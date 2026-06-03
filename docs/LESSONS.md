@@ -25,3 +25,6 @@
   before downloading large torch wheels again.
 - Avoid broad `pkill -f` process patterns. They can match the shell command that
   is trying to clean up the process and terminate the SSH session itself.
+- Keep the experiment script syntactically valid on the reusable GPU Python
+  stack. The current image uses Python 3.10, so avoid newer nested f-string
+  syntax even if local tools can parse it.

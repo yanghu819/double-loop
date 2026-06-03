@@ -1009,8 +1009,10 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             lines.append(f"  future_seed: {fs_line(fs)}")
     if "eval_noisy" in metrics:
         lines.extend(["", "## Eval Noise", ""])
-        lines.append(f"- clean eval loop{task.get('max_loops', 3)}: {metric_line(metrics['eval_clean'][f'loop{task.get('max_loops', 3)}'])}")
-        lines.append(f"- noisy eval loop{task.get('max_loops', 3)}: {metric_line(metrics['eval_noisy'][f'loop{task.get('max_loops', 3)}'])}")
+        max_loop = task.get("max_loops", 3)
+        last_loop_key = f"loop{max_loop}"
+        lines.append(f"- clean eval loop{max_loop}: {metric_line(metrics['eval_clean'][last_loop_key])}")
+        lines.append(f"- noisy eval loop{max_loop}: {metric_line(metrics['eval_noisy'][last_loop_key])}")
     if metrics.get("rollouts"):
         lines.extend(["", "## Stochastic Rollouts", ""])
         for key, row in metrics["rollouts"].items():

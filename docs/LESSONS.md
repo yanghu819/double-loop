@@ -41,3 +41,6 @@
 - A full-run smoke preflight must not inherit the parent `RUN_NAME`; otherwise
   the smoke and full jobs can write into the same tracking directory and blur
   config, logs, and scores.
+- Experiment recorders should trust the run-local `config.json` for the run's
+  source SHA and dirty flag. Recomputing dirty state after outputs are written
+  can make a clean run look dirty just because tracking artifacts now exist.

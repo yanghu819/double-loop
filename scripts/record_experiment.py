@@ -107,6 +107,22 @@ def update_leaderboard(repo: Path, row: Dict[str, Any]) -> None:
         writer.writerows(rows)
 
 
+def source_dirty(repo: Path) -> bool:
+    status = git(
+        repo,
+        "status",
+        "--short",
+        "--",
+        ".",
+        ":(exclude).cache",
+        ":(exclude).venv",
+        ":(exclude)artifacts",
+        ":(exclude)models",
+        ":(exclude)runs",
+    )
+    return bool(status)
+
+
 def maybe_tag(repo: Path, score: Optional[float], sha: str, threshold: Optional[float]) -> Optional[str]:
     if score is None or threshold is None or score < threshold:
         return None
@@ -131,8 +147,9 @@ def main() -> None:
     if not (repo / ".git").exists():
         raise SystemExit(f"Could not find git repository above {run_dir}")
 
-    sha = git(repo, "rev-parse", "HEAD")
-    dirty = bool(git(repo, "status", "--short"))
+    config = read_json(run_dir / "config.json")
+    sha = str(config.get("git_sha") or git(repo, "rev-parse", "HEAD"))
+    dirty = bool(config.get("git_dirty", source_dirty(repo)))
     result = load_result(run_dir)
     score, score_key = extract_score(result)
 

@@ -28,3 +28,6 @@
 - Keep the experiment script syntactically valid on the reusable GPU Python
   stack. The current image uses Python 3.10, so avoid newer nested f-string
   syntax even if local tools can parse it.
+- After remote patch transfer, inspect script tails and run the wrapper end to
+  end. A syntactically valid shell script can still be semantically truncated
+  before the metadata-recording step.

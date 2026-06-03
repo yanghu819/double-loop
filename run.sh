@@ -139,3 +139,11 @@ printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GI
     UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
   fi
 ) 2>&1 | tee -a "$LOG_DIR/run.log"
+
+RECORD_ARGS=(--run-dir "$RUN_DIR" --mode "$MODE")
+if [[ "$MODE" == "smoke" && "${UPDATE_LEADERBOARD:-0}" != "1" ]]; then
+  RECORD_ARGS+=(--no-leaderboard)
+fi
+python3 "$REPO_ROOT/scripts/record_experiment.py" "${RECORD_ARGS[@]}"
+
+printf 'completed run_dir=%s\n' "$RUN_DIR"

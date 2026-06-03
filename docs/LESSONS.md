@@ -13,3 +13,10 @@
   deliberately.
 - The bitter lesson applies here: prioritize scalable search/training feedback and
   measured experiment loops over hand-built solver shortcuts.
+
+## 2026-06-03 uv bootstrap
+
+- GPU1's system Python can lack `ensurepip`/`python3-venv`, so `setup.sh` must
+  bootstrap uv without requiring `python3 -m venv`. Prefer a local wheelhouse,
+  then `pip --target` if pip exists, then the standalone uv installer into
+  `/huyang2/double-loop/.cache/uv-bootstrap/bin`.

@@ -18,12 +18,15 @@ if command -v uv >/dev/null 2>&1; then
 else
   BOOTSTRAP_DIR="$REPO_ROOT/.cache/uv-bootstrap"
   if [[ ! -x "$BOOTSTRAP_DIR/bin/uv" ]]; then
-    python3 -m venv "$BOOTSTRAP_DIR"
-    "$BOOTSTRAP_DIR/bin/python" -m pip install --upgrade pip
+    mkdir -p "$BOOTSTRAP_DIR/bin"
     if compgen -G "$REPO_ROOT/wheelhouse/uv*.whl" >/dev/null; then
-      "$BOOTSTRAP_DIR/bin/pip" install --no-index --find-links "$REPO_ROOT/wheelhouse" uv
+      python3 -m pip install --target "$BOOTSTRAP_DIR/pylib" --no-index --find-links "$REPO_ROOT/wheelhouse" uv
+      ln -sf "$BOOTSTRAP_DIR/pylib/bin/uv" "$BOOTSTRAP_DIR/bin/uv"
+    elif python3 -m pip --version >/dev/null 2>&1; then
+      python3 -m pip install --target "$BOOTSTRAP_DIR/pylib" uv
+      ln -sf "$BOOTSTRAP_DIR/pylib/bin/uv" "$BOOTSTRAP_DIR/bin/uv"
     else
-      "$BOOTSTRAP_DIR/bin/pip" install uv
+      curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$BOOTSTRAP_DIR/bin" sh
     fi
   fi
   UV_BIN="$BOOTSTRAP_DIR/bin/uv"

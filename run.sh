@@ -11,9 +11,10 @@ export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$REPO_ROOT/.cache/uv/pyth
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$REPO_ROOT/.cache/pip}"
 export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/huggingface}"
 export TORCH_HOME="${TORCH_HOME:-$REPO_ROOT/.cache/torch}"
+export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$REPO_ROOT/.cache/torch_extensions}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 
-mkdir -p "$REPO_ROOT/.cache" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
+mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
 
 case "$MODE" in
   smoke|full) ;;
@@ -117,6 +118,7 @@ COMMON_ARGS=(
   --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
   --feature_buffer_add "${FEATURE_BUFFER_ADD:-2048}"
   --future_seed_scale "${FUTURE_SEED_SCALE:-1.0}"
+  --rwkv_kernel "${RWKV_KERNEL:-auto}"
   --lambda_ "${LAMBDA:-0.95}"
   --loop_loss "${LOOP_LOSS:-final}"
   --out_dir "$OUT_DIR"

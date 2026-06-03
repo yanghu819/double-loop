@@ -44,3 +44,18 @@
 - Experiment recorders should trust the run-local `config.json` for the run's
   source SHA and dirty flag. Recomputing dirty state after outputs are written
   can make a clean run look dirty just because tracking artifacts now exist.
+
+## 2026-06-03 RWKV7 CUDA pivot
+
+- The first 9x9 cliff run (`9x9-cliff-20260603T090939Z-d8ce276`) and the smaller
+  rescue probe (`9x9-cliff-small-20260603T092602Z-d8ce276`) both hit the wrong
+  bottleneck: the pure PyTorch recurrent scan had not emitted `step=0100` before
+  the kill window, even while the A100 was doing work. Treat this as an
+  implementation throughput failure, not as evidence about 9x9 reasoning quality.
+- Do not respond to that signal with more batch/curriculum table filling. The
+  next high-ROI question is whether a real CUDA RWKV7 WKV kernel can make the
+  same FutureSeed hypothesis cheap enough to evaluate.
+- RWKV7 `wind` CUDA keeps the useful `s0 -> sT` state interface needed by
+  FutureSeed, but it imposes hard shape constraints: CUDA bf16, `T % 16 == 0`,
+  and `head_dim` divisible by 16. For 9x9 Sudoku, pad 81 tokens to 96 and use a
+  compatible shape such as `D_MODEL=128 HEADS=8 HEAD_DIM=16`.

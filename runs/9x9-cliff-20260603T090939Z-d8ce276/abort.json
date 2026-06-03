@@ -1,0 +1,32 @@
+{
+  "aborted_at_utc": "2026-06-03T09:25:54Z",
+  "observed": {
+    "gpu_before": "0, NVIDIA A100-SXM4-80GB, 39719 MiB, 81920 MiB, 1 %;",
+    "last_step": null,
+    "step100_seen": false
+  },
+  "process": {
+    "pids_considered": [
+      "82",
+      "80",
+      "81",
+      "63"
+    ],
+    "root_pid": "63",
+    "survived_kill": [],
+    "survived_term": [],
+    "term_sent": [
+      "82",
+      "80",
+      "81",
+      "63"
+    ]
+  },
+  "reason": "step100 exceeded 15-minute kill threshold",
+  "replacement": {
+    "full_batch": 128,
+    "hole_stages": "4-8:400",
+    "reason": "same 9x9 hypothesis, smaller throughput probe after step100 latency breach"
+  },
+  "run": "9x9-cliff-20260603T090939Z-d8ce276"
+}

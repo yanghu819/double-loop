@@ -14,6 +14,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+try:
+    from rwkv7_cuda import WindRWKV7, wind_available
+except Exception:  # pragma: no cover - CUDA extension is optional for CPU smoke.
+    WindRWKV7 = None
+
+    def wind_available(head_dim: int) -> Tuple[bool, str]:
+        return False, "rwkv7_cuda import failed"
+
 
 N = 9
 BOX_ROWS = 3
@@ -139,15 +147,26 @@ def make_batch(
 
 
 class RWKVTimeMix(nn.Module):
-    """Small pure-PyTorch RWKV-style WKV block with explicit recurrent state."""
+    """RWKV-style WKV block with a CUDA RWKV7 wind path and torch fallback."""
 
-    def __init__(self, d_model: int, heads: int, head_dim: int, *, layer_id: int, layers: int) -> None:
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        *,
+        layer_id: int,
+        layers: int,
+        rwkv_kernel: str,
+    ) -> None:
         super().__init__()
         if d_model != heads * head_dim:
             raise ValueError("d_model must equal heads * head_dim")
         self.d_model = d_model
         self.heads = heads
         self.head_dim = head_dim
+        self.rwkv_kernel = rwkv_kernel
+        self._fallback_warned = False
 
         ratio_0_to_1 = layer_id / max(layers - 1, 1)
         ratio_1_to_almost0 = 1.0 - (layer_id / max(layers, 1))
@@ -222,13 +241,116 @@ class RWKVTimeMix(nn.Module):
         v = self.value(xv).view(batch_size, seq_len, heads, head_dim)
         g = torch.sigmoid(self.gate(xg))
 
+        if self.rwkv_kernel in {"auto", "wind"}:
+            if self._can_use_wind(x, initial_state):
+                y, terminal_state = self._forward_wind(
+                    r=r,
+                    w_log=w_log.view(batch_size, seq_len, heads, head_dim),
+                    k=k,
+                    v=v,
+                    kk=kk,
+                    state_lr=state_lr,
+                    gate=g,
+                    initial_state=initial_state,
+                    original_dtype=x.dtype,
+                )
+                return y, terminal_state
+            if self.rwkv_kernel == "wind":
+                ok, reason = wind_available(self.head_dim)
+                if not ok:
+                    raise RuntimeError(f"RWKV_KERNEL=wind requested but unavailable: {reason}")
+                raise RuntimeError("RWKV_KERNEL=wind requested but inputs are not CUDA tensors")
+            if not self._fallback_warned:
+                ok, reason = wind_available(self.head_dim)
+                print(f"rwkv_kernel=auto using torch fallback: {reason}", flush=True)
+                self._fallback_warned = True
+
+        return self._forward_torch(
+            r=r,
+            w_log=w_log,
+            k=k,
+            v=v,
+            kk=kk,
+            state_lr=state_lr,
+            gate=g,
+            initial_state=initial_state,
+        )
+
+    def _can_use_wind(self, x: torch.Tensor, initial_state: Optional[torch.Tensor]) -> bool:
+        if WindRWKV7 is None or not x.is_cuda:
+            return False
+        ok, _reason = wind_available(self.head_dim)
+        if not ok:
+            return False
+        if initial_state is not None:
+            expected = (x.shape[0], self.heads, self.head_dim, self.head_dim)
+            if tuple(initial_state.shape) != expected:
+                return False
+        return True
+
+    @staticmethod
+    def _pad_time(t: torch.Tensor, pad_len: int, value: float = 0.0) -> torch.Tensor:
+        if pad_len <= 0:
+            return t
+        pad_shape = (t.shape[0], pad_len, *t.shape[2:])
+        pad = t.new_full(pad_shape, value)
+        return torch.cat([t, pad], dim=1)
+
+    def _forward_wind(
+        self,
+        *,
+        r: torch.Tensor,
+        w_log: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        kk: torch.Tensor,
+        state_lr: torch.Tensor,
+        gate: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+        original_dtype: torch.dtype,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        batch_size, seq_len, heads, head_dim = r.shape
+        pad_len = (-seq_len) % 16
+        q_bf16 = self._pad_time(r, pad_len).to(torch.bfloat16)
+        w_bf16 = self._pad_time(w_log, pad_len, value=-60.0).to(torch.bfloat16)
+        k_bf16 = self._pad_time(k, pad_len).to(torch.bfloat16)
+        v_bf16 = self._pad_time(v, pad_len).to(torch.bfloat16)
+        z_bf16 = self._pad_time(-kk, pad_len).to(torch.bfloat16)
+        a_bf16 = self._pad_time(kk * state_lr, pad_len).to(torch.bfloat16)
+
         if initial_state is None:
-            memory = torch.zeros(batch_size, heads, head_dim, head_dim, device=x.device, dtype=x.dtype)
+            s0 = torch.zeros(batch_size, heads, head_dim, head_dim, device=r.device, dtype=torch.bfloat16)
+        else:
+            s0 = initial_state.to(device=r.device, dtype=torch.bfloat16)
+
+        y_bf16, terminal_state_bf16 = WindRWKV7.apply(w_bf16, q_bf16, k_bf16, v_bf16, z_bf16, a_bf16, s0)
+        y = y_bf16[:, :seq_len].reshape(batch_size, seq_len, heads * head_dim).to(original_dtype)
+        y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)
+        return self.out(y * gate), terminal_state_bf16.to(original_dtype)
+
+    def _forward_torch(
+        self,
+        *,
+        r: torch.Tensor,
+        w_log: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        kk: torch.Tensor,
+        state_lr: torch.Tensor,
+        gate: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        batch_size, seq_len, channels = gate.shape
+        heads, head_dim = self.heads, self.head_dim
+        w = torch.exp(-torch.exp(w_log.float())).to(gate.dtype).view(batch_size, seq_len, heads, head_dim)
+
+        if initial_state is None:
+            memory = torch.zeros(batch_size, heads, head_dim, head_dim, device=gate.device, dtype=gate.dtype)
         else:
             expected = (batch_size, heads, head_dim, head_dim)
             if tuple(initial_state.shape) != expected:
                 raise ValueError(f"initial_state shape {tuple(initial_state.shape)} does not match {expected}")
-            memory = initial_state.to(device=x.device, dtype=x.dtype)
+            memory = initial_state.to(device=gate.device, dtype=gate.dtype)
 
         outputs: List[torch.Tensor] = []
         for t in range(seq_len):
@@ -244,7 +366,7 @@ class RWKVTimeMix(nn.Module):
 
         y = torch.stack(outputs, dim=1)
         y = self.group_norm(y.reshape(batch_size * seq_len, channels)).reshape(batch_size, seq_len, channels)
-        return self.out(y * g), memory
+        return self.out(y * gate), memory
 
 
 class ChannelMix(nn.Module):
@@ -269,11 +391,12 @@ class RWKVBlock(nn.Module):
         *,
         layer_id: int,
         layers: int,
+        rwkv_kernel: str,
     ) -> None:
         super().__init__()
         self.ln_time = nn.LayerNorm(d_model)
         self.ln_channel = nn.LayerNorm(d_model)
-        self.time_mix = RWKVTimeMix(d_model, heads, head_dim, layer_id=layer_id, layers=layers)
+        self.time_mix = RWKVTimeMix(d_model, heads, head_dim, layer_id=layer_id, layers=layers, rwkv_kernel=rwkv_kernel)
         self.channel_mix = ChannelMix(d_model, channel_mult)
         self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
 
@@ -299,6 +422,7 @@ class FutureSeedRWKV(nn.Module):
         channel_mult: int,
         *,
         future_seed_scale: float = 1.0,
+        rwkv_kernel: str = "auto",
     ) -> None:
         super().__init__()
         if layers < 2:
@@ -306,7 +430,15 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_scale = float(future_seed_scale)
         self.blocks = nn.ModuleList(
             [
-                RWKVBlock(d_model, heads, head_dim, channel_mult, layer_id=layer_id, layers=layers)
+                RWKVBlock(
+                    d_model,
+                    heads,
+                    head_dim,
+                    channel_mult,
+                    layer_id=layer_id,
+                    layers=layers,
+                    rwkv_kernel=rwkv_kernel,
+                )
                 for layer_id in range(layers)
             ]
         )
@@ -394,6 +526,7 @@ class FutureSeedLoopSudoku(nn.Module):
         l_cycles: int,
         lambda_: float,
         future_seed_scale: float,
+        rwkv_kernel: str,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -407,6 +540,7 @@ class FutureSeedLoopSudoku(nn.Module):
             head_dim,
             channel_mult,
             future_seed_scale=future_seed_scale,
+            rwkv_kernel=rwkv_kernel,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -560,6 +694,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         l_cycles=args.l_cycles,
         lambda_=args.lambda_,
         future_seed_scale=args.future_seed_scale,
+        rwkv_kernel=args.rwkv_kernel,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
@@ -630,6 +765,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "noise_mode": "feature_diff",
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
+        "rwkv_kernel": args.rwkv_kernel,
     }
     return model.eval(), train_stats
 
@@ -1077,6 +1213,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
+    if args.rwkv_kernel == "wind":
+        ok, reason = wind_available(args.head_dim)
+        if not ok:
+            raise ValueError(f"--rwkv_kernel wind is unavailable: {reason}")
     max_eval_holes = max(parse_eval_holes(args) + [hi for _lo, hi, _steps in parse_hole_stages(args)])
     if args.hole_pattern != "random" and max_eval_holes > N:
         raise ValueError(f"--hole_pattern {args.hole_pattern} supports at most {N} holes for {N}x{N}")
@@ -1087,7 +1227,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     device = choose_device(args.cpu)
     print(
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
-        "mainline=future_seed_loop",
+        f"mainline=future_seed_loop rwkv_kernel={args.rwkv_kernel}",
         flush=True,
     )
 
@@ -1210,6 +1350,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
+        "rwkv_kernel": args.rwkv_kernel,
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
         "rollout_noise_scale": args.noise_scale if args.rollout_noise_scale < 0 else args.rollout_noise_scale,
@@ -1299,6 +1440,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max_loops", type=int, default=3)
     p.add_argument("--lambda_", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
+    p.add_argument("--rwkv_kernel", choices=("auto", "torch", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all"), default="final")
     p.add_argument("--noise_scale", type=float, default=0.01)
     p.add_argument("--feature_buffer_size", type=int, default=8192)

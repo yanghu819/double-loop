@@ -1,0 +1,30 @@
+{
+  "aborted_at_utc": "2026-06-03T09:41:03Z",
+  "decision": {
+    "continue_training": false,
+    "next_direction": "replace toy RWKV recurrent loop with CUDA RWKV7 implementation before the next 9x9 run"
+  },
+  "observed": {
+    "gpu_before": "0, NVIDIA A100-SXM4-80GB, 25241 MiB, 81920 MiB, 42 %;",
+    "step100_seen": false
+  },
+  "process": {
+    "pids_considered": [
+      "390",
+      "388",
+      "389",
+      "371"
+    ],
+    "root_pid": "371",
+    "survived_kill": [],
+    "survived_term": [],
+    "term_sent": [
+      "390",
+      "388",
+      "389",
+      "371"
+    ]
+  },
+  "reason": "user pivot: current pure PyTorch RWKV loop is toy/inefficient; switch to CUDA RWKV7 source path",
+  "run": "9x9-cliff-small-20260603T092602Z-d8ce276"
+}

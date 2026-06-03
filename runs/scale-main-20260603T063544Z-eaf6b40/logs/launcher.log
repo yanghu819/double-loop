@@ -1,0 +1,35 @@
+mode=smoke
+run_dir=/huyang2/double-loop/runs/smoke-20260603T063544Z-eaf6b40
+git_sha=eaf6b40d43e3d76fc4cf25b1e1de8ad9f85cd7fc
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=6x6 box=2x3 mainline=future_seed_loop
+[future_seed_loop stage=1:2-6] step=0001 ce=1.8869 total=1.8869 loop1=1.8863 loop_last=1.8869
+[future_seed_loop stage=1:2-6] step=0002 ce=2.2045 total=2.2045 loop1=2.2634 loop_last=2.2045
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1875
+        fs_gate=0.500, fs_state_norm=6.001
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1875
+        fs_gate=0.500, fs_state_norm=6.001
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1875
+        fs_gate=0.500, fs_state_norm=6.001
+eval_noise loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1250
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1250; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1250; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1250; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1250; gap=0.0000
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/smoke-20260603T063544Z-eaf6b40/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/smoke-20260603T063544Z-eaf6b40/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/smoke-20260603T063544Z-eaf6b40/output/futureseed_loop_case_seed52.html
+recorded run=smoke-20260603T063544Z-eaf6b40 score=0.0 key=metrics.eval_clean.loop3.label_exact
+completed run_dir=/huyang2/double-loop/runs/smoke-20260603T063544Z-eaf6b40
+mode=full
+run_dir=/huyang2/double-loop/runs/scale-main-20260603T063544Z-eaf6b40
+git_sha=eaf6b40d43e3d76fc4cf25b1e1de8ad9f85cd7fc
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=6x6 box=2x3 mainline=future_seed_loop
+[future_seed_loop stage=1:2-6] step=0100 ce=0.2434 total=0.2434 loop1=0.2511 loop_last=0.2434

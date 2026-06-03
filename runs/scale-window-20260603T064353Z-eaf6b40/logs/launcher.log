@@ -1,0 +1,50 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/scale-window-20260603T064353Z-eaf6b40
+git_sha=eaf6b40d43e3d76fc4cf25b1e1de8ad9f85cd7fc
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=6x6 box=2x3 mainline=future_seed_loop
+[future_seed_loop stage=1:2-6] step=0100 ce=0.2434 total=0.2434 loop1=0.2511 loop_last=0.2434
+[future_seed_loop stage=1:2-6] step=0200 ce=0.0325 total=0.0325 loop1=0.0366 loop_last=0.0325
+[future_seed_loop stage=1:2-6] step=0300 ce=0.0035 total=0.0035 loop1=0.0049 loop_last=0.0035
+[future_seed_loop stage=1:2-6] step=0400 ce=0.0014 total=0.0014 loop1=0.0016 loop_last=0.0014
+[future_seed_loop stage=1:2-6] step=0500 ce=0.0022 total=0.0022 loop1=0.0023 loop_last=0.0022
+[future_seed_loop stage=1:2-6] step=0600 ce=0.0002 total=0.0002 loop1=0.0002 loop_last=0.0002
+[future_seed_loop stage=1:2-6] step=0700 ce=0.0001 total=0.0001 loop1=0.0001 loop_last=0.0001
+[future_seed_loop stage=1:2-6] step=0800 ce=0.0038 total=0.0038 loop1=0.0040 loop_last=0.0038
+
+full-board metrics
+loop=1 exact=0.9883, valid=0.9883, solved=0.9883, blank_acc=0.9971
+        fs_gate=0.523, fs_state_norm=6.278
+loop=2 exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9973
+        fs_gate=0.523, fs_state_norm=6.278
+loop=3 exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9976
+        fs_gate=0.523, fs_state_norm=6.278
+eval_noise loop=3 exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9976
+
+stochastic rollout metrics
+K1 oracle_exact=0.9873 oracle_solved=0.9873 disagree=0.0000
+  confidence exact=0.9873, valid=0.9873, solved=0.9873, blank_acc=0.9971; gap=0.0000
+  consistency exact=0.9873, valid=0.9873, solved=0.9873, blank_acc=0.9971; gap=0.0000
+  residual    exact=0.9873, valid=0.9873, solved=0.9873, blank_acc=0.9971; gap=0.0000
+  majority    exact=0.9873, valid=0.9873, solved=0.9873, blank_acc=0.9971; gap=0.0000
+K4 oracle_exact=0.9912 oracle_solved=0.9912 disagree=0.0005
+  confidence exact=0.9893, valid=0.9893, solved=0.9893, blank_acc=0.9973; gap=0.0020
+  consistency exact=0.9883, valid=0.9883, solved=0.9883, blank_acc=0.9973; gap=0.0029
+  residual    exact=0.9883, valid=0.9883, solved=0.9883, blank_acc=0.9971; gap=0.0029
+  majority    exact=0.9893, valid=0.9893, solved=0.9893, blank_acc=0.9973; gap=0.0020
+K8 oracle_exact=0.9941 oracle_solved=0.9941 disagree=0.0007
+  confidence exact=0.9893, valid=0.9893, solved=0.9893, blank_acc=0.9971; gap=0.0049
+  consistency exact=0.9893, valid=0.9893, solved=0.9893, blank_acc=0.9973; gap=0.0049
+  residual    exact=0.9883, valid=0.9883, solved=0.9883, blank_acc=0.9966; gap=0.0059
+  majority    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9973; gap=0.0039
+K16 oracle_exact=0.9951 oracle_solved=0.9951 disagree=0.0007
+  confidence exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9973; gap=0.0049
+  consistency exact=0.9893, valid=0.9893, solved=0.9893, blank_acc=0.9973; gap=0.0059
+  residual    exact=0.9912, valid=0.9912, solved=0.9912, blank_acc=0.9976; gap=0.0039
+  majority    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9973; gap=0.0049
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/scale-window-20260603T064353Z-eaf6b40/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/scale-window-20260603T064353Z-eaf6b40/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/scale-window-20260603T064353Z-eaf6b40/output/futureseed_loop_case_seed52.html
+recorded run=scale-window-20260603T064353Z-eaf6b40 score=0.990234375 key=metrics.eval_clean.loop3.label_exact
+completed run_dir=/huyang2/double-loop/runs/scale-window-20260603T064353Z-eaf6b40

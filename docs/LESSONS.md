@@ -38,3 +38,6 @@
 - Generated run/cache/model directories should not make a subsequent experiment
   look source-dirty. Dirty provenance should track source edits, while run
   metadata is committed after the experiment completes.
+- A full-run smoke preflight must not inherit the parent `RUN_NAME`; otherwise
+  the smoke and full jobs can write into the same tracking directory and blur
+  config, logs, and scores.

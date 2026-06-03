@@ -51,7 +51,7 @@ if [[ -z "$PYTHON_BIN" && ! -x "$UV_BIN" ]]; then
 fi
 
 if [[ "$MODE" == "full" && "${SMOKE_DONE:-0}" != "1" ]]; then
-  SMOKE_DONE=1 SKIP_SETUP=1 "$0" smoke
+  SMOKE_DONE=1 SKIP_SETUP=1 RUN_NAME= "$0" smoke
 fi
 
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"

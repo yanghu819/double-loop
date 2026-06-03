@@ -59,3 +59,7 @@
   FutureSeed, but it imposes hard shape constraints: CUDA bf16, `T % 16 == 0`,
   and `head_dim` divisible by 16. For 9x9 Sudoku, pad 81 tokens to 96 and use a
   compatible shape such as `D_MODEL=128 HEADS=8 HEAD_DIM=16`.
+- `torch.utils.cpp_extension.load` requires a `ninja` executable even when the
+  container already has a working CUDA PyTorch. When reusing `/opt/conda/bin/python`,
+  `setup.sh` still needs to install/link `ninja` under the repo-local `.cache/bin`
+  and `run.sh` must prepend that directory to `PATH`.

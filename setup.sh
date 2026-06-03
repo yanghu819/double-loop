@@ -10,8 +10,41 @@ export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$REPO_ROOT/.cache/uv/pyth
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$REPO_ROOT/.cache/pip}"
 export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/huggingface}"
 export TORCH_HOME="${TORCH_HOME:-$REPO_ROOT/.cache/torch}"
+export PATH="$REPO_ROOT/.cache/bin:$PATH"
 
-mkdir -p "$REPO_ROOT/.cache" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs" "$XDG_CACHE_HOME" "$UV_CACHE_DIR" "$UV_PYTHON_INSTALL_DIR" "$PIP_CACHE_DIR" "$HF_HOME" "$TORCH_HOME"
+mkdir -p "$REPO_ROOT/.cache" "$REPO_ROOT/.cache/bin" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs" "$XDG_CACHE_HOME" "$UV_CACHE_DIR" "$UV_PYTHON_INSTALL_DIR" "$PIP_CACHE_DIR" "$HF_HOME" "$TORCH_HOME"
+
+ensure_ninja() {
+  local py_bin="$1"
+  if command -v ninja >/dev/null 2>&1; then
+    return 0
+  fi
+  local target="$REPO_ROOT/.cache/ninja-pylib"
+  mkdir -p "$target" "$REPO_ROOT/.cache/bin"
+  if compgen -G "$REPO_ROOT/wheelhouse/ninja*.whl" >/dev/null; then
+    "$py_bin" -m pip install --target "$target" --upgrade --no-index --find-links "$REPO_ROOT/wheelhouse" ninja
+  else
+    "$py_bin" -m pip install --target "$target" --upgrade ninja
+  fi
+  local ninja_bin
+  ninja_bin="$(PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.find_spec("ninja")
+if spec is None or spec.origin is None:
+    raise SystemExit(1)
+root = pathlib.Path(spec.origin).parent
+for candidate in (root / "data" / "bin" / "ninja", root / "data" / "bin" / "ninja.exe"):
+    if candidate.exists():
+        print(candidate)
+        raise SystemExit(0)
+raise SystemExit(2)
+PY
+)"
+  ln -sf "$ninja_bin" "$REPO_ROOT/.cache/bin/ninja"
+}
 
 SYSTEM_TORCH_PYTHON="${SYSTEM_TORCH_PYTHON:-/opt/conda/bin/python}"
 if [[ "${REUSE_SYSTEM_TORCH:-1}" == "1" && -x "$SYSTEM_TORCH_PYTHON" ]]; then
@@ -30,6 +63,7 @@ if not torch.cuda.is_available():
 print(f"reusing {sys.executable}: torch={torch.__version__} cuda={torch.cuda.get_device_name(0)}")
 PY
   then
+    ensure_ninja "$SYSTEM_TORCH_PYTHON"
     printf '%s\n' "$SYSTEM_TORCH_PYTHON" > "$REPO_ROOT/.cache/python-bin"
     printf 'Environment ready: %s\n' "$SYSTEM_TORCH_PYTHON"
     exit 0

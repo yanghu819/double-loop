@@ -13,6 +13,7 @@ export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/huggingface}"
 export TORCH_HOME="${TORCH_HOME:-$REPO_ROOT/.cache/torch}"
 export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$REPO_ROOT/.cache/torch_extensions}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
+export PATH="$REPO_ROOT/.cache/bin:$PATH"
 
 mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
 

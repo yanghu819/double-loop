@@ -27,8 +27,17 @@ if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
   "$REPO_ROOT/setup.sh"
 fi
 
+PYTHON_BIN="${PYTHON_BIN:-}"
+if [[ -z "$PYTHON_BIN" && -s "$REPO_ROOT/.cache/python-bin" ]]; then
+  PYTHON_BIN="$(<"$REPO_ROOT/.cache/python-bin")"
+fi
+if [[ -n "$PYTHON_BIN" && ! -x "$PYTHON_BIN" ]]; then
+  printf 'Configured PYTHON_BIN is not executable: %s\n' "$PYTHON_BIN" >&2
+  exit 1
+fi
+
 UV_BIN="${UV_BIN:-}"
-if [[ -z "$UV_BIN" ]]; then
+if [[ -z "$PYTHON_BIN" && -z "$UV_BIN" ]]; then
   if command -v uv >/dev/null 2>&1; then
     UV_BIN="$(command -v uv)"
   else
@@ -36,7 +45,7 @@ if [[ -z "$UV_BIN" ]]; then
   fi
 fi
 
-if [[ ! -x "$UV_BIN" ]]; then
+if [[ -z "$PYTHON_BIN" && ! -x "$UV_BIN" ]]; then
   printf 'uv is not available; run ./setup.sh first.\n' >&2
   exit 1
 fi
@@ -124,5 +133,9 @@ printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GI
 
 (
   cd "$EXP_DIR"
-  UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
+  if [[ -n "$PYTHON_BIN" ]]; then
+    "$PYTHON_BIN" study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
+  else
+    UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
+  fi
 ) 2>&1 | tee -a "$LOG_DIR/run.log"

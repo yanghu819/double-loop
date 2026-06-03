@@ -20,3 +20,8 @@
   bootstrap uv without requiring `python3 -m venv`. Prefer a local wheelhouse,
   then `pip --target` if pip exists, then the standalone uv installer into
   `/huyang2/double-loop/.cache/uv-bootstrap/bin`.
+- The current GPU1 image already includes `/opt/conda/bin/python` with
+  `torch 2.7.0+cu126` and CUDA on the A100. Reuse that configured GPU stack
+  before downloading large torch wheels again.
+- Avoid broad `pkill -f` process patterns. They can match the shell command that
+  is trying to clean up the process and terminate the SSH session itself.

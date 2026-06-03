@@ -79,3 +79,28 @@
   exact 0.9629, and holes16 exact 0.8535. This supports continuing 9x9 CUDA
   scale-up; the K8 oracle gap is effectively zero, so rollout selector work is
   low priority for this branch.
+
+## 2026-06-03 9x9 mechanism ablation
+
+- The one-hour ablation budget was enough for three targeted GPU1 runs at
+  source SHA `5e2253f`: no outer loop, no FutureSeed, and no training
+  feature-diff noise. This was a mechanism test, not a sweep; each run answered
+  whether a specific part of the successful 9x9 CUDA cliff run was structural.
+- Removing the outer loop (`9x9-ablate-no-loop-20260603T111606Z-5e2253f`) did
+  not break easy-distribution 9x9: full-board exact was 0.9922, holes12 exact
+  was 0.9551, and train CE reached 0.0135 by step800. It did reduce hard-hole
+  transfer: holes16 exact was 0.7715 versus the baseline loop5 0.8535. Treat
+  loop compute as hard-constraint refinement, not as the only reason the model
+  can solve 9x9.
+- Removing FutureSeed (`9x9-ablate-no-future-seed-20260603T111747Z-5e2253f`)
+  collapsed the run: train CE was still 0.4498 at step800, full-board loop5
+  exact was 0.0664, holes12 exact was 0.0195, and holes16 exact was 0.0000.
+  K8 oracle exact rose to only 0.2031 while the best selector was 0.0762, so
+  the problem is not just selector choice. FutureSeed is carrying necessary
+  cross-layer state for 9x9 scaling.
+- Removing training feature noise (`9x9-ablate-no-feature-noise-20260603T112449Z-5e2253f`)
+  improved this setup: train CE reached 0.0007 at step800, holes12 exact was
+  0.9766, holes16 exact was 0.9004, and K8 selector gap was zero. For the next
+  9x9 scale run, default to `NOISE_SCALE=0` or a much smaller value; do not
+  spend budget on rollout selector work while FutureSeed is enabled and the
+  oracle gap remains tiny.

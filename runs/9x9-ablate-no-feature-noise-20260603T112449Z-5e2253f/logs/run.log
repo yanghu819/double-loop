@@ -1,0 +1,68 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/9x9-ablate-no-feature-noise-20260603T112449Z-5e2253f
+git_sha=5e2253f73a65ff7e7e128f5370b844f342710860
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:4-8] step=0100 ce=0.8625 total=0.8625 loop1=0.8606 loop_last=0.8625
+[future_seed_loop stage=1:4-8] step=0200 ce=0.6259 total=0.6259 loop1=0.6324 loop_last=0.6259
+[future_seed_loop stage=1:4-8] step=0300 ce=0.2061 total=0.2061 loop1=0.2301 loop_last=0.2061
+[future_seed_loop stage=2:8-12] step=0400 ce=0.1126 total=0.1126 loop1=0.1550 loop_last=0.1126
+[future_seed_loop stage=2:8-12] step=0500 ce=0.0336 total=0.0336 loop1=0.0776 loop_last=0.0336
+[future_seed_loop stage=2:8-12] step=0600 ce=0.0101 total=0.0101 loop1=0.0454 loop_last=0.0101
+[future_seed_loop stage=2:8-12] step=0700 ce=0.0044 total=0.0044 loop1=0.0126 loop_last=0.0044
+[future_seed_loop stage=2:8-12] step=0800 ce=0.0007 total=0.0007 loop1=0.0146 loop_last=0.0007
+
+full-board metrics
+loop=1 exact=0.9570, valid=0.9570, solved=0.9570, blank_acc=0.9944
+        fs_gate=0.528, fs_state_norm=8.441
+loop=2 exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998
+        fs_gate=0.528, fs_state_norm=8.441
+loop=3 exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000
+        fs_gate=0.528, fs_state_norm=8.441
+loop=4 exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000
+        fs_gate=0.528, fs_state_norm=8.441
+loop=5 exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000
+        fs_gate=0.528, fs_state_norm=8.441
+
+stochastic rollout metrics
+K1 oracle_exact=0.9980 oracle_solved=0.9980 disagree=0.0000
+  confidence exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998; gap=0.0000
+  consistency exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998; gap=0.0000
+  residual    exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998; gap=0.0000
+  majority    exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998; gap=0.0000
+K4 oracle_exact=1.0000 oracle_solved=1.0000 disagree=0.0002
+  confidence exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000; gap=0.0000
+  consistency exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000; gap=0.0000
+  residual    exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000; gap=0.0000
+  majority    exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000; gap=0.0000
+K8 oracle_exact=1.0000 oracle_solved=1.0000 disagree=0.0002
+  confidence exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9995; gap=0.0020
+  consistency exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998; gap=0.0020
+  residual    exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000; gap=0.0000
+  majority    exact=0.9980, valid=0.9980, solved=0.9980, blank_acc=0.9998; gap=0.0020
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.9492 confidence_exact=0.9492 residual_exact=0.9492 disagree=0.0000
+  K4 oracle_exact=0.9805 confidence_exact=0.9570 residual_exact=0.9492 disagree=0.0020
+  K8 oracle_exact=0.9844 confidence_exact=0.9590 residual_exact=0.9492 disagree=0.0022
+loop3
+  K1 oracle_exact=0.9980 confidence_exact=0.9980 residual_exact=0.9980 disagree=0.0000
+  K4 oracle_exact=1.0000 confidence_exact=0.9980 residual_exact=0.9961 disagree=0.0002
+  K8 oracle_exact=1.0000 confidence_exact=0.9980 residual_exact=0.9980 disagree=0.0002
+loop5
+  K1 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+  K4 oracle_exact=0.9980 confidence_exact=0.9980 residual_exact=0.9980 disagree=0.0002
+  K8 oracle_exact=1.0000 confidence_exact=1.0000 residual_exact=0.9980 disagree=0.0002
+
+hole-transfer metrics
+holes=8  exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000; indep=1.0000, exact/indep=1.00
+holes=12 exact=0.9766, valid=0.9766, solved=0.9766, blank_acc=0.9972; indep=0.9673, exact/indep=1.01
+holes=16 exact=0.9004, valid=0.9004, solved=0.9004, blank_acc=0.9923; indep=0.8838, exact/indep=1.02
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/9x9-ablate-no-feature-noise-20260603T112449Z-5e2253f/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/9x9-ablate-no-feature-noise-20260603T112449Z-5e2253f/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/9x9-ablate-no-feature-noise-20260603T112449Z-5e2253f/output/futureseed_loop_case_seed52.html

@@ -1,0 +1,478 @@
+{
+  "args": {
+    "size": 9,
+    "box_rows": 0,
+    "box_cols": 0,
+    "steps": 800,
+    "batch": 128,
+    "d_model": 128,
+    "layers": 8,
+    "heads": 8,
+    "head_dim": 16,
+    "channel_mult": 4,
+    "l_cycles": 2,
+    "max_loops": 1,
+    "lambda_": 0.95,
+    "future_seed_scale": 1.0,
+    "rwkv_kernel": "cuda",
+    "loop_loss": "final",
+    "noise_scale": 0.01,
+    "feature_buffer_size": 8192,
+    "feature_buffer_add": 2048,
+    "rollout_ks": "1,4,8",
+    "rollout_loop_values": "1",
+    "rollout_noise_scale": 0.05,
+    "lr": 0.002,
+    "weight_decay": 0.001,
+    "holes_min": 2,
+    "holes_max": 4,
+    "hole_stages": "4-8:300,8-12:500",
+    "hole_pattern": "random",
+    "eval_hole_patterns": "",
+    "eval_holes": 8,
+    "eval_holes_list": "8,12,16",
+    "eval_n": 512,
+    "blank_loss_weight": 20.0,
+    "case_index": 0,
+    "seed": 52,
+    "log_every": 100,
+    "out_dir": "/huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f/output",
+    "cpu": false
+  },
+  "metrics": {
+    "train": {
+      "train_ce_loss": 0.01351017877459526,
+      "train_total_loss": 0.01351017877459526,
+      "train_loop1_loss": 0.01351017877459526,
+      "train_loop_last_loss": 0.01351017877459526,
+      "loop_loss_mode": "final",
+      "noise_mode": "feature_diff",
+      "feature_buffer_count": 8192,
+      "train_sec": 93.98644781112671,
+      "rwkv_kernel": "cuda"
+    },
+    "eval_clean": {
+      "loop1": {
+        "label_exact": 0.9921875,
+        "valid_sudoku": 0.9921875,
+        "solved_valid_clue": 0.9921875,
+        "clue_ok": 1.0,
+        "blank_acc": 0.99853515625,
+        "avg_filled": 1.0
+      },
+      "loop1/future_seed": {
+        "fs_gate_mean": 0.5312368869781494,
+        "fs_state_norm": 8.49979019165039
+      }
+    },
+    "eval_by_holes": {
+      "holes8": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.9921875,
+            "valid_sudoku": 0.9921875,
+            "solved_valid_clue": 0.9921875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.99853515625,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5312368869781494,
+            "fs_state_norm": 8.49979019165039
+          }
+        }
+      },
+      "holes12": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.955078125,
+            "valid_sudoku": 0.955078125,
+            "solved_valid_clue": 0.955078125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9957682490348816,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5312368869781494,
+            "fs_state_norm": 8.49979019165039
+          }
+        }
+      },
+      "holes16": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.771484375,
+            "valid_sudoku": 0.771484375,
+            "solved_valid_clue": 0.771484375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.98095703125,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5312368869781494,
+            "fs_state_norm": 8.49979019165039
+          }
+        }
+      }
+    },
+    "eval_by_pattern": {
+      "random": {
+        "holes8": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.9921875,
+              "valid_sudoku": 0.9921875,
+              "solved_valid_clue": 0.9921875,
+              "clue_ok": 1.0,
+              "blank_acc": 0.99853515625,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5312368869781494,
+              "fs_state_norm": 8.49979019165039
+            }
+          }
+        },
+        "holes12": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.955078125,
+              "valid_sudoku": 0.955078125,
+              "solved_valid_clue": 0.955078125,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9957682490348816,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5312368869781494,
+              "fs_state_norm": 8.49979019165039
+            }
+          }
+        },
+        "holes16": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.771484375,
+              "valid_sudoku": 0.771484375,
+              "solved_valid_clue": 0.771484375,
+              "clue_ok": 1.0,
+              "blank_acc": 0.98095703125,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5312368869781494,
+              "fs_state_norm": 8.49979019165039
+            }
+          }
+        }
+      }
+    },
+    "eval_noisy": {
+      "loop1": {
+        "label_exact": 0.9921875,
+        "valid_sudoku": 0.9921875,
+        "solved_valid_clue": 0.9921875,
+        "clue_ok": 1.0,
+        "blank_acc": 0.99853515625,
+        "avg_filled": 1.0
+      },
+      "loop1/future_seed": {
+        "fs_gate_mean": 0.5312368869781494,
+        "fs_state_norm": 8.49979019165039
+      }
+    },
+    "rollouts": {
+      "K1": {
+        "oracle_label_exact": 0.990234375,
+        "oracle_solved_valid_clue": 0.990234375,
+        "trajectory_token_disagreement": 0.0,
+        "selector_confidence": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_consistency": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_residual": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_majority": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_gap_confidence": 0.0,
+        "selector_gap_consistency": 0.0,
+        "selector_gap_residual": 0.0,
+        "selector_gap_majority": 0.0
+      },
+      "K4": {
+        "oracle_label_exact": 0.994140625,
+        "oracle_solved_valid_clue": 0.994140625,
+        "trajectory_token_disagreement": 0.0003662109375,
+        "selector_confidence": {
+          "label_exact": 0.994140625,
+          "valid_sudoku": 0.994140625,
+          "solved_valid_clue": 0.994140625,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998779296875,
+          "avg_filled": 1.0
+        },
+        "selector_consistency": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_residual": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_majority": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_gap_confidence": 0.0,
+        "selector_gap_consistency": 0.00390625,
+        "selector_gap_residual": 0.00390625,
+        "selector_gap_majority": 0.00390625
+      },
+      "K8": {
+        "oracle_label_exact": 0.994140625,
+        "oracle_solved_valid_clue": 0.994140625,
+        "trajectory_token_disagreement": 0.00042724609375,
+        "selector_confidence": {
+          "label_exact": 0.9921875,
+          "valid_sudoku": 0.9921875,
+          "solved_valid_clue": 0.9921875,
+          "clue_ok": 1.0,
+          "blank_acc": 0.99853515625,
+          "avg_filled": 1.0
+        },
+        "selector_consistency": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_residual": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_majority": {
+          "label_exact": 0.990234375,
+          "valid_sudoku": 0.990234375,
+          "solved_valid_clue": 0.990234375,
+          "clue_ok": 1.0,
+          "blank_acc": 0.998291015625,
+          "avg_filled": 1.0
+        },
+        "selector_gap_confidence": 0.001953125,
+        "selector_gap_consistency": 0.00390625,
+        "selector_gap_residual": 0.00390625,
+        "selector_gap_majority": 0.00390625
+      }
+    },
+    "rollouts_by_loop": {
+      "loop1": {
+        "K1": {
+          "oracle_label_exact": 0.98828125,
+          "oracle_solved_valid_clue": 0.98828125,
+          "trajectory_token_disagreement": 0.0,
+          "selector_confidence": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.0,
+          "selector_gap_consistency": 0.0,
+          "selector_gap_residual": 0.0,
+          "selector_gap_majority": 0.0
+        },
+        "K4": {
+          "oracle_label_exact": 0.9921875,
+          "oracle_solved_valid_clue": 0.9921875,
+          "trajectory_token_disagreement": 0.0003662109375,
+          "selector_confidence": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.00390625,
+          "selector_gap_consistency": 0.00390625,
+          "selector_gap_residual": 0.00390625,
+          "selector_gap_majority": 0.00390625
+        },
+        "K8": {
+          "oracle_label_exact": 0.99609375,
+          "oracle_solved_valid_clue": 0.99609375,
+          "trajectory_token_disagreement": 0.00048828125,
+          "selector_confidence": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.990234375,
+            "valid_sudoku": 0.990234375,
+            "solved_valid_clue": 0.990234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998291015625,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.98828125,
+            "valid_sudoku": 0.98828125,
+            "solved_valid_clue": 0.98828125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998046875,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.990234375,
+            "valid_sudoku": 0.990234375,
+            "solved_valid_clue": 0.990234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.998291015625,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.0078125,
+          "selector_gap_consistency": 0.005859375,
+          "selector_gap_residual": 0.0078125,
+          "selector_gap_majority": 0.005859375
+        }
+      }
+    },
+    "decision": "Depth loop is neutral on full-board exact in this run.",
+    "task": {
+      "size": 9,
+      "box_rows": 3,
+      "box_cols": 3,
+      "hole_pattern": "random",
+      "eval_hole_patterns": [
+        "random"
+      ],
+      "hole_stages": [
+        [
+          4,
+          8,
+          300
+        ],
+        [
+          8,
+          12,
+          500
+        ]
+      ],
+      "max_loops": 1,
+      "loop_loss": "final",
+      "noise_mode": "feature_diff",
+      "feature_buffer_size": 8192,
+      "future_seed_scale": 1.0,
+      "rwkv_kernel": "cuda",
+      "rollout_ks": [
+        1,
+        4,
+        8
+      ],
+      "rollout_loop_values": [
+        1
+      ],
+      "rollout_noise_scale": 0.05,
+      "mainline": "future_seed_loop"
+    },
+    "artifacts": {
+      "case_html": "/huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f/output/futureseed_loop_case_seed52.html"
+    }
+  }
+}

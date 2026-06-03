@@ -1,0 +1,53 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f
+git_sha=5e2253f73a65ff7e7e128f5370b844f342710860
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:4-8] step=0100 ce=0.8447 total=0.8447 loop1=0.8447 loop_last=0.8447
+[future_seed_loop stage=1:4-8] step=0200 ce=0.4770 total=0.4770 loop1=0.4770 loop_last=0.4770
+[future_seed_loop stage=1:4-8] step=0300 ce=0.1602 total=0.1602 loop1=0.1602 loop_last=0.1602
+[future_seed_loop stage=2:8-12] step=0400 ce=0.1052 total=0.1052 loop1=0.1052 loop_last=0.1052
+[future_seed_loop stage=2:8-12] step=0500 ce=0.0529 total=0.0529 loop1=0.0529 loop_last=0.0529
+[future_seed_loop stage=2:8-12] step=0600 ce=0.0077 total=0.0077 loop1=0.0077 loop_last=0.0077
+[future_seed_loop stage=2:8-12] step=0700 ce=0.0137 total=0.0137 loop1=0.0137 loop_last=0.0137
+[future_seed_loop stage=2:8-12] step=0800 ce=0.0135 total=0.0135 loop1=0.0135 loop_last=0.0135
+
+full-board metrics
+loop=1 exact=0.9922, valid=0.9922, solved=0.9922, blank_acc=0.9985
+        fs_gate=0.531, fs_state_norm=8.500
+eval_noise loop=1 exact=0.9922, valid=0.9922, solved=0.9922, blank_acc=0.9985
+
+stochastic rollout metrics
+K1 oracle_exact=0.9902 oracle_solved=0.9902 disagree=0.0000
+  confidence exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0000
+  consistency exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0000
+  residual    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0000
+  majority    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0000
+K4 oracle_exact=0.9941 oracle_solved=0.9941 disagree=0.0004
+  confidence exact=0.9941, valid=0.9941, solved=0.9941, blank_acc=0.9988; gap=0.0000
+  consistency exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0039
+  residual    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0039
+  majority    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0039
+K8 oracle_exact=0.9941 oracle_solved=0.9941 disagree=0.0004
+  confidence exact=0.9922, valid=0.9922, solved=0.9922, blank_acc=0.9985; gap=0.0020
+  consistency exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0039
+  residual    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0039
+  majority    exact=0.9902, valid=0.9902, solved=0.9902, blank_acc=0.9983; gap=0.0039
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.9883 confidence_exact=0.9883 residual_exact=0.9883 disagree=0.0000
+  K4 oracle_exact=0.9922 confidence_exact=0.9883 residual_exact=0.9883 disagree=0.0004
+  K8 oracle_exact=0.9961 confidence_exact=0.9883 residual_exact=0.9883 disagree=0.0005
+
+hole-transfer metrics
+holes=8  exact=0.9922, valid=0.9922, solved=0.9922, blank_acc=0.9985; indep=0.9883, exact/indep=1.00
+holes=12 exact=0.9551, valid=0.9551, solved=0.9551, blank_acc=0.9958; indep=0.9504, exact/indep=1.00
+holes=16 exact=0.7715, valid=0.7715, solved=0.7715, blank_acc=0.9810; indep=0.7352, exact/indep=1.05
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f/output/futureseed_loop_case_seed52.html

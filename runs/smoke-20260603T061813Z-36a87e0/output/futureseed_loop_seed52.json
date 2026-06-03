@@ -1,0 +1,289 @@
+{
+  "args": {
+    "size": 6,
+    "box_rows": 0,
+    "box_cols": 0,
+    "steps": 2,
+    "batch": 2,
+    "d_model": 32,
+    "layers": 4,
+    "heads": 4,
+    "head_dim": 8,
+    "channel_mult": 2,
+    "l_cycles": 1,
+    "max_loops": 3,
+    "lambda_": 0.95,
+    "future_seed_scale": 1.0,
+    "loop_loss": "final",
+    "noise_scale": 0.01,
+    "feature_buffer_size": 8192,
+    "feature_buffer_add": 2048,
+    "rollout_ks": "1",
+    "rollout_loop_values": "",
+    "rollout_noise_scale": 0.05,
+    "lr": 0.002,
+    "weight_decay": 0.001,
+    "holes_min": 2,
+    "holes_max": 4,
+    "hole_stages": "",
+    "hole_pattern": "unit",
+    "eval_hole_patterns": "",
+    "eval_holes": 2,
+    "eval_holes_list": "",
+    "eval_n": 4,
+    "blank_loss_weight": 20.0,
+    "case_index": 0,
+    "seed": 52,
+    "log_every": 1,
+    "out_dir": "/huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0/output",
+    "cpu": false
+  },
+  "metrics": {
+    "train": {
+      "train_ce_loss": 1.9751068353652954,
+      "train_total_loss": 1.9751068353652954,
+      "train_loop1_loss": 1.9733033180236816,
+      "train_loop_last_loss": 1.9751068353652954,
+      "loop_loss_mode": "final",
+      "noise_mode": "feature_diff",
+      "feature_buffer_count": 864,
+      "train_sec": 2.7714085578918457
+    },
+    "eval_clean": {
+      "loop1": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.0,
+        "avg_filled": 1.0
+      },
+      "loop1/future_seed": {
+        "fs_gate_mean": 0.4999983310699463,
+        "fs_state_norm": 3.9999866485595703
+      },
+      "loop2": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.0,
+        "avg_filled": 1.0
+      },
+      "loop2/future_seed": {
+        "fs_gate_mean": 0.4999983310699463,
+        "fs_state_norm": 3.9999866485595703
+      },
+      "loop3": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.0,
+        "avg_filled": 1.0
+      },
+      "loop3/future_seed": {
+        "fs_gate_mean": 0.4999983310699463,
+        "fs_state_norm": 3.9999866485595703
+      }
+    },
+    "eval_by_holes": {
+      "holes2": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.0,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.4999983310699463,
+            "fs_state_norm": 3.9999866485595703
+          },
+          "loop2": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.0,
+            "avg_filled": 1.0
+          },
+          "loop2/future_seed": {
+            "fs_gate_mean": 0.4999983310699463,
+            "fs_state_norm": 3.9999866485595703
+          },
+          "loop3": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.0,
+            "avg_filled": 1.0
+          },
+          "loop3/future_seed": {
+            "fs_gate_mean": 0.4999983310699463,
+            "fs_state_norm": 3.9999866485595703
+          }
+        }
+      }
+    },
+    "eval_by_pattern": {
+      "unit": {
+        "holes2": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0,
+              "blank_acc": 0.0,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.4999983310699463,
+              "fs_state_norm": 3.9999866485595703
+            },
+            "loop2": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0,
+              "blank_acc": 0.0,
+              "avg_filled": 1.0
+            },
+            "loop2/future_seed": {
+              "fs_gate_mean": 0.4999983310699463,
+              "fs_state_norm": 3.9999866485595703
+            },
+            "loop3": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0,
+              "blank_acc": 0.0,
+              "avg_filled": 1.0
+            },
+            "loop3/future_seed": {
+              "fs_gate_mean": 0.4999983310699463,
+              "fs_state_norm": 3.9999866485595703
+            }
+          }
+        }
+      }
+    },
+    "eval_noisy": {
+      "loop1": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.0,
+        "avg_filled": 1.0
+      },
+      "loop1/future_seed": {
+        "fs_gate_mean": 0.4999983310699463,
+        "fs_state_norm": 3.9999866485595703
+      },
+      "loop2": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.0,
+        "avg_filled": 1.0
+      },
+      "loop2/future_seed": {
+        "fs_gate_mean": 0.4999983310699463,
+        "fs_state_norm": 3.9999866485595703
+      },
+      "loop3": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.0,
+        "avg_filled": 1.0
+      },
+      "loop3/future_seed": {
+        "fs_gate_mean": 0.4999983310699463,
+        "fs_state_norm": 3.9999866485595703
+      }
+    },
+    "rollouts": {
+      "K1": {
+        "oracle_label_exact": 0.0,
+        "oracle_solved_valid_clue": 0.0,
+        "trajectory_token_disagreement": 0.0,
+        "selector_confidence": {
+          "label_exact": 0.0,
+          "valid_sudoku": 0.0,
+          "solved_valid_clue": 0.0,
+          "clue_ok": 0.0,
+          "blank_acc": 0.0,
+          "avg_filled": 1.0
+        },
+        "selector_consistency": {
+          "label_exact": 0.0,
+          "valid_sudoku": 0.0,
+          "solved_valid_clue": 0.0,
+          "clue_ok": 0.0,
+          "blank_acc": 0.0,
+          "avg_filled": 1.0
+        },
+        "selector_residual": {
+          "label_exact": 0.0,
+          "valid_sudoku": 0.0,
+          "solved_valid_clue": 0.0,
+          "clue_ok": 0.0,
+          "blank_acc": 0.0,
+          "avg_filled": 1.0
+        },
+        "selector_majority": {
+          "label_exact": 0.0,
+          "valid_sudoku": 0.0,
+          "solved_valid_clue": 0.0,
+          "clue_ok": 0.0,
+          "blank_acc": 0.0,
+          "avg_filled": 1.0
+        },
+        "selector_gap_confidence": 0.0,
+        "selector_gap_consistency": 0.0,
+        "selector_gap_residual": 0.0,
+        "selector_gap_majority": 0.0
+      }
+    },
+    "decision": "Depth loop is neutral on full-board exact in this run.",
+    "task": {
+      "size": 6,
+      "box_rows": 2,
+      "box_cols": 3,
+      "hole_pattern": "unit",
+      "eval_hole_patterns": [
+        "unit"
+      ],
+      "hole_stages": [
+        [
+          2,
+          4,
+          2
+        ]
+      ],
+      "max_loops": 3,
+      "loop_loss": "final",
+      "noise_mode": "feature_diff",
+      "feature_buffer_size": 8192,
+      "future_seed_scale": 1.0,
+      "rollout_ks": [
+        1
+      ],
+      "rollout_loop_values": [],
+      "rollout_noise_scale": 0.05,
+      "mainline": "future_seed_loop"
+    },
+    "artifacts": {
+      "case_html": "/huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0/output/futureseed_loop_case_seed52.html"
+    }
+  }
+}

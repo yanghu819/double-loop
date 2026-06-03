@@ -1,0 +1,27 @@
+mode=smoke
+run_dir=/huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0
+git_sha=36a87e092f2b59a36c25631a97cffc71f572a71b
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=6x6 box=2x3 mainline=future_seed_loop
+[future_seed_loop stage=1:2-4] step=0001 ce=1.8640 total=1.8640 loop1=1.8581 loop_last=1.8640
+[future_seed_loop stage=1:2-4] step=0002 ce=1.9751 total=1.9751 loop1=1.9733 loop_last=1.9751
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000
+        fs_gate=0.500, fs_state_norm=4.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000
+        fs_gate=0.500, fs_state_norm=4.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000
+        fs_gate=0.500, fs_state_norm=4.000
+eval_noise loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0/output/futureseed_loop_case_seed52.html

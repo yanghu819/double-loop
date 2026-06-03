@@ -1,0 +1,12 @@
+{
+  "git_dirty": false,
+  "git_sha": "92ee7b9eff3d8c092fc624372e94fc1b65cc5977",
+  "mode": "full",
+  "notes": "2026-06-03T10:33:52Z GPU1 9x9 viability cliff with official RWKV7 statepassing CUDA at 92ee7b9. Hypothesis: after replacing toy PyTorch RWKV with CUDA, FutureSeed/RWKV should scale from saturated 6x6 to real 9x9 constraints. Result: holes8 loop5 exact=1.0000, holes12=0.9629, holes16=0.8535; full-board loop1=0.9629 and loop5=1.0000; K8 oracle gap ~0. Decision: continue CUDA 9x9 direction; selector work is low priority.",
+  "recorded_at_utc": "2026-06-03T10:45:51.477922+00:00",
+  "run_name": "9x9-cliff-cuda-20260603T103352Z-92ee7b9",
+  "score": 1.0,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "tag": "exp/score-1.0000-92ee7b9",
+  "timestamp_utc": "2026-06-03T10:41:14.726838+00:00"
+}

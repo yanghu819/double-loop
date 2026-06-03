@@ -72,3 +72,10 @@
   is not recognized while assembling for sm_80. Use the official
   `BlinkDL/RWKV-CUDA` state-passing clampw kernel for GPU1 scale-up; keep wind
   as an explicit future option for a toolchain/GPU where that asm is supported.
+- The CUDA state-passing 9x9 cliff run (`9x9-cliff-cuda-20260603T103352Z-92ee7b9`)
+  reverses the earlier 9x9 kill signal: with `D_MODEL=128`, `LAYERS=8`,
+  `HEAD_DIM=16`, `MAX_LOOPS=5`, and a 4-8 then 8-12 hole curriculum, train CE
+  fell below 1.0 by step100 and final eval reached holes8 exact 1.0000, holes12
+  exact 0.9629, and holes16 exact 0.8535. This supports continuing 9x9 CUDA
+  scale-up; the K8 oracle gap is effectively zero, so rollout selector work is
+  low priority for this branch.

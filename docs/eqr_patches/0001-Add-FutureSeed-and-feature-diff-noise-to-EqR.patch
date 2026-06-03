@@ -1,0 +1,365 @@
+From f2e9ed950d4fc922fac07f40d3c2ed8b4e96784b Mon Sep 17 00:00:00 2001
+From: torusmini <torusmini@torusminideMac-mini.local>
+Date: Wed, 3 Jun 2026 20:21:09 +0800
+Subject: [PATCH] Add FutureSeed and feature-diff noise to EqR
+
+Timestamp: 2026-06-03T12:21:09Z
+
+Implements two opt-in mechanisms for EqR: learned cross-level FutureSeed mixers and feature-difference Langevin noise sampled from a non-persistent hidden-feature ring buffer.
+
+Defaults preserve upstream EqR behavior: future_seed_scale=0.0, noise_mode=gaussian, and no FutureSeed parameters appear in default state_dicts.
+
+Runtime evaluation overrides now support noise_mode, feature_noise_fallback, and future_seed_scale, with validation and a warning when an old checkpoint lacks FutureSeedMixer modules.
+
+Validation: python -m py_compile models/eqr.py evaluate.py; git diff --check; direct CPU forward smoke for default and futureseed_featurediff configs; CPU torch.compile forward smoke for futureseed_featurediff.
+
+Experience and lesson: EqR's eval-time stochastic breadth means feature noise must maintain an online non-persistent buffer during forward, not just during training; buffer mutation is wrapped with torch compile disable to avoid Dynamo capturing stateful sampling.
+---
+ config/arch/eqr.yaml             |   6 ++
+ docs/futureseed_feature_noise.md |  35 +++++++
+ evaluate.py                      |  39 +++++++
+ models/eqr.py                    | 172 +++++++++++++++++++++++++++++--
+ 4 files changed, 242 insertions(+), 10 deletions(-)
+ create mode 100644 docs/futureseed_feature_noise.md
+
+diff --git a/config/arch/eqr.yaml b/config/arch/eqr.yaml
+index 52c52ef..9e3100a 100644
+--- a/config/arch/eqr.yaml
++++ b/config/arch/eqr.yaml
+@@ -25,5 +25,11 @@ mlp_t: false
+ 
+ lambda_: 0.95
+ noise_scale: 0.01
++noise_mode: gaussian
++feature_noise_buffer_size: 512
++feature_noise_buffer_add: 64
++feature_noise_fallback: gaussian
++future_seed_scale: 0.0
++future_seed_gate_bias: -2.0
+ H_init_std: 1.0
+ L_init_std: 1.0
+diff --git a/docs/futureseed_feature_noise.md b/docs/futureseed_feature_noise.md
+new file mode 100644
+index 0000000..ad6e7fd
+--- /dev/null
++++ b/docs/futureseed_feature_noise.md
+@@ -0,0 +1,35 @@
++# FutureSeed and Feature Noise in EqR
++
++This patch keeps upstream EqR behavior as the default. The two added mechanisms are opt-in:
++
++- `arch.future_seed_scale=1.0` enables learned cross-level state seeding.
++- `arch.noise_mode=feature_diff` replaces Gaussian Langevin samples with normalized differences sampled from recent hidden features.
++
++FutureSeed must be enabled when the model is created for training. Eval-time overrides can scale it down or disable it, but they cannot add trained mixer weights to an old checkpoint.
++
++## Mechanism
++
++FutureSeed treats the other recursion level as a predictive prior on the current level. Before the L updates, `z_H` seeds `z_L`; before the H update, refined `z_L` seeds `z_H`. The seed is RMS-normalized, projected, and gated, so the model can learn whether the cross-level prior is useful without replacing EqR's attractor dynamics.
++
++Feature noise keeps EqR's stochastic attractor search, but moves the perturbation distribution closer to the model's own hidden manifold. It stores a small non-persistent ring buffer of hidden features and samples normalized pairwise differences. The buffer is online only and is not saved in checkpoints.
++
++## Suggested First Experiment
++
++Run a single high-information Sudoku experiment:
++
++```bash
++scripts/train.sh eqr_sudoku \
++  arch.future_seed_scale=1.0 \
++  arch.noise_mode=feature_diff \
++  arch.feature_noise_buffer_size=512 \
++  arch.feature_noise_buffer_add=64 \
++  arch.noise_scale=0.01
++```
++
++Decision readout:
++
++- If convergence top-k improves while depth/breadth cost stays similar, keep both mechanisms and tune only scale.
++- If training loss slows but eval breadth improves, keep FutureSeed and reduce `arch.noise_scale`.
++- If feature-diff noise hurts both loss and breadth, switch back to Gaussian noise and keep FutureSeed as the main hypothesis.
++
++Avoid a broad sweep. This should answer whether manifold-shaped stochasticity helps EqR's attractor search beyond random Gaussian exploration.
+diff --git a/evaluate.py b/evaluate.py
+index 14605c5..e5c3fb3 100644
+--- a/evaluate.py
++++ b/evaluate.py
+@@ -194,6 +194,45 @@ def _apply_runtime_arch_overrides(model: Any, overrides: Dict[str, Any], rank: i
+         if rank == 0 and applied:
+             rank_zero_print_info(f"runtime arch.noise_scale={value}")
+ 
++    string_runtime_attrs = ("noise_mode", "feature_noise_fallback")
++    valid_runtime_values = {
++        "noise_mode": {"gaussian", "feature_diff", "none"},
++        "feature_noise_fallback": {"gaussian", "zero"},
++    }
++    for attr in string_runtime_attrs:
++        if attr not in arch_overrides:
++            continue
++        value = str(arch_overrides[attr]).lower()
++        if value not in valid_runtime_values[attr]:
++            raise ValueError(f"Unknown arch.{attr}={value}")
++        applied = False
++        if hasattr(getattr(inner, "config", None), attr):
++            setattr(inner.config, attr, value)
++            applied = True
++        for module in inner.modules():
++            if hasattr(module, attr):
++                setattr(module, attr, value)
++                applied = True
++        if rank == 0 and applied:
++            rank_zero_print_info(f"runtime arch.{attr}={value}")
++
++    if "future_seed_scale" in arch_overrides:
++        value = float(arch_overrides["future_seed_scale"])
++        applied = False
++        module_applied = False
++        if hasattr(getattr(inner, "config", None), "future_seed_scale"):
++            setattr(inner.config, "future_seed_scale", value)
++            applied = True
++        for module in inner.modules():
++            if hasattr(module, "future_seed_scale"):
++                setattr(module, "future_seed_scale", value)
++                applied = True
++                module_applied = True
++        if rank == 0 and value != 0.0 and not module_applied:
++            rank_zero_print_warning("runtime arch.future_seed_scale set, but this checkpoint has no FutureSeedMixer modules")
++        if rank == 0 and applied:
++            rank_zero_print_info(f"runtime arch.future_seed_scale={value}")
++
+     stds = getattr(inner, "_random_reset_field_stds", None)
+     if isinstance(stds, dict):
+         if "H_init_std" in arch_overrides:
+diff --git a/models/eqr.py b/models/eqr.py
+index 8084f2b..7e07f6b 100644
+--- a/models/eqr.py
++++ b/models/eqr.py
+@@ -11,6 +11,14 @@ from models.layers import Attention, CastedEmbedding, CastedLinear, CosSin, Rota
+ from models.sparse_embedding import CastedSparseEmbedding
+ 
+ 
++def _disable_torch_compile(fn: Any) -> Any:
++    compiler = getattr(torch, "compiler", None)
++    disable = getattr(compiler, "disable", None)
++    if disable is None:
++        disable = getattr(getattr(torch, "_dynamo", None), "disable", None)
++    return disable(fn) if disable is not None else fn
++
++
+ @dataclass
+ class LatentCarry:
+     z_H: torch.Tensor
+@@ -55,6 +63,12 @@ class EqRConfig(BaseModel):
+     puzzle_emb_ndim: int = 0
+     lambda_: float = 0.95
+     noise_scale: float = 0.01
++    noise_mode: str = "gaussian"
++    feature_noise_buffer_size: int = 512
++    feature_noise_buffer_add: int = 64
++    feature_noise_fallback: str = "gaussian"
++    future_seed_scale: float = 0.0
++    future_seed_gate_bias: float = -2.0
+     H_init_std: float = 1.0
+     L_init_std: float = 1.0
+ 
+@@ -89,19 +103,145 @@ class ReasoningBlock(nn.Module):
+         return rms_norm(hidden_states + self.mlp(hidden_states), variance_epsilon=self.norm_eps)
+ 
+ 
++class FutureSeedMixer(nn.Module):
++    def __init__(self, hidden_size: int, rms_norm_eps: float, scale: float, gate_bias: float) -> None:
++        super().__init__()
++        self.future_seed_scale = float(scale)
++        self.norm_eps = float(rms_norm_eps)
++        self.gate_logit = nn.Parameter(torch.tensor(float(gate_bias)))
++        self.proj = CastedLinear(hidden_size, hidden_size, bias=False)
++        with torch.no_grad():
++            self.proj.weight.zero_()
++            idx = torch.arange(hidden_size)
++            self.proj.weight[idx, idx] = 1.0
++
++    def forward(self, target: torch.Tensor, seed: torch.Tensor) -> torch.Tensor:
++        scale = float(self.future_seed_scale)
++        if scale == 0.0:
++            return target
++        seeded = self.proj(rms_norm(seed, variance_epsilon=self.norm_eps)).to(target.dtype)
++        gate = torch.sigmoid(self.gate_logit.to(torch.float32)).to(target.dtype) * scale
++        return target + gate * seeded
++
++
++class FeatureNoiseBuffer(nn.Module):
++    def __init__(self, hidden_size: int, max_size: int, max_add: int) -> None:
++        super().__init__()
++        self.hidden_size = int(hidden_size)
++        self.max_size = max(0, int(max_size))
++        self.max_add = max(0, int(max_add))
++        self.register_buffer("features", torch.empty(0, self.hidden_size), persistent=False)
++        self.register_buffer("feature_count", torch.zeros((), dtype=torch.long), persistent=False)
++        self.register_buffer("feature_ptr", torch.zeros((), dtype=torch.long), persistent=False)
++
++    def _ensure_storage(self, reference: torch.Tensor) -> bool:
++        if self.max_size <= 1:
++            return False
++        if self.feature_count.device != reference.device:
++            self.feature_count = self.feature_count.to(reference.device)
++            self.feature_ptr = self.feature_ptr.to(reference.device)
++        expected_shape = (self.max_size, self.hidden_size)
++        storage_mismatch = (
++            self.features.device != reference.device
++            or self.features.dtype != reference.dtype
++            or tuple(self.features.shape) != expected_shape
++        )
++        if storage_mismatch:
++            self.features = torch.empty(expected_shape, dtype=reference.dtype, device=reference.device)
++            self.feature_count.zero_()
++            self.feature_ptr.zero_()
++        return True
++
++    @_disable_torch_compile
++    @torch.no_grad()
++    def add(self, features: torch.Tensor) -> None:
++        if not self._ensure_storage(features):
++            return
++        flat = features.detach().reshape(-1, self.hidden_size)
++        if flat.shape[0] == 0:
++            return
++        add_count = flat.shape[0] if self.max_add == 0 else min(self.max_add, flat.shape[0])
++        if flat.shape[0] > add_count:
++            flat = flat.index_select(0, torch.randint(flat.shape[0], (add_count,), device=flat.device))
++        if flat.shape[0] > self.max_size:
++            flat = flat[-self.max_size :]
++
++        n = int(flat.shape[0])
++        ptr = int(self.feature_ptr.item())
++        first = min(n, self.max_size - ptr)
++        self.features[ptr : ptr + first].copy_(flat[:first])
++        if first < n:
++            self.features[: n - first].copy_(flat[first:])
++        self.feature_ptr.fill_((ptr + n) % self.max_size)
++        self.feature_count.fill_(min(self.max_size, int(self.feature_count.item()) + n))
++
++    @_disable_torch_compile
++    @torch.no_grad()
++    def sample(self, reference: torch.Tensor) -> Optional[torch.Tensor]:
++        if not self._ensure_storage(reference):
++            return None
++        count = int(self.feature_count.item())
++        if count < 2:
++            return None
++        out_shape = reference.shape[:-1]
++        idx_a = torch.randint(count, out_shape, device=reference.device)
++        idx_b = (idx_a + 1 + torch.randint(count - 1, out_shape, device=reference.device)) % count
++        noise = self.features[idx_a] - self.features[idx_b]
++        noise_fp32 = noise.to(torch.float32)
++        noise_rms = noise_fp32.square().mean(dim=-1, keepdim=True).sqrt().clamp_min(1e-6)
++        ref_rms = (
++            reference.detach()
++            .to(torch.float32)
++            .square()
++            .mean(dim=-1, keepdim=True)
++            .sqrt()
++            .clamp_min(1e-6)
++        )
++        return (noise_fp32 * (ref_rms / noise_rms)).to(reference.dtype)
++
++
+ class NoisyReasoningModule(nn.Module):
+     def __init__(self, config: EqRConfig, layers: List[ReasoningBlock]) -> None:
+         super().__init__()
+         self.layers = nn.ModuleList(layers)
+         self.lambda_ = config.lambda_
+         self.noise_scale = config.noise_scale
++        self.noise_mode = str(config.noise_mode).lower()
++        self.feature_noise_fallback = str(config.feature_noise_fallback).lower()
++        if self.noise_mode not in {"gaussian", "feature_diff", "none"}:
++            raise ValueError(f"Unknown noise_mode '{config.noise_mode}'")
++        if self.feature_noise_fallback not in {"gaussian", "zero"}:
++            raise ValueError(f"Unknown feature_noise_fallback '{config.feature_noise_fallback}'")
++        self.feature_buffer = FeatureNoiseBuffer(
++            hidden_size=config.hidden_size,
++            max_size=config.feature_noise_buffer_size,
++            max_add=config.feature_noise_buffer_add,
++        )
++
++    def _make_noise(self, hidden_states: torch.Tensor, updated: torch.Tensor) -> Optional[torch.Tensor]:
++        if float(self.noise_scale) == 0.0 or self.noise_mode == "none":
++            return None
++        if self.noise_mode == "feature_diff":
++            self.feature_buffer.add(updated)
++            noise = self.feature_buffer.sample(updated)
++            if noise is not None:
++                return noise * self.noise_scale
++            if self.feature_noise_fallback == "zero":
++                return None
++            if self.feature_noise_fallback != "gaussian":
++                raise ValueError(f"Unknown feature_noise_fallback '{self.feature_noise_fallback}'")
++            return torch.randn_like(hidden_states) * self.noise_scale
++        if self.noise_mode == "gaussian":
++            return torch.randn_like(hidden_states) * self.noise_scale
++        raise ValueError(f"Unknown noise_mode '{self.noise_mode}'")
+ 
+     def forward(self, hidden_states: torch.Tensor, input_injection: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+         updated = hidden_states + input_injection
+         for layer in self.layers:
+             updated = layer(hidden_states=updated, **kwargs)
+-        noise = torch.randn_like(hidden_states) * self.noise_scale
+-        return (1 - self.lambda_) * hidden_states + self.lambda_ * updated + noise
++        mixed = (1 - self.lambda_) * hidden_states + self.lambda_ * updated
++        noise = self._make_noise(hidden_states, updated)
++        return mixed if noise is None else mixed + noise
+ 
+ 
+ class InnerNetwork(nn.Module):
+@@ -129,6 +269,22 @@ class InnerNetwork(nn.Module):
+ 
+         self._init_pos()
+         self.L_level = NoisyReasoningModule(config, [ReasoningBlock(config) for _ in range(config.L_layers)])
++        if float(config.future_seed_scale) != 0.0:
++            self.future_seed_l_from_h = FutureSeedMixer(
++                config.hidden_size,
++                config.rms_norm_eps,
++                config.future_seed_scale,
++                config.future_seed_gate_bias,
++            )
++            self.future_seed_h_from_l = FutureSeedMixer(
++                config.hidden_size,
++                config.rms_norm_eps,
++                config.future_seed_scale,
++                config.future_seed_gate_bias,
++            )
++        else:
++            self.future_seed_l_from_h = None
++            self.future_seed_h_from_l = None
+         self.H_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.H_init_std), persistent=False)
+         self.L_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.L_init_std), persistent=False)
+         with torch.no_grad():
+@@ -193,8 +349,12 @@ class InnerNetwork(nn.Module):
+         return carry
+ 
+     def latent_recursion(self, z_H: torch.Tensor, z_L: torch.Tensor, x: torch.Tensor, seq: Dict[str, CosSin]) -> Tuple[torch.Tensor, torch.Tensor]:
++        if self.future_seed_l_from_h is not None:
++            z_L = self.future_seed_l_from_h(z_L, z_H)
+         for _ in range(self.config.L_cycles):
+             z_L = self.L_level(z_L, z_H + x, **seq)
++        if self.future_seed_h_from_l is not None:
++            z_H = self.future_seed_h_from_l(z_H, z_L)
+         z_H = self.L_level(z_H, z_L, **seq)
+         return z_H, z_L
+ 
+@@ -216,14 +376,6 @@ class InnerNetwork(nn.Module):
+         return LatentCarry(z_H=z_H.detach(), z_L=z_L.detach()), logits, q[..., 0]
+ 
+ 
+-def _disable_torch_compile(fn: Any) -> Any:
+-    compiler = getattr(torch, "compiler", None)
+-    disable = getattr(compiler, "disable", None)
+-    if disable is None:
+-        disable = getattr(getattr(torch, "_dynamo", None), "disable", None)
+-    return disable(fn) if disable is not None else fn
+-
+-
+ @_disable_torch_compile
+ def _reset_rows(
+     inner: Any,
+-- 
+2.50.1 (Apple Git-155)
+

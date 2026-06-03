@@ -91,23 +91,43 @@ with open(path, "w", encoding="utf-8") as f:
 PY
 
 COMMON_ARGS=(
-  --size 6
-  --max_loops 3
-  --d_model 32
-  --layers 4
-  --heads 4
-  --head_dim 8
-  --channel_mult 2
-  --l_cycles 1
-  --holes_min 2
-  --holes_max 4
-  --eval_holes 2
-  --hole_pattern unit
-  --blank_loss_weight 20
-  --noise_scale 0.01
-  --rollout_noise_scale 0.05
+  --size "${SUDOKU_SIZE:-6}"
+  --max_loops "${MAX_LOOPS:-3}"
+  --d_model "${D_MODEL:-32}"
+  --layers "${LAYERS:-4}"
+  --heads "${HEADS:-4}"
+  --head_dim "${HEAD_DIM:-8}"
+  --channel_mult "${CHANNEL_MULT:-2}"
+  --l_cycles "${L_CYCLES:-1}"
+  --holes_min "${HOLES_MIN:-2}"
+  --holes_max "${HOLES_MAX:-4}"
+  --eval_holes "${EVAL_HOLES:-2}"
+  --hole_pattern "${HOLE_PATTERN:-unit}"
+  --blank_loss_weight "${BLANK_LOSS_WEIGHT:-20}"
+  --noise_scale "${NOISE_SCALE:-0.01}"
+  --rollout_noise_scale "${ROLLOUT_NOISE_SCALE:-0.05}"
+  --lr "${LR:-2e-3}"
+  --weight_decay "${WEIGHT_DECAY:-1e-3}"
+  --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
+  --feature_buffer_add "${FEATURE_BUFFER_ADD:-2048}"
+  --future_seed_scale "${FUTURE_SEED_SCALE:-1.0}"
+  --lambda_ "${LAMBDA:-0.95}"
+  --loop_loss "${LOOP_LOSS:-final}"
   --out_dir "$OUT_DIR"
 )
+
+if [[ -n "${HOLE_STAGES:-}" ]]; then
+  COMMON_ARGS+=(--hole_stages "$HOLE_STAGES")
+fi
+if [[ -n "${EVAL_HOLES_LIST:-}" ]]; then
+  COMMON_ARGS+=(--eval_holes_list "$EVAL_HOLES_LIST")
+fi
+if [[ -n "${EVAL_HOLE_PATTERNS:-}" ]]; then
+  COMMON_ARGS+=(--eval_hole_patterns "$EVAL_HOLE_PATTERNS")
+fi
+if [[ -n "${ROLLOUT_LOOP_VALUES:-}" ]]; then
+  COMMON_ARGS+=(--rollout_loop_values "$ROLLOUT_LOOP_VALUES")
+fi
 
 if [[ "$MODE" == "smoke" ]]; then
   RUN_ARGS=(

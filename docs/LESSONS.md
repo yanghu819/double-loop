@@ -31,3 +31,7 @@
 - After remote patch transfer, inspect script tails and run the wrapper end to
   end. A syntactically valid shell script can still be semantically truncated
   before the metadata-recording step.
+- Scale-up controls should be environment-driven in `run.sh`. Keeping model
+  width/depth, curriculum, rollout, and optimizer knobs configurable lets GPU1
+  runs increase useful compute without creating one-off wrapper scripts or
+  broad low-signal sweep tables.

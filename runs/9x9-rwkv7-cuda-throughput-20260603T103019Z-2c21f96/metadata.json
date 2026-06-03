@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "2c21f96b548ccf464b65e02e08a443dd56e1fe16",
+  "mode": "full",
+  "notes": "2026-06-03T10:30:19Z GPU1 9x9 CUDA throughput probe at 2c21f96. Insight: after switching from toy PyTorch scan to RWKV7 statepassing CUDA, step100 appears quickly and CE drops below 1.0 by step100 (0.9449), so the previous 9x9 kill was implementation throughput, not evidence against the FutureSeed hypothesis. Decision: eligible for a real 800-step 9x9 cliff run; 120-step exact=0 is not a quality conclusion.",
+  "recorded_at_utc": "2026-06-03T10:35:17.066271+00:00",
+  "run_name": "9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96",
+  "score": 0.0,
+  "score_key": "metrics.eval_clean.loop2.label_exact",
+  "timestamp_utc": "2026-06-03T10:30:32.906379+00:00"
+}

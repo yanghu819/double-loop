@@ -1,0 +1,42 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96
+git_sha=2c21f96b548ccf464b65e02e08a443dd56e1fe16
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:4-8] step=0020 ce=1.2912 total=1.2912 loop1=1.2858 loop_last=1.2912
+[future_seed_loop stage=1:4-8] step=0040 ce=1.1555 total=1.1555 loop1=1.1546 loop_last=1.1555
+[future_seed_loop stage=1:4-8] step=0060 ce=1.0240 total=1.0240 loop1=1.0224 loop_last=1.0240
+[future_seed_loop stage=1:4-8] step=0080 ce=0.9946 total=0.9946 loop1=0.9979 loop_last=0.9946
+[future_seed_loop stage=1:4-8] step=0100 ce=0.9449 total=0.9449 loop1=0.9365 loop_last=0.9449
+[future_seed_loop stage=1:4-8] step=0120 ce=0.8823 total=0.8823 loop1=0.8797 loop_last=0.8823
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3682
+        fs_gate=0.499, fs_state_norm=7.983
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3701
+        fs_gate=0.499, fs_state_norm=7.983
+eval_noise loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3691
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3682; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3682; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3682; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3682; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop2
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+
+hole-transfer metrics
+holes=8  exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3701; indep=0.0004, exact/indep=0.00
+holes=12 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3099; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96/output/futureseed_loop_case_seed52.html

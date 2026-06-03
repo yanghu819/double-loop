@@ -1,0 +1,25 @@
+mode=smoke
+run_dir=/huyang2/double-loop/runs/rwkv7-statepassing-smoke-20260603T102408Z-3323172
+git_sha=3323172bfe2b395d05d13bcf30abd1b810be18d5
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=4x4 box=2x2 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:2-4] step=0001 ce=1.5523 total=1.5523 loop1=1.5523 loop_last=1.5523
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000
+        fs_gate=0.500, fs_state_norm=8.000
+eval_noise loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0000; gap=0.0000
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/rwkv7-statepassing-smoke-20260603T102408Z-3323172/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/rwkv7-statepassing-smoke-20260603T102408Z-3323172/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/rwkv7-statepassing-smoke-20260603T102408Z-3323172/output/futureseed_loop_case_seed52.html

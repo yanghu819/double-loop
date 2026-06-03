@@ -102,7 +102,7 @@ def update_leaderboard(repo: Path, row: Dict[str, Any]) -> None:
     rows.append({key: str(row.get(key, "")) for key in fieldnames})
     rows.sort(key=lambda item: item.get("timestamp_utc", ""))
     with path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

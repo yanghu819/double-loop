@@ -1,0 +1,8 @@
+{
+  "aborted_at_utc": "2026-06-03T10:12:25Z",
+  "git_sha": "65e20a52839b3429c89310d4480c97ae478344bd",
+  "run_name": "rwkv7-wind-smoke-20260603T101148Z-65e20a5",
+  "stage": "cuda_extension_compile",
+  "reason": "RWKV7 wind CUDA kernel failed to assemble on GPU1 A100/CUDA 12.6 because ptxas does not recognize the movmatrix instruction while compiling for sm_80.",
+  "decision": "Do not continue trying wind on the current GPU1 image. Switch to the official BlinkDL/RWKV-CUDA state-passing clampw kernel, which preserves s0 to sT and ds0 while avoiding movmatrix."
+}

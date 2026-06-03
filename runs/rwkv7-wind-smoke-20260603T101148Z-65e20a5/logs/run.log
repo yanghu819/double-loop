@@ -1,0 +1,251 @@
+mode=smoke
+run_dir=/huyang2/double-loop/runs/rwkv7-wind-smoke-20260603T101148Z-65e20a5
+git_sha=65e20a52839b3429c89310d4480c97ae478344bd
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=4x4 box=2x2 mainline=future_seed_loop rwkv_kernel=wind
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2506, in _run_ninja_build
+    subprocess.run(
+  File "/opt/conda/lib/python3.10/subprocess.py", line 526, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 255.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1471, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1237, in run
+    model, train_stats = train_model(args, device=device)
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 726, in train_model
+    loop_logits, _fs_trace = model.forward_trace(
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 594, in forward_trace
+    z_l, _diag = self.depth_update(
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 565, in depth_update
+    updated, diag = self.reasoner(hidden + injection)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 463, in forward
+    x, previous_state = block(x, initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 409, in forward
+    time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 246, in forward
+    y, terminal_state = self._forward_wind(
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 326, in _forward_wind
+    y_bf16, terminal_state_bf16 = WindRWKV7.apply(w_bf16, q_bf16, k_bf16, v_bf16, z_bf16, a_bf16, s0)
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/wind.py", line 98, in apply
+    return _WindRWKV7Fn.apply(w, q, k, v, z, a, s0)
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/function.py", line 575, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/wind.py", line 68, in forward
+    _load_wind(head_dim)
+  File "/huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/wind.py", line 48, in _load_wind
+    load(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 1623, in load
+    return _jit_compile(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2076, in _jit_compile
+    _write_ninja_file_and_build_library(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2222, in _write_ninja_file_and_build_library
+    _run_ninja_build(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2522, in _run_ninja_build
+    raise RuntimeError(message) from e
+RuntimeError: Error building extension 'rwkv7_wind_c16': [1/3] /usr/local/cuda/bin/nvcc --generate-dependencies-with-compile --dependency-output wind_rwkv7.cuda.o.d -DTORCH_EXTENSION_NAME=rwkv7_wind_c16 -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\"_gcc\" -DPYBIND11_STDLIB=\"_libstdcpp\" -DPYBIND11_BUILD_ABI=\"_cxxabi1016\" -I/huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/rwkv_cuda_wind -isystem /opt/conda/lib/python3.10/site-packages/torch/include -isystem /opt/conda/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda/include -isystem /opt/conda/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=1 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_80,code=compute_80 -gencode=arch=compute_80,code=sm_80 --compiler-options '-fPIC' -res-usage --use_fast_math -O3 -Xptxas -O3 --extra-device-vectorization -D_C_=16 -std=c++17 -c /huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/rwkv_cuda_wind/wind_rwkv7.cu -o wind_rwkv7.cuda.o 
+FAILED: [code=255] wind_rwkv7.cuda.o 
+/usr/local/cuda/bin/nvcc --generate-dependencies-with-compile --dependency-output wind_rwkv7.cuda.o.d -DTORCH_EXTENSION_NAME=rwkv7_wind_c16 -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\"_gcc\" -DPYBIND11_STDLIB=\"_libstdcpp\" -DPYBIND11_BUILD_ABI=\"_cxxabi1016\" -I/huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/rwkv_cuda_wind -isystem /opt/conda/lib/python3.10/site-packages/torch/include -isystem /opt/conda/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda/include -isystem /opt/conda/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=1 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_80,code=compute_80 -gencode=arch=compute_80,code=sm_80 --compiler-options '-fPIC' -res-usage --use_fast_math -O3 -Xptxas -O3 --extra-device-vectorization -D_C_=16 -std=c++17 -c /huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/rwkv_cuda_wind/wind_rwkv7.cu -o wind_rwkv7.cuda.o 
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1682; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1686; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1690; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1694; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1770; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1774; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1778; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 1782; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3520; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3524; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3528; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3532; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3542; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3546; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3550; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3554; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3800; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3804; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3808; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3812; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3850; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3854; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3858; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3862; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3923; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3927; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3931; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3935; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3939; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3943; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3947; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3951; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3991; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3995; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 3999; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4003; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4007; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4011; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4015; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4019; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4059; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4063; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4067; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4071; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4140; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4144; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4148; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4152; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4204; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4208; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4212; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4216; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4268; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4272; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4276; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4280; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4284; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4288; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4292; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4296; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4334; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4338; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4342; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4346; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4350; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4354; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4358; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4362; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4400; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4404; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4408; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4412; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4480; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4484; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4488; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4492; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4544; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4548; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4552; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4556; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4608; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4612; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4616; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4620; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4624; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4628; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4632; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4636; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4709; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4714; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4719; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4724; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4728; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4732; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4736; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4740; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4770; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4774; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4778; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4782; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4933; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4937; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4941; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4945; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 4999; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5003; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5007; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5011; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5049; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5053; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5057; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5061; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5141; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5145; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5149; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5153; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5199; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5203; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5207; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5211; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5284; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5288; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5292; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5296; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5300; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5305; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5310; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5315; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5320; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5468; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5481; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5924; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5928; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5932; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 5936; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6005; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6009; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6013; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6017; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6021; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6026; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6031; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6036; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6041; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6189; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6202; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6639; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6643; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6647; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6651; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6720; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6724; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6728; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6732; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6736; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6741; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6746; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6751; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6756; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6904; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 6917; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7447; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7451; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7455; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7459; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7528; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7532; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7536; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7540; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7544; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7549; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7554; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7559; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7564; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7712; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 7725; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 8255; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 8259; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 8263; error   : Not a name of any known instruction: 'movmatrix'
+ptxas /tmp/tmpxft_00000470_00000000-6_wind_rwkv7.ptx, line 8267; error   : Not a name of any known instruction: 'movmatrix'
+ptxas fatal   : Ptx assembly aborted due to errors
+[2/3] c++ -MMD -MF wind_rwkv7.o.d -DTORCH_EXTENSION_NAME=rwkv7_wind_c16 -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\"_gcc\" -DPYBIND11_STDLIB=\"_libstdcpp\" -DPYBIND11_BUILD_ABI=\"_cxxabi1016\" -I/huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/rwkv_cuda_wind -isystem /opt/conda/lib/python3.10/site-packages/torch/include -isystem /opt/conda/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda/include -isystem /opt/conda/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=1 -fPIC -std=c++17 -c /huyang2/double-loop/experiments/rwkv_fs_sudoku/rwkv7_cuda/rwkv_cuda_wind/wind_rwkv7.cpp -o wind_rwkv7.o 
+ninja: build stopped: subcommand failed.
+

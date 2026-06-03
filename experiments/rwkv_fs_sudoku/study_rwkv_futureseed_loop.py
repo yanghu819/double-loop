@@ -15,9 +15,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 try:
-    from rwkv7_cuda import WindRWKV7, wind_available
+    from rwkv7_cuda import StatePassingRWKV7, WindRWKV7, statepassing_available, wind_available
 except Exception:  # pragma: no cover - CUDA extension is optional for CPU smoke.
+    StatePassingRWKV7 = None
     WindRWKV7 = None
+
+    def statepassing_available(head_dim: int) -> Tuple[bool, str]:
+        return False, "rwkv7_cuda import failed"
 
     def wind_available(head_dim: int) -> Tuple[bool, str]:
         return False, "rwkv7_cuda import failed"
@@ -147,7 +151,7 @@ def make_batch(
 
 
 class RWKVTimeMix(nn.Module):
-    """RWKV-style WKV block with a CUDA RWKV7 wind path and torch fallback."""
+    """RWKV-style WKV block with CUDA RWKV7 paths and a torch fallback."""
 
     def __init__(
         self,
@@ -230,8 +234,8 @@ class RWKVTimeMix(nn.Module):
         xg = x + delta * self.mix_g
 
         r = torch.sigmoid(self.receptance(xr)).view(batch_size, seq_len, heads, head_dim)
-        w_log = -F.softplus(-(self.time_decay + torch.tanh(self.decay_delta(xw)))) - 0.5
-        w = torch.exp(-torch.exp(w_log.float())).to(x.dtype).view(batch_size, seq_len, heads, head_dim)
+        w_raw = self.time_decay + torch.tanh(self.decay_delta(xw))
+        w_log = -F.softplus(-w_raw) - 0.5
         state_lr = torch.sigmoid(self.state_lr(xa)).view(batch_size, seq_len, heads, head_dim)
         k_flat = self.key(xk)
         kk = F.normalize((k_flat * self.key_scale).view(batch_size, seq_len, heads, head_dim), dim=-1, p=2.0)
@@ -240,6 +244,26 @@ class RWKVTimeMix(nn.Module):
         )
         v = self.value(xv).view(batch_size, seq_len, heads, head_dim)
         g = torch.sigmoid(self.gate(xg))
+
+        if self.rwkv_kernel in {"auto", "cuda", "statepassing"}:
+            if self._can_use_statepassing(x, initial_state):
+                y, terminal_state = self._forward_statepassing(
+                    r=r,
+                    w_raw=w_raw.view(batch_size, seq_len, heads, head_dim),
+                    k=k,
+                    v=v,
+                    kk=kk,
+                    state_lr=state_lr,
+                    gate=g,
+                    initial_state=initial_state,
+                    original_dtype=x.dtype,
+                )
+                return y, terminal_state
+            if self.rwkv_kernel in {"cuda", "statepassing"}:
+                ok, reason = statepassing_available(self.head_dim)
+                if not ok:
+                    raise RuntimeError(f"RWKV_KERNEL={self.rwkv_kernel} requested but unavailable: {reason}")
+                raise RuntimeError(f"RWKV_KERNEL={self.rwkv_kernel} requested but inputs are not CUDA tensors")
 
         if self.rwkv_kernel in {"auto", "wind"}:
             if self._can_use_wind(x, initial_state):
@@ -261,8 +285,12 @@ class RWKVTimeMix(nn.Module):
                     raise RuntimeError(f"RWKV_KERNEL=wind requested but unavailable: {reason}")
                 raise RuntimeError("RWKV_KERNEL=wind requested but inputs are not CUDA tensors")
             if not self._fallback_warned:
+                sp_ok, sp_reason = statepassing_available(self.head_dim)
                 ok, reason = wind_available(self.head_dim)
-                print(f"rwkv_kernel=auto using torch fallback: {reason}", flush=True)
+                print(
+                    f"rwkv_kernel=auto using torch fallback: statepassing={sp_ok}:{sp_reason}; wind={ok}:{reason}",
+                    flush=True,
+                )
                 self._fallback_warned = True
 
         return self._forward_torch(
@@ -275,6 +303,18 @@ class RWKVTimeMix(nn.Module):
             gate=g,
             initial_state=initial_state,
         )
+
+    def _can_use_statepassing(self, x: torch.Tensor, initial_state: Optional[torch.Tensor]) -> bool:
+        if StatePassingRWKV7 is None or not x.is_cuda:
+            return False
+        ok, _reason = statepassing_available(self.head_dim)
+        if not ok:
+            return False
+        if initial_state is not None:
+            expected = (x.shape[0], self.heads, self.head_dim, self.head_dim)
+            if tuple(initial_state.shape) != expected:
+                return False
+        return True
 
     def _can_use_wind(self, x: torch.Tensor, initial_state: Optional[torch.Tensor]) -> bool:
         if WindRWKV7 is None or not x.is_cuda:
@@ -327,6 +367,41 @@ class RWKVTimeMix(nn.Module):
         y = y_bf16[:, :seq_len].reshape(batch_size, seq_len, heads * head_dim).to(original_dtype)
         y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)
         return self.out(y * gate), terminal_state_bf16.to(original_dtype)
+
+    def _forward_statepassing(
+        self,
+        *,
+        r: torch.Tensor,
+        w_raw: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        kk: torch.Tensor,
+        state_lr: torch.Tensor,
+        gate: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+        original_dtype: torch.dtype,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        batch_size, seq_len, heads, head_dim = r.shape
+        pad_len = (-seq_len) % 16
+        r_bf16 = self._pad_time(r, pad_len).to(torch.bfloat16)
+        w_bf16 = self._pad_time(w_raw, pad_len, value=-60.0).to(torch.bfloat16)
+        k_bf16 = self._pad_time(k, pad_len).to(torch.bfloat16)
+        v_bf16 = self._pad_time(v, pad_len).to(torch.bfloat16)
+        a_bf16 = self._pad_time(-kk, pad_len).to(torch.bfloat16)
+        b_bf16 = self._pad_time(kk * state_lr, pad_len).to(torch.bfloat16)
+
+        if initial_state is None:
+            s0 = torch.zeros(batch_size, heads, head_dim, head_dim, device=r.device, dtype=torch.float32)
+        else:
+            expected = (batch_size, heads, head_dim, head_dim)
+            if tuple(initial_state.shape) != expected:
+                raise ValueError(f"initial_state shape {tuple(initial_state.shape)} does not match {expected}")
+            s0 = initial_state.to(device=r.device, dtype=torch.float32)
+
+        y_bf16, terminal_state = StatePassingRWKV7.apply(s0, r_bf16, w_bf16, k_bf16, v_bf16, a_bf16, b_bf16)
+        y = y_bf16[:, :seq_len].reshape(batch_size, seq_len, heads * head_dim).to(original_dtype)
+        y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)
+        return self.out(y * gate), terminal_state.to(original_dtype)
 
     def _forward_torch(
         self,
@@ -1213,6 +1288,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
+    if args.rwkv_kernel in {"cuda", "statepassing"}:
+        ok, reason = statepassing_available(args.head_dim)
+        if not ok:
+            raise ValueError(f"--rwkv_kernel {args.rwkv_kernel} is unavailable: {reason}")
     if args.rwkv_kernel == "wind":
         ok, reason = wind_available(args.head_dim)
         if not ok:
@@ -1440,7 +1519,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max_loops", type=int, default=3)
     p.add_argument("--lambda_", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
-    p.add_argument("--rwkv_kernel", choices=("auto", "torch", "wind"), default="auto")
+    p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all"), default="final")
     p.add_argument("--noise_scale", type=float, default=0.01)
     p.add_argument("--feature_buffer_size", type=int, default=8192)

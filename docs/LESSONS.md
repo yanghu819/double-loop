@@ -67,3 +67,8 @@
   under the target's `bin/` directory, not necessarily under the imported
   package path. For `ninja`, link `.cache/ninja-pylib/bin/ninja` into
   `.cache/bin/ninja` before trying to compile CUDA extensions.
+- The `modded-nanogpt-rwkv` wind kernel is not the right A100 default on the
+  current GPU1 image: CUDA 12.6 reaches `ptxas`, then fails because `movmatrix`
+  is not recognized while assembling for sm_80. Use the official
+  `BlinkDL/RWKV-CUDA` state-passing clampw kernel for GPU1 scale-up; keep wind
+  as an explicit future option for a toolchain/GPU where that asm is supported.

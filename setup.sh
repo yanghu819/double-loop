@@ -27,16 +27,22 @@ ensure_ninja() {
     "$py_bin" -m pip install --target "$target" --upgrade ninja
   fi
   local ninja_bin
-  ninja_bin="$(PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
+  ninja_bin="$(PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - "$target" <<'PY'
 import importlib.util
 import pathlib
 import sys
 
+target = pathlib.Path(sys.argv[1])
 spec = importlib.util.find_spec("ninja")
 if spec is None or spec.origin is None:
     raise SystemExit(1)
 root = pathlib.Path(spec.origin).parent
-for candidate in (root / "data" / "bin" / "ninja", root / "data" / "bin" / "ninja.exe"):
+for candidate in (
+    target / "bin" / "ninja",
+    target / "bin" / "ninja.exe",
+    root / "data" / "bin" / "ninja",
+    root / "data" / "bin" / "ninja.exe",
+):
     if candidate.exists():
         print(candidate)
         raise SystemExit(0)

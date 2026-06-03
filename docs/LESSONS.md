@@ -63,3 +63,7 @@
   container already has a working CUDA PyTorch. When reusing `/opt/conda/bin/python`,
   `setup.sh` still needs to install/link `ninja` under the repo-local `.cache/bin`
   and `run.sh` must prepend that directory to `PATH`.
+- When installing PyPI packages with `pip --target`, console scripts are written
+  under the target's `bin/` directory, not necessarily under the imported
+  package path. For `ninja`, link `.cache/ninja-pylib/bin/ninja` into
+  `.cache/bin/ninja` before trying to compile CUDA extensions.

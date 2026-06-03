@@ -5,15 +5,22 @@ __pycache__/
 # Local Python / uv environments
 .venv/
 experiments/**/.venv/
+.cache/
 
 # Reference repositories are cloned locally for reading, not vendored here.
 repos/
+wheelhouse/*.whl
 
 # Heavy experiment artifacts should be stored outside Git or in a release asset.
+artifacts/
+models/
 *.pt
 *.pth
 *.ckpt
 *.safetensors
 wandb/
 mlruns/
+runs/**/source_snapshot.tar.gz
 runs/**/checkpoints/
+checkpoints/
+checkpoints

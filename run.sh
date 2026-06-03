@@ -56,7 +56,13 @@ fi
 
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 GIT_DIRTY=0
-if [[ -n "$(git -C "$REPO_ROOT" status --short)" ]]; then
+SOURCE_STATUS="$(git -C "$REPO_ROOT" status --short -- . \
+  ':(exclude).cache' \
+  ':(exclude).venv' \
+  ':(exclude)artifacts' \
+  ':(exclude)models' \
+  ':(exclude)runs')"
+if [[ -n "$SOURCE_STATUS" ]]; then
   GIT_DIRTY=1
 fi
 

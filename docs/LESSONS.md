@@ -35,3 +35,6 @@
   width/depth, curriculum, rollout, and optimizer knobs configurable lets GPU1
   runs increase useful compute without creating one-off wrapper scripts or
   broad low-signal sweep tables.
+- Generated run/cache/model directories should not make a subsequent experiment
+  look source-dirty. Dirty provenance should track source edits, while run
+  metadata is committed after the experiment completes.

@@ -1,0 +1,67 @@
+{
+  "run_name": "scaleup-d192l10-h40-20260604T0844Z-a5b3b4a",
+  "source_sha": "a5b3b4ae7cd6bbf98f1b065887cac04697373529",
+  "recorded_at_utc": "2026-06-04T08:57:25.192348+00:00",
+  "gpu_row": "GPU1",
+  "cuda_visible_devices": "0",
+  "hypothesis": "A larger FutureSeed RWKV recurrent backbone can move the 9x9 random-hole exact-solve cliff outward from h32 toward h40, and loop depth should matter most on the hardest transfer holes.",
+  "configuration": {
+    "sudoku_size": 9,
+    "hole_pattern": "random",
+    "d_model": 192,
+    "layers": 10,
+    "heads": 12,
+    "head_dim": 16,
+    "channel_mult": 4,
+    "l_cycles": 2,
+    "max_loops": 5,
+    "future_seed_scale": 1,
+    "noise_scale": 0,
+    "rollout_noise_scale": 0,
+    "rwkv_kernel": "cuda",
+    "hole_stages": "8-20:300,20-32:500,32-40:300",
+    "full_steps": 1100,
+    "full_batch": 160,
+    "full_eval_n": 512,
+    "eval_holes_list": [24, 32, 36, 40, 44],
+    "rollout_loop_values": [1, 3, 5],
+    "full_rollout_ks": [1]
+  },
+  "train": {
+    "train_sec": 1255.2463,
+    "final_ce": 0.058475,
+    "final_loop1_loss": 0.366492,
+    "final_loop_last_loss": 0.058475,
+    "trace": [
+      {"step": 100, "stage": "8-20", "ce": 1.1645, "loop1_loss": 1.1670, "loop_last_loss": 1.1645},
+      {"step": 200, "stage": "8-20", "ce": 0.4785, "loop1_loss": 0.5112, "loop_last_loss": 0.4785},
+      {"step": 300, "stage": "8-20", "ce": 0.0683, "loop1_loss": 0.1078, "loop_last_loss": 0.0683},
+      {"step": 400, "stage": "20-32", "ce": 0.0629, "loop1_loss": 0.1858, "loop_last_loss": 0.0629},
+      {"step": 500, "stage": "20-32", "ce": 0.0311, "loop1_loss": 0.1205, "loop_last_loss": 0.0311},
+      {"step": 600, "stage": "20-32", "ce": 0.0206, "loop1_loss": 0.1099, "loop_last_loss": 0.0206},
+      {"step": 700, "stage": "20-32", "ce": 0.0209, "loop1_loss": 0.1302, "loop_last_loss": 0.0209},
+      {"step": 800, "stage": "20-32", "ce": 0.0201, "loop1_loss": 0.1276, "loop_last_loss": 0.0201},
+      {"step": 900, "stage": "32-40", "ce": 0.1074, "loop1_loss": 0.3919, "loop_last_loss": 0.1074},
+      {"step": 1000, "stage": "32-40", "ce": 0.0932, "loop1_loss": 0.3253, "loop_last_loss": 0.0932},
+      {"step": 1100, "stage": "32-40", "ce": 0.0585, "loop1_loss": 0.3665, "loop_last_loss": 0.0585}
+    ]
+  },
+  "eval_by_holes": {
+    "24": {"loop1_exact": 0.814453, "loop2_exact": 0.986328, "loop3_exact": 0.988281, "loop4_exact": 0.988281, "loop5_exact": 0.988281, "loop5_minus_loop1": 0.173828, "loop5_blank_acc": 0.998047},
+    "32": {"loop1_exact": 0.332031, "loop2_exact": 0.904297, "loop3_exact": 0.919922, "loop4_exact": 0.919922, "loop5_exact": 0.919922, "loop5_minus_loop1": 0.587891, "loop5_blank_acc": 0.993042},
+    "36": {"loop1_exact": 0.064453, "loop2_exact": 0.728516, "loop3_exact": 0.791016, "loop4_exact": 0.800781, "loop5_exact": 0.808594, "loop5_minus_loop1": 0.744141, "loop5_blank_acc": 0.979601},
+    "40": {"loop1_exact": 0.001953, "loop2_exact": 0.425781, "loop3_exact": 0.515625, "loop4_exact": 0.527344, "loop5_exact": 0.533203, "loop5_minus_loop1": 0.531250, "loop5_blank_acc": 0.953125},
+    "44": {"loop1_exact": 0.000000, "loop2_exact": 0.103516, "loop3_exact": 0.167969, "loop4_exact": 0.187500, "loop5_exact": 0.191406, "loop5_minus_loop1": 0.191406, "loop5_blank_acc": 0.889338}
+  },
+  "score": {
+    "key": "metrics.eval_clean.loop5.label_exact",
+    "value": 0.919921875
+  },
+  "decision": "Continue the FutureSeed RWKV backbone direction; scale-up moves the useful exact-solve cliff to h40, while h44 remains a board-level consistency target for loop-horizon or hard-curriculum experiments.",
+  "lessons": [
+    "Loop depth is still mechanistically valuable after FutureSeed: loop2 to loop5 adds exact solves on h40 and h44.",
+    "h44 failure is a global consistency cliff because blank accuracy remains much higher than exact solve rate.",
+    "The next high-ROI experiment should change loop horizon or hard curriculum, not run a blind width or seed table.",
+    "The dirty metadata bit came from a pre-launch core file, not source edits; source_HEAD, source.patch, and source snapshot are archived for provenance."
+  ]
+}

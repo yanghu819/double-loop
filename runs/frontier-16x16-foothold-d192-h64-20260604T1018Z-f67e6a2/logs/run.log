@@ -1,0 +1,55 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2
+git_sha=f67e6a2e909dc39ce5ba48f622d93b1ec43f5ab3
+git_dirty=1
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:16-32] step=0100 ce=1.4472 total=1.4472 loop1=1.4453 loop_last=1.4472
+[future_seed_loop stage=1:16-32] step=0200 ce=1.1872 total=1.1872 loop1=1.2001 loop_last=1.1872
+[future_seed_loop stage=1:16-32] step=0300 ce=0.9933 total=0.9933 loop1=1.0013 loop_last=0.9933
+[future_seed_loop stage=2:32-48] step=0400 ce=1.1440 total=1.1440 loop1=1.1541 loop_last=1.1440
+[future_seed_loop stage=2:32-48] step=0500 ce=1.1415 total=1.1415 loop1=1.1574 loop_last=1.1415
+[future_seed_loop stage=2:32-48] step=0600 ce=1.0380 total=1.0380 loop1=1.0596 loop_last=1.0380
+[future_seed_loop stage=2:32-48] step=0700 ce=0.9125 total=0.9125 loop1=0.9613 loop_last=0.9125
+[future_seed_loop stage=3:48-64] step=0800 ce=0.9115 total=0.9115 loop1=1.0472 loop_last=0.9115
+[future_seed_loop stage=3:48-64] step=0900 ce=0.7611 total=0.7611 loop1=0.9899 loop_last=0.7611
+[future_seed_loop stage=3:48-64] step=1000 ce=0.5792 total=0.5792 loop1=0.9110 loop_last=0.5792
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.6528
+        fs_gate=0.515, fs_state_norm=8.240
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7304
+        fs_gate=0.515, fs_state_norm=8.240
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7374
+        fs_gate=0.515, fs_state_norm=8.240
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7398
+        fs_gate=0.515, fs_state_norm=8.240
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7393
+        fs_gate=0.515, fs_state_norm=8.240
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7393; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7393; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7393; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7393; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop3
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop5
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+
+hole-transfer metrics
+holes=48 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7393; indep=0.0000, exact/indep=0.00
+holes=32 exact=0.0039, valid=0.0039, solved=0.0039, blank_acc=0.8287; indep=0.0025, exact/indep=1.59
+holes=64 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.6552; indep=0.0000, exact/indep=0.00
+holes=80 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5704; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2/output/futureseed_loop_case_seed52.html

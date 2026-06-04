@@ -1,0 +1,46 @@
+{
+  "run_name": "frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2",
+  "source_sha": "f67e6a2e909dc39ce5ba48f622d93b1ec43f5ab3",
+  "recorded_at_utc": "2026-06-04T10:41:38.512425+00:00",
+  "gpu_row": "GPU1",
+  "board": {"size": 16, "box_rows": 4, "box_cols": 4},
+  "hypothesis": "A gentler 16x16 low-hole curriculum might establish a full-board foothold if the paradigm scales beyond 12x12.",
+  "configuration": {
+    "d_model": 192,
+    "layers": 10,
+    "heads": 12,
+    "head_dim": 16,
+    "channel_mult": 4,
+    "max_loops": 5,
+    "future_seed_scale": 1,
+    "noise_scale": 0,
+    "rollout_noise_scale": 0,
+    "rwkv_kernel": "cuda",
+    "hole_stages": "16-32:300,32-48:400,48-64:300",
+    "full_batch": 64,
+    "full_eval_n": 256,
+    "eval_holes_list": [32, 48, 64, 80]
+  },
+  "train": {
+    "train_sec": 1353.9262,
+    "final_ce": 0.579181,
+    "final_loop1_loss": 0.911039,
+    "final_loop_last_loss": 0.579181
+  },
+  "eval_by_holes": {
+    "32": {"loop1_exact": 0.0, "loop3_exact": 0.003906, "loop5_exact": 0.003906, "loop5_blank_acc": 0.828735},
+    "48": {"loop1_exact": 0.0, "loop3_exact": 0.0, "loop5_exact": 0.0, "loop5_blank_acc": 0.739258},
+    "64": {"loop1_exact": 0.0, "loop3_exact": 0.0, "loop5_exact": 0.0, "loop5_blank_acc": 0.655212},
+    "80": {"loop1_exact": 0.0, "loop3_exact": 0.0, "loop5_exact": 0.0, "loop5_blank_acc": 0.57041}
+  },
+  "score": {
+    "key": "metrics.eval_clean.loop5.label_exact",
+    "value": 0.0
+  },
+  "decision": "16x16 does not have a usable full-board foothold under the current paradigm; largest supported board is 12x12.",
+  "lessons": [
+    "16x16 can optimize local CE but does not form global board consistency.",
+    "Loop depth is neutral on exact solve at 16x16 in this setup.",
+    "The next 16x16 attempt needs a mechanism change, not a seed or high-hole repeat."
+  ]
+}

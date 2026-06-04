@@ -42,9 +42,9 @@ UNITS: List[List[int]] = []
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
     global N, BOX_ROWS, BOX_COLS, CELLS, BLANK, VOCAB, ROWS, COLS, BOXES, UNITS
     if box_rows <= 0 or box_cols <= 0:
-        inferred = {4: (2, 2), 6: (2, 3), 9: (3, 3)}
+        inferred = {4: (2, 2), 6: (2, 3), 9: (3, 3), 12: (3, 4), 16: (4, 4), 25: (5, 5)}
         if size not in inferred:
-            raise ValueError("Use 4x4, 6x6, or 9x9 Sudoku, or pass --box_rows and --box_cols.")
+            raise ValueError("Use a supported Sudoku size, or pass --box_rows and --box_cols.")
         box_rows, box_cols = inferred[size]
     if box_rows <= 1 or box_cols <= 1 or box_rows * box_cols != size:
         raise ValueError("Sudoku needs size == box_rows * box_cols with both box dimensions > 1.")

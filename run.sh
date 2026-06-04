@@ -168,6 +168,8 @@ fi
 
 COMMON_ARGS=(
   --size "${SUDOKU_SIZE:-6}"
+  --box_rows "${BOX_ROWS:-0}"
+  --box_cols "${BOX_COLS:-0}"
   --max_loops "${MAX_LOOPS:-3}"
   --d_model "${D_MODEL:-32}"
   --layers "${LAYERS:-4}"

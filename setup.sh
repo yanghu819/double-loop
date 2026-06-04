@@ -52,6 +52,39 @@ PY
   ln -sf "$ninja_bin" "$REPO_ROOT/.cache/bin/ninja"
 }
 
+ensure_runtime_deps() {
+  local py_bin="$1"
+  local target="$REPO_ROOT/.cache/python-extra-pylib"
+  mkdir -p "$target"
+
+  local missing
+  missing="$(
+    PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
+import importlib.util
+
+modules = {
+    "colorama": "colorama>=0.4.6",
+    "numpy": "numpy>=2.0",
+    "pydantic": "pydantic>=2.0",
+}
+for module, package in modules.items():
+    if importlib.util.find_spec(module) is None:
+        print(package)
+PY
+  )"
+
+  if [[ -n "$missing" ]]; then
+    local pip_args=(--target "$target" --upgrade)
+    if compgen -G "$REPO_ROOT/wheelhouse/*.whl" >/dev/null; then
+      pip_args+=(--no-index --find-links "$REPO_ROOT/wheelhouse")
+    fi
+    # shellcheck disable=SC2086
+    "$py_bin" -m pip install "${pip_args[@]}" $missing
+  fi
+
+  printf '%s\n' "$target" > "$REPO_ROOT/.cache/python-extra-path"
+}
+
 SYSTEM_TORCH_PYTHON="${SYSTEM_TORCH_PYTHON:-/opt/conda/bin/python}"
 if [[ "${REUSE_SYSTEM_TORCH:-1}" == "1" && -x "$SYSTEM_TORCH_PYTHON" ]]; then
   if "$SYSTEM_TORCH_PYTHON" - <<'PY'
@@ -70,6 +103,7 @@ print(f"reusing {sys.executable}: torch={torch.__version__} cuda={torch.cuda.get
 PY
   then
     ensure_ninja "$SYSTEM_TORCH_PYTHON"
+    ensure_runtime_deps "$SYSTEM_TORCH_PYTHON"
     printf '%s\n' "$SYSTEM_TORCH_PYTHON" > "$REPO_ROOT/.cache/python-bin"
     printf 'Environment ready: %s\n' "$SYSTEM_TORCH_PYTHON"
     exit 0

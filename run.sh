@@ -38,6 +38,14 @@ if [[ -n "$PYTHON_BIN" && ! -x "$PYTHON_BIN" ]]; then
   exit 1
 fi
 
+PYTHON_EXTRA_PATH="${PYTHON_EXTRA_PATH:-}"
+if [[ -z "$PYTHON_EXTRA_PATH" && -s "$REPO_ROOT/.cache/python-extra-path" ]]; then
+  PYTHON_EXTRA_PATH="$(<"$REPO_ROOT/.cache/python-extra-path")"
+fi
+if [[ -n "$PYTHON_EXTRA_PATH" ]]; then
+  export PYTHONPATH="$PYTHON_EXTRA_PATH${PYTHONPATH:+:$PYTHONPATH}"
+fi
+
 UV_BIN="${UV_BIN:-}"
 if [[ -z "$PYTHON_BIN" && -z "$UV_BIN" ]]; then
   if command -v uv >/dev/null 2>&1; then

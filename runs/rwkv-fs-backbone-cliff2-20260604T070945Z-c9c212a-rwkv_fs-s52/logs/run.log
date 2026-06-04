@@ -1,0 +1,65 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/rwkv-fs-backbone-cliff2-20260604T070945Z-c9c212a-rwkv_fs-s52
+git_sha=c9c212a9e99aa41bd1ada01c3eb9e3d7a9449324
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop rwkv_kernel=cuda
+[future_seed_loop stage=1:8-16] step=0100 ce=1.0295 total=1.0295 loop1=1.0260 loop_last=1.0295
+[future_seed_loop stage=1:8-16] step=0200 ce=0.4579 total=0.4579 loop1=0.5230 loop_last=0.4579
+[future_seed_loop stage=2:16-24] step=0300 ce=0.0539 total=0.0539 loop1=0.1295 loop_last=0.0539
+[future_seed_loop stage=2:16-24] step=0400 ce=0.0243 total=0.0243 loop1=0.0882 loop_last=0.0243
+[future_seed_loop stage=2:16-24] step=0500 ce=0.0108 total=0.0108 loop1=0.0755 loop_last=0.0108
+[future_seed_loop stage=2:16-24] step=0600 ce=0.0057 total=0.0057 loop1=0.0725 loop_last=0.0057
+
+full-board metrics
+loop=1 exact=0.9102, valid=0.9102, solved=0.9102, blank_acc=0.9938
+        fs_gate=0.524, fs_state_norm=8.380
+loop=2 exact=0.9941, valid=0.9941, solved=0.9941, blank_acc=0.9991
+        fs_gate=0.524, fs_state_norm=8.380
+loop=3 exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994
+        fs_gate=0.524, fs_state_norm=8.380
+loop=4 exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994
+        fs_gate=0.524, fs_state_norm=8.380
+loop=5 exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994
+        fs_gate=0.524, fs_state_norm=8.380
+
+stochastic rollout metrics
+K1 oracle_exact=0.9961 oracle_solved=0.9961 disagree=0.0000
+  confidence exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  consistency exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  residual    exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  majority    exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+K4 oracle_exact=0.9961 oracle_solved=0.9961 disagree=0.0000
+  confidence exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  consistency exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  residual    exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  majority    exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+K8 oracle_exact=0.9961 oracle_solved=0.9961 disagree=0.0000
+  confidence exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  consistency exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  residual    exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+  majority    exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.9102 confidence_exact=0.9102 residual_exact=0.9102 disagree=0.0000
+  K4 oracle_exact=0.9102 confidence_exact=0.9102 residual_exact=0.9102 disagree=0.0000
+  K8 oracle_exact=0.9102 confidence_exact=0.9102 residual_exact=0.9102 disagree=0.0000
+loop3
+  K1 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+  K4 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+  K8 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+loop5
+  K1 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+  K4 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+  K8 oracle_exact=0.9961 confidence_exact=0.9961 residual_exact=0.9961 disagree=0.0000
+
+hole-transfer metrics
+holes=16 exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9994; indep=0.9903, exact/indep=1.01
+holes=20 exact=0.9805, valid=0.9805, solved=0.9805, blank_acc=0.9983; indep=0.9673, exact/indep=1.01
+holes=24 exact=0.8828, valid=0.8848, solved=0.8848, blank_acc=0.9897; indep=0.7793, exact/indep=1.13
+holes=28 exact=0.6855, valid=0.6914, solved=0.6914, blank_acc=0.9739; indep=0.4770, exact/indep=1.44
+holes=32 exact=0.4043, valid=0.4121, solved=0.4121, blank_acc=0.9409; indep=0.1424, exact/indep=2.84
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/rwkv-fs-backbone-cliff2-20260604T070945Z-c9c212a-rwkv_fs-s52/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/rwkv-fs-backbone-cliff2-20260604T070945Z-c9c212a-rwkv_fs-s52/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/rwkv-fs-backbone-cliff2-20260604T070945Z-c9c212a-rwkv_fs-s52/output/futureseed_loop_case_seed52.html

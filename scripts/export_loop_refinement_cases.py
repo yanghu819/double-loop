@@ -28,6 +28,9 @@ VIZ_PATH = REPO_ROOT / "scripts/visualize_sudoku_case.py"
 
 
 def import_from_path(name: str, path: Path) -> ModuleType:
+    parent = str(path.parent)
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise ImportError(f"cannot import {name} from {path}")

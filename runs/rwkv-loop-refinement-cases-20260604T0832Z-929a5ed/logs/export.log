@@ -1,0 +1,29 @@
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:8-16] step=0100 ce=0.8118 total=0.8118 loop1=0.8162 loop_last=0.8118
+[future_seed_loop stage=1:8-16] step=0200 ce=0.3641 total=0.3641 loop1=0.3892 loop_last=0.3641
+[future_seed_loop stage=2:16-24] step=0300 ce=0.0760 total=0.0760 loop1=0.1385 loop_last=0.0760
+[future_seed_loop stage=2:16-24] step=0400 ce=0.0192 total=0.0192 loop1=0.0868 loop_last=0.0192
+[future_seed_loop stage=2:16-24] step=0500 ce=0.0098 total=0.0098 loop1=0.0535 loop_last=0.0098
+[future_seed_loop stage=2:16-24] step=0600 ce=0.0081 total=0.0081 loop1=0.0456 loop_last=0.0081
+Traceback (most recent call last):
+  File "/huyang2/double-loop/scripts/export_loop_refinement_cases.py", line 420, in <module>
+    main()
+  File "/huyang2/double-loop/scripts/export_loop_refinement_cases.py", line 384, in main
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+  File "/opt/conda/lib/python3.10/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+  File "/opt/conda/lib/python3.10/json/encoder.py", line 201, in encode
+    chunks = list(chunks)
+  File "/opt/conda/lib/python3.10/json/encoder.py", line 431, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/opt/conda/lib/python3.10/json/encoder.py", line 405, in _iterencode_dict
+    yield from chunks
+  File "/opt/conda/lib/python3.10/json/encoder.py", line 405, in _iterencode_dict
+    yield from chunks
+  File "/opt/conda/lib/python3.10/json/encoder.py", line 438, in _iterencode
+    o = _default(o)
+  File "/opt/conda/lib/python3.10/json/encoder.py", line 179, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type PosixPath is not JSON serializable

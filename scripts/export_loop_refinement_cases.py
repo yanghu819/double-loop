@@ -274,6 +274,13 @@ def parse_int_list(raw: str) -> list[int]:
     return [int(item.strip()) for item in raw.split(",") if item.strip()]
 
 
+def jsonable_config(args: argparse.Namespace) -> dict[str, Any]:
+    out = {}
+    for key, value in vars(args).items():
+        out[key] = str(value) if isinstance(value, Path) else value
+    return out
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "runs/rwkv-loop-refinement-cases-20260604")
@@ -374,7 +381,7 @@ def main() -> None:
     summary = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "purpose": "Concrete loop-refinement cases: loop1 wrong to later-loop improved/exact.",
-        "config": vars(args),
+        "config": jsonable_config(args),
         "train": train_stats,
         "metrics_by_holes": metrics_by_holes,
         "cases": all_cases,

@@ -42,6 +42,13 @@ Does FutureSeed as part of the RWKV/stateful backbone change optimization and lo
 - `case_9x9_seed52_fs_vs_nofs.json`: extracted board matrices and wrong-cell/conflict metadata.
 - Case readout: 16 hidden cells; FutureSeed loop1/5 has `0/16` wrong hidden cells; no-FutureSeed loop5 has `6/16` wrong hidden cells and `14` row/column/box conflict units.
 
+## Loop Case Follow-Up
+
+- `runs/rwkv-loop-refinement-cases-20260604T0832Z-929a5ed/`: concrete h24/h28/h32 cases selected specifically for loop value.
+- All 9 selected cases are `refined`: loop1 has hidden-cell errors, while loop5 is exact.
+- Best explanatory examples: h24 `7/1/0` wrong hidden cells across loop1/3/5; h32 `7/0/0` and `7/1/0`.
+- This separates the mechanisms: the original case shows FutureSeed/global interaction; the follow-up cases show depth-loop refinement after FutureSeed has produced a usable state.
+
 ## Next Step
 
 - Rerun the same A/B with one more seed or a smaller batch if lease is tight. If effect repeats, stop debating EqR adapters and invest in RWKV7/CUDA FutureSeed backbone and structured eval at holes<=9 as a separate probe.

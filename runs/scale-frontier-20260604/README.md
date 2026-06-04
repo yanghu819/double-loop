@@ -12,6 +12,7 @@ The current paradigm supports 12x12 but not 16x16 full-board solving under the t
 | 12x12 | `frontier-12x12-d256-h72-20260604T0920Z-f67e6a2` | h60 loop5 exact `0.5052`, h72 `0.0443`, h84 `0.0` | largest supported board |
 | 16x16 high-hole | `frontier-16x16-d192-h112-20260604T1006Z-f67e6a2` | high-loss at h64-h96; aborted | over-hard curriculum |
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
+| 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
 
 ## Insight
 
@@ -26,6 +27,6 @@ Treat 12x12 as the largest supported Sudoku scale for the current paradigm. Do n
 Next high-ROI work should change the mechanism:
 
 1. Add a board/unit consistency objective.
-2. Add stronger intermediate loop supervision.
+2. Add shaped intermediate loop supervision; the naive equal `LOOP_LOSS=all` run was negative.
 3. Add hierarchical row/col/box tokens or unit-level state passing.
 4. Fix experiment tracking so source snapshots are stored outside Git once they exceed GitHub's hard file limit.

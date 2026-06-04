@@ -1,0 +1,48 @@
+{
+  "run_name": "frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796",
+  "source_sha": "75a8796b822a80f66ebe9e3d1d5dc341d6505891",
+  "recorded_at_utc": "2026-06-04T13:13:37.037272+00:00",
+  "gpu_row": "GPU1",
+  "board": {"size": 16, "box_rows": 4, "box_cols": 4},
+  "hypothesis": "Supervising every loop, increasing hidden size, and increasing loop depth may create a 16x16 full-board foothold.",
+  "configuration": {
+    "d_model": 256,
+    "layers": 12,
+    "heads": 16,
+    "head_dim": 16,
+    "channel_mult": 4,
+    "max_loops": 8,
+    "loop_loss": "all",
+    "future_seed_scale": 1,
+    "noise_scale": 0,
+    "rollout_noise_scale": 0,
+    "rwkv_kernel": "cuda",
+    "hole_stages": "8-24:300,24-32:500,32-40:400",
+    "full_batch": 24,
+    "full_eval_n": 256,
+    "eval_holes_list": [24, 32, 40, 48]
+  },
+  "train": {
+    "train_sec": 2287.7061,
+    "final_ce": 1.049803,
+    "final_total": 1.051027,
+    "final_loop1_loss": 1.059487,
+    "final_loop_last_loss": 1.049803
+  },
+  "eval_by_holes": {
+    "24": {"loop1_exact": 0.0, "loop5_exact": 0.0, "loop8_exact": 0.0, "loop8_blank_acc": 0.410156},
+    "32": {"loop1_exact": 0.0, "loop5_exact": 0.0, "loop8_exact": 0.0, "loop8_blank_acc": 0.387207},
+    "40": {"loop1_exact": 0.0, "loop5_exact": 0.0, "loop8_exact": 0.0, "loop8_blank_acc": 0.395508},
+    "48": {"loop1_exact": 0.0, "loop5_exact": 0.0, "loop8_exact": 0.0, "loop8_blank_acc": 0.355957}
+  },
+  "score": {
+    "key": "metrics.eval_clean.loop8.label_exact",
+    "value": 0.0
+  },
+  "decision": "Naive equal all-loop supervision is negative for 16x16; do not continue this exact route.",
+  "lessons": [
+    "Equal per-loop CE makes optimization harder and does not produce an attractor.",
+    "Increasing hidden size and loop budget did not rescue global consistency.",
+    "Future loop supervision should be shaped or consistency-based, not uniform hard-label CE at every loop."
+  ]
+}

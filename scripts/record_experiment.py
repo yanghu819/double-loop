@@ -19,6 +19,10 @@ def load_result(run_dir: Path) -> Optional[Dict[str, Any]]:
     if not candidates:
         candidates = sorted(run_dir.glob("**/futureseed_loop_seed*.json"))
     if not candidates:
+        candidates = sorted((run_dir / "output").glob("eqr_probe_seed*.json"))
+    if not candidates:
+        candidates = sorted(run_dir.glob("**/eqr_probe_seed*.json"))
+    if not candidates:
         return None
     with candidates[-1].open("r", encoding="utf-8") as f:
         return json.load(f)
@@ -43,7 +47,7 @@ def extract_score(result: Optional[Dict[str, Any]]) -> Tuple[Optional[float], st
 
     metrics = result.get("metrics", {})
     task = metrics.get("task", {})
-    max_loops = task.get("max_loops", 3)
+    max_loops = task.get("max_loops", task.get("train_loops", 3))
     preferred_key = f"eval_clean.loop{max_loops}.label_exact"
     try:
         preferred = metrics["eval_clean"][f"loop{max_loops}"]["label_exact"]

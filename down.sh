@@ -10,4 +10,7 @@ export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/huggingface}"
 export TORCH_HOME="${TORCH_HOME:-$REPO_ROOT/.cache/torch}"
 
 mkdir -p "$REPO_ROOT/.cache" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs" "$XDG_CACHE_HOME" "$UV_CACHE_DIR" "$PIP_CACHE_DIR" "$HF_HOME" "$TORCH_HOME"
+if [[ "${SKIP_EQR:-0}" != "1" ]]; then
+  "$REPO_ROOT/scripts/apply_eqr_patch.sh"
+fi
 printf 'No external data or model download is required for the current Sudoku probe.\n'

@@ -18,9 +18,9 @@ export PATH="$REPO_ROOT/.cache/bin:$PATH"
 mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
 
 case "$MODE" in
-  smoke|full) ;;
+  smoke|full|eqr_probe) ;;
   *)
-    printf 'Usage: %s [smoke|full]\n' "$0" >&2
+    printf 'Usage: %s [smoke|full|eqr_probe]\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -97,6 +97,66 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(payload, f, indent=2)
     f.write("\n")
 PY
+
+if [[ "$MODE" == "eqr_probe" ]]; then
+  if [[ "${SKIP_DOWN:-0}" != "1" ]]; then
+    "$REPO_ROOT/down.sh"
+  fi
+
+  EQR_ARGS=(
+    --repo_root "$REPO_ROOT"
+    --eqr_dir "${EQR_DIR:-$REPO_ROOT/repos/eqr}"
+    --out_dir "$OUT_DIR"
+    --size "${SUDOKU_SIZE:-9}"
+    --steps "${EQR_STEPS:-120}"
+    --batch "${EQR_BATCH:-64}"
+    --eval_n "${EQR_EVAL_N:-128}"
+    --holes_min "${EQR_HOLES_MIN:-4}"
+    --holes_max "${EQR_HOLES_MAX:-10}"
+    --hole_pattern "${HOLE_PATTERN:-random}"
+    --eval_holes "${EQR_EVAL_HOLES:-8}"
+    --eval_holes_list "${EQR_EVAL_HOLES_LIST:-8,12}"
+    --hidden_size "${EQR_HIDDEN_SIZE:-192}"
+    --heads "${EQR_HEADS:-6}"
+    --layers "${EQR_LAYERS:-2}"
+    --h_cycles "${EQR_H_CYCLES:-2}"
+    --l_cycles "${EQR_L_CYCLES:-4}"
+    --train_loops "${EQR_TRAIN_LOOPS:-4}"
+    --noise_scale "${EQR_NOISE_SCALE:-0.01}"
+    --noise_mode "${EQR_NOISE_MODE:-feature_diff}"
+    --feature_noise_buffer_size "${EQR_FEATURE_NOISE_BUFFER_SIZE:-512}"
+    --feature_noise_buffer_add "${EQR_FEATURE_NOISE_BUFFER_ADD:-64}"
+    --future_seed_scale "${EQR_FUTURE_SEED_SCALE:-1.0}"
+    --future_seed_gate_bias "${EQR_FUTURE_SEED_GATE_BIAS:--2.0}"
+    --forward_dtype "${EQR_FORWARD_DTYPE:-bfloat16}"
+    --lr "${EQR_LR:-3e-4}"
+    --weight_decay "${EQR_WEIGHT_DECAY:-0.1}"
+    --blank_loss_weight "${BLANK_LOSS_WEIGHT:-8.0}"
+    --loop_loss "${EQR_LOOP_LOSS:-final}"
+    --seed "${SEED:-52}"
+    --log_every "${EQR_LOG_EVERY:-50}"
+  )
+  if [[ -n "${EQR_HOLE_STAGES:-}" ]]; then
+    EQR_ARGS+=(--hole_stages "$EQR_HOLE_STAGES")
+  fi
+  if [[ "${CPU:-0}" == "1" ]]; then
+    EQR_ARGS+=(--cpu)
+  fi
+
+  printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"
+  (
+    cd "$REPO_ROOT"
+    if [[ -n "$PYTHON_BIN" ]]; then
+      "$PYTHON_BIN" scripts/eqr_nohydra_probe.py "${EQR_ARGS[@]}"
+    else
+      UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python scripts/eqr_nohydra_probe.py "${EQR_ARGS[@]}"
+    fi
+  ) 2>&1 | tee -a "$LOG_DIR/run.log"
+
+  python3 "$REPO_ROOT/scripts/record_experiment.py" --run-dir "$RUN_DIR" --mode "$MODE"
+  printf 'completed run_dir=%s\n' "$RUN_DIR"
+  exit 0
+fi
 
 COMMON_ARGS=(
   --size "${SUDOKU_SIZE:-6}"

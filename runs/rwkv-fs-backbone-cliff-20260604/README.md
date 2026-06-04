@@ -35,6 +35,13 @@ Does FutureSeed as part of the RWKV/stateful backbone change optimization and lo
 - Rollout selector work is not the next bottleneck in this deterministic no-noise readout: K1/K4/K8 oracle and selectors are identical.
 - First launch aborted before training because structured linked eval patterns currently support at most 9 holes on 9x9; hard h16+ eval was relaunched without structured patterns.
 
+## Concrete Case Visualization
+
+- `case_9x9_seed52_fs_vs_nofs.html`: one fixed 9x9 seed-52 evaluation puzzle with puzzle, solution, FutureSeed loop1/3/5, and no-FutureSeed loop1/3/5.
+- `case_9x9_seed52_fs_vs_nofs.png`: presentation-ready snapshot of the same case.
+- `case_9x9_seed52_fs_vs_nofs.json`: extracted board matrices and wrong-cell/conflict metadata.
+- Case readout: 16 hidden cells; FutureSeed loop1/5 has `0/16` wrong hidden cells; no-FutureSeed loop5 has `6/16` wrong hidden cells and `14` row/column/box conflict units.
+
 ## Next Step
 
 - Rerun the same A/B with one more seed or a smaller batch if lease is tight. If effect repeats, stop debating EqR adapters and invest in RWKV7/CUDA FutureSeed backbone and structured eval at holes<=9 as a separate probe.
@@ -43,3 +50,4 @@ Does FutureSeed as part of the RWKV/stateful backbone change optimization and lo
 
 - `runs.csv`: per-run clean and rollout metrics.
 - `summary.json`: machine-readable aggregate plus abort metadata.
+- `case_9x9_seed52_fs_vs_nofs.*`: human-readable concrete Sudoku case visualization.

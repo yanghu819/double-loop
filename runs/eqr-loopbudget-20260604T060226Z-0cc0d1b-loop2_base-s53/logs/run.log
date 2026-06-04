@@ -1,0 +1,18 @@
+mode=eqr_probe
+run_dir=/huyang2/double-loop/runs/eqr-loopbudget-20260604T060226Z-0cc0d1b-loop2_base-s53
+git_sha=0cc0d1bedf69e1f0aef8fa7a3ab3d4a61e0666e1
+git_dirty=0
+device=cuda torch=2.7.0+cu126 params=888962 eqr_dir=/huyang2/double-loop/repos/eqr
+[eqr_nohydra stage=1:8-16] step=0100 ce=0.4238 loop1=1.0000 sec=32.1
+[eqr_nohydra stage=1:8-16] step=0200 ce=0.0312 loop1=0.2930 sec=64.2
+[eqr_nohydra stage=1:8-16] step=0300 ce=0.0075 loop1=0.2354 sec=96.3
+[eqr_nohydra stage=2:16-24] step=0400 ce=0.0135 loop1=0.3418 sec=128.5
+[eqr_nohydra stage=2:16-24] step=0500 ce=0.0184 loop1=0.2402 sec=160.6
+[eqr_nohydra stage=2:16-24] step=0600 ce=0.0133 loop1=0.2275 sec=192.7
+[eqr_nohydra stage=2:16-24] step=0700 ce=0.0070 loop1=0.2197 sec=224.8
+[eqr_nohydra stage=2:16-24] step=0800 ce=0.0119 loop1=0.1670 sec=256.9
+[eqr_nohydra stage=2:16-24] step=0900 ce=0.0057 loop1=0.1377 sec=288.9
+primary holes16 loop2 exact=0.9980 blank=0.9998 gain=0.2793
+decision=Continue: EqR benefits from deeper recurrent refinement with FutureSeed/feature-diff enabled.
+wrote /huyang2/double-loop/runs/eqr-loopbudget-20260604T060226Z-0cc0d1b-loop2_base-s53/output/eqr_probe_seed53.json
+wrote /huyang2/double-loop/runs/eqr-loopbudget-20260604T060226Z-0cc0d1b-loop2_base-s53/output/eqr_probe_seed53.md

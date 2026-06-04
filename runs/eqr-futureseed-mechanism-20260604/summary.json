@@ -1,0 +1,341 @@
+{
+  "all_git_clean": false,
+  "decision": {
+    "bottleneck": "No positive bottleneck prior: h28/h32 means are negative or near zero under 96x1 capacity, so FutureSeed does not rescue EqR compression.",
+    "feature_noise": "Keep stopped: prior study showed high wall-time cost with no robust exact lift; this run found no need to revisit it.",
+    "loop_budget": "Weak/inconsistent positive tail only: h32 mean delta below +0.05, with seed-level sign flips. Do not claim FutureSeed loop compression for EqR.",
+    "structured_ood": "Skipped by plan: neither loop-budget nor bottleneck met the required clear positive FutureSeed signal."
+  },
+  "groups": {
+    "bottleneck": {
+      "base": {
+        "h16_blank_mean": 0.826934814453125,
+        "h16_exact_mean": 0.05859375,
+        "h20_blank_mean": 0.7613769471645355,
+        "h20_exact_mean": 0.00830078125,
+        "h24_blank_mean": 0.6866455078125,
+        "h24_exact_mean": 0.0,
+        "h28_blank_mean": 0.6090785264968872,
+        "h28_exact_mean": 0.0,
+        "h32_blank_mean": 0.5262451171875,
+        "h32_exact_mean": 0.0,
+        "n": 4,
+        "train_ce_mean": 0.412109375,
+        "train_sec_mean": 267.3951171040535
+      },
+      "fs_only": {
+        "h16_blank_mean": 0.7796630859375,
+        "h16_exact_mean": 0.05322265625,
+        "h20_blank_mean": 0.7114746123552322,
+        "h20_exact_mean": 0.00537109375,
+        "h24_blank_mean": 0.6319783627986908,
+        "h24_exact_mean": 0.0,
+        "h28_blank_mean": 0.5630754753947258,
+        "h28_exact_mean": 0.0,
+        "h32_blank_mean": 0.483489990234375,
+        "h32_exact_mean": 0.0,
+        "n": 4,
+        "train_ce_mean": 0.484375,
+        "train_sec_mean": 272.11398059129715
+      }
+    },
+    "loop_budget": {
+      "base": {
+        "h16_blank_mean": 0.9994099934895834,
+        "h16_exact_mean": 0.9964192708333334,
+        "h20_blank_mean": 0.9977213541666666,
+        "h20_exact_mean": 0.9827473958333334,
+        "h24_blank_mean": 0.9894205629825592,
+        "h24_exact_mean": 0.9111328125,
+        "h28_blank_mean": 0.964785615603129,
+        "h28_exact_mean": 0.7041015625,
+        "h32_blank_mean": 0.898345947265625,
+        "h32_exact_mean": 0.2945963541666667,
+        "n": 6,
+        "train_ce_mean": 0.009663899739583334,
+        "train_sec_mean": 300.34269686539966
+      },
+      "fs_only": {
+        "h16_blank_mean": 0.9996337890625,
+        "h16_exact_mean": 0.9973958333333334,
+        "h20_blank_mean": 0.997851570447286,
+        "h20_exact_mean": 0.9860026041666666,
+        "h24_blank_mean": 0.990546335776647,
+        "h24_exact_mean": 0.9231770833333334,
+        "h28_blank_mean": 0.9656342963377634,
+        "h28_exact_mean": 0.7112630208333334,
+        "h32_blank_mean": 0.9053141276041666,
+        "h32_exact_mean": 0.3170572916666667,
+        "n": 6,
+        "train_ce_mean": 0.012110392252604166,
+        "train_sec_mean": 301.1228125492732
+      }
+    }
+  },
+  "paired_deltas": {
+    "bottleneck": {
+      "h16_exact": {
+        "mean": -0.00537109375,
+        "values": [
+          {
+            "delta": -0.009765625,
+            "seed": 52
+          },
+          {
+            "delta": -0.091796875,
+            "seed": 53
+          },
+          {
+            "delta": -0.01171875,
+            "seed": 54
+          },
+          {
+            "delta": 0.091796875,
+            "seed": 55
+          }
+        ]
+      },
+      "h20_exact": {
+        "mean": -0.0029296875,
+        "values": [
+          {
+            "delta": -0.001953125,
+            "seed": 52
+          },
+          {
+            "delta": -0.021484375,
+            "seed": 53
+          },
+          {
+            "delta": 0.0078125,
+            "seed": 54
+          },
+          {
+            "delta": 0.00390625,
+            "seed": 55
+          }
+        ]
+      },
+      "h24_exact": {
+        "mean": 0.0,
+        "values": [
+          {
+            "delta": 0.0,
+            "seed": 52
+          },
+          {
+            "delta": 0.0,
+            "seed": 53
+          },
+          {
+            "delta": 0.0,
+            "seed": 54
+          },
+          {
+            "delta": 0.0,
+            "seed": 55
+          }
+        ]
+      },
+      "h28_exact": {
+        "mean": 0.0,
+        "values": [
+          {
+            "delta": 0.0,
+            "seed": 52
+          },
+          {
+            "delta": 0.0,
+            "seed": 53
+          },
+          {
+            "delta": 0.0,
+            "seed": 54
+          },
+          {
+            "delta": 0.0,
+            "seed": 55
+          }
+        ]
+      },
+      "h32_exact": {
+        "mean": 0.0,
+        "values": [
+          {
+            "delta": 0.0,
+            "seed": 52
+          },
+          {
+            "delta": 0.0,
+            "seed": 53
+          },
+          {
+            "delta": 0.0,
+            "seed": 54
+          },
+          {
+            "delta": 0.0,
+            "seed": 55
+          }
+        ]
+      }
+    },
+    "loop_budget": {
+      "h16_exact": {
+        "mean": 0.0009765625,
+        "values": [
+          {
+            "delta": 0.001953125,
+            "seed": 52
+          },
+          {
+            "delta": 0.0,
+            "seed": 53
+          },
+          {
+            "delta": -0.001953125,
+            "seed": 54
+          },
+          {
+            "delta": 0.0,
+            "seed": 55
+          },
+          {
+            "delta": 0.005859375,
+            "seed": 56
+          },
+          {
+            "delta": 0.0,
+            "seed": 57
+          }
+        ]
+      },
+      "h20_exact": {
+        "mean": 0.0032552083333333335,
+        "values": [
+          {
+            "delta": 0.009765625,
+            "seed": 52
+          },
+          {
+            "delta": 0.00390625,
+            "seed": 53
+          },
+          {
+            "delta": 0.001953125,
+            "seed": 54
+          },
+          {
+            "delta": -0.005859375,
+            "seed": 55
+          },
+          {
+            "delta": -0.00390625,
+            "seed": 56
+          },
+          {
+            "delta": 0.013671875,
+            "seed": 57
+          }
+        ]
+      },
+      "h24_exact": {
+        "mean": 0.012044270833333334,
+        "values": [
+          {
+            "delta": -0.00390625,
+            "seed": 52
+          },
+          {
+            "delta": 0.01171875,
+            "seed": 53
+          },
+          {
+            "delta": 0.025390625,
+            "seed": 54
+          },
+          {
+            "delta": -0.001953125,
+            "seed": 55
+          },
+          {
+            "delta": 0.005859375,
+            "seed": 56
+          },
+          {
+            "delta": 0.03515625,
+            "seed": 57
+          }
+        ]
+      },
+      "h28_exact": {
+        "mean": 0.007161458333333333,
+        "values": [
+          {
+            "delta": -0.033203125,
+            "seed": 52
+          },
+          {
+            "delta": 0.05078125,
+            "seed": 53
+          },
+          {
+            "delta": 0.03515625,
+            "seed": 54
+          },
+          {
+            "delta": -0.001953125,
+            "seed": 55
+          },
+          {
+            "delta": -0.001953125,
+            "seed": 56
+          },
+          {
+            "delta": -0.005859375,
+            "seed": 57
+          }
+        ]
+      },
+      "h32_exact": {
+        "mean": 0.0224609375,
+        "values": [
+          {
+            "delta": -0.04296875,
+            "seed": 52
+          },
+          {
+            "delta": 0.0625,
+            "seed": 53
+          },
+          {
+            "delta": 0.080078125,
+            "seed": 54
+          },
+          {
+            "delta": -0.001953125,
+            "seed": 55
+          },
+          {
+            "delta": -0.0078125,
+            "seed": 56
+          },
+          {
+            "delta": 0.044921875,
+            "seed": 57
+          }
+        ]
+      }
+    }
+  },
+  "provenance": {
+    "dirty_reason": "second batch source.patch contains only leaderboard.csv metadata rows from first batch concurrent completion; code and experiment config stayed at the detached source SHA",
+    "first_batch_git_dirty_false": 8,
+    "gpu": "AIStation GPU1 only; CUDA_VISIBLE_DEVICES=0",
+    "second_batch_git_dirty_true": 12,
+    "source_sha": "0cc0d1bedf69e1f0aef8fa7a3ab3d4a61e0666e1"
+  },
+  "run_count": 20,
+  "source_sha": "0cc0d1bedf69e1f0aef8fa7a3ab3d4a61e0666e1",
+  "timestamp_utc": "2026-06-04T06:27:53.221667+00:00"
+}

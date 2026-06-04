@@ -1,0 +1,18 @@
+mode=eqr_probe
+run_dir=/huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s52
+git_sha=0cc0d1bedf69e1f0aef8fa7a3ab3d4a61e0666e1
+git_dirty=1
+device=cuda torch=2.7.0+cu126 params=112706 eqr_dir=/huyang2/double-loop/repos/eqr
+[eqr_nohydra stage=1:8-16] step=0100 ce=1.2031 loop1=1.7266 sec=30.4
+[eqr_nohydra stage=1:8-16] step=0200 ce=0.9023 loop1=1.6406 sec=60.0
+[eqr_nohydra stage=1:8-16] step=0300 ce=0.6055 loop1=1.4844 sec=89.6
+[eqr_nohydra stage=2:16-24] step=0400 ce=0.7461 loop1=1.7891 sec=119.2
+[eqr_nohydra stage=2:16-24] step=0500 ce=0.6250 loop1=1.7891 sec=148.8
+[eqr_nohydra stage=2:16-24] step=0600 ce=0.6172 loop1=1.8594 sec=178.5
+[eqr_nohydra stage=2:16-24] step=0700 ce=0.5586 loop1=1.8906 sec=208.1
+[eqr_nohydra stage=2:16-24] step=0800 ce=0.5391 loop1=1.9141 sec=237.7
+[eqr_nohydra stage=2:16-24] step=0900 ce=0.5156 loop1=1.9609 sec=267.4
+primary holes16 loop4 exact=0.0098 blank=0.7731 gain=0.0098
+decision=Pivot: exact remains near zero; inspect global consistency or reduce task difficulty.
+wrote /huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s52/output/eqr_probe_seed52.json
+wrote /huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s52/output/eqr_probe_seed52.md

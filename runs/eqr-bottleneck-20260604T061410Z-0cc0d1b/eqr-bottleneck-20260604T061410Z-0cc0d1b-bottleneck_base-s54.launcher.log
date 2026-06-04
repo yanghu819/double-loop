@@ -1,0 +1,21 @@
+nohup: ignoring input
+mode=eqr_probe
+run_dir=/huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s54
+git_sha=0cc0d1bedf69e1f0aef8fa7a3ab3d4a61e0666e1
+git_dirty=1
+device=cuda torch=2.7.0+cu126 params=112706 eqr_dir=/huyang2/double-loop/repos/eqr
+[eqr_nohydra stage=1:8-16] step=0100 ce=1.1875 loop1=1.8047 sec=30.4
+[eqr_nohydra stage=1:8-16] step=0200 ce=0.8359 loop1=1.5859 sec=60.0
+[eqr_nohydra stage=1:8-16] step=0300 ce=0.6172 loop1=1.5312 sec=89.7
+[eqr_nohydra stage=2:16-24] step=0400 ce=0.7773 loop1=1.8672 sec=119.2
+[eqr_nohydra stage=2:16-24] step=0500 ce=0.6680 loop1=2.0312 sec=148.8
+[eqr_nohydra stage=2:16-24] step=0600 ce=0.5273 loop1=1.9844 sec=178.5
+[eqr_nohydra stage=2:16-24] step=0700 ce=0.4844 loop1=2.0156 sec=208.1
+[eqr_nohydra stage=2:16-24] step=0800 ce=0.4023 loop1=2.0938 sec=237.8
+[eqr_nohydra stage=2:16-24] step=0900 ce=0.3340 loop1=2.1562 sec=267.5
+primary holes16 loop4 exact=0.1094 blank=0.8749 gain=0.1094
+decision=Continue: EqR benefits from deeper recurrent refinement with FutureSeed/feature-diff enabled.
+wrote /huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s54/output/eqr_probe_seed54.json
+wrote /huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s54/output/eqr_probe_seed54.md
+recorded run=eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s54 score=0.109375 key=metrics.eval_clean.loop4.label_exact
+completed run_dir=/huyang2/double-loop/runs/eqr-bottleneck-20260604T061410Z-0cc0d1b-bottleneck_base-s54

@@ -4,7 +4,7 @@ Timestamp: 2026-06-03
 
 Source repo: `repos/eqr`
 Base upstream SHA: `aba94e9cde0f273ce644db5261cd6915ba6561f0`
-Local EqR implementation commit: `f2e9ed950d4f`
+Local EqR implementation commit: `a4d22ac`
 Archived patch: `docs/eqr_patches/0001-Add-FutureSeed-and-feature-diff-noise-to-EqR.patch`
 
 ## What Changed
@@ -14,6 +14,7 @@ Archived patch: `docs/eqr_patches/0001-Add-FutureSeed-and-feature-diff-noise-to-
 - Kept default EqR behavior unchanged: `future_seed_scale=0.0`, `noise_mode=gaussian`.
 - Added eval-time runtime overrides for `noise_mode`, `feature_noise_fallback`, and `future_seed_scale`.
 - Added validation and warnings so typoed noise modes or old checkpoints do not create silent false positives.
+- Added a CUDA-safe attention fallback: use FlashAttention when present, otherwise use PyTorch SDPA instead of requiring `flash_attn_3`.
 
 ## Mechanism Hypothesis
 
@@ -46,5 +47,6 @@ Decision rules:
 - `git diff --check`
 - Direct CPU forward smoke for default EqR and `futureseed_featurediff`
 - CPU `torch.compile` forward smoke for `futureseed_featurediff`
+- GPU1 no-Hydra smoke uses PyTorch SDPA when FlashAttention is not installed.
 
 Hydra job-config parsing was not run locally because the Mac environment lacks `hydra`.

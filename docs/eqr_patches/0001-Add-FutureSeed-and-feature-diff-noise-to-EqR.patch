@@ -1,25 +1,20 @@
-From f2e9ed950d4fc922fac07f40d3c2ed8b4e96784b Mon Sep 17 00:00:00 2001
+From a4d22ac2f796dc3ec09b90c7605f1376cf05089b Mon Sep 17 00:00:00 2001
 From: torusmini <torusmini@torusminideMac-mini.local>
-Date: Wed, 3 Jun 2026 20:21:09 +0800
-Subject: [PATCH] Add FutureSeed and feature-diff noise to EqR
+Date: Thu, 4 Jun 2026 12:08:19 +0800
+Subject: [PATCH] Add FutureSeed feature noise and SDPA fallback
 
-Timestamp: 2026-06-03T12:21:09Z
+Timestamp UTC: 2026-06-04T04:21:00Z
 
-Implements two opt-in mechanisms for EqR: learned cross-level FutureSeed mixers and feature-difference Langevin noise sampled from a non-persistent hidden-feature ring buffer.
+Adds opt-in FutureSeed mixers, feature-difference hidden noise, and a PyTorch SDPA fallback for CUDA attention when FlashAttention is unavailable. The fallback keeps EqR usable in lean AIStation environments without installing flash_attn_3 or Hydra.
 
-Defaults preserve upstream EqR behavior: future_seed_scale=0.0, noise_mode=gaussian, and no FutureSeed parameters appear in default state_dicts.
-
-Runtime evaluation overrides now support noise_mode, feature_noise_fallback, and future_seed_scale, with validation and a warning when an old checkpoint lacks FutureSeedMixer modules.
-
-Validation: python -m py_compile models/eqr.py evaluate.py; git diff --check; direct CPU forward smoke for default and futureseed_featurediff configs; CPU torch.compile forward smoke for futureseed_featurediff.
-
-Experience and lesson: EqR's eval-time stochastic breadth means feature noise must maintain an online non-persistent buffer during forward, not just during training; buffer mutation is wrapped with torch compile disable to avoid Dynamo capturing stateful sampling.
+Experience / lesson: preserve upstream FlashAttention fast path when present, but do not make the no-Hydra experiment depend on a fragile optional attention package.
 ---
  config/arch/eqr.yaml             |   6 ++
  docs/futureseed_feature_noise.md |  35 +++++++
  evaluate.py                      |  39 +++++++
  models/eqr.py                    | 172 +++++++++++++++++++++++++++++--
- 4 files changed, 242 insertions(+), 10 deletions(-)
+ models/layers.py                 |   4 +-
+ 5 files changed, 243 insertions(+), 13 deletions(-)
  create mode 100644 docs/futureseed_feature_noise.md
 
 diff --git a/config/arch/eqr.yaml b/config/arch/eqr.yaml
@@ -360,6 +355,21 @@ index 8084f2b..7e07f6b 100644
  @_disable_torch_compile
  def _reset_rows(
      inner: Any,
+diff --git a/models/layers.py b/models/layers.py
+index 23ae2c3..343beb5 100644
+--- a/models/layers.py
++++ b/models/layers.py
+@@ -146,9 +146,7 @@ class Attention(nn.Module):
+         k = qkv[:, :, self.num_heads : self.num_heads + self.num_key_value_heads]
+         v = qkv[:, :, self.num_heads + self.num_key_value_heads :]
+         q, k = self._apply_rope(cos_sin, q, k)
+-        if q.is_cuda:
+-            if flash_attn_func is None:
+-                colored_exception(RuntimeError, "flash_attn is not installed but CUDA attention was requested.")
++        if q.is_cuda and flash_attn_func is not None:
+             y = flash_attn_func(q=q, k=k, v=v, causal=self.causal)
+             if isinstance(y, tuple):
+                 y = y[0]
 -- 
 2.50.1 (Apple Git-155)
 

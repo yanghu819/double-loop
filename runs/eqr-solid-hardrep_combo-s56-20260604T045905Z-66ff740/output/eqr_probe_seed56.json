@@ -1,0 +1,366 @@
+{
+  "config": {
+    "batch": 128,
+    "blank_loss_weight": 8.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "cpu": false,
+    "eqr_dir": "/huyang2/double-loop/repos/eqr",
+    "eval_holes": 16,
+    "eval_holes_list": "16,20,24,28,32",
+    "eval_n": 512,
+    "expansion": 4.0,
+    "feature_noise_buffer_add": 64,
+    "feature_noise_buffer_size": 512,
+    "forward_dtype": "bfloat16",
+    "future_seed_gate_bias": -2.0,
+    "future_seed_scale": 1.0,
+    "grad_clip": 1.0,
+    "h_cycles": 2,
+    "heads": 6,
+    "hidden_size": 192,
+    "hole_pattern": "random",
+    "hole_stages": "8-16:300,16-24:600",
+    "holes_max": 10,
+    "holes_min": 4,
+    "l_cycles": 4,
+    "lambda_": 0.95,
+    "layers": 2,
+    "log_every": 100,
+    "loop_loss": "final",
+    "lr": 0.0003,
+    "noise_mode": "feature_diff",
+    "noise_scale": 0.005,
+    "out_dir": "/huyang2/double-loop/runs/eqr-solid-hardrep_combo-s56-20260604T045905Z-66ff740/output",
+    "repo_root": "/huyang2/double-loop",
+    "seed": 56,
+    "size": 9,
+    "steps": 900,
+    "train_loops": 4,
+    "weight_decay": 0.1
+  },
+  "metrics": {
+    "decision": "Continue: EqR benefits from deeper recurrent refinement with FutureSeed/feature-diff enabled.",
+    "eval_by_holes": {
+      "holes16": {
+        "eval_clean": {
+          "loop1": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.7979736328125,
+            "clue_ok": 0.814453125,
+            "label_exact": 0.02734375,
+            "solved_valid_clue": 0.02734375,
+            "valid_sudoku": 0.02734375
+          },
+          "loop2": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.995361328125,
+            "clue_ok": 1.0,
+            "label_exact": 0.94921875,
+            "solved_valid_clue": 0.94921875,
+            "valid_sudoku": 0.94921875
+          },
+          "loop3": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.999267578125,
+            "clue_ok": 1.0,
+            "label_exact": 0.99609375,
+            "solved_valid_clue": 0.99609375,
+            "valid_sudoku": 0.99609375
+          },
+          "loop4": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.999267578125,
+            "clue_ok": 1.0,
+            "label_exact": 0.998046875,
+            "solved_valid_clue": 1.0,
+            "valid_sudoku": 1.0
+          }
+        }
+      },
+      "holes20": {
+        "eval_clean": {
+          "loop1": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.7159179449081421,
+            "clue_ok": 0.794921875,
+            "label_exact": 0.0,
+            "solved_valid_clue": 0.0,
+            "valid_sudoku": 0.0
+          },
+          "loop2": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.9756835699081421,
+            "clue_ok": 1.0,
+            "label_exact": 0.748046875,
+            "solved_valid_clue": 0.75,
+            "valid_sudoku": 0.75
+          },
+          "loop3": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.995898425579071,
+            "clue_ok": 1.0,
+            "label_exact": 0.962890625,
+            "solved_valid_clue": 0.966796875,
+            "valid_sudoku": 0.966796875
+          },
+          "loop4": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.997753918170929,
+            "clue_ok": 1.0,
+            "label_exact": 0.98828125,
+            "solved_valid_clue": 0.994140625,
+            "valid_sudoku": 0.994140625
+          }
+        }
+      },
+      "holes24": {
+        "eval_clean": {
+          "loop1": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.6429036259651184,
+            "clue_ok": 0.6953125,
+            "label_exact": 0.0,
+            "solved_valid_clue": 0.0,
+            "valid_sudoku": 0.0
+          },
+          "loop2": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.940185546875,
+            "clue_ok": 0.998046875,
+            "label_exact": 0.38671875,
+            "solved_valid_clue": 0.38671875,
+            "valid_sudoku": 0.38671875
+          },
+          "loop3": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.983154296875,
+            "clue_ok": 1.0,
+            "label_exact": 0.83984375,
+            "solved_valid_clue": 0.841796875,
+            "valid_sudoku": 0.841796875
+          },
+          "loop4": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.9906412959098816,
+            "clue_ok": 1.0,
+            "label_exact": 0.9296875,
+            "solved_valid_clue": 0.939453125,
+            "valid_sudoku": 0.939453125
+          }
+        }
+      },
+      "holes28": {
+        "eval_clean": {
+          "loop1": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.5733817219734192,
+            "clue_ok": 0.65625,
+            "label_exact": 0.0,
+            "solved_valid_clue": 0.0,
+            "valid_sudoku": 0.0
+          },
+          "loop2": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.8703264594078064,
+            "clue_ok": 0.9921875,
+            "label_exact": 0.103515625,
+            "solved_valid_clue": 0.103515625,
+            "valid_sudoku": 0.103515625
+          },
+          "loop3": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.9410575032234192,
+            "clue_ok": 1.0,
+            "label_exact": 0.5078125,
+            "solved_valid_clue": 0.509765625,
+            "valid_sudoku": 0.509765625
+          },
+          "loop4": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.9628208875656128,
+            "clue_ok": 1.0,
+            "label_exact": 0.71484375,
+            "solved_valid_clue": 0.73046875,
+            "valid_sudoku": 0.73046875
+          }
+        }
+      },
+      "holes32": {
+        "eval_clean": {
+          "loop1": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.4879150390625,
+            "clue_ok": 0.634765625,
+            "label_exact": 0.0,
+            "solved_valid_clue": 0.0,
+            "valid_sudoku": 0.0
+          },
+          "loop2": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.7742919921875,
+            "clue_ok": 0.998046875,
+            "label_exact": 0.001953125,
+            "solved_valid_clue": 0.001953125,
+            "valid_sudoku": 0.001953125
+          },
+          "loop3": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.86651611328125,
+            "clue_ok": 1.0,
+            "label_exact": 0.1171875,
+            "solved_valid_clue": 0.12109375,
+            "valid_sudoku": 0.12109375
+          },
+          "loop4": {
+            "avg_filled": 1.0,
+            "blank_acc": 0.90631103515625,
+            "clue_ok": 0.998046875,
+            "label_exact": 0.333984375,
+            "solved_valid_clue": 0.345703125,
+            "valid_sudoku": 0.345703125
+          }
+        }
+      }
+    },
+    "eval_clean": {
+      "loop1": {
+        "avg_filled": 1.0,
+        "blank_acc": 0.7979736328125,
+        "clue_ok": 0.814453125,
+        "label_exact": 0.02734375,
+        "solved_valid_clue": 0.02734375,
+        "valid_sudoku": 0.02734375
+      },
+      "loop2": {
+        "avg_filled": 1.0,
+        "blank_acc": 0.995361328125,
+        "clue_ok": 1.0,
+        "label_exact": 0.94921875,
+        "solved_valid_clue": 0.94921875,
+        "valid_sudoku": 0.94921875
+      },
+      "loop3": {
+        "avg_filled": 1.0,
+        "blank_acc": 0.999267578125,
+        "clue_ok": 1.0,
+        "label_exact": 0.99609375,
+        "solved_valid_clue": 0.99609375,
+        "valid_sudoku": 0.99609375
+      },
+      "loop4": {
+        "avg_filled": 1.0,
+        "blank_acc": 0.999267578125,
+        "clue_ok": 1.0,
+        "label_exact": 0.998046875,
+        "solved_valid_clue": 1.0,
+        "valid_sudoku": 1.0
+      }
+    },
+    "task": {
+      "h_cycles": 2,
+      "heads": 6,
+      "hidden_size": 192,
+      "hole_pattern": "random",
+      "hole_stages": "8-16:300,16-24:600",
+      "holes_max": 10,
+      "holes_min": 4,
+      "l_cycles": 4,
+      "layers": 2,
+      "model": "EqRModel",
+      "params": 962692,
+      "size": 9,
+      "train_loops": 4
+    },
+    "train": {
+      "future_seed_scale": 1.0,
+      "history": [
+        {
+          "ce": 0.4765625,
+          "holes_max": 16,
+          "holes_min": 8,
+          "loop1_ce": 1.078125,
+          "sec": 141.18651580810547,
+          "stage": 1,
+          "step": 100
+        },
+        {
+          "ce": 0.017822265625,
+          "holes_max": 16,
+          "holes_min": 8,
+          "loop1_ce": 0.609375,
+          "sec": 282.0500912666321,
+          "stage": 1,
+          "step": 200
+        },
+        {
+          "ce": 0.01031494140625,
+          "holes_max": 16,
+          "holes_min": 8,
+          "loop1_ce": 0.546875,
+          "sec": 342.4026679992676,
+          "stage": 1,
+          "step": 300
+        },
+        {
+          "ce": 0.00872802734375,
+          "holes_max": 24,
+          "holes_min": 16,
+          "loop1_ce": 0.80078125,
+          "sec": 378.43428206443787,
+          "stage": 2,
+          "step": 400
+        },
+        {
+          "ce": 0.02685546875,
+          "holes_max": 24,
+          "holes_min": 16,
+          "loop1_ce": 0.72265625,
+          "sec": 414.2045159339905,
+          "stage": 2,
+          "step": 500
+        },
+        {
+          "ce": 0.006134033203125,
+          "holes_max": 24,
+          "holes_min": 16,
+          "loop1_ce": 0.66015625,
+          "sec": 450.4533762931824,
+          "stage": 2,
+          "step": 600
+        },
+        {
+          "ce": 0.0036468505859375,
+          "holes_max": 24,
+          "holes_min": 16,
+          "loop1_ce": 0.671875,
+          "sec": 487.0607898235321,
+          "stage": 2,
+          "step": 700
+        },
+        {
+          "ce": 0.007110595703125,
+          "holes_max": 24,
+          "holes_min": 16,
+          "loop1_ce": 0.7265625,
+          "sec": 524.0314655303955,
+          "stage": 2,
+          "step": 800
+        },
+        {
+          "ce": 0.017333984375,
+          "holes_max": 24,
+          "holes_min": 16,
+          "loop1_ce": 0.58203125,
+          "sec": 561.4236850738525,
+          "stage": 2,
+          "step": 900
+        }
+      ],
+      "noise_mode": "feature_diff",
+      "train_ce_loss": 0.017333984375,
+      "train_loop1_loss": 0.58203125,
+      "train_sec": 561.4238047599792
+    }
+  }
+}

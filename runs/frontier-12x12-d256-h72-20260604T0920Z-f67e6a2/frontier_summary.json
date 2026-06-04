@@ -1,0 +1,46 @@
+{
+  "run_name": "frontier-12x12-d256-h72-20260604T0920Z-f67e6a2",
+  "source_sha": "f67e6a2e909dc39ce5ba48f622d93b1ec43f5ab3",
+  "recorded_at_utc": "2026-06-04T09:55:59.532238+00:00",
+  "gpu_row": "GPU1",
+  "board": {"size": 12, "box_rows": 3, "box_cols": 4},
+  "hypothesis": "The FutureSeed RWKV recurrent-loop paradigm may extend beyond 9x9 if loop depth can recover board-level consistency on a larger 12x12 constraint graph.",
+  "configuration": {
+    "d_model": 256,
+    "layers": 12,
+    "heads": 16,
+    "head_dim": 16,
+    "channel_mult": 4,
+    "max_loops": 5,
+    "future_seed_scale": 1,
+    "noise_scale": 0,
+    "rollout_noise_scale": 0,
+    "rwkv_kernel": "cuda",
+    "hole_stages": "16-36:300,36-60:500,60-72:300",
+    "full_batch": 80,
+    "full_eval_n": 384,
+    "eval_holes_list": [48, 60, 72, 84]
+  },
+  "train": {
+    "train_sec": 2111.1092,
+    "final_ce": 0.18565,
+    "final_loop1_loss": 1.023798,
+    "final_loop_last_loss": 0.18565
+  },
+  "eval_by_holes": {
+    "48": {"loop1_exact": 0.0, "loop2_exact": 0.684896, "loop3_exact": 0.877604, "loop4_exact": 0.882812, "loop5_exact": 0.888021, "loop5_blank_acc": 0.994412},
+    "60": {"loop1_exact": 0.0, "loop2_exact": 0.161458, "loop3_exact": 0.442708, "loop4_exact": 0.484375, "loop5_exact": 0.505208, "loop5_blank_acc": 0.974349},
+    "72": {"loop1_exact": 0.0, "loop2_exact": 0.002604, "loop3_exact": 0.023438, "loop4_exact": 0.039062, "loop5_exact": 0.044271, "loop5_blank_acc": 0.888057},
+    "84": {"loop1_exact": 0.0, "loop2_exact": 0.0, "loop3_exact": 0.0, "loop4_exact": 0.0, "loop5_exact": 0.0, "loop5_blank_acc": 0.699343}
+  },
+  "score": {
+    "key": "metrics.eval_clean.loop5.label_exact",
+    "value": 0.5052083730697632
+  },
+  "decision": "12x12 is supported at h60 and below; h72 is an edge case and h84 is outside the current regime. Proceed to a smaller 16x16 viability probe rather than blind capacity scaling.",
+  "lessons": [
+    "Loop depth is mandatory at 12x12 because loop1 exact is zero while loop5 h60 exact is 0.5052.",
+    "The frontier failure is board-level consistency: h72 blank accuracy is 0.8881 but exact solve is only 0.0443.",
+    "12x12 D256/L12 nearly saturates GPU1 memory, so 16x16 needs a smaller probe configuration."
+  ]
+}

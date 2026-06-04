@@ -14,6 +14,13 @@ if [[ ! -d "$EQR_DIR/.git" ]]; then
 fi
 
 if [[ -n "$(git -C "$EQR_DIR" status --short --untracked-files=no)" ]]; then
+  current_sha="$(git -C "$EQR_DIR" rev-parse HEAD)"
+  if [[ "$current_sha" == "$EQR_BASE_SHA" ]] && git -C "$EQR_DIR" apply --reverse --check "$PATCH_PATH" >/dev/null 2>&1; then
+    git -C "$EQR_DIR" rev-parse HEAD > "$EQR_DIR/.double-loop-base-sha"
+    printf 'EqR FutureSeed/feature-noise patch already applied at %s\n' "$EQR_DIR"
+    printf 'EqR ready: base=%s dir=%s\n' "$EQR_BASE_SHA" "$EQR_DIR"
+    exit 0
+  fi
   printf 'EqR repo has tracked local changes; refusing to overwrite: %s\n' "$EQR_DIR" >&2
   git -C "$EQR_DIR" status --short >&2
   exit 1

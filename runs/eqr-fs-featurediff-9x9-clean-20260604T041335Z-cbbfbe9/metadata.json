@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "cbbfbe9e1401b1cf3521f4aaf3e36e11cacbe2a3",
+  "mode": "eqr_probe",
+  "notes": "2026-06-04T04:13:35Z GPU1 EqR no-Hydra 9x9 FutureSeed+feature-diff probe at cbbfbe9. Hypothesis: EqR attractor recursion should exploit learned cross-level FutureSeed plus low-scale manifold-shaped feature noise without needing Hydra or flash_attn; if loop depth matters on holes12/16, this is a real mechanism branch rather than easy-distribution saturation. Result: train CE step600=0.0005 in 82.5s; holes8 loop4 exact=1.0000, holes12=0.9844, holes16=0.8945; loop gains are large (holes8 +0.9375, holes12 +0.9766, holes16 +0.8945). Decision: continue EqR FutureSeed direction; next high-ROI test is not broad ablation but selector/noise scheduling or harder-hole transfer. Lesson: flash_attn is unnecessary for this experiment; PyTorch CUDA SDPA is enough for seq81.",
+  "recorded_at_utc": "2026-06-04T04:15:03.305590+00:00",
+  "run_name": "eqr-fs-featurediff-9x9-clean-20260604T041335Z-cbbfbe9",
+  "score": 1.0,
+  "score_key": "metrics.eval_clean.loop4.label_exact",
+  "timestamp_utc": "2026-06-04T04:15:03.305590+00:00"
+}

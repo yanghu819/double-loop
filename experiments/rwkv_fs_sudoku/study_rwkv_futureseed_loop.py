@@ -37,11 +37,13 @@ ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
 UNITS: List[List[int]] = []
+CELL_TO_UNITS: List[List[int]] = []
 _UNIT_INDEX_CACHE: Dict[Tuple[int, int, int, str], torch.Tensor] = {}
+_CELL_TO_UNIT_INDEX_CACHE: Dict[Tuple[int, int, int, str], torch.Tensor] = {}
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
-    global N, BOX_ROWS, BOX_COLS, CELLS, BLANK, VOCAB, ROWS, COLS, BOXES, UNITS
+    global N, BOX_ROWS, BOX_COLS, CELLS, BLANK, VOCAB, ROWS, COLS, BOXES, UNITS, CELL_TO_UNITS
     if box_rows <= 0 or box_cols <= 0:
         inferred = {4: (2, 2), 6: (2, 3), 9: (3, 3), 12: (3, 4), 16: (4, 4), 25: (5, 5)}
         if size not in inferred:
@@ -64,7 +66,15 @@ def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
         for bc in range(0, N, BOX_COLS)
     ]
     UNITS = ROWS + COLS + BOXES
+    cell_to_units = [[] for _ in range(CELLS)]
+    for unit_idx, unit in enumerate(UNITS):
+        for cell_idx in unit:
+            cell_to_units[cell_idx].append(unit_idx)
+    if any(len(unit_ids) != 3 for unit_ids in cell_to_units):
+        raise ValueError("Every Sudoku cell must belong to exactly three units.")
+    CELL_TO_UNITS = cell_to_units
     _UNIT_INDEX_CACHE.clear()
+    _CELL_TO_UNIT_INDEX_CACHE.clear()
 
 
 configure_sudoku(N, BOX_ROWS, BOX_COLS)
@@ -548,6 +558,44 @@ class FutureSeedRWKV(nn.Module):
         return x, {"fs_gate_mean": zero, "fs_state_norm": zero}
 
 
+def cell_to_unit_tensor(device: torch.device) -> torch.Tensor:
+    key = (N, BOX_ROWS, BOX_COLS, str(device))
+    cached = _CELL_TO_UNIT_INDEX_CACHE.get(key)
+    if cached is None or cached.device != device:
+        cached = torch.tensor(CELL_TO_UNITS, dtype=torch.long, device=device)
+        _CELL_TO_UNIT_INDEX_CACHE[key] = cached
+    return cached
+
+
+class UnitStatePass(nn.Module):
+    def __init__(self, d_model: int, *, scale: float, gate_bias: float) -> None:
+        super().__init__()
+        self.unit_state_scale = float(scale)
+        self.norm = nn.LayerNorm(d_model)
+        self.proj = nn.Linear(d_model, d_model, bias=False)
+        self.gate_logit = nn.Parameter(torch.tensor(float(gate_bias)))
+        with torch.no_grad():
+            self.proj.weight.zero_()
+            idx = torch.arange(d_model)
+            self.proj.weight[idx, idx] = 1.0
+
+    def forward(self, hidden: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        scale = float(self.unit_state_scale)
+        zero = hidden.new_zeros(())
+        if scale == 0.0:
+            return hidden, {"unit_state_gate": zero, "unit_state_norm": zero}
+        units = unit_index_tensor(hidden.device)
+        cell_to_units = cell_to_unit_tensor(hidden.device)
+        unit_state = hidden[:, units, :].mean(dim=2)
+        cell_state = unit_state[:, cell_to_units, :].mean(dim=2)
+        message = self.proj(self.norm(cell_state)).to(hidden.dtype)
+        gate = torch.sigmoid(self.gate_logit.to(torch.float32)).to(hidden.dtype) * scale
+        return hidden + gate * message, {
+            "unit_state_gate": gate.mean(),
+            "unit_state_norm": message.norm(dim=-1).mean(),
+        }
+
+
 class FeatureNoiseBuffer:
     def __init__(self, *, capacity: int, feature_dim: int, device: torch.device, dtype: torch.dtype = torch.float32) -> None:
         self.capacity = int(capacity)
@@ -604,6 +652,8 @@ class FutureSeedLoopSudoku(nn.Module):
         lambda_: float,
         future_seed_scale: float,
         rwkv_kernel: str,
+        unit_state_scale: float,
+        unit_state_gate_bias: float,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -619,6 +669,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_scale=future_seed_scale,
             rwkv_kernel=rwkv_kernel,
         )
+        self.unit_state = UnitStatePass(d_model, scale=unit_state_scale, gate_bias=unit_state_gate_bias)
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.out_norm = nn.LayerNorm(d_model)
@@ -686,6 +737,8 @@ class FutureSeedLoopSudoku(nn.Module):
                 feature_buffer_add=feature_buffer_add,
                 allow_noise=True,
             )
+            z_h, unit_diag = self.unit_state(z_h)
+            fs_diag = {**fs_diag, **unit_diag}
             board_h = self.out_norm(z_h[:, :CELLS])
             loop_logits.append(self.head(board_h))
             fs_trace.append(fs_diag)
@@ -833,6 +886,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         lambda_=args.lambda_,
         future_seed_scale=args.future_seed_scale,
         rwkv_kernel=args.rwkv_kernel,
+        unit_state_scale=args.unit_state_scale,
+        unit_state_gate_bias=args.unit_state_gate_bias,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
@@ -914,6 +969,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "loop_loss_min_weight": args.loop_loss_min_weight,
         "loop_loss_weights": last_loop_weights,
         "unit_loss_weight": args.unit_loss_weight,
+        "unit_state_scale": args.unit_state_scale,
+        "unit_state_gate_bias": args.unit_state_gate_bias,
         "noise_mode": "feature_diff",
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -1507,6 +1564,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "loop_loss_power": args.loop_loss_power,
         "loop_loss_min_weight": args.loop_loss_min_weight,
         "unit_loss_weight": args.unit_loss_weight,
+        "unit_state_scale": args.unit_state_scale,
+        "unit_state_gate_bias": args.unit_state_gate_bias,
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
@@ -1606,6 +1665,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--loop_loss_power", type=float, default=2.0)
     p.add_argument("--loop_loss_min_weight", type=float, default=0.05)
     p.add_argument("--unit_loss_weight", type=float, default=0.0)
+    p.add_argument("--unit_state_scale", type=float, default=0.0)
+    p.add_argument("--unit_state_gate_bias", type=float, default=-2.0)
     p.add_argument("--noise_scale", type=float, default=0.01)
     p.add_argument("--feature_buffer_size", type=int, default=8192)
     p.add_argument("--feature_buffer_add", type=int, default=2048)

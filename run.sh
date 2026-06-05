@@ -196,6 +196,8 @@ COMMON_ARGS=(
   --loop_loss_power "${LOOP_LOSS_POWER:-2.0}"
   --loop_loss_min_weight "${LOOP_LOSS_MIN_WEIGHT:-0.05}"
   --unit_loss_weight "${UNIT_LOSS_WEIGHT:-0.0}"
+  --unit_state_scale "${UNIT_STATE_SCALE:-0.0}"
+  --unit_state_gate_bias "${UNIT_STATE_GATE_BIAS:--2.0}"
   --out_dir "$OUT_DIR"
 )
 

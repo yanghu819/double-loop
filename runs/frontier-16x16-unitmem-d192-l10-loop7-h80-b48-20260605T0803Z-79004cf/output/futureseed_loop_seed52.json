@@ -1,0 +1,1342 @@
+{
+  "args": {
+    "size": 16,
+    "box_rows": 0,
+    "box_cols": 0,
+    "steps": 300,
+    "batch": 48,
+    "d_model": 192,
+    "layers": 10,
+    "heads": 12,
+    "head_dim": 16,
+    "channel_mult": 4,
+    "l_cycles": 2,
+    "max_loops": 7,
+    "lambda_": 0.95,
+    "future_seed_scale": 1.0,
+    "rwkv_kernel": "cuda",
+    "loop_loss": "final",
+    "loop_loss_start": 1,
+    "loop_loss_power": 2.0,
+    "loop_loss_min_weight": 0.05,
+    "unit_loss_weight": 0.0,
+    "unit_state_scale": 1.0,
+    "unit_state_gate_bias": -1.0,
+    "unit_state_mode": "memory",
+    "unit_state_memory_decay": 0.7,
+    "unit_state_token_scale": 1.0,
+    "noise_scale": 0.0,
+    "feature_buffer_size": 8192,
+    "feature_buffer_add": 2048,
+    "rollout_ks": "1",
+    "rollout_loop_values": "1,3,5,7",
+    "rollout_noise_scale": 0.0,
+    "lr": 0.002,
+    "weight_decay": 0.001,
+    "holes_min": 2,
+    "holes_max": 4,
+    "hole_stages": "32-48:300,48-64:500,64-80:400",
+    "hole_pattern": "random",
+    "eval_hole_patterns": "",
+    "eval_holes": 64,
+    "eval_holes_list": "48,64,80,96",
+    "eval_n": 256,
+    "blank_loss_weight": 20.0,
+    "case_index": 0,
+    "seed": 52,
+    "log_every": 100,
+    "out_dir": "/huyang2/double-loop/.worktrees/unitmem-79004cf/runs/frontier-16x16-unitmem-d192-l10-loop7-h80-b48-20260605T0803Z-79004cf/output",
+    "cpu": false
+  },
+  "metrics": {
+    "train": {
+      "train_ce_loss": 0.12261423468589783,
+      "train_total_loss": 0.12261423468589783,
+      "train_loop1_loss": 0.5100845098495483,
+      "train_loop_last_loss": 0.12261423468589783,
+      "train_unit_loss": 0.012000763788819313,
+      "train_unit_weighted_loss": 0.012000763788819313,
+      "loop_loss_mode": "final",
+      "loop_loss_start": 1,
+      "loop_loss_power": 2.0,
+      "loop_loss_min_weight": 0.05,
+      "loop_loss_weights": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "unit_loss_weight": 0.0,
+      "unit_state_scale": 1.0,
+      "unit_state_gate_bias": -1.0,
+      "unit_state_mode": "memory",
+      "unit_state_memory_decay": 0.7,
+      "unit_state_token_scale": 1.0,
+      "noise_mode": "feature_diff",
+      "feature_buffer_count": 8192,
+      "train_sec": 1855.8327646255493,
+      "rwkv_kernel": "cuda"
+    },
+    "eval_clean": {
+      "loop1": {
+        "label_exact": 0.0,
+        "valid_sudoku": 0.0,
+        "solved_valid_clue": 0.0,
+        "clue_ok": 0.0,
+        "blank_acc": 0.802734375,
+        "avg_filled": 1.0
+      },
+      "loop1/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 114.63388061523438,
+        "unit_state_memory_norm": 14.791921615600586
+      },
+      "loop2": {
+        "label_exact": 0.21875,
+        "valid_sudoku": 0.22265625,
+        "solved_valid_clue": 0.22265625,
+        "clue_ok": 1.0,
+        "blank_acc": 0.9669189453125,
+        "avg_filled": 1.0
+      },
+      "loop2/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 103.27444458007812,
+        "unit_state_memory_norm": 16.617576599121094
+      },
+      "loop3": {
+        "label_exact": 0.234375,
+        "valid_sudoku": 0.234375,
+        "solved_valid_clue": 0.234375,
+        "clue_ok": 1.0,
+        "blank_acc": 0.96832275390625,
+        "avg_filled": 1.0
+      },
+      "loop3/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 62.145103454589844,
+        "unit_state_memory_norm": 66.25703430175781
+      },
+      "loop4": {
+        "label_exact": 0.23046875,
+        "valid_sudoku": 0.23046875,
+        "solved_valid_clue": 0.23046875,
+        "clue_ok": 1.0,
+        "blank_acc": 0.968505859375,
+        "avg_filled": 1.0
+      },
+      "loop4/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 59.833778381347656,
+        "unit_state_memory_norm": 248.89657592773438
+      },
+      "loop5": {
+        "label_exact": 0.23046875,
+        "valid_sudoku": 0.23046875,
+        "solved_valid_clue": 0.23046875,
+        "clue_ok": 1.0,
+        "blank_acc": 0.9683837890625,
+        "avg_filled": 1.0
+      },
+      "loop5/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 59.69618225097656,
+        "unit_state_memory_norm": 894.8790283203125
+      },
+      "loop6": {
+        "label_exact": 0.23046875,
+        "valid_sudoku": 0.23046875,
+        "solved_valid_clue": 0.23046875,
+        "clue_ok": 1.0,
+        "blank_acc": 0.96832275390625,
+        "avg_filled": 1.0
+      },
+      "loop6/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 59.695579528808594,
+        "unit_state_memory_norm": 3171.44287109375
+      },
+      "loop7": {
+        "label_exact": 0.23046875,
+        "valid_sudoku": 0.23046875,
+        "solved_valid_clue": 0.23046875,
+        "clue_ok": 1.0,
+        "blank_acc": 0.96844482421875,
+        "avg_filled": 1.0
+      },
+      "loop7/future_seed": {
+        "fs_gate_mean": 0.5052464604377747,
+        "fs_state_norm": 8.083943367004395,
+        "unit_state_gate": 0.4412376582622528,
+        "unit_state_norm": 59.699241638183594,
+        "unit_state_memory_norm": 11188.326171875
+      }
+    },
+    "eval_by_holes": {
+      "holes64": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.802734375,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 114.63388061523438,
+            "unit_state_memory_norm": 14.791921615600586
+          },
+          "loop2": {
+            "label_exact": 0.21875,
+            "valid_sudoku": 0.22265625,
+            "solved_valid_clue": 0.22265625,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9669189453125,
+            "avg_filled": 1.0
+          },
+          "loop2/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 103.27444458007812,
+            "unit_state_memory_norm": 16.617576599121094
+          },
+          "loop3": {
+            "label_exact": 0.234375,
+            "valid_sudoku": 0.234375,
+            "solved_valid_clue": 0.234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96832275390625,
+            "avg_filled": 1.0
+          },
+          "loop3/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 62.145103454589844,
+            "unit_state_memory_norm": 66.25703430175781
+          },
+          "loop4": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.968505859375,
+            "avg_filled": 1.0
+          },
+          "loop4/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 59.833778381347656,
+            "unit_state_memory_norm": 248.89657592773438
+          },
+          "loop5": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9683837890625,
+            "avg_filled": 1.0
+          },
+          "loop5/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 59.69618225097656,
+            "unit_state_memory_norm": 894.8790283203125
+          },
+          "loop6": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96832275390625,
+            "avg_filled": 1.0
+          },
+          "loop6/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 59.695579528808594,
+            "unit_state_memory_norm": 3171.44287109375
+          },
+          "loop7": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96844482421875,
+            "avg_filled": 1.0
+          },
+          "loop7/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 59.699241638183594,
+            "unit_state_memory_norm": 11188.326171875
+          }
+        }
+      },
+      "holes48": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0078125,
+            "blank_acc": 0.8965657353401184,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 112.05010986328125,
+            "unit_state_memory_norm": 14.758883476257324
+          },
+          "loop2": {
+            "label_exact": 0.703125,
+            "valid_sudoku": 0.70703125,
+            "solved_valid_clue": 0.70703125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9903157353401184,
+            "avg_filled": 1.0
+          },
+          "loop2/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 91.32938385009766,
+            "unit_state_memory_norm": 16.09834861755371
+          },
+          "loop3": {
+            "label_exact": 0.70703125,
+            "valid_sudoku": 0.71484375,
+            "solved_valid_clue": 0.71484375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.989990234375,
+            "avg_filled": 1.0
+          },
+          "loop3/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 55.40654754638672,
+            "unit_state_memory_norm": 64.6636962890625
+          },
+          "loop4": {
+            "label_exact": 0.69921875,
+            "valid_sudoku": 0.70703125,
+            "solved_valid_clue": 0.70703125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.98974609375,
+            "avg_filled": 1.0
+          },
+          "loop4/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 55.55107116699219,
+            "unit_state_memory_norm": 241.39718627929688
+          },
+          "loop5": {
+            "label_exact": 0.69921875,
+            "valid_sudoku": 0.70703125,
+            "solved_valid_clue": 0.70703125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9896647334098816,
+            "avg_filled": 1.0
+          },
+          "loop5/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 56.12128448486328,
+            "unit_state_memory_norm": 865.1561889648438
+          },
+          "loop6": {
+            "label_exact": 0.69921875,
+            "valid_sudoku": 0.70703125,
+            "solved_valid_clue": 0.70703125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9895833134651184,
+            "avg_filled": 1.0
+          },
+          "loop6/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 56.322959899902344,
+            "unit_state_memory_norm": 3062.5078125
+          },
+          "loop7": {
+            "label_exact": 0.69921875,
+            "valid_sudoku": 0.70703125,
+            "solved_valid_clue": 0.70703125,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9895833134651184,
+            "avg_filled": 1.0
+          },
+          "loop7/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 56.3845100402832,
+            "unit_state_memory_norm": 10799.78515625
+          }
+        }
+      },
+      "holes80": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.707470715045929,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 116.33201599121094,
+            "unit_state_memory_norm": 14.7911376953125
+          },
+          "loop2": {
+            "label_exact": 0.00390625,
+            "valid_sudoku": 0.00390625,
+            "solved_valid_clue": 0.00390625,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9142090082168579,
+            "avg_filled": 1.0
+          },
+          "loop2/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 111.30064392089844,
+            "unit_state_memory_norm": 17.421688079833984
+          },
+          "loop3": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9171386957168579,
+            "avg_filled": 1.0
+          },
+          "loop3/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 67.27645111083984,
+            "unit_state_memory_norm": 68.83613586425781
+          },
+          "loop4": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.91748046875,
+            "avg_filled": 1.0
+          },
+          "loop4/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 62.793800354003906,
+            "unit_state_memory_norm": 260.127197265625
+          },
+          "loop5": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.91748046875,
+            "avg_filled": 1.0
+          },
+          "loop5/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 62.105857849121094,
+            "unit_state_memory_norm": 938.064697265625
+          },
+          "loop6": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9173828363418579,
+            "avg_filled": 1.0
+          },
+          "loop6/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 61.961483001708984,
+            "unit_state_memory_norm": 3328.109375
+          },
+          "loop7": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.917431652545929,
+            "avg_filled": 1.0
+          },
+          "loop7/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 61.9261360168457,
+            "unit_state_memory_norm": 11745.2607421875
+          }
+        }
+      },
+      "holes96": {
+        "eval_clean": {
+          "loop1": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.5940755009651184,
+            "avg_filled": 1.0
+          },
+          "loop1/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 116.61676025390625,
+            "unit_state_memory_norm": 14.740962028503418
+          },
+          "loop2": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.8290202021598816,
+            "avg_filled": 1.0
+          },
+          "loop2/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 114.27226257324219,
+            "unit_state_memory_norm": 18.461286544799805
+          },
+          "loop3": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.8343912959098816,
+            "avg_filled": 1.0
+          },
+          "loop3/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 71.41133117675781,
+            "unit_state_memory_norm": 71.84893798828125
+          },
+          "loop4": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.8342692255973816,
+            "avg_filled": 1.0
+          },
+          "loop4/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 65.21095275878906,
+            "unit_state_memory_norm": 272.63604736328125
+          },
+          "loop5": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.8343505859375,
+            "avg_filled": 1.0
+          },
+          "loop5/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 64.08949279785156,
+            "unit_state_memory_norm": 985.7667846679688
+          },
+          "loop6": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.8343098759651184,
+            "avg_filled": 1.0
+          },
+          "loop6/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 63.833343505859375,
+            "unit_state_memory_norm": 3500.837646484375
+          },
+          "loop7": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 1.0,
+            "blank_acc": 0.8343098759651184,
+            "avg_filled": 1.0
+          },
+          "loop7/future_seed": {
+            "fs_gate_mean": 0.5052464604377747,
+            "fs_state_norm": 8.083943367004395,
+            "unit_state_gate": 0.4412376582622528,
+            "unit_state_norm": 63.767879486083984,
+            "unit_state_memory_norm": 12358.9990234375
+          }
+        }
+      }
+    },
+    "eval_by_pattern": {
+      "random": {
+        "holes64": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0,
+              "blank_acc": 0.802734375,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 114.63388061523438,
+              "unit_state_memory_norm": 14.791921615600586
+            },
+            "loop2": {
+              "label_exact": 0.21875,
+              "valid_sudoku": 0.22265625,
+              "solved_valid_clue": 0.22265625,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9669189453125,
+              "avg_filled": 1.0
+            },
+            "loop2/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 103.27444458007812,
+              "unit_state_memory_norm": 16.617576599121094
+            },
+            "loop3": {
+              "label_exact": 0.234375,
+              "valid_sudoku": 0.234375,
+              "solved_valid_clue": 0.234375,
+              "clue_ok": 1.0,
+              "blank_acc": 0.96832275390625,
+              "avg_filled": 1.0
+            },
+            "loop3/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 62.145103454589844,
+              "unit_state_memory_norm": 66.25703430175781
+            },
+            "loop4": {
+              "label_exact": 0.23046875,
+              "valid_sudoku": 0.23046875,
+              "solved_valid_clue": 0.23046875,
+              "clue_ok": 1.0,
+              "blank_acc": 0.968505859375,
+              "avg_filled": 1.0
+            },
+            "loop4/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 59.833778381347656,
+              "unit_state_memory_norm": 248.89657592773438
+            },
+            "loop5": {
+              "label_exact": 0.23046875,
+              "valid_sudoku": 0.23046875,
+              "solved_valid_clue": 0.23046875,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9683837890625,
+              "avg_filled": 1.0
+            },
+            "loop5/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 59.69618225097656,
+              "unit_state_memory_norm": 894.8790283203125
+            },
+            "loop6": {
+              "label_exact": 0.23046875,
+              "valid_sudoku": 0.23046875,
+              "solved_valid_clue": 0.23046875,
+              "clue_ok": 1.0,
+              "blank_acc": 0.96832275390625,
+              "avg_filled": 1.0
+            },
+            "loop6/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 59.695579528808594,
+              "unit_state_memory_norm": 3171.44287109375
+            },
+            "loop7": {
+              "label_exact": 0.23046875,
+              "valid_sudoku": 0.23046875,
+              "solved_valid_clue": 0.23046875,
+              "clue_ok": 1.0,
+              "blank_acc": 0.96844482421875,
+              "avg_filled": 1.0
+            },
+            "loop7/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 59.699241638183594,
+              "unit_state_memory_norm": 11188.326171875
+            }
+          }
+        },
+        "holes48": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0078125,
+              "blank_acc": 0.8965657353401184,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 112.05010986328125,
+              "unit_state_memory_norm": 14.758883476257324
+            },
+            "loop2": {
+              "label_exact": 0.703125,
+              "valid_sudoku": 0.70703125,
+              "solved_valid_clue": 0.70703125,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9903157353401184,
+              "avg_filled": 1.0
+            },
+            "loop2/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 91.32938385009766,
+              "unit_state_memory_norm": 16.09834861755371
+            },
+            "loop3": {
+              "label_exact": 0.70703125,
+              "valid_sudoku": 0.71484375,
+              "solved_valid_clue": 0.71484375,
+              "clue_ok": 1.0,
+              "blank_acc": 0.989990234375,
+              "avg_filled": 1.0
+            },
+            "loop3/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 55.40654754638672,
+              "unit_state_memory_norm": 64.6636962890625
+            },
+            "loop4": {
+              "label_exact": 0.69921875,
+              "valid_sudoku": 0.70703125,
+              "solved_valid_clue": 0.70703125,
+              "clue_ok": 1.0,
+              "blank_acc": 0.98974609375,
+              "avg_filled": 1.0
+            },
+            "loop4/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 55.55107116699219,
+              "unit_state_memory_norm": 241.39718627929688
+            },
+            "loop5": {
+              "label_exact": 0.69921875,
+              "valid_sudoku": 0.70703125,
+              "solved_valid_clue": 0.70703125,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9896647334098816,
+              "avg_filled": 1.0
+            },
+            "loop5/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 56.12128448486328,
+              "unit_state_memory_norm": 865.1561889648438
+            },
+            "loop6": {
+              "label_exact": 0.69921875,
+              "valid_sudoku": 0.70703125,
+              "solved_valid_clue": 0.70703125,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9895833134651184,
+              "avg_filled": 1.0
+            },
+            "loop6/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 56.322959899902344,
+              "unit_state_memory_norm": 3062.5078125
+            },
+            "loop7": {
+              "label_exact": 0.69921875,
+              "valid_sudoku": 0.70703125,
+              "solved_valid_clue": 0.70703125,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9895833134651184,
+              "avg_filled": 1.0
+            },
+            "loop7/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 56.3845100402832,
+              "unit_state_memory_norm": 10799.78515625
+            }
+          }
+        },
+        "holes80": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0,
+              "blank_acc": 0.707470715045929,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 116.33201599121094,
+              "unit_state_memory_norm": 14.7911376953125
+            },
+            "loop2": {
+              "label_exact": 0.00390625,
+              "valid_sudoku": 0.00390625,
+              "solved_valid_clue": 0.00390625,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9142090082168579,
+              "avg_filled": 1.0
+            },
+            "loop2/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 111.30064392089844,
+              "unit_state_memory_norm": 17.421688079833984
+            },
+            "loop3": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9171386957168579,
+              "avg_filled": 1.0
+            },
+            "loop3/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 67.27645111083984,
+              "unit_state_memory_norm": 68.83613586425781
+            },
+            "loop4": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.91748046875,
+              "avg_filled": 1.0
+            },
+            "loop4/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 62.793800354003906,
+              "unit_state_memory_norm": 260.127197265625
+            },
+            "loop5": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.91748046875,
+              "avg_filled": 1.0
+            },
+            "loop5/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 62.105857849121094,
+              "unit_state_memory_norm": 938.064697265625
+            },
+            "loop6": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.9173828363418579,
+              "avg_filled": 1.0
+            },
+            "loop6/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 61.961483001708984,
+              "unit_state_memory_norm": 3328.109375
+            },
+            "loop7": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.917431652545929,
+              "avg_filled": 1.0
+            },
+            "loop7/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 61.9261360168457,
+              "unit_state_memory_norm": 11745.2607421875
+            }
+          }
+        },
+        "holes96": {
+          "eval_clean": {
+            "loop1": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 0.0,
+              "blank_acc": 0.5940755009651184,
+              "avg_filled": 1.0
+            },
+            "loop1/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 116.61676025390625,
+              "unit_state_memory_norm": 14.740962028503418
+            },
+            "loop2": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.8290202021598816,
+              "avg_filled": 1.0
+            },
+            "loop2/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 114.27226257324219,
+              "unit_state_memory_norm": 18.461286544799805
+            },
+            "loop3": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.8343912959098816,
+              "avg_filled": 1.0
+            },
+            "loop3/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 71.41133117675781,
+              "unit_state_memory_norm": 71.84893798828125
+            },
+            "loop4": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.8342692255973816,
+              "avg_filled": 1.0
+            },
+            "loop4/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 65.21095275878906,
+              "unit_state_memory_norm": 272.63604736328125
+            },
+            "loop5": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.8343505859375,
+              "avg_filled": 1.0
+            },
+            "loop5/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 64.08949279785156,
+              "unit_state_memory_norm": 985.7667846679688
+            },
+            "loop6": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.8343098759651184,
+              "avg_filled": 1.0
+            },
+            "loop6/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 63.833343505859375,
+              "unit_state_memory_norm": 3500.837646484375
+            },
+            "loop7": {
+              "label_exact": 0.0,
+              "valid_sudoku": 0.0,
+              "solved_valid_clue": 0.0,
+              "clue_ok": 1.0,
+              "blank_acc": 0.8343098759651184,
+              "avg_filled": 1.0
+            },
+            "loop7/future_seed": {
+              "fs_gate_mean": 0.5052464604377747,
+              "fs_state_norm": 8.083943367004395,
+              "unit_state_gate": 0.4412376582622528,
+              "unit_state_norm": 63.767879486083984,
+              "unit_state_memory_norm": 12358.9990234375
+            }
+          }
+        }
+      }
+    },
+    "rollouts": {
+      "K1": {
+        "oracle_label_exact": 0.23046875,
+        "oracle_solved_valid_clue": 0.23046875,
+        "trajectory_token_disagreement": 0.0,
+        "selector_confidence": {
+          "label_exact": 0.23046875,
+          "valid_sudoku": 0.23046875,
+          "solved_valid_clue": 0.23046875,
+          "clue_ok": 1.0,
+          "blank_acc": 0.96844482421875,
+          "avg_filled": 1.0
+        },
+        "selector_consistency": {
+          "label_exact": 0.23046875,
+          "valid_sudoku": 0.23046875,
+          "solved_valid_clue": 0.23046875,
+          "clue_ok": 1.0,
+          "blank_acc": 0.96844482421875,
+          "avg_filled": 1.0
+        },
+        "selector_residual": {
+          "label_exact": 0.23046875,
+          "valid_sudoku": 0.23046875,
+          "solved_valid_clue": 0.23046875,
+          "clue_ok": 1.0,
+          "blank_acc": 0.96844482421875,
+          "avg_filled": 1.0
+        },
+        "selector_majority": {
+          "label_exact": 0.23046875,
+          "valid_sudoku": 0.23046875,
+          "solved_valid_clue": 0.23046875,
+          "clue_ok": 1.0,
+          "blank_acc": 0.96844482421875,
+          "avg_filled": 1.0
+        },
+        "selector_gap_confidence": 0.0,
+        "selector_gap_consistency": 0.0,
+        "selector_gap_residual": 0.0,
+        "selector_gap_majority": 0.0
+      }
+    },
+    "rollouts_by_loop": {
+      "loop1": {
+        "K1": {
+          "oracle_label_exact": 0.0,
+          "oracle_solved_valid_clue": 0.0,
+          "trajectory_token_disagreement": 0.0,
+          "selector_confidence": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.802734375,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.802734375,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.802734375,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.0,
+            "valid_sudoku": 0.0,
+            "solved_valid_clue": 0.0,
+            "clue_ok": 0.0,
+            "blank_acc": 0.802734375,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.0,
+          "selector_gap_consistency": 0.0,
+          "selector_gap_residual": 0.0,
+          "selector_gap_majority": 0.0
+        }
+      },
+      "loop3": {
+        "K1": {
+          "oracle_label_exact": 0.234375,
+          "oracle_solved_valid_clue": 0.234375,
+          "trajectory_token_disagreement": 0.0,
+          "selector_confidence": {
+            "label_exact": 0.234375,
+            "valid_sudoku": 0.234375,
+            "solved_valid_clue": 0.234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96832275390625,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.234375,
+            "valid_sudoku": 0.234375,
+            "solved_valid_clue": 0.234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96832275390625,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.234375,
+            "valid_sudoku": 0.234375,
+            "solved_valid_clue": 0.234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96832275390625,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.234375,
+            "valid_sudoku": 0.234375,
+            "solved_valid_clue": 0.234375,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96832275390625,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.0,
+          "selector_gap_consistency": 0.0,
+          "selector_gap_residual": 0.0,
+          "selector_gap_majority": 0.0
+        }
+      },
+      "loop5": {
+        "K1": {
+          "oracle_label_exact": 0.23046875,
+          "oracle_solved_valid_clue": 0.23046875,
+          "trajectory_token_disagreement": 0.0,
+          "selector_confidence": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9683837890625,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9683837890625,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9683837890625,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.9683837890625,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.0,
+          "selector_gap_consistency": 0.0,
+          "selector_gap_residual": 0.0,
+          "selector_gap_majority": 0.0
+        }
+      },
+      "loop7": {
+        "K1": {
+          "oracle_label_exact": 0.23046875,
+          "oracle_solved_valid_clue": 0.23046875,
+          "trajectory_token_disagreement": 0.0,
+          "selector_confidence": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96844482421875,
+            "avg_filled": 1.0
+          },
+          "selector_consistency": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96844482421875,
+            "avg_filled": 1.0
+          },
+          "selector_residual": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96844482421875,
+            "avg_filled": 1.0
+          },
+          "selector_majority": {
+            "label_exact": 0.23046875,
+            "valid_sudoku": 0.23046875,
+            "solved_valid_clue": 0.23046875,
+            "clue_ok": 1.0,
+            "blank_acc": 0.96844482421875,
+            "avg_filled": 1.0
+          },
+          "selector_gap_confidence": 0.0,
+          "selector_gap_consistency": 0.0,
+          "selector_gap_residual": 0.0,
+          "selector_gap_majority": 0.0
+        }
+      }
+    },
+    "decision": "Depth loop adds useful full-board refinement.",
+    "task": {
+      "size": 16,
+      "box_rows": 4,
+      "box_cols": 4,
+      "hole_pattern": "random",
+      "eval_hole_patterns": [
+        "random"
+      ],
+      "hole_stages": [
+        [
+          32,
+          48,
+          300
+        ],
+        [
+          48,
+          64,
+          500
+        ],
+        [
+          64,
+          80,
+          400
+        ]
+      ],
+      "max_loops": 7,
+      "loop_loss": "final",
+      "loop_loss_start": 1,
+      "loop_loss_power": 2.0,
+      "loop_loss_min_weight": 0.05,
+      "unit_loss_weight": 0.0,
+      "unit_state_scale": 1.0,
+      "unit_state_gate_bias": -1.0,
+      "unit_state_mode": "memory",
+      "unit_state_memory_decay": 0.7,
+      "unit_state_token_scale": 1.0,
+      "noise_mode": "feature_diff",
+      "feature_buffer_size": 8192,
+      "future_seed_scale": 1.0,
+      "rwkv_kernel": "cuda",
+      "rollout_ks": [
+        1
+      ],
+      "rollout_loop_values": [
+        1,
+        3,
+        5,
+        7
+      ],
+      "rollout_noise_scale": 0.0,
+      "mainline": "future_seed_loop"
+    },
+    "artifacts": {
+      "case_html": "/huyang2/double-loop/.worktrees/unitmem-79004cf/runs/frontier-16x16-unitmem-d192-l10-loop7-h80-b48-20260605T0803Z-79004cf/output/futureseed_loop_case_seed52.html"
+    }
+  }
+}

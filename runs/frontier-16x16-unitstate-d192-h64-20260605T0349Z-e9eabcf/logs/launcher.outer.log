@@ -1,0 +1,58 @@
+nohup: ignoring input
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/unitstate-e9/runs/frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf
+git_sha=e9eabcff07c207335ec8930c479ee841996e3b90
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:16-32] step=0100 ce=0.2129 total=0.2129 loop1=0.2063 loop_last=0.2129 unit=0.0105
+[future_seed_loop stage=1:16-32] step=0200 ce=0.0467 total=0.0467 loop1=0.0726 loop_last=0.0467 unit=0.0026
+[future_seed_loop stage=1:16-32] step=0300 ce=0.0273 total=0.0273 loop1=0.0481 loop_last=0.0273 unit=0.0017
+[future_seed_loop stage=2:32-48] step=0400 ce=0.0956 total=0.0956 loop1=0.1383 loop_last=0.0956 unit=0.0087
+[future_seed_loop stage=2:32-48] step=0500 ce=0.0844 total=0.0844 loop1=0.1322 loop_last=0.0844 unit=0.0082
+[future_seed_loop stage=2:32-48] step=0600 ce=0.0736 total=0.0736 loop1=0.1314 loop_last=0.0736 unit=0.0068
+[future_seed_loop stage=2:32-48] step=0700 ce=0.0764 total=0.0764 loop1=0.1281 loop_last=0.0764 unit=0.0076
+[future_seed_loop stage=3:48-64] step=0800 ce=0.1497 total=0.1497 loop1=0.2687 loop_last=0.1497 unit=0.0157
+[future_seed_loop stage=3:48-64] step=0900 ce=0.1344 total=0.1344 loop1=0.2667 loop_last=0.1344 unit=0.0133
+[future_seed_loop stage=3:48-64] step=1000 ce=0.1102 total=0.1102 loop1=0.2491 loop_last=0.1102 unit=0.0110
+
+full-board metrics
+loop=1 exact=0.2031, valid=0.2031, solved=0.2031, blank_acc=0.9520
+        fs_gate=0.497, fs_state_norm=7.952
+loop=2 exact=0.6836, valid=0.6836, solved=0.6836, blank_acc=0.9866
+        fs_gate=0.497, fs_state_norm=7.952
+loop=3 exact=0.6758, valid=0.6758, solved=0.6758, blank_acc=0.9865
+        fs_gate=0.497, fs_state_norm=7.952
+loop=4 exact=0.6875, valid=0.6875, solved=0.6875, blank_acc=0.9871
+        fs_gate=0.497, fs_state_norm=7.952
+loop=5 exact=0.6914, valid=0.6914, solved=0.6914, blank_acc=0.9872
+        fs_gate=0.497, fs_state_norm=7.952
+
+stochastic rollout metrics
+K1 oracle_exact=0.6914 oracle_solved=0.6914 disagree=0.0000
+  confidence exact=0.6914, valid=0.6914, solved=0.6914, blank_acc=0.9872; gap=0.0000
+  consistency exact=0.6914, valid=0.6914, solved=0.6914, blank_acc=0.9872; gap=0.0000
+  residual    exact=0.6914, valid=0.6914, solved=0.6914, blank_acc=0.9872; gap=0.0000
+  majority    exact=0.6914, valid=0.6914, solved=0.6914, blank_acc=0.9872; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.2031 confidence_exact=0.2031 residual_exact=0.2031 disagree=0.0000
+loop3
+  K1 oracle_exact=0.6758 confidence_exact=0.6758 residual_exact=0.6758 disagree=0.0000
+loop5
+  K1 oracle_exact=0.6914 confidence_exact=0.6914 residual_exact=0.6914 disagree=0.0000
+
+hole-transfer metrics
+holes=32 exact=0.6914, valid=0.6914, solved=0.6914, blank_acc=0.9872; indep=0.6618, exact/indep=1.04
+holes=48 exact=0.2148, valid=0.2148, solved=0.2148, blank_acc=0.9631; indep=0.1648, exact/indep=1.30
+holes=64 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.9156; indep=0.0035, exact/indep=3.31
+holes=80 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.8386; indep=0.0000, exact/indep=0.00
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/unitstate-e9/runs/frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/unitstate-e9/runs/frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/unitstate-e9/runs/frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf/output/futureseed_loop_case_seed52.html
+recorded run=frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf score=0.69140625 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/unitstate-e9/runs/frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf

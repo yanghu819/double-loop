@@ -4,7 +4,7 @@ Purpose: identify the largest Sudoku board currently supported by the FutureSeed
 
 ## Result
 
-The current paradigm supports 12x12 but not 16x16 full-board solving under the tested budget.
+The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The new explicit unit-state mechanism opens a 16x16 foothold under the tested budget.
 
 | board | run | key result | decision |
 | --- | --- | --- | --- |
@@ -14,6 +14,7 @@ The current paradigm supports 12x12 but not 16x16 full-board solving under the t
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
 | 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
 | 16x16 delayed+unit loss | `frontier-16x16-delayed-unit-d256-l8-20260605T0236Z-37a3d6e` | delayed loop CE + unit digit-mass loss; final CE `1.0642`, h24-h48 exact `0.0`, h32 blank_acc `0.3831` | loss-only rescue is negative |
+| 16x16 unit-state | `frontier-16x16-unitstate-d192-h64-20260605T0349Z-e9eabcf` | explicit row/col/box state passing; h32 exact `0.6914`, h48 `0.2148`, h64 `0.0117` | 16x16 opened |
 
 ## Insight
 
@@ -23,13 +24,16 @@ Loop depth becomes more important at 12x12: loop1 exact is zero across evaluated
 
 The delayed+unit-loss probe rules out a loss-only patch. The unit digit-mass objective is satisfied by near-uniform predictions and did not create a full-board communication path; K8 oracle exact remained `0.0`, so this is not a selector failure.
 
+The unit-state run changes the conclusion: the 16x16 cliff was not mainly hidden size or loop count. It was missing row/column/box communication. With explicit unit-state pooling and broadcast, the same D192/L10/loop5 frontier jumps from h32 exact `0.0039` to `0.6914`.
+
 ## Decision
 
-Treat 12x12 as the largest supported Sudoku scale for the current paradigm. Do not run more 16x16 seed repeats or high-hole repeats.
+Treat 12x12 as the largest supported scale for the original flattened paradigm. Treat 16x16 as supported by the new unit-state mainline, with h64/h80 still frontier territory.
 
 Next high-ROI work should change the mechanism:
 
-1. Add hierarchical row/col/box tokens or unit-level state passing.
-2. Add shaped intermediate loop supervision only as a supporting objective; the naive equal `LOOP_LOSS=all` and delayed unit-loss rescue were both negative.
-3. Keep selector work paused until K-oracle improves; the latest K8 oracle gap is zero.
-4. Fix experiment tracking so source snapshots are stored outside Git once they exceed GitHub's hard file limit.
+1. Push 16x16 unit-state to h64/h80 with a harder curriculum.
+2. Try 25x25 feasibility with unit-state enabled, conservative holes, and strict kill criteria.
+3. Add true row/col/box unit tokens only if pooled unit-state plateaus.
+4. Keep selector work paused until K-oracle improves; current K1 is already the main result.
+5. Fix experiment tracking so source snapshots are stored outside Git once they exceed GitHub's hard file limit.

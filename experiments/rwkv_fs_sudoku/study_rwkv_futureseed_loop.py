@@ -568,31 +568,68 @@ def cell_to_unit_tensor(device: torch.device) -> torch.Tensor:
 
 
 class UnitStatePass(nn.Module):
-    def __init__(self, d_model: int, *, scale: float, gate_bias: float) -> None:
+    def __init__(
+        self,
+        d_model: int,
+        *,
+        scale: float,
+        gate_bias: float,
+        mode: str,
+        memory_decay: float,
+        token_scale: float,
+    ) -> None:
         super().__init__()
+        if mode not in {"pooled", "memory"}:
+            raise ValueError("--unit_state_mode must be 'pooled' or 'memory'")
+        self.mode = mode
         self.unit_state_scale = float(scale)
+        self.memory_decay = float(memory_decay)
+        self.token_scale = float(token_scale)
         self.norm = nn.LayerNorm(d_model)
         self.proj = nn.Linear(d_model, d_model, bias=False)
+        self.unit_position = nn.Embedding(len(UNITS), d_model)
         self.gate_logit = nn.Parameter(torch.tensor(float(gate_bias)))
         with torch.no_grad():
             self.proj.weight.zero_()
             idx = torch.arange(d_model)
             self.proj.weight[idx, idx] = 1.0
+            nn.init.normal_(self.unit_position.weight, mean=0.0, std=0.02)
 
-    def forward(self, hidden: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def forward(
+        self,
+        hidden: torch.Tensor,
+        unit_memory: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Dict[str, torch.Tensor]]:
         scale = float(self.unit_state_scale)
         zero = hidden.new_zeros(())
         if scale == 0.0:
-            return hidden, {"unit_state_gate": zero, "unit_state_norm": zero}
+            return hidden, unit_memory, {
+                "unit_state_gate": zero,
+                "unit_state_norm": zero,
+                "unit_state_memory_norm": zero,
+            }
         units = unit_index_tensor(hidden.device)
         cell_to_units = cell_to_unit_tensor(hidden.device)
-        unit_state = hidden[:, units, :].mean(dim=2)
+        pooled = hidden[:, units, :].mean(dim=2)
+        if self.mode == "memory":
+            unit_ids = torch.arange(len(UNITS), dtype=torch.long, device=hidden.device)
+            unit_tokens = pooled + self.unit_position(unit_ids).unsqueeze(0).to(dtype=hidden.dtype) * float(self.token_scale)
+            if unit_memory is None or unit_memory.shape != unit_tokens.shape:
+                unit_state = unit_tokens
+            else:
+                decay = min(max(float(self.memory_decay), 0.0), 0.999)
+                unit_state = unit_memory.to(dtype=hidden.dtype) * decay + unit_tokens * (1.0 - decay)
+            next_unit_memory: Optional[torch.Tensor] = unit_state
+        else:
+            unit_state = pooled
+            next_unit_memory = unit_memory
         cell_state = unit_state[:, cell_to_units, :].mean(dim=2)
         message = self.proj(self.norm(cell_state)).to(hidden.dtype)
         gate = torch.sigmoid(self.gate_logit.to(torch.float32)).to(hidden.dtype) * scale
-        return hidden + gate * message, {
+        return hidden + gate * message, next_unit_memory, {
             "unit_state_gate": gate.mean(),
             "unit_state_norm": message.norm(dim=-1).mean(),
+            "unit_state_memory_norm": unit_state.norm(dim=-1).mean(),
         }
 
 
@@ -654,6 +691,9 @@ class FutureSeedLoopSudoku(nn.Module):
         rwkv_kernel: str,
         unit_state_scale: float,
         unit_state_gate_bias: float,
+        unit_state_mode: str,
+        unit_state_memory_decay: float,
+        unit_state_token_scale: float,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -669,7 +709,14 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_scale=future_seed_scale,
             rwkv_kernel=rwkv_kernel,
         )
-        self.unit_state = UnitStatePass(d_model, scale=unit_state_scale, gate_bias=unit_state_gate_bias)
+        self.unit_state = UnitStatePass(
+            d_model,
+            scale=unit_state_scale,
+            gate_bias=unit_state_gate_bias,
+            mode=unit_state_mode,
+            memory_decay=unit_state_memory_decay,
+            token_scale=unit_state_token_scale,
+        )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.out_norm = nn.LayerNorm(d_model)
@@ -714,6 +761,7 @@ class FutureSeedLoopSudoku(nn.Module):
         batch_size, seq_len, _channels = x.shape
         z_h = self.h_init.expand(batch_size, seq_len, -1)
         z_l = self.l_init.expand(batch_size, seq_len, -1)
+        unit_memory: Optional[torch.Tensor] = None
 
         loop_logits: List[torch.Tensor] = []
         fs_trace: List[Dict[str, torch.Tensor]] = []
@@ -737,7 +785,7 @@ class FutureSeedLoopSudoku(nn.Module):
                 feature_buffer_add=feature_buffer_add,
                 allow_noise=True,
             )
-            z_h, unit_diag = self.unit_state(z_h)
+            z_h, unit_memory, unit_diag = self.unit_state(z_h, unit_memory)
             fs_diag = {**fs_diag, **unit_diag}
             board_h = self.out_norm(z_h[:, :CELLS])
             loop_logits.append(self.head(board_h))
@@ -888,6 +936,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         rwkv_kernel=args.rwkv_kernel,
         unit_state_scale=args.unit_state_scale,
         unit_state_gate_bias=args.unit_state_gate_bias,
+        unit_state_mode=args.unit_state_mode,
+        unit_state_memory_decay=args.unit_state_memory_decay,
+        unit_state_token_scale=args.unit_state_token_scale,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
@@ -971,6 +1022,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "unit_loss_weight": args.unit_loss_weight,
         "unit_state_scale": args.unit_state_scale,
         "unit_state_gate_bias": args.unit_state_gate_bias,
+        "unit_state_mode": args.unit_state_mode,
+        "unit_state_memory_decay": args.unit_state_memory_decay,
+        "unit_state_token_scale": args.unit_state_token_scale,
         "noise_mode": "feature_diff",
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -1566,6 +1620,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "unit_loss_weight": args.unit_loss_weight,
         "unit_state_scale": args.unit_state_scale,
         "unit_state_gate_bias": args.unit_state_gate_bias,
+        "unit_state_mode": args.unit_state_mode,
+        "unit_state_memory_decay": args.unit_state_memory_decay,
+        "unit_state_token_scale": args.unit_state_token_scale,
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
@@ -1667,6 +1724,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--unit_loss_weight", type=float, default=0.0)
     p.add_argument("--unit_state_scale", type=float, default=0.0)
     p.add_argument("--unit_state_gate_bias", type=float, default=-2.0)
+    p.add_argument("--unit_state_mode", choices=("pooled", "memory"), default="pooled")
+    p.add_argument("--unit_state_memory_decay", type=float, default=0.5)
+    p.add_argument("--unit_state_token_scale", type=float, default=1.0)
     p.add_argument("--noise_scale", type=float, default=0.01)
     p.add_argument("--feature_buffer_size", type=int, default=8192)
     p.add_argument("--feature_buffer_add", type=int, default=2048)

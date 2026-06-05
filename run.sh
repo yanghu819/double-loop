@@ -198,6 +198,9 @@ COMMON_ARGS=(
   --unit_loss_weight "${UNIT_LOSS_WEIGHT:-0.0}"
   --unit_state_scale "${UNIT_STATE_SCALE:-0.0}"
   --unit_state_gate_bias "${UNIT_STATE_GATE_BIAS:--2.0}"
+  --unit_state_mode "${UNIT_STATE_MODE:-pooled}"
+  --unit_state_memory_decay "${UNIT_STATE_MEMORY_DECAY:-0.5}"
+  --unit_state_token_scale "${UNIT_STATE_TOKEN_SCALE:-1.0}"
   --out_dir "$OUT_DIR"
 )
 

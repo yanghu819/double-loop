@@ -1,0 +1,60 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/harder16-f170ff7/runs/frontier-16x16-unitstate-d256-l12-loop7-h80-b32-20260605T0658Z-f170ff7
+git_sha=f170ff74bff34392a3bb32dbe8a3a1eb16c7a4ae
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda
+[future_seed_loop stage=1:32-48] step=0100 ce=0.3058 total=0.3058 loop1=0.2835 loop_last=0.3058 unit=0.0234
+[future_seed_loop stage=1:32-48] step=0200 ce=0.1498 total=0.1498 loop1=0.1519 loop_last=0.1498 unit=0.0162
+[future_seed_loop stage=1:32-48] step=0300 ce=0.0953 total=0.0953 loop1=0.1144 loop_last=0.0953 unit=0.0099
+[future_seed_loop stage=2:48-64] step=0400 ce=0.2047 total=0.2047 loop1=0.2458 loop_last=0.2047 unit=0.0223
+[future_seed_loop stage=2:48-64] step=0500 ce=0.2111 total=0.2111 loop1=0.2546 loop_last=0.2111 unit=0.0255
+[future_seed_loop stage=2:48-64] step=0600 ce=0.1851 total=0.1851 loop1=0.2432 loop_last=0.1851 unit=0.0216
+[future_seed_loop stage=2:48-64] step=0700 ce=0.1724 total=0.1724 loop1=0.2184 loop_last=0.1724 unit=0.0186
+[future_seed_loop stage=2:48-64] step=0800 ce=0.1781 total=0.1781 loop1=0.2737 loop_last=0.1781 unit=0.0207
+[future_seed_loop stage=3:64-80] step=0900 ce=0.2966 total=0.2966 loop1=0.4309 loop_last=0.2966 unit=0.0343
+[future_seed_loop stage=3:64-80] step=1000 ce=0.2361 total=0.2361 loop1=0.4235 loop_last=0.2361 unit=0.0272
+[future_seed_loop stage=3:64-80] step=1100 ce=0.2193 total=0.2193 loop1=0.4015 loop_last=0.2193 unit=0.0224
+[future_seed_loop stage=3:64-80] step=1200 ce=0.1867 total=0.1867 loop1=0.5612 loop_last=0.1867 unit=0.0188
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7713
+        fs_gate=0.507, fs_state_norm=8.107
+loop=2 exact=0.0312, valid=0.0312, solved=0.0312, blank_acc=0.9433
+        fs_gate=0.507, fs_state_norm=8.107
+loop=3 exact=0.0352, valid=0.0352, solved=0.0352, blank_acc=0.9437
+        fs_gate=0.507, fs_state_norm=8.107
+loop=4 exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9434
+        fs_gate=0.507, fs_state_norm=8.107
+loop=5 exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432
+        fs_gate=0.507, fs_state_norm=8.107
+loop=6 exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432
+        fs_gate=0.507, fs_state_norm=8.107
+loop=7 exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432
+        fs_gate=0.507, fs_state_norm=8.107
+
+stochastic rollout metrics
+K1 oracle_exact=0.0430 oracle_solved=0.0430 disagree=0.0000
+  confidence exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432; gap=0.0000
+  consistency exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432; gap=0.0000
+  residual    exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432; gap=0.0000
+  majority    exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop3
+  K1 oracle_exact=0.0352 confidence_exact=0.0352 residual_exact=0.0352 disagree=0.0000
+loop5
+  K1 oracle_exact=0.0430 confidence_exact=0.0430 residual_exact=0.0430 disagree=0.0000
+loop7
+  K1 oracle_exact=0.0430 confidence_exact=0.0430 residual_exact=0.0430 disagree=0.0000
+
+hole-transfer metrics
+holes=64 exact=0.0430, valid=0.0430, solved=0.0430, blank_acc=0.9432; indep=0.0237, exact/indep=1.82
+holes=48 exact=0.4180, valid=0.4219, solved=0.4219, blank_acc=0.9766; indep=0.3216, exact/indep=1.30
+holes=80 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.8724; indep=0.0000, exact/indep=0.00
+holes=96 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7820; indep=0.0000, exact/indep=0.00
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/harder16-f170ff7/runs/frontier-16x16-unitstate-d256-l12-loop7-h80-b32-20260605T0658Z-f170ff7/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/harder16-f170ff7/runs/frontier-16x16-unitstate-d256-l12-loop7-h80-b32-20260605T0658Z-f170ff7/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/harder16-f170ff7/runs/frontier-16x16-unitstate-d256-l12-loop7-h80-b32-20260605T0658Z-f170ff7/output/futureseed_loop_case_seed52.html

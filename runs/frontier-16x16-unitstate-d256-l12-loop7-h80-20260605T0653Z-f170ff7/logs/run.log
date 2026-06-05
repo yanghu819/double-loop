@@ -1,0 +1,48 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/harder16-f170ff7/runs/frontier-16x16-unitstate-d256-l12-loop7-h80-20260605T0653Z-f170ff7
+git_sha=f170ff74bff34392a3bb32dbe8a3a1eb16c7a4ae
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1696, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1450, in run
+    model, train_stats = train_model(args, device=device)
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 922, in train_model
+    loop_logits, _fs_trace = model.forward_trace(
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 731, in forward_trace
+    z_h, fs_diag = self.depth_update(
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 693, in depth_update
+    updated, diag = self.reasoner(hidden + injection)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 550, in forward
+    x, previous_state = block(x, initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 496, in forward
+    time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 262, in forward
+    y, terminal_state = self._forward_statepassing(
+  File "/huyang2/double-loop/.worktrees/harder16-f170ff7/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 415, in _forward_statepassing
+    y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/normalization.py", line 313, in forward
+    return F.group_norm(input, self.num_groups, self.weight, self.bias, self.eps)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/functional.py", line 2965, in group_norm
+    return torch.group_norm(
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 16.00 MiB. GPU 0 has a total capacity of 79.32 GiB of which 13.00 MiB is free. Process 50074 has 79.30 GiB memory in use. Of the allocated memory 77.70 GiB is allocated by PyTorch, and 1.11 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

@@ -192,6 +192,10 @@ COMMON_ARGS=(
   --rwkv_kernel "${RWKV_KERNEL:-auto}"
   --lambda_ "${LAMBDA:-0.95}"
   --loop_loss "${LOOP_LOSS:-final}"
+  --loop_loss_start "${LOOP_LOSS_START:-1}"
+  --loop_loss_power "${LOOP_LOSS_POWER:-2.0}"
+  --loop_loss_min_weight "${LOOP_LOSS_MIN_WEIGHT:-0.05}"
+  --unit_loss_weight "${UNIT_LOSS_WEIGHT:-0.0}"
   --out_dir "$OUT_DIR"
 )
 

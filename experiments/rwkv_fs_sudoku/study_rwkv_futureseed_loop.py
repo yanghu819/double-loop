@@ -37,6 +37,7 @@ ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
 UNITS: List[List[int]] = []
+_UNIT_INDEX_CACHE: Dict[Tuple[int, int, int, str], torch.Tensor] = {}
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
@@ -63,6 +64,7 @@ def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
         for bc in range(0, N, BOX_COLS)
     ]
     UNITS = ROWS + COLS + BOXES
+    _UNIT_INDEX_CACHE.clear()
 
 
 configure_sudoku(N, BOX_ROWS, BOX_COLS)
@@ -735,6 +737,67 @@ def loss_from_logits(
     return (loss * weights).sum() / weights.sum().clamp_min(1.0)
 
 
+def unit_index_tensor(device: torch.device) -> torch.Tensor:
+    key = (N, BOX_ROWS, BOX_COLS, str(device))
+    cached = _UNIT_INDEX_CACHE.get(key)
+    if cached is None or cached.device != device:
+        cached = torch.tensor(UNITS, dtype=torch.long, device=device)
+        _UNIT_INDEX_CACHE[key] = cached
+    return cached
+
+
+def unit_consistency_loss(logits: torch.Tensor) -> torch.Tensor:
+    probs = logits.to(torch.float32).softmax(dim=-1)
+    units = unit_index_tensor(logits.device)
+    digit_mass = probs[:, units, :].sum(dim=2)
+    return (digit_mass - 1.0).square().mean()
+
+
+def loop_weight_tensor(
+    num_loops: int,
+    *,
+    mode: str,
+    start: int,
+    power: float,
+    min_weight: float,
+    device: torch.device,
+) -> torch.Tensor:
+    if num_loops <= 0:
+        raise ValueError("num_loops must be positive")
+    weights = torch.zeros(num_loops, dtype=torch.float32, device=device)
+    if mode == "final":
+        weights[-1] = 1.0
+        return weights
+    if mode == "all":
+        weights.fill_(1.0 / num_loops)
+        return weights
+
+    first = min(max(int(start), 1), num_loops) - 1
+    active = num_loops - first
+    ramp = torch.linspace(1.0 / active, 1.0, active, dtype=torch.float32, device=device).pow(float(power))
+    if mode == "shaped":
+        early = torch.full((first,), float(min_weight), dtype=torch.float32, device=device)
+        weights = torch.cat((early, torch.clamp(ramp, min=float(min_weight))))
+    elif mode == "delayed":
+        weights[first:] = ramp
+    else:
+        raise ValueError(f"Unknown loop loss mode {mode!r}")
+    return weights / weights.sum().clamp_min(1e-8)
+
+
+def weighted_loop_loss(losses: List[torch.Tensor], args: argparse.Namespace) -> Tuple[torch.Tensor, torch.Tensor]:
+    weights = loop_weight_tensor(
+        len(losses),
+        mode=args.loop_loss,
+        start=args.loop_loss_start,
+        power=args.loop_loss_power,
+        min_weight=args.loop_loss_min_weight,
+        device=losses[-1].device,
+    ).to(dtype=losses[-1].dtype)
+    stacked = torch.stack(losses)
+    return (stacked * weights).sum(), weights
+
+
 @torch.no_grad()
 def fs_metrics_from_trace(trace: Dict[str, torch.Tensor]) -> Dict[str, float]:
     return {key: float(value.detach().cpu()) for key, value in trace.items()}
@@ -784,6 +847,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_total_loss = 0.0
     last_loop1_loss = 0.0
     last_loop_last_loss = 0.0
+    last_unit_loss = 0.0
+    last_unit_weighted_loss = 0.0
+    last_loop_weights: List[float] = []
 
     global_step = 0
     for stage_idx, (holes_min, holes_max, stage_steps) in enumerate(parse_hole_stages(args), start=1):
@@ -810,11 +876,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 loss_from_logits(logits, labels, clue_mask, blank_weight=args.blank_loss_weight)
                 for logits in loop_logits
             ]
+            unit_losses = [unit_consistency_loss(logits) for logits in loop_logits]
             ce_loss = loop_losses[-1]
-            if args.loop_loss == "all":
-                loss = torch.stack(loop_losses).mean()
-            else:
-                loss = ce_loss
+            supervised_loss, loop_weights = weighted_loop_loss(loop_losses, args)
+            unit_weighted_loss, _unit_weights = weighted_loop_loss(unit_losses, args)
+            loss = supervised_loss + float(args.unit_loss_weight) * unit_weighted_loss
             opt.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -823,11 +889,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_total_loss = float(loss.detach().cpu())
             last_loop1_loss = float(loop_losses[0].detach().cpu())
             last_loop_last_loss = float(loop_losses[-1].detach().cpu())
+            last_unit_loss = float(unit_losses[-1].detach().cpu())
+            last_unit_weighted_loss = float(unit_weighted_loss.detach().cpu())
+            last_loop_weights = [float(x) for x in loop_weights.detach().cpu().tolist()]
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
                     f"step={global_step:04d} ce={last_ce_loss:.4f} total={last_total_loss:.4f} "
-                    f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f}",
+                    f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f} "
+                    f"unit={last_unit_loss:.4f}",
                     flush=True,
                 )
 
@@ -836,7 +906,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "train_total_loss": last_total_loss,
         "train_loop1_loss": last_loop1_loss,
         "train_loop_last_loss": last_loop_last_loss,
+        "train_unit_loss": last_unit_loss,
+        "train_unit_weighted_loss": last_unit_weighted_loss,
         "loop_loss_mode": args.loop_loss,
+        "loop_loss_start": args.loop_loss_start,
+        "loop_loss_power": args.loop_loss_power,
+        "loop_loss_min_weight": args.loop_loss_min_weight,
+        "loop_loss_weights": last_loop_weights,
+        "unit_loss_weight": args.unit_loss_weight,
         "noise_mode": "feature_diff",
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -1426,6 +1503,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "hole_stages": parse_hole_stages(args),
         "max_loops": args.max_loops,
         "loop_loss": args.loop_loss,
+        "loop_loss_start": args.loop_loss_start,
+        "loop_loss_power": args.loop_loss_power,
+        "loop_loss_min_weight": args.loop_loss_min_weight,
+        "unit_loss_weight": args.unit_loss_weight,
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
@@ -1520,7 +1601,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--lambda_", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
-    p.add_argument("--loop_loss", choices=("final", "all"), default="final")
+    p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
+    p.add_argument("--loop_loss_start", type=int, default=1)
+    p.add_argument("--loop_loss_power", type=float, default=2.0)
+    p.add_argument("--loop_loss_min_weight", type=float, default=0.05)
+    p.add_argument("--unit_loss_weight", type=float, default=0.0)
     p.add_argument("--noise_scale", type=float, default=0.01)
     p.add_argument("--feature_buffer_size", type=int, default=8192)
     p.add_argument("--feature_buffer_add", type=int, default=2048)

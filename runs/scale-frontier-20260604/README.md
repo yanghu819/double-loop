@@ -19,6 +19,7 @@ The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The ne
 | 16x16 unit-memory | `frontier-16x16-unitmem-d192-l10-loop7-h80-b48-20260605T0803Z-79004cf` | persistent row/col/box unit memory, h48 exact `0.6992`, h64 `0.2305`, h80 `0.0` | structure beats direct scale |
 | 16x16 unit-memory h80 curriculum | `frontier-16x16-unitmem-h80curr-d192-l10-loop7-b48-20260605T0850Z-0be64f4` | longer 64-80 stage; h64 exact `0.4297`, h72 `0.2031`, h80 `0.0625`, h88 `0.0039` | h80 opened |
 | 25x25 unit-memory feasibility | `frontier-25x25-unitmem-feas-d160-l8-loop5-b32-20260605T0937Z-710bb46` | D160/L8/loop5; h50 exact `0.5156`, h75 `0.0742`, h100 `0.0` | 25x25 low-hole foothold |
+| 25x25 unit-memory h100 curriculum | `upperbound-25x25-unitmem-h100curr-d160-l8-loop5-b32-20260607T050029Z-46a0b06` | h75 exact `0.1289`, h90 `0.0078`, h100 `0.0078`, h110 `0.0`; h100 blank_acc `0.9381` | h100 barely opened; global consistency frontier |
 
 ## Insight
 
@@ -38,13 +39,15 @@ The h80-focused memory curriculum opens the next frontier: h80 exact rises from 
 
 The 25x25 conservative feasibility run establishes the first larger-board foothold. With D160/L8/loop5 memory mode, h50 exact reaches `0.5156` and h75 reaches `0.0742`; h100 remains `0.0`. The model can optimize 625-cell Sudoku under low/mid holes, so 25x25 is no longer a pure infeasibility case.
 
+The 25x25 h100 curriculum probe pushes the frontier but also clarifies the upper bound of the current mechanism. With the same D160/L8/loop5 memory mainline and a `50-75:300,75-100:700` curriculum, h75 improves to `0.1289` and h100 becomes nonzero at `0.0078`. However, h100 blank accuracy is already `0.9381`, while exact remains near zero. Loop1 h100 exact is `0.0`, loop2 opens `0.0078`, and loops 3-5 mostly refine blank accuracy without improving exact. This is a global consistency bottleneck, not a local recognition or throughput bottleneck.
+
 ## Decision
 
-Treat 12x12 as the largest supported scale for the original flattened paradigm. Treat 16x16 as supported by the new unit-memory mainline through h80. Treat 25x25 as supported at low holes and feasible at h75. h100 on 25x25 and h88/h96 on 16x16 are still frontier territory.
+Treat 12x12 as the largest supported scale for the original flattened paradigm. Treat 16x16 as supported by the new unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25 and h88/h96 on 16x16 are still frontier territory.
 
 Next high-ROI work should change the mechanism:
 
-1. Target the 25x25 h75-h100 transition with memory mode, e.g. `50-75:300,75-100:700`, eval h75/h90/h100/h110.
-2. For 16x16 h88/h96, prefer true unit tokens inside the RWKV sequence or a targeted hard curriculum over more width.
+1. Implement true row/column/box unit tokens inside the RWKV recurrent sequence, then rerun the 25x25 h75/h90/h100/h110 readout against the h100 curriculum baseline.
+2. For 16x16 h88/h96, prefer the same true unit-token mechanism or a targeted hard curriculum over more width.
 3. Add activation checkpointing only if it enables a structurally different experiment, not just a blind D384/L16 scale-up.
 4. Keep selector work paused until K-oracle improves; current K1 is already the main result.

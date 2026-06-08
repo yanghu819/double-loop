@@ -1,0 +1,38 @@
+nohup: ignoring input
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/runs/clean-scale-16x16-d256-l12-loop8-h64-b48-20260608T035314Z-f227f8f
+git_sha=f227f8f50e3d6eee296d6fcb7c7bad3fa1dbdc5d
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1517, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1304, in run
+    model, train_stats = train_model(args, device=device)
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 835, in train_model
+    loop_logits, _fs_trace = model.forward_trace(
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 657, in forward_trace
+    z_l, _diag = self.depth_update(
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 628, in depth_update
+    updated, diag = self.reasoner(hidden + injection)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 526, in forward
+    x, previous_state = block(x, initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 474, in forward
+    x = x + self.channel_mix(self.ln_channel(x))
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 444, in forward
+    return self.value(F.relu(self.key(x)).square())
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/functional.py", line 1704, in relu
+    result = torch.relu(input)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 48.00 MiB. GPU 0 has a total capacity of 79.32 GiB of which 33.00 MiB is free. Process 106787 has 79.28 GiB memory in use. Of the allocated memory 78.71 GiB is allocated by PyTorch, and 87.71 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

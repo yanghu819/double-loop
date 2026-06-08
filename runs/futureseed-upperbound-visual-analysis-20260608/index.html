@@ -1,0 +1,608 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>FutureSeed Upper-Bound Visual Analysis</title>
+<style>
+body { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+main { max-width: 1160px; margin: 0 auto; padding: 28px; }
+h1 { margin: 0 0 8px; font-size: 28px; }
+h2 { margin: 0 0 12px; font-size: 18px; }
+p { line-height: 1.55; color: #334155; }
+.panel { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; margin: 16px 0; }
+.kicker { text-transform: uppercase; letter-spacing: .08em; color: #64748b; font-size: 12px; font-weight: 800; }
+.claim { font-size: 18px; color: #0f172a; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { border-bottom: 1px solid #e2e8f0; padding: 8px 7px; text-align: left; vertical-align: middle; }
+th { color: #475569; font-weight: 750; background: #f8fafc; }
+.bar { display: inline-block; vertical-align: middle; margin-left: 8px; width: 76px; height: 7px; background: #e2e8f0; border-radius: 2px; overflow: hidden; }
+.bar span { display: block; height: 100%; }
+.chart { width: 100%; height: auto; background: #fff; }
+.axis { font-size: 12px; fill: #64748b; }
+.legend { font-size: 12px; font-weight: 700; }
+.split { display: grid; grid-template-columns: minmax(340px, 1fr) auto; gap: 18px; align-items: start; }
+.mini-grid { display: grid; grid-template-columns: repeat(16, 22px); grid-auto-rows: 22px; border: 2px solid #0f172a; width: max-content; }
+.g { display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-right: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; font-size: 10px; font-weight: 800; }
+.g:nth-child(4n) { border-right: 2px solid #0f172a; }
+.g:nth-child(n+49):nth-child(-n+64), .g:nth-child(n+113):nth-child(-n+128), .g:nth-child(n+177):nth-child(-n+192) { border-bottom: 2px solid #0f172a; }
+.g.clue { background: #e2e8f0; color: #334155; }
+.g.correct { background: #bbf7d0; color: #14532d; }
+.g.wrong { background: #fecaca; color: #7f1d1d; }
+.note { color: #64748b; font-size: 13px; }
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } .mini-grid { grid-template-columns: repeat(16, 18px); grid-auto-rows: 18px; } .g { font-size: 9px; } }
+</style>
+</head>
+<body>
+<main>
+<div class="kicker">FutureSeed / Bitter Lesson diagnostic</div>
+<h1>Upper-bound visual analysis: why clean 16x16 is hitting the wall</h1>
+<p class="claim">The current clean FutureSeed+RWKV+loop path is not primarily failing at rollout selection or Sudoku global consistency. It is still below the local-token reliability regime where exact-board solving can emerge.</p>
+
+<section class="panel">
+<h2>1. The exact-solve wall is exponential in holes</h2>
+<p>Even under an optimistic independent-cell approximation, exact probability is roughly <span class="code">blank_acc ^ holes</span>. For 24 blanks, a 50% exact board needs about 97.2% blank accuracy. The latest clean 16x16 runs are around 33-34% at h24, so exact=0 is not mysterious; it is mathematically forced.</p>
+<table><thead><tr><th>holes</th><th>blank_acc needed for 10% exact</th><th>blank_acc needed for 50% exact</th></tr></thead><tbody><tr><td>16</td><td>86.6%</td><td>95.8%</td></tr><tr><td>24</td><td>90.9%</td><td>97.2%</td></tr><tr><td>32</td><td>93.1%</td><td>97.9%</td></tr><tr><td>48</td><td>95.3%</td><td>98.6%</td></tr><tr><td>60</td><td>96.2%</td><td>98.9%</td></tr><tr><td>72</td><td>96.9%</td><td>99.0%</td></tr><tr><td>84</td><td>97.3%</td><td>99.2%</td></tr></tbody></table>
+</section>
+
+<section class="panel">
+<h2>2. Clean ladder: where loop works, and where it stops</h2>
+<p>9x9 and 12x12 show real loop/refinement value once loop-final blank accuracy enters the high-90% regime. Clean 16x16 is far below that regime. Bigger board size does not only require more global consistency; it first requires substantially better per-cell reliability.</p>
+<table><thead><tr><th>run</th><th>board</th><th>holes</th><th>loop1 blank</th><th>final blank</th><th>loop1 exact</th><th>final exact</th><th>exact gain</th><th>blank^holes</th></tr></thead><tbody><tr><td>9x9 FutureSeed</td><td>9x9</td><td>16</td><td>99.4%</td><td>99.9% <span class="bar"><span style="width:99.94%;background:#0284c7"></span></span></td><td>91.0%</td><td>99.6% <span class="bar"><span style="width:99.61%;background:#16a34a"></span></span></td><td>8.6%</td><td>9.90e-01</td></tr><tr><td>9x9 FutureSeed</td><td>9x9</td><td>20</td><td>98.0%</td><td>99.8% <span class="bar"><span style="width:99.83%;background:#0284c7"></span></span></td><td>70.9%</td><td>98.0% <span class="bar"><span style="width:98.05%;background:#16a34a"></span></span></td><td>27.1%</td><td>9.67e-01</td></tr><tr><td>9x9 FutureSeed</td><td>9x9</td><td>24</td><td>95.3%</td><td>99.0% <span class="bar"><span style="width:98.97%;background:#0284c7"></span></span></td><td>42.4%</td><td>88.3% <span class="bar"><span style="width:88.28%;background:#16a34a"></span></span></td><td>45.9%</td><td>7.79e-01</td></tr><tr><td>9x9 FutureSeed</td><td>9x9</td><td>28</td><td>90.9%</td><td>97.4% <span class="bar"><span style="width:97.39%;background:#0284c7"></span></span></td><td>13.1%</td><td>68.6% <span class="bar"><span style="width:68.55%;background:#16a34a"></span></span></td><td>55.5%</td><td>4.77e-01</td></tr><tr><td>9x9 FutureSeed</td><td>9x9</td><td>32</td><td>84.4%</td><td>94.1% <span class="bar"><span style="width:94.09%;background:#0284c7"></span></span></td><td>1.4%</td><td>40.4% <span class="bar"><span style="width:40.43%;background:#16a34a"></span></span></td><td>39.1%</td><td>1.42e-01</td></tr><tr><td>12x12 clean frontier</td><td>12x12</td><td>48</td><td>79.1%</td><td>99.4% <span class="bar"><span style="width:99.44%;background:#0284c7"></span></span></td><td>0.0%</td><td>88.8% <span class="bar"><span style="width:88.80%;background:#16a34a"></span></span></td><td>88.8%</td><td>7.64e-01</td></tr><tr><td>12x12 clean frontier</td><td>12x12</td><td>60</td><td>69.9%</td><td>97.4% <span class="bar"><span style="width:97.43%;background:#0284c7"></span></span></td><td>0.0%</td><td>50.5% <span class="bar"><span style="width:50.52%;background:#16a34a"></span></span></td><td>50.5%</td><td>2.10e-01</td></tr><tr><td>12x12 clean frontier</td><td>12x12</td><td>72</td><td>58.8%</td><td>88.8% <span class="bar"><span style="width:88.81%;background:#0284c7"></span></span></td><td>0.0%</td><td>4.4% <span class="bar"><span style="width:4.43%;background:#16a34a"></span></span></td><td>4.4%</td><td>1.94e-04</td></tr><tr><td>12x12 clean frontier</td><td>12x12</td><td>84</td><td>46.0%</td><td>69.9% <span class="bar"><span style="width:69.93%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>8.99e-14</td></tr><tr><td>16x16 decay=0.5</td><td>16x16</td><td>16</td><td>36.1%</td><td>36.8% <span class="bar"><span style="width:36.84%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>1.15e-07</td></tr><tr><td>16x16 loop loss all</td><td>16x16</td><td>16</td><td>35.9%</td><td>36.5% <span class="bar"><span style="width:36.45%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>9.71e-08</td></tr><tr><td>16x16 decay=0.5</td><td>16x16</td><td>24</td><td>33.0%</td><td>33.5% <span class="bar"><span style="width:33.54%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>4.12e-12</td></tr><tr><td>16x16 loop loss all</td><td>16x16</td><td>24</td><td>33.1%</td><td>33.8% <span class="bar"><span style="width:33.81%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>4.96e-12</td></tr><tr><td>16x16 clean foothold</td><td>16x16</td><td>32</td><td>75.5%</td><td>82.9% <span class="bar"><span style="width:82.87%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.4% <span class="bar"><span style="width:0.39%;background:#16a34a"></span></span></td><td>0.4%</td><td>2.45e-03</td></tr><tr><td>16x16 decay=0.5</td><td>16x16</td><td>32</td><td>31.0%</td><td>32.1% <span class="bar"><span style="width:32.10%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>1.62e-16</td></tr><tr><td>16x16 loop loss all</td><td>16x16</td><td>32</td><td>30.3%</td><td>31.1% <span class="bar"><span style="width:31.12%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>5.96e-17</td></tr><tr><td>16x16 clean foothold</td><td>16x16</td><td>48</td><td>65.3%</td><td>73.9% <span class="bar"><span style="width:73.93%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>5.04e-07</td></tr><tr><td>16x16 clean foothold</td><td>16x16</td><td>64</td><td>57.1%</td><td>65.5% <span class="bar"><span style="width:65.52%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>1.77e-12</td></tr><tr><td>16x16 clean foothold</td><td>16x16</td><td>80</td><td>49.1%</td><td>57.0% <span class="bar"><span style="width:57.04%;background:#0284c7"></span></span></td><td>0.0%</td><td>0.0% <span class="bar"><span style="width:0.00%;background:#16a34a"></span></span></td><td>0.0%</td><td>3.13e-20</td></tr></tbody></table>
+</section>
+
+<section class="panel">
+<h2>3. Training CE is not enough</h2>
+<p>Both simple FutureSeed decay and all-loop supervision show a delayed CE drop at step600. The eval grids still remain exact=0 with weak blank accuracy. This separates optimization loss movement from actual recurrent solving.</p>
+<svg viewBox="0 0 780 300" class="chart" role="img" aria-label="train CE curves">
+<line x1="34" y1="266" x2="746" y2="266" stroke="#94a3b8"/>
+<line x1="34" y1="34" x2="34" y2="266" stroke="#94a3b8"/>
+<text x="34" y="20" class="axis">CE 1.24</text>
+<text x="34" y="292" class="axis">step 0 to 600</text>
+<polyline points="390.0,229.5 627.3,55.3" fill="none" stroke="#2563eb" stroke-width="3"/>
+<circle cx="390.0" cy="229.5" r="4" fill="#2563eb"><title>clean boundary locator step 300: 1.0208</title></circle>
+<circle cx="627.3" cy="55.3" r="4" fill="#2563eb"><title>clean boundary locator step 500: 1.2165</title></circle>
+<text x="526" y="28" fill="#2563eb" class="legend">clean boundary locator</text>
+<polyline points="152.7,63.7 271.3,168.4 390.0,227.5 508.7,60.2 627.3,43.7 746.0,266.0" fill="none" stroke="#dc2626" stroke-width="3"/>
+<circle cx="152.7" cy="63.7" r="4" fill="#dc2626"><title>decay=0.5 step 100: 1.2070</title></circle>
+<circle cx="271.3" cy="168.4" r="4" fill="#dc2626"><title>decay=0.5 step 200: 1.0894</title></circle>
+<circle cx="390.0" cy="227.5" r="4" fill="#dc2626"><title>decay=0.5 step 300: 1.0231</title></circle>
+<circle cx="508.7" cy="60.2" r="4" fill="#dc2626"><title>decay=0.5 step 400: 1.2110</title></circle>
+<circle cx="627.3" cy="43.7" r="4" fill="#dc2626"><title>decay=0.5 step 500: 1.2295</title></circle>
+<circle cx="746.0" cy="266.0" r="4" fill="#dc2626"><title>decay=0.5 step 600: 0.9798</title></circle>
+<text x="526" y="46" fill="#dc2626" class="legend">decay=0.5</text>
+<polyline points="152.7,49.6 271.3,135.6 390.0,243.0 508.7,52.1 627.3,34.0 746.0,263.6" fill="none" stroke="#16a34a" stroke-width="3"/>
+<circle cx="152.7" cy="49.6" r="4" fill="#16a34a"><title>loop loss all step 100: 1.2229</title></circle>
+<circle cx="271.3" cy="135.6" r="4" fill="#16a34a"><title>loop loss all step 200: 1.1263</title></circle>
+<circle cx="390.0" cy="243.0" r="4" fill="#16a34a"><title>loop loss all step 300: 1.0056</title></circle>
+<circle cx="508.7" cy="52.1" r="4" fill="#16a34a"><title>loop loss all step 400: 1.2201</title></circle>
+<circle cx="627.3" cy="34.0" r="4" fill="#16a34a"><title>loop loss all step 500: 1.2404</title></circle>
+<circle cx="746.0" cy="263.6" r="4" fill="#16a34a"><title>loop loss all step 600: 0.9825</title></circle>
+<text x="526" y="64" fill="#16a34a" class="legend">loop loss all</text>
+</svg>
+</section>
+
+<section class='panel'><h2>Case microscope: decay=0.5</h2><p>Single h24 case from the saved HTML. Gray are clues, green hidden cells are correct, red hidden cells are wrong.</p><div class='split'><div><table><thead><tr><th>loop</th><th>correct hidden</th><th>wrong hidden</th><th>hidden acc</th></tr></thead><tbody><tr><td>1</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>2</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>3</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>4</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>5</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>6</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>7</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr><tr><td>8</td><td>7</td><td>17</td><td>29.2% <span class="bar"><span style="width:29.17%;background:#16a34a"></span></span></td></tr></tbody></table></div><div><div class="mini-grid">
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">15</span>
+<span class="g clue">11</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g clue">14</span>
+<span class="g clue">12</span>
+<span class="g clue">16</span>
+<span class="g clue">8</span>
+<span class="g clue">2</span>
+<span class="g clue">9</span>
+<span class="g clue">6</span>
+<span class="g wrong">7</span>
+<span class="g wrong">7</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g wrong">3</span>
+<span class="g clue">3</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">6</span>
+<span class="g clue">7</span>
+<span class="g wrong">5</span>
+<span class="g clue">4</span>
+<span class="g clue">15</span>
+<span class="g clue">5</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">2</span>
+<span class="g clue">16</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">4</span>
+<span class="g clue">15</span>
+<span class="g clue">10</span>
+<span class="g clue">6</span>
+<span class="g clue">7</span>
+<span class="g clue">1</span>
+<span class="g wrong">3</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g correct">12</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">7</span>
+<span class="g clue">10</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">8</span>
+<span class="g correct">2</span>
+<span class="g clue">3</span>
+<span class="g clue">14</span>
+<span class="g correct">12</span>
+<span class="g wrong">12</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">9</span>
+<span class="g clue">8</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">6</span>
+<span class="g clue">16</span>
+<span class="g wrong">2</span>
+<span class="g clue">2</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">1</span>
+<span class="g clue">6</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">11</span>
+<span class="g clue">9</span>
+<span class="g clue">14</span>
+<span class="g clue">10</span>
+<span class="g clue">13</span>
+<span class="g clue">7</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g wrong">4</span>
+<span class="g clue">4</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">10</span>
+<span class="g clue">13</span>
+<span class="g clue">8</span>
+<span class="g correct">11</span>
+<span class="g clue">9</span>
+<span class="g clue">15</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g clue">13</span>
+<span class="g clue">14</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">16</span>
+<span class="g clue">1</span>
+<span class="g clue">4</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">12</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">3</span>
+<span class="g clue">13</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">2</span>
+<span class="g clue">10</span>
+<span class="g clue">5</span>
+<span class="g clue">12</span>
+<span class="g clue">11</span>
+<span class="g clue">4</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">11</span>
+<span class="g clue">5</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g clue">7</span>
+<span class="g clue">3</span>
+<span class="g clue">9</span>
+<span class="g clue">15</span>
+<span class="g clue">16</span>
+<span class="g clue">8</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">10</span>
+<span class="g clue">1</span>
+<span class="g wrong">16</span>
+<span class="g clue">9</span>
+<span class="g clue">15</span>
+<span class="g clue">16</span>
+<span class="g clue">13</span>
+<span class="g clue">7</span>
+<span class="g clue">3</span>
+<span class="g wrong">12</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g wrong">9</span>
+<span class="g clue">16</span>
+<span class="g clue">9</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">12</span>
+<span class="g clue">11</span>
+<span class="g clue">1</span>
+<span class="g clue">2</span>
+<span class="g clue">10</span>
+<span class="g clue">6</span>
+<span class="g wrong">14</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">8</span>
+<span class="g clue">15</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g clue">13</span>
+<span class="g wrong">7</span>
+<span class="g clue">2</span>
+<span class="g wrong">10</span>
+<span class="g clue">6</span>
+<span class="g clue">16</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g correct">14</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g wrong">6</span>
+<span class="g clue">7</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">9</span>
+<span class="g clue">6</span>
+<span class="g clue">12</span>
+<span class="g clue">13</span>
+<span class="g clue">4</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g wrong">6</span>
+<span class="g clue">6</span>
+<span class="g wrong">16</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">5</span>
+<span class="g clue">8</span>
+<span class="g clue">7</span>
+<span class="g clue">1</span>
+<span class="g clue">14</span>
+<span class="g clue">10</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">13</span>
+<span class="g correct">3</span>
+<span class="g clue">4</span>
+<span class="g clue">12</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g clue">1</span>
+<span class="g clue">14</span>
+<span class="g clue">15</span>
+<span class="g clue">5</span>
+<span class="g correct">8</span>
+<span class="g clue">11</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+</div></div></div></section><section class='panel'><h2>Case microscope: loop loss all</h2><p>Single h24 case from the saved HTML. Gray are clues, green hidden cells are correct, red hidden cells are wrong.</p><div class='split'><div><table><thead><tr><th>loop</th><th>correct hidden</th><th>wrong hidden</th><th>hidden acc</th></tr></thead><tbody><tr><td>1</td><td>6</td><td>18</td><td>25.0% <span class="bar"><span style="width:25.00%;background:#16a34a"></span></span></td></tr><tr><td>2</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr><tr><td>3</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr><tr><td>4</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr><tr><td>5</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr><tr><td>6</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr><tr><td>7</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr><tr><td>8</td><td>4</td><td>20</td><td>16.7% <span class="bar"><span style="width:16.67%;background:#16a34a"></span></span></td></tr></tbody></table></div><div><div class="mini-grid">
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">15</span>
+<span class="g clue">11</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g clue">14</span>
+<span class="g clue">12</span>
+<span class="g clue">16</span>
+<span class="g clue">8</span>
+<span class="g clue">2</span>
+<span class="g clue">9</span>
+<span class="g clue">6</span>
+<span class="g correct">1</span>
+<span class="g wrong">7</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g wrong">3</span>
+<span class="g clue">3</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">6</span>
+<span class="g clue">7</span>
+<span class="g wrong">16</span>
+<span class="g clue">4</span>
+<span class="g clue">15</span>
+<span class="g clue">5</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">2</span>
+<span class="g clue">16</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">4</span>
+<span class="g clue">15</span>
+<span class="g clue">10</span>
+<span class="g clue">6</span>
+<span class="g clue">7</span>
+<span class="g clue">1</span>
+<span class="g wrong">3</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g wrong">14</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">7</span>
+<span class="g clue">10</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">8</span>
+<span class="g correct">2</span>
+<span class="g clue">3</span>
+<span class="g clue">14</span>
+<span class="g wrong">13</span>
+<span class="g correct">13</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">9</span>
+<span class="g clue">8</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">6</span>
+<span class="g clue">16</span>
+<span class="g wrong">2</span>
+<span class="g clue">2</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">1</span>
+<span class="g clue">6</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">11</span>
+<span class="g clue">9</span>
+<span class="g clue">14</span>
+<span class="g clue">10</span>
+<span class="g clue">13</span>
+<span class="g clue">7</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g wrong">14</span>
+<span class="g clue">4</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">10</span>
+<span class="g clue">13</span>
+<span class="g clue">8</span>
+<span class="g wrong">15</span>
+<span class="g clue">9</span>
+<span class="g clue">15</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g clue">13</span>
+<span class="g clue">14</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">16</span>
+<span class="g clue">1</span>
+<span class="g clue">4</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">12</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">7</span>
+<span class="g clue">14</span>
+<span class="g clue">3</span>
+<span class="g clue">13</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">2</span>
+<span class="g clue">10</span>
+<span class="g clue">5</span>
+<span class="g clue">12</span>
+<span class="g clue">11</span>
+<span class="g clue">4</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">11</span>
+<span class="g clue">5</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g clue">7</span>
+<span class="g clue">3</span>
+<span class="g clue">9</span>
+<span class="g clue">15</span>
+<span class="g clue">16</span>
+<span class="g clue">8</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+<span class="g clue">10</span>
+<span class="g clue">1</span>
+<span class="g wrong">16</span>
+<span class="g clue">9</span>
+<span class="g clue">15</span>
+<span class="g clue">16</span>
+<span class="g clue">13</span>
+<span class="g clue">7</span>
+<span class="g clue">3</span>
+<span class="g wrong">12</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g wrong">9</span>
+<span class="g clue">16</span>
+<span class="g clue">9</span>
+<span class="g clue">4</span>
+<span class="g clue">5</span>
+<span class="g clue">12</span>
+<span class="g clue">11</span>
+<span class="g clue">1</span>
+<span class="g clue">2</span>
+<span class="g clue">10</span>
+<span class="g clue">6</span>
+<span class="g wrong">3</span>
+<span class="g clue">14</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">8</span>
+<span class="g clue">15</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g clue">13</span>
+<span class="g wrong">14</span>
+<span class="g clue">2</span>
+<span class="g wrong">1</span>
+<span class="g clue">6</span>
+<span class="g clue">16</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g wrong">9</span>
+<span class="g clue">1</span>
+<span class="g clue">10</span>
+<span class="g wrong">6</span>
+<span class="g clue">7</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">9</span>
+<span class="g clue">6</span>
+<span class="g clue">12</span>
+<span class="g clue">13</span>
+<span class="g clue">4</span>
+<span class="g clue">3</span>
+<span class="g clue">5</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">8</span>
+<span class="g clue">9</span>
+<span class="g wrong">6</span>
+<span class="g clue">6</span>
+<span class="g wrong">16</span>
+<span class="g clue">11</span>
+<span class="g clue">15</span>
+<span class="g clue">5</span>
+<span class="g clue">8</span>
+<span class="g clue">7</span>
+<span class="g clue">1</span>
+<span class="g clue">14</span>
+<span class="g clue">10</span>
+<span class="g clue">13</span>
+<span class="g clue">3</span>
+<span class="g clue">12</span>
+<span class="g clue">4</span>
+<span class="g clue">13</span>
+<span class="g correct">3</span>
+<span class="g clue">4</span>
+<span class="g clue">12</span>
+<span class="g clue">10</span>
+<span class="g clue">7</span>
+<span class="g clue">1</span>
+<span class="g clue">14</span>
+<span class="g clue">15</span>
+<span class="g clue">5</span>
+<span class="g wrong">11</span>
+<span class="g clue">11</span>
+<span class="g clue">9</span>
+<span class="g clue">16</span>
+<span class="g clue">2</span>
+<span class="g clue">6</span>
+</div></div></div></section>
+
+<section class="panel">
+<h2>Decision</h2>
+<p>The immediate ceiling is local reliability under clean scaling: 16x16 h24/h32 predictions are too wrong before Sudoku-level consistency can matter. FutureSeed decay and naive all-loop supervision are not enough. The next Bitter-Lesson-aligned work should improve generic modeling capacity/credit assignment or FutureSeed's learned recurrent state mechanism only if it can raise blank accuracy first.</p>
+<p class="note">Generated from existing run artifacts only. No CPU smoke, no training, no Sudoku-specific modeling trick was added.</p>
+</section>
+</main>
+</body>
+</html>

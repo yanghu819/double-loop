@@ -1,0 +1,58 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/fs-decay-16x16-24a95d5/runs/fsdecay16x16-d256-l12-loop8-h32-b16-s600eval-20260608T0520Z-24a95d5
+git_sha=24a95d5af5a40a532ca03d8083bc95245d11cdf5
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:8-16] step=0100 ce=1.2070 total=1.2070 loop1=1.2069 loop_last=1.2070
+[future_seed_loop stage=1:8-16] step=0200 ce=1.0894 total=1.0894 loop1=1.0801 loop_last=1.0894
+[future_seed_loop stage=1:8-16] step=0300 ce=1.0231 total=1.0231 loop1=1.0242 loop_last=1.0231
+[future_seed_loop stage=2:16-24] step=0400 ce=1.2110 total=1.2110 loop1=1.2164 loop_last=1.2110
+[future_seed_loop stage=2:16-24] step=0500 ce=1.2295 total=1.2295 loop1=1.2334 loop_last=1.2295
+[future_seed_loop stage=2:16-24] step=0600 ce=0.9798 total=0.9798 loop1=0.9883 loop_last=0.9798
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3304
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3341
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3348
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3350
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=6 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3356
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=7 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+loop=8 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354
+        fs_gate=0.499, fs_state_norm=15.976, fs_decay=0.50
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop3
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop5
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop8
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+
+hole-transfer metrics
+holes=24 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3354; indep=0.0000, exact/indep=0.00
+holes=16 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3684; indep=0.0000, exact/indep=0.00
+holes=32 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3210; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/fs-decay-16x16-24a95d5/runs/fsdecay16x16-d256-l12-loop8-h32-b16-s600eval-20260608T0520Z-24a95d5/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/fs-decay-16x16-24a95d5/runs/fsdecay16x16-d256-l12-loop8-h32-b16-s600eval-20260608T0520Z-24a95d5/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/fs-decay-16x16-24a95d5/runs/fsdecay16x16-d256-l12-loop8-h32-b16-s600eval-20260608T0520Z-24a95d5/output/futureseed_loop_case_seed52.html

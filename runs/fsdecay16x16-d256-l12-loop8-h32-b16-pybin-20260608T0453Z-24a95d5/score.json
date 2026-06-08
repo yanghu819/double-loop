@@ -1,0 +1,66 @@
+{
+  "timestamp_utc": "2026-06-08T04:59:41.181077+00:00",
+  "run_name": "fsdecay16x16-d256-l12-loop8-h32-b16-pybin-20260608T0453Z-24a95d5",
+  "git_sha": "24a95d5af5a40a532ca03d8083bc95245d11cdf5",
+  "status": "prematurely_stopped_after_buffered_positive_signal",
+  "primary_metric": "train_ce_stage2_step600_buffered",
+  "primary_score": 0.9798,
+  "curve": [
+    {
+      "stage_index": 1,
+      "holes": "8-16",
+      "step": 100,
+      "ce": 1.207,
+      "total": 1.207,
+      "loop1": 1.2069,
+      "loop_last": 1.207
+    },
+    {
+      "stage_index": 1,
+      "holes": "8-16",
+      "step": 200,
+      "ce": 1.0894,
+      "total": 1.0894,
+      "loop1": 1.0801,
+      "loop_last": 1.0894
+    },
+    {
+      "stage_index": 1,
+      "holes": "8-16",
+      "step": 300,
+      "ce": 1.0231,
+      "total": 1.0231,
+      "loop1": 1.0242,
+      "loop_last": 1.0231
+    },
+    {
+      "stage_index": 2,
+      "holes": "16-24",
+      "step": 400,
+      "ce": 1.211,
+      "total": 1.211,
+      "loop1": 1.2164,
+      "loop_last": 1.211
+    },
+    {
+      "stage_index": 2,
+      "holes": "16-24",
+      "step": 500,
+      "ce": 1.2295,
+      "total": 1.2295,
+      "loop1": 1.2334,
+      "loop_last": 1.2295
+    },
+    {
+      "stage_index": 2,
+      "holes": "16-24",
+      "step": 600,
+      "ce": 0.9798,
+      "total": 0.9798,
+      "loop1": 0.9883,
+      "loop_last": 0.9798
+    }
+  ],
+  "decision": "do_not_conclude_failure; relaunch shortened completion to step600 with evaluation, then run no-decay control only if eval signal survives",
+  "insight": "Step500 looked worse than baseline, but buffered logs revealed step600 CE=0.9798 after kill. The immediate lesson is that this 16x16 curriculum can have delayed loss cliffs; decision rules should check a post-transition window before killing."
+}

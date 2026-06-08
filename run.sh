@@ -189,6 +189,7 @@ COMMON_ARGS=(
   --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
   --feature_buffer_add "${FEATURE_BUFFER_ADD:-2048}"
   --future_seed_scale "${FUTURE_SEED_SCALE:-1.0}"
+  --future_seed_decay "${FUTURE_SEED_DECAY:-0.0}"
   --rwkv_kernel "${RWKV_KERNEL:-auto}"
   --lambda_ "${LAMBDA:-0.95}"
   --loop_loss "${LOOP_LOSS:-final}"

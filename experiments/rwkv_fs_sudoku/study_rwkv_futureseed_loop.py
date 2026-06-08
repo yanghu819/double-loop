@@ -485,12 +485,14 @@ class FutureSeedRWKV(nn.Module):
         channel_mult: int,
         *,
         future_seed_scale: float = 1.0,
+        future_seed_decay: float = 0.0,
         rwkv_kernel: str = "auto",
     ) -> None:
         super().__init__()
         if layers < 2:
             raise ValueError("FutureSeed needs at least two layers.")
         self.future_seed_scale = float(future_seed_scale)
+        self.future_seed_decay = float(future_seed_decay)
         self.blocks = nn.ModuleList(
             [
                 RWKVBlock(
@@ -508,6 +510,7 @@ class FutureSeedRWKV(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         previous_state: Optional[torch.Tensor] = None
+        seed_state: Optional[torch.Tensor] = None
         gates = []
         state_norms = []
         for layer_idx, block in enumerate(self.blocks):
@@ -517,8 +520,13 @@ class FutureSeedRWKV(nn.Module):
                 gate = torch.sigmoid(block.future_seed_logit) * self.future_seed_scale
                 gates.append(gate.mean())
                 if self.future_seed_scale > 0:
-                    denom = previous_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                    normalized_state = previous_state / denom
+                    if seed_state is None or self.future_seed_decay <= 0:
+                        seed_state = previous_state
+                    else:
+                        keep = self.future_seed_decay
+                        seed_state = keep * seed_state + (1.0 - keep) * previous_state
+                    denom = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                    normalized_state = seed_state / denom
                     initial_state = normalized_state * gate
                     state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
                 else:
@@ -529,9 +537,10 @@ class FutureSeedRWKV(nn.Module):
             return x, {
                 "fs_gate_mean": torch.stack(gates).mean(),
                 "fs_state_norm": torch.stack(state_norms).mean(),
+                "fs_decay": x.new_tensor(self.future_seed_decay),
             }
         zero = x.new_zeros(())
-        return x, {"fs_gate_mean": zero, "fs_state_norm": zero}
+        return x, {"fs_gate_mean": zero, "fs_state_norm": zero, "fs_decay": zero}
 
 
 class FeatureNoiseBuffer:
@@ -589,6 +598,7 @@ class FutureSeedLoopSudoku(nn.Module):
         l_cycles: int,
         lambda_: float,
         future_seed_scale: float,
+        future_seed_decay: float,
         rwkv_kernel: str,
     ) -> None:
         super().__init__()
@@ -603,6 +613,7 @@ class FutureSeedLoopSudoku(nn.Module):
             head_dim,
             channel_mult,
             future_seed_scale=future_seed_scale,
+            future_seed_decay=future_seed_decay,
             rwkv_kernel=rwkv_kernel,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -787,7 +798,9 @@ def coupling_line(m: Dict[str, float], holes: int) -> str:
 
 
 def fs_line(m: Dict[str, float]) -> str:
-    return f"fs_gate={m['fs_gate_mean']:.3f}, fs_state_norm={m['fs_state_norm']:.3f}"
+    decay = m.get("fs_decay")
+    suffix = "" if decay is None else f", fs_decay={decay:.2f}"
+    return f"fs_gate={m['fs_gate_mean']:.3f}, fs_state_norm={m['fs_state_norm']:.3f}{suffix}"
 
 
 def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[FutureSeedLoopSudoku, Dict[str, float]]:
@@ -802,6 +815,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         l_cycles=args.l_cycles,
         lambda_=args.lambda_,
         future_seed_scale=args.future_seed_scale,
+        future_seed_decay=args.future_seed_decay,
         rwkv_kernel=args.rwkv_kernel,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
@@ -1277,6 +1291,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--d_model must equal --heads * --head_dim")
     if args.future_seed_scale < 0:
         raise ValueError("--future_seed_scale must be non-negative")
+    if not (0.0 <= args.future_seed_decay < 1.0):
+        raise ValueError("--future_seed_decay must be in [0, 1)")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -1401,6 +1417,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
+        "future_seed_decay": args.future_seed_decay,
         "rwkv_kernel": args.rwkv_kernel,
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
@@ -1484,6 +1501,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max_loops", type=int, default=3)
     p.add_argument("--lambda_", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
+    p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
     p.add_argument("--loop_loss_start", type=int, default=1)

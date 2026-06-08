@@ -37,13 +37,10 @@ ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
 UNITS: List[List[int]] = []
-CELL_TO_UNITS: List[List[int]] = []
-_UNIT_INDEX_CACHE: Dict[Tuple[int, int, int, str], torch.Tensor] = {}
-_CELL_TO_UNIT_INDEX_CACHE: Dict[Tuple[int, int, int, str], torch.Tensor] = {}
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
-    global N, BOX_ROWS, BOX_COLS, CELLS, BLANK, VOCAB, ROWS, COLS, BOXES, UNITS, CELL_TO_UNITS
+    global N, BOX_ROWS, BOX_COLS, CELLS, BLANK, VOCAB, ROWS, COLS, BOXES, UNITS
     if box_rows <= 0 or box_cols <= 0:
         inferred = {4: (2, 2), 6: (2, 3), 9: (3, 3), 12: (3, 4), 16: (4, 4), 25: (5, 5)}
         if size not in inferred:
@@ -66,15 +63,6 @@ def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
         for bc in range(0, N, BOX_COLS)
     ]
     UNITS = ROWS + COLS + BOXES
-    cell_to_units = [[] for _ in range(CELLS)]
-    for unit_idx, unit in enumerate(UNITS):
-        for cell_idx in unit:
-            cell_to_units[cell_idx].append(unit_idx)
-    if any(len(unit_ids) != 3 for unit_ids in cell_to_units):
-        raise ValueError("Every Sudoku cell must belong to exactly three units.")
-    CELL_TO_UNITS = cell_to_units
-    _UNIT_INDEX_CACHE.clear()
-    _CELL_TO_UNIT_INDEX_CACHE.clear()
 
 
 configure_sudoku(N, BOX_ROWS, BOX_COLS)
@@ -122,19 +110,7 @@ def shuffled_solution(rng: random.Random) -> List[int]:
 def choose_blank_cells(holes: int, rng: random.Random, hole_pattern: str) -> List[int]:
     if hole_pattern == "random":
         return rng.sample(range(CELLS), holes)
-
-    pools: Dict[str, List[List[int]]] = {
-        "row": ROWS,
-        "col": COLS,
-        "box": BOXES,
-        "unit": UNITS,
-    }
-    if hole_pattern not in pools:
-        raise ValueError(f"Unknown --hole_pattern {hole_pattern!r}")
-    candidates = rng.choice(pools[hole_pattern])
-    if holes > len(candidates):
-        raise ValueError(f"--hole_pattern {hole_pattern} supports at most {len(candidates)} holes for {N}x{N}")
-    return rng.sample(candidates, holes)
+    raise ValueError("--hole_pattern now supports only 'random'; structured hole patterns were Sudoku-specific probes.")
 
 
 def make_batch(
@@ -558,81 +534,6 @@ class FutureSeedRWKV(nn.Module):
         return x, {"fs_gate_mean": zero, "fs_state_norm": zero}
 
 
-def cell_to_unit_tensor(device: torch.device) -> torch.Tensor:
-    key = (N, BOX_ROWS, BOX_COLS, str(device))
-    cached = _CELL_TO_UNIT_INDEX_CACHE.get(key)
-    if cached is None or cached.device != device:
-        cached = torch.tensor(CELL_TO_UNITS, dtype=torch.long, device=device)
-        _CELL_TO_UNIT_INDEX_CACHE[key] = cached
-    return cached
-
-
-class UnitStatePass(nn.Module):
-    def __init__(
-        self,
-        d_model: int,
-        *,
-        scale: float,
-        gate_bias: float,
-        mode: str,
-        memory_decay: float,
-        token_scale: float,
-    ) -> None:
-        super().__init__()
-        if mode not in {"pooled", "memory"}:
-            raise ValueError("--unit_state_mode must be 'pooled' or 'memory'")
-        self.mode = mode
-        self.unit_state_scale = float(scale)
-        self.memory_decay = float(memory_decay)
-        self.token_scale = float(token_scale)
-        self.norm = nn.LayerNorm(d_model)
-        self.proj = nn.Linear(d_model, d_model, bias=False)
-        self.unit_position = nn.Embedding(len(UNITS), d_model)
-        self.gate_logit = nn.Parameter(torch.tensor(float(gate_bias)))
-        with torch.no_grad():
-            self.proj.weight.zero_()
-            idx = torch.arange(d_model)
-            self.proj.weight[idx, idx] = 1.0
-            nn.init.normal_(self.unit_position.weight, mean=0.0, std=0.02)
-
-    def forward(
-        self,
-        hidden: torch.Tensor,
-        unit_memory: Optional[torch.Tensor],
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Dict[str, torch.Tensor]]:
-        scale = float(self.unit_state_scale)
-        zero = hidden.new_zeros(())
-        if scale == 0.0:
-            return hidden, unit_memory, {
-                "unit_state_gate": zero,
-                "unit_state_norm": zero,
-                "unit_state_memory_norm": zero,
-            }
-        units = unit_index_tensor(hidden.device)
-        cell_to_units = cell_to_unit_tensor(hidden.device)
-        pooled = hidden[:, units, :].mean(dim=2)
-        if self.mode == "memory":
-            unit_ids = torch.arange(len(UNITS), dtype=torch.long, device=hidden.device)
-            unit_tokens = pooled + self.unit_position(unit_ids).unsqueeze(0).to(dtype=hidden.dtype) * float(self.token_scale)
-            if unit_memory is None or unit_memory.shape != unit_tokens.shape:
-                unit_state = unit_tokens
-            else:
-                decay = min(max(float(self.memory_decay), 0.0), 0.999)
-                unit_state = unit_memory.to(dtype=hidden.dtype) * decay + unit_tokens * (1.0 - decay)
-            next_unit_memory: Optional[torch.Tensor] = unit_state
-        else:
-            unit_state = pooled
-            next_unit_memory = unit_memory
-        cell_state = unit_state[:, cell_to_units, :].mean(dim=2)
-        message = self.proj(self.norm(cell_state)).to(hidden.dtype)
-        gate = torch.sigmoid(self.gate_logit.to(torch.float32)).to(hidden.dtype) * scale
-        return hidden + gate * message, next_unit_memory, {
-            "unit_state_gate": gate.mean(),
-            "unit_state_norm": message.norm(dim=-1).mean(),
-            "unit_state_memory_norm": unit_state.norm(dim=-1).mean(),
-        }
-
-
 class FeatureNoiseBuffer:
     def __init__(self, *, capacity: int, feature_dim: int, device: torch.device, dtype: torch.dtype = torch.float32) -> None:
         self.capacity = int(capacity)
@@ -689,11 +590,6 @@ class FutureSeedLoopSudoku(nn.Module):
         lambda_: float,
         future_seed_scale: float,
         rwkv_kernel: str,
-        unit_state_scale: float,
-        unit_state_gate_bias: float,
-        unit_state_mode: str,
-        unit_state_memory_decay: float,
-        unit_state_token_scale: float,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -708,14 +604,6 @@ class FutureSeedLoopSudoku(nn.Module):
             channel_mult,
             future_seed_scale=future_seed_scale,
             rwkv_kernel=rwkv_kernel,
-        )
-        self.unit_state = UnitStatePass(
-            d_model,
-            scale=unit_state_scale,
-            gate_bias=unit_state_gate_bias,
-            mode=unit_state_mode,
-            memory_decay=unit_state_memory_decay,
-            token_scale=unit_state_token_scale,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -761,7 +649,6 @@ class FutureSeedLoopSudoku(nn.Module):
         batch_size, seq_len, _channels = x.shape
         z_h = self.h_init.expand(batch_size, seq_len, -1)
         z_l = self.l_init.expand(batch_size, seq_len, -1)
-        unit_memory: Optional[torch.Tensor] = None
 
         loop_logits: List[torch.Tensor] = []
         fs_trace: List[Dict[str, torch.Tensor]] = []
@@ -785,8 +672,6 @@ class FutureSeedLoopSudoku(nn.Module):
                 feature_buffer_add=feature_buffer_add,
                 allow_noise=True,
             )
-            z_h, unit_memory, unit_diag = self.unit_state(z_h, unit_memory)
-            fs_diag = {**fs_diag, **unit_diag}
             board_h = self.out_norm(z_h[:, :CELLS])
             loop_logits.append(self.head(board_h))
             fs_trace.append(fs_diag)
@@ -836,22 +721,6 @@ def loss_from_logits(
         return loss.mean()
     weights = torch.where(clue_mask, torch.ones_like(loss), torch.full_like(loss, float(blank_weight)))
     return (loss * weights).sum() / weights.sum().clamp_min(1.0)
-
-
-def unit_index_tensor(device: torch.device) -> torch.Tensor:
-    key = (N, BOX_ROWS, BOX_COLS, str(device))
-    cached = _UNIT_INDEX_CACHE.get(key)
-    if cached is None or cached.device != device:
-        cached = torch.tensor(UNITS, dtype=torch.long, device=device)
-        _UNIT_INDEX_CACHE[key] = cached
-    return cached
-
-
-def unit_consistency_loss(logits: torch.Tensor) -> torch.Tensor:
-    probs = logits.to(torch.float32).softmax(dim=-1)
-    units = unit_index_tensor(logits.device)
-    digit_mass = probs[:, units, :].sum(dim=2)
-    return (digit_mass - 1.0).square().mean()
 
 
 def loop_weight_tensor(
@@ -934,11 +803,6 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         lambda_=args.lambda_,
         future_seed_scale=args.future_seed_scale,
         rwkv_kernel=args.rwkv_kernel,
-        unit_state_scale=args.unit_state_scale,
-        unit_state_gate_bias=args.unit_state_gate_bias,
-        unit_state_mode=args.unit_state_mode,
-        unit_state_memory_decay=args.unit_state_memory_decay,
-        unit_state_token_scale=args.unit_state_token_scale,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
@@ -953,8 +817,6 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_total_loss = 0.0
     last_loop1_loss = 0.0
     last_loop_last_loss = 0.0
-    last_unit_loss = 0.0
-    last_unit_weighted_loss = 0.0
     last_loop_weights: List[float] = []
 
     global_step = 0
@@ -982,11 +844,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 loss_from_logits(logits, labels, clue_mask, blank_weight=args.blank_loss_weight)
                 for logits in loop_logits
             ]
-            unit_losses = [unit_consistency_loss(logits) for logits in loop_logits]
             ce_loss = loop_losses[-1]
             supervised_loss, loop_weights = weighted_loop_loss(loop_losses, args)
-            unit_weighted_loss, _unit_weights = weighted_loop_loss(unit_losses, args)
-            loss = supervised_loss + float(args.unit_loss_weight) * unit_weighted_loss
+            loss = supervised_loss
             opt.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -995,15 +855,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_total_loss = float(loss.detach().cpu())
             last_loop1_loss = float(loop_losses[0].detach().cpu())
             last_loop_last_loss = float(loop_losses[-1].detach().cpu())
-            last_unit_loss = float(unit_losses[-1].detach().cpu())
-            last_unit_weighted_loss = float(unit_weighted_loss.detach().cpu())
             last_loop_weights = [float(x) for x in loop_weights.detach().cpu().tolist()]
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
                     f"step={global_step:04d} ce={last_ce_loss:.4f} total={last_total_loss:.4f} "
-                    f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f} "
-                    f"unit={last_unit_loss:.4f}",
+                    f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f}",
                     flush=True,
                 )
 
@@ -1012,19 +869,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "train_total_loss": last_total_loss,
         "train_loop1_loss": last_loop1_loss,
         "train_loop_last_loss": last_loop_last_loss,
-        "train_unit_loss": last_unit_loss,
-        "train_unit_weighted_loss": last_unit_weighted_loss,
         "loop_loss_mode": args.loop_loss,
         "loop_loss_start": args.loop_loss_start,
         "loop_loss_power": args.loop_loss_power,
         "loop_loss_min_weight": args.loop_loss_min_weight,
         "loop_loss_weights": last_loop_weights,
-        "unit_loss_weight": args.unit_loss_weight,
-        "unit_state_scale": args.unit_state_scale,
-        "unit_state_gate_bias": args.unit_state_gate_bias,
-        "unit_state_mode": args.unit_state_mode,
-        "unit_state_memory_decay": args.unit_state_memory_decay,
-        "unit_state_token_scale": args.unit_state_token_scale,
         "noise_mode": "feature_diff",
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -1061,28 +910,6 @@ def evaluate_model(
         out[f"loop{loop_idx}/future_seed"] = fs_metrics_from_trace(fs_trace[loop_idx - 1])
         loop_preds.append(pred)
     return out, loop_preds
-
-
-@torch.no_grad()
-def evaluate_pattern(
-    model: FutureSeedLoopSudoku,
-    *,
-    eval_n: int,
-    holes: int,
-    hole_pattern: str,
-    max_loops: int,
-    device: torch.device,
-    seed: int,
-) -> Dict[str, Any]:
-    batch = make_batch(eval_n, holes, holes, hole_pattern, random.Random(seed), device=device)
-    clean, _loop_preds = evaluate_model(
-        model,
-        batch,
-        max_loops=max_loops,
-        noise_scale=0.0,
-        seed=seed + 3000,
-    )
-    return {"eval_clean": clean}
 
 
 def parse_rollout_ks(args: argparse.Namespace) -> List[int]:
@@ -1344,20 +1171,6 @@ def parse_eval_holes(args: argparse.Namespace) -> List[int]:
     return deduped
 
 
-def parse_eval_patterns(args: argparse.Namespace) -> List[str]:
-    raw = str(args.eval_hole_patterns).strip()
-    patterns = [args.hole_pattern] if not raw else [x.strip() for x in raw.split(",") if x.strip()]
-    allowed = {"random", "row", "col", "box", "unit"}
-    for pattern_name in patterns:
-        if pattern_name not in allowed:
-            raise ValueError(f"--eval_hole_patterns contains unsupported pattern {pattern_name!r}")
-    deduped = []
-    for pattern_name in patterns:
-        if pattern_name not in deduped:
-            deduped.append(pattern_name)
-    return deduped
-
-
 def parse_hole_stages(args: argparse.Namespace) -> List[Tuple[int, int, int]]:
     raw = str(args.hole_stages).strip()
     if not raw:
@@ -1453,15 +1266,6 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             holes = int(hole_key.removeprefix("holes"))
             loop3 = hole_metrics["eval_clean"][f"loop{task.get('max_loops', 3)}"]
             lines.append(f"- {hole_key}: {metric_line(loop3)}; {coupling_line(loop3, holes)}")
-    if len(metrics.get("eval_by_pattern", {})) > 1:
-        lines.extend(["", "## Pattern Transfer", ""])
-        for pattern_name, by_holes in metrics["eval_by_pattern"].items():
-            lines.append(f"### {pattern_name}")
-            for hole_key, hole_metrics in by_holes.items():
-                holes = int(hole_key.removeprefix("holes"))
-                loop3 = hole_metrics["eval_clean"][f"loop{task.get('max_loops', 3)}"]
-                lines.append(f"- {hole_key}: {metric_line(loop3)}; {coupling_line(loop3, holes)}")
-            lines.append("")
     lines.extend(["", "## Decision", "", metrics["decision"], "", "## Artifacts", ""])
     for name, value in artifacts.items():
         lines.append(f"- {name}: {value}")
@@ -1484,12 +1288,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         ok, reason = wind_available(args.head_dim)
         if not ok:
             raise ValueError(f"--rwkv_kernel wind is unavailable: {reason}")
-    max_eval_holes = max(parse_eval_holes(args) + [hi for _lo, hi, _steps in parse_hole_stages(args)])
-    if args.hole_pattern != "random" and max_eval_holes > N:
-        raise ValueError(f"--hole_pattern {args.hole_pattern} supports at most {N} holes for {N}x{N}")
-    eval_patterns = parse_eval_patterns(args)
-    if any(pattern_name != "random" for pattern_name in eval_patterns) and max_eval_holes > N:
-        raise ValueError(f"linked eval patterns support at most {N} holes for {N}x{N}")
+    if args.hole_pattern != "random":
+        raise ValueError("--hole_pattern now supports only 'random'; structured hole probes were removed from the clean mainline.")
 
     device = choose_device(args.cpu)
     print(
@@ -1522,7 +1322,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "train": train_stats,
         "eval_clean": clean,
         "eval_by_holes": {},
-        "eval_by_pattern": {},
     }
     if args.noise_scale > 0:
         noisy, _noisy_preds = evaluate_model(
@@ -1578,23 +1377,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         )
         metrics["eval_by_holes"][f"holes{holes}"] = {"eval_clean": hole_clean}
 
-    for pattern_name in eval_patterns:
-        by_holes: Dict[str, Any] = {}
-        for holes in eval_holes_values:
-            if pattern_name == args.hole_pattern and f"holes{holes}" in metrics["eval_by_holes"]:
-                by_holes[f"holes{holes}"] = metrics["eval_by_holes"][f"holes{holes}"]
-            else:
-                by_holes[f"holes{holes}"] = evaluate_pattern(
-                    model,
-                    eval_n=args.eval_n,
-                    holes=holes,
-                    hole_pattern=pattern_name,
-                    max_loops=args.max_loops,
-                    device=device,
-                    seed=args.seed + 7000 + holes * 17 + sum(ord(c) for c in pattern_name),
-                )
-        metrics["eval_by_pattern"][pattern_name] = by_holes
-
     l1 = metrics["eval_clean"]["loop1"]["label_exact"]
     last_key = f"loop{args.max_loops}"
     l_last = metrics["eval_clean"][last_key]["label_exact"]
@@ -1610,19 +1392,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "box_rows": BOX_ROWS,
         "box_cols": BOX_COLS,
         "hole_pattern": args.hole_pattern,
-        "eval_hole_patterns": eval_patterns,
         "hole_stages": parse_hole_stages(args),
         "max_loops": args.max_loops,
         "loop_loss": args.loop_loss,
         "loop_loss_start": args.loop_loss_start,
         "loop_loss_power": args.loop_loss_power,
         "loop_loss_min_weight": args.loop_loss_min_weight,
-        "unit_loss_weight": args.unit_loss_weight,
-        "unit_state_scale": args.unit_state_scale,
-        "unit_state_gate_bias": args.unit_state_gate_bias,
-        "unit_state_mode": args.unit_state_mode,
-        "unit_state_memory_decay": args.unit_state_memory_decay,
-        "unit_state_token_scale": args.unit_state_token_scale,
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
@@ -1686,13 +1461,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         for holes in eval_holes_values:
             loop_last = metrics["eval_by_holes"][f"holes{holes}"]["eval_clean"][last_key]
             print(f"holes={holes:<2d} {metric_line(loop_last)}; {coupling_line(loop_last, holes)}")
-    if len(eval_patterns) > 1:
-        print("\npattern-transfer metrics")
-        for pattern_name in eval_patterns:
-            print(f"pattern={pattern_name}")
-            for holes in eval_holes_values:
-                loop_last = metrics["eval_by_pattern"][pattern_name][f"holes{holes}"]["eval_clean"][last_key]
-                print(f"  holes={holes:<2d} {metric_line(loop_last)}; {coupling_line(loop_last, holes)}")
     print(metrics["decision"])
     print(f"wrote {json_path}")
     print(f"wrote {md_path}")
@@ -1721,13 +1489,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--loop_loss_start", type=int, default=1)
     p.add_argument("--loop_loss_power", type=float, default=2.0)
     p.add_argument("--loop_loss_min_weight", type=float, default=0.05)
-    p.add_argument("--unit_loss_weight", type=float, default=0.0)
-    p.add_argument("--unit_state_scale", type=float, default=0.0)
-    p.add_argument("--unit_state_gate_bias", type=float, default=-2.0)
-    p.add_argument("--unit_state_mode", choices=("pooled", "memory"), default="pooled")
-    p.add_argument("--unit_state_memory_decay", type=float, default=0.5)
-    p.add_argument("--unit_state_token_scale", type=float, default=1.0)
-    p.add_argument("--noise_scale", type=float, default=0.01)
+    p.add_argument("--noise_scale", type=float, default=0.0)
     p.add_argument("--feature_buffer_size", type=int, default=8192)
     p.add_argument("--feature_buffer_add", type=int, default=2048)
     p.add_argument("--rollout_ks", default="")
@@ -1738,8 +1500,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--holes_min", type=int, default=4)
     p.add_argument("--holes_max", type=int, default=12)
     p.add_argument("--hole_stages", default="")
-    p.add_argument("--hole_pattern", choices=("random", "row", "col", "box", "unit"), default="random")
-    p.add_argument("--eval_hole_patterns", default="")
+    p.add_argument("--hole_pattern", choices=("random",), default="random")
     p.add_argument("--eval_holes", type=int, default=8)
     p.add_argument("--eval_holes_list", default="")
     p.add_argument("--eval_n", type=int, default=128)

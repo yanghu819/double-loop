@@ -180,10 +180,10 @@ COMMON_ARGS=(
   --holes_min "${HOLES_MIN:-2}"
   --holes_max "${HOLES_MAX:-4}"
   --eval_holes "${EVAL_HOLES:-2}"
-  --hole_pattern "${HOLE_PATTERN:-unit}"
+  --hole_pattern "${HOLE_PATTERN:-random}"
   --blank_loss_weight "${BLANK_LOSS_WEIGHT:-20}"
-  --noise_scale "${NOISE_SCALE:-0.01}"
-  --rollout_noise_scale "${ROLLOUT_NOISE_SCALE:-0.05}"
+  --noise_scale "${NOISE_SCALE:-0.0}"
+  --rollout_noise_scale "${ROLLOUT_NOISE_SCALE:-0.0}"
   --lr "${LR:-2e-3}"
   --weight_decay "${WEIGHT_DECAY:-1e-3}"
   --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
@@ -195,12 +195,6 @@ COMMON_ARGS=(
   --loop_loss_start "${LOOP_LOSS_START:-1}"
   --loop_loss_power "${LOOP_LOSS_POWER:-2.0}"
   --loop_loss_min_weight "${LOOP_LOSS_MIN_WEIGHT:-0.05}"
-  --unit_loss_weight "${UNIT_LOSS_WEIGHT:-0.0}"
-  --unit_state_scale "${UNIT_STATE_SCALE:-0.0}"
-  --unit_state_gate_bias "${UNIT_STATE_GATE_BIAS:--2.0}"
-  --unit_state_mode "${UNIT_STATE_MODE:-pooled}"
-  --unit_state_memory_decay "${UNIT_STATE_MEMORY_DECAY:-0.5}"
-  --unit_state_token_scale "${UNIT_STATE_TOKEN_SCALE:-1.0}"
   --out_dir "$OUT_DIR"
 )
 
@@ -209,9 +203,6 @@ if [[ -n "${HOLE_STAGES:-}" ]]; then
 fi
 if [[ -n "${EVAL_HOLES_LIST:-}" ]]; then
   COMMON_ARGS+=(--eval_holes_list "$EVAL_HOLES_LIST")
-fi
-if [[ -n "${EVAL_HOLE_PATTERNS:-}" ]]; then
-  COMMON_ARGS+=(--eval_hole_patterns "$EVAL_HOLE_PATTERNS")
 fi
 if [[ -n "${ROLLOUT_LOOP_VALUES:-}" ]]; then
   COMMON_ARGS+=(--rollout_loop_values "$ROLLOUT_LOOP_VALUES")

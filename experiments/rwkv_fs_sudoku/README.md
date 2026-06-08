@@ -6,7 +6,6 @@ This directory keeps one active mechanism:
 RWKV recurrent backbone
 + FutureSeed cross-layer recurrent state initialization
 + EqR-style depth loop
-+ feature-difference stochastic rollout
 ```
 
 Sudoku is only a structured probe. The mechanism must still make sense for a
@@ -38,8 +37,21 @@ There is one active checkpoint and one active run artifact:
 | RWKV recurrent scan | recurrent sequence model | general backbone for token streams |
 | FutureSeed | cross-layer recurrent state initialization | global state propagation without copying input views |
 | Depth loop | iterative refinement / inference-time compute | tests whether more computation improves latent state |
-| Feature-difference stochastic rollout | activation-space latent transition | uses hidden-state differences as the stochastic basis |
-| Rollout oracle diagnostics | best-of-N sampling diagnostic | measures whether the proposal mechanism creates useful candidates |
+| Feature-difference stochastic rollout | activation-space latent transition | optional diagnostic, disabled by default |
+| Rollout oracle diagnostics | best-of-N sampling diagnostic | measures whether optional stochastic proposals create useful candidates |
+
+## Deleted From Mainline
+
+The clean mainline intentionally excludes Sudoku-specific shortcuts:
+
+- no row/column/box state pooling
+- no persistent unit memory
+- no unit-consistency loss
+- no row/column/box/unit hole-pattern evaluation
+
+Rows, columns, and boxes remain only in the data generator, valid-board metric,
+and visualization because those are the proxy task definition rather than model
+assistance.
 
 ## Run
 
@@ -51,9 +63,9 @@ uv run python study_rwkv_futureseed_loop.py \
   --d_model 32 --layers 4 --heads 4 --head_dim 8 --channel_mult 2 \
   --l_cycles 1 \
   --holes_min 2 --holes_max 4 --eval_holes 2 \
-  --eval_holes_list 2,4,6 --hole_pattern unit \
-  --eval_hole_patterns row,col,box --blank_loss_weight 20 \
-  --out_dir /tmp/rwkv_fs_sudoku_smoke
+  --eval_holes_list 2,4,6 --hole_pattern random \
+  --blank_loss_weight 20 \
+  --out_dir runs/rwkv_fs_sudoku_smoke
 ```
 
 Best-known feature-diff run:
@@ -64,11 +76,11 @@ uv run python study_rwkv_futureseed_loop.py \
   --d_model 32 --layers 4 --heads 4 --head_dim 8 --channel_mult 2 \
   --l_cycles 1 \
   --holes_min 2 --holes_max 4 --eval_holes 2 \
-  --hole_pattern unit \
+  --hole_pattern random \
   --blank_loss_weight 20 \
-  --noise_scale 0.01 \
+  --noise_scale 0.0 \
   --rollout_ks 1,4,8,16 \
-  --rollout_noise_scale 0.05 --log_every 50 \
+  --rollout_noise_scale 0.0 --log_every 50 \
   --out_dir runs/final_feature_diff_main_6x6
 ```
 

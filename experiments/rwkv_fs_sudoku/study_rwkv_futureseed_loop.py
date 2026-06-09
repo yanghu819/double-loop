@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import math
 import random
 import time
 from dataclasses import asdict, dataclass
@@ -486,13 +487,25 @@ class FutureSeedRWKV(nn.Module):
         *,
         future_seed_scale: float = 1.0,
         future_seed_decay: float = 0.0,
+        future_seed_update: str = "fixed",
         rwkv_kernel: str = "auto",
     ) -> None:
         super().__init__()
         if layers < 2:
             raise ValueError("FutureSeed needs at least two layers.")
+        if future_seed_update not in {"fixed", "learned"}:
+            raise ValueError("future_seed_update must be 'fixed' or 'learned'.")
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
+        self.future_seed_update = future_seed_update
+        if future_seed_update == "learned":
+            update_init = min(max(1.0 - self.future_seed_decay, 1e-4), 1.0 - 1e-4)
+            update_logit = math.log(update_init / (1.0 - update_init))
+            self.future_seed_update_logit = nn.Parameter(
+                torch.full((layers - 1, 1, heads, 1, 1), float(update_logit))
+            )
+        else:
+            self.register_parameter("future_seed_update_logit", None)
         self.blocks = nn.ModuleList(
             [
                 RWKVBlock(
@@ -512,6 +525,7 @@ class FutureSeedRWKV(nn.Module):
         previous_state: Optional[torch.Tensor] = None
         seed_state: Optional[torch.Tensor] = None
         gates = []
+        update_gates = []
         state_norms = []
         for layer_idx, block in enumerate(self.blocks):
             initial_state = None
@@ -520,27 +534,42 @@ class FutureSeedRWKV(nn.Module):
                 gate = torch.sigmoid(block.future_seed_logit) * self.future_seed_scale
                 gates.append(gate.mean())
                 if self.future_seed_scale > 0:
-                    if seed_state is None or self.future_seed_decay <= 0:
+                    if seed_state is None:
                         seed_state = previous_state
+                        update_gates.append(x.new_ones(()))
+                    elif self.future_seed_update == "learned":
+                        assert self.future_seed_update_logit is not None
+                        update_gate = torch.sigmoid(self.future_seed_update_logit[layer_idx - 1]).to(
+                            device=previous_state.device,
+                            dtype=previous_state.dtype,
+                        )
+                        seed_state = seed_state + update_gate * (previous_state - seed_state)
+                        update_gates.append(update_gate.mean())
+                    elif self.future_seed_decay <= 0:
+                        seed_state = previous_state
+                        update_gates.append(x.new_ones(()))
                     else:
                         keep = self.future_seed_decay
                         seed_state = keep * seed_state + (1.0 - keep) * previous_state
+                        update_gates.append(x.new_tensor(1.0 - keep))
                     denom = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
                     normalized_state = seed_state / denom
                     initial_state = normalized_state * gate
                     state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
                 else:
+                    update_gates.append(x.new_zeros(()))
                     state_norms.append(x.new_zeros(()))
             x, previous_state = block(x, initial_state=initial_state)
 
         if gates:
             return x, {
                 "fs_gate_mean": torch.stack(gates).mean(),
+                "fs_update_mean": torch.stack(update_gates).mean(),
                 "fs_state_norm": torch.stack(state_norms).mean(),
                 "fs_decay": x.new_tensor(self.future_seed_decay),
             }
         zero = x.new_zeros(())
-        return x, {"fs_gate_mean": zero, "fs_state_norm": zero, "fs_decay": zero}
+        return x, {"fs_gate_mean": zero, "fs_update_mean": zero, "fs_state_norm": zero, "fs_decay": zero}
 
 
 class FeatureNoiseBuffer:
@@ -599,11 +628,14 @@ class FutureSeedLoopSudoku(nn.Module):
         lambda_: float,
         future_seed_scale: float,
         future_seed_decay: float,
+        future_seed_update: str,
+        loop_feedback_scale: float,
         rwkv_kernel: str,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
         self.lambda_ = float(lambda_)
+        self.loop_feedback_scale = float(loop_feedback_scale)
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -614,12 +646,18 @@ class FutureSeedLoopSudoku(nn.Module):
             channel_mult,
             future_seed_scale=future_seed_scale,
             future_seed_decay=future_seed_decay,
+            future_seed_update=future_seed_update,
             rwkv_kernel=rwkv_kernel,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.out_norm = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, N, bias=False)
+        if self.loop_feedback_scale > 0:
+            self.loop_feedback = nn.Linear(N, d_model, bias=False)
+            nn.init.zeros_(self.loop_feedback.weight)
+        else:
+            self.loop_feedback = None
 
     def input_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
         positions = torch.arange(CELLS, dtype=torch.long, device=inputs.device)
@@ -660,14 +698,18 @@ class FutureSeedLoopSudoku(nn.Module):
         batch_size, seq_len, _channels = x.shape
         z_h = self.h_init.expand(batch_size, seq_len, -1)
         z_l = self.l_init.expand(batch_size, seq_len, -1)
+        feedback: Optional[torch.Tensor] = None
+        zero = x.new_zeros(())
 
         loop_logits: List[torch.Tensor] = []
         fs_trace: List[Dict[str, torch.Tensor]] = []
         for _ in range(int(loops)):
+            feedback_in_norm = zero if feedback is None else feedback.norm(dim=-1).mean()
+            loop_context = x if feedback is None else x + feedback
             for _ in range(self.l_cycles):
                 z_l, _diag = self.depth_update(
                     z_l,
-                    z_h + x,
+                    z_h + loop_context,
                     noise_scale,
                     feature_buffer=feature_buffer,
                     update_feature_buffer=update_feature_buffer,
@@ -684,7 +726,16 @@ class FutureSeedLoopSudoku(nn.Module):
                 allow_noise=True,
             )
             board_h = self.out_norm(z_h[:, :CELLS])
-            loop_logits.append(self.head(board_h))
+            logits = self.head(board_h)
+            loop_logits.append(logits)
+            fs_diag = dict(fs_diag)
+            fs_diag["loop_feedback_in_norm"] = feedback_in_norm
+            if self.loop_feedback is not None and self.loop_feedback_scale > 0:
+                feedback = self.loop_feedback(logits.softmax(dim=-1)) * self.loop_feedback_scale
+                fs_diag["loop_feedback_next_norm"] = feedback.norm(dim=-1).mean()
+            else:
+                feedback = None
+                fs_diag["loop_feedback_next_norm"] = zero
             fs_trace.append(fs_diag)
         return loop_logits, fs_trace
 
@@ -798,9 +849,18 @@ def coupling_line(m: Dict[str, float], holes: int) -> str:
 
 
 def fs_line(m: Dict[str, float]) -> str:
-    decay = m.get("fs_decay")
-    suffix = "" if decay is None else f", fs_decay={decay:.2f}"
-    return f"fs_gate={m['fs_gate_mean']:.3f}, fs_state_norm={m['fs_state_norm']:.3f}{suffix}"
+    parts = [
+        f"fs_gate={m['fs_gate_mean']:.3f}",
+        f"fs_update={m.get('fs_update_mean', 0.0):.3f}",
+        f"fs_state_norm={m['fs_state_norm']:.3f}",
+    ]
+    if "fs_decay" in m:
+        parts.append(f"fs_decay={m['fs_decay']:.2f}")
+    if "loop_feedback_in_norm" in m:
+        parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
+    if "loop_feedback_next_norm" in m:
+        parts.append(f"fb_next={m['loop_feedback_next_norm']:.3f}")
+    return ", ".join(parts)
 
 
 def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[FutureSeedLoopSudoku, Dict[str, float]]:
@@ -816,6 +876,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         lambda_=args.lambda_,
         future_seed_scale=args.future_seed_scale,
         future_seed_decay=args.future_seed_decay,
+        future_seed_update=args.future_seed_update,
+        loop_feedback_scale=args.loop_feedback_scale,
         rwkv_kernel=args.rwkv_kernel,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
@@ -892,6 +954,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "rwkv_kernel": args.rwkv_kernel,
+        "future_seed_update": args.future_seed_update,
+        "loop_feedback_scale": args.loop_feedback_scale,
     }
     return model.eval(), train_stats
 
@@ -1221,6 +1285,8 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             f"loop_loss={train.get('loop_loss_mode', 'final')}, "
             f"noise={train.get('noise_mode', 'feature_diff')}, "
             f"buffer={train.get('feature_buffer_count', 0)}, "
+            f"fs_update={train.get('future_seed_update', 'fixed')}, "
+            f"loop_fb={train.get('loop_feedback_scale', 0.0):.2f}, "
             f"loop1_loss={train.get('train_loop1_loss', 0.0):.4f}, "
             f"loop_last_loss={train.get('train_loop_last_loss', 0.0):.4f}, "
             f"sec={train.get('train_sec', 0.0):.1f}"
@@ -1293,6 +1359,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--future_seed_scale must be non-negative")
     if not (0.0 <= args.future_seed_decay < 1.0):
         raise ValueError("--future_seed_decay must be in [0, 1)")
+    if args.loop_feedback_scale < 0:
+        raise ValueError("--loop_feedback_scale must be non-negative")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -1418,6 +1486,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
         "future_seed_decay": args.future_seed_decay,
+        "future_seed_update": args.future_seed_update,
+        "loop_feedback_scale": args.loop_feedback_scale,
         "rwkv_kernel": args.rwkv_kernel,
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
@@ -1502,6 +1572,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--lambda_", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_decay", type=float, default=0.0)
+    p.add_argument("--future_seed_update", choices=("fixed", "learned"), default="fixed")
+    p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
     p.add_argument("--loop_loss_start", type=int, default=1)

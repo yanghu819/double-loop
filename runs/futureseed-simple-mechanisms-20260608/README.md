@@ -1,6 +1,6 @@
 # FutureSeed Simple Mechanisms, 2026-06-08
 
-Source SHAs: `24a95d5af5a40a532ca03d8083bc95245d11cdf5`, `5ec9129db2ffe486f388b25f10be491097a1af38`
+Source SHAs: `24a95d5af5a40a532ca03d8083bc95245d11cdf5`, `5ec9129db2ffe486f388b25f10be491097a1af38`, `a9a0e9d6ca7464a8700931af7035cf758f001cc5`
 
 GPU: GPU1 only, NVIDIA A800-SXM4-80GB.
 
@@ -13,6 +13,7 @@ This was not a table-filling ablation. Each run had a decision:
 - FutureSeed EMA decay: does smoothing cross-layer seed state make the 16x16 curriculum viable?
 - All-loop supervision: if loops are neutral, is the bottleneck final-loop-only credit assignment?
 - Loop feedback + learned update gate: if loops are neutral because the next iteration cannot see prior beliefs, does feeding previous prediction distributions back into the next loop make recurrence useful?
+- BF16 batch32 scaling: if local digit reliability is the bottleneck, does a generic memory-efficiency change allow a larger batch and better optimization without adding Sudoku priors?
 
 ## Runs
 
@@ -23,6 +24,7 @@ This was not a table-filling ablation. Each run had a decision:
 | `fsdecay16x16-d256-l12-loop8-h32-b16-s600eval-20260608T0520Z-24a95d5` | FutureSeed decay=0.5, total step600 with eval | CE 1.2070 -> 1.0894 -> 1.0231 -> 1.2110 -> 1.2295 -> 0.9798 | h24 loop8 exact 0.0000, blank_acc 0.3354 | decay changes loss curve but not viability |
 | `loopall16x16-d256-l12-loop8-h32-b16-s600eval-20260608T0545Z-24a95d5` | FutureSeed decay=0, `LOOP_LOSS=all` | CE 1.2229 -> 1.1263 -> 1.0056 -> 1.2201 -> 1.2404 -> 0.9825 | h24 loop8 exact 0.0000, blank_acc 0.3381 | naive all-loop supervision is not enough |
 | `loopfeedback-fsgate16x16-d256-l12-loop8-h24-s600-20260609T0539Z-5ec9129` | learned FutureSeed update, explicit prediction feedback into later loops, shaped loop supervision | CE 1.1880 -> 1.1215 -> 1.0158 -> 1.2196 -> 1.2250 -> 0.9810 | h24 loop8 exact 0.0000, blank_acc 0.3270; loop8-loop1 blank_acc +0.0021; fb_norm 1.541 | feedback path is active but not the bottleneck |
+| `bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d` | bf16 forward, batch32, no feedback, shaped loop supervision | CE 1.2038 -> 1.0780 -> 0.9221 -> 1.1133 -> 1.0364 -> 0.9751 | h24 loop8 exact 0.0000, blank_acc 0.3711; h32 blank_acc 0.3571; fits at about 67.8GB | keep bf16 for scaling; exact still closed |
 
 ## Readouts
 
@@ -49,6 +51,15 @@ Loop feedback + learned FutureSeed gate:
 - loop1 to loop8 blank_acc gain on h24: +0.0021
 - feedback norm: 1.541, so the negative result is not caused by a dead feedback path
 
+BF16 batch32 scaling:
+
+- h16 exact 0.0000, blank_acc 0.4043
+- h24 exact 0.0000, blank_acc 0.3711
+- h32 exact 0.0000, blank_acc 0.3571
+- loop1 to loop8 exact gain: 0.0000
+- loop1 to loop8 blank_acc gain on h24: +0.0033
+- batch32 fits at about 67.8GB where fp32 batch32 previously OOMed near the 80GB limit
+
 ## Insights
 
 1. Step500 was a bad kill boundary for this curriculum. Both completed runs had a delayed CE drop at step600 after looking bad at step500. Future kill rules should require a post-transition window before judging a stage.
@@ -59,9 +70,11 @@ Loop feedback + learned FutureSeed gate:
 
 4. Clean 16x16 is still below the per-cell accuracy regime needed for exact Sudoku. This is not the earlier "blank accuracy high but exact zero" global-consistency-only failure; blank_acc around 0.33 means the model is still far from local digit reliability.
 
-5. The practical 80GB clean scale boundary remains D256/L12/loop8/b16 at roughly 42.9GB. Batch32 and batch48 OOM near 79GB.
+5. The old fp32 80GB clean scale boundary was D256/L12/loop8/b16 at roughly 42.9GB. BF16 forward changes that: D256/L12/loop8/b32 fits at about 67.8GB and improves h24/h32 blank accuracy.
 
 6. Explicit previous-prediction feedback does not fix neutral loops. The model learns a nonzero feedback vector and a nontrivial FutureSeed update gate, but later loops only add about +0.002 h24 blank accuracy. That means the next useful loop mechanism must change representation or credit assignment more deeply than "feed the old logits back in."
+
+7. BF16/batch scaling is the first clean mechanism in this set that moves local eval behavior. It does not solve exact boards, but it raises blank accuracy enough to justify using it as the default for the next clean scale probe.
 
 ## Lessons To Reuse
 
@@ -69,4 +82,5 @@ Loop feedback + learned FutureSeed gate:
 - Add `PYTHONDONTWRITEBYTECODE=1` for future runs to avoid `__pycache__` making provenance dirty.
 - Do not promote decay/gate micro-sweeps unless a simple instance first changes eval behavior.
 - Do not run loop-feedback scale sweeps. One active-feedback run already answered the main question: the path is live but not useful enough.
+- Use `FORWARD_DTYPE=bfloat16` for future GPU1 clean scale experiments unless there is a numerical regression.
 - For Better Lesson scaling, the next high-ROI move is not another small loss tweak. The bottleneck points to generic capacity/credit-assignment changes that can raise per-cell accuracy first, while avoiding Sudoku-specific row/column/box priors.

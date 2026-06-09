@@ -1,0 +1,60 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/bf16-scale-20260609T0610Z-a9a0e9d/runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d
+git_sha=a9a0e9d6ca7464a8700931af7035cf758f001cc5
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=16x16 box=4x4 mainline=future_seed_loop rwkv_kernel=cuda forward_dtype=bfloat16
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:8-16] step=0100 ce=1.2038 total=1.2038 loop1=1.2044 loop_last=1.2038
+[future_seed_loop stage=1:8-16] step=0200 ce=1.0780 total=1.0780 loop1=1.0789 loop_last=1.0780
+[future_seed_loop stage=1:8-16] step=0300 ce=0.9221 total=0.9220 loop1=0.9203 loop_last=0.9221
+[future_seed_loop stage=2:16-24] step=0400 ce=1.1133 total=1.1132 loop1=1.1161 loop_last=1.1133
+[future_seed_loop stage=2:16-24] step=0500 ce=1.0364 total=1.0367 loop1=1.0447 loop_last=1.0364
+[future_seed_loop stage=2:16-24] step=0600 ce=0.9751 total=0.9753 loop1=0.9817 loop_last=0.9751
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3678
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3706
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3714
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3716
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3716
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=6 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3714
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=7 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3713
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=8 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3711
+        fs_gate=0.497, fs_update=0.545, fs_state_norm=15.904, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3711; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3711; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3711; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3711; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop3
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop5
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop8
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+
+hole-transfer metrics
+holes=24 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3711; indep=0.0000, exact/indep=0.00
+holes=16 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4043; indep=0.0000, exact/indep=0.00
+holes=32 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3571; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/bf16-scale-20260609T0610Z-a9a0e9d/runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/bf16-scale-20260609T0610Z-a9a0e9d/runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/bf16-scale-20260609T0610Z-a9a0e9d/runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_case_seed52.html
+recorded run=bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d score=0.0 key=metrics.eval_clean.loop8.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/bf16-scale-20260609T0610Z-a9a0e9d/runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d

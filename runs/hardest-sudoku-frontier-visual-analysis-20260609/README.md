@@ -1,6 +1,6 @@
 # Hardest Doable Sudoku Frontier Visual Analysis
 
-Generated UTC: `2026-06-09T09:02:23.557543+00:00`
+Generated UTC: `2026-06-09T10:58:28.087897+00:00`
 
 ## Selection
 
@@ -27,9 +27,10 @@ The loop has two regimes. Loop1 to loop2 mostly repairs local cell reliability. 
 ## Concrete Cases
 
 - 12x12 archived case: `runs/frontier-12x12-d256-h72-20260604T0920Z-f67e6a2/output/futureseed_loop_case_seed52.html`. This is the concrete case exported by the original run. It is useful for reading loop refinement from the same trained model, but the archive did not save a full h72 case bank.
+- New h72 case bank: `runs/casebank-h72-12x12-d256-l12-loop5-s1100-20260609T1013Z-8a2eb57/output/case_bank/h72/index.html`. This reproduced the frontier and exported 4 solved-by-loop, 4 almost-solved, and 4 hard-failure h72 boards.
 - 16x16 clean failure case: `runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_case_seed52.html`. This shows why 16x16 clean is not yet the right case-level microscope: exact is still closed.
 
-The next GPU run should export a case bank during evaluation for h72: solved-by-loop, almost-solved, and hard-failure boards, with per-loop wrong cells, entropy, and conflict counts. That is a visualization change, not a Sudoku training trick.
+The case bank confirms the loop story concretely. Solved-by-loop boards start with about 29-32 wrong hidden cells at loop1, drop to 5-11 at loop2, reach 0-3 by loop3, and finish exact by loop5. Almost-solved and hard-failure boards show the current limit: the last 1-5 coupled wrong cells can become sticky.
 
 ## Files
 

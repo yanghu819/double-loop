@@ -24,6 +24,8 @@ CLEAN_12_JSON = REPO_ROOT / "runs/frontier-12x12-d256-h72-20260604T0920Z-f67e6a2
 CLEAN_12_CASE = REPO_ROOT / "runs/frontier-12x12-d256-h72-20260604T0920Z-f67e6a2/output/futureseed_loop_case_seed52.html"
 CLEAN_16_JSON = REPO_ROOT / "runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_seed52.json"
 CLEAN_16_CASE = REPO_ROOT / "runs/bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_case_seed52.html"
+H72_CASEBANK_INDEX = REPO_ROOT / "runs/casebank-h72-12x12-d256-l12-loop5-s1100-20260609T1013Z-8a2eb57/output/case_bank/h72/index.html"
+H72_CASEBANK_JSON = REPO_ROOT / "runs/casebank-h72-12x12-d256-l12-loop5-s1100-20260609T1013Z-8a2eb57/output/case_bank/h72/cases.json"
 UPPERBOUND_SUMMARY = REPO_ROOT / "runs/futureseed-upperbound-visual-analysis-20260608/summary.json"
 UNIT_16_JSON = REPO_ROOT / "runs/frontier-16x16-unitmem-h80curr-d192-l10-loop7-b48-20260605T0850Z-0be64f4/output/futureseed_loop_seed52.json"
 UNIT_25_JSON = REPO_ROOT / "runs/upperbound-25x25-unitmem-h100curr-d160-l8-loop5-b32-20260607T050029Z-46a0b06/output/futureseed_loop_seed52.json"
@@ -301,6 +303,7 @@ def build_summary() -> dict[str, Any]:
     h72_curve = extract_loop_curve(clean12_metrics, "holes72")
     h60_curve = extract_loop_curve(clean12_metrics, "holes60")
     fs = fs_stats(clean12_metrics, "holes72")
+    case_bank = load_json(H72_CASEBANK_JSON) if H72_CASEBANK_JSON.exists() else None
 
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -322,8 +325,10 @@ def build_summary() -> dict[str, Any]:
         "future_seed_h72": fs,
         "case_links": {
             "near_frontier_12x12_default_case": rel(CLEAN_12_CASE),
+            "h72_case_bank": rel(H72_CASEBANK_INDEX),
             "clean_16x16_failure_case": rel(CLEAN_16_CASE),
         },
+        "case_bank_summary": case_bank["summary"] if case_bank else None,
     }
 
 
@@ -365,9 +370,10 @@ The loop has two regimes. Loop1 to loop2 mostly repairs local cell reliability. 
 ## Concrete Cases
 
 - 12x12 archived case: `{summary['case_links']['near_frontier_12x12_default_case']}`. This is the concrete case exported by the original run. It is useful for reading loop refinement from the same trained model, but the archive did not save a full h72 case bank.
+- New h72 case bank: `{summary['case_links']['h72_case_bank']}`. This reproduced the frontier and exported 4 solved-by-loop, 4 almost-solved, and 4 hard-failure h72 boards.
 - 16x16 clean failure case: `{summary['case_links']['clean_16x16_failure_case']}`. This shows why 16x16 clean is not yet the right case-level microscope: exact is still closed.
 
-The next GPU run should export a case bank during evaluation for h72: solved-by-loop, almost-solved, and hard-failure boards, with per-loop wrong cells, entropy, and conflict counts. That is a visualization change, not a Sudoku training trick.
+The case bank confirms the loop story concretely. Solved-by-loop boards start with about 29-32 wrong hidden cells at loop1, drop to 5-11 at loop2, reach 0-3 by loop3, and finish exact by loop5. Almost-solved and hard-failure boards show the current limit: the last 1-5 coupled wrong cells can become sticky.
 
 ## Files
 
@@ -422,6 +428,7 @@ def build_html(summary: dict[str, Any]) -> str:
     fs_norm = float(fs.get("fs_state_norm", 0.0))
 
     clean_case_link = html_link(CLEAN_12_CASE, "open the archived 12x12 loop case")
+    casebank_link = html_link(H72_CASEBANK_INDEX, "open the new h72 case bank")
     failure_case_link = html_link(CLEAN_16_CASE, "open the clean 16x16 failure case")
 
     return f"""<!doctype html>
@@ -608,23 +615,24 @@ def build_html(summary: dict[str, Any]) -> str:
       <h2>Concrete cases</h2>
       <p>{clean_case_link}</p>
       <p class="small">This is the concrete case exported by the 12x12 frontier run. It is from the same model, but the archive did not save a full h72 case bank.</p>
+      <p style="margin-top:10px;">{casebank_link}</p>
+      <p class="small">This reproduces the frontier and adds 4 solved-by-loop, 4 almost-solved, and 4 hard-failure h72 boards with per-loop wrong cells, entropy, changed cells, and duplicate conflicts.</p>
       <p style="margin-top:10px;">{failure_case_link}</p>
       <p class="small">This helps explain why clean 16x16 is not yet the case-level target: the current clean run has no exact successes.</p>
-      <div class="callout warn" style="margin-top:12px;">
-        <strong>Archive gap:</strong> h72 board-level cases cannot be reconstructed from aggregate metrics alone. The next run should export case banks during eval.
+      <div class="callout" style="margin-top:12px;">
+        <strong>Case-bank read:</strong> solved boards usually go from about 29-32 wrong hidden cells at loop1 to 0-3 by loop3, then exact by loop5. Failures often stall with 1-5 coupled wrong cells.
       </div>
     </div>
   </section>
 
   <section class="panel" style="margin-top: 18px;">
-    <h2>Next visualization run</h2>
-    <p>The next GPU run should not change the Sudoku task or add priors. It should add case-bank export for h72 while training/evaluating the same clean setup.</p>
+    <h2>Next read</h2>
+    <p>The h72 case bank is now available. The next useful analysis is not another training variant; it is reading the case groups for what actually changes between loops.</p>
     <ul class="list">
-      <li>Save solved-by-loop cases: loop1 wrong, loop5 exact.</li>
-      <li>Save almost-solved cases: loop5 has 1 to 4 wrong hidden cells.</li>
-      <li>Save hard failures: high blank accuracy, low board validity.</li>
-      <li>Trace per-loop entropy, changed cells, and duplicate-conflict counts as diagnosis only.</li>
-      <li>Trace FutureSeed injection norm per token/layer so we can see whether global seed influence is uniform or concentrated.</li>
+      <li>Solved-by-loop: identify what kinds of conflicts disappear between loop2 and loop5.</li>
+      <li>Almost-solved: inspect why a single wrong hidden cell remains sticky.</li>
+      <li>Hard failures: check whether the remaining 5 wrong cells form one coupled region or multiple independent mistakes.</li>
+      <li>FutureSeed tracing is still missing at per-token/layer granularity; that is the next instrumentation gap.</li>
     </ul>
   </section>
 </main>

@@ -123,7 +123,7 @@
 <main>
   <header>
     <h1>Hardest doable Sudoku frontier</h1>
-    <p>Generated from archived GPU1 runs at <code>2026-06-09T09:02:23.557543+00:00</code>. No model was run for this report.</p>
+    <p>Generated from archived GPU1 runs at <code>2026-06-09T10:58:28.087897+00:00</code>. No model was run for this report.</p>
   </header>
 
   <section class="hero">
@@ -206,23 +206,24 @@
       <h2>Concrete cases</h2>
       <p><a href="../frontier-12x12-d256-h72-20260604T0920Z-f67e6a2/output/futureseed_loop_case_seed52.html">open the archived 12x12 loop case</a></p>
       <p class="small">This is the concrete case exported by the 12x12 frontier run. It is from the same model, but the archive did not save a full h72 case bank.</p>
+      <p style="margin-top:10px;"><a href="../casebank-h72-12x12-d256-l12-loop5-s1100-20260609T1013Z-8a2eb57/output/case_bank/h72/index.html">open the new h72 case bank</a></p>
+      <p class="small">This reproduces the frontier and adds 4 solved-by-loop, 4 almost-solved, and 4 hard-failure h72 boards with per-loop wrong cells, entropy, changed cells, and duplicate conflicts.</p>
       <p style="margin-top:10px;"><a href="../bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_case_seed52.html">open the clean 16x16 failure case</a></p>
       <p class="small">This helps explain why clean 16x16 is not yet the case-level target: the current clean run has no exact successes.</p>
-      <div class="callout warn" style="margin-top:12px;">
-        <strong>Archive gap:</strong> h72 board-level cases cannot be reconstructed from aggregate metrics alone. The next run should export case banks during eval.
+      <div class="callout" style="margin-top:12px;">
+        <strong>Case-bank read:</strong> solved boards usually go from about 29-32 wrong hidden cells at loop1 to 0-3 by loop3, then exact by loop5. Failures often stall with 1-5 coupled wrong cells.
       </div>
     </div>
   </section>
 
   <section class="panel" style="margin-top: 18px;">
-    <h2>Next visualization run</h2>
-    <p>The next GPU run should not change the Sudoku task or add priors. It should add case-bank export for h72 while training/evaluating the same clean setup.</p>
+    <h2>Next read</h2>
+    <p>The h72 case bank is now available. The next useful analysis is not another training variant; it is reading the case groups for what actually changes between loops.</p>
     <ul class="list">
-      <li>Save solved-by-loop cases: loop1 wrong, loop5 exact.</li>
-      <li>Save almost-solved cases: loop5 has 1 to 4 wrong hidden cells.</li>
-      <li>Save hard failures: high blank accuracy, low board validity.</li>
-      <li>Trace per-loop entropy, changed cells, and duplicate-conflict counts as diagnosis only.</li>
-      <li>Trace FutureSeed injection norm per token/layer so we can see whether global seed influence is uniform or concentrated.</li>
+      <li>Solved-by-loop: identify what kinds of conflicts disappear between loop2 and loop5.</li>
+      <li>Almost-solved: inspect why a single wrong hidden cell remains sticky.</li>
+      <li>Hard failures: check whether the remaining 5 wrong cells form one coupled region or multiple independent mistakes.</li>
+      <li>FutureSeed tracing is still missing at per-token/layer granularity; that is the next instrumentation gap.</li>
     </ul>
   </section>
 </main>

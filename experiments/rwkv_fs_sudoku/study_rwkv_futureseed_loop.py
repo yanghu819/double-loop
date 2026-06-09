@@ -7,6 +7,7 @@ import json
 import math
 import random
 import time
+from contextlib import nullcontext
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -87,6 +88,16 @@ def choose_device(force_cpu: bool = False) -> torch.device:
     if torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
+
+
+def forward_autocast(forward_dtype: str, device: torch.device):
+    if forward_dtype == "float32":
+        return nullcontext()
+    if forward_dtype != "bfloat16":
+        raise ValueError("--forward_dtype must be 'float32' or 'bfloat16'")
+    if device.type != "cuda":
+        raise ValueError("--forward_dtype=bfloat16 requires a CUDA device")
+    return torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16)
 
 
 def pattern(row: int, col: int) -> int:
@@ -778,7 +789,7 @@ def loss_from_logits(
     *,
     blank_weight: float,
 ) -> torch.Tensor:
-    loss = F.cross_entropy(logits.reshape(-1, N), labels.reshape(-1), reduction="none").view_as(labels)
+    loss = F.cross_entropy(logits.float().reshape(-1, N), labels.reshape(-1), reduction="none").view_as(labels)
     if blank_weight == 1.0:
         return loss.mean()
     weights = torch.where(clue_mask, torch.ones_like(loss), torch.full_like(loss, float(blank_weight)))
@@ -908,14 +919,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 rng,
                 device=device,
             )
-            loop_logits, _fs_trace = model.forward_trace(
-                inputs,
-                loops=args.max_loops,
-                noise_scale=args.noise_scale,
-                feature_buffer=feature_buffer,
-                update_feature_buffer=model.training,
-                feature_buffer_add=args.feature_buffer_add,
-            )
+            with forward_autocast(args.forward_dtype, device):
+                loop_logits, _fs_trace = model.forward_trace(
+                    inputs,
+                    loops=args.max_loops,
+                    noise_scale=args.noise_scale,
+                    feature_buffer=feature_buffer,
+                    update_feature_buffer=model.training,
+                    feature_buffer_add=args.feature_buffer_add,
+                )
             loop_losses = [
                 loss_from_logits(logits, labels, clue_mask, blank_weight=args.blank_loss_weight)
                 for logits in loop_logits
@@ -954,6 +966,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "rwkv_kernel": args.rwkv_kernel,
+        "forward_dtype": args.forward_dtype,
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
     }
@@ -968,18 +981,20 @@ def evaluate_model(
     max_loops: int,
     noise_scale: float,
     seed: int,
+    forward_dtype: str = "float32",
 ) -> Tuple[Dict[str, Any], List[torch.Tensor]]:
     if noise_scale > 0:
         torch.manual_seed(seed)
     inputs, labels, clue_mask = batch
     feature_buffer = getattr(model, "feature_noise_buffer", None)
-    loop_logits, fs_trace = model.forward_trace(
-        inputs,
-        loops=max_loops,
-        noise_scale=noise_scale,
-        feature_buffer=feature_buffer,
-        update_feature_buffer=False,
-    )
+    with forward_autocast(forward_dtype, inputs.device):
+        loop_logits, fs_trace = model.forward_trace(
+            inputs,
+            loops=max_loops,
+            noise_scale=noise_scale,
+            feature_buffer=feature_buffer,
+            update_feature_buffer=False,
+        )
     out: Dict[str, Any] = {}
     loop_preds: List[torch.Tensor] = []
     for loop_idx, logits in enumerate(loop_logits, start=1):
@@ -1048,6 +1063,7 @@ def evaluate_rollouts(
     noise_scale: float,
     ks: List[int],
     seed: int,
+    forward_dtype: str = "float32",
 ) -> Dict[str, Any]:
     if not ks:
         return {}
@@ -1059,13 +1075,14 @@ def evaluate_rollouts(
     for rollout_idx in range(max_k):
         if noise_scale > 0:
             torch.manual_seed(seed + rollout_idx)
-        loop_logits, _fs_trace = model.forward_trace(
-            inputs,
-            loops=max_loops,
-            noise_scale=noise_scale,
-            feature_buffer=feature_buffer,
-            update_feature_buffer=False,
-        )
+        with forward_autocast(forward_dtype, inputs.device):
+            loop_logits, _fs_trace = model.forward_trace(
+                inputs,
+                loops=max_loops,
+                noise_scale=noise_scale,
+                feature_buffer=feature_buffer,
+                update_feature_buffer=False,
+            )
         last_logits_list.append(loop_logits[-1])
         prev_logits_list.append(loop_logits[-2] if max_loops > 1 else loop_logits[-1])
 
@@ -1083,10 +1100,10 @@ def evaluate_rollouts(
     valid = torch.stack(valid_rows, dim=0)
     solved = valid & clue_ok
 
-    probs = last_logits.softmax(dim=-1)
+    probs = last_logits.float().softmax(dim=-1)
     max_prob = probs.max(dim=-1).values
     confidence_scores = (max_prob * blank_k).sum(dim=-1) / blank_k.sum(dim=-1).clamp_min(1)
-    residual = (last_logits.softmax(dim=-1) - prev_logits.softmax(dim=-1)).square().mean(dim=-1)
+    residual = (last_logits.float().softmax(dim=-1) - prev_logits.float().softmax(dim=-1)).square().mean(dim=-1)
     residual_scores = -((residual * blank_k).sum(dim=-1) / blank_k.sum(dim=-1).clamp_min(1))
 
     out: Dict[str, Any] = {}
@@ -1132,6 +1149,7 @@ def evaluate_rollouts_by_loop(
     noise_scale: float,
     ks: List[int],
     seed: int,
+    forward_dtype: str = "float32",
 ) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
     for loops in loop_values:
@@ -1142,6 +1160,7 @@ def evaluate_rollouts_by_loop(
             noise_scale=noise_scale,
             ks=ks,
             seed=seed + loops * 1009,
+            forward_dtype=forward_dtype,
         )
     return out
 
@@ -1285,6 +1304,7 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             f"loop_loss={train.get('loop_loss_mode', 'final')}, "
             f"noise={train.get('noise_mode', 'feature_diff')}, "
             f"buffer={train.get('feature_buffer_count', 0)}, "
+            f"dtype={train.get('forward_dtype', 'float32')}, "
             f"fs_update={train.get('future_seed_update', 'fixed')}, "
             f"loop_fb={train.get('loop_feedback_scale', 0.0):.2f}, "
             f"loop1_loss={train.get('train_loop1_loss', 0.0):.4f}, "
@@ -1361,6 +1381,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--future_seed_decay must be in [0, 1)")
     if args.loop_feedback_scale < 0:
         raise ValueError("--loop_feedback_scale must be non-negative")
+    if args.forward_dtype not in {"float32", "bfloat16"}:
+        raise ValueError("--forward_dtype must be 'float32' or 'bfloat16'")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -1376,9 +1398,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--hole_pattern now supports only 'random'; structured hole probes were removed from the clean mainline.")
 
     device = choose_device(args.cpu)
+    if args.forward_dtype == "bfloat16" and device.type != "cuda":
+        raise ValueError("--forward_dtype=bfloat16 requires CUDA; CPU/MPS fallback is disabled for this run")
     print(
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
-        f"mainline=future_seed_loop rwkv_kernel={args.rwkv_kernel}",
+        f"mainline=future_seed_loop rwkv_kernel={args.rwkv_kernel} forward_dtype={args.forward_dtype}",
         flush=True,
     )
 
@@ -1401,6 +1425,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         max_loops=args.max_loops,
         noise_scale=0.0,
         seed=args.seed + 4000,
+        forward_dtype=args.forward_dtype,
     )
     metrics: Dict[str, Any] = {
         "train": train_stats,
@@ -1414,6 +1439,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             max_loops=args.max_loops,
             noise_scale=args.noise_scale,
             seed=args.seed + 5000,
+            forward_dtype=args.forward_dtype,
         )
         metrics["eval_noisy"] = noisy
 
@@ -1427,6 +1453,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             noise_scale=rollout_noise,
             ks=rollout_ks,
             seed=args.seed + 6000,
+            forward_dtype=args.forward_dtype,
         )
         rollout_loop_values = parse_rollout_loop_values(args)
         if rollout_loop_values:
@@ -1437,6 +1464,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 noise_scale=rollout_noise,
                 ks=rollout_ks,
                 seed=args.seed + 6500,
+                forward_dtype=args.forward_dtype,
             )
 
     eval_holes_values = parse_eval_holes(args)
@@ -1458,6 +1486,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             max_loops=args.max_loops,
             noise_scale=0.0,
             seed=args.seed + 4000 + holes,
+            forward_dtype=args.forward_dtype,
         )
         metrics["eval_by_holes"][f"holes{holes}"] = {"eval_clean": hole_clean}
 
@@ -1489,6 +1518,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
         "rwkv_kernel": args.rwkv_kernel,
+        "forward_dtype": args.forward_dtype,
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
         "rollout_noise_scale": args.noise_scale if args.rollout_noise_scale < 0 else args.rollout_noise_scale,
@@ -1574,6 +1604,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--future_seed_update", choices=("fixed", "learned"), default="fixed")
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
+    p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
     p.add_argument("--loop_loss_start", type=int, default=1)

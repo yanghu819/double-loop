@@ -199,6 +199,10 @@ COMMON_ARGS=(
   --loop_loss_start "${LOOP_LOSS_START:-1}"
   --loop_loss_power "${LOOP_LOSS_POWER:-2.0}"
   --loop_loss_min_weight "${LOOP_LOSS_MIN_WEIGHT:-0.05}"
+  --case_bank_holes "${CASE_BANK_HOLES:-}"
+  --case_bank_n "${CASE_BANK_N:-0}"
+  --case_bank_eval_n "${CASE_BANK_EVAL_N:-256}"
+  --case_bank_loop_values "${CASE_BANK_LOOP_VALUES:-}"
   --out_dir "$OUT_DIR"
 )
 

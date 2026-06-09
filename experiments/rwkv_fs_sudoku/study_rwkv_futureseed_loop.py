@@ -1173,6 +1173,11 @@ def digit(v: int) -> str:
     return "." if int(v) == BLANK else str(int(v) + 1)
 
 
+def coord(idx: int) -> str:
+    row, col = divmod(int(idx), N)
+    return f"R{row + 1}C{col + 1}"
+
+
 def grid_html(board: List[int], solution: List[int], clue: List[bool]) -> str:
     cells = []
     for i, value in enumerate(board):
@@ -1250,6 +1255,432 @@ h3 {{ margin: 0 0 8px; font-size: 13px; }}
 </html>
 """
     path.write_text(body, encoding="utf-8")
+
+
+def parse_int_csv(raw: str, *, name: str, low: int, high: int) -> List[int]:
+    values: List[int] = []
+    if not str(raw).strip():
+        return values
+    for item in str(raw).split(","):
+        item = item.strip()
+        if not item:
+            continue
+        value = int(item)
+        if value < low or value > high:
+            raise ValueError(f"{name} entries must be in [{low}, {high}]")
+        if value not in values:
+            values.append(value)
+    return values
+
+
+def conflict_info(board: List[int]) -> Tuple[set[int], List[str]]:
+    conflict_cells: set[int] = set()
+    conflict_units: List[str] = []
+    unit_names = [f"row {i + 1}" for i in range(N)] + [f"col {i + 1}" for i in range(N)] + [
+        f"box {r + 1},{c + 1}" for r in range(N // BOX_ROWS) for c in range(N // BOX_COLS)
+    ]
+    for name, unit in zip(unit_names, UNITS):
+        by_digit: Dict[int, List[int]] = {}
+        for idx in unit:
+            value = int(board[idx])
+            if 0 <= value < N:
+                by_digit.setdefault(value, []).append(idx)
+        repeated = {digit_value: locs for digit_value, locs in by_digit.items() if len(locs) > 1}
+        if not repeated:
+            continue
+        bits = []
+        for digit_value, locs in sorted(repeated.items()):
+            conflict_cells.update(locs)
+            bits.append(f"{digit(digit_value)}@" + ",".join(coord(idx) for idx in locs))
+        conflict_units.append(f"{name}: " + "; ".join(bits))
+    return conflict_cells, conflict_units
+
+
+def case_grid_html(
+    board: List[int],
+    solution: List[int],
+    clue: List[bool],
+    *,
+    conflict_cells: set[int] | None = None,
+    previous: List[int] | None = None,
+    mode: str = "prediction",
+) -> str:
+    conflict_cells = conflict_cells or set()
+    cell_px = 34 if N <= 12 else 30 if N <= 16 else 26
+    font_px = 13 if N <= 16 else 11
+    cells = []
+    for i, value in enumerate(board):
+        row, col = divmod(i, N)
+        cls = ["cell"]
+        title = coord(i)
+        if mode == "puzzle":
+            if clue[i]:
+                cls.append("clue")
+                title += " clue"
+            else:
+                cls.append("hole")
+                title += " hidden"
+        elif mode == "solution":
+            cls.append("solution")
+            if clue[i]:
+                cls.append("given-solution")
+        elif clue[i]:
+            cls.append("clue")
+        elif value == solution[i]:
+            cls.append("correct")
+        else:
+            cls.append("wrong")
+            title += f" truth={digit(solution[i])}"
+        if i in conflict_cells:
+            cls.append("conflict")
+            title += " duplicate-conflict"
+        if previous is not None and not clue[i] and int(previous[i]) != int(value):
+            cls.append("changed")
+            title += f" changed-from={digit(previous[i])}"
+        style = [f"width:{cell_px}px", f"height:{cell_px}px", f"font-size:{font_px}px"]
+        if col == N - 1:
+            style.append("border-right:0")
+        elif (col + 1) % BOX_COLS == 0:
+            style.append("border-right:2px solid #0f172a")
+        if row == N - 1:
+            style.append("border-bottom:0")
+        elif (row + 1) % BOX_ROWS == 0:
+            style.append("border-bottom:2px solid #0f172a")
+        cells.append(
+            f'<div class="{" ".join(cls)}" style="{";".join(style)}" title="{html.escape(title)}">'
+            f"{html.escape(digit(value))}</div>"
+        )
+    grid_style = f"grid-template-columns: repeat({N}, {cell_px}px); grid-template-rows: repeat({N}, {cell_px}px)"
+    return f'<div class="grid" style="{grid_style}">' + "".join(cells) + "</div>"
+
+
+def case_panel_html(
+    title: str,
+    subtitle: str,
+    board: List[int],
+    solution: List[int],
+    clue: List[bool],
+    *,
+    conflict_cells: set[int] | None = None,
+    previous: List[int] | None = None,
+    mode: str = "prediction",
+) -> str:
+    return (
+        '<section class="case-panel">'
+        f"<h3>{html.escape(title)}</h3>"
+        f"<p>{html.escape(subtitle)}</p>"
+        f"{case_grid_html(board, solution, clue, conflict_cells=conflict_cells, previous=previous, mode=mode)}"
+        "</section>"
+    )
+
+
+def write_case_bank_case_html(path: Path, case: Dict[str, Any], loop_values: List[int]) -> None:
+    puzzle = case["_puzzle"]
+    solution = case["_solution"]
+    clue = case["_clue"]
+    panels = [
+        case_panel_html("Puzzle", f"{case['holes']} hidden cells", puzzle, solution, clue, mode="puzzle"),
+        case_panel_html("Solution", "sampled target board", solution, solution, clue, mode="solution"),
+    ]
+    previous: Optional[List[int]] = None
+    for loop in loop_values:
+        loop_key = f"loop{loop}"
+        row = case["loops"][loop_key]
+        panels.append(
+            case_panel_html(
+                f"Loop {loop}",
+                (
+                    f"wrong={row['wrong_count']}/{case['holes']}; "
+                    f"changed={row['changed_from_previous']}; "
+                    f"entropy={row['hidden_entropy_mean']:.3f}; "
+                    f"conflicts={row['conflict_unit_count']}"
+                ),
+                row["_board"],
+                solution,
+                clue,
+                conflict_cells=set(row["_conflict_cells"]),
+                previous=previous,
+            )
+        )
+        previous = row["_board"]
+    wrong_lines = []
+    for loop in loop_values:
+        loop_key = f"loop{loop}"
+        wrong = case["loops"][loop_key]["wrong_blanks"]
+        wrong_lines.append(
+            f"<li><code>{loop_key}</code>: "
+            + (", ".join(f"<code>{html.escape(item['coord'])}</code>" for item in wrong[:32]) if wrong else "none")
+            + (" ..." if len(wrong) > 32 else "")
+            + "</li>"
+        )
+
+    body = f"""<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{html.escape(case['title'])}</title>
+<style>
+body {{ margin: 22px; background: #f6f8fa; color: #24292f; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }}
+h1 {{ margin: 0 0 8px; font-size: 24px; letter-spacing: 0; }}
+h2 {{ margin: 18px 0 8px; font-size: 17px; letter-spacing: 0; }}
+h3 {{ margin: 0 0 5px; font-size: 14px; letter-spacing: 0; }}
+p {{ margin: 0; color: #57606a; font-size: 13px; line-height: 1.35; }}
+code {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }}
+.row {{ display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }}
+.case-panel {{ background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 10px; }}
+.case-panel p {{ min-height: 35px; max-width: 420px; }}
+.grid {{ display: grid; border: 2px solid #0f172a; width: max-content; margin-top: 9px; }}
+.cell {{ box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-right: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; font-weight: 760; position: relative; }}
+.clue {{ background: #e2e8f0; color: #0f172a; }}
+.hole {{ background: #fff7ed; color: #9a3412; }}
+.solution {{ background: #e0f2fe; color: #0c4a6e; }}
+.given-solution {{ box-shadow: inset 0 0 0 2px rgba(15,23,42,0.13); }}
+.correct {{ background: #bbf7d0; color: #14532d; }}
+.wrong {{ background: #fecaca; color: #7f1d1d; }}
+.conflict::after {{ content: ""; position: absolute; inset: 3px; border: 3px solid #f59e0b; border-radius: 5px; pointer-events: none; }}
+.changed::before {{ content: ""; position: absolute; left: 7px; right: 7px; bottom: 4px; height: 3px; background: #1f6feb; border-radius: 4px; }}
+.notes {{ max-width: 1200px; margin-top: 14px; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 12px 14px; }}
+.notes ul {{ margin: 8px 0 0 18px; padding: 0; }}
+.notes li {{ margin: 4px 0; font-size: 13px; color: #57606a; }}
+</style>
+</head>
+<body>
+<h1>{html.escape(case['title'])}</h1>
+<p>Kind: <code>{html.escape(case['kind'])}</code>. Batch index {case['batch_index']}. Blue underline marks hidden cells changed since the previous shown loop; orange outline marks duplicate conflicts.</p>
+<div class="row" style="margin-top: 14px;">{''.join(panels)}</div>
+<div class="notes">
+  <h2>Wrong hidden cells</h2>
+  <ul>{''.join(wrong_lines)}</ul>
+</div>
+</body>
+</html>
+"""
+    path.write_text(body, encoding="utf-8")
+
+
+def json_ready_case(case: Dict[str, Any]) -> Dict[str, Any]:
+    out = {key: value for key, value in case.items() if not key.startswith("_")}
+    loops = {}
+    for loop_key, row in case["loops"].items():
+        loops[loop_key] = {key: value for key, value in row.items() if not key.startswith("_")}
+    out["loops"] = loops
+    return out
+
+
+def write_case_bank_index(path: Path, *, holes: int, selected: Dict[str, List[Dict[str, Any]]], summary: Dict[str, Any]) -> None:
+    cards = []
+    for kind, cases in selected.items():
+        rows = []
+        for case in cases:
+            final_loop = f"loop{summary['final_loop']}"
+            row = case["loops"][final_loop]
+            rows.append(
+                "<tr>"
+                f"<td><a href=\"{html.escape(Path(case['html_path']).name)}\">{html.escape(case['stem'])}</a></td>"
+                f"<td>{case['batch_index']}</td>"
+                f"<td>{row['wrong_count']}</td>"
+                f"<td>{row['blank_acc']:.3f}</td>"
+                f"<td>{row['hidden_entropy_mean']:.3f}</td>"
+                f"<td>{row['conflict_unit_count']}</td>"
+                "</tr>"
+            )
+        if not rows:
+            rows.append('<tr><td colspan="6">no cases found in this eval sample</td></tr>')
+        cards.append(
+            f"""
+<section class="panel">
+  <h2>{html.escape(kind.replace("_", " "))}</h2>
+  <table><thead><tr><th>case</th><th>batch</th><th>final wrong</th><th>blank acc</th><th>entropy</th><th>conflict units</th></tr></thead><tbody>{''.join(rows)}</tbody></table>
+</section>
+"""
+        )
+
+    body = f"""<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{N}x{N} h{holes} case bank</title>
+<style>
+body {{ margin: 24px; background: #f6f8fa; color: #24292f; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }}
+h1 {{ margin: 0 0 8px; font-size: 26px; letter-spacing: 0; }}
+h2 {{ margin: 0 0 10px; font-size: 17px; letter-spacing: 0; }}
+p {{ margin: 0 0 14px; color: #57606a; line-height: 1.45; }}
+code {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }}
+.grid {{ display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }}
+.panel {{ background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 14px; }}
+table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+th, td {{ border-bottom: 1px solid #d0d7de; padding: 8px 7px; text-align: left; }}
+th {{ color: #57606a; background: #f0f3f6; }}
+tr:last-child td {{ border-bottom: 0; }}
+a {{ color: #1f6feb; }}
+</style>
+</head>
+<body>
+<h1>{N}x{N} h{holes} FutureSeed loop case bank</h1>
+<p>Eval sample: <code>{summary['eval_n']}</code>. Final loop exact: <code>{summary['final_exact']:.4f}</code>. Final loop blank accuracy: <code>{summary['final_blank_acc']:.4f}</code>. This artifact is diagnostic only; it does not change training.</p>
+<div class="grid">{''.join(cards)}</div>
+</body>
+</html>
+"""
+    path.write_text(body, encoding="utf-8")
+
+
+@torch.no_grad()
+def export_case_bank(
+    model: "FutureSeedLoopSudoku",
+    out_dir: Path,
+    *,
+    holes_values: List[int],
+    eval_n: int,
+    cases_per_kind: int,
+    loop_values: List[int],
+    seed: int,
+    forward_dtype: str,
+) -> Dict[str, Any]:
+    if cases_per_kind <= 0 or not holes_values:
+        return {}
+    bank_root = out_dir / "case_bank"
+    bank_root.mkdir(parents=True, exist_ok=True)
+    device = next(model.parameters()).device
+    feature_buffer = getattr(model, "feature_noise_buffer", None)
+    artifacts: Dict[str, Any] = {"case_bank_root": str(bank_root.resolve()), "holes": {}}
+    for holes in holes_values:
+        batch = make_batch(eval_n, holes, holes, "random", random.Random(seed + 91000 + holes * 97), device=device)
+        inputs, labels, clue_mask = batch
+        max_loop = max(loop_values)
+        with forward_autocast(forward_dtype, device):
+            loop_logits, _fs_trace = model.forward_trace(
+                inputs,
+                loops=max_loop,
+                noise_scale=0.0,
+                feature_buffer=feature_buffer,
+                update_feature_buffer=False,
+            )
+        loop_preds = [logits.argmax(dim=-1) for logits in loop_logits]
+        entropies = []
+        for logits in loop_logits:
+            probs = logits.float().softmax(dim=-1)
+            entropies.append((-(probs * probs.clamp_min(1e-9).log()).sum(dim=-1)).detach().cpu())
+
+        holes_dir = bank_root / f"h{holes}"
+        holes_dir.mkdir(parents=True, exist_ok=True)
+        clue_cpu = clue_mask.detach().cpu()
+        labels_cpu = labels.detach().cpu()
+        inputs_cpu = inputs.detach().cpu()
+        preds_cpu = [pred.detach().cpu() for pred in loop_preds]
+        selected: Dict[str, List[Dict[str, Any]]] = {"solved_by_loop": [], "almost_solved": [], "hard_failure": []}
+        candidates: Dict[str, List[Tuple[Tuple[float, ...], Dict[str, Any]]]] = {key: [] for key in selected}
+
+        for idx in range(eval_n):
+            clue = [bool(x) for x in clue_cpu[idx].tolist()]
+            blank_indices = [cell for cell, is_clue in enumerate(clue) if not is_clue]
+            solution = [int(x) for x in labels_cpu[idx].view(-1).tolist()]
+            puzzle = [int(x) for x in inputs_cpu[idx].view(-1).tolist()]
+            loops: Dict[str, Any] = {}
+            previous: Optional[List[int]] = None
+            for loop in loop_values:
+                board = [int(x) for x in preds_cpu[loop - 1][idx].view(-1).tolist()]
+                wrong = [cell for cell in blank_indices if board[cell] != solution[cell]]
+                conflict_cells, conflict_units = conflict_info(board)
+                hidden_entropy = float(entropies[loop - 1][idx][blank_indices].mean().item()) if blank_indices else 0.0
+                changed = (
+                    sum(1 for cell in blank_indices if previous is not None and previous[cell] != board[cell])
+                    if previous is not None
+                    else 0
+                )
+                loops[f"loop{loop}"] = {
+                    "wrong_count": len(wrong),
+                    "blank_acc": 1.0 - (len(wrong) / max(len(blank_indices), 1)),
+                    "exact": len(wrong) == 0 and all(board[cell] == solution[cell] for cell in range(CELLS)),
+                    "valid_board": valid_board(torch.tensor(board)),
+                    "changed_from_previous": changed,
+                    "hidden_entropy_mean": hidden_entropy,
+                    "conflict_unit_count": len(conflict_units),
+                    "conflict_units": conflict_units[:32],
+                    "wrong_blanks": [
+                        {"coord": coord(cell), "pred": digit(board[cell]), "truth": digit(solution[cell])}
+                        for cell in wrong[:64]
+                    ],
+                    "_board": board,
+                    "_conflict_cells": sorted(conflict_cells),
+                }
+                previous = board
+            first_key = f"loop{loop_values[0]}"
+            final_key = f"loop{loop_values[-1]}"
+            first_wrong = loops[first_key]["wrong_count"]
+            final_wrong = loops[final_key]["wrong_count"]
+            final_blank_acc = loops[final_key]["blank_acc"]
+            final_conflicts = loops[final_key]["conflict_unit_count"]
+            case = {
+                "holes": holes,
+                "batch_index": idx,
+                "loops": loops,
+                "_puzzle": puzzle,
+                "_solution": solution,
+                "_clue": clue,
+            }
+            if first_wrong > 0 and final_wrong == 0:
+                kind = "solved_by_loop"
+                score = (-float(first_wrong), float(loops[final_key]["hidden_entropy_mean"]), float(idx))
+            elif 1 <= final_wrong <= 4:
+                kind = "almost_solved"
+                score = (float(final_wrong), float(final_conflicts), -float(final_blank_acc), float(idx))
+            elif final_wrong > 4:
+                kind = "hard_failure"
+                score = (-float(final_blank_acc), float(final_wrong), float(final_conflicts), float(idx))
+            else:
+                continue
+            case["kind"] = kind
+            candidates[kind].append((score, case))
+
+        used: set[int] = set()
+        for kind, rows in candidates.items():
+            rows.sort(key=lambda item: item[0])
+            for _score, case in rows:
+                if case["batch_index"] in used:
+                    continue
+                used.add(case["batch_index"])
+                stem = f"h{holes}_{kind}_{len(selected[kind]) + 1:02d}_b{case['batch_index']:04d}"
+                case["stem"] = stem
+                case["title"] = f"{N}x{N} h{holes} {kind} #{len(selected[kind]) + 1}"
+                html_path = holes_dir / f"{stem}.html"
+                write_case_bank_case_html(html_path, case, loop_values)
+                case["html_path"] = str(html_path.resolve())
+                selected[kind].append(case)
+                if len(selected[kind]) >= cases_per_kind:
+                    break
+
+        final_logits = loop_logits[loop_values[-1] - 1]
+        final_metrics, _final_preds = metrics_from_logits(final_logits, labels, clue_mask)
+        holes_summary = {
+            "holes": holes,
+            "eval_n": eval_n,
+            "loop_values": loop_values,
+            "final_loop": loop_values[-1],
+            "final_exact": final_metrics.label_exact,
+            "final_blank_acc": final_metrics.blank_acc,
+            "selected_counts": {kind: len(cases) for kind, cases in selected.items()},
+        }
+        json_path = holes_dir / "cases.json"
+        index_path = holes_dir / "index.html"
+        json_path.write_text(
+            json.dumps(
+                {
+                    "summary": holes_summary,
+                    "selected": {kind: [json_ready_case(case) for case in cases] for kind, cases in selected.items()},
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        write_case_bank_index(index_path, holes=holes, selected=selected, summary=holes_summary)
+        artifacts["holes"][f"h{holes}"] = {
+            "index_html": str(index_path.resolve()),
+            "cases_json": str(json_path.resolve()),
+            "summary": holes_summary,
+        }
+    return artifacts
 
 
 def parse_eval_holes(args: argparse.Namespace) -> List[int]:
@@ -1360,6 +1791,19 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
                     f"residual={row['selector_residual']['label_exact']:.4f}, "
                     f"disagree={row['trajectory_token_disagreement']:.4f}"
                 )
+    if metrics.get("case_bank"):
+        lines.extend(["", "## Case Bank", ""])
+        case_bank = metrics["case_bank"]
+        for hole_key, row in case_bank.get("holes", {}).items():
+            summary = row.get("summary", {})
+            lines.append(
+                f"- {hole_key}: index={row.get('index_html', '')}; "
+                f"cases={row.get('cases_json', '')}; "
+                f"final_loop={summary.get('final_loop')}, "
+                f"exact={summary.get('final_exact', 0.0):.4f}, "
+                f"blank_acc={summary.get('final_blank_acc', 0.0):.4f}, "
+                f"selected={summary.get('selected_counts', {})}"
+            )
     if len(metrics.get("eval_by_holes", {})) > 1:
         lines.extend(["", "## Hole Transfer", ""])
         for hole_key, hole_metrics in metrics["eval_by_holes"].items():
@@ -1522,6 +1966,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
         "rollout_noise_scale": args.noise_scale if args.rollout_noise_scale < 0 else args.rollout_noise_scale,
+        "case_bank_holes": args.case_bank_holes,
+        "case_bank_n": args.case_bank_n,
+        "case_bank_eval_n": args.case_bank_eval_n,
+        "case_bank_loop_values": args.case_bank_loop_values,
         "mainline": "future_seed_loop",
     }
 
@@ -1536,6 +1984,31 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         loop_preds=[pred[case_index] for pred in loop_preds],
     )
     artifacts = {"case_html": str(html_path.resolve())}
+    case_bank_holes = parse_int_csv(args.case_bank_holes, name="--case_bank_holes", low=1, high=CELLS)
+    case_bank_loop_values = parse_int_csv(
+        args.case_bank_loop_values,
+        name="--case_bank_loop_values",
+        low=1,
+        high=args.max_loops,
+    )
+    if not case_bank_loop_values:
+        case_bank_loop_values = sorted({1, min(2, args.max_loops), min(3, args.max_loops), args.max_loops})
+    elif args.max_loops not in case_bank_loop_values:
+        case_bank_loop_values = sorted(set(case_bank_loop_values + [args.max_loops]))
+    if args.case_bank_n > 0 and case_bank_holes:
+        case_bank = export_case_bank(
+            model,
+            out_dir,
+            holes_values=case_bank_holes,
+            eval_n=args.case_bank_eval_n,
+            cases_per_kind=args.case_bank_n,
+            loop_values=case_bank_loop_values,
+            seed=args.seed,
+            forward_dtype=args.forward_dtype,
+        )
+        if case_bank:
+            metrics["case_bank"] = case_bank
+            artifacts["case_bank_root"] = case_bank["case_bank_root"]
     metrics["artifacts"] = artifacts
 
     json_path = out_dir / f"futureseed_loop_seed{args.seed}.json"
@@ -1578,6 +2051,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         for holes in eval_holes_values:
             loop_last = metrics["eval_by_holes"][f"holes{holes}"]["eval_clean"][last_key]
             print(f"holes={holes:<2d} {metric_line(loop_last)}; {coupling_line(loop_last, holes)}")
+    if metrics.get("case_bank"):
+        print("\ncase-bank artifacts")
+        for hole_key, row in metrics["case_bank"]["holes"].items():
+            summary = row["summary"]
+            print(
+                f"{hole_key} exact={summary['final_exact']:.4f} "
+                f"blank_acc={summary['final_blank_acc']:.4f} selected={summary['selected_counts']}"
+            )
+            print(f"  index={row['index_html']}")
+            print(f"  cases={row['cases_json']}")
     print(metrics["decision"])
     print(f"wrote {json_path}")
     print(f"wrote {md_path}")
@@ -1627,6 +2110,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval_n", type=int, default=128)
     p.add_argument("--blank_loss_weight", type=float, default=8.0)
     p.add_argument("--case_index", type=int, default=0)
+    p.add_argument("--case_bank_holes", default="")
+    p.add_argument("--case_bank_n", type=int, default=0)
+    p.add_argument("--case_bank_eval_n", type=int, default=256)
+    p.add_argument("--case_bank_loop_values", default="")
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
     p.add_argument("--out_dir", default="runs/mainline")

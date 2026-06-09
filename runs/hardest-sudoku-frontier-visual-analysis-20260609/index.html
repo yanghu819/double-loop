@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardest Doable Sudoku Frontier</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fa;
+      --panel: #ffffff;
+      --text: #24292f;
+      --muted: #57606a;
+      --line: #d0d7de;
+      --blue: #1f6feb;
+      --green: #2da44e;
+      --gold: #bf8700;
+      --red: #cf222e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 44px; }
+    header { margin-bottom: 18px; }
+    h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.1; letter-spacing: 0; }
+    h2 { margin: 0 0 12px; font-size: 20px; letter-spacing: 0; }
+    h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: 0; }
+    p { margin: 0 0 10px; line-height: 1.48; color: var(--muted); }
+    a { color: var(--blue); text-decoration-thickness: 1px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      gap: 16px;
+      align-items: stretch;
+      margin-top: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 1px rgba(31,35,40,0.03);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 108px;
+    }
+    .kicker { color: var(--muted); font-size: 12px; text-transform: uppercase; font-weight: 700; }
+    .big { font-size: 30px; font-weight: 800; margin-top: 4px; color: var(--text); }
+    .small { font-size: 13px; color: var(--muted); }
+    .charts { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 16px 0; }
+    .chart {
+      margin: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .chart figcaption { font-weight: 750; margin-bottom: 8px; }
+    svg { width: 100%; height: auto; display: block; }
+    .gridline { stroke: #d8dee4; stroke-width: 1; }
+    .xgrid { stroke: #eef1f4; stroke-width: 1; }
+    .axis { stroke: #57606a; stroke-width: 1.2; }
+    .tick, .legend, .axislabel { fill: #57606a; font-size: 12px; }
+    .rotate { transform: rotate(-90deg); transform-origin: 16px center; }
+    .metric-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    .metric-table th, .metric-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+    .metric-table th { background: #f0f3f6; color: #57606a; font-size: 12px; }
+    .metric-table tr:last-child td { border-bottom: 0; }
+    .metric-table tr.selected td { background: #ddf4ff; }
+    .compact td, .compact th { padding: 8px 10px; }
+    .barcell { position: relative; min-width: 96px; height: 24px; background: #f0f3f6; border-radius: 6px; overflow: hidden; }
+    .bar { position: absolute; inset: 0 auto 0 0; background: rgba(31,111,235,0.18); }
+    .barcell span { position: relative; display: flex; height: 100%; align-items: center; padding-left: 8px; font-weight: 700; color: #24292f; }
+    .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .callout {
+      border-left: 4px solid var(--blue);
+      padding: 12px 14px;
+      background: #ddf4ff;
+      border-radius: 8px;
+      color: #24292f;
+    }
+    .warn { border-left-color: var(--red); background: #ffebe9; }
+    .list { margin: 8px 0 0 18px; padding: 0; color: var(--muted); }
+    .list li { margin: 6px 0; }
+    @media (max-width: 900px) {
+      .hero, .twocol, .cards { grid-template-columns: 1fr; }
+      h1 { font-size: 26px; }
+      main { padding: 22px 14px 34px; }
+      .metric-table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Hardest doable Sudoku frontier</h1>
+    <p>Generated from archived GPU1 runs at <code>2026-06-09T09:02:23.557543+00:00</code>. No model was run for this report.</p>
+  </header>
+
+  <section class="hero">
+    <div class="panel">
+      <h2>Chosen task: 12x12 random h72</h2>
+      <p>It is the hardest archived clean random-hole setting with nonzero exact solve rate. The next harder 12x12 point h84 is closed, and clean 16x16 is still closed.</p>
+      <p>The important property is not that h72 scores well. It barely works: loop5 exact is 4.43%. That is exactly why it is useful. It has enough solved boards to inspect, while h84 and clean 16x16 are still closed.</p>
+      <div class="callout">
+        <strong>Read:</strong> h72 is the current clean mechanism microscope. It is hard enough to expose the cliff, but not so hard that every board fails.
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Selection rule</h2>
+      <p><strong>Doable</strong> means nonzero exact solve rate. <strong>Hard</strong> means the next harder clean setting collapses. <strong>Clean</strong> means no Sudoku unit-memory training mechanism.</p>
+      <p>16x16 unit-memory and 25x25 unit-memory remain useful diagnostics, but they are not the clean FutureSeed+loop mainline.</p>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="card"><div class="kicker">h72 loop5 exact</div><div class="big">4.43%</div><div class="small">thin but nonzero</div></div>
+    <div class="card"><div class="kicker">h72 loop5 blank acc</div><div class="big">88.81%</div><div class="small">local cells mostly right</div></div>
+    <div class="card"><div class="kicker">loop exact gain</div><div class="big">4.43%</div><div class="small">loop1 exact is zero</div></div>
+    <div class="card"><div class="kicker">exact / independent</div><div class="big">228.2x</div><div class="small">success is not random per-cell luck</div></div>
+  </section>
+
+  <section class="charts">
+    
+<figure class="chart">
+  <figcaption>12x12 h72: loops turn local guesses into a few full-board solves</figcaption>
+  <svg viewBox="0 0 840 320" role="img" aria-label="12x12 h72: loops turn local guesses into a few full-board solves">
+    <text x="420.0" y="314" text-anchor="middle" class="axislabel">loop</text>
+    <text x="16" y="160.0" text-anchor="middle" class="axislabel rotate">percent</text>
+    <line x1="58" x2="816" y1="276.0" y2="276.0" class="gridline"/><text x="48" y="280.0" text-anchor="end" class="tick">0</text><line x1="58" x2="816" y1="216.5" y2="216.5" class="gridline"/><text x="48" y="220.5" text-anchor="end" class="tick">25</text><line x1="58" x2="816" y1="157.0" y2="157.0" class="gridline"/><text x="48" y="161.0" text-anchor="end" class="tick">50</text><line x1="58" x2="816" y1="97.5" y2="97.5" class="gridline"/><text x="48" y="101.5" text-anchor="end" class="tick">75</text><line x1="58" x2="816" y1="38.0" y2="38.0" class="gridline"/><text x="48" y="42.0" text-anchor="end" class="tick">100</text><line x1="58.0" x2="58.0" y1="38" y2="276" class="xgrid"/><text x="58.0" y="298" text-anchor="middle" class="tick">1</text><line x1="247.5" x2="247.5" y1="38" y2="276" class="xgrid"/><text x="247.5" y="298" text-anchor="middle" class="tick">2</text><line x1="437.0" x2="437.0" y1="38" y2="276" class="xgrid"/><text x="437.0" y="298" text-anchor="middle" class="tick">3</text><line x1="626.5" x2="626.5" y1="38" y2="276" class="xgrid"/><text x="626.5" y="298" text-anchor="middle" class="tick">4</text><line x1="816.0" x2="816.0" y1="38" y2="276" class="xgrid"/><text x="816.0" y="298" text-anchor="middle" class="tick">5</text>
+    <line x1="58" x2="816" y1="276" y2="276" class="axis"/>
+    <line x1="58" x2="58" y1="38" y2="276" class="axis"/>
+    <polyline points="58.0,276.0 247.5,275.4 437.0,270.4 626.5,266.7 816.0,265.5" fill="none" stroke="#1f6feb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58.0" cy="276.0" r="4" fill="#1f6feb"/><circle cx="247.5" cy="275.4" r="4" fill="#1f6feb"/><circle cx="437.0" cy="270.4" r="4" fill="#1f6feb"/><circle cx="626.5" cy="266.7" r="4" fill="#1f6feb"/><circle cx="816.0" cy="265.5" r="4" fill="#1f6feb"/><rect x="58" y="12" width="11" height="11" fill="#1f6feb" rx="2"/><text x="75" y="22" class="legend">exact</text><polyline points="58.0,136.1 247.5,78.3 437.0,66.3 626.5,65.0 816.0,64.6" fill="none" stroke="#2da44e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58.0" cy="136.1" r="4" fill="#2da44e"/><circle cx="247.5" cy="78.3" r="4" fill="#2da44e"/><circle cx="437.0" cy="66.3" r="4" fill="#2da44e"/><circle cx="626.5" cy="65.0" r="4" fill="#2da44e"/><circle cx="816.0" cy="64.6" r="4" fill="#2da44e"/><rect x="196" y="12" width="11" height="11" fill="#2da44e" rx="2"/><text x="213" y="22" class="legend">blank acc</text><polyline points="58.0,276.0 247.5,275.4 437.0,269.2 626.5,264.8 816.0,263.6" fill="none" stroke="#bf8700" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58.0" cy="276.0" r="4" fill="#bf8700"/><circle cx="247.5" cy="275.4" r="4" fill="#bf8700"/><circle cx="437.0" cy="269.2" r="4" fill="#bf8700"/><circle cx="626.5" cy="264.8" r="4" fill="#bf8700"/><circle cx="816.0" cy="263.6" r="4" fill="#bf8700"/><rect x="334" y="12" width="11" height="11" fill="#bf8700" rx="2"/><text x="351" y="22" class="legend">valid board</text>
+  </svg>
+</figure>
+
+    
+<figure class="chart">
+  <figcaption>12x12 clean ladder: h72 is the last nonzero clean point before collapse</figcaption>
+  <svg viewBox="0 0 840 320" role="img" aria-label="12x12 clean ladder: h72 is the last nonzero clean point before collapse">
+    <text x="420.0" y="314" text-anchor="middle" class="axislabel">hidden cells</text>
+    <text x="16" y="160.0" text-anchor="middle" class="axislabel rotate">percent</text>
+    <line x1="58" x2="816" y1="276.0" y2="276.0" class="gridline"/><text x="48" y="280.0" text-anchor="end" class="tick">0</text><line x1="58" x2="816" y1="216.5" y2="216.5" class="gridline"/><text x="48" y="220.5" text-anchor="end" class="tick">25</text><line x1="58" x2="816" y1="157.0" y2="157.0" class="gridline"/><text x="48" y="161.0" text-anchor="end" class="tick">50</text><line x1="58" x2="816" y1="97.5" y2="97.5" class="gridline"/><text x="48" y="101.5" text-anchor="end" class="tick">75</text><line x1="58" x2="816" y1="38.0" y2="38.0" class="gridline"/><text x="48" y="42.0" text-anchor="end" class="tick">100</text><line x1="58.0" x2="58.0" y1="38" y2="276" class="xgrid"/><text x="58.0" y="298" text-anchor="middle" class="tick">48</text><line x1="310.7" x2="310.7" y1="38" y2="276" class="xgrid"/><text x="310.7" y="298" text-anchor="middle" class="tick">60</text><line x1="563.3" x2="563.3" y1="38" y2="276" class="xgrid"/><text x="563.3" y="298" text-anchor="middle" class="tick">72</text><line x1="816.0" x2="816.0" y1="38" y2="276" class="xgrid"/><text x="816.0" y="298" text-anchor="middle" class="tick">84</text>
+    <line x1="58" x2="816" y1="276" y2="276" class="axis"/>
+    <line x1="58" x2="58" y1="38" y2="276" class="axis"/>
+    <polyline points="58.0,64.7 310.7,155.8 563.3,265.5 816.0,276.0" fill="none" stroke="#1f6feb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58.0" cy="64.7" r="4" fill="#1f6feb"/><circle cx="310.7" cy="155.8" r="4" fill="#1f6feb"/><circle cx="563.3" cy="265.5" r="4" fill="#1f6feb"/><circle cx="816.0" cy="276.0" r="4" fill="#1f6feb"/><rect x="58" y="12" width="11" height="11" fill="#1f6feb" rx="2"/><text x="75" y="22" class="legend">loop final exact</text><polyline points="58.0,39.3 310.7,44.1 563.3,64.6 816.0,109.6" fill="none" stroke="#2da44e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58.0" cy="39.3" r="4" fill="#2da44e"/><circle cx="310.7" cy="44.1" r="4" fill="#2da44e"/><circle cx="563.3" cy="64.6" r="4" fill="#2da44e"/><circle cx="816.0" cy="109.6" r="4" fill="#2da44e"/><rect x="196" y="12" width="11" height="11" fill="#2da44e" rx="2"/><text x="213" y="22" class="legend">loop final blank acc</text>
+  </svg>
+</figure>
+
+  </section>
+
+  <section class="twocol">
+    <div>
+      <h2>Loop curve at h72</h2>
+      <table class="metric-table compact"><thead><tr><th>loop</th><th>exact</th><th>blank acc</th><th>exact delta</th><th>blank acc delta</th></tr></thead><tbody><tr><td>1</td><td><div class="barcell"><div class="bar" style="width:0.00%"></div><span>0.00%</span></div></td><td><div class="barcell"><div class="bar" style="width:58.77%"></div><span>58.77%</span></div></td><td>0.00%</td><td>0.00%</td></tr><tr><td>2</td><td><div class="barcell"><div class="bar" style="width:0.26%"></div><span>0.26%</span></div></td><td><div class="barcell"><div class="bar" style="width:83.05%"></div><span>83.05%</span></div></td><td>0.26%</td><td>24.28%</td></tr><tr><td>3</td><td><div class="barcell"><div class="bar" style="width:2.34%"></div><span>2.34%</span></div></td><td><div class="barcell"><div class="bar" style="width:88.12%"></div><span>88.12%</span></div></td><td>2.08%</td><td>5.07%</td></tr><tr><td>4</td><td><div class="barcell"><div class="bar" style="width:3.91%"></div><span>3.91%</span></div></td><td><div class="barcell"><div class="bar" style="width:88.64%"></div><span>88.64%</span></div></td><td>1.56%</td><td>0.52%</td></tr><tr><td>5</td><td><div class="barcell"><div class="bar" style="width:4.43%"></div><span>4.43%</span></div></td><td><div class="barcell"><div class="bar" style="width:88.81%"></div><span>88.81%</span></div></td><td>0.52%</td><td>0.17%</td></tr></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>Plain-language mechanism read</h2>
+      <p>Loop1 to loop2 is the big local-repair jump: blank accuracy moves from 58.77% to 83.05%. That still barely solves full boards.</p>
+      <p>Loop2 to loop5 adds little blank accuracy, but exact keeps moving upward. That is the more interesting part: late loops are not just making more cells right; they are sometimes making the board coherent.</p>
+      <p>Failure after loop5 is therefore a whole-board coordination problem. A few coupled errors can keep exact near zero even when most hidden cells are correct.</p>
+    </div>
+  </section>
+
+  <section style="margin-top: 18px;">
+    <h2>Difficulty ladder</h2>
+    <table class="metric-table"><thead><tr><th>run</th><th>size</th><th>holes</th><th>line</th><th>final loop</th><th>exact</th><th>blank acc</th><th>independent exact estimate</th><th>read</th></tr></thead><tbody><tr><td>9x9 clean FutureSeed+loop</td><td>9</td><td>32</td><td>clean</td><td>loop5</td><td><div class="barcell"><div class="bar" style="width:40.43%"></div><span>40.43%</span></div></td><td><div class="barcell"><div class="bar" style="width:94.09%"></div><span>94.09%</span></div></td><td>0.1424</td><td>already learnable; not the hardest frontier</td></tr><tr><td>12x12 clean FutureSeed+loop</td><td>12</td><td>60</td><td>clean</td><td>loop5</td><td><div class="barcell"><div class="bar" style="width:50.52%"></div><span>50.52%</span></div></td><td><div class="barcell"><div class="bar" style="width:97.43%"></div><span>97.43%</span></div></td><td>0.2103</td><td>strongly doable, but too far from the cliff</td></tr><tr class="selected"><td>12x12 clean FutureSeed+loop</td><td>12</td><td>72</td><td>clean</td><td>loop5</td><td><div class="barcell"><div class="bar" style="width:4.43%"></div><span>4.43%</span></div></td><td><div class="barcell"><div class="bar" style="width:88.81%"></div><span>88.81%</span></div></td><td>1.94e-04</td><td>selected: hardest clean nonzero exact</td></tr><tr><td>12x12 clean FutureSeed+loop</td><td>12</td><td>84</td><td>clean</td><td>loop5</td><td><div class="barcell"><div class="bar" style="width:0.00%"></div><span>0.00%</span></div></td><td><div class="barcell"><div class="bar" style="width:69.93%"></div><span>69.93%</span></div></td><td>8.99e-14</td><td>closed under this run</td></tr><tr><td>16x16 clean bf16</td><td>16</td><td>24</td><td>clean</td><td>loop8</td><td><div class="barcell"><div class="bar" style="width:0.00%"></div><span>0.00%</span></div></td><td><div class="barcell"><div class="bar" style="width:37.11%"></div><span>37.11%</span></div></td><td>4.65e-11</td><td>larger, but exact is still closed</td></tr><tr><td>16x16 unit-memory diagnostic</td><td>16</td><td>80</td><td>unit-memory</td><td>loop7</td><td><div class="barcell"><div class="bar" style="width:6.25%"></div><span>6.25%</span></div></td><td><div class="barcell"><div class="bar" style="width:94.72%"></div><span>94.72%</span></div></td><td>0.0130</td><td>harder but uses Sudoku unit memory</td></tr><tr><td>25x25 unit-memory diagnostic</td><td>25</td><td>100</td><td>unit-memory</td><td>loop5</td><td><div class="barcell"><div class="bar" style="width:0.78%"></div><span>0.78%</span></div></td><td><div class="barcell"><div class="bar" style="width:93.81%"></div><span>93.81%</span></div></td><td>0.0017</td><td>upper-bound diagnostic, not clean mainline</td></tr></tbody></table>
+  </section>
+
+  <section class="twocol">
+    <div class="panel">
+      <h2>FutureSeed reading</h2>
+      <p>The h72 archive reports FutureSeed gate mean 0.540 and seed-state norm 8.639. That tells us the global seed is active, but it is not enough by itself: loop1 exact is 0.00%.</p>
+      <p>The useful story is FutureSeed plus recurrence. FutureSeed gives a noncausal global initialization; loop reuses it and iteratively cleans the board. The present archive does not store per-token seed influence, so the next visualization needs richer traces.</p>
+    </div>
+    <div class="panel">
+      <h2>Concrete cases</h2>
+      <p><a href="../frontier-12x12-d256-h72-20260604T0920Z-f67e6a2/output/futureseed_loop_case_seed52.html">open the archived 12x12 loop case</a></p>
+      <p class="small">This is the concrete case exported by the 12x12 frontier run. It is from the same model, but the archive did not save a full h72 case bank.</p>
+      <p style="margin-top:10px;"><a href="../bf16-b32-shaped16x16-d256-l12-loop8-h24-s600-20260609T0638Z-a9a0e9d/output/futureseed_loop_case_seed52.html">open the clean 16x16 failure case</a></p>
+      <p class="small">This helps explain why clean 16x16 is not yet the case-level target: the current clean run has no exact successes.</p>
+      <div class="callout warn" style="margin-top:12px;">
+        <strong>Archive gap:</strong> h72 board-level cases cannot be reconstructed from aggregate metrics alone. The next run should export case banks during eval.
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top: 18px;">
+    <h2>Next visualization run</h2>
+    <p>The next GPU run should not change the Sudoku task or add priors. It should add case-bank export for h72 while training/evaluating the same clean setup.</p>
+    <ul class="list">
+      <li>Save solved-by-loop cases: loop1 wrong, loop5 exact.</li>
+      <li>Save almost-solved cases: loop5 has 1 to 4 wrong hidden cells.</li>
+      <li>Save hard failures: high blank accuracy, low board validity.</li>
+      <li>Trace per-loop entropy, changed cells, and duplicate-conflict counts as diagnosis only.</li>
+      <li>Trace FutureSeed injection norm per token/layer so we can see whether global seed influence is uniform or concentrated.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

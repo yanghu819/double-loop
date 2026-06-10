@@ -1467,6 +1467,48 @@ def json_ready_case(case: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def case_cell_diagnostic(
+    *,
+    cell: int,
+    loop: int,
+    board: List[int],
+    solution: List[int],
+    preds_cpu: List[torch.Tensor],
+    margins: List[torch.Tensor],
+    entropies: List[torch.Tensor],
+    idx: int,
+    loop_values: List[int],
+) -> Dict[str, Any]:
+    pred_value = board[cell]
+    previous_pred: Optional[int] = None
+    previous_loop: Optional[int] = None
+    for candidate_loop in reversed([value for value in loop_values if value < loop]):
+        previous_pred = int(preds_cpu[candidate_loop - 1][idx].view(-1)[cell].item())
+        previous_loop = candidate_loop
+        break
+
+    stable_since = loop
+    for candidate_loop in reversed([value for value in loop_values if value < loop]):
+        candidate_pred = int(preds_cpu[candidate_loop - 1][idx].view(-1)[cell].item())
+        if candidate_pred != pred_value:
+            break
+        stable_since = candidate_loop
+
+    row = {
+        "coord": coord(cell),
+        "pred": digit(pred_value),
+        "truth": digit(solution[cell]),
+        "margin": float(margins[loop - 1][idx].view(-1)[cell].item()),
+        "entropy": float(entropies[loop - 1][idx].view(-1)[cell].item()),
+        "stable_since_loop": stable_since,
+        "changed_from_previous_loop": previous_pred is not None and previous_pred != pred_value,
+    }
+    if previous_pred is not None and previous_loop is not None:
+        row["previous_loop"] = previous_loop
+        row["previous_pred"] = digit(previous_pred)
+    return row
+
+
 def write_case_bank_index(path: Path, *, holes: int, selected: Dict[str, List[Dict[str, Any]]], summary: Dict[str, Any]) -> None:
     cards = []
     for kind, cases in selected.items():
@@ -1558,9 +1600,12 @@ def export_case_bank(
             )
         loop_preds = [logits.argmax(dim=-1) for logits in loop_logits]
         entropies = []
+        margins = []
         for logits in loop_logits:
             probs = logits.float().softmax(dim=-1)
             entropies.append((-(probs * probs.clamp_min(1e-9).log()).sum(dim=-1)).detach().cpu())
+            top2 = probs.topk(k=2, dim=-1).values
+            margins.append((top2[..., 0] - top2[..., 1]).detach().cpu())
 
         holes_dir = bank_root / f"h{holes}"
         holes_dir.mkdir(parents=True, exist_ok=True)
@@ -1598,7 +1643,17 @@ def export_case_bank(
                     "conflict_unit_count": len(conflict_units),
                     "conflict_units": conflict_units[:32],
                     "wrong_blanks": [
-                        {"coord": coord(cell), "pred": digit(board[cell]), "truth": digit(solution[cell])}
+                        case_cell_diagnostic(
+                            cell=cell,
+                            loop=loop,
+                            board=board,
+                            solution=solution,
+                            preds_cpu=preds_cpu,
+                            margins=margins,
+                            entropies=entropies,
+                            idx=idx,
+                            loop_values=loop_values,
+                        )
                         for cell in wrong[:64]
                     ],
                     "_board": board,

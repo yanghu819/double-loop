@@ -1,0 +1,79 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939
+git_sha=09429392f2a88ef09ac7b6fc2d0952e34397593f
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=12x12 box=3x4 mainline=future_seed_loop rwkv_kernel=auto forward_dtype=bfloat16
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:16-36] step=0100 ce=1.5211 total=1.5211 loop1=1.5207 loop_last=1.5211
+[future_seed_loop stage=1:16-36] step=0200 ce=1.2852 total=1.2852 loop1=1.2926 loop_last=1.2852
+[future_seed_loop stage=1:16-36] step=0300 ce=1.0894 total=1.0894 loop1=1.0919 loop_last=1.0894
+[future_seed_loop stage=2:36-60] step=0400 ce=1.2379 total=1.2379 loop1=1.2722 loop_last=1.2379
+[future_seed_loop stage=2:36-60] step=0500 ce=0.7125 total=0.7125 loop1=0.8334 loop_last=0.7125
+[future_seed_loop stage=2:36-60] step=0600 ce=0.4949 total=0.4949 loop1=0.7758 loop_last=0.4949
+[future_seed_loop stage=2:36-60] step=0700 ce=0.3009 total=0.3009 loop1=0.5640 loop_last=0.3009
+[future_seed_loop stage=2:36-60] step=0800 ce=0.1601 total=0.1601 loop1=0.4365 loop_last=0.1601
+[future_seed_loop stage=3:60-72] step=0900 ce=0.3128 total=0.3128 loop1=0.8173 loop_last=0.3128
+[future_seed_loop stage=3:60-72] step=1000 ce=0.2078 total=0.2078 loop1=0.7417 loop_last=0.2078
+[future_seed_loop stage=3:60-72] step=1100 ce=0.1566 total=0.1566 loop1=0.6853 loop_last=0.1566
+
+full-board metrics
+loop=1 exact=0.0026, valid=0.0026, solved=0.0026, blank_acc=0.8402
+        fs_gate=0.519, fs_update=0.545, fs_state_norm=8.300, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=2 exact=0.3464, valid=0.3516, solved=0.3516, blank_acc=0.9657
+        fs_gate=0.519, fs_update=0.545, fs_state_norm=8.300, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=3 exact=0.4896, valid=0.5156, solved=0.5156, blank_acc=0.9726
+        fs_gate=0.519, fs_update=0.545, fs_state_norm=8.300, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=4 exact=0.5078, valid=0.5365, solved=0.5365, blank_acc=0.9734
+        fs_gate=0.519, fs_update=0.545, fs_state_norm=8.300, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+loop=5 exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739
+        fs_gate=0.519, fs_update=0.545, fs_state_norm=8.300, fs_decay=0.50, fb_in=0.000, fb_next=0.000
+
+stochastic rollout metrics
+K1 oracle_exact=0.5052 oracle_solved=0.5365 disagree=0.0000
+  confidence exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  consistency exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  residual    exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  majority    exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+K4 oracle_exact=0.5052 oracle_solved=0.5365 disagree=0.0000
+  confidence exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  consistency exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  residual    exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  majority    exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+K8 oracle_exact=0.5052 oracle_solved=0.5365 disagree=0.0000
+  confidence exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  consistency exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  residual    exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+  majority    exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0026 confidence_exact=0.0026 residual_exact=0.0026 disagree=0.0000
+  K4 oracle_exact=0.0026 confidence_exact=0.0026 residual_exact=0.0026 disagree=0.0000
+  K8 oracle_exact=0.0026 confidence_exact=0.0026 residual_exact=0.0026 disagree=0.0000
+loop3
+  K1 oracle_exact=0.4896 confidence_exact=0.4896 residual_exact=0.4896 disagree=0.0000
+  K4 oracle_exact=0.4896 confidence_exact=0.4896 residual_exact=0.4896 disagree=0.0000
+  K8 oracle_exact=0.4896 confidence_exact=0.4896 residual_exact=0.4896 disagree=0.0000
+loop5
+  K1 oracle_exact=0.5052 confidence_exact=0.5052 residual_exact=0.5052 disagree=0.0000
+  K4 oracle_exact=0.5052 confidence_exact=0.5052 residual_exact=0.5052 disagree=0.0000
+  K8 oracle_exact=0.5052 confidence_exact=0.5052 residual_exact=0.5052 disagree=0.0000
+
+hole-transfer metrics
+holes=60 exact=0.5052, valid=0.5365, solved=0.5365, blank_acc=0.9739; indep=0.2042, exact/indep=2.47
+holes=48 exact=0.9062, valid=0.9193, solved=0.9193, blank_acc=0.9934; indep=0.7290, exact/indep=1.24
+holes=72 exact=0.0521, valid=0.0651, solved=0.0651, blank_acc=0.9007; indep=0.0005, exact/indep=97.19
+holes=84 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7255; indep=0.0000, exact/indep=0.00
+
+case-bank artifacts
+h72 exact=0.0635 blank_acc=0.9007 selected={'solved_by_loop': 8, 'almost_solved': 8, 'hard_failure': 8}
+  index=/huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939/output/case_bank/h72/index.html
+  cases=/huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939/output/case_bank/h72/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939/output/futureseed_loop_case_seed52.html
+recorded run=futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939 score=0.5052083730697632 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/fsdecay-h72-20260610T044909Z-0942939/runs/futureseed-decay050-h72-12x12-d256-l12-loop5-s1100-20260610T0449Z-0942939

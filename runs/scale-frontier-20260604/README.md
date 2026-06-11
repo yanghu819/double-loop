@@ -9,7 +9,8 @@ The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The ne
 | board | run | key result | decision |
 | --- | --- | --- | --- |
 | 9x9 | `scaleup-d192l10-h40-20260604T0844Z-a5b3b4a` | h40 loop5 exact `0.5332`, h44 `0.1914` | supported |
-| 12x12 | `frontier-12x12-d256-h72-20260604T0920Z-f67e6a2` | h60 loop5 exact `0.5052`, h72 `0.0443`, h84 `0.0` | largest supported board |
+| 12x12 initial clean | `frontier-12x12-d256-h72-20260604T0920Z-f67e6a2` | h60 loop5 exact `0.5052`, h72 `0.0443`, h84 `0.0` | first clean 12x12 support |
+| 12x12 clean h84 long-stage | `h84long-12x12-d256-l12-loop5-s2400-20260611T043811Z-f3e48c2` | h60/h72/h84/h96 loop5 exact `0.9297`/`0.7161`/`0.1172`/`0.0`; h84 loop1 `0.0`, loop3 `0.0625`, loop5 `0.1172` | h84 opened by clean curriculum/compute; h96 closed |
 | 16x16 high-hole | `frontier-16x16-d192-h112-20260604T1006Z-f67e6a2` | high-loss at h64-h96; aborted | over-hard curriculum |
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
 | 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
@@ -41,13 +42,15 @@ The 25x25 conservative feasibility run establishes the first larger-board footho
 
 The 25x25 h100 curriculum probe pushes the frontier but also clarifies the upper bound of the current mechanism. With the same D160/L8/loop5 memory mainline and a `50-75:300,75-100:700` curriculum, h75 improves to `0.1289` and h100 becomes nonzero at `0.0078`. However, h100 blank accuracy is already `0.9381`, while exact remains near zero. Loop1 h100 exact is `0.0`, loop2 opens `0.0078`, and loops 3-5 mostly refine blank accuracy without improving exact. This is a global consistency bottleneck, not a local recognition or throughput bottleneck.
 
+The 2026-06-11 clean h84 long-stage run updates the original flattened FutureSeed+loop picture. Without adding row/column/box unit-memory machinery, simply extending the 72-84 hard stage from the short probe to 1500 steps moves h84 loop5 exact from `0.0234` to `0.1172`, and h72 rises to `0.7161`. This is a real curriculum/compute scaling win. It also keeps the bottleneck visible: h96 is still `0.0`, h84 blank accuracy is `0.8895` while exact is `0.1172`, and K1/K4/K8 rollout oracle gaps are zero. The next clean scaling question is therefore capacity or loop/FutureSeed state dynamics, not selector search or Sudoku-specific repair rules.
+
 ## Decision
 
-Treat 12x12 as the largest supported scale for the original flattened paradigm. Treat 16x16 as supported by the new unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25 and h88/h96 on 16x16 are still frontier territory.
+Treat 12x12 h84 as supported by the original flattened FutureSeed+loop paradigm after clean hard-stage scaling; h96 is the current closed boundary for that path. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h96 on clean 12x12 are still frontier territory.
 
 Next high-ROI work should change the mechanism:
 
-1. Implement true row/column/box unit tokens inside the RWKV recurrent sequence, then rerun the 25x25 h75/h90/h100/h110 readout against the h100 curriculum baseline.
-2. For 16x16 h88/h96, prefer the same true unit-token mechanism or a targeted hard curriculum over more width.
-3. Add activation checkpointing only if it enables a structurally different experiment, not just a blind D384/L16 scale-up.
-4. Keep selector work paused until K-oracle improves; current K1 is already the main result.
+1. For the clean FutureSeed+loop path, run one capacity or loop/FutureSeed-state scale-up against the h84 curriculum to see whether h96 opens.
+2. Keep selector work paused until K-oracle improves; current K1 is already the main result on the clean h84 run.
+3. For the historical unit-memory path, only revisit true row/column/box unit tokens if the clean path stalls again; do not add Sudoku-specific repair rules to the mainline.
+4. Add activation checkpointing only if it enables a structurally different scaling experiment, not just a blind D384/L16 table entry.

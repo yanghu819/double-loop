@@ -16,7 +16,8 @@ The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The ne
 | 12x12 loop-time h96 | `looptime-h96-12x12-d256-l12-loop5-s3400-20260611T093013Z-cddd449` | `LOOP_TIME_SCALE=1`; h72/h84/h96/h108 loop5 exact `0.8542`/`0.4115`/`0.0052`/`0.0`; h96 loop1 blank_acc `0.5102` vs clean `0.4211` | stronger early loops, worse final consistency; stop loop-time scale sweeps |
 | 12x12 compressed h96 focus | `h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804` | shortened early curriculum plus 1400-step h96 stage; h72/h84/h96/h108 loop5 exact `0.9010`/`0.3828`/`0.0`/`0.0`; h96 blank_acc `0.7545` | hard-stage exposure alone is insufficient; full middle curriculum matters |
 | 12x12 full-budget clean h96 | `h96fullclean-12x12-d256-l12-loop5-s4800-20260611T1212Z-4337212` | full middle curriculum plus 2400-step h96 stage; h72/h84/h96/h108 loop5 exact `0.9844`/`0.8828`/`0.3164`/`0.0`; h96 loop1/3/5 exact `0.0`/`0.0293`/`0.3164` | h96 supported by clean scaling; h108 still closed |
-| 12x12 h108 frontier | `h108frontier-12x12-d256-l12-loop5-s6200-20260611T1400Z-e446f4a` | full h96 foundation plus 1600-step h108 stage; h84/h96/h108/h120 loop5 exact `0.9902`/`0.8848`/`0.1797`/`0.0`; h108 loop1/3/5 exact `0.0`/`0.0020`/`0.1797` | h108 opened; h120 is the new clean boundary |
+| 12x12 h108 frontier | `h108frontier-12x12-d256-l12-loop5-s6200-20260611T1400Z-e446f4a` | full h96 foundation plus 1600-step h108 stage; h84/h96/h108/h120 loop5 exact `0.9902`/`0.8848`/`0.1797`/`0.0`; h108 loop1/3/5 exact `0.0`/`0.0020`/`0.1797` | h108 opened; h120 still closed |
+| 12x12 h120 loop6 all-loop | `h120loopall-retry-12x12-d256-l12-loop6-s7400-20260611T1640Z-8ccc4a9` | loop6, `LOOP_LOSS=all`, full h108 foundation plus 1600-step h120 stage; h96/h108/h120/h132 loop6 exact `0.9922`/`0.9160`/`0.0273`/`0.0`; h120 loop1/3/4/6 exact `0.0`/`0.0117`/`0.0273`/`0.0273` | h108 strongly supported; h120 barely opened but remains frontier |
 | 16x16 high-hole | `frontier-16x16-d192-h112-20260604T1006Z-f67e6a2` | high-loss at h64-h96; aborted | over-hard curriculum |
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
 | 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
@@ -64,13 +65,15 @@ The same run also keeps the role of loop clean. At h96, loop1 exact is `0.0`, lo
 
 The h108 frontier run pushes the same clean path again. With a strong h96 foundation and a 1600-step 96-108 stage, h108 loop5 exact reaches `0.1797`, while h96 transfer reaches `0.8848` and h84 reaches `0.9902`. Loop remains the mechanism: h108 loop1 exact is `0.0`, loop3 is only `0.0020`, loop4 jumps to `0.1328`, and loop5 reaches `0.1797`. h120 stays closed at `0.0` exact and only `0.3439` blank accuracy, so it is a harder local-and-global frontier rather than a near-solved selector problem.
 
+The h120 loop6 all-loop run moves that frontier but does not solve it. Adding one more recurrent loop and supervising every loop makes h108 robust: h108 exact rises from `0.1797` to `0.9160`, and h96 rises to `0.9922`. It also opens h120 from `0.0` to `0.0273`, with h120 blank accuracy rising from `0.3439` to `0.5866`. The h120 loop curve is the key readout: loop1 exact is `0.0`, loop3 is `0.0117`, loop4 reaches `0.0273`, and loops 5-6 only add tiny blank accuracy without improving exact. That means loop6 plus all-loop supervision improves the trajectory and the h108 foundation, but h120 still needs better hard-stage learning or state dynamics.
+
 ## Decision
 
-Treat 12x12 h108 as supported by the original flattened FutureSeed+loop paradigm after full clean curriculum/compute scaling; h120 is now the current closed boundary for that path. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h120 on clean 12x12 are still frontier territory.
+Treat 12x12 h108 as strongly supported by the original flattened FutureSeed+loop paradigm after loop6/all-loop scaling; h120 is barely open but still frontier territory. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h120/h132 on clean 12x12 are still frontier territory.
 
 Next high-ROI work should change the mechanism:
 
-1. For the clean FutureSeed+loop path, move the next clean frontier to h120 or test one simple late-loop state revision mechanism; do not run loop-time, feedback scale, compressed h96 schedule sweeps, or selector work.
+1. For the clean FutureSeed+loop path, keep h120 as the next target but use only high-leverage changes: more h120-stage compute/capacity, activation checkpointing if it enables real scale, or one simple FutureSeed state revision mechanism. Do not run loop-time, feedback scale, compressed h96 schedule sweeps, or selector work.
 2. Keep selector work paused until K-oracle improves; current K1 is already the main result on the clean h84 run.
 3. For the historical unit-memory path, only revisit true row/column/box unit tokens if the clean path stalls again; do not add Sudoku-specific repair rules to the mainline.
 4. Add activation checkpointing only if it enables a structurally different scaling experiment, not just a blind D384/L16 table entry.

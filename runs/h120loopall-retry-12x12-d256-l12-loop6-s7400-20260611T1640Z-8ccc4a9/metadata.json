@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "8ccc4a9afb73b927ca8d3976837abf372ddd2e04",
+  "mode": "full",
+  "notes": "2026-06-11 GPU1 h120 loop6 all-loop scale test: clean 12x12 FutureSeed+loop source 8ccc4a9, D256/L12/loop6, LOOP_LOSS=all, h120 curriculum 16-36:200,36-60:300,60-72:500,72-84:1200,84-96:1800,96-108:1800,108-120:1600, batch72/eval512/bfloat16 on GPU1 A100 80GB after AIStation restart. Result: h96/h108/h120/h132 loop6 exact=0.9922/0.9160/0.0273/0.0000; h120 blank_acc=0.5866; final CE=0.3605 after 8556.3s. Loop curve at h120: loop1/3/4/5/6 exact=0.0000/0.0117/0.0273/0.0273/0.0273; loop6 adds blank_acc but exact saturates after loop4. Insight: loop6+all-loop strongly consolidates h96/h108 and opens h120 from zero, but h120 remains a real frontier because final local accuracy is only 0.5866 and loop gains saturate early. The limiting factor is hard-stage learning/capacity/state dynamics, not selector search. K1 oracle gap is zero. Decision: treat h120 as barely opened, h108 as strongly supported by this route; next high-ROI work should target h120 stage compute/capacity or a simple FutureSeed state update, not rollout selector or Sudoku repair. No tag because primary score <0.50.",
+  "recorded_at_utc": "2026-06-11T18:41:48.464385+00:00",
+  "run_name": "h120loopall-retry-12x12-d256-l12-loop6-s7400-20260611T1640Z-8ccc4a9",
+  "score": 0.02734375,
+  "score_key": "metrics.eval_clean.loop6.label_exact",
+  "timestamp_utc": "2026-06-11T18:31:28.813992+00:00"
+}

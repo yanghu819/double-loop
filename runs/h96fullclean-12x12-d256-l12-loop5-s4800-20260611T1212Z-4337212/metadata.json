@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "43372120a550473e7df4f5b45ff146bd72fefed0",
+  "mode": "full",
+  "notes": "2026-06-11 GPU1 full-budget clean h96 scale test: D256/L12/loop5 12x12 FutureSeed+loop at source 4337212, preserving middle curriculum and extending 84-96 to 2400 steps (16-36:200,36-60:300,60-72:500,72-84:1400,84-96:2400), batch80/eval512/bfloat16. Result: h72/h84/h96/h108 loop5 exact=0.9844/0.8828/0.3164/0.0000; h96 blank_acc=0.9264; final CE=0.1178 after 5130.8s. This strongly improves over clean h96 baseline 0.8750/0.4740/0.0104/0.0000 and over compressed h96 focus 0.9010/0.3828/0.0000/0.0000. Insight: h96 was still compute/curriculum limited, not a hard mechanism ceiling; the compressed run failed because it removed middle-stage foundation. Loop remains essential: h96 loop1/3/4/5 exact=0.0000/0.0293/0.2715/0.3164, so recurrent refinement is the solve path. K1 oracle gap is zero, so selector work remains low ROI. Decision: treat clean 12x12 h96 as supported; move frontier to h108 or simple late-loop state revision. No tag because score <0.50.",
+  "recorded_at_utc": "2026-06-11T13:53:23.640581+00:00",
+  "run_name": "h96fullclean-12x12-d256-l12-loop5-s4800-20260611T1212Z-4337212",
+  "score": 0.31640625,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "timestamp_utc": "2026-06-11T13:44:39.385310+00:00"
+}

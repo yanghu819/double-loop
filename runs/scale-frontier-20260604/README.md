@@ -16,6 +16,7 @@ The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The ne
 | 12x12 loop-time h96 | `looptime-h96-12x12-d256-l12-loop5-s3400-20260611T093013Z-cddd449` | `LOOP_TIME_SCALE=1`; h72/h84/h96/h108 loop5 exact `0.8542`/`0.4115`/`0.0052`/`0.0`; h96 loop1 blank_acc `0.5102` vs clean `0.4211` | stronger early loops, worse final consistency; stop loop-time scale sweeps |
 | 12x12 compressed h96 focus | `h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804` | shortened early curriculum plus 1400-step h96 stage; h72/h84/h96/h108 loop5 exact `0.9010`/`0.3828`/`0.0`/`0.0`; h96 blank_acc `0.7545` | hard-stage exposure alone is insufficient; full middle curriculum matters |
 | 12x12 full-budget clean h96 | `h96fullclean-12x12-d256-l12-loop5-s4800-20260611T1212Z-4337212` | full middle curriculum plus 2400-step h96 stage; h72/h84/h96/h108 loop5 exact `0.9844`/`0.8828`/`0.3164`/`0.0`; h96 loop1/3/5 exact `0.0`/`0.0293`/`0.3164` | h96 supported by clean scaling; h108 still closed |
+| 12x12 h108 frontier | `h108frontier-12x12-d256-l12-loop5-s6200-20260611T1400Z-e446f4a` | full h96 foundation plus 1600-step h108 stage; h84/h96/h108/h120 loop5 exact `0.9902`/`0.8848`/`0.1797`/`0.0`; h108 loop1/3/5 exact `0.0`/`0.0020`/`0.1797` | h108 opened; h120 is the new clean boundary |
 | 16x16 high-hole | `frontier-16x16-d192-h112-20260604T1006Z-f67e6a2` | high-loss at h64-h96; aborted | over-hard curriculum |
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
 | 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
@@ -61,13 +62,15 @@ The full-budget clean h96 run changes the 12x12 conclusion. Keeping a full middl
 
 The same run also keeps the role of loop clean. At h96, loop1 exact is `0.0`, loop3 is `0.0293`, loop4 is `0.2715`, and loop5 is `0.3164`. The solve does not come from a stronger single forward pass; it comes from recurrent refinement. K1 oracle and selector are identical, so selector work remains low ROI.
 
+The h108 frontier run pushes the same clean path again. With a strong h96 foundation and a 1600-step 96-108 stage, h108 loop5 exact reaches `0.1797`, while h96 transfer reaches `0.8848` and h84 reaches `0.9902`. Loop remains the mechanism: h108 loop1 exact is `0.0`, loop3 is only `0.0020`, loop4 jumps to `0.1328`, and loop5 reaches `0.1797`. h120 stays closed at `0.0` exact and only `0.3439` blank accuracy, so it is a harder local-and-global frontier rather than a near-solved selector problem.
+
 ## Decision
 
-Treat 12x12 h96 as supported by the original flattened FutureSeed+loop paradigm after full clean curriculum/compute scaling; h108 is now the current closed boundary for that path. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h108 on clean 12x12 are still frontier territory.
+Treat 12x12 h108 as supported by the original flattened FutureSeed+loop paradigm after full clean curriculum/compute scaling; h120 is now the current closed boundary for that path. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h120 on clean 12x12 are still frontier territory.
 
 Next high-ROI work should change the mechanism:
 
-1. For the clean FutureSeed+loop path, move the next clean frontier to h108 or test one simple late-loop state revision mechanism; do not run loop-time, feedback scale, or compressed h96 schedule sweeps.
+1. For the clean FutureSeed+loop path, move the next clean frontier to h120 or test one simple late-loop state revision mechanism; do not run loop-time, feedback scale, compressed h96 schedule sweeps, or selector work.
 2. Keep selector work paused until K-oracle improves; current K1 is already the main result on the clean h84 run.
 3. For the historical unit-memory path, only revisit true row/column/box unit tokens if the clean path stalls again; do not add Sudoku-specific repair rules to the mainline.
 4. Add activation checkpointing only if it enables a structurally different scaling experiment, not just a blind D384/L16 table entry.

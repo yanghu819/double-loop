@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "e446f4ae64b80067c40fce2e185f5b9de27fe3e9",
+  "mode": "full",
+  "notes": "2026-06-11 GPU1 h108 clean frontier test: D256/L12/loop5 12x12 FutureSeed+loop at source e446f4a, using full h96 foundation and 96-108 hard stage (16-36:200,36-60:300,60-72:500,72-84:1400,84-96:2200,96-108:1600), batch80/eval512/bfloat16. Result: h84/h96/h108/h120 loop5 exact=0.9902/0.8848/0.1797/0.0000; h108 blank_acc=0.8685; final CE=0.1359 after 6591.7s. Insight: clean FutureSeed+loop scales beyond h96; h108 is open without Sudoku-specific repair or selector search. Loop remains the mechanism: h108 loop1/3/4/5 exact=0.0000/0.0020/0.1328/0.1797. K1 oracle gap is zero, so selector work remains low ROI. h120 is still closed with blank_acc=0.3439, making h120 the new clean 12x12 frontier. No tag because score <0.50.",
+  "recorded_at_utc": "2026-06-11T15:58:33.593715+00:00",
+  "run_name": "h108frontier-12x12-d256-l12-loop5-s6200-20260611T1400Z-e446f4a",
+  "score": 0.1796875,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "timestamp_utc": "2026-06-11T15:46:03.700382+00:00"
+}

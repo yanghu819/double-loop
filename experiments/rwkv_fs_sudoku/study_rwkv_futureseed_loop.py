@@ -641,12 +641,14 @@ class FutureSeedLoopSudoku(nn.Module):
         future_seed_decay: float,
         future_seed_update: str,
         loop_feedback_scale: float,
+        loop_time_scale: float,
         rwkv_kernel: str,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
         self.lambda_ = float(lambda_)
         self.loop_feedback_scale = float(loop_feedback_scale)
+        self.loop_time_scale = float(loop_time_scale)
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -664,6 +666,11 @@ class FutureSeedLoopSudoku(nn.Module):
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.out_norm = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, N, bias=False)
+        if self.loop_time_scale > 0:
+            self.loop_time = nn.Linear(2, d_model, bias=False)
+            nn.init.normal_(self.loop_time.weight, mean=0.0, std=0.02)
+        else:
+            self.loop_time = None
         if self.loop_feedback_scale > 0:
             self.loop_feedback = nn.Linear(N, d_model, bias=False)
             nn.init.zeros_(self.loop_feedback.weight)
@@ -714,9 +721,17 @@ class FutureSeedLoopSudoku(nn.Module):
 
         loop_logits: List[torch.Tensor] = []
         fs_trace: List[Dict[str, torch.Tensor]] = []
-        for _ in range(int(loops)):
+        loop_count = int(loops)
+        for loop_idx in range(loop_count):
             feedback_in_norm = zero if feedback is None else feedback.norm(dim=-1).mean()
             loop_context = x if feedback is None else x + feedback
+            loop_time_norm = zero
+            if self.loop_time is not None and self.loop_time_scale > 0:
+                phase = float(loop_idx + 1) / float(max(loop_count, 1))
+                features = x.new_tensor([[math.sin(math.pi * phase), math.cos(math.pi * phase)]])
+                loop_time = self.loop_time(features).to(dtype=x.dtype).view(1, 1, -1) * self.loop_time_scale
+                loop_context = loop_context + loop_time
+                loop_time_norm = loop_time.norm(dim=-1).mean()
             for _ in range(self.l_cycles):
                 z_l, _diag = self.depth_update(
                     z_l,
@@ -741,6 +756,7 @@ class FutureSeedLoopSudoku(nn.Module):
             loop_logits.append(logits)
             fs_diag = dict(fs_diag)
             fs_diag["loop_feedback_in_norm"] = feedback_in_norm
+            fs_diag["loop_time_norm"] = loop_time_norm
             if self.loop_feedback is not None and self.loop_feedback_scale > 0:
                 feedback = self.loop_feedback(logits.softmax(dim=-1)) * self.loop_feedback_scale
                 fs_diag["loop_feedback_next_norm"] = feedback.norm(dim=-1).mean()
@@ -871,6 +887,8 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
         parts.append(f"fb_next={m['loop_feedback_next_norm']:.3f}")
+    if "loop_time_norm" in m:
+        parts.append(f"loop_time={m['loop_time_norm']:.3f}")
     return ", ".join(parts)
 
 
@@ -889,6 +907,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_decay=args.future_seed_decay,
         future_seed_update=args.future_seed_update,
         loop_feedback_scale=args.loop_feedback_scale,
+        loop_time_scale=args.loop_time_scale,
         rwkv_kernel=args.rwkv_kernel,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
@@ -969,6 +988,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "forward_dtype": args.forward_dtype,
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
+        "loop_time_scale": args.loop_time_scale,
     }
     return model.eval(), train_stats
 
@@ -1793,6 +1813,7 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             f"dtype={train.get('forward_dtype', 'float32')}, "
             f"fs_update={train.get('future_seed_update', 'fixed')}, "
             f"loop_fb={train.get('loop_feedback_scale', 0.0):.2f}, "
+            f"loop_time={train.get('loop_time_scale', 0.0):.2f}, "
             f"loop1_loss={train.get('train_loop1_loss', 0.0):.4f}, "
             f"loop_last_loss={train.get('train_loop_last_loss', 0.0):.4f}, "
             f"sec={train.get('train_sec', 0.0):.1f}"
@@ -1880,6 +1901,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--future_seed_decay must be in [0, 1)")
     if args.loop_feedback_scale < 0:
         raise ValueError("--loop_feedback_scale must be non-negative")
+    if args.loop_time_scale < 0:
+        raise ValueError("--loop_time_scale must be non-negative")
     if args.forward_dtype not in {"float32", "bfloat16"}:
         raise ValueError("--forward_dtype must be 'float32' or 'bfloat16'")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
@@ -2016,6 +2039,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_decay": args.future_seed_decay,
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
+        "loop_time_scale": args.loop_time_scale,
         "rwkv_kernel": args.rwkv_kernel,
         "forward_dtype": args.forward_dtype,
         "rollout_ks": rollout_ks,
@@ -2142,6 +2166,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--future_seed_update", choices=("fixed", "learned"), default="fixed")
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
+    p.add_argument("--loop_time_scale", type=float, default=0.0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")

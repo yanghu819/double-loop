@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>12x12 h96 case bank</title>
+<style>
+body { margin: 24px; background: #f6f8fa; color: #24292f; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: 0; }
+h2 { margin: 0 0 10px; font-size: 17px; letter-spacing: 0; }
+p { margin: 0 0 14px; color: #57606a; line-height: 1.45; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+.panel { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { border-bottom: 1px solid #d0d7de; padding: 8px 7px; text-align: left; }
+th { color: #57606a; background: #f0f3f6; }
+tr:last-child td { border-bottom: 0; }
+a { color: #1f6feb; }
+</style>
+</head>
+<body>
+<h1>12x12 h96 FutureSeed loop case bank</h1>
+<p>Eval sample: <code>1024</code>. Final loop exact: <code>0.0068</code>. Final loop blank accuracy: <code>0.7652</code>. This artifact is diagnostic only; it does not change training.</p>
+<div class="grid">
+<section class="panel">
+  <h2>solved by loop</h2>
+  <table><thead><tr><th>case</th><th>batch</th><th>final wrong</th><th>blank acc</th><th>entropy</th><th>conflict units</th></tr></thead><tbody><tr><td><a href="h96_solved_by_loop_01_b0114.html">h96_solved_by_loop_01_b0114</a></td><td>114</td><td>0</td><td>1.000</td><td>0.377</td><td>0</td></tr><tr><td><a href="h96_solved_by_loop_02_b0237.html">h96_solved_by_loop_02_b0237</a></td><td>237</td><td>0</td><td>1.000</td><td>0.269</td><td>0</td></tr><tr><td><a href="h96_solved_by_loop_03_b0122.html">h96_solved_by_loop_03_b0122</a></td><td>122</td><td>0</td><td>1.000</td><td>0.234</td><td>0</td></tr><tr><td><a href="h96_solved_by_loop_04_b0650.html">h96_solved_by_loop_04_b0650</a></td><td>650</td><td>0</td><td>1.000</td><td>0.306</td><td>0</td></tr><tr><td><a href="h96_solved_by_loop_05_b0463.html">h96_solved_by_loop_05_b0463</a></td><td>463</td><td>0</td><td>1.000</td><td>0.193</td><td>0</td></tr><tr><td><a href="h96_solved_by_loop_06_b1011.html">h96_solved_by_loop_06_b1011</a></td><td>1011</td><td>0</td><td>1.000</td><td>0.310</td><td>0</td></tr><tr><td><a href="h96_solved_by_loop_07_b0435.html">h96_solved_by_loop_07_b0435</a></td><td>435</td><td>0</td><td>1.000</td><td>0.325</td><td>0</td></tr></tbody></table>
+</section>
+
+<section class="panel">
+  <h2>almost solved</h2>
+  <table><thead><tr><th>case</th><th>batch</th><th>final wrong</th><th>blank acc</th><th>entropy</th><th>conflict units</th></tr></thead><tbody><tr><td><a href="h96_almost_solved_01_b0116.html">h96_almost_solved_01_b0116</a></td><td>116</td><td>1</td><td>0.990</td><td>0.452</td><td>3</td></tr><tr><td><a href="h96_almost_solved_02_b0134.html">h96_almost_solved_02_b0134</a></td><td>134</td><td>1</td><td>0.990</td><td>0.313</td><td>3</td></tr><tr><td><a href="h96_almost_solved_03_b0227.html">h96_almost_solved_03_b0227</a></td><td>227</td><td>1</td><td>0.990</td><td>0.249</td><td>3</td></tr><tr><td><a href="h96_almost_solved_04_b0475.html">h96_almost_solved_04_b0475</a></td><td>475</td><td>1</td><td>0.990</td><td>0.293</td><td>3</td></tr><tr><td><a href="h96_almost_solved_05_b0486.html">h96_almost_solved_05_b0486</a></td><td>486</td><td>1</td><td>0.990</td><td>0.312</td><td>3</td></tr><tr><td><a href="h96_almost_solved_06_b0499.html">h96_almost_solved_06_b0499</a></td><td>499</td><td>1</td><td>0.990</td><td>0.360</td><td>3</td></tr><tr><td><a href="h96_almost_solved_07_b0560.html">h96_almost_solved_07_b0560</a></td><td>560</td><td>1</td><td>0.990</td><td>0.289</td><td>3</td></tr><tr><td><a href="h96_almost_solved_08_b0636.html">h96_almost_solved_08_b0636</a></td><td>636</td><td>1</td><td>0.990</td><td>0.291</td><td>3</td></tr></tbody></table>
+</section>
+
+<section class="panel">
+  <h2>hard failure</h2>
+  <table><thead><tr><th>case</th><th>batch</th><th>final wrong</th><th>blank acc</th><th>entropy</th><th>conflict units</th></tr></thead><tbody><tr><td><a href="h96_hard_failure_01_b0601.html">h96_hard_failure_01_b0601</a></td><td>601</td><td>5</td><td>0.948</td><td>0.305</td><td>4</td></tr><tr><td><a href="h96_hard_failure_02_b0991.html">h96_hard_failure_02_b0991</a></td><td>991</td><td>5</td><td>0.948</td><td>0.293</td><td>5</td></tr><tr><td><a href="h96_hard_failure_03_b0195.html">h96_hard_failure_03_b0195</a></td><td>195</td><td>5</td><td>0.948</td><td>0.481</td><td>6</td></tr><tr><td><a href="h96_hard_failure_04_b0362.html">h96_hard_failure_04_b0362</a></td><td>362</td><td>5</td><td>0.948</td><td>0.450</td><td>6</td></tr><tr><td><a href="h96_hard_failure_05_b0395.html">h96_hard_failure_05_b0395</a></td><td>395</td><td>5</td><td>0.948</td><td>0.291</td><td>6</td></tr><tr><td><a href="h96_hard_failure_06_b0902.html">h96_hard_failure_06_b0902</a></td><td>902</td><td>5</td><td>0.948</td><td>0.359</td><td>6</td></tr><tr><td><a href="h96_hard_failure_07_b0338.html">h96_hard_failure_07_b0338</a></td><td>338</td><td>5</td><td>0.948</td><td>0.283</td><td>7</td></tr><tr><td><a href="h96_hard_failure_08_b0043.html">h96_hard_failure_08_b0043</a></td><td>43</td><td>5</td><td>0.948</td><td>0.451</td><td>8</td></tr></tbody></table>
+</section>
+</div>
+</body>
+</html>

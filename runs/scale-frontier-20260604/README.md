@@ -14,6 +14,7 @@ The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The ne
 | 12x12 D320 capacity probe | `capprobe-d320-12x12-h84-s900-20260611T054106Z-d29bb4e` | D320/L12/loop5 batch48 fits around 49GB, but shortened 900-step curriculum gives h72/h84/h96 exact `0.0` and h84 blank_acc `0.5523` | width fits, but short budget is not enough evidence |
 | 12x12 clean h96 frontier | `h96frontier-12x12-d256-l12-loop5-s3400-20260611T075445Z-be4046b` | h72/h84/h96/h108 loop5 exact `0.8750`/`0.4740`/`0.0104`/`0.0`; h96 loop1/3 `0.0`, loop4 `0.0078`, loop5 `0.0104` | h96 barely opened; h108 closed |
 | 12x12 loop-time h96 | `looptime-h96-12x12-d256-l12-loop5-s3400-20260611T093013Z-cddd449` | `LOOP_TIME_SCALE=1`; h72/h84/h96/h108 loop5 exact `0.8542`/`0.4115`/`0.0052`/`0.0`; h96 loop1 blank_acc `0.5102` vs clean `0.4211` | stronger early loops, worse final consistency; stop loop-time scale sweeps |
+| 12x12 compressed h96 focus | `h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804` | shortened early curriculum plus 1400-step h96 stage; h72/h84/h96/h108 loop5 exact `0.9010`/`0.3828`/`0.0`/`0.0`; h96 blank_acc `0.7545` | hard-stage exposure alone is insufficient; full middle curriculum matters |
 | 16x16 high-hole | `frontier-16x16-d192-h112-20260604T1006Z-f67e6a2` | high-loss at h64-h96; aborted | over-hard curriculum |
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
 | 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
@@ -53,13 +54,15 @@ The h96 frontier run pushes the clean path one step further. Moving curriculum p
 
 The loop-time conditioning run answers a narrower mechanism question. Adding a learned projection of generic loop phase makes early loops much stronger: h96 loop1 blank accuracy rises from `0.4211` to `0.5102`, and loop1 training loss is consistently lower in later stages. But final exact gets worse: h96 falls from `0.0104` to `0.0052`, h84 from `0.4740` to `0.4115`, and h96 loop5 blank accuracy falls from `0.7769` to `0.7549`. The model did learn and use the phase signal, but the phase signal turned the early loop into a better predictor without improving late global consistency.
 
+The compressed h96 focus run is a useful negative guardrail. It spends 1400 of 2400 steps directly in the 84-96 stage and reaches final CE `0.3850`, close to the full h96 baseline `0.3931`. But h96 exact falls from `0.0104` to `0.0`, h84 falls from `0.4740` to `0.3828`, and h96 blank accuracy falls from `0.7769` to `0.7545`. The one improvement is easier transfer at h72, from `0.8750` to `0.9010`. That means low CE and more hard-stage exposure are not enough; the full middle curriculum appears to build global consistency that the h96 stage cannot recover after being compressed.
+
 ## Decision
 
 Treat 12x12 h84 as supported by the original flattened FutureSeed+loop paradigm after clean hard-stage scaling; h96 is barely open and h108 is the current closed boundary for that path. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h96/h108 on clean 12x12 are still frontier territory.
 
 Next high-ROI work should change the mechanism:
 
-1. For the clean FutureSeed+loop path, either extend the h96 hard stage or change the late-loop state update itself; do not run loop-time or feedback scale sweeps.
+1. For the clean FutureSeed+loop path, either run a full-length clean h96 hard-stage continuation or change the late-loop state update itself; do not run loop-time, feedback scale, or compressed h96 schedule sweeps.
 2. Keep selector work paused until K-oracle improves; current K1 is already the main result on the clean h84 run.
 3. For the historical unit-memory path, only revisit true row/column/box unit tokens if the clean path stalls again; do not add Sudoku-specific repair rules to the mainline.
 4. Add activation checkpointing only if it enables a structurally different scaling experiment, not just a blind D384/L16 table entry.

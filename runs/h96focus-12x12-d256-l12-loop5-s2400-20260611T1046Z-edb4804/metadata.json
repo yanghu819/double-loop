@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "edb4804c39938d72fc5c99e9994766c6cd8973b8",
+  "mode": "full",
+  "notes": "2026-06-11 GPU1 h96-focused compressed curriculum probe: same clean FutureSeed+loop D256/L12/loop5, but 2400 total steps and compressed early stages 16-36:100,36-60:150,60-72:250,72-84:500,84-96:1400 due remaining lease. Purpose: test whether h96 opens by spending proportionally more time in 84-96, or whether full middle-stage foundation is required. Result: h72/h84/h96/h108 loop5 exact=0.9010/0.3828/0.0000/0.0000; h96 blank_acc=0.7545; final CE=0.3850. Against full h96 baseline 0.8750/0.4740/0.0104/0.0000 and h96 blank_acc=0.7769, compressed schedule improves h72 but loses h84/h96. Lesson: h96 is not unlocked by entering hard stage early; middle curriculum/global-consistency foundation matters. Decision: stop compressed h96 schedules; next useful path is full-length clean hard-stage compute or a real late-state revision mechanism.",
+  "recorded_at_utc": "2026-06-11T11:53:57.504076+00:00",
+  "run_name": "h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804",
+  "score": 0.0,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "timestamp_utc": "2026-06-11T11:41:25.532144+00:00"
+}

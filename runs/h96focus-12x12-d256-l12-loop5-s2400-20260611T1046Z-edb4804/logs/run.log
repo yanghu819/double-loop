@@ -1,0 +1,69 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/h96focus-20260611T1046Z-edb4804/runs/h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804
+git_sha=edb4804c39938d72fc5c99e9994766c6cd8973b8
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=12x12 box=3x4 mainline=future_seed_loop rwkv_kernel=auto forward_dtype=bfloat16
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:16-36] step=0100 ce=1.5464 total=1.5464 loop1=1.5470 loop_last=1.5464
+[future_seed_loop stage=2:36-60] step=0200 ce=1.6066 total=1.6066 loop1=1.6118 loop_last=1.6066
+[future_seed_loop stage=3:60-72] step=0300 ce=1.6126 total=1.6126 loop1=1.6277 loop_last=1.6126
+[future_seed_loop stage=3:60-72] step=0400 ce=1.2014 total=1.2014 loop1=1.3280 loop_last=1.2014
+[future_seed_loop stage=3:60-72] step=0500 ce=0.8148 total=0.8148 loop1=1.1118 loop_last=0.8148
+[future_seed_loop stage=4:72-84] step=0600 ce=0.8294 total=0.8294 loop1=1.2819 loop_last=0.8294
+[future_seed_loop stage=4:72-84] step=0700 ce=0.6517 total=0.6517 loop1=1.1693 loop_last=0.6517
+[future_seed_loop stage=4:72-84] step=0800 ce=0.4896 total=0.4896 loop1=1.1119 loop_last=0.4896
+[future_seed_loop stage=4:72-84] step=0900 ce=0.3556 total=0.3556 loop1=1.0631 loop_last=0.3556
+[future_seed_loop stage=4:72-84] step=1000 ce=0.3012 total=0.3012 loop1=1.1546 loop_last=0.3012
+[future_seed_loop stage=5:84-96] step=1100 ce=0.6418 total=0.6418 loop1=1.4898 loop_last=0.6418
+[future_seed_loop stage=5:84-96] step=1200 ce=0.6266 total=0.6266 loop1=1.4078 loop_last=0.6266
+[future_seed_loop stage=5:84-96] step=1300 ce=0.5651 total=0.5651 loop1=1.4265 loop_last=0.5651
+[future_seed_loop stage=5:84-96] step=1400 ce=0.4622 total=0.4622 loop1=1.3447 loop_last=0.4622
+[future_seed_loop stage=5:84-96] step=1500 ce=0.5402 total=0.5402 loop1=1.4053 loop_last=0.5402
+[future_seed_loop stage=5:84-96] step=1600 ce=0.4962 total=0.4962 loop1=1.4057 loop_last=0.4962
+[future_seed_loop stage=5:84-96] step=1700 ce=0.4455 total=0.4455 loop1=1.3706 loop_last=0.4455
+[future_seed_loop stage=5:84-96] step=1800 ce=0.4073 total=0.4073 loop1=1.3407 loop_last=0.4073
+[future_seed_loop stage=5:84-96] step=1900 ce=0.4590 total=0.4590 loop1=1.4647 loop_last=0.4590
+[future_seed_loop stage=5:84-96] step=2000 ce=0.4515 total=0.4515 loop1=1.3473 loop_last=0.4515
+[future_seed_loop stage=5:84-96] step=2100 ce=0.4619 total=0.4619 loop1=1.4188 loop_last=0.4619
+[future_seed_loop stage=5:84-96] step=2200 ce=0.3838 total=0.3838 loop1=1.3106 loop_last=0.3838
+[future_seed_loop stage=5:84-96] step=2300 ce=0.3741 total=0.3741 loop1=1.3303 loop_last=0.3741
+[future_seed_loop stage=5:84-96] step=2400 ce=0.3850 total=0.3850 loop1=1.4437 loop_last=0.3850
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4309
+        fs_gate=0.575, fs_update=1.000, fs_state_norm=9.198, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.6253
+        fs_gate=0.575, fs_update=1.000, fs_state_norm=9.198, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7348
+        fs_gate=0.575, fs_update=1.000, fs_state_norm=9.198, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7522
+        fs_gate=0.575, fs_update=1.000, fs_state_norm=9.198, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7545
+        fs_gate=0.575, fs_update=1.000, fs_state_norm=9.198, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7545; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7545; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7545; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7545; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop3
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop5
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+
+hole-transfer metrics
+holes=96 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.7545; indep=0.0000, exact/indep=0.00
+holes=72 exact=0.9010, valid=0.9323, solved=0.9323, blank_acc=0.9915; indep=0.5409, exact/indep=1.67
+holes=84 exact=0.3828, valid=0.4036, solved=0.4036, blank_acc=0.9445; indep=0.0082, exact/indep=46.45
+holes=108 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4597; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/h96focus-20260611T1046Z-edb4804/runs/h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/h96focus-20260611T1046Z-edb4804/runs/h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/h96focus-20260611T1046Z-edb4804/runs/h96focus-12x12-d256-l12-loop5-s2400-20260611T1046Z-edb4804/output/futureseed_loop_case_seed52.html

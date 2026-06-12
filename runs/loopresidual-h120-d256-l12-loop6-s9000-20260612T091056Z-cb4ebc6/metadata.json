@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-06-12T10:58:00Z",
+  "run_name": "loopresidual-h120-d256-l12-loop6-s9000-20260612T091056Z-cb4ebc6",
+  "mode": "full",
+  "git_sha": "cb4ebc6ca768987931a2fec4295ff8164bc24902",
+  "git_dirty": false,
+  "status": "aborted_after_checkpoint",
+  "primary_metric_key": "checkpoint.step6800.holes120.eval_clean.loop6.label_exact",
+  "primary_metric": 0.0,
+  "checkpoint_step": 6800,
+  "notes": "2026-06-12 GPU1 loop-residual FutureSeed h120 mechanism test. D256/L12/loop6/all-loop, batch72/eval512/bfloat16/statepassing, FUTURE_SEED_UPDATE=loop_residual and FUTURE_SEED_DECAY=0.75. At step6800, h96/h108/h120/h132 loop6 exact=0.6484/0.2266/0.0000/0.0000; h120 blank_acc=0.6178 and loop6-loop3 exact gain=0.0000. Decision: stop by exact PID and switch to fixed FutureSeed context plus gated mutable scratch. Lesson: writing FutureSeed memory back into the backbone state helps easier transfer but does not solve the h120 global-coupling cliff."
+}

@@ -1,0 +1,102 @@
+{
+  "timestamp_utc": "2026-06-12T11:44:39.073396+00:00",
+  "action": "stopped_after_checkpoint",
+  "reason": "h120 and h132 exact remained zero at first hard checkpoint; h120 loop6-loop3 exact gain was zero, so continuing loop_residual has low ROI versus testing mutable scratch state.",
+  "pid": 1567,
+  "checkpoint": "checkpoint_eval_step006800.json",
+  "step": 6800,
+  "stage": 7,
+  "train": {
+    "ce_loss": 0.44520455598831177,
+    "loop1_loss": 1.249496340751648,
+    "loop_last_loss": 0.44520455598831177,
+    "total_loss": 0.6143617630004883
+  },
+  "summary": {
+    "h96": {
+      "loop_exact": [
+        0.0,
+        0.484375,
+        0.646484375,
+        0.64453125,
+        0.64453125,
+        0.6484375
+      ],
+      "loop_blank_acc": [
+        0.8736572265625,
+        0.9765625,
+        0.98162841796875,
+        0.98187255859375,
+        0.9818928837776184,
+        0.98193359375
+      ],
+      "loop6_exact": 0.6484375,
+      "loop6_minus_loop3_exact": 0.001953125,
+      "loop6_blank_acc": 0.98193359375
+    },
+    "h108": {
+      "loop_exact": [
+        0.0,
+        0.037109375,
+        0.203125,
+        0.21875,
+        0.228515625,
+        0.2265625
+      ],
+      "loop_blank_acc": [
+        0.6730504631996155,
+        0.8963215947151184,
+        0.9272280335426331,
+        0.93017578125,
+        0.9306098222732544,
+        0.9308810830116272
+      ],
+      "loop6_exact": 0.2265625,
+      "loop6_minus_loop3_exact": 0.0234375,
+      "loop6_blank_acc": 0.9308810830116272
+    },
+    "h120": {
+      "loop_exact": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "loop_blank_acc": [
+        0.36892902851104736,
+        0.538378894329071,
+        0.605175793170929,
+        0.6155436038970947,
+        0.617431640625,
+        0.6177734136581421
+      ],
+      "loop6_exact": 0.0,
+      "loop6_minus_loop3_exact": 0.0,
+      "loop6_blank_acc": 0.6177734136581421
+    },
+    "h132": {
+      "loop_exact": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "loop_blank_acc": [
+        0.16005267202854156,
+        0.16577887535095215,
+        0.17149029672145844,
+        0.17165304720401764,
+        0.17085404694080353,
+        0.16996626555919647
+      ],
+      "loop6_exact": 0.0,
+      "loop6_minus_loop3_exact": 0.0,
+      "loop6_blank_acc": 0.16996626555919647
+    }
+  },
+  "next_decision": "launch gated scratchpad run from GitHub truth SHA b03829b"
+}

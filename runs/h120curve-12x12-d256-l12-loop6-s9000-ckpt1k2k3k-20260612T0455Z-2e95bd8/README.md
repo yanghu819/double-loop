@@ -47,4 +47,20 @@ The main bottleneck is still global consistency at h120. Blank accuracy rises in
 - Checkpoints: `output/checkpoint_eval_step006800.json`, `output/checkpoint_eval_step007800.json`, `output/checkpoint_eval_step008800.json`
 - Report: `output/futureseed_loop_seed52.md`
 - Case HTML: `output/futureseed_loop_case_seed52.html`
+- Hardest-case visual: `output/h120_hardest_case_visual.html`
+- Hardest-case PNG: `output/h120_hardest_case_visual.png`
+- Hardest-case parsed summary: `output/h120_hardest_case_summary.json`
 - Logs: `logs/run.log`, `logs/driver.log`
+
+## Hardest Case Visual Read
+
+The saved seed52 h120 case exposes the failure mode directly. Loop1 gets only
+`22/120` hidden cells right. Loop3 lifts that to `51/120`, but loop4 drops to
+`47/120`, loop5 stays at `47/120`, and loop6 reaches only `48/120`. The final
+board still has `72` wrong hidden cells and `34` duplicate row/column/box
+conflict units.
+
+This supports the current interpretation: loop depth is useful early, but the
+fixed FutureSeed state does not keep producing meaningful revisions late in the
+trajectory. The next modeling change should be a simple state update or gated
+revision mechanism, not Sudoku-specific repair or selector logic.

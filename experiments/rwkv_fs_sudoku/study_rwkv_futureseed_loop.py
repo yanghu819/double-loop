@@ -682,6 +682,12 @@ class FutureSeedLoopSudoku(nn.Module):
         future_seed_update: str,
         loop_feedback_scale: float,
         loop_time_scale: float,
+        scratch_mode: str,
+        scratch_scale: float,
+        scratch_noise_scale: float,
+        scratch_gauss_projections: int,
+        scratch_gate_bias: float,
+        scratch_decay_bias: float,
         rwkv_kernel: str,
     ) -> None:
         super().__init__()
@@ -689,6 +695,11 @@ class FutureSeedLoopSudoku(nn.Module):
         self.lambda_ = float(lambda_)
         self.loop_feedback_scale = float(loop_feedback_scale)
         self.loop_time_scale = float(loop_time_scale)
+        if scratch_mode not in {"none", "gated"}:
+            raise ValueError("scratch_mode must be 'none' or 'gated'.")
+        self.scratch_mode = scratch_mode
+        self.scratch_scale = float(scratch_scale)
+        self.scratch_noise_scale = float(scratch_noise_scale)
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -716,10 +727,110 @@ class FutureSeedLoopSudoku(nn.Module):
             nn.init.zeros_(self.loop_feedback.weight)
         else:
             self.loop_feedback = None
+        if self.scratch_mode == "gated":
+            self.scratch_init = nn.Parameter(torch.zeros(1, 1, d_model))
+            self.scratch_norm = nn.LayerNorm(d_model)
+            self.scratch_update_norm = nn.LayerNorm(d_model)
+            self.scratch_residual = nn.Linear(d_model, d_model, bias=False)
+            self.scratch_gate = nn.Linear(d_model, d_model)
+            self.scratch_decay = nn.Linear(d_model, d_model)
+            nn.init.normal_(self.scratch_residual.weight, mean=0.0, std=0.02)
+            nn.init.zeros_(self.scratch_gate.weight)
+            nn.init.zeros_(self.scratch_decay.weight)
+            nn.init.constant_(self.scratch_gate.bias, float(scratch_gate_bias))
+            nn.init.constant_(self.scratch_decay.bias, float(scratch_decay_bias))
+            if scratch_gauss_projections > 0:
+                projection = torch.randn(int(scratch_gauss_projections), d_model)
+                projection = projection / projection.norm(dim=-1, keepdim=True).clamp(min=1e-6)
+            else:
+                projection = torch.empty(0, d_model)
+            self.register_buffer("scratch_projection", projection)
+        else:
+            self.register_parameter("scratch_init", None)
+            self.scratch_norm = None
+            self.scratch_update_norm = None
+            self.scratch_residual = None
+            self.scratch_gate = None
+            self.scratch_decay = None
+            self.register_buffer("scratch_projection", torch.empty(0, d_model))
 
     def input_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
         positions = torch.arange(CELLS, dtype=torch.long, device=inputs.device)
         return self.embed(inputs) + self.position(positions).unsqueeze(0)
+
+    def scratch_gaussian_loss(self, residual: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        if self.scratch_projection.numel() == 0:
+            zero = residual.new_zeros(())
+            return zero, {
+                "scratch_proj_mean_abs": zero,
+                "scratch_proj_var_mean": zero,
+                "scratch_proj_var_rank": zero,
+            }
+        z = F.layer_norm(residual.float(), (residual.shape[-1],))
+        projection = self.scratch_projection.to(device=z.device, dtype=z.dtype)
+        projected = z.reshape(-1, z.shape[-1]) @ projection.t()
+        mean = projected.mean(dim=0)
+        var = projected.var(dim=0, unbiased=False)
+        loss = mean.square().mean() + (var - 1.0).square().mean()
+        var_detached = var.detach().clamp(min=1e-8)
+        var_rank = var_detached.sum().square() / var_detached.square().sum().clamp(min=1e-8)
+        return loss.to(dtype=residual.dtype), {
+            "scratch_proj_mean_abs": mean.detach().abs().mean().to(dtype=residual.dtype),
+            "scratch_proj_var_mean": var.detach().mean().to(dtype=residual.dtype),
+            "scratch_proj_var_rank": var_rank.to(dtype=residual.dtype),
+        }
+
+    def scratch_input(
+        self,
+        scratch: Optional[torch.Tensor],
+    ) -> Tuple[Optional[torch.Tensor], torch.Tensor]:
+        if scratch is None or self.scratch_mode == "none":
+            zero = self.h_init.new_zeros(())
+            return None, zero
+        if self.training and self.scratch_noise_scale > 0:
+            noise = torch.randn_like(scratch) * self.scratch_noise_scale
+            return scratch + noise, noise.norm(dim=-1).mean()
+        return scratch, scratch.new_zeros(())
+
+    def update_scratch(
+        self,
+        scratch: Optional[torch.Tensor],
+        hidden: torch.Tensor,
+    ) -> Tuple[Optional[torch.Tensor], Dict[str, torch.Tensor]]:
+        if self.scratch_mode == "none":
+            zero = hidden.new_zeros(())
+            return None, {
+                "scratch_gate_mean": zero,
+                "scratch_decay_mean": zero,
+                "scratch_residual_norm": zero,
+                "scratch_delta_norm": zero,
+                "scratch_gauss_loss": zero,
+                "scratch_proj_mean_abs": zero,
+                "scratch_proj_var_mean": zero,
+                "scratch_proj_var_rank": zero,
+            }
+        assert scratch is not None
+        assert self.scratch_norm is not None
+        assert self.scratch_update_norm is not None
+        assert self.scratch_residual is not None
+        assert self.scratch_gate is not None
+        assert self.scratch_decay is not None
+        h = self.scratch_norm(hidden)
+        residual = torch.tanh(self.scratch_residual(h))
+        gate = torch.sigmoid(self.scratch_gate(h))
+        decay = torch.sigmoid(self.scratch_decay(h))
+        updated = self.scratch_update_norm(decay * scratch + gate * residual)
+        delta = updated - scratch
+        gauss_loss, gauss_diag = self.scratch_gaussian_loss(residual)
+        diag = {
+            "scratch_gate_mean": gate.mean(),
+            "scratch_decay_mean": decay.mean(),
+            "scratch_residual_norm": residual.norm(dim=-1).mean(),
+            "scratch_delta_norm": delta.norm(dim=-1).mean(),
+            "scratch_gauss_loss": gauss_loss,
+            **gauss_diag,
+        }
+        return updated, diag
 
     def depth_update(
         self,
@@ -758,6 +869,10 @@ class FutureSeedLoopSudoku(nn.Module):
         z_h = self.h_init.expand(batch_size, seq_len, -1)
         z_l = self.l_init.expand(batch_size, seq_len, -1)
         feedback: Optional[torch.Tensor] = None
+        scratch: Optional[torch.Tensor] = None
+        if self.scratch_mode == "gated":
+            assert self.scratch_init is not None
+            scratch = self.scratch_init.expand(batch_size, seq_len, -1)
         h_seed_memory: Optional[List[torch.Tensor]] = None
         l_seed_memory: Optional[List[torch.Tensor]] = None
         zero = x.new_zeros(())
@@ -768,6 +883,9 @@ class FutureSeedLoopSudoku(nn.Module):
         for loop_idx in range(loop_count):
             feedback_in_norm = zero if feedback is None else feedback.norm(dim=-1).mean()
             loop_context = x if feedback is None else x + feedback
+            scratch_context, scratch_noise_norm = self.scratch_input(scratch)
+            if scratch_context is not None and self.scratch_scale > 0:
+                loop_context = loop_context + scratch_context * self.scratch_scale
             loop_time_norm = zero
             if self.loop_time is not None and self.loop_time_scale > 0:
                 phase = float(loop_idx + 1) / float(max(loop_count, 1))
@@ -802,6 +920,9 @@ class FutureSeedLoopSudoku(nn.Module):
             fs_diag = dict(fs_diag)
             fs_diag["loop_feedback_in_norm"] = feedback_in_norm
             fs_diag["loop_time_norm"] = loop_time_norm
+            fs_diag["scratch_noise_norm"] = scratch_noise_norm
+            scratch, scratch_diag = self.update_scratch(scratch, z_h)
+            fs_diag.update(scratch_diag)
             if self.loop_feedback is not None and self.loop_feedback_scale > 0:
                 feedback = self.loop_feedback(logits.softmax(dim=-1)) * self.loop_feedback_scale
                 fs_diag["loop_feedback_next_norm"] = feedback.norm(dim=-1).mean()
@@ -938,6 +1059,16 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(f"fb_next={m['loop_feedback_next_norm']:.3f}")
     if "loop_time_norm" in m:
         parts.append(f"loop_time={m['loop_time_norm']:.3f}")
+    if "scratch_gate_mean" in m:
+        parts.append(f"scratch_gate={m['scratch_gate_mean']:.3f}")
+        parts.append(f"scratch_decay={m.get('scratch_decay_mean', 0.0):.3f}")
+        parts.append(f"scratch_delta={m.get('scratch_delta_norm', 0.0):.3f}")
+        parts.append(f"scratch_resid={m.get('scratch_residual_norm', 0.0):.3f}")
+    if m.get("scratch_noise_norm", 0.0) > 0:
+        parts.append(f"scratch_noise={m['scratch_noise_norm']:.3f}")
+    if m.get("scratch_proj_var_rank", 0.0) > 0:
+        parts.append(f"scratch_var={m.get('scratch_proj_var_mean', 0.0):.3f}")
+        parts.append(f"scratch_rank={m['scratch_proj_var_rank']:.1f}")
     return ", ".join(parts)
 
 
@@ -957,6 +1088,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_update=args.future_seed_update,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_time_scale=args.loop_time_scale,
+        scratch_mode=args.scratch_mode,
+        scratch_scale=args.scratch_scale,
+        scratch_noise_scale=args.scratch_noise_scale,
+        scratch_gauss_projections=args.scratch_gauss_projections,
+        scratch_gate_bias=args.scratch_gate_bias,
+        scratch_decay_bias=args.scratch_decay_bias,
         rwkv_kernel=args.rwkv_kernel,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
@@ -973,6 +1110,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_loop1_loss = 0.0
     last_loop_last_loss = 0.0
     last_loop_weights: List[float] = []
+    last_scratch_gauss_loss = 0.0
+    last_scratch_gate = 0.0
+    last_scratch_decay = 0.0
+    last_scratch_delta = 0.0
+    last_scratch_residual = 0.0
+    last_scratch_proj_var = 0.0
+    last_scratch_proj_rank = 0.0
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -1028,7 +1172,17 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             ]
             ce_loss = loop_losses[-1]
             supervised_loss, loop_weights = weighted_loop_loss(loop_losses, args)
-            loss = supervised_loss
+            scratch_gauss_terms = [
+                trace["scratch_gauss_loss"].to(dtype=supervised_loss.dtype)
+                for trace in _fs_trace
+                if "scratch_gauss_loss" in trace
+            ]
+            scratch_gauss_loss = (
+                torch.stack(scratch_gauss_terms).mean()
+                if scratch_gauss_terms
+                else supervised_loss.new_zeros(())
+            )
+            loss = supervised_loss + float(args.scratch_gauss_weight) * scratch_gauss_loss
             opt.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -1038,11 +1192,21 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_loop1_loss = float(loop_losses[0].detach().cpu())
             last_loop_last_loss = float(loop_losses[-1].detach().cpu())
             last_loop_weights = [float(x) for x in loop_weights.detach().cpu().tolist()]
+            last_scratch_gauss_loss = float(scratch_gauss_loss.detach().cpu())
+            if _fs_trace:
+                trace_last = _fs_trace[-1]
+                last_scratch_gate = float(trace_last.get("scratch_gate_mean", ce_loss.new_zeros(())).detach().cpu())
+                last_scratch_decay = float(trace_last.get("scratch_decay_mean", ce_loss.new_zeros(())).detach().cpu())
+                last_scratch_delta = float(trace_last.get("scratch_delta_norm", ce_loss.new_zeros(())).detach().cpu())
+                last_scratch_residual = float(trace_last.get("scratch_residual_norm", ce_loss.new_zeros(())).detach().cpu())
+                last_scratch_proj_var = float(trace_last.get("scratch_proj_var_mean", ce_loss.new_zeros(())).detach().cpu())
+                last_scratch_proj_rank = float(trace_last.get("scratch_proj_var_rank", ce_loss.new_zeros(())).detach().cpu())
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
                     f"step={global_step:04d} ce={last_ce_loss:.4f} total={last_total_loss:.4f} "
-                    f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f}",
+                    f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f} "
+                    f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
             if global_step in checkpoint_step_set:
@@ -1058,6 +1222,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "total_loss": last_total_loss,
                         "loop1_loss": last_loop1_loss,
                         "loop_last_loss": last_loop_last_loss,
+                        "scratch_gauss_loss": last_scratch_gauss_loss,
+                        "scratch_gate": last_scratch_gate,
+                        "scratch_decay": last_scratch_decay,
+                        "scratch_delta": last_scratch_delta,
+                        "scratch_residual": last_scratch_residual,
+                        "scratch_proj_var": last_scratch_proj_var,
+                        "scratch_proj_rank": last_scratch_proj_rank,
                     },
                     "eval_by_holes": {},
                 }
@@ -1098,6 +1269,20 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "loop_loss_min_weight": args.loop_loss_min_weight,
         "loop_loss_weights": last_loop_weights,
         "noise_mode": "feature_diff",
+        "scratch_mode": args.scratch_mode,
+        "scratch_scale": args.scratch_scale,
+        "scratch_noise_scale": args.scratch_noise_scale,
+        "scratch_gauss_weight": args.scratch_gauss_weight,
+        "scratch_gauss_projections": args.scratch_gauss_projections,
+        "scratch_gate_bias": args.scratch_gate_bias,
+        "scratch_decay_bias": args.scratch_decay_bias,
+        "scratch_gauss_loss": last_scratch_gauss_loss,
+        "scratch_gate": last_scratch_gate,
+        "scratch_decay": last_scratch_decay,
+        "scratch_delta": last_scratch_delta,
+        "scratch_residual": last_scratch_residual,
+        "scratch_proj_var": last_scratch_proj_var,
+        "scratch_proj_rank": last_scratch_proj_rank,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "rwkv_kernel": args.rwkv_kernel,
@@ -1969,6 +2154,9 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             f"fs_update={train.get('future_seed_update', 'fixed')}, "
             f"loop_fb={train.get('loop_feedback_scale', 0.0):.2f}, "
             f"loop_time={train.get('loop_time_scale', 0.0):.2f}, "
+            f"scratch={train.get('scratch_mode', 'none')}, "
+            f"scratch_delta={train.get('scratch_delta', 0.0):.3f}, "
+            f"scratch_gauss={train.get('scratch_gauss_loss', 0.0):.4f}, "
             f"loop1_loss={train.get('train_loop1_loss', 0.0):.4f}, "
             f"loop_last_loss={train.get('train_loop_last_loss', 0.0):.4f}, "
             f"sec={train.get('train_sec', 0.0):.1f}"
@@ -2058,6 +2246,18 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--loop_feedback_scale must be non-negative")
     if args.loop_time_scale < 0:
         raise ValueError("--loop_time_scale must be non-negative")
+    if args.scratch_scale < 0:
+        raise ValueError("--scratch_scale must be non-negative")
+    if args.scratch_noise_scale < 0:
+        raise ValueError("--scratch_noise_scale must be non-negative")
+    if args.scratch_gauss_weight < 0:
+        raise ValueError("--scratch_gauss_weight must be non-negative")
+    if args.scratch_gauss_projections < 0:
+        raise ValueError("--scratch_gauss_projections must be non-negative")
+    if args.scratch_gauss_weight > 0 and args.scratch_mode == "none":
+        raise ValueError("--scratch_gauss_weight requires --scratch_mode gated")
+    if args.scratch_gauss_weight > 0 and args.scratch_gauss_projections == 0:
+        raise ValueError("--scratch_gauss_weight requires positive --scratch_gauss_projections")
     if args.forward_dtype not in {"float32", "bfloat16"}:
         raise ValueError("--forward_dtype must be 'float32' or 'bfloat16'")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
@@ -2197,6 +2397,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_time_scale": args.loop_time_scale,
+        "scratch_mode": args.scratch_mode,
+        "scratch_scale": args.scratch_scale,
+        "scratch_noise_scale": args.scratch_noise_scale,
+        "scratch_gauss_weight": args.scratch_gauss_weight,
+        "scratch_gauss_projections": args.scratch_gauss_projections,
+        "scratch_gate_bias": args.scratch_gate_bias,
+        "scratch_decay_bias": args.scratch_decay_bias,
         "rwkv_kernel": args.rwkv_kernel,
         "forward_dtype": args.forward_dtype,
         "rollout_ks": rollout_ks,
@@ -2326,6 +2533,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_update", choices=("fixed", "learned", "loop_residual"), default="fixed")
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_time_scale", type=float, default=0.0)
+    p.add_argument("--scratch_mode", choices=("none", "gated"), default="none")
+    p.add_argument("--scratch_scale", type=float, default=1.0)
+    p.add_argument("--scratch_noise_scale", type=float, default=0.0)
+    p.add_argument("--scratch_gauss_weight", type=float, default=0.0)
+    p.add_argument("--scratch_gauss_projections", type=int, default=0)
+    p.add_argument("--scratch_gate_bias", type=float, default=-2.0)
+    p.add_argument("--scratch_decay_bias", type=float, default=2.0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")

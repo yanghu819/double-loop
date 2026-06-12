@@ -213,6 +213,15 @@ fi
 if [[ -n "${EVAL_HOLES_LIST:-}" ]]; then
   COMMON_ARGS+=(--eval_holes_list "$EVAL_HOLES_LIST")
 fi
+if [[ -n "${EVAL_CHECKPOINT_STEPS:-}" ]]; then
+  COMMON_ARGS+=(--eval_checkpoint_steps "$EVAL_CHECKPOINT_STEPS")
+fi
+if [[ -n "${EVAL_CHECKPOINT_STAGE_OFFSETS:-}" ]]; then
+  COMMON_ARGS+=(--eval_checkpoint_stage_offsets "$EVAL_CHECKPOINT_STAGE_OFFSETS")
+fi
+if [[ -n "${EVAL_CHECKPOINT_HOLES_LIST:-}" ]]; then
+  COMMON_ARGS+=(--eval_checkpoint_holes_list "$EVAL_CHECKPOINT_HOLES_LIST")
+fi
 if [[ -n "${ROLLOUT_LOOP_VALUES:-}" ]]; then
   COMMON_ARGS+=(--rollout_loop_values "$ROLLOUT_LOOP_VALUES")
 fi

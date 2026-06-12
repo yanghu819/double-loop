@@ -892,7 +892,7 @@ def fs_line(m: Dict[str, float]) -> str:
     return ", ".join(parts)
 
 
-def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[FutureSeedLoopSudoku, Dict[str, float]]:
+def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[FutureSeedLoopSudoku, Dict[str, Any]]:
     torch.manual_seed(args.seed)
     rng = random.Random(args.seed + 1000)
     model = FutureSeedLoopSudoku(
@@ -924,9 +924,35 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_loop1_loss = 0.0
     last_loop_last_loss = 0.0
     last_loop_weights: List[float] = []
+    stages = parse_hole_stages(args)
+    checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
+    checkpoint_step_set = set(checkpoint_steps)
+    checkpoint_evals: Dict[str, Any] = {}
+    checkpoint_batches = {}
+    if checkpoint_steps:
+        out_dir = Path(args.out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        checkpoint_holes = parse_eval_checkpoint_holes(args)
+        checkpoint_batches = {
+            holes: make_batch(
+                args.eval_n,
+                holes,
+                holes,
+                args.hole_pattern,
+                random.Random(args.seed + 13000 + holes * 17),
+                device=device,
+            )
+            for holes in checkpoint_holes
+        }
+        print(
+            "checkpoint_eval "
+            f"steps={','.join(str(step) for step in checkpoint_steps)} "
+            f"holes={','.join(str(holes) for holes in checkpoint_holes)}",
+            flush=True,
+        )
 
     global_step = 0
-    for stage_idx, (holes_min, holes_max, stage_steps) in enumerate(parse_hole_stages(args), start=1):
+    for stage_idx, (holes_min, holes_max, stage_steps) in enumerate(stages, start=1):
         for _ in range(stage_steps):
             global_step += 1
             model.train()
@@ -970,6 +996,47 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f}",
                     flush=True,
                 )
+            if global_step in checkpoint_step_set:
+                model.eval()
+                checkpoint = {
+                    "step": global_step,
+                    "stage": stage_idx,
+                    "holes_min": holes_min,
+                    "holes_max": holes_max,
+                    "elapsed_sec": time.time() - t0,
+                    "train": {
+                        "ce_loss": last_ce_loss,
+                        "total_loss": last_total_loss,
+                        "loop1_loss": last_loop1_loss,
+                        "loop_last_loss": last_loop_last_loss,
+                    },
+                    "eval_by_holes": {},
+                }
+                for holes, eval_batch in checkpoint_batches.items():
+                    clean, _preds = evaluate_model(
+                        model,
+                        eval_batch,
+                        max_loops=args.max_loops,
+                        noise_scale=0.0,
+                        seed=args.seed + 14000 + global_step + holes,
+                        forward_dtype=args.forward_dtype,
+                    )
+                    checkpoint["eval_by_holes"][f"holes{holes}"] = {"eval_clean": clean}
+                checkpoint_key = f"step{global_step}"
+                checkpoint_evals[checkpoint_key] = checkpoint
+                checkpoint_path = Path(args.out_dir) / f"checkpoint_eval_step{global_step:06d}.json"
+                checkpoint_path.write_text(json.dumps(checkpoint, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                target_key = f"holes{args.eval_holes}"
+                if target_key in checkpoint["eval_by_holes"]:
+                    last_key = f"loop{args.max_loops}"
+                    target_metrics = checkpoint["eval_by_holes"][target_key]["eval_clean"][last_key]
+                    print(
+                        f"[checkpoint_eval step={global_step:04d} {target_key}] "
+                        f"loop{args.max_loops} exact={target_metrics['label_exact']:.4f} "
+                        f"blank={target_metrics['blank_acc']:.4f}",
+                        flush=True,
+                    )
+                model.train()
 
     train_stats = {
         "train_ce_loss": last_ce_loss,
@@ -989,6 +1056,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_time_scale": args.loop_time_scale,
+        "eval_checkpoint_steps": checkpoint_steps,
+        "eval_checkpoint_holes": sorted(checkpoint_batches),
+        "checkpoint_evals": checkpoint_evals,
     }
     return model.eval(), train_stats
 
@@ -1774,6 +1844,23 @@ def parse_eval_holes(args: argparse.Namespace) -> List[int]:
     return deduped
 
 
+def parse_eval_checkpoint_holes(args: argparse.Namespace) -> List[int]:
+    raw = str(args.eval_checkpoint_holes_list).strip()
+    if not raw:
+        return parse_eval_holes(args)
+    values: List[int] = []
+    for item in raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        value = int(item)
+        if value < 1 or value > CELLS:
+            raise ValueError(f"--eval_checkpoint_holes_list values must be in [1, {CELLS}]")
+        if value not in values:
+            values.append(value)
+    return values
+
+
 def parse_hole_stages(args: argparse.Namespace) -> List[Tuple[int, int, int]]:
     raw = str(args.hole_stages).strip()
     if not raw:
@@ -1787,6 +1874,25 @@ def parse_hole_stages(args: argparse.Namespace) -> List[Tuple[int, int, int]]:
         if lo < 1 or hi < lo or steps < 1:
             raise ValueError("--hole_stages entries must look like 2-4:100 with 1 <= lo <= hi and steps > 0")
     return stages
+
+
+def parse_eval_checkpoint_steps(args: argparse.Namespace, stages: List[Tuple[int, int, int]]) -> List[int]:
+    total_steps = sum(stage_steps for _lo, _hi, stage_steps in stages)
+    steps: List[int] = []
+    for value in parse_int_csv(args.eval_checkpoint_steps, name="--eval_checkpoint_steps", low=1, high=total_steps):
+        if value not in steps:
+            steps.append(value)
+    final_stage_start = total_steps - stages[-1][2]
+    for offset in parse_int_csv(
+        args.eval_checkpoint_stage_offsets,
+        name="--eval_checkpoint_stage_offsets",
+        low=1,
+        high=stages[-1][2],
+    ):
+        step = final_stage_start + offset
+        if step not in steps:
+            steps.append(step)
+    return sorted(steps)
 
 
 def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str]) -> None:
@@ -1932,6 +2038,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     model, train_stats = train_model(args, device=device)
+    checkpoint_evals = train_stats.pop("checkpoint_evals", {})
     batch = make_batch(
         args.eval_n,
         args.eval_holes,
@@ -1953,6 +2060,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "train": train_stats,
         "eval_clean": clean,
         "eval_by_holes": {},
+        "checkpoint_evals": checkpoint_evals,
     }
     if args.noise_scale > 0:
         noisy, _noisy_preds = evaluate_model(
@@ -2049,6 +2157,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "case_bank_n": args.case_bank_n,
         "case_bank_eval_n": args.case_bank_eval_n,
         "case_bank_loop_values": args.case_bank_loop_values,
+        "eval_checkpoint_steps": train_stats.get("eval_checkpoint_steps", []),
+        "eval_checkpoint_holes": train_stats.get("eval_checkpoint_holes", []),
         "mainline": "future_seed_loop",
     }
 
@@ -2188,6 +2298,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval_holes", type=int, default=8)
     p.add_argument("--eval_holes_list", default="")
     p.add_argument("--eval_n", type=int, default=128)
+    p.add_argument("--eval_checkpoint_steps", default="")
+    p.add_argument("--eval_checkpoint_stage_offsets", default="")
+    p.add_argument("--eval_checkpoint_holes_list", default="")
     p.add_argument("--blank_loss_weight", type=float, default=8.0)
     p.add_argument("--case_index", type=int, default=0)
     p.add_argument("--case_bank_holes", default="")

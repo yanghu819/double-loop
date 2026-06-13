@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "b03829be2b4ec387f4bf772e5144b6c5dab7af74",
+  "mode": "full",
+  "notes": "2026-06-13 GPU1 D320 h120 first-checkpoint capacity test. D320/L12/loop6/all-loop, batch48, bf16/statepassing, clean fixed FutureSeed, no scratch; same h120 first-checkpoint curriculum ending at step6800. Result: h96/h108/h120/h132 loop6 exact=0.4336/0.0508/0.0000/0.0000; h120 blank_acc=0.5000; train CE=0.7799 after 8345.7s. This is worse than the D256 clean h120 curve at comparable checkpoint (h96~0.994, h108~0.820, h120~0.014) and worse than no-noise scratch on h96/h108. Lesson: blind width at lower batch and same step budget does not scale the frontier; h120 remains a data/optimization/global-consistency cliff. Stop D320 same-budget repeats; only revisit width with activation checkpointing or longer/effective-batch scaling.",
+  "recorded_at_utc": "2026-06-13T17:49:39.051059+00:00",
+  "run_name": "capprobe-d320-h120-step6800-d320-l12-loop6-b48-20260613T1522Z-b03829b",
+  "score": 0.0,
+  "score_key": "metrics.eval_clean.loop6.label_exact",
+  "timestamp_utc": "2026-06-13T17:37:43.280057+00:00"
+}

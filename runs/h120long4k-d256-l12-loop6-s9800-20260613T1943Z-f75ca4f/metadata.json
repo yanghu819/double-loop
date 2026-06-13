@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "f75ca4f911f505957709b6572b0ff3fc180edf62",
+  "mode": "full",
+  "notes": "2026-06-13 GPU1 clean D256 h120 +4k hard-stage curve extension. Source f75ca4f, D256/L12/loop6/all-loop, batch72, bf16/statepassing, fixed FutureSeed, no scratch, curriculum through 108-120:4000 with checkpoint evals at +1k/+2k/+3k/+4k. Result: checkpoint h120 loop6 exact=0.0137/0.0332/0.0410/0.0586, final eval h120 loop6 exact=0.0723, blank_acc=0.6704, valid=0.0801, train CE=0.2030 after 11824.9s. Insight: pure hard-stage compute is still positive beyond the old +3k point, but gain remains sublinear and h120 is not near solved; loops add useful exact until loop5 then saturate. Decision: D256 long compute is better ROI than same-budget D320, but next frontier should pair useful compute with a simple late-loop state revision mechanism rather than only extending hard-stage indefinitely.",
+  "recorded_at_utc": "2026-06-13T23:04:41.483909+00:00",
+  "run_name": "h120long4k-d256-l12-loop6-s9800-20260613T1943Z-f75ca4f",
+  "score": 0.072265625,
+  "score_key": "metrics.eval_clean.loop6.label_exact",
+  "timestamp_utc": "2026-06-13T22:53:29.045348+00:00"
+}

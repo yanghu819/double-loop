@@ -1,0 +1,41 @@
+mode=smoke
+run_dir=/huyang2/double-loop/.worktrees/actckpt-d320-b72-loop6-smoke-20260614T0625Z-c2df534/runs/actckpt-d320-b72-loop6-smoke4-20260614T0622Z-c2df534
+git_sha=c2df53407b17b8efee037f41ce960874897a9fb5
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=12x12 box=3x4 mainline=future_seed_loop rwkv_kernel=statepassing forward_dtype=bfloat16
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:16-36] step=0001 ce=2.5894 total=2.5894 loop1=2.5894 loop_last=2.5894 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:16-36] step=0002 ce=3.8850 total=3.9042 loop1=3.9664 loop_last=3.8850 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854
+        fs_gate=0.500, fs_update=1.000, fs_state_norm=15.997, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0870
+        fs_gate=0.500, fs_update=1.000, fs_state_norm=15.997, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0849
+        fs_gate=0.500, fs_update=1.000, fs_state_norm=15.997, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854
+        fs_gate=0.500, fs_update=1.000, fs_state_norm=15.997, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854
+        fs_gate=0.500, fs_update=1.000, fs_state_norm=15.997, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=6 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854
+        fs_gate=0.500, fs_update=1.000, fs_state_norm=15.997, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+stochastic rollout metrics
+K1 oracle_exact=0.0000 oracle_solved=0.0000 disagree=0.0000
+  confidence exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854; gap=0.0000
+  consistency exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854; gap=0.0000
+  residual    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854; gap=0.0000
+  majority    exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854; gap=0.0000
+
+hole-transfer metrics
+holes=120 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0854; indep=0.0000, exact/indep=0.00
+holes=96 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.0853; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/actckpt-d320-b72-loop6-smoke-20260614T0625Z-c2df534/runs/actckpt-d320-b72-loop6-smoke4-20260614T0622Z-c2df534/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/actckpt-d320-b72-loop6-smoke-20260614T0625Z-c2df534/runs/actckpt-d320-b72-loop6-smoke4-20260614T0622Z-c2df534/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/actckpt-d320-b72-loop6-smoke-20260614T0625Z-c2df534/runs/actckpt-d320-b72-loop6-smoke4-20260614T0622Z-c2df534/output/futureseed_loop_case_seed52.html
+recorded run=actckpt-d320-b72-loop6-smoke4-20260614T0622Z-c2df534 score=0.0 key=metrics.eval_clean.loop6.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/actckpt-d320-b72-loop6-smoke-20260614T0625Z-c2df534/runs/actckpt-d320-b72-loop6-smoke4-20260614T0622Z-c2df534

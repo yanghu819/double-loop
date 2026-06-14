@@ -1096,6 +1096,8 @@ def fs_line(m: Dict[str, float]) -> str:
 
 def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[FutureSeedLoopSudoku, Dict[str, Any]]:
     torch.manual_seed(args.seed)
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
     rng = random.Random(args.seed + 1000)
     model = FutureSeedLoopSudoku(
         d_model=args.d_model,
@@ -1311,6 +1313,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "rwkv_kernel": args.rwkv_kernel,
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
+        "cuda_max_memory_allocated_mb": (
+            torch.cuda.max_memory_allocated(device) / (1024**2) if device.type == "cuda" else 0.0
+        ),
+        "cuda_max_memory_reserved_mb": (
+            torch.cuda.max_memory_reserved(device) / (1024**2) if device.type == "cuda" else 0.0
+        ),
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_time_scale": args.loop_time_scale,

@@ -724,7 +724,7 @@ def restore_rng_state(state: Dict[str, Any], device: torch.device) -> None:
     if "torch_cpu" in state:
         torch.set_rng_state(state["torch_cpu"].cpu())
     if device.type == "cuda" and "torch_cuda" in state:
-        torch.cuda.set_rng_state(state["torch_cuda"].to(device), device)
+        torch.cuda.set_rng_state(state["torch_cuda"].cpu(), device)
 
 
 def save_training_checkpoint(

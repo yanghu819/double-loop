@@ -1,0 +1,11 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b/runs/actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b
+git_sha=d3ddc3bd73c2bf3f9ad603ebed880279c6af0a25
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=12x12 box=3x4 mainline=future_seed_loop rwkv_kernel=statepassing forward_dtype=bfloat16
+checkpoint_eval steps=6800 holes=96,108,120,132
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:16-36] step=0100 ce=1.8375 total=1.8376 loop1=1.8398 loop_last=1.8375 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:16-36] step=0200 ce=1.8053 total=1.8067 loop1=1.8135 loop_last=1.8053 scratch_delta=0.000 scratch_gauss=0.0000

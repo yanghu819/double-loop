@@ -1,0 +1,22 @@
+{
+  "aborted_at_utc": "2026-06-14T06:55:07.944754+00:00",
+  "decision": "Stop this exact run; activation checkpoint solves memory but is too slow for D320/B72 full h120 checkpoint inside a 4h lease. Next high-ROI option is either smaller activation-checkpointed capacity with reachable checkpoint, or a true resumed/longer lease run, not letting this partial run drift.",
+  "estimated_sec_per_step_after_step100": 2.65,
+  "observed_steps": [
+    {
+      "ce": 1.8375,
+      "step": 100
+    },
+    {
+      "ce": 1.8053,
+      "step": 200
+    }
+  ],
+  "pid_file": ".cache/launch/actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b.pid",
+  "projected_remaining_sec_after_step200": 17490,
+  "reason": "D320/B72 activation-checkpoint fair capacity run projected beyond current GPU1 lease before first h120 checkpoint.",
+  "remaining_steps_after_step200": 6600,
+  "status": "aborted",
+  "step100_to_step200_sec_estimate": 265,
+  "target_checkpoint_step": 6800
+}

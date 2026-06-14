@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint as torch_checkpoint
 
 try:
     from rwkv7_cuda import StatePassingRWKV7, WindRWKV7, statepassing_available, wind_available
@@ -499,6 +500,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_scale: float = 1.0,
         future_seed_decay: float = 0.0,
         future_seed_update: str = "fixed",
+        activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
     ) -> None:
         super().__init__()
@@ -509,6 +511,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
         self.future_seed_update = future_seed_update
+        self.activation_checkpoint = bool(activation_checkpoint)
         if future_seed_update in {"learned", "loop_residual"}:
             update_init = min(max(1.0 - self.future_seed_decay, 1e-4), 1.0 - 1e-4)
             update_logit = math.log(update_init / (1.0 - update_init))
@@ -601,7 +604,24 @@ class FutureSeedRWKV(nn.Module):
                     state_norms.append(x.new_zeros(()))
                     if next_seed_memory is not None:
                         next_seed_memory.append(previous_state)
-            x, previous_state = block(x, initial_state=initial_state)
+            if self.activation_checkpoint and self.training and torch.is_grad_enabled():
+                if initial_state is None:
+                    x, previous_state = torch_checkpoint(
+                        lambda block_input: block(block_input, initial_state=None),
+                        x,
+                        use_reentrant=False,
+                        preserve_rng_state=False,
+                    )
+                else:
+                    x, previous_state = torch_checkpoint(
+                        lambda block_input, block_state: block(block_input, initial_state=block_state),
+                        x,
+                        initial_state,
+                        use_reentrant=False,
+                        preserve_rng_state=False,
+                    )
+            else:
+                x, previous_state = block(x, initial_state=initial_state)
 
         if gates:
             out = {
@@ -688,6 +708,7 @@ class FutureSeedLoopSudoku(nn.Module):
         scratch_gauss_projections: int,
         scratch_gate_bias: float,
         scratch_decay_bias: float,
+        activation_checkpoint: bool,
         rwkv_kernel: str,
     ) -> None:
         super().__init__()
@@ -711,6 +732,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_scale=future_seed_scale,
             future_seed_decay=future_seed_decay,
             future_seed_update=future_seed_update,
+            activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -1094,6 +1116,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         scratch_gauss_projections=args.scratch_gauss_projections,
         scratch_gate_bias=args.scratch_gate_bias,
         scratch_decay_bias=args.scratch_decay_bias,
+        activation_checkpoint=args.activation_checkpoint,
         rwkv_kernel=args.rwkv_kernel,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
@@ -1287,6 +1310,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "train_sec": time.time() - t0,
         "rwkv_kernel": args.rwkv_kernel,
         "forward_dtype": args.forward_dtype,
+        "activation_checkpoint": bool(args.activation_checkpoint),
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_time_scale": args.loop_time_scale,
@@ -2540,6 +2564,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--scratch_gauss_projections", type=int, default=0)
     p.add_argument("--scratch_gate_bias", type=float, default=-2.0)
     p.add_argument("--scratch_decay_bias", type=float, default=2.0)
+    p.add_argument("--activation_checkpoint", action="store_true")
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")

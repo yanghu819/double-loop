@@ -214,6 +214,10 @@ COMMON_ARGS=(
   --out_dir "$OUT_DIR"
 )
 
+if [[ "${ACTIVATION_CHECKPOINT:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--activation_checkpoint)
+fi
+
 if [[ -n "${HOLE_STAGES:-}" ]]; then
   COMMON_ARGS+=(--hole_stages "$HOLE_STAGES")
 fi

@@ -685,6 +685,113 @@ class FeatureNoiseBuffer:
         perturb = diff / diff_rms * ref_rms
         return perturb.to(dtype=reference.dtype).reshape_as(reference)
 
+    def state_dict(self) -> Dict[str, Any]:
+        return {
+            "capacity": self.capacity,
+            "feature_dim": self.feature_dim,
+            "count": self.count,
+            "write_pos": self.write_pos,
+            "data": self.data.detach().cpu(),
+            "dtype": str(self.dtype),
+        }
+
+    def load_state_dict(self, state: Dict[str, Any]) -> None:
+        if int(state.get("capacity", self.capacity)) != self.capacity:
+            raise ValueError("FeatureNoiseBuffer capacity mismatch in training checkpoint")
+        if int(state.get("feature_dim", self.feature_dim)) != self.feature_dim:
+            raise ValueError("FeatureNoiseBuffer feature_dim mismatch in training checkpoint")
+        data = state.get("data")
+        if data is not None:
+            self.data.copy_(data.to(device=self.device, dtype=self.dtype))
+        self.count = int(state.get("count", 0))
+        self.write_pos = int(state.get("write_pos", 0))
+
+
+def train_checkpoint_dir(args: argparse.Namespace) -> Path:
+    if str(args.train_checkpoint_dir).strip():
+        return Path(args.train_checkpoint_dir)
+    return Path(args.out_dir).parent / "checkpoints"
+
+
+def capture_rng_state(device: torch.device) -> Dict[str, Any]:
+    state: Dict[str, Any] = {"torch_cpu": torch.get_rng_state()}
+    if device.type == "cuda":
+        state["torch_cuda"] = torch.cuda.get_rng_state(device)
+    return state
+
+
+def restore_rng_state(state: Dict[str, Any], device: torch.device) -> None:
+    if "torch_cpu" in state:
+        torch.set_rng_state(state["torch_cpu"])
+    if device.type == "cuda" and "torch_cuda" in state:
+        torch.cuda.set_rng_state(state["torch_cuda"], device)
+
+
+def save_training_checkpoint(
+    *,
+    args: argparse.Namespace,
+    model: "FutureSeedLoopSudoku",
+    opt: torch.optim.Optimizer,
+    feature_buffer: FeatureNoiseBuffer,
+    rng: random.Random,
+    device: torch.device,
+    global_step: int,
+    stage_idx: int,
+    holes_min: int,
+    holes_max: int,
+    t0: float,
+    checkpoint_evals: Dict[str, Any],
+    last_metrics: Dict[str, Any],
+    reason: str,
+) -> Path:
+    out_dir = train_checkpoint_dir(args)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": 1,
+        "saved_at_step": int(global_step),
+        "stage": int(stage_idx),
+        "holes_min": int(holes_min),
+        "holes_max": int(holes_max),
+        "elapsed_sec": time.time() - t0,
+        "reason": reason,
+        "args": vars(args),
+        "model": model.state_dict(),
+        "optimizer": opt.state_dict(),
+        "feature_buffer": feature_buffer.state_dict(),
+        "rng_python": rng.getstate(),
+        "rng_torch": capture_rng_state(device),
+        "checkpoint_evals": checkpoint_evals,
+        "last_metrics": last_metrics,
+    }
+    step_path = out_dir / f"train_state_step{global_step:06d}.pt"
+    tmp_path = out_dir / f".train_state_step{global_step:06d}.pt.tmp"
+    torch.save(payload, tmp_path)
+    tmp_path.replace(step_path)
+    latest_tmp = out_dir / ".latest.pt.tmp"
+    latest_path = out_dir / "latest.pt"
+    torch.save(payload, latest_tmp)
+    latest_tmp.replace(latest_path)
+    return step_path
+
+
+def load_training_checkpoint(
+    path: str,
+    *,
+    model: "FutureSeedLoopSudoku",
+    opt: torch.optim.Optimizer,
+    feature_buffer: FeatureNoiseBuffer,
+    rng: random.Random,
+    device: torch.device,
+) -> Dict[str, Any]:
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    model.load_state_dict(checkpoint["model"])
+    opt.load_state_dict(checkpoint["optimizer"])
+    feature_buffer.load_state_dict(checkpoint.get("feature_buffer", {}))
+    if "rng_python" in checkpoint:
+        rng.setstate(checkpoint["rng_python"])
+    restore_rng_state(checkpoint.get("rng_torch", {}), device)
+    return checkpoint
+
 
 class FutureSeedLoopSudoku(nn.Module):
     def __init__(
@@ -1130,6 +1237,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     model.feature_noise_buffer = feature_buffer
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     t0 = time.time()
+    resume_info: Dict[str, Any] = {}
+    saved_train_checkpoints: List[str] = []
     last_ce_loss = 0.0
     last_total_loss = 0.0
     last_loop1_loss = 0.0
@@ -1170,8 +1279,54 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         )
 
     global_step = 0
+    if str(args.resume_train_checkpoint).strip():
+        checkpoint = load_training_checkpoint(
+            args.resume_train_checkpoint,
+            model=model,
+            opt=opt,
+            feature_buffer=feature_buffer,
+            rng=rng,
+            device=device,
+        )
+        global_step = int(checkpoint.get("saved_at_step", 0))
+        checkpoint_evals = dict(checkpoint.get("checkpoint_evals", {}))
+        last_metrics = dict(checkpoint.get("last_metrics", {}))
+        last_ce_loss = float(last_metrics.get("ce_loss", 0.0))
+        last_total_loss = float(last_metrics.get("total_loss", 0.0))
+        last_loop1_loss = float(last_metrics.get("loop1_loss", 0.0))
+        last_loop_last_loss = float(last_metrics.get("loop_last_loss", 0.0))
+        last_loop_weights = [float(x) for x in last_metrics.get("loop_weights", [])]
+        last_scratch_gauss_loss = float(last_metrics.get("scratch_gauss_loss", 0.0))
+        last_scratch_gate = float(last_metrics.get("scratch_gate", 0.0))
+        last_scratch_decay = float(last_metrics.get("scratch_decay", 0.0))
+        last_scratch_delta = float(last_metrics.get("scratch_delta", 0.0))
+        last_scratch_residual = float(last_metrics.get("scratch_residual", 0.0))
+        last_scratch_proj_var = float(last_metrics.get("scratch_proj_var", 0.0))
+        last_scratch_proj_rank = float(last_metrics.get("scratch_proj_rank", 0.0))
+        resume_info = {
+            "path": str(args.resume_train_checkpoint),
+            "saved_at_step": global_step,
+            "checkpoint_version": checkpoint.get("version"),
+            "checkpoint_reason": checkpoint.get("reason"),
+            "checkpoint_elapsed_sec": checkpoint.get("elapsed_sec"),
+        }
+        print(
+            f"resumed_train_checkpoint path={args.resume_train_checkpoint} "
+            f"step={global_step} reason={checkpoint.get('reason', '')}",
+            flush=True,
+        )
+
+    total_steps = sum(stage_steps for _lo, _hi, stage_steps in stages)
+    if global_step > total_steps:
+        raise ValueError(f"resume step {global_step} exceeds configured total steps {total_steps}")
+    last_saved_step = -1
+    completed_before_stage = 0
     for stage_idx, (holes_min, holes_max, stage_steps) in enumerate(stages, start=1):
-        for _ in range(stage_steps):
+        stage_end = completed_before_stage + stage_steps
+        if global_step >= stage_end:
+            completed_before_stage = stage_end
+            continue
+        for _ in range(global_step - completed_before_stage, stage_steps):
             global_step += 1
             model.train()
             inputs, labels, clue_mask = make_batch(
@@ -1282,6 +1437,78 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         flush=True,
                     )
                 model.train()
+                if args.save_train_checkpoint_every >= 0:
+                    path = save_training_checkpoint(
+                        args=args,
+                        model=model,
+                        opt=opt,
+                        feature_buffer=feature_buffer,
+                        rng=rng,
+                        device=device,
+                        global_step=global_step,
+                        stage_idx=stage_idx,
+                        holes_min=holes_min,
+                        holes_max=holes_max,
+                        t0=t0,
+                        checkpoint_evals=checkpoint_evals,
+                        last_metrics={
+                            "ce_loss": last_ce_loss,
+                            "total_loss": last_total_loss,
+                            "loop1_loss": last_loop1_loss,
+                            "loop_last_loss": last_loop_last_loss,
+                            "loop_weights": last_loop_weights,
+                            "scratch_gauss_loss": last_scratch_gauss_loss,
+                            "scratch_gate": last_scratch_gate,
+                            "scratch_decay": last_scratch_decay,
+                            "scratch_delta": last_scratch_delta,
+                            "scratch_residual": last_scratch_residual,
+                            "scratch_proj_var": last_scratch_proj_var,
+                            "scratch_proj_rank": last_scratch_proj_rank,
+                        },
+                        reason="eval_checkpoint",
+                    )
+                    saved_train_checkpoints.append(str(path))
+                    last_saved_step = global_step
+                    print(f"[train_checkpoint step={global_step:04d}] path={path}", flush=True)
+
+            if (
+                args.save_train_checkpoint_every > 0
+                and global_step % args.save_train_checkpoint_every == 0
+                and global_step != last_saved_step
+            ):
+                path = save_training_checkpoint(
+                    args=args,
+                    model=model,
+                    opt=opt,
+                    feature_buffer=feature_buffer,
+                    rng=rng,
+                    device=device,
+                    global_step=global_step,
+                    stage_idx=stage_idx,
+                    holes_min=holes_min,
+                    holes_max=holes_max,
+                    t0=t0,
+                    checkpoint_evals=checkpoint_evals,
+                    last_metrics={
+                        "ce_loss": last_ce_loss,
+                        "total_loss": last_total_loss,
+                        "loop1_loss": last_loop1_loss,
+                        "loop_last_loss": last_loop_last_loss,
+                        "loop_weights": last_loop_weights,
+                        "scratch_gauss_loss": last_scratch_gauss_loss,
+                        "scratch_gate": last_scratch_gate,
+                        "scratch_decay": last_scratch_decay,
+                        "scratch_delta": last_scratch_delta,
+                        "scratch_residual": last_scratch_residual,
+                        "scratch_proj_var": last_scratch_proj_var,
+                        "scratch_proj_rank": last_scratch_proj_rank,
+                    },
+                    reason="periodic",
+                )
+                saved_train_checkpoints.append(str(path))
+                last_saved_step = global_step
+                print(f"[train_checkpoint step={global_step:04d}] path={path}", flush=True)
+        completed_before_stage = stage_end
 
     train_stats = {
         "train_ce_loss": last_ce_loss,
@@ -1313,6 +1540,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "rwkv_kernel": args.rwkv_kernel,
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
+        "resume_train_checkpoint": resume_info,
+        "save_train_checkpoint_every": args.save_train_checkpoint_every,
+        "saved_train_checkpoints": saved_train_checkpoints,
         "cuda_max_memory_allocated_mb": (
             torch.cuda.max_memory_allocated(device) / (1024**2) if device.type == "cuda" else 0.0
         ),
@@ -2573,6 +2803,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--scratch_gate_bias", type=float, default=-2.0)
     p.add_argument("--scratch_decay_bias", type=float, default=2.0)
     p.add_argument("--activation_checkpoint", action="store_true")
+    p.add_argument("--resume_train_checkpoint", default="")
+    p.add_argument("--train_checkpoint_dir", default="")
+    p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")

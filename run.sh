@@ -218,6 +218,16 @@ if [[ "${ACTIVATION_CHECKPOINT:-0}" == "1" ]]; then
   COMMON_ARGS+=(--activation_checkpoint)
 fi
 
+if [[ -n "${RESUME_TRAIN_CHECKPOINT:-}" ]]; then
+  COMMON_ARGS+=(--resume_train_checkpoint "$RESUME_TRAIN_CHECKPOINT")
+fi
+if [[ -n "${TRAIN_CHECKPOINT_DIR:-}" ]]; then
+  COMMON_ARGS+=(--train_checkpoint_dir "$TRAIN_CHECKPOINT_DIR")
+fi
+if [[ -n "${SAVE_TRAIN_CHECKPOINT_EVERY:-}" ]]; then
+  COMMON_ARGS+=(--save_train_checkpoint_every "$SAVE_TRAIN_CHECKPOINT_EVERY")
+fi
+
 if [[ -n "${HOLE_STAGES:-}" ]]; then
   COMMON_ARGS+=(--hole_stages "$HOLE_STAGES")
 fi

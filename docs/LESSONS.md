@@ -120,11 +120,27 @@
   D256 late-continuation best `0.1777`, and the run used about `27GB` allocated
   / `32GB` reserved on an 80GB GPU with moderate utilization. Before jumping to
   larger width, improve throughput/effective compute for the current D320 path.
+- The packed D320 continuation confirms that this was a real systems bottleneck.
+  Microbatch `48` with accumulation `2` reached about `60-64GB` memory use and
+  near-100% GPU utilization, while h120 checkpoint loop6 exact moved
+  `0.1289 -> 0.1777` from step13200 to step13600. Final full eval reached
+  h96/h108/h120/h132 loop6 exact `0.9941`/`0.9492`/`0.1738`/`0.0`. This nearly
+  matches the D256 best regime, but does not beat it decisively or open h132.
 - Loop remains essential at h120: final h120 loop1 exact was `0.0`, loop3 was
   `0.0664`, and loop6 was `0.1270`. This supports recurrence as the active
   mechanism, not one-pass prediction. It does not justify selector or repair
   work because the clean path still has positive compute slope and K-oracle has
   not shown selector headroom.
+- For packed D320, the loop evidence is even clearer: final h120 loop1/3/4/5/6
+  exact is `0.0000`/`0.0820`/`0.1562`/`0.1699`/`0.1738`. The remaining limit is
+  not one-pass recognition; it is turning late-loop local fill into more valid
+  full-board solves.
+- A new detached worktree can fail before GPU training if `.cache/bin/ninja` is
+  not linked or on `PATH`. The failed
+  `d320-mb48eff96-h120-s13600-20260615T205559Z-785f3cd` launch is an environment
+  abort, not a model result. Future remote launchers should always link the base
+  repo-local ninja or prepend `/huyang2/double-loop/.cache/bin` and
+  `/opt/conda/bin` before loading the RWKV CUDA extension.
 - Treat GPU halts as platform events when a periodic checkpoint exists. The
   interrupted `d320-effb72-h120-resume9800-s12800-20260615T1703Z-785f3cd`
   segment resumed cleanly into

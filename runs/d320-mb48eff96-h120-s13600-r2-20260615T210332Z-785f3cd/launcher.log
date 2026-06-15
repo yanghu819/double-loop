@@ -1,0 +1,72 @@
+launch_utc=2026-06-15T21:01:54Z
+run_name=d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd
+worktree=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd
+source_sha=785f3cdca74aab1f6e9d6a4cc252a17e3aa63731
+resume_checkpoint=/huyang2/double-loop/.worktrees/d320-effb72-h120-s12800-20260615T1703Z-785f3cd/runs/d320-effb72-h120-resume10000-s12800-20260615T1801Z-785f3cd/checkpoints/latest.pt
+experiment=packing-scale D320 h120 continuation, microbatch48 x grad_accum2 effective_batch96
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd
+git_sha=785f3cdca74aab1f6e9d6a4cc252a17e3aa63731
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=12x12 box=3x4 mainline=future_seed_loop rwkv_kernel=statepassing forward_dtype=bfloat16
+checkpoint_eval steps=13200,13600 holes=96,108,120,132
+resumed_train_checkpoint path=/huyang2/double-loop/.worktrees/d320-effb72-h120-s12800-20260615T1703Z-785f3cd/runs/d320-effb72-h120-resume10000-s12800-20260615T1801Z-785f3cd/checkpoints/latest.pt step=12800 reason=eval_checkpoint
+[future_seed_loop stage=7:108-120] step=12900 ce=0.2179 total=0.4192 loop1=1.1869 loop_last=0.2179 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=13000 ce=0.1364 total=0.3417 loop1=1.1405 loop_last=0.1364 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=13000] path=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/checkpoints/train_state_step013000.pt
+[future_seed_loop stage=7:108-120] step=13100 ce=0.1450 total=0.3522 loop1=1.1467 loop_last=0.1450 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=13200 ce=0.2347 total=0.4463 loop1=1.2192 loop_last=0.2347 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=13200 holes120] loop6 exact=0.1289 blank=0.7398
+[train_checkpoint step=13200] path=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/checkpoints/train_state_step013200.pt
+[future_seed_loop stage=7:108-120] step=13300 ce=0.1688 total=0.3800 loop1=1.1934 loop_last=0.1688 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=13400 ce=0.2748 total=0.4673 loop1=1.2358 loop_last=0.2748 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=13400] path=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/checkpoints/train_state_step013400.pt
+[future_seed_loop stage=7:108-120] step=13500 ce=0.2141 total=0.4163 loop1=1.1854 loop_last=0.2141 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=13600 ce=0.2292 total=0.4431 loop1=1.2138 loop_last=0.2292 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=13600 holes120] loop6 exact=0.1777 blank=0.7628
+[train_checkpoint step=13600] path=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/checkpoints/train_state_step013600.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3797
+        fs_gate=0.610, fs_update=1.000, fs_state_norm=19.530, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.6073
+        fs_gate=0.610, fs_update=1.000, fs_state_norm=19.530, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0820, valid=0.0820, solved=0.0820, blank_acc=0.7294
+        fs_gate=0.610, fs_update=1.000, fs_state_norm=19.530, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.1562, valid=0.1602, solved=0.1602, blank_acc=0.7577
+        fs_gate=0.610, fs_update=1.000, fs_state_norm=19.530, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.1699, valid=0.1719, solved=0.1719, blank_acc=0.7604
+        fs_gate=0.610, fs_update=1.000, fs_state_norm=19.530, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=6 exact=0.1738, valid=0.1758, solved=0.1758, blank_acc=0.7611
+        fs_gate=0.610, fs_update=1.000, fs_state_norm=19.530, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+stochastic rollout metrics
+K1 oracle_exact=0.1738 oracle_solved=0.1758 disagree=0.0000
+  confidence exact=0.1738, valid=0.1758, solved=0.1758, blank_acc=0.7611; gap=0.0000
+  consistency exact=0.1738, valid=0.1758, solved=0.1758, blank_acc=0.7611; gap=0.0000
+  residual    exact=0.1738, valid=0.1758, solved=0.1758, blank_acc=0.7611; gap=0.0000
+  majority    exact=0.1738, valid=0.1758, solved=0.1758, blank_acc=0.7611; gap=0.0000
+
+compute-scaling rollout metrics
+loop1
+  K1 oracle_exact=0.0000 confidence_exact=0.0000 residual_exact=0.0000 disagree=0.0000
+loop3
+  K1 oracle_exact=0.0820 confidence_exact=0.0820 residual_exact=0.0820 disagree=0.0000
+loop4
+  K1 oracle_exact=0.1562 confidence_exact=0.1562 residual_exact=0.1562 disagree=0.0000
+loop5
+  K1 oracle_exact=0.1699 confidence_exact=0.1699 residual_exact=0.1699 disagree=0.0000
+loop6
+  K1 oracle_exact=0.1738 confidence_exact=0.1738 residual_exact=0.1738 disagree=0.0000
+
+hole-transfer metrics
+holes=120 exact=0.1738, valid=0.1758, solved=0.1758, blank_acc=0.7611; indep=0.0000, exact/indep=29165205119297.11
+holes=96 exact=0.9941, valid=0.9941, solved=0.9941, blank_acc=0.9992; indep=0.9303, exact/indep=1.07
+holes=108 exact=0.9492, valid=0.9512, solved=0.9512, blank_acc=0.9942; indep=0.5332, exact/indep=1.78
+holes=132 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1648; indep=0.0000, exact/indep=0.00
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/output/futureseed_loop_case_seed52.html
+recorded run=d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd score=0.173828125 key=metrics.eval_clean.loop6.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd/runs/d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd

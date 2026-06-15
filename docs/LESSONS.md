@@ -104,3 +104,29 @@
   9x9 scale run, default to `NOISE_SCALE=0` or a much smaller value; do not
   spend budget on rollout selector work while FutureSeed is enabled and the
   oracle gap remains tiny.
+
+## 2026-06-15 D320 effective-batch h120 scaling
+
+- D320 width was not fairly judged by the earlier batch48 run. With microbatch
+  `24` and gradient accumulation `3`, the effective-batch D320 route preserves
+  the h96/h108 foundation and opens h120. The useful scaling move was general
+  training infrastructure: checkpoint/resume, effective batch, bf16, and the
+  CUDA statepassing RWKV kernel.
+- The step12800 continuation confirms real but slow scaling. h120 loop6 exact
+  moved from the old D320 step9800 checkpoint `0.0566` through
+  `0.0820 -> 0.1016 -> 0.1191`, and final full eval reached `0.1270`. h108
+  remained strong at `0.9355`; h132 stayed closed at `0.0`.
+- Width is useful but not a shortcut. The D320 final score is still below the
+  D256 late-continuation best `0.1777`, and the run used about `27GB` allocated
+  / `32GB` reserved on an 80GB GPU with moderate utilization. Before jumping to
+  larger width, improve throughput/effective compute for the current D320 path.
+- Loop remains essential at h120: final h120 loop1 exact was `0.0`, loop3 was
+  `0.0664`, and loop6 was `0.1270`. This supports recurrence as the active
+  mechanism, not one-pass prediction. It does not justify selector or repair
+  work because the clean path still has positive compute slope and K-oracle has
+  not shown selector headroom.
+- Treat GPU halts as platform events when a periodic checkpoint exists. The
+  interrupted `d320-effb72-h120-resume9800-s12800-20260615T1703Z-785f3cd`
+  segment resumed cleanly into
+  `d320-effb72-h120-resume10000-s12800-20260615T1801Z-785f3cd`; do not count the
+  interrupted segment as a model result.

@@ -188,6 +188,7 @@ COMMON_ARGS=(
   --weight_decay "${WEIGHT_DECAY:-1e-3}"
   --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
   --feature_buffer_add "${FEATURE_BUFFER_ADD:-2048}"
+  --grad_accum_steps "${GRAD_ACCUM_STEPS:-1}"
   --future_seed_scale "${FUTURE_SEED_SCALE:-1.0}"
   --future_seed_decay "${FUTURE_SEED_DECAY:-0.0}"
   --future_seed_update "${FUTURE_SEED_UPDATE:-fixed}"

@@ -1329,58 +1329,94 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         for _ in range(global_step - completed_before_stage, stage_steps):
             global_step += 1
             model.train()
-            inputs, labels, clue_mask = make_batch(
-                args.batch,
-                holes_min,
-                holes_max,
-                args.hole_pattern,
-                rng,
-                device=device,
-            )
-            with forward_autocast(args.forward_dtype, device):
-                loop_logits, _fs_trace = model.forward_trace(
-                    inputs,
-                    loops=args.max_loops,
-                    noise_scale=args.noise_scale,
-                    feature_buffer=feature_buffer,
-                    update_feature_buffer=model.training,
-                    feature_buffer_add=args.feature_buffer_add,
-                )
-            loop_losses = [
-                loss_from_logits(logits, labels, clue_mask, blank_weight=args.blank_loss_weight)
-                for logits in loop_logits
-            ]
-            ce_loss = loop_losses[-1]
-            supervised_loss, loop_weights = weighted_loop_loss(loop_losses, args)
-            scratch_gauss_terms = [
-                trace["scratch_gauss_loss"].to(dtype=supervised_loss.dtype)
-                for trace in _fs_trace
-                if "scratch_gauss_loss" in trace
-            ]
-            scratch_gauss_loss = (
-                torch.stack(scratch_gauss_terms).mean()
-                if scratch_gauss_terms
-                else supervised_loss.new_zeros(())
-            )
-            loss = supervised_loss + float(args.scratch_gauss_weight) * scratch_gauss_loss
             opt.zero_grad(set_to_none=True)
-            loss.backward()
+            accum_count = max(1, int(args.grad_accum_steps))
+            accum_ce_loss = 0.0
+            accum_total_loss = 0.0
+            accum_loop1_loss = 0.0
+            accum_loop_last_loss = 0.0
+            accum_scratch_gauss_loss = 0.0
+            accum_scratch_gate = 0.0
+            accum_scratch_decay = 0.0
+            accum_scratch_delta = 0.0
+            accum_scratch_residual = 0.0
+            accum_scratch_proj_var = 0.0
+            accum_scratch_proj_rank = 0.0
+            for _accum_idx in range(accum_count):
+                inputs, labels, clue_mask = make_batch(
+                    args.batch,
+                    holes_min,
+                    holes_max,
+                    args.hole_pattern,
+                    rng,
+                    device=device,
+                )
+                with forward_autocast(args.forward_dtype, device):
+                    loop_logits, _fs_trace = model.forward_trace(
+                        inputs,
+                        loops=args.max_loops,
+                        noise_scale=args.noise_scale,
+                        feature_buffer=feature_buffer,
+                        update_feature_buffer=model.training,
+                        feature_buffer_add=args.feature_buffer_add,
+                    )
+                loop_losses = [
+                    loss_from_logits(logits, labels, clue_mask, blank_weight=args.blank_loss_weight)
+                    for logits in loop_logits
+                ]
+                ce_loss = loop_losses[-1]
+                supervised_loss, loop_weights = weighted_loop_loss(loop_losses, args)
+                scratch_gauss_terms = [
+                    trace["scratch_gauss_loss"].to(dtype=supervised_loss.dtype)
+                    for trace in _fs_trace
+                    if "scratch_gauss_loss" in trace
+                ]
+                scratch_gauss_loss = (
+                    torch.stack(scratch_gauss_terms).mean()
+                    if scratch_gauss_terms
+                    else supervised_loss.new_zeros(())
+                )
+                loss = supervised_loss + float(args.scratch_gauss_weight) * scratch_gauss_loss
+                (loss / float(accum_count)).backward()
+                accum_ce_loss += float(ce_loss.detach().cpu())
+                accum_total_loss += float(loss.detach().cpu())
+                accum_loop1_loss += float(loop_losses[0].detach().cpu())
+                accum_loop_last_loss += float(loop_losses[-1].detach().cpu())
+                accum_scratch_gauss_loss += float(scratch_gauss_loss.detach().cpu())
+                if _fs_trace:
+                    trace_last = _fs_trace[-1]
+                    accum_scratch_gate += float(
+                        trace_last.get("scratch_gate_mean", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_scratch_decay += float(
+                        trace_last.get("scratch_decay_mean", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_scratch_delta += float(
+                        trace_last.get("scratch_delta_norm", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_scratch_residual += float(
+                        trace_last.get("scratch_residual_norm", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_scratch_proj_var += float(
+                        trace_last.get("scratch_proj_var_mean", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_scratch_proj_rank += float(
+                        trace_last.get("scratch_proj_var_rank", ce_loss.new_zeros(())).detach().cpu()
+                    )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
-            last_ce_loss = float(ce_loss.detach().cpu())
-            last_total_loss = float(loss.detach().cpu())
-            last_loop1_loss = float(loop_losses[0].detach().cpu())
-            last_loop_last_loss = float(loop_losses[-1].detach().cpu())
+            last_ce_loss = accum_ce_loss / float(accum_count)
+            last_total_loss = accum_total_loss / float(accum_count)
+            last_loop1_loss = accum_loop1_loss / float(accum_count)
+            last_loop_last_loss = accum_loop_last_loss / float(accum_count)
             last_loop_weights = [float(x) for x in loop_weights.detach().cpu().tolist()]
-            last_scratch_gauss_loss = float(scratch_gauss_loss.detach().cpu())
-            if _fs_trace:
-                trace_last = _fs_trace[-1]
-                last_scratch_gate = float(trace_last.get("scratch_gate_mean", ce_loss.new_zeros(())).detach().cpu())
-                last_scratch_decay = float(trace_last.get("scratch_decay_mean", ce_loss.new_zeros(())).detach().cpu())
-                last_scratch_delta = float(trace_last.get("scratch_delta_norm", ce_loss.new_zeros(())).detach().cpu())
-                last_scratch_residual = float(trace_last.get("scratch_residual_norm", ce_loss.new_zeros(())).detach().cpu())
-                last_scratch_proj_var = float(trace_last.get("scratch_proj_var_mean", ce_loss.new_zeros(())).detach().cpu())
-                last_scratch_proj_rank = float(trace_last.get("scratch_proj_var_rank", ce_loss.new_zeros(())).detach().cpu())
+            last_scratch_gauss_loss = accum_scratch_gauss_loss / float(accum_count)
+            last_scratch_gate = accum_scratch_gate / float(accum_count)
+            last_scratch_decay = accum_scratch_decay / float(accum_count)
+            last_scratch_delta = accum_scratch_delta / float(accum_count)
+            last_scratch_residual = accum_scratch_residual / float(accum_count)
+            last_scratch_proj_var = accum_scratch_proj_var / float(accum_count)
+            last_scratch_proj_rank = accum_scratch_proj_rank / float(accum_count)
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -1537,6 +1573,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "scratch_proj_rank": last_scratch_proj_rank,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
+        "microbatch": args.batch,
+        "grad_accum_steps": args.grad_accum_steps,
+        "effective_batch": args.batch * max(1, int(args.grad_accum_steps)),
         "rwkv_kernel": args.rwkv_kernel,
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
@@ -2782,6 +2821,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--box_cols", type=int, default=0)
     p.add_argument("--steps", type=int, default=400)
     p.add_argument("--batch", type=int, default=64)
+    p.add_argument("--grad_accum_steps", type=int, default=1)
     p.add_argument("--d_model", type=int, default=48)
     p.add_argument("--layers", type=int, default=4)
     p.add_argument("--heads", type=int, default=4)

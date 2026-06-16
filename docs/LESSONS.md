@@ -143,6 +143,13 @@
   Do not spend the next budget on another identical 3k-step extension. Change an
   effective scaling axis or test a simple FutureSeed/loop state update that lets
   late loops keep revising boards.
+- The delayed loop-credit probe answers the simplest objective-shaping escape
+  hatch. Resuming step22600 with `LOOP_LOSS=delayed` and `LOOP_LOSS_START=4`
+  keeps h96/h108 alive, but h120 loop6 exact falls to `0.1602` at step23100 and
+  h120 loop1/3/4/5/6 exact is only `0.0000`/`0.0781`/`0.1406`/`0.1563`/`0.1602`.
+  Moving supervision credit to late loops does not create late correction; it
+  erases useful h120 structure. Stop delayed loop-credit variants unless a
+  different state dynamic gives a reason to revisit them.
 - Loop remains essential at h120: final h120 loop1 exact was `0.0`, loop3 was
   `0.0664`, and loop6 was `0.1270`. This supports recurrence as the active
   mechanism, not one-pass prediction. It does not justify selector or repair
@@ -166,6 +173,9 @@
   last two loops are mostly polishing. The next mechanism question is not "more
   loops"; it is whether the state update can keep correcting wrong partial
   boards after loop4 without adding Sudoku-specific repair.
+- Delayed loop credit made that loop curve worse, not better. At step23100,
+  h120 loop3/4/5/6 exact is `0.0781`/`0.1406`/`0.1563`/`0.1602`; this rejects
+  the theory that all-loop loss alone is the late-loop bottleneck.
 - A new detached worktree can fail before GPU training if `.cache/bin/ninja` is
   not linked or on `PATH`. The failed
   `d320-mb48eff96-h120-s13600-20260615T205559Z-785f3cd` launch is an environment

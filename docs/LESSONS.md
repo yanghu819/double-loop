@@ -135,6 +135,14 @@
   exact moves `0.1934 -> 0.2266 -> 0.2520`, and final full eval reaches h120
   exact `0.2891`. This is still a clean scaling win, not a reason to add
   selector or Sudoku repair.
+- The step22600 continuation is the first useful plateau signal for packed D320.
+  h120 checkpoint loop6 exact moves only `0.2637 -> 0.2676 -> 0.2461`, and final
+  full eval reaches h120 exact `0.2754`, below the step19600 final `0.2891`.
+  h96/h108 remain strong at `0.9961`/`0.9492`, so this is not foundation
+  collapse; it is low marginal ROI for the same h120 hard-stage continuation.
+  Do not spend the next budget on another identical 3k-step extension. Change an
+  effective scaling axis or test a simple FutureSeed/loop state update that lets
+  late loops keep revising boards.
 - Loop remains essential at h120: final h120 loop1 exact was `0.0`, loop3 was
   `0.0664`, and loop6 was `0.1270`. This supports recurrence as the active
   mechanism, not one-pass prediction. It does not justify selector or repair
@@ -151,8 +159,13 @@
   exact stalls.
 - At step19600, h120 loop1/3/4/5/6 exact is
   `0.0000`/`0.2070`/`0.2773`/`0.2852`/`0.2891`. Loop is still the mechanism,
-  but the marginal loop5-to-loop6 gain is small. Keep scaling training first;
-  deeper loop counts remain low ROI.
+  but the marginal loop5-to-loop6 gain is small. Deeper loop counts remain low
+  ROI.
+- At step22600, h120 loop1/3/4/5/6 exact is
+  `0.0000`/`0.1914`/`0.2656`/`0.2715`/`0.2754`. Loop remains necessary, but the
+  last two loops are mostly polishing. The next mechanism question is not "more
+  loops"; it is whether the state update can keep correcting wrong partial
+  boards after loop4 without adding Sudoku-specific repair.
 - A new detached worktree can fail before GPU training if `.cache/bin/ninja` is
   not linked or on `PATH`. The failed
   `d320-mb48eff96-h120-s13600-20260615T205559Z-785f3cd` launch is an environment

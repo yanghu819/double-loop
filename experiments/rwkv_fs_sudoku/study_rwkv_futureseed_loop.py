@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import html
 import json
 import math
@@ -784,8 +785,37 @@ def load_training_checkpoint(
     device: torch.device,
 ) -> Dict[str, Any]:
     checkpoint = torch.load(path, map_location=device, weights_only=False)
-    model.load_state_dict(checkpoint["model"])
-    opt.load_state_dict(checkpoint["optimizer"])
+    missing, unexpected = model.load_state_dict(checkpoint["model"], strict=False)
+    allowed_missing = {"loop_update_logit"}
+    allowed_unexpected = {"loop_update_logit"}
+    bad_missing = [key for key in missing if key not in allowed_missing]
+    bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
+    if bad_missing or bad_unexpected:
+        raise RuntimeError(
+            "Checkpoint model state mismatch: "
+            f"missing={bad_missing}, unexpected={bad_unexpected}"
+        )
+    optimizer_state = checkpoint["optimizer"]
+    try:
+        opt.load_state_dict(optimizer_state)
+    except ValueError as exc:
+        current_state = opt.state_dict()
+        saved_groups = optimizer_state.get("param_groups", [])
+        current_groups = current_state.get("param_groups", [])
+        can_expand = (
+            missing == ["loop_update_logit"]
+            and len(saved_groups) == len(current_groups)
+            and all(len(saved.get("params", [])) <= len(current.get("params", [])) for saved, current in zip(saved_groups, current_groups))
+        )
+        if not can_expand:
+            raise
+        expanded_optimizer_state = copy.deepcopy(optimizer_state)
+        for saved, current in zip(expanded_optimizer_state["param_groups"], current_groups):
+            saved["params"] = list(current["params"])
+        try:
+            opt.load_state_dict(expanded_optimizer_state)
+        except ValueError:
+            raise exc
     feature_buffer.load_state_dict(checkpoint.get("feature_buffer", {}))
     if "rng_python" in checkpoint:
         rng.setstate(checkpoint["rng_python"])
@@ -803,7 +833,10 @@ class FutureSeedLoopSudoku(nn.Module):
         head_dim: int,
         channel_mult: int,
         l_cycles: int,
+        max_loops: int,
         lambda_: float,
+        loop_update_mode: str,
+        loop_update_gate_init: float,
         future_seed_scale: float,
         future_seed_decay: float,
         future_seed_update: str,
@@ -821,6 +854,10 @@ class FutureSeedLoopSudoku(nn.Module):
         super().__init__()
         self.l_cycles = int(l_cycles)
         self.lambda_ = float(lambda_)
+        self.max_loops = int(max_loops)
+        if loop_update_mode not in {"fixed", "learned_gate"}:
+            raise ValueError("loop_update_mode must be 'fixed' or 'learned_gate'.")
+        self.loop_update_mode = loop_update_mode
         self.loop_feedback_scale = float(loop_feedback_scale)
         self.loop_time_scale = float(loop_time_scale)
         if scratch_mode not in {"none", "gated"}:
@@ -882,6 +919,12 @@ class FutureSeedLoopSudoku(nn.Module):
             self.scratch_gate = None
             self.scratch_decay = None
             self.register_buffer("scratch_projection", torch.empty(0, d_model))
+        if self.loop_update_mode == "learned_gate":
+            gate_init = min(max(float(loop_update_gate_init), 1e-4), 1.0 - 1e-4)
+            gate_logit = math.log(gate_init / (1.0 - gate_init))
+            self.loop_update_logit = nn.Parameter(torch.full((max(1, self.max_loops), 2), float(gate_logit)))
+        else:
+            self.register_parameter("loop_update_logit", None)
 
     def input_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
         positions = torch.arange(CELLS, dtype=torch.long, device=inputs.device)
@@ -972,15 +1015,28 @@ class FutureSeedLoopSudoku(nn.Module):
         feature_buffer_add: int,
         allow_noise: bool,
         seed_memory: Optional[List[Optional[torch.Tensor]]] = None,
+        loop_idx: int = 0,
+        stream_idx: int = 0,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], Optional[List[torch.Tensor]]]:
         updated, diag, next_seed_memory = self.reasoner(hidden + injection, seed_memory=seed_memory)
-        out = (1.0 - self.lambda_) * hidden + self.lambda_ * updated
+        if self.loop_update_logit is None:
+            update_gate = hidden.new_tensor(self.lambda_)
+        else:
+            loop_i = min(max(int(loop_idx), 0), self.loop_update_logit.shape[0] - 1)
+            stream_i = min(max(int(stream_idx), 0), self.loop_update_logit.shape[1] - 1)
+            update_gate = torch.sigmoid(self.loop_update_logit[loop_i, stream_i]).to(
+                device=hidden.device,
+                dtype=hidden.dtype,
+            )
+        out = hidden + update_gate * (updated - hidden)
         if allow_noise and noise_scale > 0:
             if feature_buffer is None:
                 raise ValueError("feature-difference noise requires a FeatureNoiseBuffer")
             out = out + feature_buffer.sample_diff_like(out) * float(noise_scale)
         if allow_noise and update_feature_buffer and feature_buffer is not None:
             feature_buffer.add(out, max_items=feature_buffer_add)
+        diag = dict(diag)
+        diag["loop_update_gate"] = update_gate.detach()
         return out, diag, next_seed_memory
 
     def forward_trace(
@@ -1022,8 +1078,9 @@ class FutureSeedLoopSudoku(nn.Module):
                 loop_time = self.loop_time(features).to(dtype=x.dtype).view(1, 1, -1) * self.loop_time_scale
                 loop_context = loop_context + loop_time
                 loop_time_norm = loop_time.norm(dim=-1).mean()
+            l_update_gates: List[torch.Tensor] = []
             for _ in range(self.l_cycles):
-                z_l, _diag, l_seed_memory = self.depth_update(
+                z_l, l_diag, l_seed_memory = self.depth_update(
                     z_l,
                     z_h + loop_context,
                     noise_scale,
@@ -1032,7 +1089,11 @@ class FutureSeedLoopSudoku(nn.Module):
                     feature_buffer_add=feature_buffer_add,
                     allow_noise=True,
                     seed_memory=l_seed_memory,
+                    loop_idx=loop_idx,
+                    stream_idx=0,
                 )
+                if "loop_update_gate" in l_diag:
+                    l_update_gates.append(l_diag["loop_update_gate"])
             z_h, fs_diag, h_seed_memory = self.depth_update(
                 z_h,
                 z_l,
@@ -1042,11 +1103,18 @@ class FutureSeedLoopSudoku(nn.Module):
                 feature_buffer_add=feature_buffer_add,
                 allow_noise=True,
                 seed_memory=h_seed_memory,
+                loop_idx=loop_idx,
+                stream_idx=1,
             )
             board_h = self.out_norm(z_h[:, :CELLS])
             logits = self.head(board_h)
             loop_logits.append(logits)
             fs_diag = dict(fs_diag)
+            fs_diag["loop_update_gate_h"] = fs_diag.pop("loop_update_gate", zero)
+            if l_update_gates:
+                fs_diag["loop_update_gate_l"] = torch.stack(l_update_gates).mean()
+            else:
+                fs_diag["loop_update_gate_l"] = zero
             fs_diag["loop_feedback_in_norm"] = feedback_in_norm
             fs_diag["loop_time_norm"] = loop_time_norm
             fs_diag["scratch_noise_norm"] = scratch_noise_norm
@@ -1188,6 +1256,10 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(f"fb_next={m['loop_feedback_next_norm']:.3f}")
     if "loop_time_norm" in m:
         parts.append(f"loop_time={m['loop_time_norm']:.3f}")
+    if "loop_update_gate_l" in m:
+        parts.append(f"upd_l={m['loop_update_gate_l']:.3f}")
+    if "loop_update_gate_h" in m:
+        parts.append(f"upd_h={m['loop_update_gate_h']:.3f}")
     if "scratch_gate_mean" in m:
         parts.append(f"scratch_gate={m['scratch_gate_mean']:.3f}")
         parts.append(f"scratch_decay={m.get('scratch_decay_mean', 0.0):.3f}")
@@ -1213,7 +1285,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         head_dim=args.head_dim,
         channel_mult=args.channel_mult,
         l_cycles=args.l_cycles,
+        max_loops=args.max_loops,
         lambda_=args.lambda_,
+        loop_update_mode=args.loop_update_mode,
+        loop_update_gate_init=args.loop_update_gate_init,
         future_seed_scale=args.future_seed_scale,
         future_seed_decay=args.future_seed_decay,
         future_seed_update=args.future_seed_update,
@@ -1251,6 +1326,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_scratch_residual = 0.0
     last_scratch_proj_var = 0.0
     last_scratch_proj_rank = 0.0
+    last_loop_update_gate_l = 0.0
+    last_loop_update_gate_h = 0.0
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -1303,6 +1380,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_scratch_residual = float(last_metrics.get("scratch_residual", 0.0))
         last_scratch_proj_var = float(last_metrics.get("scratch_proj_var", 0.0))
         last_scratch_proj_rank = float(last_metrics.get("scratch_proj_rank", 0.0))
+        last_loop_update_gate_l = float(last_metrics.get("loop_update_gate_l", 0.0))
+        last_loop_update_gate_h = float(last_metrics.get("loop_update_gate_h", 0.0))
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -1342,6 +1421,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_scratch_residual = 0.0
             accum_scratch_proj_var = 0.0
             accum_scratch_proj_rank = 0.0
+            accum_loop_update_gate_l = 0.0
+            accum_loop_update_gate_h = 0.0
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_batch(
                     args.batch,
@@ -1403,6 +1484,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     accum_scratch_proj_rank += float(
                         trace_last.get("scratch_proj_var_rank", ce_loss.new_zeros(())).detach().cpu()
                     )
+                    accum_loop_update_gate_l += float(
+                        trace_last.get("loop_update_gate_l", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_loop_update_gate_h += float(
+                        trace_last.get("loop_update_gate_h", ce_loss.new_zeros(())).detach().cpu()
+                    )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
@@ -1417,11 +1504,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_scratch_residual = accum_scratch_residual / float(accum_count)
             last_scratch_proj_var = accum_scratch_proj_var / float(accum_count)
             last_scratch_proj_rank = accum_scratch_proj_rank / float(accum_count)
+            last_loop_update_gate_l = accum_loop_update_gate_l / float(accum_count)
+            last_loop_update_gate_h = accum_loop_update_gate_h / float(accum_count)
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
                     f"step={global_step:04d} ce={last_ce_loss:.4f} total={last_total_loss:.4f} "
                     f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f} "
+                    f"upd_l={last_loop_update_gate_l:.3f} upd_h={last_loop_update_gate_h:.3f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -1445,6 +1535,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "scratch_residual": last_scratch_residual,
                         "scratch_proj_var": last_scratch_proj_var,
                         "scratch_proj_rank": last_scratch_proj_rank,
+                        "loop_update_gate_l": last_loop_update_gate_l,
+                        "loop_update_gate_h": last_loop_update_gate_h,
                     },
                     "eval_by_holes": {},
                 }
@@ -1500,6 +1592,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "scratch_residual": last_scratch_residual,
                             "scratch_proj_var": last_scratch_proj_var,
                             "scratch_proj_rank": last_scratch_proj_rank,
+                            "loop_update_gate_l": last_loop_update_gate_l,
+                            "loop_update_gate_h": last_loop_update_gate_h,
                         },
                         reason="eval_checkpoint",
                     )
@@ -1571,6 +1665,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "scratch_residual": last_scratch_residual,
         "scratch_proj_var": last_scratch_proj_var,
         "scratch_proj_rank": last_scratch_proj_rank,
+        "loop_update_mode": args.loop_update_mode,
+        "loop_update_gate_init": args.loop_update_gate_init,
+        "loop_update_gate_l": last_loop_update_gate_l,
+        "loop_update_gate_h": last_loop_update_gate_h,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "microbatch": args.batch,
@@ -2453,6 +2551,8 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             f"buffer={train.get('feature_buffer_count', 0)}, "
             f"dtype={train.get('forward_dtype', 'float32')}, "
             f"fs_update={train.get('future_seed_update', 'fixed')}, "
+            f"loop_update={train.get('loop_update_mode', 'fixed')}, "
+            f"upd_h={train.get('loop_update_gate_h', 0.0):.3f}, "
             f"loop_fb={train.get('loop_feedback_scale', 0.0):.2f}, "
             f"loop_time={train.get('loop_time_scale', 0.0):.2f}, "
             f"scratch={train.get('scratch_mode', 'none')}, "
@@ -2541,6 +2641,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--d_model must equal --heads * --head_dim")
     if args.future_seed_scale < 0:
         raise ValueError("--future_seed_scale must be non-negative")
+    if not (0.0 < args.loop_update_gate_init < 1.0):
+        raise ValueError("--loop_update_gate_init must be in (0, 1)")
     if not (0.0 <= args.future_seed_decay < 1.0):
         raise ValueError("--future_seed_decay must be in [0, 1)")
     if args.loop_feedback_scale < 0:
@@ -2696,6 +2798,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_scale": args.future_seed_scale,
         "future_seed_decay": args.future_seed_decay,
         "future_seed_update": args.future_seed_update,
+        "loop_update_mode": args.loop_update_mode,
+        "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_time_scale": args.loop_time_scale,
         "scratch_mode": args.scratch_mode,
@@ -2830,6 +2934,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--l_cycles", type=int, default=2)
     p.add_argument("--max_loops", type=int, default=3)
     p.add_argument("--lambda_", type=float, default=0.95)
+    p.add_argument("--loop_update_mode", choices=("fixed", "learned_gate"), default="fixed")
+    p.add_argument("--loop_update_gate_init", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--future_seed_update", choices=("fixed", "learned", "loop_residual"), default="fixed")

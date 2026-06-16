@@ -204,6 +204,8 @@ COMMON_ARGS=(
   --forward_dtype "${FORWARD_DTYPE:-float32}"
   --rwkv_kernel "${RWKV_KERNEL:-auto}"
   --lambda_ "${LAMBDA:-0.95}"
+  --loop_update_mode "${LOOP_UPDATE_MODE:-fixed}"
+  --loop_update_gate_init "${LOOP_UPDATE_GATE_INIT:-0.95}"
   --loop_loss "${LOOP_LOSS:-final}"
   --loop_loss_start "${LOOP_LOSS_START:-1}"
   --loop_loss_power "${LOOP_LOSS_POWER:-2.0}"

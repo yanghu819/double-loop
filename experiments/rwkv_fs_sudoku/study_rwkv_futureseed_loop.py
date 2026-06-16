@@ -796,26 +796,43 @@ def load_training_checkpoint(
             f"missing={bad_missing}, unexpected={bad_unexpected}"
         )
     optimizer_state = checkpoint["optimizer"]
-    try:
-        opt.load_state_dict(optimizer_state)
-    except ValueError as exc:
+    if missing == ["loop_update_logit"]:
         current_state = opt.state_dict()
         saved_groups = optimizer_state.get("param_groups", [])
         current_groups = current_state.get("param_groups", [])
-        can_expand = (
-            missing == ["loop_update_logit"]
-            and len(saved_groups) == len(current_groups)
-            and all(len(saved.get("params", [])) <= len(current.get("params", [])) for saved, current in zip(saved_groups, current_groups))
-        )
+        current_names = [name for name, _param in model.named_parameters()]
+        current_param_count = sum(len(group.get("params", [])) for group in current_groups)
+        can_expand = len(saved_groups) == len(current_groups) and len(current_names) == current_param_count
         if not can_expand:
-            raise
+            raise ValueError("Cannot expand optimizer state for missing loop_update_logit")
         expanded_optimizer_state = copy.deepcopy(optimizer_state)
+        all_saved_params = [
+            param_id
+            for group in optimizer_state.get("param_groups", [])
+            for param_id in group.get("params", [])
+        ]
+        synthetic_param_id = (max(all_saved_params) + 1) if all_saved_params else 0
+        name_cursor = 0
         for saved, current in zip(expanded_optimizer_state["param_groups"], current_groups):
-            saved["params"] = list(current["params"])
-        try:
-            opt.load_state_dict(expanded_optimizer_state)
-        except ValueError:
-            raise exc
+            old_params = list(saved.get("params", []))
+            new_params = []
+            old_cursor = 0
+            for _param_id in current.get("params", []):
+                name = current_names[name_cursor]
+                name_cursor += 1
+                if name == "loop_update_logit":
+                    new_params.append(synthetic_param_id)
+                    synthetic_param_id += 1
+                else:
+                    if old_cursor >= len(old_params):
+                        raise ValueError("Optimizer state is missing old parameters while inserting loop_update_logit")
+                    new_params.append(old_params[old_cursor])
+                    old_cursor += 1
+            if old_cursor != len(old_params):
+                raise ValueError("Optimizer state has leftover old parameters after inserting loop_update_logit")
+            saved["params"] = new_params
+        optimizer_state = expanded_optimizer_state
+    opt.load_state_dict(optimizer_state)
     feature_buffer.load_state_dict(checkpoint.get("feature_buffer", {}))
     if "rng_python" in checkpoint:
         rng.setstate(checkpoint["rng_python"])

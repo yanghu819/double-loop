@@ -36,6 +36,7 @@ The original flattened FutureSeed RWKV loop supports 12x12 but not 16x16. The ne
 | 12x12 D320 effective-batch h120 continuation | `d320-effb72-h120-resume10000-s12800-20260615T1801Z-785f3cd` | D320/L12/loop6/all-loop, same effective batch `72`, continued from the step10000 checkpoint to step12800. h120 checkpoint loop6 exact `0.0820`/`0.1016`/`0.1191` at steps 10800/11800/12800; final h96/h108/h120/h132 loop6 exact `0.9883`/`0.9355`/`0.1270`/`0.0` | D320 continues improving with more compute, but still trails D256 late continuation `0.1777`; next clean scale work should improve throughput/effective compute or use a simple late-loop state update |
 | 12x12 D320 packed h120 continuation | `d320-mb48eff96-h120-s13600-r2-20260615T210332Z-785f3cd` | D320/L12/loop6/all-loop, microbatch `48`, grad accumulation `2`, effective batch `96`; continued from step12800 to step13600. h120 checkpoint loop6 exact `0.1289`/`0.1777` at steps 13200/13600; final h96/h108/h120/h132 loop6 exact `0.9941`/`0.9492`/`0.1738`/`0.0`; GPU memory about `60-64GB` with near-100% util | better packing uses the 80GB GPU properly and nearly reaches the D256 best regime, but still does not open h132 or clearly beat the D256 best |
 | 12x12 D320 packed h120 long continuation | `d320-mb48eff96-h120-s16600-r2-20260615T2210Z-ba934f4` | same packed D320 path, continued from step13600 to step16600. h120 checkpoint loop6 exact `0.1445`/`0.1738`/`0.1953` at steps 14600/15600/16600; final h96/h108/h120/h132 loop6 exact `0.9941`/`0.9297`/`0.2363`/`0.0`; h120 loop1/3/4/5/6 exact `0.0`/`0.1621`/`0.2188`/`0.2363`/`0.2363` | clean packed D320 now beats the old h120 platform; h132 remains closed, and loop6 adds no exact over loop5 |
+| 12x12 D320 packed h120 step19600 | `d320-mb48eff96-h120-s19600-20260616T0400Z-7e1ddba` | same packed D320 path, continued from step16600 to step19600. h120 checkpoint loop6 exact `0.1934`/`0.2266`/`0.2520` at steps 17600/18600/19600; final h96/h108/h120/h132 loop6 exact `0.9961`/`0.9512`/`0.2891`/`0.0`; h120 loop1/3/4/5/6 exact `0.0`/`0.2070`/`0.2773`/`0.2852`/`0.2891` | clean packed D320 still scales; h120 is active frontier, h132 transfer remains closed |
 | 16x16 high-hole | `frontier-16x16-d192-h112-20260604T1006Z-f67e6a2` | high-loss at h64-h96; aborted | over-hard curriculum |
 | 16x16 foothold | `frontier-16x16-foothold-d192-h64-20260604T1018Z-f67e6a2` | final CE `0.5792`, but h32 exact `0.0039`, h48+ exact `0.0` | not supported |
 | 16x16 all-loop | `frontier-16x16-allloop-d256-l8-20260604T1234Z-75a8796` | `LOOP_LOSS=all`, D256/L12/loop8; final CE `1.0498`, h24-h48 exact `0.0` | naive per-loop CE is negative |
@@ -142,13 +143,22 @@ does not add exact solves over loop5. h132 remains exactly `0.0` with only
 `0.1646` blank accuracy in the final eval, so this is h120 support progress, not
 general transfer to the next difficulty.
 
+The step19600 continuation strengthens the same conclusion. The h120 checkpoint
+curve moves `0.1934 -> 0.2266 -> 0.2520`, and final full eval reaches `0.2891`.
+This is a clean scaling win under the same mechanism, not a selector win: K1
+oracle gap remains zero. Loop remains the solve path, with h120 loop1/3/4/5/6
+exact `0.0`/`0.2070`/`0.2773`/`0.2852`/`0.2891`, but the small loop5-to-loop6
+gain says the next lever is more training/data at this packed scale rather than
+more loop depth. h132 is still closed at exact `0.0`, so do not move the frontier
+to h132 yet.
+
 ## Decision
 
-Treat 12x12 h108 as strongly supported by the original flattened FutureSeed+loop paradigm after loop6/all-loop scaling; h120 is open but not solved, with best clean h120 exact now `0.2363` and h132 still `0.0`. Same-model D256 h120 continuation past step14300 is low marginal ROI because blank accuracy improves without exact improvement, but packed D320 remains on a useful clean scaling curve through step16600. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h132 on clean 12x12 are still frontier territory.
+Treat 12x12 h108 as strongly supported by the original flattened FutureSeed+loop paradigm after loop6/all-loop scaling; h120 is open but not solved, with best clean h120 exact now `0.2891` and h132 still `0.0`. Same-model D256 h120 continuation past step14300 is low marginal ROI because blank accuracy improves without exact improvement, but packed D320 remains on a useful clean scaling curve through step19600. Treat 16x16 as supported by the historical unit-memory mainline through h80. Treat 25x25 as supported at low holes, feasible at h75, and barely open at h100. h100 on 25x25, h88/h96 on 16x16, and h132 on clean 12x12 are still frontier territory.
 
 Next high-ROI work should change a real scaling axis:
 
-1. For the clean FutureSeed+loop path, keep h120 as the next target and continue packed D320 only for genuinely later checkpoints beyond step16600. Use activation-checkpointed capacity only when the speed tradeoff is acceptable, or test a structurally simple FutureSeed/loop state update if exact stalls while blank accuracy keeps rising. Do not run loop-residual, no-noise scratch repeats, scratch denoising/Gaussian sweeps, loop-time, feedback scale, compressed h96 schedule sweeps, same-budget D320/B48 repeats, deeper loop-count sweeps, identical D256 h120 continuation, non-resumable D320/B72 h120 repeats, short D320 repeats, or selector work.
+1. For the clean FutureSeed+loop path, keep h120 as the next target and continue packed D320 only for genuinely later checkpoints beyond step19600. Use activation-checkpointed capacity only when the speed tradeoff is acceptable, or test a structurally simple FutureSeed/loop state update if exact stalls while blank accuracy keeps rising. Do not run loop-residual, no-noise scratch repeats, scratch denoising/Gaussian sweeps, loop-time, feedback scale, compressed h96 schedule sweeps, same-budget D320/B48 repeats, deeper loop-count sweeps, identical D256 h120 continuation, non-resumable D320/B72 h120 repeats, short D320 repeats, or selector work.
 2. Keep selector work paused until K-oracle improves; current K1 is already the main result on the clean h84 run.
 3. For the historical unit-memory path, only revisit true row/column/box unit tokens if the clean path stalls again; do not add Sudoku-specific repair rules to the mainline.
 4. Add activation checkpointing only if it enables a structurally different scaling experiment, not just a blind D384/L16 table entry.

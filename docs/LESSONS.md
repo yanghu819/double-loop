@@ -131,6 +131,10 @@
   steps 14600/15600/16600, and final full eval reaches h120 exact `0.2363`.
   This is enough evidence that h120 remains compute-limited under the clean
   FutureSeed+loop recipe.
+- The step19600 continuation confirms the same direction: h120 checkpoint loop6
+  exact moves `0.1934 -> 0.2266 -> 0.2520`, and final full eval reaches h120
+  exact `0.2891`. This is still a clean scaling win, not a reason to add
+  selector or Sudoku repair.
 - Loop remains essential at h120: final h120 loop1 exact was `0.0`, loop3 was
   `0.0664`, and loop6 was `0.1270`. This supports recurrence as the active
   mechanism, not one-pass prediction. It does not justify selector or repair
@@ -145,6 +149,10 @@
   loop6 no longer adds exact solves beyond loop5, so do not respond with a
   loop-count sweep. Buy more clean training or change the state update only if
   exact stalls.
+- At step19600, h120 loop1/3/4/5/6 exact is
+  `0.0000`/`0.2070`/`0.2773`/`0.2852`/`0.2891`. Loop is still the mechanism,
+  but the marginal loop5-to-loop6 gain is small. Keep scaling training first;
+  deeper loop counts remain low ROI.
 - A new detached worktree can fail before GPU training if `.cache/bin/ninja` is
   not linked or on `PATH`. The failed
   `d320-mb48eff96-h120-s13600-20260615T205559Z-785f3cd` launch is an environment

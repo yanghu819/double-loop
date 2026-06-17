@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "ebb198d6d17dca9fd448a1d47ff95ab220451dee",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 improvement-aware context objective probe from SHA ebb198d. Mechanism: context logits get a hinge residual CE target to beat detached current logits on currently wrong tokens, weight=0.1 margin=0.01; no maze rules/search/repair/selector or seed/bias/temp sweep. Completed 800 steps in 603.9s. Loop12 path_f1=0.5830, exact=0.0, loop gain=-0.0006. Loop1/loop12 precision 0.4144/0.4135, recall 0.9982/1.0, pred_frac 0.4654/0.4672. Candidate weights remain diverse at loop12 keep/proposed/context=0.366/0.323/0.311 and context is different from proposed rms=0.950. Residual target was mechanically satisfied: context_improve_loss -> 0 and context CE beats current CE by 0.590 on current errors, but failures still copy broad false-positive masks. Lesson: CE-improvement on wrong tokens is not enough; the target optimizes class confidence, not pruning/topology, so next work needs a correction signal tied to mask sharpening or uncertainty, still generic.",
+  "recorded_at_utc": "2026-06-17T19:03:05.612518+00:00",
+  "run_name": "maze31-cross-improve-w01m001-d256l4-s800-20260617T184714Z-ebb198d",
+  "score": 0.5830127000808716,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-17T18:54:17.218148+00:00"
+}

@@ -345,6 +345,19 @@
   distills the broad mask. The next high-ROI objective must be improvement-aware
   or residual/contrastive, predicting how a later loop is better than loop1
   rather than predicting the next logits themselves.
+- A simple CE-improvement target is also too weak for loop correction. The
+  `state_compete_cross` context-improvement probe asked context logits to beat
+  detached current logits on currently wrong tokens (`weight=0.1`,
+  `margin=0.01`). The target was satisfied: at loop12 the diagnostic loss was
+  `0.0`, context CE beat current CE by about `0.590` on current errors, and
+  candidate weights stayed diverse (`keep/proposed/context =
+  0.366/0.323/0.311`, `context_minus_proposed_rms = 0.950`). But loop12 path F1
+  was `0.5830`, exact `0.0`, loop gain was `-0.0006`, and precision/predicted
+  fraction worsened slightly from `0.4144/0.4654` to `0.4135/0.4672`. The hard
+  cases still copy broad false-positive masks, e.g. `288 -> 290` false
+  positives with no misses. This rejects token-level CE advantage as the next
+  mainline; the correction signal must be tied to pruning or uncertainty
+  sharpening, not just making context more confident on already-wrong cells.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

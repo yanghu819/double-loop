@@ -272,6 +272,251 @@ def metrics_from_logits(logits: torch.Tensor, labels: torch.Tensor) -> Dict[str,
     }
 
 
+@torch.no_grad()
+def per_case_path_metrics(pred: torch.Tensor, labels: torch.Tensor) -> Dict[str, torch.Tensor]:
+    correct = pred == labels
+    path_label = labels == PATH_ID
+    path_pred = pred == PATH_ID
+    tp = (path_pred & path_label).sum(dim=-1).to(torch.float32)
+    fp = (path_pred & ~path_label).sum(dim=-1).to(torch.float32)
+    fn = (~path_pred & path_label).sum(dim=-1).to(torch.float32)
+    precision = tp / (tp + fp).clamp_min(1.0)
+    recall = tp / (tp + fn).clamp_min(1.0)
+    f1 = (2 * tp) / (2 * tp + fp + fn).clamp_min(1.0)
+    return {
+        "label_exact": correct.all(dim=-1).to(torch.float32),
+        "path_exact": (path_pred == path_label).all(dim=-1).to(torch.float32),
+        "path_f1": f1,
+        "path_precision": precision,
+        "path_recall": recall,
+        "path_pred_frac": path_pred.to(torch.float32).mean(dim=-1),
+        "path_label_frac": path_label.to(torch.float32).mean(dim=-1),
+        "false_positive_path": fp,
+        "false_negative_path": fn,
+    }
+
+
+def parse_loop_list(text: str, max_loop: int) -> List[int]:
+    loops: List[int] = []
+    for raw in str(text or "").split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+        value = int(raw)
+        if 1 <= value <= max_loop and value not in loops:
+            loops.append(value)
+    if max_loop not in loops:
+        loops.append(max_loop)
+    return sorted(loops)
+
+
+def row_chars_from_ids(ids: np.ndarray, n: int, *, target: bool = False) -> List[str]:
+    rows: List[str] = []
+    chars = {
+        WALL_ID: "#",
+        OPEN_ID: ".",
+        START_ID: "S",
+        GOAL_ID: "G",
+        PATH_ID: "P" if target else "p",
+        PAD_ID: "?",
+    }
+    grid = ids.reshape(n, n)
+    for y in range(n):
+        rows.append("".join(chars.get(int(grid[y, x]), "?") for x in range(n)))
+    return rows
+
+
+def comparison_rows(input_ids: np.ndarray, label_ids: np.ndarray, pred_ids: np.ndarray, n: int) -> List[str]:
+    rows: List[str] = []
+    inp = input_ids.reshape(n, n)
+    label_path = label_ids.reshape(n, n) == PATH_ID
+    pred_path = pred_ids.reshape(n, n) == PATH_ID
+    for y in range(n):
+        chars = []
+        for x in range(n):
+            token = int(inp[y, x])
+            if token == WALL_ID:
+                chars.append("#")
+            elif token == START_ID:
+                chars.append("S")
+            elif token == GOAL_ID:
+                chars.append("G")
+            elif label_path[y, x] and pred_path[y, x]:
+                chars.append("T")
+            elif label_path[y, x]:
+                chars.append("M")
+            elif pred_path[y, x]:
+                chars.append("F")
+            else:
+                chars.append(".")
+        rows.append("".join(chars))
+    return rows
+
+
+def grid_html(rows: List[str], n: int, title: str, stats: Optional[Dict[str, float]] = None) -> str:
+    class_map = {
+        "#": "wall",
+        ".": "open",
+        "S": "start",
+        "G": "goal",
+        "P": "gold",
+        "p": "pred",
+        "T": "tp",
+        "F": "fp",
+        "M": "fn",
+        "?": "unk",
+    }
+    stat_text = ""
+    if stats:
+        stat_text = " ".join(
+            f"{key}={value:.4f}" for key, value in stats.items() if isinstance(value, (int, float))
+        )
+    cells = []
+    for row in rows:
+        for ch in row:
+            cls = class_map.get(ch, "unk")
+            cells.append(f'<span class="cell {cls}">{ch}</span>')
+    return (
+        '<section class="panel">'
+        f"<h3>{title}</h3>"
+        f'<p class="stats">{stat_text}</p>'
+        f'<div class="grid" style="grid-template-columns: repeat({n}, 15px);">'
+        + "".join(cells)
+        + "</div></section>"
+    )
+
+
+def write_visualizations(out_dir: Path, payload: Dict[str, Any]) -> None:
+    viz_dir = out_dir / "visualizations"
+    viz_dir.mkdir(parents=True, exist_ok=True)
+    (viz_dir / "cases.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    n = int(payload["grid_size"])
+    lines = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        "<title>Maze Loop Visualization</title>",
+        "<style>",
+        "body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;background:#f7f7f4;color:#1f2328}",
+        "h1{margin-bottom:4px}.case{border-top:1px solid #d7d7d2;padding-top:18px;margin-top:22px}",
+        ".legend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}.legend span{padding:2px 7px;border-radius:4px;background:#fff;border:1px solid #ddd}",
+        ".panels{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}.panel{background:#fff;border:1px solid #d8d8d2;border-radius:8px;padding:10px}",
+        ".panel h3{font-size:14px;margin:0 0 4px}.stats{font-size:12px;color:#555;min-height:18px;margin:0 0 8px}",
+        ".grid{display:grid;gap:1px;background:#c9c9c2;padding:2px}.cell{width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-family:ui-monospace,Menlo,monospace;line-height:1}",
+        ".wall{background:#252525;color:#252525}.open{background:#f4f1e7;color:#c7c2b6}.start{background:#2f9e44;color:white}.goal{background:#d9480f;color:white}.gold{background:#5c7cfa;color:white}.pred{background:#91a7ff;color:#102a83}.tp{background:#2b8a3e;color:white}.fp{background:#f08c00;color:white}.fn{background:#c2255c;color:white}.unk{background:#aaa;color:white}",
+        "</style>",
+        "</head>",
+        "<body>",
+        "<h1>Maze21 Loop Visualization</h1>",
+        f"<p>Grid {n}x{n}. T=true path predicted, F=false positive path, M=missed true path.</p>",
+        '<div class="legend"><span># wall</span><span>S start</span><span>G goal</span><span>T true positive</span><span>F extra predicted path</span><span>M missed true path</span></div>',
+    ]
+    for case in payload["cases"]:
+        lines.extend(
+            [
+                '<article class="case">',
+                f"<h2>Case {case['case_index']} - {case['reason']}</h2>",
+                f"<p>final_f1={case['final_path_f1']:.4f} loop_gain={case['loop_gain']:.4f} exact={case['final_exact']:.4f}</p>",
+                '<div class="panels">',
+                grid_html(case["target_rows"], n, "target path"),
+            ]
+        )
+        for loop_key in case["loop_order"]:
+            lines.append(grid_html(case["comparison_rows"][loop_key], n, loop_key, case["loop_stats"][loop_key]))
+        lines.extend(["</div>", "</article>"])
+    lines.extend(["</body>", "</html>"])
+    (viz_dir / "index.html").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def build_visualization_payload(
+    args: argparse.Namespace,
+    batch: Dict[str, torch.Tensor],
+    logits_by_step: List[torch.Tensor],
+    residuals: List[Dict[str, float]],
+) -> Dict[str, Any]:
+    n = int(args.grid_size)
+    loops = parse_loop_list(args.viz_loops, len(logits_by_step))
+    labels_cpu = batch["labels"].detach().cpu()
+    labels = labels_cpu.numpy()
+    inputs = batch["inputs"].detach().cpu().numpy()
+    preds_by_loop = {loop: logits_by_step[loop - 1].argmax(dim=-1).detach().cpu() for loop in loops}
+    stats_by_loop = {loop: per_case_path_metrics(preds_by_loop[loop], labels_cpu).items() for loop in loops}
+    stats_np: Dict[int, Dict[str, np.ndarray]] = {}
+    for loop, items in stats_by_loop.items():
+        stats_np[loop] = {key: value.detach().cpu().numpy() for key, value in items}
+    loop1 = loops[0]
+    final_loop = loops[-1]
+    final_f1 = stats_np[final_loop]["path_f1"]
+    loop_gain = final_f1 - stats_np[loop1]["path_f1"]
+    over_pred = stats_np[final_loop]["path_pred_frac"] - stats_np[final_loop]["path_label_frac"]
+
+    orders = [
+        ("largest loop gain", np.argsort(-loop_gain)),
+        ("hard final low f1", np.argsort(final_f1)),
+        ("most final over-prediction", np.argsort(-over_pred)),
+    ]
+    selected: List[int] = []
+    reasons: Dict[int, str] = {}
+    for reason, order in orders:
+        for idx in order.tolist():
+            if len(selected) >= args.viz_cases:
+                break
+            if idx in selected:
+                continue
+            selected.append(int(idx))
+            reasons[int(idx)] = reason
+        if len(selected) >= args.viz_cases:
+            break
+
+    cases = []
+    for idx in selected:
+        loop_stats: Dict[str, Dict[str, float]] = {}
+        comparison: Dict[str, List[str]] = {}
+        loop_order: List[str] = []
+        for loop in loops:
+            key = f"loop{loop}"
+            loop_order.append(key)
+            loop_stats[key] = {
+                stat_key: float(values[idx])
+                for stat_key, values in stats_np[loop].items()
+                if stat_key
+                in {
+                    "label_exact",
+                    "path_exact",
+                    "path_f1",
+                    "path_precision",
+                    "path_recall",
+                    "path_pred_frac",
+                    "path_label_frac",
+                    "false_positive_path",
+                    "false_negative_path",
+                }
+            }
+            comparison[key] = comparison_rows(inputs[idx], labels[idx], preds_by_loop[loop][idx].numpy(), n)
+        cases.append(
+            {
+                "case_index": idx,
+                "reason": reasons[idx],
+                "loop_order": loop_order,
+                "loop_gain": float(loop_gain[idx]),
+                "final_path_f1": float(final_f1[idx]),
+                "final_exact": float(stats_np[final_loop]["label_exact"][idx]),
+                "input_rows": row_chars_from_ids(inputs[idx], n),
+                "target_rows": row_chars_from_ids(labels[idx], n, target=True),
+                "comparison_rows": comparison,
+                "loop_stats": loop_stats,
+            }
+        )
+    return {
+        "grid_size": n,
+        "viz_loops": loops,
+        "residuals": {f"loop{idx}": residuals[idx - 1] for idx in loops},
+        "cases": cases,
+    }
+
+
 def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device) -> Dict[str, Any]:
     rng = np.random.default_rng(args.seed + 1000)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -321,7 +566,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
 
 
 @torch.no_grad()
-def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.device, seed_offset: int = 0) -> Dict[str, Any]:
+def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.device, seed_offset: int = 0) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
     rng = np.random.default_rng(args.seed + 4000 + seed_offset)
     model.eval()
     batch = make_batch(args, args.eval_n, rng, device)
@@ -330,7 +575,10 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
     for idx, logits in enumerate(logits_by_step, start=1):
         eval_clean[f"loop{idx}"] = metrics_from_logits(logits, batch["labels"])
         eval_clean[f"loop{idx}/residual"] = residuals[idx - 1]
-    return eval_clean
+    viz_payload = None
+    if args.viz_cases > 0:
+        viz_payload = build_visualization_payload(args, batch, logits_by_step, residuals)
+    return eval_clean, viz_payload
 
 
 def write_report(path: Path, metrics: Dict[str, Any]) -> None:
@@ -401,6 +649,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
+    p.add_argument("--viz_cases", type=int, default=0)
+    p.add_argument("--viz_loops", default="1,2,4,6,10")
     return p.parse_args()
 
 
@@ -457,7 +707,7 @@ def main() -> None:
     print(f"device={device} torch={torch.__version__} params={param_count} eqr_dir={eqr_dir}", flush=True)
 
     train_metrics = train(args, model, device)
-    eval_clean = evaluate(args, model, device)
+    eval_clean, viz_payload = evaluate(args, model, device)
     final = eval_clean[f"loop{args.eval_loops}"]
     loop1 = eval_clean["loop1"]
     loop_gain = float(final["path_f1"]) - float(loop1["path_f1"])
@@ -499,6 +749,8 @@ def main() -> None:
     md_path = out_dir / f"eqr_maze_probe_{suffix}.md"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     write_report(md_path, metrics)
+    if viz_payload is not None:
+        write_visualizations(out_dir, viz_payload)
     print(
         f"primary loop{args.eval_loops} exact={final['label_exact']:.4f} "
         f"path_f1={final['path_f1']:.4f} gain={loop_gain:.4f}"

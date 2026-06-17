@@ -142,6 +142,8 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     --grad_clip "${EQR_GRAD_CLIP:-1.0}"
     --seed "${SEED:-52}"
     --log_every "${MAZE_LOG_EVERY:-100}"
+    --viz_cases "${MAZE_VIZ_CASES:-0}"
+    --viz_loops "${MAZE_VIZ_LOOPS:-1,2,4,6,10}"
   )
 
   printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"

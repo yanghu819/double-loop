@@ -1,0 +1,257 @@
+{
+  "config": {
+    "batch": 128,
+    "eqr_dir": "/huyang2/double-loop/.worktrees/maze15-eqr-fs-vs-base-20260617T0447Z-aa86dee/repos/eqr",
+    "eval_loops": 8,
+    "eval_n": 512,
+    "expansion": 4.0,
+    "forward_dtype": "bfloat16",
+    "future_seed_gate_bias": -2.0,
+    "future_seed_scale": 1.0,
+    "grad_clip": 1.0,
+    "grid_size": 15,
+    "h_cycles": 2,
+    "heads": 4,
+    "hidden_size": 128,
+    "l_cycles": 4,
+    "lambda_": 0.95,
+    "layers": 1,
+    "log_every": 100,
+    "loop_loss": "all",
+    "lr": 0.0003,
+    "max_grid_attempts": 200,
+    "max_path_length": 56,
+    "max_start_attempts": 200,
+    "maze_mode": "perfect",
+    "min_path_length": 32,
+    "noise_mode": "none",
+    "noise_scale": 0.0,
+    "out_dir": "/huyang2/double-loop/.worktrees/maze15-eqr-fs-vs-base-20260617T0447Z-aa86dee/runs/maze15-fs-s600-20260617T0447Z-aa86dee/output",
+    "path_loss_weight": 4.0,
+    "repo_root": "/huyang2/double-loop/.worktrees/maze15-eqr-fs-vs-base-20260617T0447Z-aa86dee",
+    "seed": 52,
+    "steps": 600,
+    "train_loops": 4,
+    "wall_prob": 0.37,
+    "weight_decay": 0.1
+  },
+  "metrics": {
+    "decision": "Continue cautiously: maze path learning is alive, but loop gain is weak; inspect residuals before scaling.",
+    "eval_clean": {
+      "loop1": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5904821157455444,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42269426584243774,
+        "path_pred_frac": 0.4221614599227905,
+        "path_recall": 0.999909520149231,
+        "static_acc": 0.703342080116272,
+        "token_acc": 0.7562673687934875
+      },
+      "loop1/residual": {
+        "zH_rms": 1.353047490119934,
+        "zL_rms": 1.4118813276290894
+      },
+      "loop2": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.591134786605835,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42344576120376587,
+        "path_pred_frac": 0.42113715410232544,
+        "path_recall": 0.9993409514427185,
+        "static_acc": 0.7044621109962463,
+        "token_acc": 0.7570833563804626
+      },
+      "loop2/residual": {
+        "zH_rms": 0.3133576214313507,
+        "zL_rms": 0.321429580450058
+      },
+      "loop3": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5909721851348877,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4232317805290222,
+        "path_pred_frac": 0.42151910066604614,
+        "path_recall": 0.9996901750564575,
+        "static_acc": 0.7040711641311646,
+        "token_acc": 0.756822943687439
+      },
+      "loop3/residual": {
+        "zH_rms": 0.11948259174823761,
+        "zL_rms": 0.10778924077749252
+      },
+      "loop4": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5913111567497253,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4237744212150574,
+        "path_pred_frac": 0.42048612236976624,
+        "path_recall": 0.9985262155532837,
+        "static_acc": 0.7050855159759521,
+        "token_acc": 0.7574566006660461
+      },
+      "loop4/residual": {
+        "zH_rms": 0.04827440530061722,
+        "zL_rms": 0.04634670540690422
+      },
+      "loop5": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.591254472732544,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42370110750198364,
+        "path_pred_frac": 0.42059895396232605,
+        "path_recall": 0.9986104369163513,
+        "static_acc": 0.7049692869186401,
+        "token_acc": 0.7573785185813904
+      },
+      "loop5/residual": {
+        "zH_rms": 0.0247992854565382,
+        "zL_rms": 0.02680225297808647
+      },
+      "loop6": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5912767648696899,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42366498708724976,
+        "path_pred_frac": 0.4207899272441864,
+        "path_recall": 0.9989734292030334,
+        "static_acc": 0.7048107981681824,
+        "token_acc": 0.7573090195655823
+      },
+      "loop6/residual": {
+        "zH_rms": 0.012479349970817566,
+        "zL_rms": 0.013401315547525883
+      },
+      "loop7": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5912230014801025,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4236002564430237,
+        "path_pred_frac": 0.42086806893348694,
+        "path_recall": 0.9990089535713196,
+        "static_acc": 0.7047262787818909,
+        "token_acc": 0.7572482824325562
+      },
+      "loop7/residual": {
+        "zH_rms": 0.0074156783521175385,
+        "zL_rms": 0.008452069014310837
+      },
+      "loop8": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5912420749664307,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4236219823360443,
+        "path_pred_frac": 0.4208506941795349,
+        "path_recall": 0.9990089535713196,
+        "static_acc": 0.7047473788261414,
+        "token_acc": 0.7572656273841858
+      },
+      "loop8/residual": {
+        "zH_rms": 0.005840136669576168,
+        "zL_rms": 0.007193026132881641
+      }
+    },
+    "task": {
+      "eval_loops": 8,
+      "future_seed_scale": 1.0,
+      "grid_size": 15,
+      "h_cycles": 2,
+      "heads": 4,
+      "hidden_size": 128,
+      "l_cycles": 4,
+      "layers": 1,
+      "max_path_length": 56,
+      "maze_mode": "perfect",
+      "min_path_length": 32,
+      "model": "EqRModel",
+      "params": 296708,
+      "train_loops": 4
+    },
+    "train": {
+      "history": [
+        {
+          "ce": 0.357421875,
+          "exact": 0.0,
+          "loop1_ce": 0.361328125,
+          "path_f1": 0.5778905153274536,
+          "sec": 21.475773811340332,
+          "step": 100,
+          "zH_rms": 0.05886082723736763,
+          "zL_rms": 0.03343074396252632
+        },
+        {
+          "ce": 0.35546875,
+          "exact": 0.0,
+          "loop1_ce": 0.35546875,
+          "path_f1": 0.5847444534301758,
+          "sec": 43.457947969436646,
+          "step": 200,
+          "zH_rms": 0.0632755309343338,
+          "zL_rms": 0.03943251073360443
+        },
+        {
+          "ce": 0.353515625,
+          "exact": 0.0,
+          "loop1_ce": 0.35546875,
+          "path_f1": 0.5858919620513916,
+          "sec": 65.37787008285522,
+          "step": 300,
+          "zH_rms": 0.09818346798419952,
+          "zL_rms": 0.09688954800367355
+        },
+        {
+          "ce": 0.35546875,
+          "exact": 0.0,
+          "loop1_ce": 0.35546875,
+          "path_f1": 0.5872644186019897,
+          "sec": 86.29977679252625,
+          "step": 400,
+          "zH_rms": 0.06751426309347153,
+          "zL_rms": 0.05072927474975586
+        },
+        {
+          "ce": 0.3515625,
+          "exact": 0.0,
+          "loop1_ce": 0.353515625,
+          "path_f1": 0.5828420519828796,
+          "sec": 107.76837825775146,
+          "step": 500,
+          "zH_rms": 0.05590397119522095,
+          "zL_rms": 0.05126137286424637
+        },
+        {
+          "ce": 0.357421875,
+          "exact": 0.0,
+          "loop1_ce": 0.357421875,
+          "path_f1": 0.5834617614746094,
+          "sec": 128.92642378807068,
+          "step": 600,
+          "zH_rms": 0.047356024384498596,
+          "zL_rms": 0.045176953077316284
+        }
+      ],
+      "train_ce_loss": 0.357421875,
+      "train_last_metrics": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5834617614746094,
+        "path_label_frac": 0.17468750476837158,
+        "path_precision": 0.41585835814476013,
+        "path_pred_frac": 0.418090283870697,
+        "path_recall": 0.9953192472457886,
+        "static_acc": 0.7041103839874268,
+        "token_acc": 0.7549999952316284
+      },
+      "train_loop1_loss": 0.357421875,
+      "train_sec": 128.92647981643677
+    }
+  }
+}

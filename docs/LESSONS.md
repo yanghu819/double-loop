@@ -191,6 +191,12 @@
   meaningful compute, or test one slightly richer learned update rule such as
   per-channel/state-conditioned gating. It should not pivot back to selector,
   repair, Sudoku priors, feature-noise tables, or loop-count sweeps.
+- Continuing the learned-gate checkpoint to step24600 did not restore a useful
+  slope. The checkpoint h120 loop6 exact was `0.3281`, below the prior
+  learned-gate checkpoint `0.3496` and not above the prior full-eval `0.3340`.
+  The run was stopped deliberately. Treat this as evidence that a single scalar
+  learned update gate helped the plateau once, but same-direction extra steps
+  are now low ROI unless paired with a real state-dynamics or scaling change.
 - A new detached worktree can fail before GPU training if `.cache/bin/ninja` is
   not linked or on `PATH`. The failed
   `d320-mb48eff96-h120-s13600-20260615T205559Z-785f3cd` launch is an environment
@@ -202,3 +208,22 @@
   segment resumed cleanly into
   `d320-effb72-h120-resume10000-s12800-20260615T1801Z-785f3cd`; do not count the
   interrupted segment as a model result.
+
+## 2026-06-17 Maze proxy
+
+- The no-Hydra EqR maze runner works on GPU1 and gives a cheap proxy for
+  recurrence on grid path propagation. It runs online generated mazes, archives
+  config/logs/source metadata, and does not require Hydra or flash-attn.
+- The first 15x15 perfect-maze probe is neutral for FutureSeed transfer:
+  FutureSeed loop8 path F1 was `0.5912`, base loop8 path F1 was `0.5905`, exact
+  was `0.0` for both, and loop gain was only `+0.0008` for FutureSeed versus
+  `+0.0000` for base.
+- The useful signal is diagnostic, not positive: the model is mostly learning a
+  broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
+  while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but
+  precision was only `0.4236`. This explains why exact is zero and why loops do
+  not matter yet.
+- Do not use this 15x15 run to claim FutureSeed works on maze. The next maze
+  experiment should make recurrence pressure real, for example by increasing
+  path length/grid size or by tracking whether later loops reduce over-predicted
+  PATH cells. A flat seed table at the same 15x15 setting would be low ROI.

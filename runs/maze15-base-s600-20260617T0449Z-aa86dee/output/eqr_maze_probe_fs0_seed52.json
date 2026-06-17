@@ -1,0 +1,257 @@
+{
+  "config": {
+    "batch": 128,
+    "eqr_dir": "/huyang2/double-loop/.worktrees/maze15-eqr-fs-vs-base-20260617T0447Z-aa86dee/repos/eqr",
+    "eval_loops": 8,
+    "eval_n": 512,
+    "expansion": 4.0,
+    "forward_dtype": "bfloat16",
+    "future_seed_gate_bias": -2.0,
+    "future_seed_scale": 0.0,
+    "grad_clip": 1.0,
+    "grid_size": 15,
+    "h_cycles": 2,
+    "heads": 4,
+    "hidden_size": 128,
+    "l_cycles": 4,
+    "lambda_": 0.95,
+    "layers": 1,
+    "log_every": 100,
+    "loop_loss": "all",
+    "lr": 0.0003,
+    "max_grid_attempts": 200,
+    "max_path_length": 56,
+    "max_start_attempts": 200,
+    "maze_mode": "perfect",
+    "min_path_length": 32,
+    "noise_mode": "none",
+    "noise_scale": 0.0,
+    "out_dir": "/huyang2/double-loop/.worktrees/maze15-eqr-fs-vs-base-20260617T0447Z-aa86dee/runs/maze15-base-s600-20260617T0449Z-aa86dee/output",
+    "path_loss_weight": 4.0,
+    "repo_root": "/huyang2/double-loop/.worktrees/maze15-eqr-fs-vs-base-20260617T0447Z-aa86dee",
+    "seed": 52,
+    "steps": 600,
+    "train_loops": 4,
+    "wall_prob": 0.37,
+    "weight_decay": 0.1
+  },
+  "metrics": {
+    "decision": "Continue cautiously: maze path learning is alive, but loop gain is weak; inspect residuals before scaling.",
+    "eval_clean": {
+      "loop1": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5904460549354553,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4226527810096741,
+        "path_pred_frac": 0.42223089933395386,
+        "path_recall": 0.9999593496322632,
+        "static_acc": 0.7032470107078552,
+        "token_acc": 0.7561979293823242
+      },
+      "loop1/residual": {
+        "zH_rms": 1.3338820934295654,
+        "zL_rms": 1.4117529392242432
+      },
+      "loop2": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5905138254165649,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4228995442390442,
+        "path_pred_frac": 0.42157986760139465,
+        "path_recall": 0.9990000128746033,
+        "static_acc": 0.7038492560386658,
+        "token_acc": 0.7565191388130188
+      },
+      "loop2/residual": {
+        "zH_rms": 0.332586407661438,
+        "zL_rms": 0.2805996835231781
+      },
+      "loop3": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5907338857650757,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42341768741607666,
+        "path_pred_frac": 0.42026910185813904,
+        "path_recall": 0.9972743988037109,
+        "static_acc": 0.7050538063049316,
+        "token_acc": 0.75718754529953
+      },
+      "loop3/residual": {
+        "zH_rms": 0.13205450773239136,
+        "zL_rms": 0.1198352575302124
+      },
+      "loop4": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.59067702293396,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4231688976287842,
+        "path_pred_frac": 0.42098090052604675,
+        "path_recall": 0.9983633160591125,
+        "static_acc": 0.7044198513031006,
+        "token_acc": 0.7568576335906982
+      },
+      "loop4/residual": {
+        "zH_rms": 0.06630442291498184,
+        "zL_rms": 0.060867857187986374
+      },
+      "loop5": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5906991958618164,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4230145215988159,
+        "path_pred_frac": 0.4215972423553467,
+        "path_recall": 0.9993732571601868,
+        "static_acc": 0.7039020657539368,
+        "token_acc": 0.7566232681274414
+      },
+      "loop5/residual": {
+        "zH_rms": 0.03434940055012703,
+        "zL_rms": 0.030938109382987022
+      },
+      "loop6": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5905375480651855,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42282795906066895,
+        "path_pred_frac": 0.42184898257255554,
+        "path_recall": 0.9995033740997314,
+        "static_acc": 0.703627347946167,
+        "token_acc": 0.7564236521720886
+      },
+      "loop6/residual": {
+        "zH_rms": 0.019297810271382332,
+        "zL_rms": 0.018559005111455917
+      },
+      "loop7": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5905089378356934,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.42278486490249634,
+        "path_pred_frac": 0.42190104722976685,
+        "path_recall": 0.9995409250259399,
+        "static_acc": 0.703574538230896,
+        "token_acc": 0.7563889026641846
+      },
+      "loop7/residual": {
+        "zH_rms": 0.012058851309120655,
+        "zL_rms": 0.013075546361505985
+      },
+      "loop8": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5904883742332458,
+        "path_label_frac": 0.17846354842185974,
+        "path_precision": 0.4227595031261444,
+        "path_pred_frac": 0.42195314168930054,
+        "path_recall": 0.9995856881141663,
+        "static_acc": 0.703521728515625,
+        "token_acc": 0.7563542127609253
+      },
+      "loop8/residual": {
+        "zH_rms": 0.008844254538416862,
+        "zL_rms": 0.010576796717941761
+      }
+    },
+    "task": {
+      "eval_loops": 8,
+      "future_seed_scale": 0.0,
+      "grid_size": 15,
+      "h_cycles": 2,
+      "heads": 4,
+      "hidden_size": 128,
+      "l_cycles": 4,
+      "layers": 1,
+      "max_path_length": 56,
+      "maze_mode": "perfect",
+      "min_path_length": 32,
+      "model": "EqRModel",
+      "params": 263938,
+      "train_loops": 4
+    },
+    "train": {
+      "history": [
+        {
+          "ce": 0.357421875,
+          "exact": 0.0,
+          "loop1_ce": 0.361328125,
+          "path_f1": 0.5778905153274536,
+          "sec": 21.797455549240112,
+          "step": 100,
+          "zH_rms": 0.05654308199882507,
+          "zL_rms": 0.031209474429488182
+        },
+        {
+          "ce": 0.35546875,
+          "exact": 0.0,
+          "loop1_ce": 0.357421875,
+          "path_f1": 0.5847444534301758,
+          "sec": 43.65633273124695,
+          "step": 200,
+          "zH_rms": 0.052322812378406525,
+          "zL_rms": 0.03363191708922386
+        },
+        {
+          "ce": 0.35546875,
+          "exact": 0.0,
+          "loop1_ce": 0.357421875,
+          "path_f1": 0.5858919620513916,
+          "sec": 65.71432542800903,
+          "step": 300,
+          "zH_rms": 0.056181274354457855,
+          "zL_rms": 0.037495072931051254
+        },
+        {
+          "ce": 0.35546875,
+          "exact": 0.0,
+          "loop1_ce": 0.35546875,
+          "path_f1": 0.5872644186019897,
+          "sec": 86.59903478622437,
+          "step": 400,
+          "zH_rms": 0.06508725881576538,
+          "zL_rms": 0.04690055549144745
+        },
+        {
+          "ce": 0.3515625,
+          "exact": 0.0,
+          "loop1_ce": 0.35546875,
+          "path_f1": 0.5828420519828796,
+          "sec": 107.08017587661743,
+          "step": 500,
+          "zH_rms": 0.07297331094741821,
+          "zL_rms": 0.05808333680033684
+        },
+        {
+          "ce": 0.357421875,
+          "exact": 0.0,
+          "loop1_ce": 0.357421875,
+          "path_f1": 0.5822288393974304,
+          "sec": 127.95512557029724,
+          "step": 600,
+          "zH_rms": 0.06587131321430206,
+          "zL_rms": 0.05981503427028656
+        }
+      ],
+      "train_ce_loss": 0.357421875,
+      "train_last_metrics": {
+        "label_exact": 0.0,
+        "path_exact": 0.0,
+        "path_f1": 0.5822288393974304,
+        "path_label_frac": 0.17468750476837158,
+        "path_precision": 0.4142269492149353,
+        "path_pred_frac": 0.4206944406032562,
+        "path_recall": 0.9976922273635864,
+        "static_acc": 0.7014178037643433,
+        "token_acc": 0.753159761428833
+      },
+      "train_loop1_loss": 0.357421875,
+      "train_sec": 127.955162525177
+    }
+  }
+}

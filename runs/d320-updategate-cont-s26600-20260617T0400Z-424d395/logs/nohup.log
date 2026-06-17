@@ -1,0 +1,26 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/d320-updategate-cont-s26600-20260617T0400Z-424d395/runs/d320-updategate-cont-s26600-20260617T0400Z-424d395
+git_sha=424d395851a46481cd0252aa84ac0b7981a98f9a
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=12x12 box=3x4 mainline=future_seed_loop rwkv_kernel=statepassing forward_dtype=bfloat16
+checkpoint_eval steps=24600,25600,26600 holes=96,108,120,132
+resumed_train_checkpoint path=/huyang2/double-loop/.worktrees/d320-updategate-remap-s23600-20260616T1005Z-8e2e217/runs/d320-updategate-remap-s23600-20260616T1005Z-8e2e217/checkpoints/latest.pt step=23600 reason=eval_checkpoint
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=7:108-120] step=23700 ce=0.0943 total=0.2099 loop1=0.7154 loop_last=0.0943 upd_l=0.985 upd_h=0.984 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=23800 ce=0.1457 total=0.2810 loop1=0.8265 loop_last=0.1457 upd_l=0.986 upd_h=0.985 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=23800] path=/huyang2/double-loop/.worktrees/d320-updategate-cont-s26600-20260617T0400Z-424d395/runs/d320-updategate-cont-s26600-20260617T0400Z-424d395/checkpoints/train_state_step023800.pt
+[future_seed_loop stage=7:108-120] step=23900 ce=0.1309 total=0.2526 loop1=0.7442 loop_last=0.1309 upd_l=0.987 upd_h=0.987 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=24000 ce=0.1755 total=0.3167 loop1=0.8745 loop_last=0.1755 upd_l=0.988 upd_h=0.987 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=24000] path=/huyang2/double-loop/.worktrees/d320-updategate-cont-s26600-20260617T0400Z-424d395/runs/d320-updategate-cont-s26600-20260617T0400Z-424d395/checkpoints/train_state_step024000.pt
+[future_seed_loop stage=7:108-120] step=24100 ce=0.1077 total=0.2294 loop1=0.7162 loop_last=0.1077 upd_l=0.989 upd_h=0.988 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=24200 ce=0.0802 total=0.2234 loop1=0.7982 loop_last=0.0802 upd_l=0.990 upd_h=0.989 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=24200] path=/huyang2/double-loop/.worktrees/d320-updategate-cont-s26600-20260617T0400Z-424d395/runs/d320-updategate-cont-s26600-20260617T0400Z-424d395/checkpoints/train_state_step024200.pt
+[future_seed_loop stage=7:108-120] step=24300 ce=0.1583 total=0.2765 loop1=0.7464 loop_last=0.1583 upd_l=0.991 upd_h=0.990 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=24400 ce=0.0968 total=0.2552 loop1=0.8630 loop_last=0.0968 upd_l=0.991 upd_h=0.990 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=24400] path=/huyang2/double-loop/.worktrees/d320-updategate-cont-s26600-20260617T0400Z-424d395/runs/d320-updategate-cont-s26600-20260617T0400Z-424d395/checkpoints/train_state_step024400.pt
+[future_seed_loop stage=7:108-120] step=24500 ce=0.0894 total=0.2078 loop1=0.6863 loop_last=0.0894 upd_l=0.992 upd_h=0.991 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=7:108-120] step=24600 ce=0.0619 total=0.2022 loop1=0.7481 loop_last=0.0619 upd_l=0.992 upd_h=0.991 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=24600 holes120] loop6 exact=0.3281 blank=0.8612
+[train_checkpoint step=24600] path=/huyang2/double-loop/.worktrees/d320-updategate-cont-s26600-20260617T0400Z-424d395/runs/d320-updategate-cont-s26600-20260617T0400Z-424d395/checkpoints/train_state_step024600.pt

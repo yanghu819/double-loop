@@ -23,6 +23,14 @@ def load_result(run_dir: Path) -> Optional[Dict[str, Any]]:
     if not candidates:
         candidates = sorted(run_dir.glob("**/eqr_probe_seed*.json"))
     if not candidates:
+        candidates = sorted((run_dir / "output").glob("eqr_maze_probe_*.json"))
+    if not candidates:
+        candidates = sorted(run_dir.glob("**/eqr_maze_probe_*.json"))
+    if not candidates:
+        candidates = sorted((run_dir / "output").glob("checkpoint_eval_step*.json"))
+    if not candidates:
+        candidates = sorted(run_dir.glob("**/checkpoint_eval_step*.json"))
+    if not candidates:
         return None
     with candidates[-1].open("r", encoding="utf-8") as f:
         return json.load(f)
@@ -46,6 +54,40 @@ def extract_score(result: Optional[Dict[str, Any]]) -> Tuple[Optional[float], st
         return None, "missing_result_json"
 
     metrics = result.get("metrics", {})
+    task = metrics.get("task", {})
+    if task.get("model") == "EqRModel" and "grid_size" in task and "min_path_length" in task:
+        max_loops = task.get("eval_loops", task.get("train_loops", 1))
+        try:
+            preferred = metrics["eval_clean"][f"loop{max_loops}"]["path_f1"]
+            return float(preferred), f"metrics.eval_clean.loop{max_loops}.path_f1"
+        except Exception:
+            pass
+
+    eval_by_holes = result.get("eval_by_holes", {})
+    hole_candidates = []
+    for holes_key, holes_payload in eval_by_holes.items():
+        try:
+            holes_num = int(str(holes_key).replace("holes", ""))
+            clean = holes_payload.get("eval_clean", {})
+            loop_nums = [
+                int(str(key).replace("loop", ""))
+                for key, value in clean.items()
+                if str(key).startswith("loop") and isinstance(value, dict) and "label_exact" in value
+            ]
+            if not loop_nums:
+                continue
+            loop_num = max(loop_nums)
+            value = float(clean[f"loop{loop_num}"]["label_exact"])
+            path = f"eval_by_holes.{holes_key}.eval_clean.loop{loop_num}.label_exact"
+            hole_candidates.append((holes_num, loop_num, value, path))
+        except Exception:
+            continue
+    if hole_candidates:
+        primary_h120 = [item for item in hole_candidates if item[0] == 120]
+        candidates_for_score = primary_h120 or hole_candidates
+        _holes, _loop, value, path = max(candidates_for_score, key=lambda item: (item[0], item[1]))
+        return value, path
+
     task = metrics.get("task", {})
     max_loops = task.get("max_loops", task.get("train_loops", 3))
     preferred_key = f"eval_clean.loop{max_loops}.label_exact"

@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import random
 import sys
 import time
+import types
 from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -28,6 +30,21 @@ DIRS = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
 def add_import_paths(repo_root: Path, eqr_dir: Path) -> None:
     sys.path.insert(0, str(eqr_dir))
+
+
+def install_colorama_fallback() -> None:
+    if importlib.util.find_spec("colorama") is not None:
+        return
+
+    class _Codes:
+        BLACK = RED = GREEN = YELLOW = BLUE = MAGENTA = CYAN = WHITE = RESET = ""
+        RESET_ALL = BRIGHT = DIM = NORMAL = ""
+
+    module = types.ModuleType("colorama")
+    module.Fore = _Codes()
+    module.Style = _Codes()
+    module.init = lambda *_args, **_kwargs: None
+    sys.modules["colorama"] = module
 
 
 def _bfs(open_mask: np.ndarray, start: Tuple[int, int]) -> Tuple[np.ndarray, np.ndarray]:
@@ -392,6 +409,7 @@ def main() -> None:
     repo_root = Path(args.repo_root).resolve()
     eqr_dir = Path(args.eqr_dir or repo_root / "repos" / "eqr").resolve()
     add_import_paths(repo_root, eqr_dir)
+    install_colorama_fallback()
 
     from models.eqr import EqRModel
 

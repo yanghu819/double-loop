@@ -176,6 +176,21 @@
 - Delayed loop credit made that loop curve worse, not better. At step23100,
   h120 loop3/4/5/6 exact is `0.0781`/`0.1406`/`0.1563`/`0.1602`; this rejects
   the theory that all-loop loss alone is the late-loop bottleneck.
+- The learned loop update gate is the first simple state-dynamics change with a
+  positive h120 signal after the packed D320 plateau. Resuming the step22600
+  checkpoint with `LOOP_UPDATE_MODE=learned_gate` and init `0.95` reaches final
+  h120 loop6 exact `0.3340`, with checkpoint step23600 h120 loop6 exact
+  `0.3496`. This beats the clean step19600/22600 finals `0.2891`/`0.2754` and
+  avoids the delayed-loss collapse `0.1602`. The learned gate is not just a
+  no-op: final eval uses lower update gates in early loops and near-full update
+  in loops 4-6. This supports simple learned state dynamics as a real mechanism.
+- The same learned-gate run still has h132 exact `0.0` and h132 blank accuracy
+  only about `0.17`. Do not overclaim it as opening the next frontier. It makes
+  h120 late-loop correction better; it does not solve the larger-scale
+  interaction problem. Next work should either continue this checkpoint with
+  meaningful compute, or test one slightly richer learned update rule such as
+  per-channel/state-conditioned gating. It should not pivot back to selector,
+  repair, Sudoku priors, feature-noise tables, or loop-count sweeps.
 - A new detached worktree can fail before GPU training if `.cache/bin/ninja` is
   not linked or on `PATH`. The failed
   `d320-mb48eff96-h120-s13600-20260615T205559Z-785f3cd` launch is an environment

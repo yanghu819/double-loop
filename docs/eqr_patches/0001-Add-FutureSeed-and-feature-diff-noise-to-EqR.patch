@@ -67,7 +67,7 @@ index 14605c5..e5c3fb3 100644
      if isinstance(stds, dict):
          if "H_init_std" in arch_overrides:
 diff --git a/models/eqr.py b/models/eqr.py
-index 8084f2b..5cc1b7b 100644
+index 8084f2b..a3afef8 100644
 --- a/models/eqr.py
 +++ b/models/eqr.py
 @@ -11,6 +11,14 @@ from models.layers import Attention, CastedEmbedding, CastedLinear, CosSin, Rota
@@ -85,7 +85,7 @@ index 8084f2b..5cc1b7b 100644
  @dataclass
  class LatentCarry:
      z_H: torch.Tensor
-@@ -55,6 +63,14 @@ class EqRConfig(BaseModel):
+@@ -55,6 +63,16 @@ class EqRConfig(BaseModel):
      puzzle_emb_ndim: int = 0
      lambda_: float = 0.95
      noise_scale: float = 0.01
@@ -97,10 +97,12 @@ index 8084f2b..5cc1b7b 100644
 +    future_seed_gate_bias: float = -2.0
 +    state_update_mode: str = "none"
 +    state_gate_bias: float = 2.0
++    decision_boundary_token_id: int = -1
++    decision_boundary_scale: float = 1.0
      H_init_std: float = 1.0
      L_init_std: float = 1.0
  
-@@ -89,19 +105,306 @@ class ReasoningBlock(nn.Module):
+@@ -89,19 +107,411 @@ class ReasoningBlock(nn.Module):
          return rms_norm(hidden_states + self.mlp(hidden_states), variance_epsilon=self.norm_eps)
  
  
@@ -286,6 +288,111 @@ index 8084f2b..5cc1b7b 100644
 +        return mixed, weights
 +
 +
++class DecisionBoundaryCalibrator(nn.Module):
++    def __init__(self, config: EqRConfig) -> None:
++        super().__init__()
++        self.token_id = int(config.decision_boundary_token_id)
++        self.scale = float(config.decision_boundary_scale)
++        feature_dim = 11
++        hidden = max(16, min(64, config.hidden_size // 4))
++        self.norm = nn.LayerNorm(feature_dim)
++        self.net = nn.Sequential(
++            nn.Linear(feature_dim, hidden),
++            nn.SiLU(),
++            nn.Linear(hidden, 1),
++        )
++        self.latest_stats: Dict[str, float] = {}
++        with torch.no_grad():
++            nn.init.xavier_uniform_(self.net[0].weight)
++            self.net[0].bias.zero_()
++            nn.init.normal_(self.net[2].weight, mean=0.0, std=0.02)
++            self.net[2].bias.zero_()
++
++    def _target_features(self, logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
++        logits_fp32 = logits.to(torch.float32)
++        vocab = logits_fp32.shape[-1]
++        token_id = self.token_id
++        if token_id < 0 or token_id >= vocab:
++            raise ValueError(f"decision_boundary_token_id {token_id} is outside vocab size {vocab}")
++        target = logits_fp32[..., token_id]
++        non_target = logits_fp32.clone()
++        non_target[..., token_id] = torch.finfo(logits_fp32.dtype).min
++        non_target_max = non_target.max(dim=-1).values
++        margin = target - non_target_max
++        prob = logits_fp32.softmax(dim=-1)
++        entropy = -(prob * prob.clamp_min(1e-8).log()).sum(dim=-1) / math.log(max(2, vocab))
++        return target, non_target_max, margin, entropy
++
++    def forward(
++        self,
++        logits: torch.Tensor,
++        previous_logits: torch.Tensor,
++        context_logits: Optional[torch.Tensor],
++        candidate_weights: Optional[torch.Tensor],
++        loop_index: Optional[torch.Tensor],
++    ) -> torch.Tensor:
++        if self.scale == 0.0:
++            self.latest_stats = {}
++            return logits
++        raw_target, _raw_non_target, raw_margin, raw_entropy = self._target_features(logits)
++        _prev_target, _prev_non_target, prev_margin, _prev_entropy = self._target_features(previous_logits)
++        if context_logits is None:
++            context_margin = raw_margin
++            context_entropy = raw_entropy
++            disagreement = torch.zeros_like(raw_margin)
++        else:
++            _context_target, _context_non_target, context_margin, context_entropy = self._target_features(context_logits)
++            disagreement = (
++                logits.to(torch.float32).softmax(dim=-1) - context_logits.to(torch.float32).softmax(dim=-1)
++            ).abs().sum(dim=-1)
++        if candidate_weights is None:
++            weight_features = torch.zeros(*raw_margin.shape, 3, dtype=torch.float32, device=logits.device)
++            weight_features[..., 1] = 1.0
++        else:
++            weight_features = candidate_weights.to(torch.float32)
++        if loop_index is None:
++            loop_feature = torch.zeros_like(raw_margin)
++        else:
++            loop_value = loop_index.to(device=logits.device, dtype=torch.float32).view(-1, 1)
++            loop_feature = torch.log1p(loop_value).expand_as(raw_margin) / 4.0
++        features = torch.cat(
++            (
++                torch.tanh(raw_margin[..., None] / 4.0),
++                torch.tanh(prev_margin[..., None] / 4.0),
++                torch.tanh(context_margin[..., None] / 4.0),
++                torch.tanh((context_margin - raw_margin)[..., None] / 4.0),
++                raw_entropy[..., None],
++                context_entropy[..., None],
++                disagreement[..., None],
++                weight_features,
++                loop_feature[..., None],
++            ),
++            dim=-1,
++        )
++        threshold = self.net(self.norm(features)).squeeze(-1).to(torch.float32) * self.scale
++        calibrated = logits.to(torch.float32).clone()
++        calibrated[..., self.token_id] = calibrated[..., self.token_id] - threshold
++        calibrated_margin = raw_margin - threshold
++        with torch.no_grad():
++            raw_pred = logits.to(torch.float32).argmax(dim=-1) == self.token_id
++            calibrated_pred = calibrated.argmax(dim=-1) == self.token_id
++            self.latest_stats = {
++                "state_boundary_threshold_mean": float(threshold.mean().detach().cpu()),
++                "state_boundary_threshold_abs_mean": float(threshold.abs().mean().detach().cpu()),
++                "state_boundary_threshold_std": float(threshold.std(unbiased=False).detach().cpu()),
++                "state_boundary_threshold_pos_frac": float((threshold > 0).to(torch.float32).mean().detach().cpu()),
++                "state_boundary_raw_margin_mean": float(raw_margin.mean().detach().cpu()),
++                "state_boundary_calibrated_margin_mean": float(calibrated_margin.mean().detach().cpu()),
++                "state_boundary_margin_shift_mean": float((calibrated_margin - raw_margin).mean().detach().cpu()),
++                "state_boundary_raw_path_frac": float(raw_pred.to(torch.float32).mean().detach().cpu()),
++                "state_boundary_calibrated_path_frac": float(calibrated_pred.to(torch.float32).mean().detach().cpu()),
++                "state_boundary_prune_flip_frac": float((raw_pred & ~calibrated_pred).to(torch.float32).mean().detach().cpu()),
++                "state_boundary_add_flip_frac": float((~raw_pred & calibrated_pred).to(torch.float32).mean().detach().cpu()),
++                "state_boundary_loop_feature": float(loop_feature.mean().detach().cpu()),
++            }
++        return calibrated.to(logits.dtype)
++
++
 +class FeatureNoiseBuffer(nn.Module):
 +    def __init__(self, hidden_size: int, max_size: int, max_add: int) -> None:
 +        super().__init__()
@@ -409,15 +516,23 @@ index 8084f2b..5cc1b7b 100644
  
  
  class InnerNetwork(nn.Module):
-@@ -129,6 +432,41 @@ class InnerNetwork(nn.Module):
+@@ -129,6 +539,51 @@ class InnerNetwork(nn.Module):
  
          self._init_pos()
          self.L_level = NoisyReasoningModule(config, [ReasoningBlock(config) for _ in range(config.L_layers)])
 +        self.state_update_mode = str(config.state_update_mode).lower()
-+        if self.state_update_mode not in {"none", "learned_gate", "state_compete", "state_compete_cross", "state_compete_conf"}:
++        if self.state_update_mode not in {
++            "none",
++            "learned_gate",
++            "state_compete",
++            "state_compete_cross",
++            "state_compete_conf",
++            "state_compete_boundary",
++        }:
 +            raise ValueError(f"Unknown state_update_mode '{config.state_update_mode}'")
 +        self.latest_state_gate_stats: Dict[str, float] = {}
 +        self.latest_state_aux: Dict[str, torch.Tensor] = {}
++        self.boundary_calibrator = DecisionBoundaryCalibrator(config) if self.state_update_mode == "state_compete_boundary" else None
 +        if self.state_update_mode == "learned_gate":
 +            self.state_gate_h = LearnedStateGate(config.hidden_size, config.rms_norm_eps, config.state_gate_bias)
 +            self.state_gate_l = LearnedStateGate(config.hidden_size, config.rms_norm_eps, config.state_gate_bias)
@@ -429,6 +544,8 @@ index 8084f2b..5cc1b7b 100644
 +        elif self.state_update_mode == "state_compete_cross":
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="cross")
 +        elif self.state_update_mode == "state_compete_conf":
++            self.state_compete_h = StateCompetitionMixer(config, context_mode="conf")
++        elif self.state_update_mode == "state_compete_boundary":
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="conf")
 +        else:
 +            self.state_compete_h = None
@@ -451,7 +568,7 @@ index 8084f2b..5cc1b7b 100644
          self.H_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.H_init_std), persistent=False)
          self.L_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.L_init_std), persistent=False)
          with torch.no_grad():
-@@ -193,8 +531,12 @@ class InnerNetwork(nn.Module):
+@@ -193,8 +648,12 @@ class InnerNetwork(nn.Module):
          return carry
  
      def latent_recursion(self, z_H: torch.Tensor, z_L: torch.Tensor, x: torch.Tensor, seq: Dict[str, CosSin]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -464,7 +581,7 @@ index 8084f2b..5cc1b7b 100644
          z_H = self.L_level(z_H, z_L, **seq)
          return z_H, z_L
  
-@@ -205,25 +547,59 @@ class InnerNetwork(nn.Module):
+@@ -205,25 +664,79 @@ class InnerNetwork(nn.Module):
          return self.latent_recursion(z_H, z_L, x, seq)
  
      def forward(self, carry: LatentCarry, batch: Dict[str, torch.Tensor]) -> Tuple[LatentCarry, torch.Tensor, torch.Tensor]:
@@ -476,6 +593,8 @@ index 8084f2b..5cc1b7b 100644
 -            {"cos_sin": self._cos_sin()},
 +            seq,
          )
++        state_weights: Optional[torch.Tensor] = None
++        context_logits: Optional[torch.Tensor] = None
 +        if self.state_gate_h is not None and self.state_gate_l is not None:
 +            z_H, gate_h = self.state_gate_h(carry.z_H, z_H)
 +            z_L, gate_l = self.state_gate_l(carry.z_L, z_L)
@@ -494,10 +613,12 @@ index 8084f2b..5cc1b7b 100644
 +                puzzle_emb_len=self.config.puzzle_emb_len,
 +                **seq,
 +            )
++            state_weights = weights
 +            context_h = getattr(self.state_compete_h, "latest_context", None)
 +            if context_h is not None:
++                context_logits = self.lm_head(context_h[:, self.config.puzzle_emb_len :]).contiguous()
 +                self.latest_state_aux = {
-+                    "context_logits": self.lm_head(context_h[:, self.config.puzzle_emb_len :]).contiguous()
++                    "context_logits": context_logits
 +                }
 +            else:
 +                self.latest_state_aux = {}
@@ -518,6 +639,22 @@ index 8084f2b..5cc1b7b 100644
 +            self.latest_state_gate_stats = {}
 +            self.latest_state_aux = {}
          logits = self.lm_head(z_H[:, self.config.puzzle_emb_len :]).contiguous()
++        if self.boundary_calibrator is not None:
++            previous_logits = self.lm_head(carry.z_H[:, self.config.puzzle_emb_len :]).contiguous()
++            board_weights = None if state_weights is None else state_weights[:, self.config.puzzle_emb_len :]
++            calibrated_logits = self.boundary_calibrator(
++                logits,
++                previous_logits,
++                context_logits,
++                board_weights,
++                batch.get("loop_index"),
++            ).contiguous()
++            self.latest_state_aux = {**self.latest_state_aux, "raw_logits": logits}
++            self.latest_state_gate_stats = {
++                **self.latest_state_gate_stats,
++                **self.boundary_calibrator.latest_stats,
++            }
++            logits = calibrated_logits
          q = self.q_head(z_H[:, 0]).to(torch.float32)
          return LatentCarry(z_H=z_H.detach(), z_L=z_L.detach()), logits, q[..., 0]
  

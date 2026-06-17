@@ -268,9 +268,23 @@ def inner_rollout(
     aux_by_step: List[Dict[str, torch.Tensor]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
     state_update_mode = str(state_update_mode).lower()
-    if state_update_mode not in {"none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross", "state_compete_conf"}:
+    if state_update_mode not in {
+        "none",
+        "delta_carry",
+        "learned_gate",
+        "state_compete",
+        "state_compete_cross",
+        "state_compete_conf",
+        "state_compete_boundary",
+    }:
         raise ValueError(f"unknown state_update_mode: {state_update_mode}")
     for idx in range(steps):
+        inner_batch["loop_index"] = torch.full(
+            (int(batch["inputs"].shape[0]),),
+            idx + 1,
+            dtype=torch.float32,
+            device=batch["inputs"].device,
+        )
         prev_h = carry.z_H
         prev_l = carry.z_L
         carry, logits, _q = model.inner(carry, inner_batch)
@@ -1059,12 +1073,22 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_gate_bias", type=float, default=-2.0)
     p.add_argument(
         "--state_update_mode",
-        choices=("none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross", "state_compete_conf"),
+        choices=(
+            "none",
+            "delta_carry",
+            "learned_gate",
+            "state_compete",
+            "state_compete_cross",
+            "state_compete_conf",
+            "state_compete_boundary",
+        ),
         default="none",
     )
     p.add_argument("--state_delta_scale", type=float, default=0.0)
     p.add_argument("--state_delta_decay", type=float, default=1.0)
     p.add_argument("--state_gate_bias", type=float, default=2.0)
+    p.add_argument("--decision_boundary_token_id", type=int, default=PATH_ID)
+    p.add_argument("--decision_boundary_scale", type=float, default=1.0)
     p.add_argument("--forward_dtype", default="bfloat16")
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--weight_decay", type=float, default=0.1)
@@ -1135,6 +1159,8 @@ def main() -> None:
         "state_delta_scale": args.state_delta_scale,
         "state_delta_decay": args.state_delta_decay,
         "state_gate_bias": args.state_gate_bias,
+        "decision_boundary_token_id": args.decision_boundary_token_id,
+        "decision_boundary_scale": args.decision_boundary_scale,
         "H_init_std": 1.0,
         "L_init_std": 1.0,
     }
@@ -1176,6 +1202,8 @@ def main() -> None:
             "state_delta_scale": args.state_delta_scale,
             "state_delta_decay": args.state_delta_decay,
             "state_gate_bias": args.state_gate_bias,
+            "decision_boundary_token_id": args.decision_boundary_token_id,
+            "decision_boundary_scale": args.decision_boundary_scale,
             "predictive_state_weight": args.predictive_state_weight,
             "predictive_state_horizon": args.predictive_state_horizon,
             "context_improve_weight": args.context_improve_weight,

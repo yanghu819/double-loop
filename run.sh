@@ -139,6 +139,8 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     --state_delta_scale "${EQR_STATE_DELTA_SCALE:-0.0}"
     --state_delta_decay "${EQR_STATE_DELTA_DECAY:-1.0}"
     --state_gate_bias "${EQR_STATE_GATE_BIAS:-2.0}"
+    --decision_boundary_token_id "${EQR_DECISION_BOUNDARY_TOKEN_ID:-5}"
+    --decision_boundary_scale "${EQR_DECISION_BOUNDARY_SCALE:-1.0}"
     --forward_dtype "${EQR_FORWARD_DTYPE:-bfloat16}"
     --lr "${EQR_LR:-3e-4}"
     --weight_decay "${EQR_WEIGHT_DECAY:-0.1}"

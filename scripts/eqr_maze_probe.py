@@ -267,7 +267,7 @@ def inner_rollout(
     residuals: List[Dict[str, float]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
     state_update_mode = str(state_update_mode).lower()
-    if state_update_mode not in {"none", "delta_carry"}:
+    if state_update_mode not in {"none", "delta_carry", "learned_gate"}:
         raise ValueError(f"unknown state_update_mode: {state_update_mode}")
     for idx in range(steps):
         prev_h = carry.z_H
@@ -294,6 +294,7 @@ def inner_rollout(
                     "raw_zH_rms": float(raw_zH.detach().cpu()),
                     "raw_zL_rms": float(raw_zL.detach().cpu()),
                     "state_delta_scale": loop_delta_scale,
+                    **getattr(model.inner, "latest_state_gate_stats", {}),
                 }
             )
     return logits_by_step, residuals
@@ -736,7 +737,7 @@ def write_report(path: Path, metrics: Dict[str, Any]) -> None:
         f"- train path stages: `{task['path_stages'] or 'fixed hard range'}`",
         f"- mode: `{task['maze_mode']}`",
         f"- future_seed_scale: {task['future_seed_scale']}",
-        f"- state update: `{task['state_update_mode']}` scale={task['state_delta_scale']} decay={task['state_delta_decay']}",
+        f"- state update: `{task['state_update_mode']}` scale={task['state_delta_scale']} decay={task['state_delta_decay']} gate_bias={task.get('state_gate_bias', 2.0)}",
         f"- train loops: {task['train_loops']}",
         f"- eval loops: {task['eval_loops']}",
         f"- train CE: {train['train_ce_loss']:.4f}",
@@ -786,9 +787,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--noise_mode", choices=("gaussian", "feature_diff", "none"), default="none")
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_gate_bias", type=float, default=-2.0)
-    p.add_argument("--state_update_mode", choices=("none", "delta_carry"), default="none")
+    p.add_argument("--state_update_mode", choices=("none", "delta_carry", "learned_gate"), default="none")
     p.add_argument("--state_delta_scale", type=float, default=0.0)
     p.add_argument("--state_delta_decay", type=float, default=1.0)
+    p.add_argument("--state_gate_bias", type=float, default=2.0)
     p.add_argument("--forward_dtype", default="bfloat16")
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--weight_decay", type=float, default=0.1)
@@ -851,6 +853,7 @@ def main() -> None:
         "state_update_mode": args.state_update_mode,
         "state_delta_scale": args.state_delta_scale,
         "state_delta_decay": args.state_delta_decay,
+        "state_gate_bias": args.state_gate_bias,
         "H_init_std": 1.0,
         "L_init_std": 1.0,
     }
@@ -891,6 +894,7 @@ def main() -> None:
             "state_update_mode": args.state_update_mode,
             "state_delta_scale": args.state_delta_scale,
             "state_delta_decay": args.state_delta_decay,
+            "state_gate_bias": args.state_gate_bias,
             "params": param_count,
         },
         "train": train_metrics,

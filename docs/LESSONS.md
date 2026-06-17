@@ -269,6 +269,17 @@
   than showing a capacity breakout. Do not rerun the same D320 hard-from-step-1
   setup just for a final number. The next high-ROI Maze31 test is data/curriculum
   scaling, not another same-distribution width repeat.
+- Maze31 path-length curriculum is a negative result with a useful cause. The
+  `80-140` warmup reached only path F1 `0.1634` at step600, and the tighter
+  `120-200` bridge collapsed to path F1 `0.0164` at step400. Shorter paths make
+  PATH labels too sparse and encourage conservative non-PATH predictions. This
+  is worse than hard-from-start, which at least learns a broad path mask.
+- Maze31 simple depth scaling also does not open the frontier. Hidden-192 with
+  4 layers reaches loop12 path F1 `0.5364`, exact `0.0`, and loop gain `-0.0008`.
+  Loop1 and loop12 have almost identical precision/recall, so the loop is not
+  revising the state. Width-alone, depth-alone, and naive curriculum are all low
+  ROI now; the next useful step is a simple state-dynamics change or genuinely
+  larger effective compute, not another one-axis table entry.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

@@ -1,0 +1,17 @@
+{
+  "run_name": "maze31-densitybridge-d192-s2400-20260617T084558Z-d5a8258",
+  "status": "aborted",
+  "abort_time_utc": "2026-06-17T08:50:08Z",
+  "reason": "low_roi_density_preserving_curriculum_path_prediction_collapsed_by_step400",
+  "source_sha": "d5a82583fd3e4f160cf86731c05f35a1bc3fc445",
+  "remote_run_dir": "/huyang2/double-loop/.worktrees/maze31-densitybridge-d192-s2400-20260617T084558Z-d5a8258/runs/maze31-densitybridge-d192-s2400-20260617T084558Z-d5a8258",
+  "stopped_pid": 994,
+  "observed_steps": [100, 200, 300, 400],
+  "observed_train_curve": [
+    {"step":100,"ce":0.3496,"path_f1":0.0605,"exact":0.0,"path_range":"120-200"},
+    {"step":200,"ce":0.3457,"path_f1":0.0377,"exact":0.0,"path_range":"120-200"},
+    {"step":300,"ce":0.3438,"path_f1":0.0150,"exact":0.0,"path_range":"120-200"},
+    {"step":400,"ce":0.3438,"path_f1":0.0164,"exact":0.0,"path_range":"120-200"}
+  ],
+  "decision": "Stop path-length curriculum branch for now. Both 80-140 and 120-200 warmups encourage conservative non-PATH predictions instead of opening Maze31. Next test a clean depth scaling axis on the original hard range."
+}

@@ -171,14 +171,54 @@ def _maze_to_ids(open_mask: np.ndarray, start: Tuple[int, int], goal: Tuple[int,
     return inputs.reshape(-1), labels.reshape(-1)
 
 
-def make_batch(args: argparse.Namespace, batch_size: int, rng: np.random.Generator, device: torch.device) -> Dict[str, torch.Tensor]:
+PathStage = Tuple[int, int, int]
+
+
+def parse_path_stages(text: str) -> List[PathStage]:
+    stages: List[PathStage] = []
+    for raw in str(text or "").split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+        if ":" not in raw or "-" not in raw:
+            raise ValueError("path stages must look like min-max:steps,min-max:steps")
+        range_text, steps_text = raw.split(":", 1)
+        min_text, max_text = range_text.split("-", 1)
+        min_path = int(min_text)
+        max_path = int(max_text)
+        steps = int(steps_text)
+        if min_path < 1 or max_path < min_path or steps < 1:
+            raise ValueError("path stage ranges must be positive and ordered")
+        stages.append((min_path, max_path, steps))
+    return stages
+
+
+def path_range_for_step(stages: List[PathStage], step: int, default_range: Tuple[int, int]) -> Tuple[int, int]:
+    if not stages:
+        return default_range
+    total = 0
+    for min_path, max_path, duration in stages:
+        total += duration
+        if step <= total:
+            return min_path, max_path
+    return stages[-1][0], stages[-1][1]
+
+
+def make_batch(
+    args: argparse.Namespace,
+    batch_size: int,
+    rng: np.random.Generator,
+    device: torch.device,
+    path_range: Optional[Tuple[int, int]] = None,
+) -> Dict[str, torch.Tensor]:
     inputs: List[np.ndarray] = []
     labels: List[np.ndarray] = []
+    min_path, max_path = path_range or (args.min_path_length, args.max_path_length)
     for _ in range(batch_size):
         maze = _sample_maze(
             args.grid_size,
-            args.min_path_length,
-            args.max_path_length,
+            min_path,
+            max_path,
             args.maze_mode,
             args.wall_prob,
             rng,
@@ -577,12 +617,15 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     t0 = time.time()
     history: List[Dict[str, Any]] = []
+    path_stages = parse_path_stages(args.path_stages)
+    default_range = (args.min_path_length, args.max_path_length)
     last_loss = 0.0
     last_loop1 = 0.0
     last_metrics: Dict[str, float] = {}
     for step in range(1, args.steps + 1):
         model.train()
-        batch = make_batch(args, args.batch, rng, device)
+        train_path_range = path_range_for_step(path_stages, step, default_range)
+        batch = make_batch(args, args.batch, rng, device, path_range=train_path_range)
         logits_by_step, residuals = inner_rollout(model, batch, args.train_loops, noise_scale=args.noise_scale)
         losses = [loss_from_logits(logits, batch["labels"], args.path_loss_weight) for logits in logits_by_step]
         loss = losses[-1] if args.loop_loss == "final" else torch.stack(losses).mean()
@@ -602,13 +645,16 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "exact": last_metrics["label_exact"],
                 "zH_rms": residuals[-1]["zH_rms"],
                 "zL_rms": residuals[-1]["zL_rms"],
+                "train_min_path_length": train_path_range[0],
+                "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
             }
             history.append(row)
             print(
                 f"[eqr_maze] step={step:04d} ce={last_loss:.4f} loop1={last_loop1:.4f} "
                 f"path_f1={row['path_f1']:.4f} exact={row['exact']:.4f} "
-                f"zH={row['zH_rms']:.4f} zL={row['zL_rms']:.4f}",
+                f"zH={row['zH_rms']:.4f} zL={row['zL_rms']:.4f} "
+                f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
     return {
@@ -617,6 +663,10 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
+        "path_stages": [
+            {"min_path_length": min_path, "max_path_length": max_path, "steps": steps}
+            for min_path, max_path, steps in path_stages
+        ],
     }
 
 
@@ -646,6 +696,7 @@ def write_report(path: Path, metrics: Dict[str, Any]) -> None:
         "",
         f"- grid: {task['grid_size']}x{task['grid_size']}",
         f"- path range: {task['min_path_length']}-{task['max_path_length']}",
+        f"- train path stages: `{task['path_stages'] or 'fixed hard range'}`",
         f"- mode: `{task['maze_mode']}`",
         f"- future_seed_scale: {task['future_seed_scale']}",
         f"- train loops: {task['train_loops']}",
@@ -678,6 +729,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--wall_prob", type=float, default=0.37)
     p.add_argument("--min_path_length", type=int, default=32)
     p.add_argument("--max_path_length", type=int, default=56)
+    p.add_argument("--path_stages", default="")
     p.add_argument("--max_grid_attempts", type=int, default=200)
     p.add_argument("--max_start_attempts", type=int, default=200)
     p.add_argument("--steps", type=int, default=600)
@@ -720,6 +772,7 @@ def main() -> None:
 
     if args.grid_size % 2 == 0 and args.maze_mode == "perfect":
         raise ValueError("--grid_size must be odd for perfect mazes")
+    parse_path_stages(args.path_stages)
     if args.hidden_size % args.heads != 0:
         raise ValueError("--hidden_size must be divisible by --heads")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -782,6 +835,7 @@ def main() -> None:
             "maze_mode": args.maze_mode,
             "min_path_length": args.min_path_length,
             "max_path_length": args.max_path_length,
+            "path_stages": args.path_stages,
             "train_loops": args.train_loops,
             "eval_loops": args.eval_loops,
             "hidden_size": args.hidden_size,

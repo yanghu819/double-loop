@@ -263,6 +263,12 @@
   comparison. A D320 short capacity probe can decide whether the frontier is
   representation capacity or whether the next useful axis is curriculum/state
   dynamics. Do not extend the exact D192 Maze31 configuration.
+- The D320 Maze31 capacity probe was interrupted after step600 by the GPU1
+  lease, before final eval, but the early training curve is still informative:
+  path F1 stays around `0.56` with exact `0.0`, matching the D192 plateau rather
+  than showing a capacity breakout. Do not rerun the same D320 hard-from-step-1
+  setup just for a final number. The next high-ROI Maze31 test is data/curriculum
+  scaling, not another same-distribution width repeat.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

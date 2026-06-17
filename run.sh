@@ -116,6 +116,7 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     --wall_prob "${MAZE_WALL_PROB:-0.37}"
     --min_path_length "${MAZE_MIN_PATH_LENGTH:-32}"
     --max_path_length "${MAZE_MAX_PATH_LENGTH:-56}"
+    --path_stages "${MAZE_PATH_STAGES:-}"
     --max_grid_attempts "${MAZE_MAX_GRID_ATTEMPTS:-200}"
     --max_start_attempts "${MAZE_MAX_START_ATTEMPTS:-200}"
     --steps "${MAZE_STEPS:-600}"

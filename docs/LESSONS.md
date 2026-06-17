@@ -218,6 +218,35 @@
   FutureSeed loop8 path F1 was `0.5912`, base loop8 path F1 was `0.5905`, exact
   was `0.0` for both, and loop gain was only `+0.0008` for FutureSeed versus
   `+0.0000` for base.
+- The harder Maze21 pressure setting is the first useful non-Sudoku signal.
+  With 21x21 perfect mazes and path length 80-140, the 1200-step FutureSeed run
+  reached loop10 path F1 `0.8051`, while the matched base reached `0.7614`.
+  More importantly, FutureSeed showed a larger loop gain (`+0.1177` versus
+  `+0.0518`) and reduced over-predicted path mass more aggressively. This
+  suggests the loop is doing real path refinement, not just producing a static
+  one-pass mask.
+- The 2400-step Maze21 FutureSeed long-viz run opens exact path solving:
+  loop1 exact/path F1 is `0.0000`/`0.7817`, while loop10 exact/path F1 is
+  `0.9961`/`0.9997`. Train exact stayed zero through step1000, appeared at
+  step1400, jumped to `0.6250` by step1800, and reached `0.9531` at step2400.
+  The earlier 1200-step high-F1/no-exact result was therefore not a hard
+  mechanism ceiling; it was under-computed for exact global cleanup.
+- Maze21 visualizations show the actual loop behavior. Loop1 tends to mark a
+  broad connected path region with many false-positive corridors. Loops 2-4
+  remove most wrong branches while preserving the true path, and later loops
+  polish rare misses. In the largest-gain case 191, loop1 has F1 `0.5972` with
+  69 false positives and 16 misses; loop10 has F1 `1.0000` with zero false
+  positives and zero misses. This is useful evidence that recurrence is doing
+  iterative correction rather than a cosmetic confidence pass.
+- The current visualization selector mostly captured solved largest-gain cases.
+  That is good for explaining what the loop fixes, but not enough for studying
+  the rare remaining failures after loop10. The next visualization upgrade
+  should reserve final-failure cases first, then fill remaining slots with
+  largest-gain cases.
+- The Maze proxy reinforces the clean scaling principle: continue with more
+  compute, harder tasks, and simple recurrent state dynamics. Do not pivot to
+  selector, path repair, or handcrafted maze priors while this scalable route is
+  still producing clear gains.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

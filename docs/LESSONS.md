@@ -303,6 +303,15 @@
   is not enough; do not sweep gate bias. The next generic state update needs
   richer comparison/competition between candidate path hypotheses, not another
   scalar coverage knob.
+- State competition is a small move toward pruning but not yet a loop mechanism.
+  The `state_compete` run lets H state choose between previous, proposed, and
+  context-competed candidates. It improves the broad-mask operating point versus
+  readout-gate (`pred_frac 0.4556` vs `0.4646`, precision `0.4198` vs `0.4157`,
+  loop12 F1 `0.5874` vs `0.5851`), but loop gain is still `-0.0001`. The
+  softmax remains dominated by the proposed candidate (`~0.961` at loop12), so
+  it does not yet use later loops to revise. Next work should increase real
+  recurrence pressure or make the competing candidate stronger; do not turn this
+  into a seed/gate-bias table.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

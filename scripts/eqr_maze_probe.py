@@ -260,11 +260,12 @@ def inner_rollout(
     state_update_mode: str = "none",
     state_delta_scale: float = 0.0,
     state_delta_decay: float = 1.0,
-) -> Tuple[List[torch.Tensor], List[Dict[str, float]]]:
+) -> Tuple[List[torch.Tensor], List[Dict[str, float]], List[Dict[str, torch.Tensor]]]:
     set_noise_scale(model, noise_scale)
     carry = reset_inner_carry(model, batch)
     logits_by_step: List[torch.Tensor] = []
     residuals: List[Dict[str, float]] = []
+    aux_by_step: List[Dict[str, torch.Tensor]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
     state_update_mode = str(state_update_mode).lower()
     if state_update_mode not in {"none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross"}:
@@ -284,6 +285,7 @@ def inner_rollout(
                 z_L=(raw_l + loop_delta_scale * (raw_l - prev_l)).detach(),
             )
         logits_by_step.append(logits)
+        aux_by_step.append(dict(getattr(model.inner, "latest_state_aux", {})))
         with torch.no_grad():
             raw_zH = (raw_h - prev_h).to(torch.float32).square().mean().sqrt()
             raw_zL = (raw_l - prev_l).to(torch.float32).square().mean().sqrt()
@@ -297,7 +299,37 @@ def inner_rollout(
                     **getattr(model.inner, "latest_state_gate_stats", {}),
                 }
             )
-    return logits_by_step, residuals
+    with torch.no_grad():
+        for idx in range(len(aux_by_step) - 1):
+            context_logits = aux_by_step[idx].get("context_logits")
+            if context_logits is None:
+                continue
+            next_logits = logits_by_step[idx + 1]
+            mse = F.mse_loss(context_logits.to(torch.float32), next_logits.detach().to(torch.float32))
+            residuals[idx]["state_predict_next_logit_mse"] = float(mse.detach().cpu())
+    return logits_by_step, residuals, aux_by_step
+
+
+def predictive_state_loss(
+    logits_by_step: List[torch.Tensor],
+    aux_by_step: List[Dict[str, torch.Tensor]],
+    horizon: int,
+) -> torch.Tensor:
+    losses = []
+    horizon = max(1, int(horizon))
+    for idx, aux in enumerate(aux_by_step):
+        target_idx = idx + horizon
+        if target_idx >= len(logits_by_step):
+            continue
+        context_logits = aux.get("context_logits")
+        if context_logits is None:
+            continue
+        target = logits_by_step[target_idx].detach()
+        losses.append(F.mse_loss(context_logits.to(torch.float32), target.to(torch.float32)))
+    if not losses:
+        device = logits_by_step[-1].device if logits_by_step else torch.device("cpu")
+        return torch.zeros((), dtype=torch.float32, device=device)
+    return torch.stack(losses).mean()
 
 
 def loss_from_logits(logits: torch.Tensor, labels: torch.Tensor, path_weight: float) -> torch.Tensor:
@@ -648,7 +680,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         model.train()
         train_path_range = path_range_for_step(path_stages, step, default_range)
         batch = make_batch(args, args.batch, rng, device, path_range=train_path_range)
-        logits_by_step, residuals = inner_rollout(
+        logits_by_step, residuals, aux_by_step = inner_rollout(
             model,
             batch,
             args.train_loops,
@@ -658,13 +690,16 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             state_delta_decay=args.state_delta_decay,
         )
         losses = [loss_from_logits(logits, batch["labels"], args.path_loss_weight) for logits in logits_by_step]
-        loss = losses[-1] if args.loop_loss == "final" else torch.stack(losses).mean()
+        supervised_loss = losses[-1] if args.loop_loss == "final" else torch.stack(losses).mean()
+        pred_loss = predictive_state_loss(logits_by_step, aux_by_step, args.predictive_state_horizon)
+        loss = supervised_loss + float(args.predictive_state_weight) * pred_loss
         opt.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         opt.step()
         last_loss = float(losses[-1].detach().cpu())
         last_loop1 = float(losses[0].detach().cpu())
+        last_pred_loss = float(pred_loss.detach().cpu())
         if args.log_every and step % args.log_every == 0:
             last_metrics = metrics_from_logits(logits_by_step[-1], batch["labels"])
             row = {
@@ -675,6 +710,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "exact": last_metrics["label_exact"],
                 "zH_rms": residuals[-1]["zH_rms"],
                 "zL_rms": residuals[-1]["zL_rms"],
+                "predictive_state_loss": last_pred_loss,
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -684,12 +720,14 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"[eqr_maze] step={step:04d} ce={last_loss:.4f} loop1={last_loop1:.4f} "
                 f"path_f1={row['path_f1']:.4f} exact={row['exact']:.4f} "
                 f"zH={row['zH_rms']:.4f} zL={row['zL_rms']:.4f} "
+                f"pred={row['predictive_state_loss']:.4f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
     return {
         "train_ce_loss": last_loss,
         "train_loop1_loss": last_loop1,
+        "train_predictive_state_loss": last_pred_loss,
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
@@ -705,7 +743,7 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
     rng = np.random.default_rng(args.seed + 4000 + seed_offset)
     model.eval()
     batch = make_batch(args, args.eval_n, rng, device)
-    logits_by_step, residuals = inner_rollout(
+    logits_by_step, residuals, _aux_by_step = inner_rollout(
         model,
         batch,
         args.eval_loops,
@@ -800,6 +838,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--weight_decay", type=float, default=0.1)
     p.add_argument("--path_loss_weight", type=float, default=4.0)
     p.add_argument("--loop_loss", choices=("final", "all"), default="all")
+    p.add_argument("--predictive_state_weight", type=float, default=0.0)
+    p.add_argument("--predictive_state_horizon", type=int, default=1)
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -899,6 +939,8 @@ def main() -> None:
             "state_delta_scale": args.state_delta_scale,
             "state_delta_decay": args.state_delta_decay,
             "state_gate_bias": args.state_gate_bias,
+            "predictive_state_weight": args.predictive_state_weight,
+            "predictive_state_horizon": args.predictive_state_horizon,
             "params": param_count,
         },
         "train": train_metrics,

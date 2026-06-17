@@ -144,6 +144,8 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     --weight_decay "${EQR_WEIGHT_DECAY:-0.1}"
     --path_loss_weight "${MAZE_PATH_LOSS_WEIGHT:-4.0}"
     --loop_loss "${EQR_LOOP_LOSS:-all}"
+    --predictive_state_weight "${EQR_PREDICTIVE_STATE_WEIGHT:-0.0}"
+    --predictive_state_horizon "${EQR_PREDICTIVE_STATE_HORIZON:-1}"
     --grad_clip "${EQR_GRAD_CLIP:-1.0}"
     --seed "${SEED:-52}"
     --log_every "${MAZE_LOG_EVERY:-100}"

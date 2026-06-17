@@ -368,6 +368,41 @@ def context_improvement_loss(
     return torch.stack(losses).mean()
 
 
+def context_path_ranking_loss(
+    logits_by_step: List[torch.Tensor],
+    aux_by_step: List[Dict[str, torch.Tensor]],
+    labels: torch.Tensor,
+    margin: float,
+) -> torch.Tensor:
+    losses = []
+    margin = float(margin)
+    path_labels = labels == PATH_ID
+    for logits, aux in zip(logits_by_step, aux_by_step):
+        context_logits = aux.get("context_logits")
+        if context_logits is None:
+            continue
+        with torch.no_grad():
+            current_path = logits.detach().argmax(dim=-1) == PATH_ID
+            positive_mask = current_path & path_labels
+            negative_mask = current_path & ~path_labels
+        path_scores = context_logits[..., PATH_ID].to(torch.float32)
+        batch_losses = []
+        for sample_idx in range(path_scores.shape[0]):
+            pos = positive_mask[sample_idx]
+            neg = negative_mask[sample_idx]
+            if not bool(pos.any() and neg.any()):
+                continue
+            hardest_positive = path_scores[sample_idx][pos].min()
+            hardest_negative = path_scores[sample_idx][neg].max()
+            batch_losses.append(F.softplus(hardest_negative - hardest_positive + margin))
+        if batch_losses:
+            losses.append(torch.stack(batch_losses).mean())
+    if not losses:
+        device = logits_by_step[-1].device if logits_by_step else labels.device
+        return torch.zeros((), dtype=torch.float32, device=device)
+    return torch.stack(losses).mean()
+
+
 @torch.no_grad()
 def add_context_improvement_diagnostics(
     logits_by_step: List[torch.Tensor],
@@ -404,6 +439,70 @@ def add_context_improvement_diagnostics(
                 "context_improve_current_ce": float(current_mean.detach().cpu()),
                 "context_improve_context_ce": float(context_mean.detach().cpu()),
                 "context_improve_advantage": float((current_mean - context_mean).detach().cpu()),
+            }
+        )
+
+
+@torch.no_grad()
+def add_context_ranking_diagnostics(
+    logits_by_step: List[torch.Tensor],
+    aux_by_step: List[Dict[str, torch.Tensor]],
+    residuals: List[Dict[str, float]],
+    labels: torch.Tensor,
+    margin: float,
+) -> None:
+    margin = float(margin)
+    path_labels = labels == PATH_ID
+    for idx, (logits, aux) in enumerate(zip(logits_by_step, aux_by_step)):
+        context_logits = aux.get("context_logits")
+        if context_logits is None or idx >= len(residuals):
+            continue
+        current_path = logits.detach().argmax(dim=-1) == PATH_ID
+        positive_mask = current_path & path_labels
+        negative_mask = current_path & ~path_labels
+        path_scores = context_logits.detach()[..., PATH_ID].to(torch.float32)
+        sample_losses = []
+        sample_hard_margins = []
+        positive_scores = []
+        negative_scores = []
+        valid_samples = 0
+        for sample_idx in range(path_scores.shape[0]):
+            pos = positive_mask[sample_idx]
+            neg = negative_mask[sample_idx]
+            if not bool(pos.any() and neg.any()):
+                continue
+            valid_samples += 1
+            pos_scores = path_scores[sample_idx][pos]
+            neg_scores = path_scores[sample_idx][neg]
+            hardest_positive = pos_scores.min()
+            hardest_negative = neg_scores.max()
+            sample_losses.append(F.softplus(hardest_negative - hardest_positive + margin))
+            sample_hard_margins.append(hardest_positive - hardest_negative)
+            positive_scores.append(pos_scores.mean())
+            negative_scores.append(neg_scores.mean())
+        if sample_losses:
+            loss_value = torch.stack(sample_losses).mean()
+            hard_margin = torch.stack(sample_hard_margins).mean()
+            pos_mean = torch.stack(positive_scores).mean()
+            neg_mean = torch.stack(negative_scores).mean()
+            mean_margin = pos_mean - neg_mean
+        else:
+            loss_value = torch.zeros((), dtype=torch.float32, device=path_scores.device)
+            hard_margin = torch.zeros((), dtype=torch.float32, device=path_scores.device)
+            pos_mean = torch.zeros((), dtype=torch.float32, device=path_scores.device)
+            neg_mean = torch.zeros((), dtype=torch.float32, device=path_scores.device)
+            mean_margin = torch.zeros((), dtype=torch.float32, device=path_scores.device)
+        residuals[idx].update(
+            {
+                "context_rank_candidate_frac": float(current_path.to(torch.float32).mean().detach().cpu()),
+                "context_rank_positive_frac": float(positive_mask.to(torch.float32).mean().detach().cpu()),
+                "context_rank_negative_frac": float(negative_mask.to(torch.float32).mean().detach().cpu()),
+                "context_rank_valid_sample_frac": float(valid_samples / max(1, path_scores.shape[0])),
+                "context_rank_loss": float(loss_value.detach().cpu()),
+                "context_rank_hard_margin": float(hard_margin.detach().cpu()),
+                "context_rank_mean_margin": float(mean_margin.detach().cpu()),
+                "context_rank_positive_score": float(pos_mean.detach().cpu()),
+                "context_rank_negative_score": float(neg_mean.detach().cpu()),
             }
         )
 
@@ -774,10 +873,17 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             batch["labels"],
             args.context_improve_margin,
         )
+        rank_loss = context_path_ranking_loss(
+            logits_by_step,
+            aux_by_step,
+            batch["labels"],
+            args.context_rank_margin,
+        )
         loss = (
             supervised_loss
             + float(args.predictive_state_weight) * pred_loss
             + float(args.context_improve_weight) * improve_loss
+            + float(args.context_rank_weight) * rank_loss
         )
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -787,6 +893,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         last_loop1 = float(losses[0].detach().cpu())
         last_pred_loss = float(pred_loss.detach().cpu())
         last_improve_loss = float(improve_loss.detach().cpu())
+        last_rank_loss = float(rank_loss.detach().cpu())
         if args.log_every and step % args.log_every == 0:
             last_metrics = metrics_from_logits(logits_by_step[-1], batch["labels"])
             row = {
@@ -799,6 +906,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "zL_rms": residuals[-1]["zL_rms"],
                 "predictive_state_loss": last_pred_loss,
                 "context_improve_loss": last_improve_loss,
+                "context_rank_loss": last_rank_loss,
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -809,6 +917,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"path_f1={row['path_f1']:.4f} exact={row['exact']:.4f} "
                 f"zH={row['zH_rms']:.4f} zL={row['zL_rms']:.4f} "
                 f"pred={row['predictive_state_loss']:.4f} improve={row['context_improve_loss']:.4f} "
+                f"rank={row['context_rank_loss']:.4f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
@@ -817,6 +926,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_loop1_loss": last_loop1,
         "train_predictive_state_loss": last_pred_loss,
         "train_context_improve_loss": last_improve_loss,
+        "train_context_rank_loss": last_rank_loss,
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
@@ -847,6 +957,13 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
         residuals,
         batch["labels"],
         args.context_improve_margin,
+    )
+    add_context_ranking_diagnostics(
+        logits_by_step,
+        aux_by_step,
+        residuals,
+        batch["labels"],
+        args.context_rank_margin,
     )
     eval_clean: Dict[str, Any] = {}
     for idx, logits in enumerate(logits_by_step, start=1):
@@ -938,6 +1055,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--predictive_state_horizon", type=int, default=1)
     p.add_argument("--context_improve_weight", type=float, default=0.0)
     p.add_argument("--context_improve_margin", type=float, default=0.01)
+    p.add_argument("--context_rank_weight", type=float, default=0.0)
+    p.add_argument("--context_rank_margin", type=float, default=0.25)
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -1041,6 +1160,8 @@ def main() -> None:
             "predictive_state_horizon": args.predictive_state_horizon,
             "context_improve_weight": args.context_improve_weight,
             "context_improve_margin": args.context_improve_margin,
+            "context_rank_weight": args.context_rank_weight,
+            "context_rank_margin": args.context_rank_margin,
             "params": param_count,
         },
         "train": train_metrics,

@@ -538,6 +538,74 @@ def add_context_ranking_diagnostics(
         )
 
 
+def path_mass_pressure_loss(
+    logits_by_step: List[torch.Tensor],
+    labels: torch.Tensor,
+    start_loop: int,
+    recall_margin: float,
+) -> torch.Tensor:
+    if not logits_by_step:
+        return torch.zeros((), dtype=torch.float32, device=labels.device)
+    path_labels = labels == PATH_ID
+    non_path = ~path_labels
+    start_idx = max(0, int(start_loop) - 1)
+    with torch.no_grad():
+        base_prob = logits_by_step[0].detach().to(torch.float32).softmax(dim=-1)[..., PATH_ID]
+        base_pos_prob = (base_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
+    losses = []
+    margin = float(recall_margin)
+    for logits in logits_by_step[start_idx:]:
+        path_prob = logits.to(torch.float32).softmax(dim=-1)[..., PATH_ID]
+        neg_mass = (path_prob * non_path).sum(dim=-1) / non_path.sum(dim=-1).clamp_min(1)
+        pos_prob = (path_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
+        recall_guard = F.relu(base_pos_prob - pos_prob + margin).square()
+        losses.append((neg_mass + recall_guard).mean())
+    if not losses:
+        return torch.zeros((), dtype=torch.float32, device=labels.device)
+    return torch.stack(losses).mean()
+
+
+@torch.no_grad()
+def add_path_mass_diagnostics(
+    logits_by_step: List[torch.Tensor],
+    residuals: List[Dict[str, float]],
+    labels: torch.Tensor,
+    start_loop: int,
+    recall_margin: float,
+) -> None:
+    if not logits_by_step:
+        return
+    path_labels = labels == PATH_ID
+    non_path = ~path_labels
+    label_frac = path_labels.to(torch.float32).mean()
+    start_idx = max(0, int(start_loop) - 1)
+    base_prob = logits_by_step[0].detach().to(torch.float32).softmax(dim=-1)[..., PATH_ID]
+    base_pos_prob = (base_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
+    margin = float(recall_margin)
+    for idx, logits in enumerate(logits_by_step):
+        if idx >= len(residuals):
+            continue
+        path_prob = logits.detach().to(torch.float32).softmax(dim=-1)[..., PATH_ID]
+        pred_path = logits.detach().argmax(dim=-1) == PATH_ID
+        neg_mass = (path_prob * non_path).sum(dim=-1) / non_path.sum(dim=-1).clamp_min(1)
+        pos_prob = (path_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
+        prob_frac = path_prob.mean()
+        recall_guard = F.relu(base_pos_prob - pos_prob + margin).square()
+        residuals[idx].update(
+            {
+                "path_mass_active": float(idx >= start_idx),
+                "path_mass_label_frac": float(label_frac.detach().cpu()),
+                "path_mass_prob_frac": float(prob_frac.detach().cpu()),
+                "path_mass_excess_prob_frac": float((prob_frac - label_frac).detach().cpu()),
+                "path_mass_positive_prob": float(pos_prob.mean().detach().cpu()),
+                "path_mass_negative_prob": float(neg_mass.mean().detach().cpu()),
+                "path_mass_loop1_positive_prob": float(base_pos_prob.mean().detach().cpu()),
+                "path_mass_recall_guard_loss": float(recall_guard.mean().detach().cpu()),
+                "path_mass_hard_pred_frac": float(pred_path.to(torch.float32).mean().detach().cpu()),
+            }
+        )
+
+
 def loss_from_logits(logits: torch.Tensor, labels: torch.Tensor, path_weight: float) -> torch.Tensor:
     loss = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1), reduction="none").view_as(labels)
     if path_weight != 1.0:
@@ -911,11 +979,18 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             args.context_rank_margin,
             args.context_rank_mode,
         )
+        mass_loss = path_mass_pressure_loss(
+            logits_by_step,
+            batch["labels"],
+            args.path_mass_start_loop,
+            args.path_mass_recall_margin,
+        )
         loss = (
             supervised_loss
             + float(args.predictive_state_weight) * pred_loss
             + float(args.context_improve_weight) * improve_loss
             + float(args.context_rank_weight) * rank_loss
+            + float(args.path_mass_weight) * mass_loss
         )
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -926,6 +1001,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         last_pred_loss = float(pred_loss.detach().cpu())
         last_improve_loss = float(improve_loss.detach().cpu())
         last_rank_loss = float(rank_loss.detach().cpu())
+        last_mass_loss = float(mass_loss.detach().cpu())
         if args.log_every and step % args.log_every == 0:
             last_metrics = metrics_from_logits(logits_by_step[-1], batch["labels"])
             row = {
@@ -939,6 +1015,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "predictive_state_loss": last_pred_loss,
                 "context_improve_loss": last_improve_loss,
                 "context_rank_loss": last_rank_loss,
+                "path_mass_loss": last_mass_loss,
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -949,7 +1026,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"path_f1={row['path_f1']:.4f} exact={row['exact']:.4f} "
                 f"zH={row['zH_rms']:.4f} zL={row['zL_rms']:.4f} "
                 f"pred={row['predictive_state_loss']:.4f} improve={row['context_improve_loss']:.4f} "
-                f"rank={row['context_rank_loss']:.4f} "
+                f"rank={row['context_rank_loss']:.4f} mass={row['path_mass_loss']:.4f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
@@ -959,6 +1036,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_predictive_state_loss": last_pred_loss,
         "train_context_improve_loss": last_improve_loss,
         "train_context_rank_loss": last_rank_loss,
+        "train_path_mass_loss": last_mass_loss,
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
@@ -997,6 +1075,13 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
         batch["labels"],
         args.context_rank_margin,
         args.context_rank_mode,
+    )
+    add_path_mass_diagnostics(
+        logits_by_step,
+        residuals,
+        batch["labels"],
+        args.path_mass_start_loop,
+        args.path_mass_recall_margin,
     )
     eval_clean: Dict[str, Any] = {}
     for idx, logits in enumerate(logits_by_step, start=1):
@@ -1101,6 +1186,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--context_rank_weight", type=float, default=0.0)
     p.add_argument("--context_rank_margin", type=float, default=0.25)
     p.add_argument("--context_rank_mode", choices=("hard", "dense"), default="hard")
+    p.add_argument("--path_mass_weight", type=float, default=0.0)
+    p.add_argument("--path_mass_start_loop", type=int, default=4)
+    p.add_argument("--path_mass_recall_margin", type=float, default=0.0)
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -1211,6 +1299,9 @@ def main() -> None:
             "context_rank_weight": args.context_rank_weight,
             "context_rank_margin": args.context_rank_margin,
             "context_rank_mode": args.context_rank_mode,
+            "path_mass_weight": args.path_mass_weight,
+            "path_mass_start_loop": args.path_mass_start_loop,
+            "path_mass_recall_margin": args.path_mass_recall_margin,
             "params": param_count,
         },
         "train": train_metrics,

@@ -18,9 +18,9 @@ export PATH="$REPO_ROOT/.cache/bin:$PATH"
 mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
 
 case "$MODE" in
-  smoke|full|eqr_probe) ;;
+  smoke|full|eqr_probe|eqr_maze_probe) ;;
   *)
-    printf 'Usage: %s [smoke|full|eqr_probe]\n' "$0" >&2
+    printf 'Usage: %s [smoke|full|eqr_probe|eqr_maze_probe]\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -105,6 +105,59 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(payload, f, indent=2)
     f.write("\n")
 PY
+
+if [[ "$MODE" == "eqr_maze_probe" ]]; then
+  MAZE_ARGS=(
+    --repo_root "$REPO_ROOT"
+    --eqr_dir "${EQR_DIR:-$REPO_ROOT/repos/eqr}"
+    --out_dir "$OUT_DIR"
+    --grid_size "${MAZE_GRID_SIZE:-15}"
+    --maze_mode "${MAZE_MODE:-perfect}"
+    --wall_prob "${MAZE_WALL_PROB:-0.37}"
+    --min_path_length "${MAZE_MIN_PATH_LENGTH:-32}"
+    --max_path_length "${MAZE_MAX_PATH_LENGTH:-56}"
+    --max_grid_attempts "${MAZE_MAX_GRID_ATTEMPTS:-200}"
+    --max_start_attempts "${MAZE_MAX_START_ATTEMPTS:-200}"
+    --steps "${MAZE_STEPS:-600}"
+    --batch "${MAZE_BATCH:-128}"
+    --eval_n "${MAZE_EVAL_N:-512}"
+    --hidden_size "${EQR_HIDDEN_SIZE:-128}"
+    --heads "${EQR_HEADS:-4}"
+    --layers "${EQR_LAYERS:-1}"
+    --h_cycles "${EQR_H_CYCLES:-2}"
+    --l_cycles "${EQR_L_CYCLES:-4}"
+    --train_loops "${EQR_TRAIN_LOOPS:-4}"
+    --eval_loops "${EQR_EVAL_LOOPS:-8}"
+    --expansion "${EQR_EXPANSION:-4.0}"
+    --lambda_ "${EQR_LAMBDA:-0.95}"
+    --noise_scale "${EQR_NOISE_SCALE:-0.0}"
+    --noise_mode "${EQR_NOISE_MODE:-none}"
+    --future_seed_scale "${EQR_FUTURE_SEED_SCALE:-1.0}"
+    --future_seed_gate_bias "${EQR_FUTURE_SEED_GATE_BIAS:--2.0}"
+    --forward_dtype "${EQR_FORWARD_DTYPE:-bfloat16}"
+    --lr "${EQR_LR:-3e-4}"
+    --weight_decay "${EQR_WEIGHT_DECAY:-0.1}"
+    --path_loss_weight "${MAZE_PATH_LOSS_WEIGHT:-4.0}"
+    --loop_loss "${EQR_LOOP_LOSS:-all}"
+    --grad_clip "${EQR_GRAD_CLIP:-1.0}"
+    --seed "${SEED:-52}"
+    --log_every "${MAZE_LOG_EVERY:-100}"
+  )
+
+  printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"
+  (
+    cd "$REPO_ROOT"
+    if [[ -n "$PYTHON_BIN" ]]; then
+      "$PYTHON_BIN" scripts/eqr_maze_probe.py "${MAZE_ARGS[@]}"
+    else
+      UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python scripts/eqr_maze_probe.py "${MAZE_ARGS[@]}"
+    fi
+  ) 2>&1 | tee -a "$LOG_DIR/run.log"
+
+  python3 "$REPO_ROOT/scripts/record_experiment.py" --run-dir "$RUN_DIR" --mode "$MODE"
+  printf 'completed run_dir=%s\n' "$RUN_DIR"
+  exit 0
+fi
 
 if [[ "$MODE" == "eqr_probe" ]]; then
   if [[ "${SKIP_DOWN:-0}" != "1" ]]; then

@@ -247,6 +247,22 @@
   compute, harder tasks, and simple recurrent state dynamics. Do not pivot to
   selector, path repair, or handcrafted maze priors while this scalable route is
   still producing clear gains.
+- Maze31 is the first clear failure frontier for the current small maze model.
+  With 31x31 perfect mazes, path length 160-260, hidden 192, 2 layers, train
+  loops 6 and eval loops 12, the run finishes at loop12 path F1 `0.5094` and
+  exact `0.0000`; loop1 path F1 is `0.5203`, so the loop gain is negative
+  (`-0.0109`). Training F1 oscillates around `0.55` from step200 through
+  step1800 and CE stays near `0.35`, unlike Maze21 where exact opens late.
+- The Maze31 failure visualizations are qualitatively different from Maze21.
+  Maze21 loop1 gave a broad but useful path guess that later loops pruned. In
+  Maze31 D192, loop1 already misses too much of the true path and later loops
+  mostly preserve a wrong mask. Case 71 drops from loop1 F1 `0.3478` to loop12
+  F1 `0.1763`, with false negatives rising from 87 to 127. This rejects "just
+  add eval loops" as the next answer for Maze31.
+- The immediate high-ROI Maze31 question is effective capacity, not base
+  comparison. A D320 short capacity probe can decide whether the frontier is
+  representation capacity or whether the next useful axis is curriculum/state
+  dynamics. Do not extend the exact D192 Maze31 configuration.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

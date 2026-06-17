@@ -390,6 +390,7 @@ def write_visualizations(out_dir: Path, payload: Dict[str, Any]) -> None:
     viz_dir = out_dir / "visualizations"
     viz_dir.mkdir(parents=True, exist_ok=True)
     (viz_dir / "cases.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_casebook(viz_dir / "casebook.md", payload)
     n = int(payload["grid_size"])
     lines = [
         "<!doctype html>",
@@ -409,7 +410,7 @@ def write_visualizations(out_dir: Path, payload: Dict[str, Any]) -> None:
         "</style>",
         "</head>",
         "<body>",
-        "<h1>Maze21 Loop Visualization</h1>",
+        f"<h1>Maze {n}x{n} Loop Visualization</h1>",
         f"<p>Grid {n}x{n}. T=true path predicted, F=false positive path, M=missed true path.</p>",
         '<div class="legend"><span># wall</span><span>S start</span><span>G goal</span><span>T true positive</span><span>F extra predicted path</span><span>M missed true path</span></div>',
     ]
@@ -428,6 +429,50 @@ def write_visualizations(out_dir: Path, payload: Dict[str, Any]) -> None:
         lines.extend(["</div>", "</article>"])
     lines.extend(["</body>", "</html>"])
     (viz_dir / "index.html").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_casebook(path: Path, payload: Dict[str, Any]) -> None:
+    n = int(payload["grid_size"])
+    lines = [
+        f"# Maze {n}x{n} Loop Trajectory Casebook",
+        "",
+        "Legend: `#` wall, `S` start, `G` goal, `T` correct predicted path, "
+        "`F` false-positive path, `M` missed true path, `.` open non-path cell.",
+        "",
+        "Cases are selected in this order: final failures, hard low-F1 cases, "
+        "final over-prediction cases, then largest loop-gain solved cases.",
+        "",
+    ]
+    preferred_loops = {"loop1", "loop2", "loop4", "loop6", "loop10"}
+    for case in payload["cases"]:
+        stats = case["loop_stats"]
+        final_key = case["loop_order"][-1]
+        loop1 = stats[case["loop_order"][0]]
+        final = stats[final_key]
+        lines.extend(
+            [
+                f"## Case {case['case_index']} ({case['reason']})",
+                "",
+                (
+                    f"Loop gain: `{case['loop_gain']:.4f}`. "
+                    f"First loop F1 `{loop1['path_f1']:.4f}` with "
+                    f"{int(loop1['false_positive_path'])} false positives and "
+                    f"{int(loop1['false_negative_path'])} misses. "
+                    f"{final_key} F1 `{final['path_f1']:.4f}` with "
+                    f"{int(final['false_positive_path'])} false positives and "
+                    f"{int(final['false_negative_path'])} misses. "
+                    f"Final exact `{case['final_exact']:.4f}`."
+                ),
+                "",
+            ]
+        )
+        for loop_key in case["loop_order"]:
+            if loop_key not in preferred_loops and loop_key != final_key:
+                continue
+            lines.extend([f"### {loop_key}", "", "```text"])
+            lines.extend(case["comparison_rows"][loop_key])
+            lines.extend(["```", ""])
+    path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def build_visualization_payload(
@@ -449,13 +494,23 @@ def build_visualization_payload(
     loop1 = loops[0]
     final_loop = loops[-1]
     final_f1 = stats_np[final_loop]["path_f1"]
+    final_exact = stats_np[final_loop]["label_exact"]
     loop_gain = final_f1 - stats_np[loop1]["path_f1"]
     over_pred = stats_np[final_loop]["path_pred_frac"] - stats_np[final_loop]["path_label_frac"]
+    final_fp = stats_np[final_loop]["false_positive_path"]
+    final_fn = stats_np[final_loop]["false_negative_path"]
+
+    final_failures = np.where(final_exact < 0.5)[0]
+    if final_failures.size:
+        final_failures = final_failures[
+            np.lexsort((-final_fn[final_failures], -final_fp[final_failures], final_f1[final_failures]))
+        ]
 
     orders = [
-        ("largest loop gain", np.argsort(-loop_gain)),
+        ("final failure", final_failures),
         ("hard final low f1", np.argsort(final_f1)),
         ("most final over-prediction", np.argsort(-over_pred)),
+        ("largest loop gain", np.argsort(-loop_gain)),
     ]
     selected: List[int] = []
     reasons: Dict[int, str] = {}

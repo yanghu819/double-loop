@@ -253,6 +253,21 @@
   decision-boundary update, such as learned threshold or normalization state,
   that can actually turn score gaps into mask sparsity without maze repair or
   rule priors.
+- The direct learned decision-boundary probe
+  (`maze31-boundary-d256l4-s800-20260617T224859Z-d538baa`) shows that the
+  boundary can move, but current training pressure moves it in the wrong
+  direction. Loop12 path F1 was `0.5854`, loop gain `-0.0003`, precision
+  `0.4177 -> 0.4173`, and predicted path fraction `0.4587 -> 0.4593`. The
+  learned threshold was not tiny: abs mean was about `0.30`. But raw path
+  fraction was only `0.4339` at loop12 and calibration expanded it to `0.4606`;
+  prune-flip fraction was `0.0` while add-flip fraction was `0.0267`. Ten hard
+  visualized cases got slightly wider, with false positives `283.5 -> 285.1`.
+  This reframes the bottleneck: a learned threshold is trainable and can affect
+  predictions, but CE plus path-weight pressure rewards high-recall expansion
+  once the true path is covered. Do not sweep threshold scale, gate bias, seed,
+  or ranking variants. The next useful mechanism should alter generic recurrent
+  training pressure so later loops are rewarded for reducing excess predicted
+  mass without maze repair or topology rules.
 - The current visualization selector mostly captured solved largest-gain cases.
   That is good for explaining what the loop fixes, but not enough for studying
   the rare remaining failures after loop10. The next visualization upgrade

@@ -119,7 +119,7 @@ index 14605c5..e5c3fb3 100644
      if isinstance(stds, dict):
          if "H_init_std" in arch_overrides:
 diff --git a/models/eqr.py b/models/eqr.py
-index 8084f2b..5993703 100644
+index 8084f2b..dbcce52 100644
 --- a/models/eqr.py
 +++ b/models/eqr.py
 @@ -11,6 +11,14 @@ from models.layers import Attention, CastedEmbedding, CastedLinear, CosSin, Rota
@@ -361,10 +361,10 @@ index 8084f2b..5993703 100644
          z_H = self.L_level(z_H, z_L, **seq)
          return z_H, z_L
  
-@@ -213,17 +400,21 @@ class InnerNetwork(nn.Module):
+@@ -211,19 +398,23 @@ class InnerNetwork(nn.Module):
+             self._input_embeddings(batch["inputs"], batch["puzzle_identifiers"]),
+             {"cos_sin": self._cos_sin()},
          )
-         logits = self.lm_head(z_H[:, self.config.puzzle_emb_len :]).contiguous()
-         q = self.q_head(z_H[:, 0]).to(torch.float32)
 +        if self.state_gate_h is not None and self.state_gate_l is not None:
 +            z_H, gate_h = self.state_gate_h(carry.z_H, z_H)
 +            z_L, gate_l = self.state_gate_l(carry.z_L, z_L)
@@ -377,6 +377,8 @@ index 8084f2b..5993703 100644
 +                }
 +        else:
 +            self.latest_state_gate_stats = {}
+         logits = self.lm_head(z_H[:, self.config.puzzle_emb_len :]).contiguous()
+         q = self.q_head(z_H[:, 0]).to(torch.float32)
          return LatentCarry(z_H=z_H.detach(), z_L=z_L.detach()), logits, q[..., 0]
  
  

@@ -294,6 +294,15 @@
   `0.1217` and recall to `0.2846`, yielding path F1 `0.3481`. This supports the
   state-dynamics thesis but rejects fixed sign/scale carry transforms; next work
   should be a small learned/gated update that can adaptively keep or prune.
+- The first learned-gate implementation was diagnostic: applying the gate after
+  logits left it untrained because loop carry is detached between calls. The
+  corrected readout-gated run proves the gate can learn (`H` gate mean moves
+  `0.896 -> 0.876`, std nonzero), but it still does not reopen recurrence:
+  loop12 path F1 is `0.5851`, loop gain is only `+0.0001`, and predicted PATH
+  fraction rises to `0.4646` versus true `0.1932`. A simple per-token keep gate
+  is not enough; do not sweep gate bias. The next generic state update needs
+  richer comparison/competition between candidate path hypotheses, not another
+  scalar coverage knob.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

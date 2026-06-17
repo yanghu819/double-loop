@@ -257,22 +257,43 @@ def inner_rollout(
     batch: Dict[str, torch.Tensor],
     steps: int,
     noise_scale: float,
+    state_update_mode: str = "none",
+    state_delta_scale: float = 0.0,
+    state_delta_decay: float = 1.0,
 ) -> Tuple[List[torch.Tensor], List[Dict[str, float]]]:
     set_noise_scale(model, noise_scale)
     carry = reset_inner_carry(model, batch)
     logits_by_step: List[torch.Tensor] = []
     residuals: List[Dict[str, float]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
-    for _ in range(steps):
+    state_update_mode = str(state_update_mode).lower()
+    if state_update_mode not in {"none", "delta_carry"}:
+        raise ValueError(f"unknown state_update_mode: {state_update_mode}")
+    for idx in range(steps):
         prev_h = carry.z_H
         prev_l = carry.z_L
         carry, logits, _q = model.inner(carry, inner_batch)
+        raw_h = carry.z_H
+        raw_l = carry.z_L
+        loop_delta_scale = float(state_delta_scale) * (float(state_delta_decay) ** idx)
+        if state_update_mode == "delta_carry" and loop_delta_scale != 0.0:
+            # Extrapolate a small fraction of the just-computed correction into
+            # the next recurrent state. Logits for this loop stay unchanged.
+            carry = type(carry)(
+                z_H=(raw_h + loop_delta_scale * (raw_h - prev_h)).detach(),
+                z_L=(raw_l + loop_delta_scale * (raw_l - prev_l)).detach(),
+            )
         logits_by_step.append(logits)
         with torch.no_grad():
+            raw_zH = (raw_h - prev_h).to(torch.float32).square().mean().sqrt()
+            raw_zL = (raw_l - prev_l).to(torch.float32).square().mean().sqrt()
             residuals.append(
                 {
                     "zH_rms": float((carry.z_H - prev_h).to(torch.float32).square().mean().sqrt().detach().cpu()),
                     "zL_rms": float((carry.z_L - prev_l).to(torch.float32).square().mean().sqrt().detach().cpu()),
+                    "raw_zH_rms": float(raw_zH.detach().cpu()),
+                    "raw_zL_rms": float(raw_zL.detach().cpu()),
+                    "state_delta_scale": loop_delta_scale,
                 }
             )
     return logits_by_step, residuals
@@ -626,7 +647,15 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         model.train()
         train_path_range = path_range_for_step(path_stages, step, default_range)
         batch = make_batch(args, args.batch, rng, device, path_range=train_path_range)
-        logits_by_step, residuals = inner_rollout(model, batch, args.train_loops, noise_scale=args.noise_scale)
+        logits_by_step, residuals = inner_rollout(
+            model,
+            batch,
+            args.train_loops,
+            noise_scale=args.noise_scale,
+            state_update_mode=args.state_update_mode,
+            state_delta_scale=args.state_delta_scale,
+            state_delta_decay=args.state_delta_decay,
+        )
         losses = [loss_from_logits(logits, batch["labels"], args.path_loss_weight) for logits in logits_by_step]
         loss = losses[-1] if args.loop_loss == "final" else torch.stack(losses).mean()
         opt.zero_grad(set_to_none=True)
@@ -675,7 +704,15 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
     rng = np.random.default_rng(args.seed + 4000 + seed_offset)
     model.eval()
     batch = make_batch(args, args.eval_n, rng, device)
-    logits_by_step, residuals = inner_rollout(model, batch, args.eval_loops, noise_scale=0.0)
+    logits_by_step, residuals = inner_rollout(
+        model,
+        batch,
+        args.eval_loops,
+        noise_scale=0.0,
+        state_update_mode=args.state_update_mode,
+        state_delta_scale=args.state_delta_scale,
+        state_delta_decay=args.state_delta_decay,
+    )
     eval_clean: Dict[str, Any] = {}
     for idx, logits in enumerate(logits_by_step, start=1):
         eval_clean[f"loop{idx}"] = metrics_from_logits(logits, batch["labels"])
@@ -699,6 +736,7 @@ def write_report(path: Path, metrics: Dict[str, Any]) -> None:
         f"- train path stages: `{task['path_stages'] or 'fixed hard range'}`",
         f"- mode: `{task['maze_mode']}`",
         f"- future_seed_scale: {task['future_seed_scale']}",
+        f"- state update: `{task['state_update_mode']}` scale={task['state_delta_scale']} decay={task['state_delta_decay']}",
         f"- train loops: {task['train_loops']}",
         f"- eval loops: {task['eval_loops']}",
         f"- train CE: {train['train_ce_loss']:.4f}",
@@ -748,6 +786,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--noise_mode", choices=("gaussian", "feature_diff", "none"), default="none")
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_gate_bias", type=float, default=-2.0)
+    p.add_argument("--state_update_mode", choices=("none", "delta_carry"), default="none")
+    p.add_argument("--state_delta_scale", type=float, default=0.0)
+    p.add_argument("--state_delta_decay", type=float, default=1.0)
     p.add_argument("--forward_dtype", default="bfloat16")
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--weight_decay", type=float, default=0.1)
@@ -807,6 +848,9 @@ def main() -> None:
         "feature_noise_fallback": "zero",
         "future_seed_scale": args.future_seed_scale,
         "future_seed_gate_bias": args.future_seed_gate_bias,
+        "state_update_mode": args.state_update_mode,
+        "state_delta_scale": args.state_delta_scale,
+        "state_delta_decay": args.state_delta_decay,
         "H_init_std": 1.0,
         "L_init_std": 1.0,
     }
@@ -844,6 +888,9 @@ def main() -> None:
             "h_cycles": args.h_cycles,
             "l_cycles": args.l_cycles,
             "future_seed_scale": args.future_seed_scale,
+            "state_update_mode": args.state_update_mode,
+            "state_delta_scale": args.state_delta_scale,
+            "state_delta_decay": args.state_delta_decay,
             "params": param_count,
         },
         "train": train_metrics,

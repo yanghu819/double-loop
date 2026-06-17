@@ -374,6 +374,21 @@
   too sparse or too hard. Do not seed-sweep it; make the pruning signal smoother
   or denser, or expose uncertainty/candidate contrast directly in the recurrent
   state update.
+- Dense pairwise ranking fixes the average score separation but still does not
+  produce loop-time pruning. The dense context-ranking probe used all true-path
+  versus false-positive PATH pairs inside the current predicted PATH set
+  (`weight=0.05`, `margin=0.25`, mode `dense`). It reaches loop12 path F1
+  `0.5857`, exact `0.0`, and loop gain `+0.0003`. Precision and predicted path
+  fraction move in the desired direction but only slightly (`0.4162 -> 0.4166`,
+  `0.4634 -> 0.4629`), with recall nearly unchanged (`0.9984 -> 0.9982`).
+  Unlike hard ranking, dense ranking learns a real average score preference:
+  loop12 positive PATH score `4.0795` versus false-positive score `4.0246`,
+  mean margin `+0.0548`. But the hard margin remains very negative (`-1.234`),
+  ranking loss stays around `0.815`, and hard-case false positives barely move
+  (`286.4 -> 286.2` average). The lesson: average pairwise preference is not
+  enough to change the recurrent operating point. The next state-dynamics work
+  should expose uncertainty/candidate contrast to the state or learn a simple
+  threshold/normalization mechanism; do not keep adding ranking-loss variants.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

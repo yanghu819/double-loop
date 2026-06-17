@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "cc01d1d4cf2b83446801d8ca79137208fa6b5e51",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 dense context path ranking probe from SHA cc01d1d. Mechanism: all true-path vs false-positive PATH pairs inside current predicted PATH candidate set contribute softplus ranking loss; weight=0.05 margin=0.25 mode=dense; no maze rules/search/repair/selector or seed/bias/temp sweep. Completed 800 steps in 678.0s. Loop12 path_f1=0.5857, exact=0.0, loop gain=+0.0003. Loop1/loop12 precision 0.4162/0.4166, recall 0.9984/0.9982, pred_frac 0.4634/0.4629. Candidate weights stayed diverse at loop12 keep/proposed/context=0.400/0.460/0.141 and context_minus_proposed_rms=1.060. Dense ranking learned a mean score gap: positive_score 4.0795 vs negative_score 4.0246, mean_margin=+0.0548, unlike hard ranking where mean gap was near zero. But hard margin stayed very negative (-1.234), rank loss stayed ~0.815, and visualized false positives barely changed (avg 286.4->286.2). Lesson: dense ranking is more optimizable and creates a real average preference, but average preference is insufficient for exact pruning; next work should put uncertainty/contrast into recurrent state or use a mechanism that changes the operating threshold, not just add another ranking loss.",
+  "recorded_at_utc": "2026-06-17T20:59:46.952098+00:00",
+  "run_name": "maze31-cross-denserank-w005m025-d256l4-s800-20260617T204516Z-cc01d1d",
+  "score": 0.5857375860214233,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-17T20:53:43.453481+00:00"
+}

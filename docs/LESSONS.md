@@ -333,6 +333,18 @@
   alternative state must learn to carry error-correcting information across
   loops, likely via a simple temporal/predictive state objective rather than
   more gate, bias, temperature, or seed sweeps.
+- Naive temporal prediction is learnable but teaches self-copying, not
+  correction. The `state_compete_cross` predictive probe trained context logits
+  at loop `t` to match stop-gradient logits at loop `t+1` with weight `0.1`.
+  The predictive loss fell from `0.0094` to `0.0018`, and eval next-logit MSE
+  fell to about `0.001`, so the auxiliary task worked mechanically. But loop12
+  path F1 was only `0.5837`, exact `0.0`, and loop gain was effectively `0`.
+  Precision/predicted fraction stayed frozen at `0.4142/0.4664`, recall was
+  `1.0`, and casebook failures copied `290` false positives from loop1 to
+  loop12. The lesson is sharp: predicting the next recurrent output just
+  distills the broad mask. The next high-ROI objective must be improvement-aware
+  or residual/contrastive, predicting how a later loop is better than loop1
+  rather than predicting the next logits themselves.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

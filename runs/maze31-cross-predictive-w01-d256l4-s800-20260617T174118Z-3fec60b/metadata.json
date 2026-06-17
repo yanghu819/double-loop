@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "3fec60b04ae6a69cdbbf5a2b7c3e04ef7a72a153",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 predictive-state objective probe from SHA 3fec60b. Mechanism: state_compete_cross context logits at loop t predict stop-gradient logits at loop t+1, weight=0.1 horizon=1; no maze rules/search/repair/selector or seed/bias sweep. Completed 800 steps. Predictive loss fell 0.0094->0.0018 and eval next-logit MSE fell to ~0.001, so the objective was learned. But loop12 path_f1=0.5837, exact=0.0, loop gain ~=0.0000; loop1/loop12 precision 0.4142/0.4142, recall 1.0/1.0, pred_frac 0.4664/0.4664. Candidate weights stayed diverse but shifted toward context: loop12 keep/proposed/context=0.388/0.261/0.351. Lesson: naive future-logit prediction teaches self-copying of the broad mask, not correction; next predictive target must be improvement-aware or contrastive, not simple next-step imitation.",
+  "recorded_at_utc": "2026-06-17T18:00:35.796035+00:00",
+  "run_name": "maze31-cross-predictive-w01-d256l4-s800-20260617T174118Z-3fec60b",
+  "score": 0.5837262272834778,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-17T17:53:41.878117+00:00"
+}

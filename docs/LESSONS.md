@@ -238,6 +238,21 @@
   69 false positives and 16 misses; loop10 has F1 `1.0000` with zero false
   positives and zero misses. This is useful evidence that recurrence is doing
   iterative correction rather than a cosmetic confidence pass.
+- On harder Maze31, state dynamics rather than candidate availability is now the
+  main bottleneck. Dense ranking learned an average true-path vs false-positive
+  score gap but did not prune the mask; the follow-up confidence-aware state
+  competition (`maze31-cross-confstate-d256l4-s800-20260617T215136Z-91b7671`)
+  kept non-collapsed candidate weights at loop12
+  keep/proposed/context `0.3486`/`0.4412`/`0.2102` and high
+  context-vs-proposed RMS `0.9635`, yet loop1-to-loop12 path F1 moved
+  `0.5852 -> 0.5849`, precision `0.4158 -> 0.4154`, and predicted path fraction
+  `0.4643 -> 0.4651`. Ten hard visualized cases stayed at zero false negatives
+  but about 288 false-positive path cells. Do not spend the next budget on
+  ranking-loss variants, gate-bias/temperature sweeps, or extra candidate
+  diversity. The next high-ROI mechanism is a stronger generic recurrent
+  decision-boundary update, such as learned threshold or normalization state,
+  that can actually turn score gaps into mask sparsity without maze repair or
+  rule priors.
 - The current visualization selector mostly captured solved largest-gain cases.
   That is good for explaining what the loop fixes, but not enough for studying
   the rare remaining failures after loop10. The next visualization upgrade

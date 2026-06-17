@@ -227,3 +227,21 @@
   experiment should make recurrence pressure real, for example by increasing
   path length/grid size or by tracking whether later loops reduce over-predicted
   PATH cells. A flat seed table at the same 15x15 setting would be low ROI.
+- The 21x21 recurrence-pressure run does create a meaningful loop signal.
+  With path range `80-140`, path-loss weight `1.5`, hidden `192`, layers `2`,
+  and train/eval loops `6/10`, FutureSeed reaches loop10 path F1 `0.8051`
+  versus base `0.7614`. FutureSeed's loop gain is `+0.1177`; base loop gain is
+  `+0.0518`. This supports recurrence as a transferable mechanism beyond
+  Sudoku.
+- The Maze21 FutureSeed gain is not just more PATH recall. At eval, the true
+  path fraction is `0.2070`; FutureSeed moves predicted path fraction from
+  `0.3270` at loop1 to `0.2797` at loop10, while precision rises
+  `0.5640 -> 0.7031`. Base improves too, but remains broader at loop10
+  predicted path fraction `0.3198` and precision `0.6308`. This is the first
+  clean non-Sudoku evidence that FutureSeed plus loop can refine an over-broad
+  global hypothesis.
+- Exact path solving is still not opened on Maze21 held-out eval: both arms have
+  loop10 exact `0.0`. Do not overclaim. The next high-ROI maze question is
+  whether more compute or a simple state-dynamics change can sharpen from
+  high-F1 masks to exact single paths. A seed table at the same budget is lower
+  ROI than increasing recurrence pressure or examining exact-failure cases.

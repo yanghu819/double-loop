@@ -67,7 +67,7 @@ index 14605c5..e5c3fb3 100644
      if isinstance(stds, dict):
          if "H_init_std" in arch_overrides:
 diff --git a/models/eqr.py b/models/eqr.py
-index 8084f2b..8604549 100644
+index 8084f2b..5cc1b7b 100644
 --- a/models/eqr.py
 +++ b/models/eqr.py
 @@ -11,6 +11,14 @@ from models.layers import Attention, CastedEmbedding, CastedLinear, CosSin, Rota
@@ -100,7 +100,7 @@ index 8084f2b..8604549 100644
      H_init_std: float = 1.0
      L_init_std: float = 1.0
  
-@@ -89,19 +105,224 @@ class ReasoningBlock(nn.Module):
+@@ -89,19 +105,306 @@ class ReasoningBlock(nn.Module):
          return rms_norm(hidden_states + self.mlp(hidden_states), variance_epsilon=self.norm_eps)
  
  
@@ -145,9 +145,9 @@ index 8084f2b..8604549 100644
 +        super().__init__()
 +        self.norm_eps = float(config.rms_norm_eps)
 +        self.context_mode = str(context_mode).lower()
-+        if self.context_mode not in {"self", "cross"}:
++        if self.context_mode not in {"self", "cross", "conf"}:
 +            raise ValueError(f"Unknown state competition context_mode '{context_mode}'")
-+        self.cross_proj = CastedLinear(config.hidden_size * 4, config.hidden_size, bias=False) if self.context_mode == "cross" else None
++        self.cross_proj = CastedLinear(config.hidden_size * 4, config.hidden_size, bias=False) if self.context_mode in {"cross", "conf"} else None
 +        self.context_attn = Attention(
 +            hidden_size=config.hidden_size,
 +            head_dim=config.hidden_size // config.num_heads,
@@ -156,15 +156,93 @@ index 8084f2b..8604549 100644
 +            causal=False,
 +        )
 +        self.score = CastedLinear(config.hidden_size, 1, bias=False)
-+        bias = [0.0, 0.0, 0.0] if self.context_mode == "cross" else [-2.0, 2.0, -2.0]
++        self.conf_score = CastedLinear(6, 3, bias=True) if self.context_mode == "conf" else None
++        bias = [0.0, 0.0, 0.0] if self.context_mode in {"cross", "conf"} else [-2.0, 2.0, -2.0]
 +        self.score_bias = nn.Parameter(torch.tensor(bias, dtype=torch.float32))
 +        self.latest_candidate_stats: Dict[str, float] = {}
 +        self.latest_context: Optional[torch.Tensor] = None
 +        with torch.no_grad():
 +            self.score.weight.zero_()
++            if self.conf_score is not None:
++                self.conf_score.weight.zero_()
++                if self.conf_score.bias is not None:
++                    self.conf_score.bias.zero_()
 +
-+    def forward(self, previous: torch.Tensor, proposed: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, torch.Tensor]:
-+        if self.context_mode == "cross":
++    def _confidence_bias(
++        self,
++        proposed: torch.Tensor,
++        context: torch.Tensor,
++        readout: Optional[nn.Module],
++        puzzle_emb_len: int,
++    ) -> Tuple[Optional[torch.Tensor], Dict[str, float]]:
++        if self.conf_score is None or readout is None:
++            return None, {}
++        offset = int(puzzle_emb_len)
++        proposed_board = proposed[:, offset:]
++        context_board = context[:, offset:]
++        if proposed_board.shape[1] == 0:
++            return None, {}
++        proposed_logits = readout(proposed_board).to(torch.float32)
++        context_logits = readout(context_board).to(torch.float32)
++        proposed_top2 = proposed_logits.topk(k=min(2, proposed_logits.shape[-1]), dim=-1).values
++        context_top2 = context_logits.topk(k=min(2, context_logits.shape[-1]), dim=-1).values
++        if proposed_top2.shape[-1] == 1:
++            proposed_margin = proposed_top2[..., 0]
++            context_margin = context_top2[..., 0]
++        else:
++            proposed_margin = proposed_top2[..., 0] - proposed_top2[..., 1]
++            context_margin = context_top2[..., 0] - context_top2[..., 1]
++        proposed_prob = proposed_logits.softmax(dim=-1)
++        context_prob = context_logits.softmax(dim=-1)
++        log_vocab = math.log(max(2, proposed_logits.shape[-1]))
++        proposed_entropy = -(proposed_prob * proposed_prob.clamp_min(1e-8).log()).sum(dim=-1) / log_vocab
++        context_entropy = -(context_prob * context_prob.clamp_min(1e-8).log()).sum(dim=-1) / log_vocab
++        disagreement = (proposed_prob - context_prob).abs().sum(dim=-1)
++        features = torch.stack(
++            (
++                torch.tanh(proposed_margin / 4.0),
++                torch.tanh(context_margin / 4.0),
++                torch.tanh((context_margin - proposed_margin) / 4.0),
++                proposed_entropy,
++                context_entropy,
++                disagreement,
++            ),
++            dim=-1,
++        ).to(proposed.dtype)
++        board_bias = self.conf_score(features).to(torch.float32)
++        if offset > 0:
++            pad = torch.zeros(
++                board_bias.shape[0],
++                offset,
++                board_bias.shape[-1],
++                dtype=board_bias.dtype,
++                device=board_bias.device,
++            )
++            bias = torch.cat((pad, board_bias), dim=1)
++        else:
++            bias = board_bias
++        with torch.no_grad():
++            stats = {
++                "state_compete_h_conf_bias_abs_mean": float(board_bias.abs().mean().detach().cpu()),
++                "state_compete_h_conf_bias_std": float(board_bias.std(unbiased=False).detach().cpu()),
++                "state_compete_h_conf_prop_margin": float(proposed_margin.mean().detach().cpu()),
++                "state_compete_h_conf_context_margin": float(context_margin.mean().detach().cpu()),
++                "state_compete_h_conf_margin_delta": float((context_margin - proposed_margin).mean().detach().cpu()),
++                "state_compete_h_conf_prop_entropy": float(proposed_entropy.mean().detach().cpu()),
++                "state_compete_h_conf_context_entropy": float(context_entropy.mean().detach().cpu()),
++                "state_compete_h_conf_disagreement": float(disagreement.mean().detach().cpu()),
++            }
++        return bias, stats
++
++    def forward(
++        self,
++        previous: torch.Tensor,
++        proposed: torch.Tensor,
++        readout: Optional[nn.Module] = None,
++        puzzle_emb_len: int = 0,
++        **kwargs: Any,
++    ) -> Tuple[torch.Tensor, torch.Tensor]:
++        if self.context_mode in {"cross", "conf"}:
 +            previous_norm = rms_norm(previous, variance_epsilon=self.norm_eps)
 +            proposed_norm = rms_norm(proposed, variance_epsilon=self.norm_eps)
 +            cross_features = torch.cat(
@@ -190,6 +268,9 @@ index 8084f2b..8604549 100644
 +        candidates = torch.stack((previous, proposed, context), dim=-2)
 +        scores = self.score(rms_norm(candidates, variance_epsilon=self.norm_eps)).squeeze(-1).to(torch.float32)
 +        scores = scores + self.score_bias.to(scores.device)
++        conf_bias, conf_stats = self._confidence_bias(proposed, context, readout, puzzle_emb_len)
++        if conf_bias is not None:
++            scores = scores + conf_bias
 +        weights = torch.softmax(scores, dim=-1).to(proposed.dtype)
 +        mixed = (weights.unsqueeze(-1) * candidates).sum(dim=-2)
 +        with torch.no_grad():
@@ -200,6 +281,7 @@ index 8084f2b..8604549 100644
 +                "state_compete_h_proposed_minus_previous_rms": float(
 +                    (proposed - previous).to(torch.float32).square().mean().sqrt().detach().cpu()
 +                ),
++                **conf_stats,
 +            }
 +        return mixed, weights
 +
@@ -327,12 +409,12 @@ index 8084f2b..8604549 100644
  
  
  class InnerNetwork(nn.Module):
-@@ -129,6 +350,39 @@ class InnerNetwork(nn.Module):
+@@ -129,6 +432,41 @@ class InnerNetwork(nn.Module):
  
          self._init_pos()
          self.L_level = NoisyReasoningModule(config, [ReasoningBlock(config) for _ in range(config.L_layers)])
 +        self.state_update_mode = str(config.state_update_mode).lower()
-+        if self.state_update_mode not in {"none", "learned_gate", "state_compete", "state_compete_cross"}:
++        if self.state_update_mode not in {"none", "learned_gate", "state_compete", "state_compete_cross", "state_compete_conf"}:
 +            raise ValueError(f"Unknown state_update_mode '{config.state_update_mode}'")
 +        self.latest_state_gate_stats: Dict[str, float] = {}
 +        self.latest_state_aux: Dict[str, torch.Tensor] = {}
@@ -346,6 +428,8 @@ index 8084f2b..8604549 100644
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="self")
 +        elif self.state_update_mode == "state_compete_cross":
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="cross")
++        elif self.state_update_mode == "state_compete_conf":
++            self.state_compete_h = StateCompetitionMixer(config, context_mode="conf")
 +        else:
 +            self.state_compete_h = None
 +        if float(config.future_seed_scale) != 0.0:
@@ -367,7 +451,7 @@ index 8084f2b..8604549 100644
          self.H_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.H_init_std), persistent=False)
          self.L_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.L_init_std), persistent=False)
          with torch.no_grad():
-@@ -193,8 +447,12 @@ class InnerNetwork(nn.Module):
+@@ -193,8 +531,12 @@ class InnerNetwork(nn.Module):
          return carry
  
      def latent_recursion(self, z_H: torch.Tensor, z_L: torch.Tensor, x: torch.Tensor, seq: Dict[str, CosSin]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -380,7 +464,7 @@ index 8084f2b..8604549 100644
          z_H = self.L_level(z_H, z_L, **seq)
          return z_H, z_L
  
-@@ -205,25 +463,53 @@ class InnerNetwork(nn.Module):
+@@ -205,25 +547,59 @@ class InnerNetwork(nn.Module):
          return self.latent_recursion(z_H, z_L, x, seq)
  
      def forward(self, carry: LatentCarry, batch: Dict[str, torch.Tensor]) -> Tuple[LatentCarry, torch.Tensor, torch.Tensor]:
@@ -403,7 +487,13 @@ index 8084f2b..8604549 100644
 +                    "state_gate_l_std": float(gate_l.to(torch.float32).std(unbiased=False).detach().cpu()),
 +                }
 +        elif self.state_compete_h is not None:
-+            z_H, weights = self.state_compete_h(carry.z_H, z_H, **seq)
++            z_H, weights = self.state_compete_h(
++                carry.z_H,
++                z_H,
++                readout=self.lm_head,
++                puzzle_emb_len=self.config.puzzle_emb_len,
++                **seq,
++            )
 +            context_h = getattr(self.state_compete_h, "latest_context", None)
 +            if context_h is not None:
 +                self.latest_state_aux = {

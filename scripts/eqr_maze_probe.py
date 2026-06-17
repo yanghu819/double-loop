@@ -268,7 +268,7 @@ def inner_rollout(
     aux_by_step: List[Dict[str, torch.Tensor]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
     state_update_mode = str(state_update_mode).lower()
-    if state_update_mode not in {"none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross"}:
+    if state_update_mode not in {"none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross", "state_compete_conf"}:
         raise ValueError(f"unknown state_update_mode: {state_update_mode}")
     for idx in range(steps):
         prev_h = carry.z_H
@@ -1059,7 +1059,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_gate_bias", type=float, default=-2.0)
     p.add_argument(
         "--state_update_mode",
-        choices=("none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross"),
+        choices=("none", "delta_carry", "learned_gate", "state_compete", "state_compete_cross", "state_compete_conf"),
         default="none",
     )
     p.add_argument("--state_delta_scale", type=float, default=0.0)

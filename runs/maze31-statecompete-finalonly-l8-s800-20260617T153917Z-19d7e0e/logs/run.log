@@ -1,0 +1,47 @@
+mode=eqr_maze_probe
+run_dir=/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/runs/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e
+git_sha=19d7e0eda7db61fc002e4cfc7cfeb1345181c191
+git_dirty=0
+device=cuda torch=2.7.0+cu126 params=3804935 eqr_dir=/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/scripts/eqr_maze_probe.py", line 924, in <module>
+    main()
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/scripts/eqr_maze_probe.py", line 864, in main
+    train_metrics = train(args, model, device)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/scripts/eqr_maze_probe.py", line 651, in train
+    logits_by_step, residuals = inner_rollout(
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/scripts/eqr_maze_probe.py", line 275, in inner_rollout
+    carry, logits, _q = model.inner(carry, inner_batch)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/eqr.py", line 426, in forward
+    z_H, z_L = self.deep_recursion(
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/eqr.py", line 421, in deep_recursion
+    z_H, z_L = self.latent_recursion(z_H, z_L, x, seq)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/eqr.py", line 412, in latent_recursion
+    z_L = self.L_level(z_L, z_H + x, **seq)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/eqr.py", line 287, in forward
+    updated = layer(hidden_states=updated, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/eqr.py", line 102, in forward
+    hidden_states + self.self_attn(cos_sin=cos_sin, hidden_states=hidden_states),
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/layers.py", line 148, in forward
+    q, k = self._apply_rope(cos_sin, q, k)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/layers.py", line 138, in _apply_rope
+    q, k = apply_rotary_pos_emb_2d(q, k, cos_h, sin_h, cos_w, sin_w)
+  File "/huyang2/double-loop/.worktrees/maze31-statecompete-finalonly-l8-s800-20260617T153917Z-19d7e0e/repos/eqr/models/layers.py", line 58, in apply_rotary_pos_emb_2d
+    q_h, k_h = q_h * cos_h + rotate_half(q_h) * sin_h, k_h * cos_h + rotate_half(k_h) * sin_h
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 16.00 MiB. GPU 0 has a total capacity of 79.32 GiB of which 17.00 MiB is free. Process 81021 has 79.29 GiB memory in use. Of the allocated memory 76.78 GiB is allocated by PyTorch, and 2.01 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

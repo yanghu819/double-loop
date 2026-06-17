@@ -312,6 +312,15 @@
   it does not yet use later loops to revise. Next work should increase real
   recurrence pressure or make the competing candidate stronger; do not turn this
   into a seed/gate-bias table.
+- Final-only recurrence pressure does not fix `state_compete` collapse. The
+  Maze31 D256/L4 final-loop-only run with `train_loops=8` reaches loop12 path F1
+  `0.5852`, exact `0.0`, and loop gain `-0.0001`. Loop1 and loop12 are nearly
+  identical: precision `0.4163 -> 0.4162`, predicted path fraction
+  `0.4626 -> 0.4629`, and candidate weights stay collapsed around proposed
+  `0.961`. Casebook failures show broad false-positive path branches copied
+  from loop1 to loop12. This rejects simple loss-pressure as the next path; the
+  next high-ROI mechanism is a stronger generic context/alternative candidate
+  that can create real comparison before the softmax competition.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

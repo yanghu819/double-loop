@@ -358,6 +358,22 @@
   positives with no misses. This rejects token-level CE advantage as the next
   mainline; the correction signal must be tied to pruning or uncertainty
   sharpening, not just making context more confident on already-wrong cells.
+- Ranking inside the current PATH mask is better aligned but still too weak in
+  the hard min/max form. The `state_compete_cross` context-ranking probe trained
+  context PATH scores so true-path cells inside the current predicted PATH set
+  outrank false-positive PATH cells (`weight=0.05`, `margin=0.25`). This moved
+  the operating point in the right direction but barely: loop1 to loop12
+  precision was `0.4167 -> 0.4171`, predicted path fraction was
+  `0.4608 -> 0.4596`, recall fell `0.9938 -> 0.9923`, and loop gain was only
+  `+0.0001`. Candidate competition stayed healthy
+  (`keep/proposed/context = 0.380/0.380/0.240`,
+  `context_minus_proposed_rms = 1.004`), but the ranking loss stayed around
+  `0.83` and the loop12 hard margin stayed negative (`-0.011`). Mean positive
+  and negative PATH scores were almost identical. The lesson: ranking is the
+  right family of signal for pruning, but the current hard min/max objective is
+  too sparse or too hard. Do not seed-sweep it; make the pruning signal smoother
+  or denser, or expose uncertainty/candidate contrast directly in the recurrent
+  state update.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

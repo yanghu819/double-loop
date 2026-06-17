@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "6a299368242fef6b8d53ea451a25df05c05db524",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 context path ranking probe from SHA 6a29936. Mechanism: within cells currently predicted PATH, context PATH logit ranks true-path positives above false-positive PATH negatives; weight=0.05 margin=0.25; no maze rules/search/repair/selector or seed/bias/temp sweep. Completed 800 steps in 664.7s. Loop12 path_f1=0.5852, exact=0.0, loop gain=+0.0001. Loop1/loop12 precision 0.4167/0.4171, recall 0.9938/0.9923, pred_frac 0.4608/0.4596. Candidate weights stayed diverse at loop12 keep/proposed/context=0.380/0.380/0.240 and context_minus_proposed_rms=1.004. Ranking objective gave a small pruning-direction signal but did not learn separation: train rank loss stayed ~0.83 and eval hard margin remained negative (-0.011), with positive/negative mean PATH scores almost identical. Lesson: ranking on current PATH candidates is better aligned than CE and slightly prunes, but the hard min/max target is not optimized enough by this setup; next work should make pruning signal smoother/denser or integrate it into state updates, not sweep seeds.",
+  "recorded_at_utc": "2026-06-17T19:59:20.043524+00:00",
+  "run_name": "maze31-cross-rank-w005m025-d256l4-s800-20260617T194554Z-6a29936",
+  "score": 0.5852304697036743,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-17T19:54:11.216362+00:00"
+}

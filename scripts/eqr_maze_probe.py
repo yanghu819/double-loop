@@ -373,9 +373,13 @@ def context_path_ranking_loss(
     aux_by_step: List[Dict[str, torch.Tensor]],
     labels: torch.Tensor,
     margin: float,
+    mode: str,
 ) -> torch.Tensor:
     losses = []
     margin = float(margin)
+    mode = str(mode).lower()
+    if mode not in {"hard", "dense"}:
+        raise ValueError(f"unknown context rank mode: {mode}")
     path_labels = labels == PATH_ID
     for logits, aux in zip(logits_by_step, aux_by_step):
         context_logits = aux.get("context_logits")
@@ -392,9 +396,15 @@ def context_path_ranking_loss(
             neg = negative_mask[sample_idx]
             if not bool(pos.any() and neg.any()):
                 continue
-            hardest_positive = path_scores[sample_idx][pos].min()
-            hardest_negative = path_scores[sample_idx][neg].max()
-            batch_losses.append(F.softplus(hardest_negative - hardest_positive + margin))
+            pos_scores = path_scores[sample_idx][pos]
+            neg_scores = path_scores[sample_idx][neg]
+            if mode == "dense":
+                pair_logits = neg_scores[:, None] - pos_scores[None, :] + margin
+                batch_losses.append(F.softplus(pair_logits).mean())
+            else:
+                hardest_positive = pos_scores.min()
+                hardest_negative = neg_scores.max()
+                batch_losses.append(F.softplus(hardest_negative - hardest_positive + margin))
         if batch_losses:
             losses.append(torch.stack(batch_losses).mean())
     if not losses:
@@ -450,8 +460,10 @@ def add_context_ranking_diagnostics(
     residuals: List[Dict[str, float]],
     labels: torch.Tensor,
     margin: float,
+    mode: str,
 ) -> None:
     margin = float(margin)
+    mode = str(mode).lower()
     path_labels = labels == PATH_ID
     for idx, (logits, aux) in enumerate(zip(logits_by_step, aux_by_step)):
         context_logits = aux.get("context_logits")
@@ -476,7 +488,11 @@ def add_context_ranking_diagnostics(
             neg_scores = path_scores[sample_idx][neg]
             hardest_positive = pos_scores.min()
             hardest_negative = neg_scores.max()
-            sample_losses.append(F.softplus(hardest_negative - hardest_positive + margin))
+            if mode == "dense":
+                pair_logits = neg_scores[:, None] - pos_scores[None, :] + margin
+                sample_losses.append(F.softplus(pair_logits).mean())
+            else:
+                sample_losses.append(F.softplus(hardest_negative - hardest_positive + margin))
             sample_hard_margins.append(hardest_positive - hardest_negative)
             positive_scores.append(pos_scores.mean())
             negative_scores.append(neg_scores.mean())
@@ -497,6 +513,7 @@ def add_context_ranking_diagnostics(
                 "context_rank_candidate_frac": float(current_path.to(torch.float32).mean().detach().cpu()),
                 "context_rank_positive_frac": float(positive_mask.to(torch.float32).mean().detach().cpu()),
                 "context_rank_negative_frac": float(negative_mask.to(torch.float32).mean().detach().cpu()),
+                "context_rank_mode": mode,
                 "context_rank_valid_sample_frac": float(valid_samples / max(1, path_scores.shape[0])),
                 "context_rank_loss": float(loss_value.detach().cpu()),
                 "context_rank_hard_margin": float(hard_margin.detach().cpu()),
@@ -878,6 +895,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             aux_by_step,
             batch["labels"],
             args.context_rank_margin,
+            args.context_rank_mode,
         )
         loss = (
             supervised_loss
@@ -964,6 +982,7 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
         residuals,
         batch["labels"],
         args.context_rank_margin,
+        args.context_rank_mode,
     )
     eval_clean: Dict[str, Any] = {}
     for idx, logits in enumerate(logits_by_step, start=1):
@@ -1057,6 +1076,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--context_improve_margin", type=float, default=0.01)
     p.add_argument("--context_rank_weight", type=float, default=0.0)
     p.add_argument("--context_rank_margin", type=float, default=0.25)
+    p.add_argument("--context_rank_mode", choices=("hard", "dense"), default="hard")
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -1162,6 +1182,7 @@ def main() -> None:
             "context_improve_margin": args.context_improve_margin,
             "context_rank_weight": args.context_rank_weight,
             "context_rank_margin": args.context_rank_margin,
+            "context_rank_mode": args.context_rank_mode,
             "params": param_count,
         },
         "train": train_metrics,

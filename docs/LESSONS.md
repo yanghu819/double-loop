@@ -286,6 +286,14 @@
   predicted PATH fraction is `0.3559` versus true `0.1932`. The failure is now
   sharper: the model can cover much of the true path, but it cannot prune wrong
   branches, and the recurrent loop is nearly inert.
+- Fixed linear state dynamics changes the coverage bias but does not solve
+  Maze31. Positive delta-carry (`scale=0.35`, decay `0.95`) raises loop12 path
+  F1 to `0.5721` and makes loop gain slightly positive (`+0.0012`), but it
+  increases predicted PATH fraction to `0.3697` and does not improve precision.
+  Negative delta-carry (`scale=-0.35`) collapses predicted PATH fraction to
+  `0.1217` and recall to `0.2846`, yielding path F1 `0.3481`. This supports the
+  state-dynamics thesis but rejects fixed sign/scale carry transforms; next work
+  should be a small learned/gated update that can adaptively keep or prune.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

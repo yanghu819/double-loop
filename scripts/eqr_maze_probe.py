@@ -332,6 +332,82 @@ def predictive_state_loss(
     return torch.stack(losses).mean()
 
 
+def context_improvement_loss(
+    logits_by_step: List[torch.Tensor],
+    aux_by_step: List[Dict[str, torch.Tensor]],
+    labels: torch.Tensor,
+    margin: float,
+) -> torch.Tensor:
+    losses = []
+    margin = float(margin)
+    for logits, aux in zip(logits_by_step, aux_by_step):
+        context_logits = aux.get("context_logits")
+        if context_logits is None:
+            continue
+        with torch.no_grad():
+            current_pred = logits.detach().argmax(dim=-1)
+            error_mask = current_pred != labels
+            current_ce = F.cross_entropy(
+                logits.detach().reshape(-1, logits.shape[-1]),
+                labels.reshape(-1),
+                reduction="none",
+            ).view_as(labels)
+        context_ce = F.cross_entropy(
+            context_logits.reshape(-1, context_logits.shape[-1]),
+            labels.reshape(-1),
+            reduction="none",
+        ).view_as(labels)
+        token_loss = F.relu(context_ce - current_ce + margin)
+        if error_mask.any():
+            losses.append(token_loss[error_mask].mean())
+        else:
+            losses.append(token_loss.mean())
+    if not losses:
+        device = logits_by_step[-1].device if logits_by_step else labels.device
+        return torch.zeros((), dtype=torch.float32, device=device)
+    return torch.stack(losses).mean()
+
+
+@torch.no_grad()
+def add_context_improvement_diagnostics(
+    logits_by_step: List[torch.Tensor],
+    aux_by_step: List[Dict[str, torch.Tensor]],
+    residuals: List[Dict[str, float]],
+    labels: torch.Tensor,
+    margin: float,
+) -> None:
+    margin = float(margin)
+    for idx, (logits, aux) in enumerate(zip(logits_by_step, aux_by_step)):
+        context_logits = aux.get("context_logits")
+        if context_logits is None or idx >= len(residuals):
+            continue
+        current_pred = logits.detach().argmax(dim=-1)
+        error_mask = current_pred != labels
+        current_ce = F.cross_entropy(
+            logits.detach().reshape(-1, logits.shape[-1]),
+            labels.reshape(-1),
+            reduction="none",
+        ).view_as(labels)
+        context_ce = F.cross_entropy(
+            context_logits.detach().reshape(-1, context_logits.shape[-1]),
+            labels.reshape(-1),
+            reduction="none",
+        ).view_as(labels)
+        token_loss = F.relu(context_ce - current_ce + margin)
+        mask = error_mask if error_mask.any() else torch.ones_like(error_mask, dtype=torch.bool)
+        current_mean = current_ce[mask].mean()
+        context_mean = context_ce[mask].mean()
+        residuals[idx].update(
+            {
+                "context_improve_error_frac": float(error_mask.to(torch.float32).mean().detach().cpu()),
+                "context_improve_loss": float(token_loss[mask].mean().detach().cpu()),
+                "context_improve_current_ce": float(current_mean.detach().cpu()),
+                "context_improve_context_ce": float(context_mean.detach().cpu()),
+                "context_improve_advantage": float((current_mean - context_mean).detach().cpu()),
+            }
+        )
+
+
 def loss_from_logits(logits: torch.Tensor, labels: torch.Tensor, path_weight: float) -> torch.Tensor:
     loss = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1), reduction="none").view_as(labels)
     if path_weight != 1.0:
@@ -692,7 +768,17 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         losses = [loss_from_logits(logits, batch["labels"], args.path_loss_weight) for logits in logits_by_step]
         supervised_loss = losses[-1] if args.loop_loss == "final" else torch.stack(losses).mean()
         pred_loss = predictive_state_loss(logits_by_step, aux_by_step, args.predictive_state_horizon)
-        loss = supervised_loss + float(args.predictive_state_weight) * pred_loss
+        improve_loss = context_improvement_loss(
+            logits_by_step,
+            aux_by_step,
+            batch["labels"],
+            args.context_improve_margin,
+        )
+        loss = (
+            supervised_loss
+            + float(args.predictive_state_weight) * pred_loss
+            + float(args.context_improve_weight) * improve_loss
+        )
         opt.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
@@ -700,6 +786,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         last_loss = float(losses[-1].detach().cpu())
         last_loop1 = float(losses[0].detach().cpu())
         last_pred_loss = float(pred_loss.detach().cpu())
+        last_improve_loss = float(improve_loss.detach().cpu())
         if args.log_every and step % args.log_every == 0:
             last_metrics = metrics_from_logits(logits_by_step[-1], batch["labels"])
             row = {
@@ -711,6 +798,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "zH_rms": residuals[-1]["zH_rms"],
                 "zL_rms": residuals[-1]["zL_rms"],
                 "predictive_state_loss": last_pred_loss,
+                "context_improve_loss": last_improve_loss,
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -720,7 +808,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"[eqr_maze] step={step:04d} ce={last_loss:.4f} loop1={last_loop1:.4f} "
                 f"path_f1={row['path_f1']:.4f} exact={row['exact']:.4f} "
                 f"zH={row['zH_rms']:.4f} zL={row['zL_rms']:.4f} "
-                f"pred={row['predictive_state_loss']:.4f} "
+                f"pred={row['predictive_state_loss']:.4f} improve={row['context_improve_loss']:.4f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
@@ -728,6 +816,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_ce_loss": last_loss,
         "train_loop1_loss": last_loop1,
         "train_predictive_state_loss": last_pred_loss,
+        "train_context_improve_loss": last_improve_loss,
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
@@ -743,7 +832,7 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
     rng = np.random.default_rng(args.seed + 4000 + seed_offset)
     model.eval()
     batch = make_batch(args, args.eval_n, rng, device)
-    logits_by_step, residuals, _aux_by_step = inner_rollout(
+    logits_by_step, residuals, aux_by_step = inner_rollout(
         model,
         batch,
         args.eval_loops,
@@ -751,6 +840,13 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
         state_update_mode=args.state_update_mode,
         state_delta_scale=args.state_delta_scale,
         state_delta_decay=args.state_delta_decay,
+    )
+    add_context_improvement_diagnostics(
+        logits_by_step,
+        aux_by_step,
+        residuals,
+        batch["labels"],
+        args.context_improve_margin,
     )
     eval_clean: Dict[str, Any] = {}
     for idx, logits in enumerate(logits_by_step, start=1):
@@ -840,6 +936,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--loop_loss", choices=("final", "all"), default="all")
     p.add_argument("--predictive_state_weight", type=float, default=0.0)
     p.add_argument("--predictive_state_horizon", type=int, default=1)
+    p.add_argument("--context_improve_weight", type=float, default=0.0)
+    p.add_argument("--context_improve_margin", type=float, default=0.01)
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -941,6 +1039,8 @@ def main() -> None:
             "state_gate_bias": args.state_gate_bias,
             "predictive_state_weight": args.predictive_state_weight,
             "predictive_state_horizon": args.predictive_state_horizon,
+            "context_improve_weight": args.context_improve_weight,
+            "context_improve_margin": args.context_improve_margin,
             "params": param_count,
         },
         "train": train_metrics,

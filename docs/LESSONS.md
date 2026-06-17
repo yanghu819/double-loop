@@ -280,6 +280,12 @@
   revising the state. Width-alone, depth-alone, and naive curriculum are all low
   ROI now; the next useful step is a simple state-dynamics change or genuinely
   larger effective compute, not another one-axis table entry.
+- Joint width+depth scale gives only a local mask improvement on Maze31, not
+  global solving. D256/L4 reaches loop12 path F1 `0.5649`, exact `0.0`, and loop
+  gain `-0.0013`. Recall rises to `0.8061`, but precision is only `0.4376` and
+  predicted PATH fraction is `0.3559` versus true `0.1932`. The failure is now
+  sharper: the model can cover much of the true path, but it cannot prune wrong
+  branches, and the recurrent loop is nearly inert.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "f19e66abb0714b4021ae84423ab7ca1f283ca63f",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 state_compete_cross probe from SHA f19e66a. Mechanism: context candidate generated from previous/proposed/delta/channel interaction plus generic noncausal attention, neutral competition init; no maze rules, repair, selector, seed/bias sweep. Completed 800 steps in 630.8s. Loop12 path_f1=0.5847, exact=0.0, loop gain=+0.0002. Candidate collapse fixed: loop12 weights keep/proposed/context=0.370/0.389/0.241 and context_minus_proposed_rms=1.03, but loop1/loop12 precision only 0.4156/0.4160 and pred_frac 0.4632/0.4622. Lesson: candidate diversity alone is insufficient; the alternative state must be trained to carry error-correcting information, not just be different.",
+  "recorded_at_utc": "2026-06-17T17:00:49.500374+00:00",
+  "run_name": "maze31-statecompete-cross-d256l4-s800-20260617T164053Z-f19e66a",
+  "score": 0.5846809148788452,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-17T16:53:57.507723+00:00"
+}

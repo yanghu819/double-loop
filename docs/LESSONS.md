@@ -321,6 +321,18 @@
   from loop1 to loop12. This rejects simple loss-pressure as the next path; the
   next high-ROI mechanism is a stronger generic context/alternative candidate
   that can create real comparison before the softmax competition.
+- Stronger generic candidate generation fixes weight collapse but not loop
+  correction. `state_compete_cross` builds context from previous/proposed/delta
+  and channel interaction, then applies noncausal attention. On Maze31 D256/L4
+  it reaches loop12 path F1 `0.5847`, exact `0.0`, and loop gain only `+0.0002`.
+  The weights are no longer collapsed (`keep/proposed/context =
+  0.370/0.389/0.241` at loop12) and the context is genuinely different from
+  proposed (`context_minus_proposed_rms ~1.03`), but precision and pred_frac
+  barely move from loop1 to loop12 (`0.4156 -> 0.4160`, `0.4632 -> 0.4622`).
+  This localizes the bottleneck: candidate diversity alone is insufficient; the
+  alternative state must learn to carry error-correcting information across
+  loops, likely via a simple temporal/predictive state objective rather than
+  more gate, bias, temperature, or seed sweeps.
 - The useful signal is diagnostic, not positive: the model is mostly learning a
   broad path mask. In the FutureSeed run, the true path fraction was `0.1785`
   while the predicted PATH fraction was `0.4209`; recall was almost `1.0` but

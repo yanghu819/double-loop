@@ -267,7 +267,7 @@ def inner_rollout(
     residuals: List[Dict[str, float]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
     state_update_mode = str(state_update_mode).lower()
-    if state_update_mode not in {"none", "delta_carry", "learned_gate"}:
+    if state_update_mode not in {"none", "delta_carry", "learned_gate", "state_compete"}:
         raise ValueError(f"unknown state_update_mode: {state_update_mode}")
     for idx in range(steps):
         prev_h = carry.z_H
@@ -787,7 +787,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--noise_mode", choices=("gaussian", "feature_diff", "none"), default="none")
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_gate_bias", type=float, default=-2.0)
-    p.add_argument("--state_update_mode", choices=("none", "delta_carry", "learned_gate"), default="none")
+    p.add_argument("--state_update_mode", choices=("none", "delta_carry", "learned_gate", "state_compete"), default="none")
     p.add_argument("--state_delta_scale", type=float, default=0.0)
     p.add_argument("--state_delta_decay", type=float, default=1.0)
     p.add_argument("--state_gate_bias", type=float, default=2.0)

@@ -608,3 +608,16 @@
   criterion. The second criterion is still open: FutureSeed+loop must make later
   loops reduce false positives without adding false negatives before we claim it
   is a stronger full paradigm than EqR.
+- Generic loss-only FP/FN pressure can harm the very opening behavior that makes
+  FutureSeed valuable. The `maze31-fs-tversky-w075-a075b065-d320l6-loop8x16`
+  probe added a late-loop soft TP/FP/FN Tversky objective to the clean D320/L6
+  FutureSeed setup (`weight=0.75`, `alpha=0.75`, `beta=0.65`), with no maze
+  rules, repair, search, selector, feature noise, state competition, or sweep.
+  It stayed in the no-PATH attractor through step600: path F1 was `0.0` at
+  `100/200/300/400/500/600`, CE stayed around `1.06-1.08`, and Tversky loss
+  stayed around `0.82`. This is worse than the matched clean FutureSeed run,
+  which opened at step400. Lesson: the second criterion cannot be solved by
+  simply adding a direct pruning loss after the fact. The next bitter-lesson
+  compliant direction must preserve the FutureSeed opening dynamics while
+  changing generic recurrent state/decision dynamics, or use a curriculum that
+  applies correction pressure only after the model has learned to open.

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment Dashboard - maze31-fs-tversky-w075-a075b065-d320l6-loop8x16-s1200-20260618T091423Z-d19cd3a</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;background:#f7f7f4;color:#1f2328}
+main{max-width:1180px;margin:auto}.card{background:#fff;border:1px solid #ddd8cf;border-radius:8px;padding:14px;margin:14px 0}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 10px}.muted{color:#6b7280}.links{display:flex;flex-wrap:wrap;gap:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left}th{background:#f3f4f6}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}dt{font-weight:600}.chart{width:100%;height:auto;background:#fbfbf8;border:1px solid #e5e0d8;border-radius:6px}.axis{stroke:#777;stroke-width:1}.tick,.legend-text{font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin-right:6px;font-size:12px}
+</style>
+</head>
+<body><main>
+<h1>maze31-fs-tversky-w075-a075b065-d320l6-loop8x16-s1200-20260618T091423Z-d19cd3a</h1>
+<p class="links"><a href="summary.json">dashboard data</a></p>
+<section class="card"><h2>Run Summary</h2>
+<dl>
+<dt>mode</dt><dd>eqr_maze_probe_abort</dd>
+<dt>score</dt><dd> <span class="muted">missing_result_json</span></dd>
+<dt>git sha</dt><dd>d19cd3a265ce0b0d275f4925d2e0f6705fce786b</dd>
+<dt>timestamp</dt><dd>2026-06-18T09:39:07.493488+00:00</dd>
+<dt>aborted</dt><dd>True</dd>
+</dl>
+<p>2026-06-18 GPU1 FutureSeed Tversky loop self-correction probe from SHA d19cd3a. Mechanism: generic late-loop soft TP/FP/FN Tversky pressure, weight=0.75 alpha=0.75 beta=0.65, on the clean D320/L6 FutureSeed Maze31 setup; no maze rules/search/repair/selector/sweep. Aborted at step600 because path_f1 stayed 0.0 and CE stayed ~1.07, while matched clean FutureSeed opened at step400. Lesson: direct loss-only FP/FN pressure can preserve the no-PATH attractor and harm opening; proving loop pruning likely needs modeling/state dynamics or curriculum that preserves opening before applying correction pressure.</p>
+</section>
+<section class="card"><h2>Training Curve</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">step</text>
+<text x="4" y="26" class="tick">1.16</text>
+<text x="4" y="218" class="tick">-0.0862</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,34.3 193.2,31.8 330.4,34.3 467.6,34.3 604.8,33.0 742.0,33.0"/>
+<circle cx="56.0" cy="34.3" r="2.4" fill="#2563eb"><title>ce step=100 value=1.0625</title></circle>
+<circle cx="193.2" cy="31.8" r="2.4" fill="#2563eb"><title>ce step=200 value=1.0781</title></circle>
+<circle cx="330.4" cy="34.3" r="2.4" fill="#2563eb"><title>ce step=300 value=1.0625</title></circle>
+<circle cx="467.6" cy="34.3" r="2.4" fill="#2563eb"><title>ce step=400 value=1.0625</title></circle>
+<circle cx="604.8" cy="33.0" r="2.4" fill="#2563eb"><title>ce step=500 value=1.0703</title></circle>
+<circle cx="742.0" cy="33.0" r="2.4" fill="#2563eb"><title>ce step=600 value=1.0703</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">ce</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,33.0 193.2,31.8 330.4,34.3 467.6,34.3 604.8,33.0 742.0,33.0"/>
+<circle cx="56.0" cy="33.0" r="2.4" fill="#dc2626"><title>loop1 step=100 value=1.0703</title></circle>
+<circle cx="193.2" cy="31.8" r="2.4" fill="#dc2626"><title>loop1 step=200 value=1.0781</title></circle>
+<circle cx="330.4" cy="34.3" r="2.4" fill="#dc2626"><title>loop1 step=300 value=1.0625</title></circle>
+<circle cx="467.6" cy="34.3" r="2.4" fill="#dc2626"><title>loop1 step=400 value=1.0625</title></circle>
+<circle cx="604.8" cy="33.0" r="2.4" fill="#dc2626"><title>loop1 step=500 value=1.0703</title></circle>
+<circle cx="742.0" cy="33.0" r="2.4" fill="#dc2626"><title>loop1 step=600 value=1.0703</title></circle>
+<text x="98" y="236" fill="#dc2626" class="legend-text">loop1</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,204.2 193.2,204.2 330.4,204.2 467.6,204.2 604.8,204.2 742.0,204.2"/>
+<circle cx="56.0" cy="204.2" r="2.4" fill="#16a34a"><title>path_f1 step=100 value=0</title></circle>
+<circle cx="193.2" cy="204.2" r="2.4" fill="#16a34a"><title>path_f1 step=200 value=0</title></circle>
+<circle cx="330.4" cy="204.2" r="2.4" fill="#16a34a"><title>path_f1 step=300 value=0</title></circle>
+<circle cx="467.6" cy="204.2" r="2.4" fill="#16a34a"><title>path_f1 step=400 value=0</title></circle>
+<circle cx="604.8" cy="204.2" r="2.4" fill="#16a34a"><title>path_f1 step=500 value=0</title></circle>
+<circle cx="742.0" cy="204.2" r="2.4" fill="#16a34a"><title>path_f1 step=600 value=0</title></circle>
+<text x="161" y="236" fill="#16a34a" class="legend-text">path_f1</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,204.2 193.2,204.2 330.4,204.2 467.6,204.2 604.8,204.2 742.0,204.2"/>
+<circle cx="56.0" cy="204.2" r="2.4" fill="#9333ea"><title>exact step=100 value=0</title></circle>
+<circle cx="193.2" cy="204.2" r="2.4" fill="#9333ea"><title>exact step=200 value=0</title></circle>
+<circle cx="330.4" cy="204.2" r="2.4" fill="#9333ea"><title>exact step=300 value=0</title></circle>
+<circle cx="467.6" cy="204.2" r="2.4" fill="#9333ea"><title>exact step=400 value=0</title></circle>
+<circle cx="604.8" cy="204.2" r="2.4" fill="#9333ea"><title>exact step=500 value=0</title></circle>
+<circle cx="742.0" cy="204.2" r="2.4" fill="#9333ea"><title>exact step=600 value=0</title></circle>
+<text x="238" y="236" fill="#9333ea" class="legend-text">exact</text>
+<polyline fill="none" stroke="#f59e0b" stroke-width="2" points="56.0,203.5 193.2,203.7 330.4,203.7 467.6,203.7 604.8,203.7 742.0,203.8"/>
+<circle cx="56.0" cy="203.5" r="2.4" fill="#f59e0b"><title>zH step=100 value=0.0044</title></circle>
+<circle cx="193.2" cy="203.7" r="2.4" fill="#f59e0b"><title>zH step=200 value=0.0031</title></circle>
+<circle cx="330.4" cy="203.7" r="2.4" fill="#f59e0b"><title>zH step=300 value=0.0029</title></circle>
+<circle cx="467.6" cy="203.7" r="2.4" fill="#f59e0b"><title>zH step=400 value=0.003</title></circle>
+<circle cx="604.8" cy="203.7" r="2.4" fill="#f59e0b"><title>zH step=500 value=0.003</title></circle>
+<circle cx="742.0" cy="203.8" r="2.4" fill="#f59e0b"><title>zH step=600 value=0.0027</title></circle>
+<text x="301" y="236" fill="#f59e0b" class="legend-text">zH</text>
+<polyline fill="none" stroke="#0891b2" stroke-width="2" points="56.0,203.5 193.2,203.8 330.4,203.8 467.6,203.8 604.8,203.8 742.0,203.7"/>
+<circle cx="56.0" cy="203.5" r="2.4" fill="#0891b2"><title>zL step=100 value=0.0043</title></circle>
+<circle cx="193.2" cy="203.8" r="2.4" fill="#0891b2"><title>zL step=200 value=0.0027</title></circle>
+<circle cx="330.4" cy="203.8" r="2.4" fill="#0891b2"><title>zL step=300 value=0.0026</title></circle>
+<circle cx="467.6" cy="203.8" r="2.4" fill="#0891b2"><title>zL step=400 value=0.0027</title></circle>
+<circle cx="604.8" cy="203.8" r="2.4" fill="#0891b2"><title>zL step=500 value=0.0027</title></circle>
+<circle cx="742.0" cy="203.7" r="2.4" fill="#0891b2"><title>zL step=600 value=0.0031</title></circle>
+<text x="343" y="236" fill="#0891b2" class="legend-text">zL</text>
+</svg>
+<table><thead><tr><th>step</th><th>stage</th><th>ce</th><th>total</th><th>loop1</th><th>loop1_ce</th><th>loop_last</th><th>path_f1</th><th>exact</th></tr></thead><tbody><tr><td>100</td><td></td><td>1.0625</td><td></td><td>1.0703</td><td></td><td></td><td>0</td><td>0</td></tr><tr><td>200</td><td></td><td>1.0781</td><td></td><td>1.0781</td><td></td><td></td><td>0</td><td>0</td></tr><tr><td>300</td><td></td><td>1.0625</td><td></td><td>1.0625</td><td></td><td></td><td>0</td><td>0</td></tr><tr><td>400</td><td></td><td>1.0625</td><td></td><td>1.0625</td><td></td><td></td><td>0</td><td>0</td></tr><tr><td>500</td><td></td><td>1.0703</td><td></td><td>1.0703</td><td></td><td></td><td>0</td><td>0</td></tr><tr><td>600</td><td></td><td>1.0703</td><td></td><td>1.0703</td><td></td><td></td><td>0</td><td>0</td></tr></tbody></table>
+</section>
+<section class="card"><h2>Loop Readout</h2>
+<p class="muted">No numeric series available.</p>
+<p class="muted">No rows available.</p>
+</section>
+<section class="card"><h2>Case Visualizations</h2><ul>
+<li class="muted">No per-case trajectories were archived for this run. Future Maze runs now default to saving casebooks.</li>
+</ul></section>
+<section class="card"><h2>Artifacts</h2>
+<table><thead><tr><th>path</th></tr></thead><tbody><tr><td>abort.json</td></tr><tr><td>config.json</td></tr><tr><td>logs/launch.outer.log</td></tr><tr><td>logs/run.log</td></tr><tr><td>metadata.json</td></tr><tr><td>score.json</td></tr></tbody></table>
+</section>
+</main></body></html>

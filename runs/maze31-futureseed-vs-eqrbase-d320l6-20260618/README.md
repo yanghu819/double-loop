@@ -6,10 +6,12 @@ Recorded: 2026-06-18T09:10Z
 
 Can we say FutureSeed+loop is better than EqR on hard Maze31?
 
-This aggregate compares two equal-compute D320/L6 Maze31 runs:
+This aggregate compares two equal-compute D320/L6 Maze31 runs, plus the next
+loss-pressure probe:
 
 - FutureSeed+loop: `maze31-cleanscale-d320l6-loop8x16-s1200-20260618T0742Z-46a2657`
 - EqR baseline: `maze31-eqrbase-d320l6-loop8x16-s1200-20260618T084436Z-2cdb9c5`
+- FutureSeed+Tversky: `maze31-fs-tversky-w075-a075b065-d320l6-loop8x16-s1200-20260618T091423Z-d19cd3a`
 
 The code path is the same except `EQR_FUTURE_SEED_SCALE=1` versus `0`. Both use
 Maze31 path `160-260`, batch `16`, train/eval loops `8/16`, hidden `320`, layers
@@ -27,6 +29,12 @@ FutureSeed clearly wins the opening/optimization test:
 
 ![FutureSeed vs EqR baseline](fs_vs_eqrbase_opening_curve.png)
 
+The Tversky probe answers a different question: can a generic soft TP/FP/FN
+training pressure make loops prune? On this setting it failed earlier than the
+loop question: it kept the model in the no-PATH attractor through step600.
+
+![FutureSeed vs EqR baseline vs Tversky](fs_eqr_tversky_opening_curve.png)
+
 ## Interpretation
 
 This supports a limited but important claim:
@@ -38,6 +46,12 @@ solution through step600, while FutureSeed opened at step400.
 It does not yet support the stronger claim that FutureSeed+loop has beaten EqR
 as a full paradigm. The FutureSeed run still had weak loop gain and its loop16
 behavior mostly increased recall/coverage rather than reducing false positives.
+
+The Tversky result makes the second criterion sharper: loss-only pressure is
+not enough. A direct FP/FN objective can damage the opening dynamics that
+FutureSeed gave us. The next viable direction should preserve the clean
+FutureSeed opening path first, then change the recurrent state/decision
+dynamics so later loops can revise the mask.
 
 ## Next Proof Target
 
@@ -55,3 +69,4 @@ maze-specific prior.
 
 - `comparison.json`
 - `fs_vs_eqrbase_opening_curve.png`
+- `fs_eqr_tversky_opening_curve.png`

@@ -621,3 +621,18 @@
   compliant direction must preserve the FutureSeed opening dynamics while
   changing generic recurrent state/decision dynamics, or use a curriculum that
   applies correction pressure only after the model has learned to open.
+- Delaying generic FP/FN pressure until after FutureSeed opening is useful for
+  the training trajectory, but it still does not prove loop self-correction. The
+  `maze31-fs-delayedtversky-a450-w075-a075b065-d320l6-loop8x16` run kept
+  Tversky weight `0` through the step400 opening point, then enabled the same
+  `weight=0.75`, `alpha=0.75`, `beta=0.65` pressure at step450. Unlike the
+  always-on run, it opened cleanly (`step400 path_f1=0.5455`) and stayed stable
+  after pressure turned on; final loop16 path F1 rose to `0.5824`, better than
+  the clean D320/L6 final `0.5344`. But loop dynamics remained almost static:
+  loop1 to loop16 was only `0.5822 -> 0.5824`, precision
+  `0.4305 -> 0.4308`, recall `0.9096 -> 0.9091`, pred PATH fraction
+  `0.4082 -> 0.4077`, and visual FP/FN `260.5/30.8 -> 260.2/31.3`. Lesson:
+  delayed pressure can improve the overall operating point, but it is not the
+  missing recurrent repair mechanism. Do not sweep Tversky timing/weight next;
+  use this as evidence that the main bottleneck is generic recurrent
+  state/decision dynamics that make later loops perform real revision.

@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "5009fc1ff8d18c165f216652074f249467277d79",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 delayed Tversky correction probe from SHA 5009fc1. Mechanism: keep clean FutureSeed training through opening, then enable generic soft TP/FP/FN Tversky pressure at step450 (weight=0.75 alpha=0.75 beta=0.65). Result: opening preserved, step400 path_f1=0.5455 with tw=0, later tw=0.75 remained stable, final loop16 path_f1=0.5824. Need interpret FP/FN carefully: loop gain remains near zero, so this improves operating point but may not prove late-loop self-correction.",
+  "recorded_at_utc": "2026-06-18T11:14:06.289389+00:00",
+  "run_name": "maze31-fs-delayedtversky-a450-w075-a075b065-d320l6-loop8x16-s1200-20260618T103230Z-5009fc1",
+  "score": 0.5823721289634705,
+  "score_key": "metrics.eval_clean.loop16.path_f1",
+  "timestamp_utc": "2026-06-18T11:05:18.098014+00:00"
+}

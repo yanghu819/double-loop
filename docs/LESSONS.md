@@ -214,6 +214,13 @@
 - The no-Hydra EqR maze runner works on GPU1 and gives a cheap proxy for
   recurrence on grid path propagation. It runs online generated mazes, archives
   config/logs/source metadata, and does not require Hydra or flash-attn.
+- Visualization is part of the experiment evidence, not a presentation layer.
+  Every archived run should have a run-level dashboard with training curves,
+  loop readouts, difficulty-transfer plots when available, and links to
+  case-level artifacts. For Maze runs, save case trajectories by default so the
+  loop story can be judged from concrete false-positive/false-negative changes,
+  not only scalar F1. If an old run lacks per-case predictions, explicitly show
+  that limitation in the dashboard instead of pretending it can be reconstructed.
 - The first 15x15 perfect-maze probe is neutral for FutureSeed transfer:
   FutureSeed loop8 path F1 was `0.5912`, base loop8 path F1 was `0.5905`, exact
   was `0.0` for both, and loop gain was only `+0.0008` for FutureSeed versus

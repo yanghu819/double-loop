@@ -1,0 +1,277 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 128,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 4,
+    "cpu": false,
+    "d_model": 128,
+    "eval_hole_patterns": "",
+    "eval_holes": 8,
+    "eval_holes_list": "8,12,16",
+    "eval_n": 512,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "head_dim": 16,
+    "heads": 8,
+    "hole_pattern": "random",
+    "hole_stages": "4-8:300,8-12:500",
+    "holes_max": 4,
+    "holes_min": 2,
+    "l_cycles": 2,
+    "lambda_": 0.95,
+    "layers": 8,
+    "log_every": 100,
+    "loop_loss": "final",
+    "lr": 0.002,
+    "max_loops": 1,
+    "noise_scale": 0.01,
+    "out_dir": "/huyang2/double-loop/runs/9x9-ablate-no-loop-20260603T111606Z-5e2253f/output",
+    "rollout_ks": "1,4,8",
+    "rollout_loop_values": "1",
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "seed": 52,
+    "size": 9,
+    "steps": 800,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.99853515625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.9921875,
+      "loop": 1,
+      "solved_valid_clue": 0.9921875,
+      "valid_sudoku": 0.9921875
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9957682490348816,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.955078125,
+      "loop": 1,
+      "solved_valid_clue": 0.955078125,
+      "valid_sudoku": 0.955078125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.98095703125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.771484375,
+      "loop": 1,
+      "solved_valid_clue": 0.771484375,
+      "valid_sudoku": 0.771484375
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:43.671308+00:00",
+  "git_dirty": false,
+  "git_sha": "5e2253f73a65ff7e7e128f5370b844f342710860",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 0.8447,
+      "loop1": 0.8447,
+      "loop_last": 0.8447,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 100,
+      "total": 0.8447
+    },
+    {
+      "ce": 0.477,
+      "loop1": 0.477,
+      "loop_last": 0.477,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 200,
+      "total": 0.477
+    },
+    {
+      "ce": 0.1602,
+      "loop1": 0.1602,
+      "loop_last": 0.1602,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 300,
+      "total": 0.1602
+    },
+    {
+      "ce": 0.1052,
+      "loop1": 0.1052,
+      "loop_last": 0.1052,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 400,
+      "total": 0.1052
+    },
+    {
+      "ce": 0.0529,
+      "loop1": 0.0529,
+      "loop_last": 0.0529,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 500,
+      "total": 0.0529
+    },
+    {
+      "ce": 0.0077,
+      "loop1": 0.0077,
+      "loop_last": 0.0077,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 600,
+      "total": 0.0077
+    },
+    {
+      "ce": 0.0137,
+      "loop1": 0.0137,
+      "loop_last": 0.0137,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 700,
+      "total": 0.0137
+    },
+    {
+      "ce": 0.0135,
+      "loop1": 0.0135,
+      "loop_last": 0.0135,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 800,
+      "total": 0.0135
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.99853515625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.9921875,
+      "loop": 1,
+      "solved_valid_clue": 0.9921875,
+      "valid_sudoku": 0.9921875
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9957682490348816,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.955078125,
+      "loop": 1,
+      "solved_valid_clue": 0.955078125,
+      "valid_sudoku": 0.955078125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.98095703125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.771484375,
+      "loop": 1,
+      "solved_valid_clue": 0.771484375,
+      "valid_sudoku": 0.771484375
+    }
+  ],
+  "loop_deltas": {},
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.99853515625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5312368869781494,
+      "future_seed.fs_state_norm": 8.49979019165039,
+      "group": "eval_clean",
+      "label_exact": 0.9921875,
+      "loop": 1,
+      "solved_valid_clue": 0.9921875,
+      "valid_sudoku": 0.9921875
+    }
+  ],
+  "mode": "full",
+  "notes": "",
+  "readme": "",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "9x9-ablate-no-loop-20260603T111606Z-5e2253f",
+  "score": 0.9921875,
+  "score_key": "metrics.eval_clean.loop1.label_exact",
+  "task": {
+    "box_cols": 3,
+    "box_rows": 3,
+    "eval_hole_patterns": [
+      "random"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "hole_pattern": "random",
+    "hole_stages": [
+      [
+        4,
+        8,
+        300
+      ],
+      [
+        8,
+        12,
+        500
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 1,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1,
+      4,
+      8
+    ],
+    "rollout_loop_values": [
+      1
+    ],
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "size": 9
+  },
+  "timestamp_utc": "2026-06-03T11:17:47.644570+00:00"
+}

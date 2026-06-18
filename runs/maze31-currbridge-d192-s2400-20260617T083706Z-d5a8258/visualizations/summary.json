@@ -1,0 +1,163 @@
+{
+  "abort": {
+    "abort_time_utc": "2026-06-17T08:41:39Z",
+    "decision": "Stop this 80-140 warmup. It made PATH labels too sparse and encouraged conservative non-PATH predictions. Relaunch a tighter bridge starting at 120-200 before 160-260.",
+    "observed_steps": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600
+    ],
+    "observed_train_curve": [
+      {
+        "ce": 0.3125,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "path_range": "80-140",
+        "step": 100
+      },
+      {
+        "ce": 0.3047,
+        "exact": 0.0,
+        "path_f1": 0.0014,
+        "path_range": "80-140",
+        "step": 200
+      },
+      {
+        "ce": 0.2852,
+        "exact": 0.0,
+        "path_f1": 0.0884,
+        "path_range": "80-140",
+        "step": 300
+      },
+      {
+        "ce": 0.2969,
+        "exact": 0.0,
+        "path_f1": 0.0611,
+        "path_range": "80-140",
+        "step": 400
+      },
+      {
+        "ce": 0.2988,
+        "exact": 0.0,
+        "path_f1": 0.081,
+        "path_range": "80-140",
+        "step": 500
+      },
+      {
+        "ce": 0.291,
+        "exact": 0.0,
+        "path_f1": 0.1634,
+        "path_range": "80-140",
+        "step": 600
+      }
+    ],
+    "reason": "low_roi_path_curriculum_short_stage_no_path_prediction_after_step600",
+    "remote_run_dir": "/huyang2/double-loop/.worktrees/maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258/runs/maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258",
+    "run_name": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258",
+    "source_sha": "d5a82583fd3e4f160cf86731c05f35a1bc3fc445",
+    "status": "aborted",
+    "stopped_pid": 421
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/run.log"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": true,
+    "git_sha": "d5a82583fd3e4f160cf86731c05f35a1bc3fc445",
+    "mode": "eqr_maze_probe",
+    "run_dir": "/huyang2/double-loop/.worktrees/maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258/runs/maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258",
+    "run_name": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258",
+    "timestamp_utc": "2026-06-17T08:34:34.023819+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:44.248573+00:00",
+  "git_dirty": true,
+  "git_sha": "d5a82583fd3e4f160cf86731c05f35a1bc3fc445",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 0.3125,
+      "exact": 0.0,
+      "loop1": 0.3145,
+      "path": "80-140",
+      "path_f1": 0.0,
+      "source_log": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258.log",
+      "step": 100,
+      "zH": 0.0072,
+      "zL": 0.0067
+    },
+    {
+      "ce": 0.3047,
+      "exact": 0.0,
+      "loop1": 0.3105,
+      "path": "80-140",
+      "path_f1": 0.0014,
+      "source_log": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258.log",
+      "step": 200,
+      "zH": 0.0084,
+      "zL": 0.008
+    },
+    {
+      "ce": 0.2852,
+      "exact": 0.0,
+      "loop1": 0.291,
+      "path": "80-140",
+      "path_f1": 0.0884,
+      "source_log": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258.log",
+      "step": 300,
+      "zH": 0.0062,
+      "zL": 0.0071
+    },
+    {
+      "ce": 0.2969,
+      "exact": 0.0,
+      "loop1": 0.2969,
+      "path": "80-140",
+      "path_f1": 0.0611,
+      "source_log": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258.log",
+      "step": 400,
+      "zH": 0.0065,
+      "zL": 0.008
+    },
+    {
+      "ce": 0.2988,
+      "exact": 0.0,
+      "loop1": 0.3008,
+      "path": "80-140",
+      "path_f1": 0.081,
+      "source_log": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258.log",
+      "step": 500,
+      "zH": 0.0152,
+      "zL": 0.0248
+    },
+    {
+      "ce": 0.291,
+      "exact": 0.0,
+      "loop1": 0.293,
+      "path": "80-140",
+      "path_f1": 0.1634,
+      "source_log": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258.log",
+      "step": 600,
+      "zH": 0.006,
+      "zL": 0.0077
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "eqr_maze_probe",
+  "notes": "",
+  "readme": "README.md",
+  "result_json": "",
+  "run_name": "maze31-currbridge-d192-s2400-20260617T083706Z-d5a8258",
+  "score": null,
+  "score_key": "",
+  "task": {},
+  "timestamp_utc": "2026-06-17T08:34:34.023819+00:00"
+}

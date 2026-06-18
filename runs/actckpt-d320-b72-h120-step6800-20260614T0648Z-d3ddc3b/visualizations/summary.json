@@ -1,0 +1,80 @@
+{
+  "abort": {
+    "aborted_at_utc": "2026-06-14T06:55:07.944754+00:00",
+    "decision": "Stop this exact run; activation checkpoint solves memory but is too slow for D320/B72 full h120 checkpoint inside a 4h lease. Next high-ROI option is either smaller activation-checkpointed capacity with reachable checkpoint, or a true resumed/longer lease run, not letting this partial run drift.",
+    "estimated_sec_per_step_after_step100": 2.65,
+    "observed_steps": [
+      {
+        "ce": 1.8375,
+        "step": 100
+      },
+      {
+        "ce": 1.8053,
+        "step": 200
+      }
+    ],
+    "pid_file": ".cache/launch/actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b.pid",
+    "projected_remaining_sec_after_step200": 17490,
+    "reason": "D320/B72 activation-checkpoint fair capacity run projected beyond current GPU1 lease before first h120 checkpoint.",
+    "remaining_steps_after_step200": 6600,
+    "status": "aborted",
+    "step100_to_step200_sec_estimate": 265,
+    "target_checkpoint_step": 6800
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/driver.log",
+    "logs/run.log"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": false,
+    "git_sha": "d3ddc3bd73c2bf3f9ad603ebed880279c6af0a25",
+    "mode": "full",
+    "run_dir": "/huyang2/double-loop/.worktrees/actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b/runs/actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b",
+    "run_name": "actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b",
+    "timestamp_utc": "2026-06-14T06:43:34.762635+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:43.685089+00:00",
+  "git_dirty": false,
+  "git_sha": "d3ddc3bd73c2bf3f9ad603ebed880279c6af0a25",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 1.8375,
+      "loop1": 1.8398,
+      "loop_last": 1.8375,
+      "scratch_delta": 0.0,
+      "scratch_gauss": 0.0,
+      "source_log": "logs/run.log",
+      "stage": "1:16-36",
+      "step": 100,
+      "total": 1.8376
+    },
+    {
+      "ce": 1.8053,
+      "loop1": 1.8135,
+      "loop_last": 1.8053,
+      "scratch_delta": 0.0,
+      "scratch_gauss": 0.0,
+      "source_log": "logs/run.log",
+      "stage": "1:16-36",
+      "step": 200,
+      "total": 1.8067
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "full",
+  "notes": "",
+  "readme": "README.md",
+  "result_json": "",
+  "run_name": "actckpt-d320-b72-h120-step6800-20260614T0648Z-d3ddc3b",
+  "score": null,
+  "score_key": "",
+  "task": {},
+  "timestamp_utc": "2026-06-14T06:43:34.762635+00:00"
+}

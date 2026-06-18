@@ -1,0 +1,147 @@
+{
+  "abort": {
+    "abort_time_utc": "2026-06-18T05:46:53Z",
+    "decision": "This abort is still useful but the original kill interpretation was too harsh: clean D320/L6 hard-from-start did open PATH prediction at step400, while the matched state_compete_cross scale run was still at path_f1=0.0 through step400. Because the process was killed just after the step400 log, no final eval or loop16 readout exists. Next run should rerun/continue this clean scale long enough to evaluate loop behavior, not expand the complex cross-candidate update.",
+    "observed_steps": [
+      100,
+      200,
+      300,
+      400
+    ],
+    "observed_train_curve": [
+      {
+        "ce": 1.0625,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 100
+      },
+      {
+        "ce": 1.0703,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 200
+      },
+      {
+        "ce": 1.0625,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 300
+      },
+      {
+        "ce": 0.3691,
+        "exact": 0.0,
+        "path_f1": 0.5861,
+        "step": 400
+      }
+    ],
+    "reason": "stopped_after_late_path_open_before_final_eval",
+    "remote_run_dir": "/huyang2/double-loop/.worktrees/maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2/runs/maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+    "run_name": "maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+    "source_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+    "status": "aborted"
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/launch.log",
+    "logs/run.log",
+    "metadata.json",
+    "score.json"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": false,
+    "git_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+    "mode": "eqr_maze_probe",
+    "run_dir": "/huyang2/double-loop/.worktrees/maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2/runs/maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+    "run_name": "maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+    "timestamp_utc": "2026-06-18T05:35:02.263273+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:44.221683+00:00",
+  "git_dirty": false,
+  "git_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 1.0625,
+      "exact": 0.0,
+      "improve": 0.0,
+      "loop1": 1.0625,
+      "margin": 0.9265,
+      "mass": 0.2477,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.0,
+      "rank": 0.0,
+      "selfcorr": 0.021,
+      "source_log": "logs/run.log",
+      "step": 100,
+      "zH": 0.0039,
+      "zL": 0.0032
+    },
+    {
+      "ce": 1.0703,
+      "exact": 0.0,
+      "improve": 0.0,
+      "loop1": 1.0703,
+      "margin": 0.7752,
+      "mass": 0.293,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.0,
+      "rank": 0.0,
+      "selfcorr": 0.0198,
+      "source_log": "logs/run.log",
+      "step": 200,
+      "zH": 0.0031,
+      "zL": 0.003
+    },
+    {
+      "ce": 1.0625,
+      "exact": 0.0,
+      "improve": 0.0,
+      "loop1": 1.0625,
+      "margin": 0.8172,
+      "mass": 0.2757,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.0,
+      "rank": 0.0,
+      "selfcorr": 0.0196,
+      "source_log": "logs/run.log",
+      "step": 300,
+      "zH": 0.0029,
+      "zL": 0.0031
+    },
+    {
+      "ce": 0.3691,
+      "exact": 0.0,
+      "improve": 0.0,
+      "loop1": 0.3691,
+      "margin": 0.2858,
+      "mass": 0.1739,
+      "path": "160-260",
+      "path_f1": 0.5861,
+      "pred": 0.0,
+      "rank": 0.0,
+      "selfcorr": 0.0401,
+      "source_log": "logs/run.log",
+      "step": 400,
+      "zH": 0.004,
+      "zL": 0.0043
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "eqr_maze_probe_abort",
+  "notes": "2026-06-18 GPU1 clean D320/L6 train8/eval16 hard-from-start short probe: path_f1 stayed 0.0 through step300 but opened at step400 (CE=0.3691, path_f1=0.5861); killed before final eval, so no loop16 score. This contrasts with state_compete_cross scale remaining path_f1=0.0 through step400.",
+  "readme": "README.md",
+  "result_json": "",
+  "run_name": "maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+  "score": null,
+  "score_key": "missing_result_json",
+  "task": {},
+  "timestamp_utc": "2026-06-18T05:46:55.836352+00:00"
+}

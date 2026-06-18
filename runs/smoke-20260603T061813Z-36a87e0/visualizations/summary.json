@@ -1,0 +1,239 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 2,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 2,
+    "cpu": false,
+    "d_model": 32,
+    "eval_hole_patterns": "",
+    "eval_holes": 2,
+    "eval_holes_list": "",
+    "eval_n": 4,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "head_dim": 8,
+    "heads": 4,
+    "hole_pattern": "unit",
+    "hole_stages": "",
+    "holes_max": 4,
+    "holes_min": 2,
+    "l_cycles": 1,
+    "lambda_": 0.95,
+    "layers": 4,
+    "log_every": 1,
+    "loop_loss": "final",
+    "lr": 0.002,
+    "max_loops": 3,
+    "noise_scale": 0.01,
+    "out_dir": "/huyang2/double-loop/runs/smoke-20260603T061813Z-36a87e0/output",
+    "rollout_ks": "1",
+    "rollout_loop_values": "",
+    "rollout_noise_scale": 0.05,
+    "seed": 52,
+    "size": 6,
+    "steps": 2,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "holes2",
+      "holes": 2,
+      "label_exact": 0.0,
+      "loop": 3,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:44.345911+00:00",
+  "git_dirty": true,
+  "git_sha": "36a87e092f2b59a36c25631a97cffc71f572a71b",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 1.864,
+      "loop1": 1.8581,
+      "loop_last": 1.864,
+      "source_log": "logs/run.log",
+      "stage": "1:2-4",
+      "step": 1,
+      "total": 1.864
+    },
+    {
+      "ce": 1.9751,
+      "loop1": 1.9733,
+      "loop_last": 1.9751,
+      "source_log": "logs/run.log",
+      "stage": "1:2-4",
+      "step": 2,
+      "total": 1.9751
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "holes2",
+      "holes": 2,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "holes2",
+      "holes": 2,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "holes2",
+      "holes": 2,
+      "label_exact": 0.0,
+      "loop": 3,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "loop_deltas": {
+    "blank_acc": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 3.0
+    },
+    "label_exact": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 3.0
+    },
+    "solved_valid_clue": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 3.0
+    },
+    "valid_sudoku": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 3.0
+    }
+  },
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.4999983310699463,
+      "future_seed.fs_state_norm": 3.9999866485595703,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 3,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "mode": "smoke",
+  "notes": "",
+  "readme": "",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "smoke-20260603T061813Z-36a87e0",
+  "score": 0.0,
+  "score_key": "metrics.eval_clean.loop3.label_exact",
+  "task": {
+    "box_cols": 3,
+    "box_rows": 2,
+    "eval_hole_patterns": [
+      "unit"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "hole_pattern": "unit",
+    "hole_stages": [
+      [
+        2,
+        4,
+        2
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 3,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1
+    ],
+    "rollout_loop_values": [],
+    "rollout_noise_scale": 0.05,
+    "size": 6
+  },
+  "timestamp_utc": "2026-06-03T06:18:21.300101+00:00"
+}

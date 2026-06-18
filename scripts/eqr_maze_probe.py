@@ -1115,9 +1115,17 @@ def build_visualization_payload(
             np.lexsort((-final_fn[final_failures], -final_fp[final_failures], final_f1[final_failures]))
         ]
 
+    loop1_fp = stats_np[loop1]["false_positive_path"]
+    final_fp = stats_np[final_loop]["false_positive_path"]
+    loop1_fn = stats_np[loop1]["false_negative_path"]
+    fp_reduction = loop1_fp - final_fp
+    fn_increase = final_fn - loop1_fn
+
     orders = [
         ("final failure", final_failures),
         ("hard final low f1", np.argsort(final_f1)),
+        ("largest false-positive pruning", np.argsort(-fp_reduction)),
+        ("largest new false negatives", np.argsort(-fn_increase)),
         ("most final over-prediction", np.argsort(-over_pred)),
         ("largest loop gain", np.argsort(-loop_gain)),
     ]
@@ -1165,6 +1173,8 @@ def build_visualization_payload(
                 "reason": reasons[idx],
                 "loop_order": loop_order,
                 "loop_gain": float(loop_gain[idx]),
+                "false_positive_reduction": float(fp_reduction[idx]),
+                "new_false_negative_count": float(fn_increase[idx]),
                 "final_path_f1": float(final_f1[idx]),
                 "final_exact": float(stats_np[final_loop]["label_exact"][idx]),
                 "input_rows": row_chars_from_ids(inputs[idx], n),

@@ -1,0 +1,512 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 128,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 4,
+    "cpu": false,
+    "d_model": 128,
+    "eval_hole_patterns": "",
+    "eval_holes": 8,
+    "eval_holes_list": "8,12,16",
+    "eval_n": 512,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 0.0,
+    "head_dim": 16,
+    "heads": 8,
+    "hole_pattern": "random",
+    "hole_stages": "4-8:300,8-12:500",
+    "holes_max": 4,
+    "holes_min": 2,
+    "l_cycles": 2,
+    "lambda_": 0.95,
+    "layers": 8,
+    "log_every": 100,
+    "loop_loss": "final",
+    "lr": 0.002,
+    "max_loops": 5,
+    "noise_scale": 0.01,
+    "out_dir": "/huyang2/double-loop/runs/9x9-ablate-no-future-seed-20260603T111747Z-5e2253f/output",
+    "rollout_ks": "1,4,8",
+    "rollout_loop_values": "1,3,5",
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "seed": 52,
+    "size": 9,
+    "steps": 800,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71142578125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.06640625,
+      "loop": 5,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6897786259651184,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.01953125,
+      "loop": 5,
+      "solved_valid_clue": 0.01953125,
+      "valid_sudoku": 0.01953125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6607666015625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.0,
+      "loop": 5,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:43.668808+00:00",
+  "git_dirty": false,
+  "git_sha": "5e2253f73a65ff7e7e128f5370b844f342710860",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 0.8821,
+      "loop1": 0.8796,
+      "loop_last": 0.8821,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 100,
+      "total": 0.8821
+    },
+    {
+      "ce": 0.7438,
+      "loop1": 0.7504,
+      "loop_last": 0.7438,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 200,
+      "total": 0.7438
+    },
+    {
+      "ce": 0.6353,
+      "loop1": 0.6321,
+      "loop_last": 0.6353,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 300,
+      "total": 0.6353
+    },
+    {
+      "ce": 0.6523,
+      "loop1": 0.6541,
+      "loop_last": 0.6523,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 400,
+      "total": 0.6523
+    },
+    {
+      "ce": 0.5355,
+      "loop1": 0.5323,
+      "loop_last": 0.5355,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 500,
+      "total": 0.5355
+    },
+    {
+      "ce": 0.5318,
+      "loop1": 0.5336,
+      "loop_last": 0.5318,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 600,
+      "total": 0.5318
+    },
+    {
+      "ce": 0.4715,
+      "loop1": 0.4711,
+      "loop_last": 0.4715,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 700,
+      "total": 0.4715
+    },
+    {
+      "ce": 0.4498,
+      "loop1": 0.4477,
+      "loop_last": 0.4498,
+      "source_log": "logs/run.log",
+      "stage": "2:8-12",
+      "step": 800,
+      "total": 0.4498
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71044921875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.068359375,
+      "loop": 1,
+      "solved_valid_clue": 0.068359375,
+      "valid_sudoku": 0.068359375
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71142578125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.068359375,
+      "loop": 2,
+      "solved_valid_clue": 0.068359375,
+      "valid_sudoku": 0.068359375
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.712158203125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.06640625,
+      "loop": 3,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.711669921875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.06640625,
+      "loop": 4,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71142578125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.06640625,
+      "loop": 5,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6892903447151184,
+      "clue_ok": 0.998046875,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.015625,
+      "loop": 1,
+      "solved_valid_clue": 0.015625,
+      "valid_sudoku": 0.015625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6901041865348816,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.017578125,
+      "loop": 2,
+      "solved_valid_clue": 0.017578125,
+      "valid_sudoku": 0.017578125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6901041865348816,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.01953125,
+      "loop": 3,
+      "solved_valid_clue": 0.01953125,
+      "valid_sudoku": 0.01953125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.689453125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.01953125,
+      "loop": 4,
+      "solved_valid_clue": 0.01953125,
+      "valid_sudoku": 0.01953125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6897786259651184,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.01953125,
+      "loop": 5,
+      "solved_valid_clue": 0.01953125,
+      "valid_sudoku": 0.01953125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6588134765625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.662841796875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.662109375,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.0,
+      "loop": 3,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6611328125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.0,
+      "loop": 4,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6607666015625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "holes16",
+      "holes": 16,
+      "label_exact": 0.0,
+      "loop": 5,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "loop_deltas": {
+    "blank_acc": {
+      "delta": 0.0009765625,
+      "first": 0.71044921875,
+      "first_x": 1.0,
+      "last": 0.71142578125,
+      "last_x": 5.0
+    },
+    "label_exact": {
+      "delta": -0.001953125,
+      "first": 0.068359375,
+      "first_x": 1.0,
+      "last": 0.06640625,
+      "last_x": 5.0
+    },
+    "solved_valid_clue": {
+      "delta": -0.001953125,
+      "first": 0.068359375,
+      "first_x": 1.0,
+      "last": 0.06640625,
+      "last_x": 5.0
+    },
+    "valid_sudoku": {
+      "delta": -0.001953125,
+      "first": 0.068359375,
+      "first_x": 1.0,
+      "last": 0.06640625,
+      "last_x": 5.0
+    }
+  },
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71044921875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "eval_clean",
+      "label_exact": 0.068359375,
+      "loop": 1,
+      "solved_valid_clue": 0.068359375,
+      "valid_sudoku": 0.068359375
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71142578125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "eval_clean",
+      "label_exact": 0.068359375,
+      "loop": 2,
+      "solved_valid_clue": 0.068359375,
+      "valid_sudoku": 0.068359375
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.712158203125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "eval_clean",
+      "label_exact": 0.06640625,
+      "loop": 3,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.711669921875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "eval_clean",
+      "label_exact": 0.06640625,
+      "loop": 4,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.71142578125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.0,
+      "future_seed.fs_state_norm": 0.0,
+      "group": "eval_clean",
+      "label_exact": 0.06640625,
+      "loop": 5,
+      "solved_valid_clue": 0.06640625,
+      "valid_sudoku": 0.06640625
+    }
+  ],
+  "mode": "full",
+  "notes": "",
+  "readme": "",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "9x9-ablate-no-future-seed-20260603T111747Z-5e2253f",
+  "score": 0.06640625,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "task": {
+    "box_cols": 3,
+    "box_rows": 3,
+    "eval_hole_patterns": [
+      "random"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 0.0,
+    "hole_pattern": "random",
+    "hole_stages": [
+      [
+        4,
+        8,
+        300
+      ],
+      [
+        8,
+        12,
+        500
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 5,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1,
+      4,
+      8
+    ],
+    "rollout_loop_values": [
+      1,
+      3,
+      5
+    ],
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "size": 9
+  },
+  "timestamp_utc": "2026-06-03T11:24:49.883646+00:00"
+}

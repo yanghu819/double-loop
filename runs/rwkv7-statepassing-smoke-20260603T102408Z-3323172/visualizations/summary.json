@@ -1,0 +1,153 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 2,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 1,
+    "cpu": false,
+    "d_model": 32,
+    "eval_hole_patterns": "",
+    "eval_holes": 2,
+    "eval_holes_list": "2",
+    "eval_n": 2,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "head_dim": 16,
+    "heads": 2,
+    "hole_pattern": "random",
+    "hole_stages": "",
+    "holes_max": 4,
+    "holes_min": 2,
+    "l_cycles": 1,
+    "lambda_": 0.95,
+    "layers": 2,
+    "log_every": 1,
+    "loop_loss": "final",
+    "lr": 0.002,
+    "max_loops": 1,
+    "noise_scale": 0.01,
+    "out_dir": "/huyang2/double-loop/runs/rwkv7-statepassing-smoke-20260603T102408Z-3323172/output",
+    "rollout_ks": "1",
+    "rollout_loop_values": "",
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "seed": 52,
+    "size": 4,
+    "steps": 1,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.5,
+      "future_seed.fs_state_norm": 8.0,
+      "group": "holes2",
+      "holes": 2,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:44.306026+00:00",
+  "git_dirty": false,
+  "git_sha": "3323172bfe2b395d05d13bcf30abd1b810be18d5",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 1.5523,
+      "loop1": 1.5523,
+      "loop_last": 1.5523,
+      "source_log": "logs/run.log",
+      "stage": "1:2-4",
+      "step": 1,
+      "total": 1.5523
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.5,
+      "future_seed.fs_state_norm": 8.0,
+      "group": "holes2",
+      "holes": 2,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "loop_deltas": {},
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.0,
+      "clue_ok": 0.0,
+      "future_seed.fs_gate_mean": 0.5,
+      "future_seed.fs_state_norm": 8.0,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "mode": "smoke",
+  "notes": "2026-06-03T10:24:08Z GPU1 A100 CUDA state-passing RWKV7 smoke at 3323172. Purpose: verify official RWKV-CUDA statepassing clampw compiles and runs forward/backward after wind movmatrix failure on sm80. Result: 1-step 4x4 smoke completed; score is not a model-quality signal.",
+  "readme": "",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "rwkv7-statepassing-smoke-20260603T102408Z-3323172",
+  "score": 0.0,
+  "score_key": "metrics.eval_clean.loop1.label_exact",
+  "task": {
+    "box_cols": 2,
+    "box_rows": 2,
+    "eval_hole_patterns": [
+      "random"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "hole_pattern": "random",
+    "hole_stages": [
+      [
+        2,
+        4,
+        1
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 1,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1
+    ],
+    "rollout_loop_values": [],
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "size": 4
+  },
+  "timestamp_utc": "2026-06-03T10:24:27.574823+00:00"
+}

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment Dashboard - eqr-solid-hardrep_base-s54-20260604T045905Z-66ff740</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;background:#f7f7f4;color:#1f2328}
+main{max-width:1180px;margin:auto}.card{background:#fff;border:1px solid #ddd8cf;border-radius:8px;padding:14px;margin:14px 0}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 10px}.muted{color:#6b7280}.links{display:flex;flex-wrap:wrap;gap:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left}th{background:#f3f4f6}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}dt{font-weight:600}.chart{width:100%;height:auto;background:#fbfbf8;border:1px solid #e5e0d8;border-radius:6px}.axis{stroke:#777;stroke-width:1}.tick,.legend-text{font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin-right:6px;font-size:12px}
+</style>
+</head>
+<body><main>
+<h1>eqr-solid-hardrep_base-s54-20260604T045905Z-66ff740</h1>
+<p class="links"><a href="output/eqr_probe_seed54.json">result JSON</a> <a href="summary.json">dashboard data</a></p>
+<section class="card"><h2>Run Summary</h2>
+<dl>
+<dt>mode</dt><dd>eqr_probe</dd>
+<dt>score</dt><dd>0.998047 <span class="muted">metrics.eval_clean.loop4.label_exact</span></dd>
+<dt>git sha</dt><dd>66ff74066cab22774c03310a20e7bcdf25311f2b</dd>
+<dt>timestamp</dt><dd>2026-06-04T05:04:38.037733+00:00</dd>
+<dt>aborted</dt><dd>False</dd>
+</dl>
+<p>2h hard-curriculum control: base EqR trained 8-16/16-24. Very strong hard-hole baseline.</p>
+</section>
+<section class="card"><h2>Task / Model</h2><dl>
+<dt>model</dt><dd>EqRModel</dd><dt>size</dt><dd>9</dd><dt>hidden_size</dt><dd>192</dd><dt>layers</dt><dd>2</dd><dt>train_loops</dt><dd>4</dd>
+</dl></section>
+<section class="card"><h2>Training Curve</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">step</text>
+<text x="4" y="26" class="tick">1.18</text>
+<text x="4" y="218" class="tick">-0.0856</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,106.4 141.8,201.4 227.5,202.2 313.2,202.4 399.0,203.0 484.8,204.2 570.5,202.5 656.2,202.2 742.0,203.5"/>
+<circle cx="56.0" cy="106.4" r="2.4" fill="#2563eb"><title>ce step=100 value=0.621094</title></circle>
+<circle cx="141.8" cy="201.4" r="2.4" fill="#2563eb"><title>ce step=200 value=0.0196533</title></circle>
+<circle cx="227.5" cy="202.2" r="2.4" fill="#2563eb"><title>ce step=300 value=0.0142212</title></circle>
+<circle cx="313.2" cy="202.4" r="2.4" fill="#2563eb"><title>ce step=400 value=0.0134888</title></circle>
+<circle cx="399.0" cy="203.0" r="2.4" fill="#2563eb"><title>ce step=500 value=0.00952148</title></circle>
+<circle cx="484.8" cy="204.2" r="2.4" fill="#2563eb"><title>ce step=600 value=0.00177002</title></circle>
+<circle cx="570.5" cy="202.5" r="2.4" fill="#2563eb"><title>ce step=700 value=0.0123901</title></circle>
+<circle cx="656.2" cy="202.2" r="2.4" fill="#2563eb"><title>ce step=800 value=0.0142822</title></circle>
+<circle cx="742.0" cy="203.5" r="2.4" fill="#2563eb"><title>ce step=900 value=0.0062561</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">ce</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,31.8 141.8,122.5 227.5,123.7 313.2,96.6 399.0,106.4 484.8,112.6 570.5,104.6 656.2,89.8 742.0,119.4"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#dc2626"><title>loop1_ce step=100 value=1.09375</title></circle>
+<circle cx="141.8" cy="122.5" r="2.4" fill="#dc2626"><title>loop1_ce step=200 value=0.519531</title></circle>
+<circle cx="227.5" cy="123.7" r="2.4" fill="#dc2626"><title>loop1_ce step=300 value=0.511719</title></circle>
+<circle cx="313.2" cy="96.6" r="2.4" fill="#dc2626"><title>loop1_ce step=400 value=0.683594</title></circle>
+<circle cx="399.0" cy="106.4" r="2.4" fill="#dc2626"><title>loop1_ce step=500 value=0.621094</title></circle>
+<circle cx="484.8" cy="112.6" r="2.4" fill="#dc2626"><title>loop1_ce step=600 value=0.582031</title></circle>
+<circle cx="570.5" cy="104.6" r="2.4" fill="#dc2626"><title>loop1_ce step=700 value=0.632812</title></circle>
+<circle cx="656.2" cy="89.8" r="2.4" fill="#dc2626"><title>loop1_ce step=800 value=0.726562</title></circle>
+<circle cx="742.0" cy="119.4" r="2.4" fill="#dc2626"><title>loop1_ce step=900 value=0.539062</title></circle>
+<text x="98" y="236" fill="#dc2626" class="legend-text">loop1_ce</text>
+</svg>
+<table><thead><tr><th>step</th><th>stage</th><th>ce</th><th>total</th><th>loop1</th><th>loop1_ce</th><th>loop_last</th><th>path_f1</th><th>exact</th></tr></thead><tbody><tr><td>100</td><td>1</td><td>0.621094</td><td></td><td></td><td>1.09375</td><td></td><td></td><td></td></tr><tr><td>200</td><td>1</td><td>0.0196533</td><td></td><td></td><td>0.519531</td><td></td><td></td><td></td></tr><tr><td>300</td><td>1</td><td>0.0142212</td><td></td><td></td><td>0.511719</td><td></td><td></td><td></td></tr><tr><td>400</td><td>2</td><td>0.0134888</td><td></td><td></td><td>0.683594</td><td></td><td></td><td></td></tr><tr><td>500</td><td>2</td><td>0.00952148</td><td></td><td></td><td>0.621094</td><td></td><td></td><td></td></tr><tr><td>600</td><td>2</td><td>0.00177002</td><td></td><td></td><td>0.582031</td><td></td><td></td><td></td></tr><tr><td>700</td><td>2</td><td>0.0123901</td><td></td><td></td><td>0.632812</td><td></td><td></td><td></td></tr><tr><td>800</td><td>2</td><td>0.0142822</td><td></td><td></td><td>0.726562</td><td></td><td></td><td></td></tr><tr><td>900</td><td>2</td><td>0.0062561</td><td></td><td></td><td>0.539062</td><td></td><td></td><td></td></tr></tbody></table>
+</section>
+<section class="card"><h2>Loop Readout</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">loop</text>
+<text x="4" y="26" class="tick">1.08</text>
+<text x="4" y="218" class="tick">-0.0441</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,204.2 284.7,48.1 513.3,33.9 742.0,32.1"/>
+<circle cx="56.0" cy="204.2" r="2.4" fill="#2563eb"><title>label_exact loop=1 value=0.0332031</title></circle>
+<circle cx="284.7" cy="48.1" r="2.4" fill="#2563eb"><title>label_exact loop=2 value=0.908203</title></circle>
+<circle cx="513.3" cy="33.9" r="2.4" fill="#2563eb"><title>label_exact loop=3 value=0.988281</title></circle>
+<circle cx="742.0" cy="32.1" r="2.4" fill="#2563eb"><title>label_exact loop=4 value=0.998047</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">label_exact</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,64.4 284.7,33.4 513.3,31.9 742.0,31.8"/>
+<circle cx="56.0" cy="64.4" r="2.4" fill="#dc2626"><title>blank_acc loop=1 value=0.817139</title></circle>
+<circle cx="284.7" cy="33.4" r="2.4" fill="#dc2626"><title>blank_acc loop=2 value=0.991089</title></circle>
+<circle cx="513.3" cy="31.9" r="2.4" fill="#dc2626"><title>blank_acc loop=3 value=0.999023</title></circle>
+<circle cx="742.0" cy="31.8" r="2.4" fill="#dc2626"><title>blank_acc loop=4 value=0.999878</title></circle>
+<text x="161" y="236" fill="#dc2626" class="legend-text">blank_acc</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,204.2 284.7,48.1 513.3,33.9 742.0,32.1"/>
+<circle cx="56.0" cy="204.2" r="2.4" fill="#16a34a"><title>valid_sudoku loop=1 value=0.0332031</title></circle>
+<circle cx="284.7" cy="48.1" r="2.4" fill="#16a34a"><title>valid_sudoku loop=2 value=0.908203</title></circle>
+<circle cx="513.3" cy="33.9" r="2.4" fill="#16a34a"><title>valid_sudoku loop=3 value=0.988281</title></circle>
+<circle cx="742.0" cy="32.1" r="2.4" fill="#16a34a"><title>valid_sudoku loop=4 value=0.998047</title></circle>
+<text x="252" y="236" fill="#16a34a" class="legend-text">valid_sudoku</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,204.2 284.7,48.1 513.3,33.9 742.0,32.1"/>
+<circle cx="56.0" cy="204.2" r="2.4" fill="#9333ea"><title>solved_valid_clue loop=1 value=0.0332031</title></circle>
+<circle cx="284.7" cy="48.1" r="2.4" fill="#9333ea"><title>solved_valid_clue loop=2 value=0.908203</title></circle>
+<circle cx="513.3" cy="33.9" r="2.4" fill="#9333ea"><title>solved_valid_clue loop=3 value=0.988281</title></circle>
+<circle cx="742.0" cy="32.1" r="2.4" fill="#9333ea"><title>solved_valid_clue loop=4 value=0.998047</title></circle>
+<text x="364" y="236" fill="#9333ea" class="legend-text">solved_valid_clue</text>
+</svg>
+<table><thead><tr><th>loop</th><th>path_f1</th><th>path_precision</th><th>path_recall</th><th>path_pred_frac</th><th>label_exact</th><th>blank_acc</th><th>valid_sudoku</th><th>solved_valid_clue</th></tr></thead><tbody><tr><td>1</td><td></td><td></td><td></td><td></td><td>0.0332031</td><td>0.817139</td><td>0.0332031</td><td>0.0332031</td></tr><tr><td>2</td><td></td><td></td><td></td><td></td><td>0.908203</td><td>0.991089</td><td>0.908203</td><td>0.908203</td></tr><tr><td>3</td><td></td><td></td><td></td><td></td><td>0.988281</td><td>0.999023</td><td>0.988281</td><td>0.988281</td></tr><tr><td>4</td><td></td><td></td><td></td><td></td><td>0.998047</td><td>0.999878</td><td>0.998047</td><td>0.998047</td></tr></tbody></table>
+</section>
+<section class="card"><h2>Loop Delta</h2>
+<table><thead><tr><th>metric</th><th>first_loop</th><th>first</th><th>last_loop</th><th>last</th><th>delta</th></tr></thead><tbody><tr><td>label_exact</td><td>1</td><td>0.0332031</td><td>4</td><td>0.998047</td><td>0.964844</td></tr><tr><td>blank_acc</td><td>1</td><td>0.817139</td><td>4</td><td>0.999878</td><td>0.182739</td></tr><tr><td>valid_sudoku</td><td>1</td><td>0.0332031</td><td>4</td><td>0.998047</td><td>0.964844</td></tr><tr><td>solved_valid_clue</td><td>1</td><td>0.0332031</td><td>4</td><td>0.998047</td><td>0.964844</td></tr></tbody></table>
+</section>
+<section class="card"><h2>Difficulty Transfer</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">holes</text>
+<text x="4" y="26" class="tick">1.06</text>
+<text x="4" y="218" class="tick">0.255</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,32.3 227.5,33.7 399.0,52.3 570.5,111.9 742.0,204.2"/>
+<circle cx="56.0" cy="32.3" r="2.4" fill="#2563eb"><title>label_exact holes=16 value=0.998047</title></circle>
+<circle cx="227.5" cy="33.7" r="2.4" fill="#2563eb"><title>label_exact holes=20 value=0.992188</title></circle>
+<circle cx="399.0" cy="52.3" r="2.4" fill="#2563eb"><title>label_exact holes=24 value=0.917969</title></circle>
+<circle cx="570.5" cy="111.9" r="2.4" fill="#2563eb"><title>label_exact holes=28 value=0.679688</title></circle>
+<circle cx="742.0" cy="204.2" r="2.4" fill="#2563eb"><title>label_exact holes=32 value=0.310547</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">label_exact</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,31.8 227.5,32.1 399.0,33.7 570.5,41.6 742.0,57.0"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#dc2626"><title>blank_acc holes=16 value=0.999878</title></circle>
+<circle cx="227.5" cy="32.1" r="2.4" fill="#dc2626"><title>blank_acc holes=20 value=0.99873</title></circle>
+<circle cx="399.0" cy="33.7" r="2.4" fill="#dc2626"><title>blank_acc holes=24 value=0.992269</title></circle>
+<circle cx="570.5" cy="41.6" r="2.4" fill="#dc2626"><title>blank_acc holes=28 value=0.960589</title></circle>
+<circle cx="742.0" cy="57.0" r="2.4" fill="#dc2626"><title>blank_acc holes=32 value=0.899048</title></circle>
+<text x="161" y="236" fill="#dc2626" class="legend-text">blank_acc</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,32.3 227.5,33.2 399.0,50.3 570.5,108.0 742.0,201.8"/>
+<circle cx="56.0" cy="32.3" r="2.4" fill="#16a34a"><title>valid_sudoku holes=16 value=0.998047</title></circle>
+<circle cx="227.5" cy="33.2" r="2.4" fill="#16a34a"><title>valid_sudoku holes=20 value=0.994141</title></circle>
+<circle cx="399.0" cy="50.3" r="2.4" fill="#16a34a"><title>valid_sudoku holes=24 value=0.925781</title></circle>
+<circle cx="570.5" cy="108.0" r="2.4" fill="#16a34a"><title>valid_sudoku holes=28 value=0.695312</title></circle>
+<circle cx="742.0" cy="201.8" r="2.4" fill="#16a34a"><title>valid_sudoku holes=32 value=0.320312</title></circle>
+<text x="252" y="236" fill="#16a34a" class="legend-text">valid_sudoku</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,32.3 227.5,33.2 399.0,50.3 570.5,108.0 742.0,201.8"/>
+<circle cx="56.0" cy="32.3" r="2.4" fill="#9333ea"><title>solved_valid_clue holes=16 value=0.998047</title></circle>
+<circle cx="227.5" cy="33.2" r="2.4" fill="#9333ea"><title>solved_valid_clue holes=20 value=0.994141</title></circle>
+<circle cx="399.0" cy="50.3" r="2.4" fill="#9333ea"><title>solved_valid_clue holes=24 value=0.925781</title></circle>
+<circle cx="570.5" cy="108.0" r="2.4" fill="#9333ea"><title>solved_valid_clue holes=28 value=0.695312</title></circle>
+<circle cx="742.0" cy="201.8" r="2.4" fill="#9333ea"><title>solved_valid_clue holes=32 value=0.320312</title></circle>
+<text x="364" y="236" fill="#9333ea" class="legend-text">solved_valid_clue</text>
+</svg>
+<table><thead><tr><th>holes</th><th>loop</th><th>label_exact</th><th>blank_acc</th><th>valid_sudoku</th><th>solved_valid_clue</th></tr></thead><tbody><tr><td>16</td><td>4</td><td>0.998047</td><td>0.999878</td><td>0.998047</td><td>0.998047</td></tr><tr><td>20</td><td>4</td><td>0.992188</td><td>0.99873</td><td>0.994141</td><td>0.994141</td></tr><tr><td>24</td><td>4</td><td>0.917969</td><td>0.992269</td><td>0.925781</td><td>0.925781</td></tr><tr><td>28</td><td>4</td><td>0.679688</td><td>0.960589</td><td>0.695312</td><td>0.695312</td></tr><tr><td>32</td><td>4</td><td>0.310547</td><td>0.899048</td><td>0.320312</td><td>0.320312</td></tr></tbody></table>
+</section>
+<section class="card"><h2>Case Visualizations</h2><ul>
+<li class="muted">No per-case trajectories were archived for this run. Future Maze runs now default to saving casebooks.</li>
+</ul></section>
+<section class="card"><h2>Artifacts</h2>
+<table><thead><tr><th>path</th></tr></thead><tbody><tr><td>config.json</td></tr><tr><td>logs/launcher.log</td></tr><tr><td>logs/run.log</td></tr><tr><td>metadata.json</td></tr><tr><td>output/eqr_probe_seed54.json</td></tr><tr><td>output/eqr_probe_seed54.md</td></tr><tr><td>score.json</td></tr></tbody></table>
+</section>
+</main></body></html>

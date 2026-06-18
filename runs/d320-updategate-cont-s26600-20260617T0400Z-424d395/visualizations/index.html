@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment Dashboard - d320-updategate-cont-s26600-20260617T0400Z-424d395</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;background:#f7f7f4;color:#1f2328}
+main{max-width:1180px;margin:auto}.card{background:#fff;border:1px solid #ddd8cf;border-radius:8px;padding:14px;margin:14px 0}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 10px}.muted{color:#6b7280}.links{display:flex;flex-wrap:wrap;gap:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left}th{background:#f3f4f6}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}dt{font-weight:600}.chart{width:100%;height:auto;background:#fbfbf8;border:1px solid #e5e0d8;border-radius:6px}.axis{stroke:#777;stroke-width:1}.tick,.legend-text{font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin-right:6px;font-size:12px}
+</style>
+</head>
+<body><main>
+<h1>d320-updategate-cont-s26600-20260617T0400Z-424d395</h1>
+<p class="links"><a href="README.md">README</a> <a href="output/checkpoint_eval_step024600.json">result JSON</a> <a href="summary.json">dashboard data</a></p>
+<section class="card"><h2>Run Summary</h2>
+<dl>
+<dt>mode</dt><dd>full</dd>
+<dt>score</dt><dd>0.328125 <span class="muted">eval_by_holes.holes120.eval_clean.loop6.label_exact</span></dd>
+<dt>git sha</dt><dd>424d395851a46481cd0252aa84ac0b7981a98f9a</dd>
+<dt>timestamp</dt><dd>2026-06-17T05:06:43.983142+00:00</dd>
+<dt>aborted</dt><dd>True</dd>
+</dl>
+<p>2026-06-17 GPU1 learned-gate D320 continuation from step23600 stopped at checkpoint step24600. h120 loop6 exact=0.3281, below prior checkpoint 0.3496 and not above prior final 0.3340. Lesson: same learned-gate continuation did not restore slope; free budget for Maze proxy and future state-dynamics changes.</p>
+</section>
+<section class="card"><h2>Training Curve</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">step</text>
+<text x="4" y="26" class="tick">0.938</text>
+<text x="4" y="218" class="tick">0.0167</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,201.1 132.2,190.0 208.4,193.2 284.7,183.5 360.9,198.2 437.1,204.2 513.3,187.3 589.6,200.6 665.8,202.2"/>
+<circle cx="56.0" cy="201.1" r="2.4" fill="#2563eb"><title>ce step=23700 value=0.0943</title></circle>
+<circle cx="132.2" cy="190.0" r="2.4" fill="#2563eb"><title>ce step=23800 value=0.1457</title></circle>
+<circle cx="208.4" cy="193.2" r="2.4" fill="#2563eb"><title>ce step=23900 value=0.1309</title></circle>
+<circle cx="284.7" cy="183.5" r="2.4" fill="#2563eb"><title>ce step=24000 value=0.1755</title></circle>
+<circle cx="360.9" cy="198.2" r="2.4" fill="#2563eb"><title>ce step=24100 value=0.1077</title></circle>
+<circle cx="437.1" cy="204.2" r="2.4" fill="#2563eb"><title>ce step=24200 value=0.0802</title></circle>
+<circle cx="513.3" cy="187.3" r="2.4" fill="#2563eb"><title>ce step=24300 value=0.1583</title></circle>
+<circle cx="589.6" cy="200.6" r="2.4" fill="#2563eb"><title>ce step=24400 value=0.0968</title></circle>
+<circle cx="665.8" cy="202.2" r="2.4" fill="#2563eb"><title>ce step=24500 value=0.0894</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">ce</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,176.1 132.2,160.6 208.4,166.8 284.7,152.9 360.9,171.8 437.1,173.1 513.3,161.6 589.6,166.2 665.8,176.5"/>
+<circle cx="56.0" cy="176.1" r="2.4" fill="#dc2626"><title>total step=23700 value=0.2099</title></circle>
+<circle cx="132.2" cy="160.6" r="2.4" fill="#dc2626"><title>total step=23800 value=0.281</title></circle>
+<circle cx="208.4" cy="166.8" r="2.4" fill="#dc2626"><title>total step=23900 value=0.2526</title></circle>
+<circle cx="284.7" cy="152.9" r="2.4" fill="#dc2626"><title>total step=24000 value=0.3167</title></circle>
+<circle cx="360.9" cy="171.8" r="2.4" fill="#dc2626"><title>total step=24100 value=0.2294</title></circle>
+<circle cx="437.1" cy="173.1" r="2.4" fill="#dc2626"><title>total step=24200 value=0.2234</title></circle>
+<circle cx="513.3" cy="161.6" r="2.4" fill="#dc2626"><title>total step=24300 value=0.2765</title></circle>
+<circle cx="589.6" cy="166.2" r="2.4" fill="#dc2626"><title>total step=24400 value=0.2552</title></circle>
+<circle cx="665.8" cy="176.5" r="2.4" fill="#dc2626"><title>total step=24500 value=0.2078</title></circle>
+<text x="98" y="236" fill="#dc2626" class="legend-text">total</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,66.3 132.2,42.2 208.4,60.1 284.7,31.8 360.9,66.2 437.1,48.4 513.3,59.6 589.6,34.3 665.8,72.6"/>
+<circle cx="56.0" cy="66.3" r="2.4" fill="#16a34a"><title>loop1 step=23700 value=0.7154</title></circle>
+<circle cx="132.2" cy="42.2" r="2.4" fill="#16a34a"><title>loop1 step=23800 value=0.8265</title></circle>
+<circle cx="208.4" cy="60.1" r="2.4" fill="#16a34a"><title>loop1 step=23900 value=0.7442</title></circle>
+<circle cx="284.7" cy="31.8" r="2.4" fill="#16a34a"><title>loop1 step=24000 value=0.8745</title></circle>
+<circle cx="360.9" cy="66.2" r="2.4" fill="#16a34a"><title>loop1 step=24100 value=0.7162</title></circle>
+<circle cx="437.1" cy="48.4" r="2.4" fill="#16a34a"><title>loop1 step=24200 value=0.7982</title></circle>
+<circle cx="513.3" cy="59.6" r="2.4" fill="#16a34a"><title>loop1 step=24300 value=0.7464</title></circle>
+<circle cx="589.6" cy="34.3" r="2.4" fill="#16a34a"><title>loop1 step=24400 value=0.863</title></circle>
+<circle cx="665.8" cy="72.6" r="2.4" fill="#16a34a"><title>loop1 step=24500 value=0.6863</title></circle>
+<text x="161" y="236" fill="#16a34a" class="legend-text">loop1</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,201.1 132.2,190.0 208.4,193.2 284.7,183.5 360.9,198.2 437.1,204.2 513.3,187.3 589.6,200.6 665.8,202.2"/>
+<circle cx="56.0" cy="201.1" r="2.4" fill="#9333ea"><title>loop_last step=23700 value=0.0943</title></circle>
+<circle cx="132.2" cy="190.0" r="2.4" fill="#9333ea"><title>loop_last step=23800 value=0.1457</title></circle>
+<circle cx="208.4" cy="193.2" r="2.4" fill="#9333ea"><title>loop_last step=23900 value=0.1309</title></circle>
+<circle cx="284.7" cy="183.5" r="2.4" fill="#9333ea"><title>loop_last step=24000 value=0.1755</title></circle>
+<circle cx="360.9" cy="198.2" r="2.4" fill="#9333ea"><title>loop_last step=24100 value=0.1077</title></circle>
+<circle cx="437.1" cy="204.2" r="2.4" fill="#9333ea"><title>loop_last step=24200 value=0.0802</title></circle>
+<circle cx="513.3" cy="187.3" r="2.4" fill="#9333ea"><title>loop_last step=24300 value=0.1583</title></circle>
+<circle cx="589.6" cy="200.6" r="2.4" fill="#9333ea"><title>loop_last step=24400 value=0.0968</title></circle>
+<circle cx="665.8" cy="202.2" r="2.4" fill="#9333ea"><title>loop_last step=24500 value=0.0894</title></circle>
+<text x="224" y="236" fill="#9333ea" class="legend-text">loop_last</text>
+<polyline fill="none" stroke="#f59e0b" stroke-width="2" points="742.0,150.4"/>
+<circle cx="742.0" cy="150.4" r="2.4" fill="#f59e0b"><title>exact step=24600 value=0.3281</title></circle>
+<text x="315" y="236" fill="#f59e0b" class="legend-text">exact</text>
+</svg>
+<table><thead><tr><th>step</th><th>stage</th><th>ce</th><th>total</th><th>loop1</th><th>loop1_ce</th><th>loop_last</th><th>path_f1</th><th>exact</th></tr></thead><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>23600</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>23700</td><td>7:108-120</td><td>0.0943</td><td>0.2099</td><td>0.7154</td><td></td><td>0.0943</td><td></td><td></td></tr><tr><td colspan="9" class="muted">... 9 more rows in summary.json</td></tr></tbody></table>
+</section>
+<section class="card"><h2>Loop Readout</h2>
+<p class="muted">No numeric series available.</p>
+<p class="muted">No rows available.</p>
+</section>
+<section class="card"><h2>Case Visualizations</h2><ul>
+<li class="muted">No per-case trajectories were archived for this run. Future Maze runs now default to saving casebooks.</li>
+</ul></section>
+<section class="card"><h2>Artifacts</h2>
+<table><thead><tr><th>path</th></tr></thead><tbody><tr><td>abort.json</td></tr><tr><td>config.json</td></tr><tr><td>logs/nohup.log</td></tr><tr><td>logs/run.log</td></tr><tr><td>metadata.json</td></tr><tr><td>output/checkpoint_eval_step024600.json</td></tr><tr><td>score.json</td></tr></tbody></table>
+</section>
+</main></body></html>

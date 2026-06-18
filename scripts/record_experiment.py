@@ -5,6 +5,7 @@ import argparse
 import csv
 import json
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
@@ -239,6 +240,22 @@ def main() -> None:
                 "notes": args.notes,
             },
         )
+
+    visualizer = repo / "scripts" / "build_experiment_visualizations.py"
+    if visualizer.exists():
+        try:
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    str(visualizer),
+                    "--repo-root",
+                    str(repo),
+                    "--run-dir",
+                    str(run_dir),
+                ]
+            )
+        except Exception as exc:
+            print(f"warning: failed to build experiment visualizations: {exc}")
 
     print(f"recorded run={run_name} score={score} key={score_key}")
 

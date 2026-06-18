@@ -1,0 +1,294 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 64,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 2,
+    "cpu": false,
+    "d_model": 128,
+    "eval_hole_patterns": "",
+    "eval_holes": 8,
+    "eval_holes_list": "8,12",
+    "eval_n": 128,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "head_dim": 16,
+    "heads": 8,
+    "hole_pattern": "random",
+    "hole_stages": "4-8:120",
+    "holes_max": 4,
+    "holes_min": 2,
+    "l_cycles": 1,
+    "lambda_": 0.95,
+    "layers": 4,
+    "log_every": 20,
+    "loop_loss": "final",
+    "lr": 0.002,
+    "max_loops": 2,
+    "noise_scale": 0.01,
+    "out_dir": "/huyang2/double-loop/runs/9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96/output",
+    "rollout_ks": "1",
+    "rollout_loop_values": "1,2",
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "seed": 52,
+    "size": 9,
+    "steps": 120,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3701171875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3098958432674408,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:43.682886+00:00",
+  "git_dirty": false,
+  "git_sha": "2c21f96b548ccf464b65e02e08a443dd56e1fe16",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 1.2912,
+      "loop1": 1.2858,
+      "loop_last": 1.2912,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 20,
+      "total": 1.2912
+    },
+    {
+      "ce": 1.1555,
+      "loop1": 1.1546,
+      "loop_last": 1.1555,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 40,
+      "total": 1.1555
+    },
+    {
+      "ce": 1.024,
+      "loop1": 1.0224,
+      "loop_last": 1.024,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 60,
+      "total": 1.024
+    },
+    {
+      "ce": 0.9946,
+      "loop1": 0.9979,
+      "loop_last": 0.9946,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 80,
+      "total": 0.9946
+    },
+    {
+      "ce": 0.9449,
+      "loop1": 0.9365,
+      "loop_last": 0.9449,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 100,
+      "total": 0.9449
+    },
+    {
+      "ce": 0.8823,
+      "loop1": 0.8797,
+      "loop_last": 0.8823,
+      "source_log": "logs/run.log",
+      "stage": "1:4-8",
+      "step": 120,
+      "total": 0.8823
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3681640625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3701171875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "holes8",
+      "holes": 8,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.310546875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3098958432674408,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "holes12",
+      "holes": 12,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "loop_deltas": {
+    "blank_acc": {
+      "delta": 0.001953125,
+      "first": 0.3681640625,
+      "first_x": 1.0,
+      "last": 0.3701171875,
+      "last_x": 2.0
+    },
+    "label_exact": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 2.0
+    },
+    "solved_valid_clue": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 2.0
+    },
+    "valid_sudoku": {
+      "delta": 0.0,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.0,
+      "last_x": 2.0
+    }
+  },
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3681640625,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.3701171875,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.49894604086875916,
+      "future_seed.fs_state_norm": 7.9831366539001465,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "mode": "full",
+  "notes": "2026-06-03T10:30:19Z GPU1 9x9 CUDA throughput probe at 2c21f96. Insight: after switching from toy PyTorch scan to RWKV7 statepassing CUDA, step100 appears quickly and CE drops below 1.0 by step100 (0.9449), so the previous 9x9 kill was implementation throughput, not evidence against the FutureSeed hypothesis. Decision: eligible for a real 800-step 9x9 cliff run; 120-step exact=0 is not a quality conclusion.",
+  "readme": "",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "9x9-rwkv7-cuda-throughput-20260603T103019Z-2c21f96",
+  "score": 0.0,
+  "score_key": "metrics.eval_clean.loop2.label_exact",
+  "task": {
+    "box_cols": 3,
+    "box_rows": 3,
+    "eval_hole_patterns": [
+      "random"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "hole_pattern": "random",
+    "hole_stages": [
+      [
+        4,
+        8,
+        120
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 2,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1
+    ],
+    "rollout_loop_values": [
+      1,
+      2
+    ],
+    "rollout_noise_scale": 0.05,
+    "rwkv_kernel": "cuda",
+    "size": 9
+  },
+  "timestamp_utc": "2026-06-03T10:30:32.906379+00:00"
+}

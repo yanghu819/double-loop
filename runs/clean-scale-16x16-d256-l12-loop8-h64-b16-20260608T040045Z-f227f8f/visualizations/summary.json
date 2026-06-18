@@ -1,0 +1,81 @@
+{
+  "abort": {
+    "decision": "Stop h64 curriculum; relaunch easier clean boundary-locator with same architecture, no Sudoku priors, holes 8-32.",
+    "exact_pid": 951,
+    "observed_step300_ce": 1.4504,
+    "reason": "low ROI curriculum: stage1 CE remained >1.0 at step300",
+    "status": "aborted",
+    "timestamp_utc": "2026-06-08T04:11:20.213321+00:00"
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "score.json"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": false,
+    "git_sha": "f227f8f50e3d6eee296d6fcb7c7bad3fa1dbdc5d",
+    "mode": "full",
+    "run_dir": "/huyang2/double-loop/.worktrees/clean-scale-16x16-f227f8f/runs/clean-scale-16x16-d256-l12-loop8-h64-b16-20260608T040045Z-f227f8f",
+    "run_name": "clean-scale-16x16-d256-l12-loop8-h64-b16-20260608T040045Z-f227f8f",
+    "timestamp_utc": "2026-06-08T04:00:54.508721+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:43.720297+00:00",
+  "git_dirty": false,
+  "git_sha": "f227f8f50e3d6eee296d6fcb7c7bad3fa1dbdc5d",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 1.8668,
+      "loop1": 1.8626,
+      "loop_last": 1.8668,
+      "source_log": "launcher.log",
+      "stage": "1:24-40",
+      "step": 100,
+      "total": 1.8668
+    },
+    {
+      "ce": 1.6036,
+      "loop1": 1.6103,
+      "loop_last": 1.6036,
+      "source_log": "launcher.log",
+      "stage": "1:24-40",
+      "step": 200,
+      "total": 1.6036
+    },
+    {
+      "ce": 1.4504,
+      "loop1": 1.4501,
+      "loop_last": 1.4504,
+      "source_log": "launcher.log",
+      "stage": "1:24-40",
+      "step": 300,
+      "total": 1.4504
+    },
+    {
+      "ce": 1.5827,
+      "loop1": 1.5895,
+      "loop_last": 1.5827,
+      "source_log": "launcher.log",
+      "stage": "2:40-56",
+      "step": 400,
+      "total": 1.5827
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "full",
+  "notes": "2026-06-08 clean Better Lesson scale probe: batch16 fits D256/L12/loop8 but h64 curriculum was low ROI; step300 CE=1.4504 on 24-40 holes, stopped before harder stages.",
+  "readme": "",
+  "result_json": "",
+  "run_name": "clean-scale-16x16-d256-l12-loop8-h64-b16-20260608T040045Z-f227f8f",
+  "score": null,
+  "score_key": "missing_result_json",
+  "task": {},
+  "timestamp_utc": "2026-06-08T04:31:22.233361+00:00"
+}

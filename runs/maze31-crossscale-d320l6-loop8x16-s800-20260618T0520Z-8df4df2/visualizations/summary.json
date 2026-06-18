@@ -1,0 +1,147 @@
+{
+  "abort": {
+    "abort_time_utc": "2026-06-18T05:30:33Z",
+    "decision": "Stop this D320/L6 train8/eval16 state_compete_cross scale run. Bigger generic cross-candidate state update without an opening schedule collapsed to no PATH prediction; do not continue identical scale, and do not sweep losses around it.",
+    "observed_steps": [
+      100,
+      200,
+      300,
+      400
+    ],
+    "observed_train_curve": [
+      {
+        "ce": 1.0625,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 100
+      },
+      {
+        "ce": 1.0625,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 200
+      },
+      {
+        "ce": 1.0625,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 300
+      },
+      {
+        "ce": 1.0547,
+        "exact": 0.0,
+        "path_f1": 0.0,
+        "step": 400
+      }
+    ],
+    "reason": "optimization_failure_path_f1_zero_through_step400",
+    "remote_run_dir": "/huyang2/double-loop/.worktrees/maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2/runs/maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2",
+    "run_name": "maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2",
+    "source_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+    "status": "aborted"
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/launch.log",
+    "logs/run.log",
+    "metadata.json",
+    "score.json"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": false,
+    "git_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+    "mode": "eqr_maze_probe",
+    "run_dir": "/huyang2/double-loop/.worktrees/maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2/runs/maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2",
+    "run_name": "maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2",
+    "timestamp_utc": "2026-06-18T05:19:59.389882+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:44.245525+00:00",
+  "git_dirty": false,
+  "git_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 1.0625,
+      "exact": 0.0,
+      "improve": 0.0073,
+      "loop1": 1.0625,
+      "margin": 0.8295,
+      "mass": 0.2711,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.4064,
+      "rank": 0.0,
+      "selfcorr": 0.0224,
+      "source_log": "logs/run.log",
+      "step": 100,
+      "zH": 0.0019,
+      "zL": 0.0037
+    },
+    {
+      "ce": 1.0625,
+      "exact": 0.0,
+      "improve": 0.0063,
+      "loop1": 1.0469,
+      "margin": 0.7816,
+      "mass": 0.285,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.3629,
+      "rank": 0.0,
+      "selfcorr": 0.0275,
+      "source_log": "logs/run.log",
+      "step": 200,
+      "zH": 0.002,
+      "zL": 0.0035
+    },
+    {
+      "ce": 1.0625,
+      "exact": 0.0,
+      "improve": 0.0104,
+      "loop1": 1.0156,
+      "margin": 0.8075,
+      "mass": 0.2573,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.4275,
+      "rank": 0.9847,
+      "selfcorr": 0.0391,
+      "source_log": "logs/run.log",
+      "step": 300,
+      "zH": 0.0071,
+      "zL": 0.0031
+    },
+    {
+      "ce": 1.0547,
+      "exact": 0.0,
+      "improve": 0.0396,
+      "loop1": 1.25,
+      "margin": 1.9981,
+      "mass": 0.0803,
+      "path": "160-260",
+      "path_f1": 0.0,
+      "pred": 0.0408,
+      "rank": 0.0,
+      "selfcorr": 0.0097,
+      "source_log": "logs/run.log",
+      "step": 400,
+      "zH": 0.0126,
+      "zL": 0.0036
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "eqr_maze_probe_abort",
+  "notes": "2026-06-18 GPU1 clean generic state_compete_cross scale abort: D320/L6 train8/eval16 had path_f1=0.0 through step400 despite 98-100% GPU utilization; stopped as optimization failure before full lease burn.",
+  "readme": "README.md",
+  "result_json": "",
+  "run_name": "maze31-crossscale-d320l6-loop8x16-s800-20260618T0520Z-8df4df2",
+  "score": null,
+  "score_key": "missing_result_json",
+  "task": {},
+  "timestamp_utc": "2026-06-18T05:30:35.587477+00:00"
+}

@@ -1,0 +1,297 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/launcher.log",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 384,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 4,
+    "cpu": false,
+    "d_model": 96,
+    "eval_hole_patterns": "",
+    "eval_holes": 4,
+    "eval_holes_list": "",
+    "eval_n": 1024,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "head_dim": 12,
+    "heads": 8,
+    "hole_pattern": "unit",
+    "hole_stages": "",
+    "holes_max": 6,
+    "holes_min": 2,
+    "l_cycles": 2,
+    "lambda_": 0.95,
+    "layers": 8,
+    "log_every": 100,
+    "loop_loss": "final",
+    "lr": 0.002,
+    "max_loops": 3,
+    "noise_scale": 0.01,
+    "out_dir": "/huyang2/double-loop/runs/scale-window-20260603T064353Z-eaf6b40/output",
+    "rollout_ks": "1,4,8,16",
+    "rollout_loop_values": "",
+    "rollout_noise_scale": 0.05,
+    "seed": 52,
+    "size": 6,
+    "steps": 800,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.99755859375,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "holes4",
+      "holes": 4,
+      "label_exact": 0.990234375,
+      "loop": 3,
+      "solved_valid_clue": 0.990234375,
+      "valid_sudoku": 0.990234375
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:44.316438+00:00",
+  "git_dirty": false,
+  "git_sha": "eaf6b40d43e3d76fc4cf25b1e1de8ad9f85cd7fc",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 0.2434,
+      "loop1": 0.2511,
+      "loop_last": 0.2434,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 100,
+      "total": 0.2434
+    },
+    {
+      "ce": 0.0325,
+      "loop1": 0.0366,
+      "loop_last": 0.0325,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 200,
+      "total": 0.0325
+    },
+    {
+      "ce": 0.0035,
+      "loop1": 0.0049,
+      "loop_last": 0.0035,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 300,
+      "total": 0.0035
+    },
+    {
+      "ce": 0.0014,
+      "loop1": 0.0016,
+      "loop_last": 0.0014,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 400,
+      "total": 0.0014
+    },
+    {
+      "ce": 0.0022,
+      "loop1": 0.0023,
+      "loop_last": 0.0022,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 500,
+      "total": 0.0022
+    },
+    {
+      "ce": 0.0002,
+      "loop1": 0.0002,
+      "loop_last": 0.0002,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 600,
+      "total": 0.0002
+    },
+    {
+      "ce": 0.0001,
+      "loop1": 0.0001,
+      "loop_last": 0.0001,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 700,
+      "total": 0.0001
+    },
+    {
+      "ce": 0.0038,
+      "loop1": 0.004,
+      "loop_last": 0.0038,
+      "source_log": "logs/run.log",
+      "stage": "1:2-6",
+      "step": 800,
+      "total": 0.0038
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9970703125,
+      "clue_ok": 0.9990234375,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "holes4",
+      "holes": 4,
+      "label_exact": 0.98828125,
+      "loop": 1,
+      "solved_valid_clue": 0.98828125,
+      "valid_sudoku": 0.98828125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.997314453125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "holes4",
+      "holes": 4,
+      "label_exact": 0.990234375,
+      "loop": 2,
+      "solved_valid_clue": 0.990234375,
+      "valid_sudoku": 0.990234375
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.99755859375,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "holes4",
+      "holes": 4,
+      "label_exact": 0.990234375,
+      "loop": 3,
+      "solved_valid_clue": 0.990234375,
+      "valid_sudoku": 0.990234375
+    }
+  ],
+  "loop_deltas": {
+    "blank_acc": {
+      "delta": 0.00048828125,
+      "first": 0.9970703125,
+      "first_x": 1.0,
+      "last": 0.99755859375,
+      "last_x": 3.0
+    },
+    "label_exact": {
+      "delta": 0.001953125,
+      "first": 0.98828125,
+      "first_x": 1.0,
+      "last": 0.990234375,
+      "last_x": 3.0
+    },
+    "solved_valid_clue": {
+      "delta": 0.001953125,
+      "first": 0.98828125,
+      "first_x": 1.0,
+      "last": 0.990234375,
+      "last_x": 3.0
+    },
+    "valid_sudoku": {
+      "delta": 0.001953125,
+      "first": 0.98828125,
+      "first_x": 1.0,
+      "last": 0.990234375,
+      "last_x": 3.0
+    }
+  },
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9970703125,
+      "clue_ok": 0.9990234375,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "eval_clean",
+      "label_exact": 0.98828125,
+      "loop": 1,
+      "solved_valid_clue": 0.98828125,
+      "valid_sudoku": 0.98828125
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.997314453125,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "eval_clean",
+      "label_exact": 0.990234375,
+      "loop": 2,
+      "solved_valid_clue": 0.990234375,
+      "valid_sudoku": 0.990234375
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.99755859375,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5231654644012451,
+      "future_seed.fs_state_norm": 6.277985572814941,
+      "group": "eval_clean",
+      "label_exact": 0.990234375,
+      "loop": 3,
+      "solved_valid_clue": 0.990234375,
+      "valid_sudoku": 0.990234375
+    }
+  ],
+  "mode": "full",
+  "notes": "GPU1 scale-up window run d_model96 layers8 batch384 steps800 eval1024",
+  "readme": "",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "scale-window-20260603T064353Z-eaf6b40",
+  "score": 0.990234375,
+  "score_key": "metrics.eval_clean.loop3.label_exact",
+  "task": {
+    "box_cols": 3,
+    "box_rows": 2,
+    "eval_hole_patterns": [
+      "unit"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "hole_pattern": "unit",
+    "hole_stages": [
+      [
+        2,
+        6,
+        800
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 3,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1,
+      4,
+      8,
+      16
+    ],
+    "rollout_loop_values": [],
+    "rollout_noise_scale": 0.05,
+    "size": 6
+  },
+  "timestamp_utc": "2026-06-03T07:27:08.080113+00:00"
+}

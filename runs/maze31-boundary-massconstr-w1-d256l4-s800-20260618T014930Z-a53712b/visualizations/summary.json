@@ -1,0 +1,76 @@
+{
+  "abort": {
+    "aborted_at_utc": "2026-06-18T01:55:29Z",
+    "decision": "infrastructure abort; relaunch same constrained objective on restarted GPU1 without changing experimental settings",
+    "last_observed_step": 200,
+    "reason": "GPU1 environment halted during training before final eval; only step100 and step200 logs exist",
+    "run_name": "maze31-boundary-massconstr-w1-d256l4-s800-20260618T014930Z-a53712b",
+    "source_sha": "a53712b11835dd2d515fe9fff274a3e6a1d70532"
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/launch.log",
+    "logs/run.log",
+    "metadata.json",
+    "score.json"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": false,
+    "git_sha": "a53712b11835dd2d515fe9fff274a3e6a1d70532",
+    "mode": "eqr_maze_probe",
+    "run_dir": "/huyang2/double-loop/.worktrees/maze31-boundary-massconstr-w1-d256l4-s800-20260618T014930Z-a53712b/runs/maze31-boundary-massconstr-w1-d256l4-s800-20260618T014930Z-a53712b",
+    "run_name": "maze31-boundary-massconstr-w1-d256l4-s800-20260618T014930Z-a53712b",
+    "timestamp_utc": "2026-06-18T01:46:30.636387+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:44.199977+00:00",
+  "git_dirty": false,
+  "git_sha": "a53712b11835dd2d515fe9fff274a3e6a1d70532",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 0.3887,
+      "exact": 0.0,
+      "improve": 0.9219,
+      "loop1": 0.3906,
+      "mass": 0.2561,
+      "path": "160-260",
+      "path_f1": 0.5794,
+      "pred": 0.6373,
+      "rank": 1.7112,
+      "source_log": "logs/run.log",
+      "step": 100,
+      "zH": 0.0063,
+      "zL": 0.0054
+    },
+    {
+      "ce": 0.3965,
+      "exact": 0.0,
+      "improve": 2.2656,
+      "loop1": 0.3984,
+      "mass": 0.256,
+      "path": "160-260",
+      "path_f1": 0.5665,
+      "pred": 1.1262,
+      "rank": 1.3545,
+      "source_log": "logs/run.log",
+      "step": 200,
+      "zH": 0.0051,
+      "zL": 0.0044
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "eqr_maze_probe_abort",
+  "notes": "2026-06-18 GPU1 infrastructure abort for first constrained path-mass launch. GPU1 environment halted before final eval after step200; archived abort.json and relaunched identical config as retry without changing hypothesis/settings.",
+  "readme": "README.md",
+  "result_json": "",
+  "run_name": "maze31-boundary-massconstr-w1-d256l4-s800-20260618T014930Z-a53712b",
+  "score": null,
+  "score_key": "missing_result_json",
+  "task": {},
+  "timestamp_utc": "2026-06-18T02:16:36.095965+00:00"
+}

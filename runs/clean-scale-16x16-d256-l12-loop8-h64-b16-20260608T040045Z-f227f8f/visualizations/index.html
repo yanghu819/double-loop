@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment Dashboard - clean-scale-16x16-d256-l12-loop8-h64-b16-20260608T040045Z-f227f8f</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;background:#f7f7f4;color:#1f2328}
+main{max-width:1180px;margin:auto}.card{background:#fff;border:1px solid #ddd8cf;border-radius:8px;padding:14px;margin:14px 0}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 10px}.muted{color:#6b7280}.links{display:flex;flex-wrap:wrap;gap:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left}th{background:#f3f4f6}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}dt{font-weight:600}.chart{width:100%;height:auto;background:#fbfbf8;border:1px solid #e5e0d8;border-radius:6px}.axis{stroke:#777;stroke-width:1}.tick,.legend-text{font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin-right:6px;font-size:12px}
+</style>
+</head>
+<body><main>
+<h1>clean-scale-16x16-d256-l12-loop8-h64-b16-20260608T040045Z-f227f8f</h1>
+<p class="links"><a href="summary.json">dashboard data</a></p>
+<section class="card"><h2>Run Summary</h2>
+<dl>
+<dt>mode</dt><dd>full</dd>
+<dt>score</dt><dd> <span class="muted">missing_result_json</span></dd>
+<dt>git sha</dt><dd>f227f8f50e3d6eee296d6fcb7c7bad3fa1dbdc5d</dd>
+<dt>timestamp</dt><dd>2026-06-08T04:31:22.233361+00:00</dd>
+<dt>aborted</dt><dd>True</dd>
+</dl>
+<p>2026-06-08 clean Better Lesson scale probe: batch16 fits D256/L12/loop8 but h64 curriculum was low ROI; step300 CE=1.4504 on 24-40 holes, stopped before harder stages.</p>
+</section>
+<section class="card"><h2>Training Curve</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">step</text>
+<text x="4" y="26" class="tick">1.9</text>
+<text x="4" y="218" class="tick">1.42</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,31.8 284.7,140.7 513.3,204.1 742.0,149.3"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#2563eb"><title>ce step=100 value=1.8668</title></circle>
+<circle cx="284.7" cy="140.7" r="2.4" fill="#2563eb"><title>ce step=200 value=1.6036</title></circle>
+<circle cx="513.3" cy="204.1" r="2.4" fill="#2563eb"><title>ce step=300 value=1.4504</title></circle>
+<circle cx="742.0" cy="149.3" r="2.4" fill="#2563eb"><title>ce step=400 value=1.5827</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">ce</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,31.8 284.7,140.7 513.3,204.1 742.0,149.3"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#dc2626"><title>total step=100 value=1.8668</title></circle>
+<circle cx="284.7" cy="140.7" r="2.4" fill="#dc2626"><title>total step=200 value=1.6036</title></circle>
+<circle cx="513.3" cy="204.1" r="2.4" fill="#dc2626"><title>total step=300 value=1.4504</title></circle>
+<circle cx="742.0" cy="149.3" r="2.4" fill="#dc2626"><title>total step=400 value=1.5827</title></circle>
+<text x="98" y="236" fill="#dc2626" class="legend-text">total</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,33.5 284.7,137.9 513.3,204.2 742.0,146.5"/>
+<circle cx="56.0" cy="33.5" r="2.4" fill="#16a34a"><title>loop1 step=100 value=1.8626</title></circle>
+<circle cx="284.7" cy="137.9" r="2.4" fill="#16a34a"><title>loop1 step=200 value=1.6103</title></circle>
+<circle cx="513.3" cy="204.2" r="2.4" fill="#16a34a"><title>loop1 step=300 value=1.4501</title></circle>
+<circle cx="742.0" cy="146.5" r="2.4" fill="#16a34a"><title>loop1 step=400 value=1.5895</title></circle>
+<text x="161" y="236" fill="#16a34a" class="legend-text">loop1</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,31.8 284.7,140.7 513.3,204.1 742.0,149.3"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#9333ea"><title>loop_last step=100 value=1.8668</title></circle>
+<circle cx="284.7" cy="140.7" r="2.4" fill="#9333ea"><title>loop_last step=200 value=1.6036</title></circle>
+<circle cx="513.3" cy="204.1" r="2.4" fill="#9333ea"><title>loop_last step=300 value=1.4504</title></circle>
+<circle cx="742.0" cy="149.3" r="2.4" fill="#9333ea"><title>loop_last step=400 value=1.5827</title></circle>
+<text x="224" y="236" fill="#9333ea" class="legend-text">loop_last</text>
+</svg>
+<table><thead><tr><th>step</th><th>stage</th><th>ce</th><th>total</th><th>loop1</th><th>loop1_ce</th><th>loop_last</th><th>path_f1</th><th>exact</th></tr></thead><tbody><tr><td>100</td><td>1:24-40</td><td>1.8668</td><td>1.8668</td><td>1.8626</td><td></td><td>1.8668</td><td></td><td></td></tr><tr><td>200</td><td>1:24-40</td><td>1.6036</td><td>1.6036</td><td>1.6103</td><td></td><td>1.6036</td><td></td><td></td></tr><tr><td>300</td><td>1:24-40</td><td>1.4504</td><td>1.4504</td><td>1.4501</td><td></td><td>1.4504</td><td></td><td></td></tr><tr><td>400</td><td>2:40-56</td><td>1.5827</td><td>1.5827</td><td>1.5895</td><td></td><td>1.5827</td><td></td><td></td></tr></tbody></table>
+</section>
+<section class="card"><h2>Loop Readout</h2>
+<p class="muted">No numeric series available.</p>
+<p class="muted">No rows available.</p>
+</section>
+<section class="card"><h2>Case Visualizations</h2><ul>
+<li class="muted">No per-case trajectories were archived for this run. Future Maze runs now default to saving casebooks.</li>
+</ul></section>
+<section class="card"><h2>Artifacts</h2>
+<table><thead><tr><th>path</th></tr></thead><tbody><tr><td>abort.json</td></tr><tr><td>config.json</td></tr><tr><td>logs/run.log</td></tr><tr><td>metadata.json</td></tr><tr><td>score.json</td></tr></tbody></table>
+</section>
+</main></body></html>

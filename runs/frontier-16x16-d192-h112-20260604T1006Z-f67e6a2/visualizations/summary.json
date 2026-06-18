@@ -1,0 +1,108 @@
+{
+  "abort": {
+    "aborted_at_utc": "2026-06-04T10:17:49.758716+00:00",
+    "children": [
+      5893,
+      5895,
+      5894
+    ],
+    "exact_pid": 5875,
+    "last_metrics": {
+      "step100_ce": 1.7717,
+      "step200_ce": 1.5689,
+      "step300_ce": 1.2512,
+      "step400_ce": 1.5498,
+      "step500_ce": 1.4809
+    },
+    "next_decision": "Stop this low-ROI run and relaunch a milder 16x16 foothold probe with 16-32,32-48,48-64 holes.",
+    "reason": "16x16 high-hole probe remained high-loss: step300 CE=1.2512 and step500 CE=1.4809 after entering 64-96 holes; treat as over-hard curriculum / no foothold, not a definitive 16x16 impossibility result."
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/launcher.log",
+    "logs/run.log"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": true,
+    "git_sha": "f67e6a2e909dc39ce5ba48f622d93b1ec43f5ab3",
+    "mode": "full",
+    "run_dir": "/huyang2/double-loop/runs/frontier-16x16-d192-h112-20260604T1006Z-f67e6a2",
+    "run_name": "frontier-16x16-d192-h112-20260604T1006Z-f67e6a2",
+    "timestamp_utc": "2026-06-04T10:06:39.595083+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-18T06:03:43.931146+00:00",
+  "git_dirty": true,
+  "git_sha": "f67e6a2e909dc39ce5ba48f622d93b1ec43f5ab3",
+  "has_abort": true,
+  "history": [
+    {
+      "ce": 1.7717,
+      "loop1": 1.773,
+      "loop_last": 1.7717,
+      "source_log": "logs/run.log",
+      "stage": "1:24-64",
+      "step": 100,
+      "total": 1.7717
+    },
+    {
+      "ce": 1.5689,
+      "loop1": 1.5713,
+      "loop_last": 1.5689,
+      "source_log": "logs/run.log",
+      "stage": "1:24-64",
+      "step": 200,
+      "total": 1.5689
+    },
+    {
+      "ce": 1.2512,
+      "loop1": 1.2588,
+      "loop_last": 1.2512,
+      "source_log": "logs/run.log",
+      "stage": "1:24-64",
+      "step": 300,
+      "total": 1.2512
+    },
+    {
+      "ce": 1.5498,
+      "loop1": 1.5799,
+      "loop_last": 1.5498,
+      "source_log": "logs/run.log",
+      "stage": "2:64-96",
+      "step": 400,
+      "total": 1.5498
+    },
+    {
+      "ce": 1.4809,
+      "loop1": 1.523,
+      "loop_last": 1.4809,
+      "source_log": "logs/run.log",
+      "stage": "2:64-96",
+      "step": 500,
+      "total": 1.4809
+    },
+    {
+      "ce": 1.4201,
+      "loop1": 1.4607,
+      "loop_last": 1.4201,
+      "source_log": "logs/run.log",
+      "stage": "2:64-96",
+      "step": 600,
+      "total": 1.4201
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "full",
+  "notes": "",
+  "readme": "README.md",
+  "result_json": "",
+  "run_name": "frontier-16x16-d192-h112-20260604T1006Z-f67e6a2",
+  "score": null,
+  "score_key": "",
+  "task": {},
+  "timestamp_utc": "2026-06-04T10:06:39.595083+00:00"
+}

@@ -1,0 +1,621 @@
+{
+  "abort": {},
+  "available_artifacts": [
+    "config.json",
+    "logs/launcher.log",
+    "logs/run.log",
+    "metadata.json",
+    "output/futureseed_loop_seed52.json",
+    "output/futureseed_loop_seed52.md",
+    "score.json"
+  ],
+  "case_links": [
+    {
+      "kind": "case html",
+      "path": "output/futureseed_loop_case_seed52.html"
+    }
+  ],
+  "config": {
+    "batch": 80,
+    "blank_loss_weight": 20.0,
+    "box_cols": 0,
+    "box_rows": 0,
+    "case_index": 0,
+    "channel_mult": 4,
+    "cpu": false,
+    "d_model": 256,
+    "eval_hole_patterns": "",
+    "eval_holes": 60,
+    "eval_holes_list": "48,60,72,84",
+    "eval_n": 384,
+    "feature_buffer_add": 2048,
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "head_dim": 16,
+    "heads": 16,
+    "hole_pattern": "random",
+    "hole_stages": "16-36:300,36-60:500,60-72:300",
+    "holes_max": 4,
+    "holes_min": 2,
+    "l_cycles": 2,
+    "lambda_": 0.95,
+    "layers": 12,
+    "log_every": 100,
+    "loop_loss": "final",
+    "lr": 0.0015,
+    "max_loops": 5,
+    "noise_scale": 0.0,
+    "out_dir": "/huyang2/double-loop/runs/frontier-12x12-d256-h72-20260604T0920Z-f67e6a2/output",
+    "rollout_ks": "1",
+    "rollout_loop_values": "1,3,5",
+    "rollout_noise_scale": 0.0,
+    "rwkv_kernel": "cuda",
+    "seed": 52,
+    "size": 12,
+    "steps": 1100,
+    "weight_decay": 0.001
+  },
+  "final_by_hole": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9944118857383728,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes48",
+      "holes": 48,
+      "label_exact": 0.8880208730697632,
+      "loop": 5,
+      "solved_valid_clue": 0.8958333730697632,
+      "valid_sudoku": 0.8958333730697632
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9743489623069763,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes60",
+      "holes": 60,
+      "label_exact": 0.5052083730697632,
+      "loop": 5,
+      "solved_valid_clue": 0.5104166865348816,
+      "valid_sudoku": 0.5104166865348816
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.8880569934844971,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes72",
+      "holes": 72,
+      "label_exact": 0.0442708358168602,
+      "loop": 5,
+      "solved_valid_clue": 0.0520833358168602,
+      "valid_sudoku": 0.0520833358168602
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6993427872657776,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes84",
+      "holes": 84,
+      "label_exact": 0.0,
+      "loop": 5,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "generated_at_utc": "2026-06-18T06:03:43.922706+00:00",
+  "git_dirty": false,
+  "git_sha": "f67e6a2e909dc39ce5ba48f622d93b1ec43f5ab3",
+  "has_abort": false,
+  "history": [
+    {
+      "ce": 1.516,
+      "loop1": 1.5117,
+      "loop_last": 1.516,
+      "source_log": "logs/run.log",
+      "stage": "1:16-36",
+      "step": 100,
+      "total": 1.516
+    },
+    {
+      "ce": 1.2282,
+      "loop1": 1.2346,
+      "loop_last": 1.2282,
+      "source_log": "logs/run.log",
+      "stage": "1:16-36",
+      "step": 200,
+      "total": 1.2282
+    },
+    {
+      "ce": 0.8291,
+      "loop1": 0.8669,
+      "loop_last": 0.8291,
+      "source_log": "logs/run.log",
+      "stage": "1:16-36",
+      "step": 300,
+      "total": 0.8291
+    },
+    {
+      "ce": 0.8054,
+      "loop1": 0.9941,
+      "loop_last": 0.8054,
+      "source_log": "logs/run.log",
+      "stage": "2:36-60",
+      "step": 400,
+      "total": 0.8054
+    },
+    {
+      "ce": 0.2922,
+      "loop1": 0.6837,
+      "loop_last": 0.2922,
+      "source_log": "logs/run.log",
+      "stage": "2:36-60",
+      "step": 500,
+      "total": 0.2922
+    },
+    {
+      "ce": 0.1669,
+      "loop1": 0.6449,
+      "loop_last": 0.1669,
+      "source_log": "logs/run.log",
+      "stage": "2:36-60",
+      "step": 600,
+      "total": 0.1669
+    },
+    {
+      "ce": 0.1258,
+      "loop1": 0.6781,
+      "loop_last": 0.1258,
+      "source_log": "logs/run.log",
+      "stage": "2:36-60",
+      "step": 700,
+      "total": 0.1258
+    },
+    {
+      "ce": 0.0756,
+      "loop1": 0.6443,
+      "loop_last": 0.0756,
+      "source_log": "logs/run.log",
+      "stage": "2:36-60",
+      "step": 800,
+      "total": 0.0756
+    },
+    {
+      "ce": 0.2395,
+      "loop1": 1.0061,
+      "loop_last": 0.2395,
+      "source_log": "logs/run.log",
+      "stage": "3:60-72",
+      "step": 900,
+      "total": 0.2395
+    },
+    {
+      "ce": 0.1941,
+      "loop1": 1.0132,
+      "loop_last": 0.1941,
+      "source_log": "logs/run.log",
+      "stage": "3:60-72",
+      "step": 1000,
+      "total": 0.1941
+    },
+    {
+      "ce": 0.1857,
+      "loop1": 1.0238,
+      "loop_last": 0.1857,
+      "source_log": "logs/run.log",
+      "stage": "3:60-72",
+      "step": 1100,
+      "total": 0.1857
+    }
+  ],
+  "hole_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.7911784052848816,
+      "clue_ok": 0.953125,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes48",
+      "holes": 48,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9871419072151184,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes48",
+      "holes": 48,
+      "label_exact": 0.6848958730697632,
+      "loop": 2,
+      "solved_valid_clue": 0.6848958730697632,
+      "valid_sudoku": 0.6848958730697632
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9939236044883728,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes48",
+      "holes": 48,
+      "label_exact": 0.8776041865348816,
+      "loop": 3,
+      "solved_valid_clue": 0.8854166865348816,
+      "valid_sudoku": 0.8854166865348816
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9942491054534912,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes48",
+      "holes": 48,
+      "label_exact": 0.8828125,
+      "loop": 4,
+      "solved_valid_clue": 0.890625,
+      "valid_sudoku": 0.890625
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9944118857383728,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes48",
+      "holes": 48,
+      "label_exact": 0.8880208730697632,
+      "loop": 5,
+      "solved_valid_clue": 0.8958333730697632,
+      "valid_sudoku": 0.8958333730697632
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6990017294883728,
+      "clue_ok": 0.9635416865348816,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes60",
+      "holes": 60,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9470919966697693,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes60",
+      "holes": 60,
+      "label_exact": 0.1614583432674408,
+      "loop": 2,
+      "solved_valid_clue": 0.1614583432674408,
+      "valid_sudoku": 0.1614583432674408
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9716579914093018,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes60",
+      "holes": 60,
+      "label_exact": 0.4427083432674408,
+      "loop": 3,
+      "solved_valid_clue": 0.4479166865348816,
+      "valid_sudoku": 0.4479166865348816
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9737847447395325,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes60",
+      "holes": 60,
+      "label_exact": 0.484375,
+      "loop": 4,
+      "solved_valid_clue": 0.4895833432674408,
+      "valid_sudoku": 0.4895833432674408
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9743489623069763,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes60",
+      "holes": 60,
+      "label_exact": 0.5052083730697632,
+      "loop": 5,
+      "solved_valid_clue": 0.5104166865348816,
+      "valid_sudoku": 0.5104166865348816
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.5877459645271301,
+      "clue_ok": 0.9869791865348816,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes72",
+      "holes": 72,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.8305121660232544,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes72",
+      "holes": 72,
+      "label_exact": 0.0026041667442768812,
+      "loop": 2,
+      "solved_valid_clue": 0.0026041667442768812,
+      "valid_sudoku": 0.0026041667442768812
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.8811848759651184,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes72",
+      "holes": 72,
+      "label_exact": 0.0234375,
+      "loop": 3,
+      "solved_valid_clue": 0.02864583395421505,
+      "valid_sudoku": 0.02864583395421505
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.8863932490348816,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes72",
+      "holes": 72,
+      "label_exact": 0.0390625,
+      "loop": 4,
+      "solved_valid_clue": 0.046875,
+      "valid_sudoku": 0.046875
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.8880569934844971,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes72",
+      "holes": 72,
+      "label_exact": 0.0442708358168602,
+      "loop": 5,
+      "solved_valid_clue": 0.0520833358168602,
+      "valid_sudoku": 0.0520833358168602
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.4604414701461792,
+      "clue_ok": 0.9869791865348816,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes84",
+      "holes": 84,
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6401599645614624,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes84",
+      "holes": 84,
+      "label_exact": 0.0,
+      "loop": 2,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6913752555847168,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes84",
+      "holes": 84,
+      "label_exact": 0.0,
+      "loop": 3,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.697792649269104,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes84",
+      "holes": 84,
+      "label_exact": 0.0,
+      "loop": 4,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6993427872657776,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "holes84",
+      "holes": 84,
+      "label_exact": 0.0,
+      "loop": 5,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    }
+  ],
+  "loop_deltas": {
+    "blank_acc": {
+      "delta": 0.2753472328186035,
+      "first": 0.6990017294883728,
+      "first_x": 1.0,
+      "last": 0.9743489623069763,
+      "last_x": 5.0
+    },
+    "label_exact": {
+      "delta": 0.5052083730697632,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.5052083730697632,
+      "last_x": 5.0
+    },
+    "solved_valid_clue": {
+      "delta": 0.5104166865348816,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.5104166865348816,
+      "last_x": 5.0
+    },
+    "valid_sudoku": {
+      "delta": 0.5104166865348816,
+      "first": 0.0,
+      "first_x": 1.0,
+      "last": 0.5104166865348816,
+      "last_x": 5.0
+    }
+  },
+  "loop_rows": [
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.6990017294883728,
+      "clue_ok": 0.9635416865348816,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "eval_clean",
+      "label_exact": 0.0,
+      "loop": 1,
+      "solved_valid_clue": 0.0,
+      "valid_sudoku": 0.0
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9470919966697693,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "eval_clean",
+      "label_exact": 0.1614583432674408,
+      "loop": 2,
+      "solved_valid_clue": 0.1614583432674408,
+      "valid_sudoku": 0.1614583432674408
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9716579914093018,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "eval_clean",
+      "label_exact": 0.4427083432674408,
+      "loop": 3,
+      "solved_valid_clue": 0.4479166865348816,
+      "valid_sudoku": 0.4479166865348816
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9737847447395325,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "eval_clean",
+      "label_exact": 0.484375,
+      "loop": 4,
+      "solved_valid_clue": 0.4895833432674408,
+      "valid_sudoku": 0.4895833432674408
+    },
+    {
+      "avg_filled": 1.0,
+      "blank_acc": 0.9743489623069763,
+      "clue_ok": 1.0,
+      "future_seed.fs_gate_mean": 0.5399296879768372,
+      "future_seed.fs_state_norm": 8.638875961303711,
+      "group": "eval_clean",
+      "label_exact": 0.5052083730697632,
+      "loop": 5,
+      "solved_valid_clue": 0.5104166865348816,
+      "valid_sudoku": 0.5104166865348816
+    }
+  ],
+  "mode": "full",
+  "notes": "",
+  "readme": "README.md",
+  "result_json": "output/futureseed_loop_seed52.json",
+  "run_name": "frontier-12x12-d256-h72-20260604T0920Z-f67e6a2",
+  "score": 0.5052083730697632,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "task": {
+    "box_cols": 4,
+    "box_rows": 3,
+    "eval_hole_patterns": [
+      "random"
+    ],
+    "feature_buffer_size": 8192,
+    "future_seed_scale": 1.0,
+    "hole_pattern": "random",
+    "hole_stages": [
+      [
+        16,
+        36,
+        300
+      ],
+      [
+        36,
+        60,
+        500
+      ],
+      [
+        60,
+        72,
+        300
+      ]
+    ],
+    "loop_loss": "final",
+    "mainline": "future_seed_loop",
+    "max_loops": 5,
+    "noise_mode": "feature_diff",
+    "rollout_ks": [
+      1
+    ],
+    "rollout_loop_values": [
+      1,
+      3,
+      5
+    ],
+    "rollout_noise_scale": 0.0,
+    "rwkv_kernel": "cuda",
+    "size": 12
+  },
+  "timestamp_utc": "2026-06-04T09:55:59.532238+00:00"
+}

@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "d104f6ec43e0fbd510705923231b4655b0d50937",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 recurrent budget-state boundary probe from SHA d104f6e. Mechanism: generic per-loop budget shift calibrates PATH boundary from margin, soft mass, entropy, candidate contrast, candidate weights, and loop index; no maze rules/search/repair/selector/sweep. Result: loop12 path_f1=0.5861, loop gain=+0.0008, precision 0.4168->0.4184, recall 0.9938->0.9897, pred_frac 0.4606->0.4570. Budget state is active but becomes an expander: threshold_mean=-0.4865, prune_flip=0.0, add_flip=0.0200; hard cases FP/FN 283.4/3.3->282.2/5.6. Lesson: boundary capacity alone is not enough; current training pressure still rewards broad masks, so do not sweep budget scale/seed/bias.",
+  "recorded_at_utc": "2026-06-18T03:23:49.763989+00:00",
+  "run_name": "maze31-budgetstate-massconstr-w1-d256l4-s800-20260618T0330Z-d104f6e",
+  "score": 0.5860637426376343,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-18T03:12:11.222612+00:00"
+}

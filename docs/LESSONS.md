@@ -492,3 +492,20 @@
   per-loop budget/normalization state or a contrastive boundary objective that
   directly separates true-path from false-positive PATH candidates while
   preserving true-path margins.
+- Learned recurrent budget state is not enough when the training pressure still
+  points at broad masks. The `maze31-budgetstate-massconstr` probe added a
+  generic per-sample per-loop budget shift to the decision boundary, using only
+  PATH margin, soft PATH mass, entropy, candidate disagreement, candidate
+  weights, and loop index. The module was active and candidates stayed diverse
+  (`keep/proposed/context = 0.376/0.444/0.181`, context-proposed RMS `1.204`),
+  but the learned boundary moved in the wrong direction: loop12 threshold mean
+  was negative (`-0.4865`), prune flips were exactly `0.0`, and add flips were
+  about `0.0200`. Loop1 to loop12 improved only slightly in F1
+  (`0.5852 -> 0.5861`) and precision (`0.4168 -> 0.4184`), while recall dropped
+  (`0.9938 -> 0.9897`). Hard visualized cases confirm the failure mode:
+  false positives barely changed (`283.4 -> 282.2`) while false negatives rose
+  (`3.3 -> 5.6`). Lesson: boundary capacity is no longer the clean bottleneck.
+  If the objective rewards coverage more than correction, a learned budget
+  variable also becomes an expander. Do not sweep budget scale, threshold bias,
+  seed, or margin; the next work should change the generic self-correction
+  pressure itself.

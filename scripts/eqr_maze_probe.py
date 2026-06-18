@@ -548,7 +548,7 @@ def path_mass_pressure_loss(
     if not logits_by_step:
         return torch.zeros((), dtype=torch.float32, device=labels.device)
     mode = str(mode).lower()
-    if mode not in {"soft", "guarded"}:
+    if mode not in {"soft", "guarded", "constrained"}:
         raise ValueError(f"unknown path mass mode: {mode}")
     path_labels = labels == PATH_ID
     non_path = ~path_labels
@@ -563,7 +563,11 @@ def path_mass_pressure_loss(
         neg_mass = (path_prob * non_path).sum(dim=-1) / non_path.sum(dim=-1).clamp_min(1)
         pos_prob = (path_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
         recall_guard = F.relu(base_pos_prob - pos_prob + margin).square()
-        if mode == "guarded":
+        if mode == "constrained":
+            cell_floor = F.relu(base_prob - path_prob + margin)
+            pos_cell_floor = (cell_floor * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
+            losses.append((neg_mass + pos_cell_floor).mean())
+        elif mode == "guarded":
             guard_active = (base_pos_prob - pos_prob + margin) > 0
             losses.append(torch.where(guard_active.detach(), recall_guard, neg_mass).mean())
         else:
@@ -600,6 +604,14 @@ def add_path_mass_diagnostics(
         prob_frac = path_prob.mean()
         recall_gap = base_pos_prob - pos_prob + margin
         recall_guard = F.relu(recall_gap).square()
+        cell_floor_gap = base_prob - path_prob + margin
+        positive_floor_gap = cell_floor_gap[path_labels]
+        positive_floor_loss = F.relu(positive_floor_gap).mean() if positive_floor_gap.numel() else torch.zeros((), device=path_prob.device)
+        positive_floor_violation = (
+            (positive_floor_gap > 0).to(torch.float32).mean()
+            if positive_floor_gap.numel()
+            else torch.zeros((), device=path_prob.device)
+        )
         residuals[idx].update(
             {
                 "path_mass_active": float(idx >= start_idx),
@@ -611,6 +623,8 @@ def add_path_mass_diagnostics(
                 "path_mass_loop1_positive_prob": float(base_pos_prob.mean().detach().cpu()),
                 "path_mass_recall_guard_loss": float(recall_guard.mean().detach().cpu()),
                 "path_mass_guard_violation_frac": float((recall_gap > 0).to(torch.float32).mean().detach().cpu()),
+                "path_mass_positive_floor_loss": float(positive_floor_loss.detach().cpu()),
+                "path_mass_positive_floor_violation_frac": float(positive_floor_violation.detach().cpu()),
                 "path_mass_hard_pred_frac": float(pred_path.to(torch.float32).mean().detach().cpu()),
             }
         )
@@ -1200,7 +1214,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--path_mass_weight", type=float, default=0.0)
     p.add_argument("--path_mass_start_loop", type=int, default=4)
     p.add_argument("--path_mass_recall_margin", type=float, default=0.0)
-    p.add_argument("--path_mass_mode", choices=("soft", "guarded"), default="soft")
+    p.add_argument("--path_mass_mode", choices=("soft", "guarded", "constrained"), default="soft")
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)

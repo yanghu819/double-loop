@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "a53712b11835dd2d515fe9fff274a3e6a1d70532",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 simultaneous constrained path-mass probe from SHA a53712b. Mechanism: keep non-path PATH-mass pressure active while adding a per-true-cell loop1 probability floor; no maze rules/search/repair/selector/sweep. Result: loop12 path_f1=0.5841, loop gain=+0.0005, precision 0.4144->0.4151, recall 0.9984->0.9971, pred_frac 0.4655->0.4641. Hard cases FP/FN 288.1/0.5->287.5/1.3. Positive floor was active on 30.7% true-path cells at loop12 but loss was small 0.0035; soft non-path mass worsened slightly 0.2556->0.2581. Lesson: simultaneous pressure avoids guarded copy-loop and avoids soft mass recall collapse, but the cell-floor constraint mostly cancels useful pruning; current probability-floor objective is not enough to create loop-time correction.",
+  "recorded_at_utc": "2026-06-18T02:16:36.044246+00:00",
+  "run_name": "maze31-boundary-massconstr-w1-d256l4-s800-retry-20260618T020007Z-a53712b",
+  "score": 0.5840852856636047,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-18T02:09:11.151905+00:00"
+}

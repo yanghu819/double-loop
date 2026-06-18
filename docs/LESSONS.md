@@ -475,3 +475,20 @@
   positive-cell margins and false-positive mass pressure active at the same
   time, for example through a normalized margin or constrained/Lagrangian form,
   not another sweep of mass weight, threshold, margin, or seed.
+- Simultaneous path-mass pressure with a true-cell probability floor avoids the
+  two obvious failures but still does not create useful loop correction. The
+  `maze31-boundary-massconstr` retry kept non-path PATH-mass pressure active and
+  added a cell-level loop1 probability floor on true-path cells. It no longer
+  froze perfectly like guarded pressure, and it did not collapse recall like the
+  original soft mass run. But the effect was tiny: loop1 to loop12 path F1
+  `0.5836 -> 0.5841`, precision `0.4144 -> 0.4151`, recall
+  `0.9984 -> 0.9971`, predicted PATH fraction `0.4655 -> 0.4641`, and hard-case
+  false positives/false negatives `288.1/0.5 -> 287.5/1.3`. The positive floor
+  was active on `30.7%` of true-path cells at loop12, but non-path PATH
+  probability slightly worsened (`0.2556 -> 0.2581`). Lesson: probability-floor
+  regularization mostly creates small calibration tradeoffs, not a robust
+  prune/keep decision. Do not sweep this floor mode. The next high-ROI direction
+  should change the recurrent decision variable itself, for example a learned
+  per-loop budget/normalization state or a contrastive boundary objective that
+  directly separates true-path from false-positive PATH candidates while
+  preserving true-path margins.

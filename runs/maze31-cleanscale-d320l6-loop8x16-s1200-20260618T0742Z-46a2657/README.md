@@ -90,6 +90,10 @@ preserving true-path evidence."
 - `output/visualizations/index.html`
 - `output/visualizations/casebook.md`
 - `output/visualizations/cases.json`
+- `output/visualizations/inline/summary_loop_effect.png`
+- `output/visualizations/inline/case_best_loop_gain.png`
+- `output/visualizations/inline/case_worst_loop_regression.png`
+- `output/visualizations/inline/case_typical_failure.png`
 - `visualizations/index.html`
 - `visualizations/summary.json`
 - `source_HEAD.txt`, `source.patch`, `source_snapshot.ls.txt`

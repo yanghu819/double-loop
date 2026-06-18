@@ -655,6 +655,33 @@ def path_decision_margin_loss(
     return torch.stack(losses).mean()
 
 
+def path_tversky_loss(
+    logits_by_step: List[torch.Tensor],
+    labels: torch.Tensor,
+    start_loop: int,
+    alpha: float,
+    beta: float,
+) -> torch.Tensor:
+    if not logits_by_step:
+        return torch.zeros((), dtype=torch.float32, device=labels.device)
+    path_labels = (labels == PATH_ID).to(torch.float32)
+    non_path = 1.0 - path_labels
+    start_idx = max(0, int(start_loop) - 1)
+    alpha = float(alpha)
+    beta = float(beta)
+    losses = []
+    for logits in logits_by_step[start_idx:]:
+        path_prob = logits.to(torch.float32).softmax(dim=-1)[..., PATH_ID]
+        tp = (path_prob * path_labels).sum(dim=-1)
+        fp = (path_prob * non_path).sum(dim=-1)
+        fn = ((1.0 - path_prob) * path_labels).sum(dim=-1)
+        score = (tp + 1.0) / (tp + alpha * fp + beta * fn + 1.0)
+        losses.append(1.0 - score.mean())
+    if not losses:
+        return torch.zeros((), dtype=torch.float32, device=labels.device)
+    return torch.stack(losses).mean()
+
+
 @torch.no_grad()
 def add_path_mass_diagnostics(
     logits_by_step: List[torch.Tensor],
@@ -704,6 +731,44 @@ def add_path_mass_diagnostics(
                 "path_mass_positive_floor_loss": float(positive_floor_loss.detach().cpu()),
                 "path_mass_positive_floor_violation_frac": float(positive_floor_violation.detach().cpu()),
                 "path_mass_hard_pred_frac": float(pred_path.to(torch.float32).mean().detach().cpu()),
+            }
+        )
+
+
+@torch.no_grad()
+def add_path_tversky_diagnostics(
+    logits_by_step: List[torch.Tensor],
+    residuals: List[Dict[str, float]],
+    labels: torch.Tensor,
+    start_loop: int,
+    alpha: float,
+    beta: float,
+) -> None:
+    if not logits_by_step:
+        return
+    path_labels = (labels == PATH_ID).to(torch.float32)
+    non_path = 1.0 - path_labels
+    start_idx = max(0, int(start_loop) - 1)
+    alpha = float(alpha)
+    beta = float(beta)
+    for idx, logits in enumerate(logits_by_step):
+        if idx >= len(residuals):
+            continue
+        path_prob = logits.detach().to(torch.float32).softmax(dim=-1)[..., PATH_ID]
+        tp = (path_prob * path_labels).sum(dim=-1)
+        fp = (path_prob * non_path).sum(dim=-1)
+        fn = ((1.0 - path_prob) * path_labels).sum(dim=-1)
+        score = (tp + 1.0) / (tp + alpha * fp + beta * fn + 1.0)
+        residuals[idx].update(
+            {
+                "path_tversky_active": float(idx >= start_idx),
+                "path_tversky_score": float(score.mean().detach().cpu()),
+                "path_tversky_loss": float((1.0 - score.mean()).detach().cpu()),
+                "path_tversky_soft_tp": float(tp.mean().detach().cpu()),
+                "path_tversky_soft_fp": float(fp.mean().detach().cpu()),
+                "path_tversky_soft_fn": float(fn.mean().detach().cpu()),
+                "path_tversky_alpha": alpha,
+                "path_tversky_beta": beta,
             }
         )
 
@@ -1207,6 +1272,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
     last_mass_loss = 0.0
     last_selfcorr_loss = 0.0
     last_path_margin_loss = 0.0
+    last_path_tversky_loss = 0.0
     for step in range(1, args.steps + 1):
         model.train()
         train_path_range = path_range_for_step(path_stages, step, default_range)
@@ -1256,6 +1322,13 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             args.path_margin_positive,
             args.path_margin_negative,
         )
+        tversky_loss = path_tversky_loss(
+            logits_by_step,
+            batch["labels"],
+            args.path_tversky_start_loop,
+            args.path_tversky_alpha,
+            args.path_tversky_beta,
+        )
         loss = (
             supervised_loss
             + float(args.predictive_state_weight) * pred_loss
@@ -1264,6 +1337,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             + float(args.path_mass_weight) * mass_loss
             + float(args.self_correction_weight) * selfcorr_loss
             + float(args.path_margin_weight) * path_margin_loss
+            + float(args.path_tversky_weight) * tversky_loss
         )
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -1277,6 +1351,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         last_mass_loss = float(mass_loss.detach().cpu())
         last_selfcorr_loss = float(selfcorr_loss.detach().cpu())
         last_path_margin_loss = float(path_margin_loss.detach().cpu())
+        last_path_tversky_loss = float(tversky_loss.detach().cpu())
         if args.log_every and step % args.log_every == 0:
             last_metrics = metrics_from_logits(logits_by_step[-1], batch["labels"])
             row = {
@@ -1293,6 +1368,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "path_mass_loss": last_mass_loss,
                 "self_correction_loss": last_selfcorr_loss,
                 "path_margin_loss": last_path_margin_loss,
+                "path_tversky_loss": last_path_tversky_loss,
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -1305,7 +1381,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"pred={row['predictive_state_loss']:.4f} improve={row['context_improve_loss']:.4f} "
                 f"rank={row['context_rank_loss']:.4f} mass={row['path_mass_loss']:.4f} "
                 f"selfcorr={row['self_correction_loss']:.4f} "
-                f"margin={row['path_margin_loss']:.4f} "
+                f"margin={row['path_margin_loss']:.4f} tversky={row['path_tversky_loss']:.4f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
@@ -1318,6 +1394,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_path_mass_loss": last_mass_loss,
         "train_self_correction_loss": last_selfcorr_loss,
         "train_path_margin_loss": last_path_margin_loss,
+        "train_path_tversky_loss": last_path_tversky_loss,
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
@@ -1378,6 +1455,14 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
         args.path_margin_start_loop,
         args.path_margin_positive,
         args.path_margin_negative,
+    )
+    add_path_tversky_diagnostics(
+        logits_by_step,
+        residuals,
+        batch["labels"],
+        args.path_tversky_start_loop,
+        args.path_tversky_alpha,
+        args.path_tversky_beta,
     )
     eval_clean: Dict[str, Any] = {}
     for idx, logits in enumerate(logits_by_step, start=1):
@@ -1494,6 +1579,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--path_margin_start_loop", type=int, default=4)
     p.add_argument("--path_margin_positive", type=float, default=0.25)
     p.add_argument("--path_margin_negative", type=float, default=0.25)
+    p.add_argument("--path_tversky_weight", type=float, default=0.0)
+    p.add_argument("--path_tversky_start_loop", type=int, default=4)
+    p.add_argument("--path_tversky_alpha", type=float, default=0.7)
+    p.add_argument("--path_tversky_beta", type=float, default=0.3)
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -1615,6 +1704,10 @@ def main() -> None:
             "path_margin_start_loop": args.path_margin_start_loop,
             "path_margin_positive": args.path_margin_positive,
             "path_margin_negative": args.path_margin_negative,
+            "path_tversky_weight": args.path_tversky_weight,
+            "path_tversky_start_loop": args.path_tversky_start_loop,
+            "path_tversky_alpha": args.path_tversky_alpha,
+            "path_tversky_beta": args.path_tversky_beta,
             "params": param_count,
         },
         "train": train_metrics,

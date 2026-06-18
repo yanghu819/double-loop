@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "2cdb9c5db8f6225f10db583ddb36cb170854eeeb",
+  "mode": "eqr_maze_probe_abort",
+  "notes": "2026-06-18 GPU1 equal-compute EqR baseline for Maze31 D320/L6. Config matches FutureSeed+loop clean run except EQR_FUTURE_SEED_SCALE=0; train/eval loops 8/16, batch16, 1200-step budget, path160-260. Aborted at step600 by kill criterion because baseline remained unopened: step100/200/300/400/500/600 path_f1 all 0.0 and CE ~1.06, while matched FutureSeed run opened at step400 with path_f1=0.5862 and final loop16 path_f1=0.5344. Lesson: FutureSeed has real opening/optimization value versus EqR baseline on hard Maze31, but this does not yet prove loop pruning superiority; next proof target remains FP-down/FN-flat loop dynamics.",
+  "recorded_at_utc": "2026-06-18T09:08:50.151665+00:00",
+  "run_name": "maze31-eqrbase-d320l6-loop8x16-s1200-20260618T084436Z-2cdb9c5",
+  "score": null,
+  "score_key": "missing_result_json",
+  "timestamp_utc": "2026-06-18T09:08:50.151665+00:00"
+}

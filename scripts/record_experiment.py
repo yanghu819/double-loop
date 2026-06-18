@@ -257,6 +257,20 @@ def main() -> None:
         except Exception as exc:
             print(f"warning: failed to build experiment visualizations: {exc}")
 
+    inline_maze_visualizer = repo / "scripts" / "build_inline_maze_visuals.py"
+    if inline_maze_visualizer.exists() and (run_dir / "output" / "visualizations" / "cases.json").exists():
+        try:
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    str(inline_maze_visualizer),
+                    "--run-dir",
+                    str(run_dir),
+                ]
+            )
+        except Exception as exc:
+            print(f"warning: failed to build inline maze visualizations: {exc}")
+
     print(f"recorded run={run_name} score={score} key={score_key}")
 
 

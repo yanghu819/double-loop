@@ -593,3 +593,18 @@
   a loop-depth or same-budget scale sweep. The next bitter-lesson-compliant move
   should be a simple generic recurrent decision/state dynamic that can revise a
   boundary, not another scalar loss, selector, repair, or maze-specific prior.
+- Equal-compute EqR baseline now gives positive evidence for FutureSeed as an
+  opening mechanism on hard Maze31. The `maze31-eqrbase-d320l6-loop8x16-s1200`
+  run matched the clean FutureSeed D320/L6 setup except
+  `EQR_FUTURE_SEED_SCALE=0`: same path range `160-260`, batch `16`, train/eval
+  loops `8/16`, hidden `320`, layers `6`, no state competition, no feature
+  noise, no pruning loss, no selector, no repair, and no maze rule. It stayed
+  completely unopened through step600: path F1 was `0.0` at steps
+  `100/200/300/400/500/600`, with CE stuck around `1.06`, so it was stopped by
+  exact PID. The matched FutureSeed run opened at step400 with train path F1
+  `0.5862` and final loop16 eval path F1 `0.5344`. Lesson: FutureSeed is not
+  merely a Sudoku-specific trick; it materially changes optimization/opening on
+  Maze31 against an equal-compute EqR baseline. But this only proves the first
+  criterion. The second criterion is still open: FutureSeed+loop must make later
+  loops reduce false positives without adding false negatives before we claim it
+  is a stronger full paradigm than EqR.

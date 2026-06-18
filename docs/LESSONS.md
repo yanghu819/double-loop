@@ -268,6 +268,19 @@
   or ranking variants. The next useful mechanism should alter generic recurrent
   training pressure so later loops are rewarded for reducing excess predicted
   mass without maze repair or topology rules.
+- The late-loop path-mass pressure probe
+  (`maze31-boundary-mass-w1-d256l4-s800-20260617T234853Z-3e1bfc3`) is the first
+  clear sign that training pressure can reverse the expansion tendency. Loop12
+  path F1 moved `0.5849 -> 0.5879`, precision `0.4154 -> 0.4235`, and predicted
+  path fraction `0.4651 -> 0.4437`. Soft mass diagnostics moved in the intended
+  direction too: non-PATH PATH probability `0.2630 -> 0.2137`, excess PATH
+  probability fraction `0.1717 -> 0.1051`. But recall fell `1.0000 -> 0.9727`,
+  true-path PATH probability fell `0.7880 -> 0.6500`, and hard visualized cases
+  traded false positives `285.5 -> 276.5` for false negatives `0.0 -> 11.7`.
+  This is a weak positive mechanism result, not a solved method. Do not sweep
+  mass weight. The next high-ROI direction is a stronger generic
+  recall-preserving pruning objective, focused on reducing excess predicted mass
+  while explicitly preventing true-path probability collapse.
 - The current visualization selector mostly captured solved largest-gain cases.
   That is good for explaining what the loop fixes, but not enough for studying
   the rare remaining failures after loop10. The next visualization upgrade

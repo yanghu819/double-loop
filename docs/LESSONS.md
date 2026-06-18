@@ -509,3 +509,20 @@
   variable also becomes an expander. Do not sweep budget scale, threshold bias,
   seed, or margin; the next work should change the generic self-correction
   pressure itself.
+- Loop-pair self-correction is learnable but still turns into calibration, not
+  clean repair. The `maze31-selfcorr-w1m002` probe used loop1 as the broad mask
+  reference and directly trained later loops to lower PATH probability on loop1
+  false-positive cells while preserving true-path probability. The loss did
+  move (`0.0500` at step100 to `0.0412` at step800), and hard predicted PATH
+  fraction fell slightly (`0.4644 -> 0.4617`). But the intended probability
+  signal did not happen: loop12 false-positive candidate PATH probability was
+  slightly higher than loop1 (`+0.0007`), while true-path probability rose
+  (`+0.0027`). Hard counts show a tradeoff rather than correction: FP count
+  improved by `-2.11`, but FN count worsened by `+0.54`; hard visualized cases
+  moved from `286.5/1.0` FP/FN to `285.0/2.3`. The boundary still had
+  `prune_flip=0.0` and `add_flip=0.0432`. Lesson: a loop1-relative soft
+  probability objective is more direct than CE/mass/floor, but it is still too
+  easy to satisfy through calibration and recall tradeoff. Do not sweep
+  self-correction weight, margin, seed, or start loop; the next direction needs
+  a stronger generic sparse-correctness pressure rather than another small
+  probability regularizer.

@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "86604ee43be9cf3ef6a61f55e4f484f603b8094a",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 loop-pair self-correction probe from SHA 86604ee. Mechanism: loop1 broad mask defines candidate false positives; later loops are directly trained to lower PATH probability on those cells while preserving true-path probability; no maze rules/search/repair/selector/sweep. Result: loop12 path_f1=0.5851, loop gain=+0.0007, precision 0.4152->0.4165, recall 0.9981->0.9952, pred_frac 0.4644->0.4617. Self-correction loss is learnable but not clean repair: FP candidate PATH prob delta=+0.0007, true prob delta=+0.0027, hard FP/FN delta=-2.11/+0.54, hard cases FP/FN 286.5/1.0->285.0/2.3. Lesson: loop1-relative soft objective still becomes calibration/tradeoff; do not sweep weight/margin/seed.",
+  "recorded_at_utc": "2026-06-18T04:20:06.170919+00:00",
+  "run_name": "maze31-selfcorr-w1m002-boundary-d256l4-s800-20260618T0350Z-86604ee",
+  "score": 0.585102915763855,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-18T04:11:00.727727+00:00"
+}

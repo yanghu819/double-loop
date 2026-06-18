@@ -67,7 +67,7 @@ index 14605c5..e5c3fb3 100644
      if isinstance(stds, dict):
          if "H_init_std" in arch_overrides:
 diff --git a/models/eqr.py b/models/eqr.py
-index 8084f2b..a3afef8 100644
+index 8084f2b..be3fd02 100644
 --- a/models/eqr.py
 +++ b/models/eqr.py
 @@ -11,6 +11,14 @@ from models.layers import Attention, CastedEmbedding, CastedLinear, CosSin, Rota
@@ -102,7 +102,7 @@ index 8084f2b..a3afef8 100644
      H_init_std: float = 1.0
      L_init_std: float = 1.0
  
-@@ -89,19 +107,411 @@ class ReasoningBlock(nn.Module):
+@@ -89,19 +107,466 @@ class ReasoningBlock(nn.Module):
          return rms_norm(hidden_states + self.mlp(hidden_states), variance_epsilon=self.norm_eps)
  
  
@@ -289,11 +289,13 @@ index 8084f2b..a3afef8 100644
 +
 +
 +class DecisionBoundaryCalibrator(nn.Module):
-+    def __init__(self, config: EqRConfig) -> None:
++    def __init__(self, config: EqRConfig, budget_state: bool = False) -> None:
 +        super().__init__()
 +        self.token_id = int(config.decision_boundary_token_id)
 +        self.scale = float(config.decision_boundary_scale)
++        self.budget_state = bool(budget_state)
 +        feature_dim = 11
++        budget_dim = 9
 +        hidden = max(16, min(64, config.hidden_size // 4))
 +        self.norm = nn.LayerNorm(feature_dim)
 +        self.net = nn.Sequential(
@@ -301,12 +303,27 @@ index 8084f2b..a3afef8 100644
 +            nn.SiLU(),
 +            nn.Linear(hidden, 1),
 +        )
++        self.budget_norm = nn.LayerNorm(budget_dim) if self.budget_state else None
++        self.budget_net = (
++            nn.Sequential(
++                nn.Linear(budget_dim, hidden),
++                nn.SiLU(),
++                nn.Linear(hidden, 1),
++            )
++            if self.budget_state
++            else None
++        )
 +        self.latest_stats: Dict[str, float] = {}
 +        with torch.no_grad():
 +            nn.init.xavier_uniform_(self.net[0].weight)
 +            self.net[0].bias.zero_()
 +            nn.init.normal_(self.net[2].weight, mean=0.0, std=0.02)
 +            self.net[2].bias.zero_()
++            if self.budget_net is not None:
++                nn.init.xavier_uniform_(self.budget_net[0].weight)
++                self.budget_net[0].bias.zero_()
++                nn.init.normal_(self.budget_net[2].weight, mean=0.0, std=0.02)
++                self.budget_net[2].bias.zero_()
 +
 +    def _target_features(self, logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
 +        logits_fp32 = logits.to(torch.float32)
@@ -370,22 +387,60 @@ index 8084f2b..a3afef8 100644
 +            dim=-1,
 +        )
 +        threshold = self.net(self.norm(features)).squeeze(-1).to(torch.float32) * self.scale
++        budget_shift = torch.zeros(logits.shape[0], 1, dtype=torch.float32, device=logits.device)
++        raw_prob = logits.to(torch.float32).softmax(dim=-1)
++        if self.budget_state and self.budget_net is not None and self.budget_norm is not None:
++            target_prob = raw_prob[..., self.token_id]
++            soft_path_frac = target_prob.mean(dim=-1)
++            raw_margin_mean = raw_margin.mean(dim=-1)
++            entropy_mean = raw_entropy.mean(dim=-1)
++            disagreement_mean = disagreement.mean(dim=-1)
++            if candidate_weights is None:
++                weight_mean = torch.zeros(raw_margin.shape[0], 3, dtype=torch.float32, device=logits.device)
++                weight_mean[:, 1] = 1.0
++            else:
++                weight_mean = candidate_weights.to(torch.float32).mean(dim=1)
++            loop_mean = loop_feature.mean(dim=-1)
++            budget_features = torch.cat(
++                (
++                    torch.tanh(raw_margin_mean[:, None] / 4.0),
++                    soft_path_frac[:, None],
++                    entropy_mean[:, None],
++                    disagreement_mean[:, None],
++                    weight_mean,
++                    loop_mean[:, None],
++                    torch.ones_like(loop_mean[:, None]),
++                ),
++                dim=-1,
++            )
++            budget_shift = self.budget_net(self.budget_norm(budget_features)).to(torch.float32) * self.scale
++            threshold = threshold + budget_shift
 +        calibrated = logits.to(torch.float32).clone()
 +        calibrated[..., self.token_id] = calibrated[..., self.token_id] - threshold
 +        calibrated_margin = raw_margin - threshold
 +        with torch.no_grad():
 +            raw_pred = logits.to(torch.float32).argmax(dim=-1) == self.token_id
 +            calibrated_pred = calibrated.argmax(dim=-1) == self.token_id
++            calibrated_prob = calibrated.softmax(dim=-1)
++            raw_soft_path_frac = raw_prob[..., self.token_id].mean()
++            calibrated_soft_path_frac = calibrated_prob[..., self.token_id].mean()
 +            self.latest_stats = {
 +                "state_boundary_threshold_mean": float(threshold.mean().detach().cpu()),
 +                "state_boundary_threshold_abs_mean": float(threshold.abs().mean().detach().cpu()),
 +                "state_boundary_threshold_std": float(threshold.std(unbiased=False).detach().cpu()),
 +                "state_boundary_threshold_pos_frac": float((threshold > 0).to(torch.float32).mean().detach().cpu()),
++                "state_boundary_budget_shift_mean": float(budget_shift.mean().detach().cpu()),
++                "state_boundary_budget_shift_abs_mean": float(budget_shift.abs().mean().detach().cpu()),
++                "state_boundary_budget_shift_std": float(budget_shift.std(unbiased=False).detach().cpu()),
++                "state_boundary_budget_shift_pos_frac": float((budget_shift > 0).to(torch.float32).mean().detach().cpu()),
 +                "state_boundary_raw_margin_mean": float(raw_margin.mean().detach().cpu()),
 +                "state_boundary_calibrated_margin_mean": float(calibrated_margin.mean().detach().cpu()),
 +                "state_boundary_margin_shift_mean": float((calibrated_margin - raw_margin).mean().detach().cpu()),
 +                "state_boundary_raw_path_frac": float(raw_pred.to(torch.float32).mean().detach().cpu()),
 +                "state_boundary_calibrated_path_frac": float(calibrated_pred.to(torch.float32).mean().detach().cpu()),
++                "state_boundary_raw_soft_path_frac": float(raw_soft_path_frac.detach().cpu()),
++                "state_boundary_calibrated_soft_path_frac": float(calibrated_soft_path_frac.detach().cpu()),
++                "state_boundary_soft_path_frac_delta": float((calibrated_soft_path_frac - raw_soft_path_frac).detach().cpu()),
 +                "state_boundary_prune_flip_frac": float((raw_pred & ~calibrated_pred).to(torch.float32).mean().detach().cpu()),
 +                "state_boundary_add_flip_frac": float((~raw_pred & calibrated_pred).to(torch.float32).mean().detach().cpu()),
 +                "state_boundary_loop_feature": float(loop_feature.mean().detach().cpu()),
@@ -516,7 +571,7 @@ index 8084f2b..a3afef8 100644
  
  
  class InnerNetwork(nn.Module):
-@@ -129,6 +539,51 @@ class InnerNetwork(nn.Module):
+@@ -129,6 +594,56 @@ class InnerNetwork(nn.Module):
  
          self._init_pos()
          self.L_level = NoisyReasoningModule(config, [ReasoningBlock(config) for _ in range(config.L_layers)])
@@ -528,11 +583,16 @@ index 8084f2b..a3afef8 100644
 +            "state_compete_cross",
 +            "state_compete_conf",
 +            "state_compete_boundary",
++            "state_compete_budget",
 +        }:
 +            raise ValueError(f"Unknown state_update_mode '{config.state_update_mode}'")
 +        self.latest_state_gate_stats: Dict[str, float] = {}
 +        self.latest_state_aux: Dict[str, torch.Tensor] = {}
-+        self.boundary_calibrator = DecisionBoundaryCalibrator(config) if self.state_update_mode == "state_compete_boundary" else None
++        self.boundary_calibrator = (
++            DecisionBoundaryCalibrator(config, budget_state=self.state_update_mode == "state_compete_budget")
++            if self.state_update_mode in {"state_compete_boundary", "state_compete_budget"}
++            else None
++        )
 +        if self.state_update_mode == "learned_gate":
 +            self.state_gate_h = LearnedStateGate(config.hidden_size, config.rms_norm_eps, config.state_gate_bias)
 +            self.state_gate_l = LearnedStateGate(config.hidden_size, config.rms_norm_eps, config.state_gate_bias)
@@ -545,7 +605,7 @@ index 8084f2b..a3afef8 100644
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="cross")
 +        elif self.state_update_mode == "state_compete_conf":
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="conf")
-+        elif self.state_update_mode == "state_compete_boundary":
++        elif self.state_update_mode in {"state_compete_boundary", "state_compete_budget"}:
 +            self.state_compete_h = StateCompetitionMixer(config, context_mode="conf")
 +        else:
 +            self.state_compete_h = None
@@ -568,7 +628,7 @@ index 8084f2b..a3afef8 100644
          self.H_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.H_init_std), persistent=False)
          self.L_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.L_init_std), persistent=False)
          with torch.no_grad():
-@@ -193,8 +648,12 @@ class InnerNetwork(nn.Module):
+@@ -193,8 +708,12 @@ class InnerNetwork(nn.Module):
          return carry
  
      def latent_recursion(self, z_H: torch.Tensor, z_L: torch.Tensor, x: torch.Tensor, seq: Dict[str, CosSin]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -581,7 +641,7 @@ index 8084f2b..a3afef8 100644
          z_H = self.L_level(z_H, z_L, **seq)
          return z_H, z_L
  
-@@ -205,25 +664,79 @@ class InnerNetwork(nn.Module):
+@@ -205,25 +724,79 @@ class InnerNetwork(nn.Module):
          return self.latent_recursion(z_H, z_L, x, seq)
  
      def forward(self, carry: LatentCarry, batch: Dict[str, torch.Tensor]) -> Tuple[LatentCarry, torch.Tensor, torch.Tensor]:

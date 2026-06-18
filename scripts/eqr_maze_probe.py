@@ -276,6 +276,7 @@ def inner_rollout(
         "state_compete_cross",
         "state_compete_conf",
         "state_compete_boundary",
+        "state_compete_budget",
     }:
         raise ValueError(f"unknown state_update_mode: {state_update_mode}")
     for idx in range(steps):
@@ -1191,6 +1192,7 @@ def parse_args() -> argparse.Namespace:
             "state_compete_cross",
             "state_compete_conf",
             "state_compete_boundary",
+            "state_compete_budget",
         ),
         default="none",
     )

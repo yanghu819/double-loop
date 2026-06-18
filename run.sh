@@ -156,6 +156,7 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     --path_mass_weight "${EQR_PATH_MASS_WEIGHT:-0.0}"
     --path_mass_start_loop "${EQR_PATH_MASS_START_LOOP:-4}"
     --path_mass_recall_margin "${EQR_PATH_MASS_RECALL_MARGIN:-0.0}"
+    --path_mass_mode "${EQR_PATH_MASS_MODE:-soft}"
     --grad_clip "${EQR_GRAD_CLIP:-1.0}"
     --seed "${SEED:-52}"
     --log_every "${MAZE_LOG_EVERY:-100}"

@@ -543,9 +543,13 @@ def path_mass_pressure_loss(
     labels: torch.Tensor,
     start_loop: int,
     recall_margin: float,
+    mode: str,
 ) -> torch.Tensor:
     if not logits_by_step:
         return torch.zeros((), dtype=torch.float32, device=labels.device)
+    mode = str(mode).lower()
+    if mode not in {"soft", "guarded"}:
+        raise ValueError(f"unknown path mass mode: {mode}")
     path_labels = labels == PATH_ID
     non_path = ~path_labels
     start_idx = max(0, int(start_loop) - 1)
@@ -559,7 +563,11 @@ def path_mass_pressure_loss(
         neg_mass = (path_prob * non_path).sum(dim=-1) / non_path.sum(dim=-1).clamp_min(1)
         pos_prob = (path_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
         recall_guard = F.relu(base_pos_prob - pos_prob + margin).square()
-        losses.append((neg_mass + recall_guard).mean())
+        if mode == "guarded":
+            guard_active = (base_pos_prob - pos_prob + margin) > 0
+            losses.append(torch.where(guard_active.detach(), recall_guard, neg_mass).mean())
+        else:
+            losses.append((neg_mass + recall_guard).mean())
     if not losses:
         return torch.zeros((), dtype=torch.float32, device=labels.device)
     return torch.stack(losses).mean()
@@ -590,7 +598,8 @@ def add_path_mass_diagnostics(
         neg_mass = (path_prob * non_path).sum(dim=-1) / non_path.sum(dim=-1).clamp_min(1)
         pos_prob = (path_prob * path_labels).sum(dim=-1) / path_labels.sum(dim=-1).clamp_min(1)
         prob_frac = path_prob.mean()
-        recall_guard = F.relu(base_pos_prob - pos_prob + margin).square()
+        recall_gap = base_pos_prob - pos_prob + margin
+        recall_guard = F.relu(recall_gap).square()
         residuals[idx].update(
             {
                 "path_mass_active": float(idx >= start_idx),
@@ -601,6 +610,7 @@ def add_path_mass_diagnostics(
                 "path_mass_negative_prob": float(neg_mass.mean().detach().cpu()),
                 "path_mass_loop1_positive_prob": float(base_pos_prob.mean().detach().cpu()),
                 "path_mass_recall_guard_loss": float(recall_guard.mean().detach().cpu()),
+                "path_mass_guard_violation_frac": float((recall_gap > 0).to(torch.float32).mean().detach().cpu()),
                 "path_mass_hard_pred_frac": float(pred_path.to(torch.float32).mean().detach().cpu()),
             }
         )
@@ -984,6 +994,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             batch["labels"],
             args.path_mass_start_loop,
             args.path_mass_recall_margin,
+            args.path_mass_mode,
         )
         loss = (
             supervised_loss
@@ -1189,6 +1200,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--path_mass_weight", type=float, default=0.0)
     p.add_argument("--path_mass_start_loop", type=int, default=4)
     p.add_argument("--path_mass_recall_margin", type=float, default=0.0)
+    p.add_argument("--path_mass_mode", choices=("soft", "guarded"), default="soft")
     p.add_argument("--grad_clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log_every", type=int, default=100)
@@ -1302,6 +1314,7 @@ def main() -> None:
             "path_mass_weight": args.path_mass_weight,
             "path_mass_start_loop": args.path_mass_start_loop,
             "path_mass_recall_margin": args.path_mass_recall_margin,
+            "path_mass_mode": args.path_mass_mode,
             "params": param_count,
         },
         "train": train_metrics,

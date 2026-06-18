@@ -526,3 +526,19 @@
   self-correction weight, margin, seed, or start loop; the next direction needs
   a stronger generic sparse-correctness pressure rather than another small
   probability regularizer.
+- PATH decision-margin pressure is also insufficient by itself. The
+  `maze31-pathmargin-w1-p025n025` probe trained later loops to put true PATH
+  cells above the strongest non-PATH logit and non-PATH cells below it. The
+  margin objective did move soft quantities: false-positive PATH margin mean
+  fell `1.1403 -> 0.1463`, non-PATH PATH probability fell
+  `0.2551 -> 0.1813`, and calibrated soft PATH fraction fell
+  `0.3533 -> 0.2507`. But hard outputs did not change at all: loop1 and loop12
+  path F1, precision, recall, and predicted PATH fraction were identical
+  (`0.5834`, `0.4139`, `1.0000`, `0.4667`), with `prune_flip=0.0` and
+  `add_flip=0.0`. The ten visual hard cases were literally unchanged
+  (`290.0/0.0 -> 290.0/0.0` FP/FN). Lesson: loss-only pressure can make the
+  model less confident on false positives without moving the discrete decision
+  boundary. Do not sweep path-margin weight, margin, seed, start loop, or
+  temperature. The remaining bottleneck is the generic recurrent decision
+  mechanism that converts soft uncertainty into pruning, not another scalar
+  regularizer.

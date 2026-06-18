@@ -574,3 +574,22 @@
   is not another scalar loss or a bigger `state_compete_cross`; it is a clean
   D320/L6 run long enough to finish eval and answer whether loop16 can prune
   after PATH prediction opens.
+- The full clean D320/L6 Maze31 readout shows that clean scaling opens PATH but
+  still does not create strong late-loop correction. The
+  `maze31-cleanscale-d320l6-loop8x16-s1200` run used only FutureSeed + loop,
+  hidden `320`, layers `6`, train/eval loops `8/16`, path-loss `1.5`, batch
+  `16`, and no state competition, scalar pruning loss, repair, search, selector,
+  feature noise, or maze rule. It reproduced the slow opening pattern:
+  steps `100/200/300` had path F1 `0.0`, step400 opened at CE `0.3691` and
+  train path F1 `0.5862`, then the curve fluctuated and ended with train path
+  F1 `0.4226`. Held-out loop1 to loop16 improved only
+  `0.5301 -> 0.5344`, with precision essentially flat
+  (`0.4431 -> 0.4434`), recall up (`0.6664 -> 0.6794`), and predicted PATH
+  fraction up (`0.2907 -> 0.2961`). The 16-case visualization aggregate shows
+  the same failure mode: average false positives rose `202.9 -> 205.1` while
+  false negatives fell `88.1 -> 86.6`. Lesson: clean scale is more optimizable
+  than the complex cross-candidate update, but loop depth is still mostly adding
+  coverage rather than pruning wrong branches. Do not repeat this exact setup as
+  a loop-depth or same-budget scale sweep. The next bitter-lesson-compliant move
+  should be a simple generic recurrent decision/state dynamic that can revise a
+  boundary, not another scalar loss, selector, repair, or maze-specific prior.

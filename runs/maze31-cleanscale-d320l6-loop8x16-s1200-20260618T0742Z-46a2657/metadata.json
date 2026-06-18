@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "46a2657df6ad18b3994f5f81920bf3c3d966e68b",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 clean D320/L6 full readout from SHA 46a2657. Mechanism: pure FutureSeed + loop, no state_compete, no extra pruning loss, no maze rules/search/repair/selector. Result: train opened after step400 but final held-out loop16 path_f1=0.5344, exact=0.0, loop gain=+0.0044; loop1/loop16 precision 0.4431->0.4434, recall 0.6664->0.6794, pred_frac 0.2907->0.2961. Visual hard cases show average FP/FN 202.9/88.1 -> 205.1/86.6. Lesson: clean D320/L6 is optimizable and better than cross-candidate optimization failure, but extra loops mainly add coverage rather than prune false branches; continue scaling only with a better recurrent decision/state dynamic, not scalar-loss sweeps or maze-specific repair.",
+  "recorded_at_utc": "2026-06-18T08:28:34.287685+00:00",
+  "run_name": "maze31-cleanscale-d320l6-loop8x16-s1200-20260618T0742Z-46a2657",
+  "score": 0.5344243049621582,
+  "score_key": "metrics.eval_clean.loop16.path_f1",
+  "timestamp_utc": "2026-06-18T08:17:50.600043+00:00"
+}

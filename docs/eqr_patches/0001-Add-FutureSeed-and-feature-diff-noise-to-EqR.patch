@@ -1,8 +1,8 @@
 diff --git a/config/arch/eqr.yaml b/config/arch/eqr.yaml
-index 52c52ef..61c4ba0 100644
+index 52c52ef..3f5596e 100644
 --- a/config/arch/eqr.yaml
 +++ b/config/arch/eqr.yaml
-@@ -25,5 +25,13 @@ mlp_t: false
+@@ -25,5 +25,16 @@ mlp_t: false
  
  lambda_: 0.95
  noise_scale: 0.01
@@ -14,6 +14,9 @@ index 52c52ef..61c4ba0 100644
 +future_seed_gate_bias: -2.0
 +state_update_mode: none
 +state_gate_bias: 2.0
++feedback_mode: none
++feedback_scale: 0.0
++feedback_gate_bias: -2.0
  H_init_std: 1.0
  L_init_std: 1.0
 diff --git a/evaluate.py b/evaluate.py
@@ -67,7 +70,7 @@ index 14605c5..e5c3fb3 100644
      if isinstance(stds, dict):
          if "H_init_std" in arch_overrides:
 diff --git a/models/eqr.py b/models/eqr.py
-index 8084f2b..be3fd02 100644
+index 8084f2b..c218569 100644
 --- a/models/eqr.py
 +++ b/models/eqr.py
 @@ -11,6 +11,14 @@ from models.layers import Attention, CastedEmbedding, CastedLinear, CosSin, Rota
@@ -85,7 +88,7 @@ index 8084f2b..be3fd02 100644
  @dataclass
  class LatentCarry:
      z_H: torch.Tensor
-@@ -55,6 +63,16 @@ class EqRConfig(BaseModel):
+@@ -55,6 +63,19 @@ class EqRConfig(BaseModel):
      puzzle_emb_ndim: int = 0
      lambda_: float = 0.95
      noise_scale: float = 0.01
@@ -99,10 +102,13 @@ index 8084f2b..be3fd02 100644
 +    state_gate_bias: float = 2.0
 +    decision_boundary_token_id: int = -1
 +    decision_boundary_scale: float = 1.0
++    feedback_mode: str = "none"
++    feedback_scale: float = 0.0
++    feedback_gate_bias: float = -2.0
      H_init_std: float = 1.0
      L_init_std: float = 1.0
  
-@@ -89,19 +107,466 @@ class ReasoningBlock(nn.Module):
+@@ -89,19 +110,466 @@ class ReasoningBlock(nn.Module):
          return rms_norm(hidden_states + self.mlp(hidden_states), variance_epsilon=self.norm_eps)
  
  
@@ -571,7 +577,14 @@ index 8084f2b..be3fd02 100644
  
  
  class InnerNetwork(nn.Module):
-@@ -129,6 +594,56 @@ class InnerNetwork(nn.Module):
+@@ -126,9 +594,63 @@ class InnerNetwork(nn.Module):
+             )
+         self.lm_head = CastedLinear(config.hidden_size, config.vocab_size, bias=False)
+         self.q_head = CastedLinear(config.hidden_size, 2, bias=True)
++        self.feedback_mode = str(config.feedback_mode).lower()
++        if self.feedback_mode not in {"none", "prob_embed"}:
++            raise ValueError(f"Unknown feedback_mode '{config.feedback_mode}'")
++        self.feedback_gate_logit = nn.Parameter(torch.tensor(float(config.feedback_gate_bias)))
  
          self._init_pos()
          self.L_level = NoisyReasoningModule(config, [ReasoningBlock(config) for _ in range(config.L_layers)])
@@ -628,7 +641,38 @@ index 8084f2b..be3fd02 100644
          self.H_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.H_init_std), persistent=False)
          self.L_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.L_init_std), persistent=False)
          with torch.no_grad():
-@@ -193,8 +708,12 @@ class InnerNetwork(nn.Module):
+@@ -168,6 +690,30 @@ class InnerNetwork(nn.Module):
+             embeddings = torch.cat((puzzle_embedding, embeddings), dim=1)
+         return self.embed_scale * embeddings
+ 
++    def _feedback_embeddings(self, feedback_logits: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
++        if self.feedback_mode == "none" or float(self.config.feedback_scale) == 0.0 or feedback_logits is None:
++            return None
++        if self.feedback_mode != "prob_embed":
++            raise ValueError(f"Unknown feedback_mode '{self.feedback_mode}'")
++        if feedback_logits.ndim != 3 or feedback_logits.shape[-1] != self.config.vocab_size:
++            raise ValueError(
++                f"Expected feedback logits shape (B, S, {self.config.vocab_size}), got {tuple(feedback_logits.shape)}"
++            )
++        probs = feedback_logits.to(torch.float32).softmax(dim=-1)
++        token_emb = self.embed_tokens.embedding_weight.to(torch.float32)
++        feedback = (probs @ token_emb).to(self.forward_dtype)
++        if self.config.puzzle_emb_len > 0:
++            pad = torch.zeros(
++                feedback.shape[0],
++                self.config.puzzle_emb_len,
++                self.config.hidden_size,
++                dtype=feedback.dtype,
++                device=feedback.device,
++            )
++            feedback = torch.cat((pad, feedback), dim=1)
++        gate = torch.sigmoid(self.feedback_gate_logit.to(torch.float32)).to(feedback.dtype)
++        return self.embed_scale * feedback * (float(self.config.feedback_scale) * gate)
++
+     def empty_carry(self, batch_size: int, device: Optional[torch.device] = None) -> LatentCarry:
+         shape = (batch_size, self.config.seq_len, self.config.hidden_size)
+         return LatentCarry(
+@@ -193,8 +739,12 @@ class InnerNetwork(nn.Module):
          return carry
  
      def latent_recursion(self, z_H: torch.Tensor, z_L: torch.Tensor, x: torch.Tensor, seq: Dict[str, CosSin]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -641,16 +685,21 @@ index 8084f2b..be3fd02 100644
          z_H = self.L_level(z_H, z_L, **seq)
          return z_H, z_L
  
-@@ -205,25 +724,79 @@ class InnerNetwork(nn.Module):
+@@ -205,25 +755,92 @@ class InnerNetwork(nn.Module):
          return self.latent_recursion(z_H, z_L, x, seq)
  
      def forward(self, carry: LatentCarry, batch: Dict[str, torch.Tensor]) -> Tuple[LatentCarry, torch.Tensor, torch.Tensor]:
 +        seq = {"cos_sin": self._cos_sin()}
++        input_embeddings = self._input_embeddings(batch["inputs"], batch["puzzle_identifiers"])
++        feedback_embeddings = self._feedback_embeddings(batch.get("feedback_logits"))
++        if feedback_embeddings is not None:
++            input_embeddings = input_embeddings + feedback_embeddings
          z_H, z_L = self.deep_recursion(
              carry.z_H,
              carry.z_L,
-             self._input_embeddings(batch["inputs"], batch["puzzle_identifiers"]),
+-            self._input_embeddings(batch["inputs"], batch["puzzle_identifiers"]),
 -            {"cos_sin": self._cos_sin()},
++            input_embeddings,
 +            seq,
          )
 +        state_weights: Optional[torch.Tensor] = None
@@ -699,6 +748,15 @@ index 8084f2b..be3fd02 100644
 +            self.latest_state_gate_stats = {}
 +            self.latest_state_aux = {}
          logits = self.lm_head(z_H[:, self.config.puzzle_emb_len :]).contiguous()
++        if feedback_embeddings is not None:
++            with torch.no_grad():
++                feedback_fp32 = feedback_embeddings[:, self.config.puzzle_emb_len :].to(torch.float32)
++                self.latest_state_gate_stats = {
++                    **self.latest_state_gate_stats,
++                    "feedback_gate": float(torch.sigmoid(self.feedback_gate_logit.to(torch.float32)).detach().cpu()),
++                    "feedback_rms": float(feedback_fp32.square().mean().sqrt().detach().cpu()),
++                    "feedback_scale": float(self.config.feedback_scale),
++                }
 +        if self.boundary_calibrator is not None:
 +            previous_logits = self.lm_head(carry.z_H[:, self.config.puzzle_emb_len :]).contiguous()
 +            board_weights = None if state_weights is None else state_weights[:, self.config.puzzle_emb_len :]

@@ -267,6 +267,7 @@ def inner_rollout(
     residuals: List[Dict[str, float]] = []
     aux_by_step: List[Dict[str, torch.Tensor]] = []
     inner_batch = {"inputs": batch["inputs"], "puzzle_identifiers": batch["puzzle_identifiers"]}
+    feedback_logits: Optional[torch.Tensor] = None
     state_update_mode = str(state_update_mode).lower()
     if state_update_mode not in {
         "none",
@@ -288,7 +289,12 @@ def inner_rollout(
         )
         prev_h = carry.z_H
         prev_l = carry.z_L
+        if feedback_logits is None:
+            inner_batch.pop("feedback_logits", None)
+        else:
+            inner_batch["feedback_logits"] = feedback_logits
         carry, logits, _q = model.inner(carry, inner_batch)
+        feedback_logits = logits.detach()
         raw_h = carry.z_H
         raw_l = carry.z_L
         loop_delta_scale = float(state_delta_scale) * (float(state_delta_decay) ** idx)
@@ -1377,6 +1383,8 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "path_margin_loss": last_path_margin_loss,
                 "path_tversky_loss": last_path_tversky_loss,
                 "path_tversky_active_weight": last_path_tversky_active_weight,
+                "feedback_gate": residuals[-1].get("feedback_gate", 0.0),
+                "feedback_rms": residuals[-1].get("feedback_rms", 0.0),
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -1391,6 +1399,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"selfcorr={row['self_correction_loss']:.4f} "
                 f"margin={row['path_margin_loss']:.4f} tversky={row['path_tversky_loss']:.4f} "
                 f"tw={row['path_tversky_active_weight']:.3f} "
+                f"fb_gate={row['feedback_gate']:.3f} fb_rms={row['feedback_rms']:.4f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
@@ -1497,6 +1506,7 @@ def write_report(path: Path, metrics: Dict[str, Any]) -> None:
         f"- train path stages: `{task['path_stages'] or 'fixed hard range'}`",
         f"- mode: `{task['maze_mode']}`",
         f"- future_seed_scale: {task['future_seed_scale']}",
+        f"- feedback: `{task.get('feedback_mode', 'none')}` scale={task.get('feedback_scale', 0.0)} gate_bias={task.get('feedback_gate_bias', -2.0)}",
         f"- state update: `{task['state_update_mode']}` scale={task['state_delta_scale']} decay={task['state_delta_decay']} gate_bias={task.get('state_gate_bias', 2.0)}",
         f"- train loops: {task['train_loops']}",
         f"- eval loops: {task['eval_loops']}",
@@ -1547,6 +1557,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--noise_mode", choices=("gaussian", "feature_diff", "none"), default="none")
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_gate_bias", type=float, default=-2.0)
+    p.add_argument("--feedback_mode", choices=("none", "prob_embed"), default="none")
+    p.add_argument("--feedback_scale", type=float, default=0.0)
+    p.add_argument("--feedback_gate_bias", type=float, default=-2.0)
     p.add_argument(
         "--state_update_mode",
         choices=(
@@ -1648,6 +1661,9 @@ def main() -> None:
         "feature_noise_fallback": "zero",
         "future_seed_scale": args.future_seed_scale,
         "future_seed_gate_bias": args.future_seed_gate_bias,
+        "feedback_mode": args.feedback_mode,
+        "feedback_scale": args.feedback_scale,
+        "feedback_gate_bias": args.feedback_gate_bias,
         "state_update_mode": args.state_update_mode,
         "state_delta_scale": args.state_delta_scale,
         "state_delta_decay": args.state_delta_decay,
@@ -1691,6 +1707,9 @@ def main() -> None:
             "h_cycles": args.h_cycles,
             "l_cycles": args.l_cycles,
             "future_seed_scale": args.future_seed_scale,
+            "feedback_mode": args.feedback_mode,
+            "feedback_scale": args.feedback_scale,
+            "feedback_gate_bias": args.feedback_gate_bias,
             "state_update_mode": args.state_update_mode,
             "state_delta_scale": args.state_delta_scale,
             "state_delta_decay": args.state_delta_decay,

@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "eee8c97a43c62ff508f365a2e573e8d10bf72d1d",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-18 GPU1 Maze31 guarded path-mass recall-preserving pruning probe. Mechanism: when true-path probability is below loop1 floor, optimize only recall guard; otherwise apply late-loop non-path PATH mass pressure. Result: recall preserved at 1.0 but hard mask froze exactly; loop12 path_f1=0.5847, gain=0.0000, precision/pred_frac unchanged 0.4152/0.4653. Soft non-path mass fell slightly 0.2627->0.2561 but guard violation was 1.0 at loop12, so the objective suppresses pruning whenever recall floor is active. Lesson: recall-preserving pruning cannot be implemented as a stop-pressure guard; it needs a target that identifies false-positive mass while maintaining positive-cell margins.",
+  "recorded_at_utc": "2026-06-18T01:08:20.044855+00:00",
+  "run_name": "maze31-boundary-massguard-w1-d256l4-s800-20260618T005041Z-eee8c97",
+  "score": 0.5846733450889587,
+  "score_key": "metrics.eval_clean.loop12.path_f1",
+  "timestamp_utc": "2026-06-18T01:00:15.412504+00:00"
+}

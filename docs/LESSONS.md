@@ -459,3 +459,19 @@
   whether more compute or a simple state-dynamics change can sharpen from
   high-F1 masks to exact single paths. A seed table at the same budget is lower
   ROI than increasing recurrence pressure or examining exact-failure cases.
+- Guarded path-mass pressure preserves recall but kills pruning. The
+  `maze31-boundary-massguard` probe changed the late-loop mass objective so that
+  when true-path probability fell below the loop1 floor, the model optimized
+  only the recall guard and stopped applying non-path mass pressure. It did
+  preserve recall (`1.0000 -> 1.0000`), but loop12 exactly copied loop1 at the
+  hard mask level: path F1 `0.5847 -> 0.5847`, precision
+  `0.4152 -> 0.4152`, predicted PATH fraction `0.4653 -> 0.4653`, hard-case
+  false positives `288.2 -> 288.2`, and false negatives stayed `0.0`. Soft
+  non-path PATH probability moved only slightly (`0.2627 -> 0.2561`), while the
+  guard was active on every eval sample at loop12
+  (`path_mass_guard_violation_frac = 1.0`). The lesson: recall-preserving
+  pruning cannot be a stop-pressure guard. If the guard disables false-positive
+  gradients, loops learn to copy the broad mask. The next objective must keep
+  positive-cell margins and false-positive mass pressure active at the same
+  time, for example through a normalized margin or constrained/Lagrangian form,
+  not another sweep of mass weight, threshold, margin, or seed.

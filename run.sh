@@ -165,6 +165,7 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     --path_margin_positive "${EQR_PATH_MARGIN_POSITIVE:-0.25}"
     --path_margin_negative "${EQR_PATH_MARGIN_NEGATIVE:-0.25}"
     --path_tversky_weight "${EQR_PATH_TVERSKY_WEIGHT:-0.0}"
+    --path_tversky_after_step "${EQR_PATH_TVERSKY_AFTER_STEP:-1}"
     --path_tversky_start_loop "${EQR_PATH_TVERSKY_START_LOOP:-4}"
     --path_tversky_alpha "${EQR_PATH_TVERSKY_ALPHA:-0.7}"
     --path_tversky_beta "${EQR_PATH_TVERSKY_BETA:-0.3}"

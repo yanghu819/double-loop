@@ -1273,6 +1273,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
     last_selfcorr_loss = 0.0
     last_path_margin_loss = 0.0
     last_path_tversky_loss = 0.0
+    last_path_tversky_active_weight = 0.0
     for step in range(1, args.steps + 1):
         model.train()
         train_path_range = path_range_for_step(path_stages, step, default_range)
@@ -1329,6 +1330,11 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             args.path_tversky_alpha,
             args.path_tversky_beta,
         )
+        path_tversky_active_weight = (
+            float(args.path_tversky_weight)
+            if step >= int(args.path_tversky_after_step)
+            else 0.0
+        )
         loss = (
             supervised_loss
             + float(args.predictive_state_weight) * pred_loss
@@ -1337,7 +1343,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             + float(args.path_mass_weight) * mass_loss
             + float(args.self_correction_weight) * selfcorr_loss
             + float(args.path_margin_weight) * path_margin_loss
-            + float(args.path_tversky_weight) * tversky_loss
+            + path_tversky_active_weight * tversky_loss
         )
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -1352,6 +1358,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         last_selfcorr_loss = float(selfcorr_loss.detach().cpu())
         last_path_margin_loss = float(path_margin_loss.detach().cpu())
         last_path_tversky_loss = float(tversky_loss.detach().cpu())
+        last_path_tversky_active_weight = path_tversky_active_weight
         if args.log_every and step % args.log_every == 0:
             last_metrics = metrics_from_logits(logits_by_step[-1], batch["labels"])
             row = {
@@ -1369,6 +1376,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "self_correction_loss": last_selfcorr_loss,
                 "path_margin_loss": last_path_margin_loss,
                 "path_tversky_loss": last_path_tversky_loss,
+                "path_tversky_active_weight": last_path_tversky_active_weight,
                 "train_min_path_length": train_path_range[0],
                 "train_max_path_length": train_path_range[1],
                 "sec": time.time() - t0,
@@ -1382,6 +1390,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"rank={row['context_rank_loss']:.4f} mass={row['path_mass_loss']:.4f} "
                 f"selfcorr={row['self_correction_loss']:.4f} "
                 f"margin={row['path_margin_loss']:.4f} tversky={row['path_tversky_loss']:.4f} "
+                f"tw={row['path_tversky_active_weight']:.3f} "
                 f"path={train_path_range[0]}-{train_path_range[1]}",
                 flush=True,
             )
@@ -1395,6 +1404,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_self_correction_loss": last_selfcorr_loss,
         "train_path_margin_loss": last_path_margin_loss,
         "train_path_tversky_loss": last_path_tversky_loss,
+        "train_path_tversky_active_weight": last_path_tversky_active_weight,
         "train_last_metrics": last_metrics,
         "train_sec": time.time() - t0,
         "history": history,
@@ -1580,6 +1590,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--path_margin_positive", type=float, default=0.25)
     p.add_argument("--path_margin_negative", type=float, default=0.25)
     p.add_argument("--path_tversky_weight", type=float, default=0.0)
+    p.add_argument("--path_tversky_after_step", type=int, default=1)
     p.add_argument("--path_tversky_start_loop", type=int, default=4)
     p.add_argument("--path_tversky_alpha", type=float, default=0.7)
     p.add_argument("--path_tversky_beta", type=float, default=0.3)
@@ -1705,6 +1716,7 @@ def main() -> None:
             "path_margin_positive": args.path_margin_positive,
             "path_margin_negative": args.path_margin_negative,
             "path_tversky_weight": args.path_tversky_weight,
+            "path_tversky_after_step": args.path_tversky_after_step,
             "path_tversky_start_loop": args.path_tversky_start_loop,
             "path_tversky_alpha": args.path_tversky_alpha,
             "path_tversky_beta": args.path_tversky_beta,

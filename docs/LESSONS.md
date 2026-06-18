@@ -542,3 +542,28 @@
   temperature. The remaining bottleneck is the generic recurrent decision
   mechanism that converts soft uncertainty into pruning, not another scalar
   regularizer.
+- Clean cross-candidate scale can fail before the loop question even starts.
+  The `maze31-crossscale-d320l6-loop8x16` probe deliberately removed the scalar
+  pruning/correction losses and spent more generic capacity and recurrence:
+  hidden `320`, layers `6`, train/eval loops `8/16`, `state_compete_cross`,
+  path-loss weight `1.5`, and batch `12`. GPU use was healthy
+  (`~51GB`, `98-100%`), but PATH prediction never opened: steps
+  `100/200/300/400` all had path F1 `0.0`, with CE stuck around
+  `1.06`. The run was killed by exact PID rather than burning the lease. Lesson:
+  naive scale-up of the more complex generic state update can introduce an
+  optimization attractor where the model predicts no path. This is not a reason
+  to add maze-specific repair or resume scalar-loss sweeps. It says the next
+  bitter-lesson-compliant scaling move must preserve the ability to open PATH
+  prediction, either through a data/compute schedule or a simpler optimizable
+  state update, before asking whether later loops can prune.
+- The matched clean D320/L6 fallback changes that interpretation in an important
+  way. Removing `state_compete_cross` and keeping only FutureSeed + loop at
+  hidden `320`, layers `6`, train/eval loops `8/16`, path-loss `1.5`, and batch
+  `16` still looked dead at steps `100/200/300` with path F1 `0.0`, but then
+  opened at step400: CE `0.3691`, path F1 `0.5861`, exact `0.0`. The process
+  was killed before final eval, so there is no loop16 held-out score. Lesson:
+  the clean scale path is slow-starting but not dead; the complex
+  cross-candidate state update made optimization worse. The next high-ROI run
+  is not another scalar loss or a bigger `state_compete_cross`; it is a clean
+  D320/L6 run long enough to finish eval and answer whether loop16 can prune
+  after PATH prediction opens.

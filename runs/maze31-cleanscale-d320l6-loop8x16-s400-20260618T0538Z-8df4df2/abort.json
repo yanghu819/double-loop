@@ -1,0 +1,16 @@
+{
+  "run_name": "maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+  "status": "aborted",
+  "abort_time_utc": "2026-06-18T05:46:53Z",
+  "reason": "stopped_after_late_path_open_before_final_eval",
+  "source_sha": "8df4df222b946363e5c854b4e6765e7efa851eb1",
+  "remote_run_dir": "/huyang2/double-loop/.worktrees/maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2/runs/maze31-cleanscale-d320l6-loop8x16-s400-20260618T0538Z-8df4df2",
+  "observed_steps": [100, 200, 300, 400],
+  "observed_train_curve": [
+    {"step":100,"ce":1.0625,"path_f1":0.0,"exact":0.0},
+    {"step":200,"ce":1.0703,"path_f1":0.0,"exact":0.0},
+    {"step":300,"ce":1.0625,"path_f1":0.0,"exact":0.0},
+    {"step":400,"ce":0.3691,"path_f1":0.5861,"exact":0.0}
+  ],
+  "decision": "This abort is still useful but the original kill interpretation was too harsh: clean D320/L6 hard-from-start did open PATH prediction at step400, while the matched state_compete_cross scale run was still at path_f1=0.0 through step400. Because the process was killed just after the step400 log, no final eval or loop16 readout exists. Next run should rerun/continue this clean scale long enough to evaluate loop behavior, not expand the complex cross-candidate update."
+}

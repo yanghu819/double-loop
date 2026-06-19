@@ -636,3 +636,27 @@
   missing recurrent repair mechanism. Do not sweep Tversky timing/weight next;
   use this as evidence that the main bottleneck is generic recurrent
   state/decision dynamics that make later loops perform real revision.
+- Source snapshots must stay lean on the remote GPU path. The first
+  `maze31-fs-feedback-probembed` launch at SHA `c3065f3` was aborted before
+  Python training or GPU compute started because `run.sh` spent more than
+  5 minutes building a full `git archive` over tracked historical runs. The
+  follow-up commit `7021726` added `SOURCE_SNAPSHOT_MODE=lean`, reducing the
+  source snapshot to about `199KB` and allowing the same experiment to start
+  normally. Lesson: archival should capture the exact SHA, patch, key scripts,
+  and run metadata without letting old run artifacts become a startup
+  bottleneck.
+- Generic previous-belief feedback is active but does not create late-loop
+  self-correction on Maze31. The successful
+  `maze31-fs-feedback-probembed-s1-delayedtv-a450-d320l6-loop8x16-s1200` run
+  fed detached previous-loop logits back as token-embedding expectations, with
+  no maze rules, search, repair, selector, or sweep. It slightly improved the
+  final operating point over delayed Tversky alone (`0.5836` vs `0.5824`
+  loop16 path F1), and the feedback module was mechanically active
+  (`gate ~= 0.126`, `rms ~= 0.107`). But loop dynamics stayed flat:
+  loop1 to loop16 path F1 was `0.583669 -> 0.583586`, precision
+  `0.428444 -> 0.428409`, recall `0.926020 -> 0.925730`, and predicted PATH
+  fraction `0.417560 -> 0.417465`. Lesson: the missing ingredient is not
+  simply giving later loops access to earlier predictions. Do not sweep
+  feedback scale, gate bias, or seed. The next high-ROI work needs a generic
+  state transition or training signal that rewards a measurable correction
+  trajectory, while preserving FutureSeed's opening advantage.

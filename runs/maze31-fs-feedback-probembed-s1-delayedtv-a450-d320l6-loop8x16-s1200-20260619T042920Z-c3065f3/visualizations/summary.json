@@ -1,0 +1,35 @@
+{
+  "abort": {
+    "git_sha": "c3065f39675259fdad993965f92273aa1ffd19c6",
+    "pid": "726",
+    "reason": "startup source_snapshot git archive over tracked historical runs took over 5 minutes before Python/GPU started",
+    "status": "aborted",
+    "timestamp_utc": "2026-06-19T04:35:19.769058+00:00"
+  },
+  "available_artifacts": [
+    "abort.json",
+    "logs/launch.outer.log",
+    "metadata.json",
+    "score.json"
+  ],
+  "case_links": [],
+  "config": {},
+  "final_by_hole": [],
+  "generated_at_utc": "2026-06-19T05:26:51.462109+00:00",
+  "git_dirty": true,
+  "git_sha": "7021726254209244b3f338ccdf06b32514ff13d7",
+  "has_abort": true,
+  "history": [],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "eqr_maze_probe_abort",
+  "notes": "2026-06-19 GPU1 startup abort for first feedback launch at SHA c3065f3. No Python training or GPU compute started; run.sh spent over 5 minutes building a full git archive over tracked historical runs. Exact PID 726 was stopped and abort.json archived. Follow-up commit 7021726 added SOURCE_SNAPSHOT_MODE=lean and relaunched the same mechanism probe successfully.",
+  "readme": "",
+  "result_json": "",
+  "run_name": "maze31-fs-feedback-probembed-s1-delayedtv-a450-d320l6-loop8x16-s1200-20260619T042920Z-c3065f3",
+  "score": null,
+  "score_key": "missing_result_json",
+  "task": {},
+  "timestamp_utc": "2026-06-19T05:26:51.432305+00:00"
+}

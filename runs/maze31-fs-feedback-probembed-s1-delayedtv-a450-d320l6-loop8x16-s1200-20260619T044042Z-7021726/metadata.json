@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "7021726254209244b3f338ccdf06b32514ff13d7",
+  "mode": "eqr_maze_probe",
+  "notes": "2026-06-19 GPU1 Maze31 generic prob-embedding feedback probe from SHA 7021726. Mechanism: detached previous-loop logits are fed back as token-embedding expectations; no maze rules/search/repair/selector/sweep. Result loop16 path_f1=0.5836, loop gain=-0.0001, precision 0.4284->0.4284, recall 0.9260->0.9257, pred_frac 0.41756->0.41746. Feedback is active (gate ~0.126, rms ~0.107) but loop still copies the operating point. Lesson: previous-belief feedback alone is not sufficient for late-loop self-correction; it mainly preserves delayed-Tversky operating point.",
+  "recorded_at_utc": "2026-06-19T05:25:34.107682+00:00",
+  "run_name": "maze31-fs-feedback-probembed-s1-delayedtv-a450-d320l6-loop8x16-s1200-20260619T044042Z-7021726",
+  "score": 0.5835857391357422,
+  "score_key": "metrics.eval_clean.loop16.path_f1",
+  "timestamp_utc": "2026-06-19T05:18:07.600954+00:00"
+}

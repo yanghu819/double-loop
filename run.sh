@@ -85,7 +85,18 @@ mkdir -p "$OUT_DIR" "$LOG_DIR"
 
 git -C "$REPO_ROOT" rev-parse HEAD > "$RUN_DIR/source_HEAD.txt"
 git -C "$REPO_ROOT" diff --binary > "$RUN_DIR/source.patch" || true
-git -C "$REPO_ROOT" archive --format=tar HEAD | gzip > "$RUN_DIR/source_snapshot.tar.gz"
+if [[ "${SOURCE_SNAPSHOT_MODE:-full}" == "lean" ]]; then
+  git -C "$REPO_ROOT" ls-files -z -- . \
+    ':(exclude).cache/**' \
+    ':(exclude).venv/**' \
+    ':(exclude)artifacts/**' \
+    ':(exclude)models/**' \
+    ':(exclude)repos/**' \
+    ':(exclude)runs/**' \
+    | tar --null -czf "$RUN_DIR/source_snapshot.tar.gz" -C "$REPO_ROOT" --files-from -
+else
+  git -C "$REPO_ROOT" archive --format=tar HEAD | gzip > "$RUN_DIR/source_snapshot.tar.gz"
+fi
 
 python3 - "$RUN_DIR/config.json" "$MODE" "$GIT_SHA" "$GIT_DIRTY" "$RUN_NAME" "$RUN_DIR" <<'PY'
 import json

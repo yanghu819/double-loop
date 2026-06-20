@@ -661,6 +661,42 @@ def path_decision_margin_loss(
     return torch.stack(losses).mean()
 
 
+def loop_hard_correction_loss(
+    logits_by_step: List[torch.Tensor],
+    labels: torch.Tensor,
+    start_loop: int,
+    prune_margin: float,
+    preserve_margin: float,
+) -> torch.Tensor:
+    if len(logits_by_step) < 2:
+        return torch.zeros((), dtype=torch.float32, device=labels.device)
+    path_labels = labels == PATH_ID
+    start_idx = max(1, int(start_loop) - 1)
+    prune_margin = float(prune_margin)
+    preserve_margin = float(preserve_margin)
+    with torch.no_grad():
+        base_margin = _path_margin(logits_by_step[0].detach())
+        base_path_pred = base_margin > 0
+        base_false_positive = base_path_pred & ~path_labels
+    losses = []
+    for logits in logits_by_step[start_idx:]:
+        margin = _path_margin(logits)
+        fp_loss = (
+            F.softplus(margin[base_false_positive] + prune_margin).mean()
+            if bool(base_false_positive.any())
+            else torch.zeros((), dtype=torch.float32, device=labels.device)
+        )
+        true_loss = (
+            F.softplus(preserve_margin - margin[path_labels]).mean()
+            if bool(path_labels.any())
+            else torch.zeros((), dtype=torch.float32, device=labels.device)
+        )
+        losses.append(fp_loss + true_loss)
+    if not losses:
+        return torch.zeros((), dtype=torch.float32, device=labels.device)
+    return torch.stack(losses).mean()
+
+
 def path_tversky_loss(
     logits_by_step: List[torch.Tensor],
     labels: torch.Tensor,
@@ -914,6 +950,81 @@ def add_loop_self_correction_diagnostics(
                 "selfcorr_fp_loss": float(fp_loss.detach().cpu()),
                 "selfcorr_true_loss": float(true_loss.detach().cpu()),
                 "selfcorr_loss": float((fp_loss + true_loss).detach().cpu()),
+            }
+        )
+
+
+@torch.no_grad()
+def add_loop_hard_correction_diagnostics(
+    logits_by_step: List[torch.Tensor],
+    residuals: List[Dict[str, float]],
+    labels: torch.Tensor,
+    start_loop: int,
+    prune_margin: float,
+    preserve_margin: float,
+) -> None:
+    if len(logits_by_step) < 2:
+        return
+    path_labels = labels == PATH_ID
+    start_idx = max(1, int(start_loop) - 1)
+    prune_margin = float(prune_margin)
+    preserve_margin = float(preserve_margin)
+    base_margin = _path_margin(logits_by_step[0].detach())
+    base_path_pred = base_margin > 0
+    base_false_positive = base_path_pred & ~path_labels
+    base_true_positive = base_path_pred & path_labels
+    base_false_negative = ~base_path_pred & path_labels
+    base_fp_count = base_false_positive.sum(dim=-1).to(torch.float32)
+    base_fn_count = base_false_negative.sum(dim=-1).to(torch.float32)
+    for idx, logits in enumerate(logits_by_step):
+        if idx >= len(residuals):
+            continue
+        margin = _path_margin(logits.detach())
+        pred_path = margin > 0
+        false_positive = pred_path & ~path_labels
+        false_negative = ~pred_path & path_labels
+        fp_count = false_positive.sum(dim=-1).to(torch.float32)
+        fn_count = false_negative.sum(dim=-1).to(torch.float32)
+        fp_values = margin[base_false_positive]
+        true_values = margin[path_labels]
+        fp_loss = (
+            F.softplus(fp_values + prune_margin).mean()
+            if fp_values.numel()
+            else torch.zeros((), dtype=torch.float32, device=labels.device)
+        )
+        true_loss = (
+            F.softplus(preserve_margin - true_values).mean()
+            if true_values.numel()
+            else torch.zeros((), dtype=torch.float32, device=labels.device)
+        )
+        prune_success = (
+            (fp_values < 0).to(torch.float32).mean()
+            if fp_values.numel()
+            else torch.zeros((), dtype=torch.float32, device=labels.device)
+        )
+        true_margin_violation = (
+            (true_values < preserve_margin).to(torch.float32).mean()
+            if true_values.numel()
+            else torch.zeros((), dtype=torch.float32, device=labels.device)
+        )
+        residuals[idx].update(
+            {
+                "hardcorr_active": float(idx >= start_idx),
+                "hardcorr_candidate_fp_frac": float(base_false_positive.to(torch.float32).mean().detach().cpu()),
+                "hardcorr_candidate_tp_frac": float(base_true_positive.to(torch.float32).mean().detach().cpu()),
+                "hardcorr_base_fp_count": float(base_fp_count.mean().detach().cpu()),
+                "hardcorr_fp_count": float(fp_count.mean().detach().cpu()),
+                "hardcorr_fp_count_delta": float((fp_count - base_fp_count).mean().detach().cpu()),
+                "hardcorr_base_fn_count": float(base_fn_count.mean().detach().cpu()),
+                "hardcorr_fn_count": float(fn_count.mean().detach().cpu()),
+                "hardcorr_fn_count_delta": float((fn_count - base_fn_count).mean().detach().cpu()),
+                "hardcorr_candidate_fp_margin": float(fp_values.mean().detach().cpu()) if fp_values.numel() else 0.0,
+                "hardcorr_true_margin": float(true_values.mean().detach().cpu()) if true_values.numel() else 0.0,
+                "hardcorr_prune_success_frac": float(prune_success.detach().cpu()),
+                "hardcorr_true_margin_violation_frac": float(true_margin_violation.detach().cpu()),
+                "hardcorr_fp_loss": float(fp_loss.detach().cpu()),
+                "hardcorr_true_loss": float(true_loss.detach().cpu()),
+                "hardcorr_loss": float((fp_loss + true_loss).detach().cpu()),
             }
         )
 
@@ -1277,6 +1388,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
     last_rank_loss = 0.0
     last_mass_loss = 0.0
     last_selfcorr_loss = 0.0
+    last_hardcorr_loss = 0.0
     last_path_margin_loss = 0.0
     last_path_tversky_loss = 0.0
     last_path_tversky_active_weight = 0.0
@@ -1322,6 +1434,13 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             args.self_correction_start_loop,
             args.self_correction_margin,
         )
+        hardcorr_loss = loop_hard_correction_loss(
+            logits_by_step,
+            batch["labels"],
+            args.hard_correction_start_loop,
+            args.hard_correction_prune_margin,
+            args.hard_correction_preserve_margin,
+        )
         path_margin_loss = path_decision_margin_loss(
             logits_by_step,
             batch["labels"],
@@ -1341,6 +1460,11 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             if step >= int(args.path_tversky_after_step)
             else 0.0
         )
+        hard_correction_active_weight = (
+            float(args.hard_correction_weight)
+            if step >= int(args.hard_correction_after_step)
+            else 0.0
+        )
         loss = (
             supervised_loss
             + float(args.predictive_state_weight) * pred_loss
@@ -1348,6 +1472,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
             + float(args.context_rank_weight) * rank_loss
             + float(args.path_mass_weight) * mass_loss
             + float(args.self_correction_weight) * selfcorr_loss
+            + hard_correction_active_weight * hardcorr_loss
             + float(args.path_margin_weight) * path_margin_loss
             + path_tversky_active_weight * tversky_loss
         )
@@ -1362,6 +1487,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         last_rank_loss = float(rank_loss.detach().cpu())
         last_mass_loss = float(mass_loss.detach().cpu())
         last_selfcorr_loss = float(selfcorr_loss.detach().cpu())
+        last_hardcorr_loss = float(hardcorr_loss.detach().cpu())
         last_path_margin_loss = float(path_margin_loss.detach().cpu())
         last_path_tversky_loss = float(tversky_loss.detach().cpu())
         last_path_tversky_active_weight = path_tversky_active_weight
@@ -1380,6 +1506,8 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 "context_rank_loss": last_rank_loss,
                 "path_mass_loss": last_mass_loss,
                 "self_correction_loss": last_selfcorr_loss,
+                "hard_correction_loss": last_hardcorr_loss,
+                "hard_correction_active_weight": hard_correction_active_weight,
                 "path_margin_loss": last_path_margin_loss,
                 "path_tversky_loss": last_path_tversky_loss,
                 "path_tversky_active_weight": last_path_tversky_active_weight,
@@ -1397,6 +1525,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
                 f"pred={row['predictive_state_loss']:.4f} improve={row['context_improve_loss']:.4f} "
                 f"rank={row['context_rank_loss']:.4f} mass={row['path_mass_loss']:.4f} "
                 f"selfcorr={row['self_correction_loss']:.4f} "
+                f"hardcorr={row['hard_correction_loss']:.4f} hw={row['hard_correction_active_weight']:.3f} "
                 f"margin={row['path_margin_loss']:.4f} tversky={row['path_tversky_loss']:.4f} "
                 f"tw={row['path_tversky_active_weight']:.3f} "
                 f"fb_gate={row['feedback_gate']:.3f} fb_rms={row['feedback_rms']:.4f} "
@@ -1411,6 +1540,7 @@ def train(args: argparse.Namespace, model: torch.nn.Module, device: torch.device
         "train_context_rank_loss": last_rank_loss,
         "train_path_mass_loss": last_mass_loss,
         "train_self_correction_loss": last_selfcorr_loss,
+        "train_hard_correction_loss": last_hardcorr_loss,
         "train_path_margin_loss": last_path_margin_loss,
         "train_path_tversky_loss": last_path_tversky_loss,
         "train_path_tversky_active_weight": last_path_tversky_active_weight,
@@ -1466,6 +1596,14 @@ def evaluate(args: argparse.Namespace, model: torch.nn.Module, device: torch.dev
         batch["labels"],
         args.self_correction_start_loop,
         args.self_correction_margin,
+    )
+    add_loop_hard_correction_diagnostics(
+        logits_by_step,
+        residuals,
+        batch["labels"],
+        args.hard_correction_start_loop,
+        args.hard_correction_prune_margin,
+        args.hard_correction_preserve_margin,
     )
     add_path_margin_diagnostics(
         logits_by_step,
@@ -1598,6 +1736,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--self_correction_weight", type=float, default=0.0)
     p.add_argument("--self_correction_start_loop", type=int, default=4)
     p.add_argument("--self_correction_margin", type=float, default=0.02)
+    p.add_argument("--hard_correction_weight", type=float, default=0.0)
+    p.add_argument("--hard_correction_after_step", type=int, default=1)
+    p.add_argument("--hard_correction_start_loop", type=int, default=4)
+    p.add_argument("--hard_correction_prune_margin", type=float, default=0.25)
+    p.add_argument("--hard_correction_preserve_margin", type=float, default=0.25)
     p.add_argument("--path_margin_weight", type=float, default=0.0)
     p.add_argument("--path_margin_start_loop", type=int, default=4)
     p.add_argument("--path_margin_positive", type=float, default=0.25)
@@ -1730,6 +1873,11 @@ def main() -> None:
             "self_correction_weight": args.self_correction_weight,
             "self_correction_start_loop": args.self_correction_start_loop,
             "self_correction_margin": args.self_correction_margin,
+            "hard_correction_weight": args.hard_correction_weight,
+            "hard_correction_after_step": args.hard_correction_after_step,
+            "hard_correction_start_loop": args.hard_correction_start_loop,
+            "hard_correction_prune_margin": args.hard_correction_prune_margin,
+            "hard_correction_preserve_margin": args.hard_correction_preserve_margin,
             "path_margin_weight": args.path_margin_weight,
             "path_margin_start_loop": args.path_margin_start_loop,
             "path_margin_positive": args.path_margin_positive,

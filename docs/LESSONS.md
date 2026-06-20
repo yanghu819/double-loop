@@ -677,3 +677,18 @@
   hard-correction weights, margins, or seeds. The next useful direction must
   change the recurrent state dynamics or target schedule so later loops have a
   robust way to revise discrete decisions without trading away recall.
+- A minimal learned recurrent gate is not enough to recover Maze31 opening on
+  the hard D320/L6 setup. The
+  `maze31-learnedgate-delayedtv-a450-d320l6-loop8x16-s1200` probe tested
+  `EQR_STATE_UPDATE_MODE=learned_gate` with the same delayed Tversky pressure
+  that previously preserved clean FutureSeed opening. It was a single
+  mechanism test, not a gate-bias or Tversky-weight sweep. The run reached
+  step600 with path F1 still exactly `0.0` at every logged point
+  (`100/200/300/400/500/600`), CE stuck around `1.06-1.11`, and Tversky active
+  from step500 onward. It was killed by exact PID and archived with
+  `abort.json`. Lesson: a scalar keep/update gate adds cost but does not solve
+  the no-PATH attractor or late-loop repair. Do not sweep learned-gate bias,
+  width, seed, or Tversky weight. The bitter-lesson compliant path is now either
+  clean FutureSeed scaling with more data/time/capacity, or a more substantial
+  generic state/update objective that first preserves opening and then rewards
+  loop-time correction.

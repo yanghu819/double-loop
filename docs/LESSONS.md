@@ -660,3 +660,20 @@
   feedback scale, gate bias, or seed. The next high-ROI work needs a generic
   state transition or training signal that rewards a measurable correction
   trajectory, while preserving FutureSeed's opening advantage.
+- A delayed hard-decision loop-pair correction target also does not solve
+  Maze31 self-correction. The
+  `maze31-hardcorr-w025-delayedtv-a450-d320l6-loop8x16-s1200` run preserved the
+  useful FutureSeed opening trajectory: path F1 was `0.0` through step300,
+  opened at step400 (`0.5851`), and completed step1200. Final loop16 path F1
+  was `0.5844`, slightly above delayed Tversky and feedback, but loop dynamics
+  again stayed flat: loop1 to loop16 was `0.584663 -> 0.584378`, precision
+  `0.416904 -> 0.416740`, recall `0.990164 -> 0.989434`, and predicted PATH
+  fraction `0.458850 -> 0.458673`. The new hard-correction diagnostics are the
+  key result: loop16 candidate false-positive margin stayed positive
+  (`0.3010`), prune success was exactly `0.0`, and the tiny false-positive
+  count reduction (`-0.029`) was offset by new false negatives (`+0.141`).
+  Lesson: simply supervising loop1 false positives after opening is still not
+  enough to make recurrent compute move the hard PATH boundary. Do not sweep
+  hard-correction weights, margins, or seeds. The next useful direction must
+  change the recurrent state dynamics or target schedule so later loops have a
+  robust way to revise discrete decisions without trading away recall.

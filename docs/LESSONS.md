@@ -722,3 +722,23 @@
   `huggingface_hub` timed out on `locuslab/EqR-data`. Do not claim official EqR
   reproduction until those two gates pass; do not silently replace AdamATan2
   with AdamW and call it official.
+- Official EqR data and Python wheels can be staged offline, but the current
+  GPU1 container still needs a clean restart before training evidence can be
+  trusted. On 2026-06-21, `locuslab/EqR-data` was downloaded locally and
+  uploaded as `eqr-data-full.tgz` (`1.3G` extracted under
+  `/huyang2/double-loop/official_eqr_compare/eqr-clean/data`). The dependency
+  wheelhouse was also downloaded locally and uploaded. A Python-only
+  `adam-atan2` wheel did not contain `adam_atan2_backend`; NVIDIA's
+  `nvidia-cuda-nvcc-cu12` wheels (`12.6.85` and probed `12.9.86`) exposed
+  `ptxas`/headers but not `bin/nvcc`, so they could not build a PyTorch CUDA
+  extension by themselves. A dependency-only fallback compiled the official
+  `adam-atan2` source for A100 `sm80` with system CUDA 11.7 while bypassing
+  PyTorch's CUDA-version guard, and the backend import passed. The wrapper also
+  needed `PYTHONPATH` for venv dependencies, official Hydra fields
+  (`epochs`/`train_epochs_per_iter` rather than a bogus YAML `max_steps`),
+  `+` syntax for absent optional fields, W&B disabled, and direct single-GPU
+  Python launching to avoid `torchrun` local distributed waits. Even then, the
+  base sanity reached step 0 and stalled in unkillable `D` state at
+  `cxiWaitEventWait` with 503MiB GPU memory and 0% util. Next official EqR
+  attempt should restart GPU1 first, then rerun the direct-Python base/FutureSeed
+  pair from the already staged offline data and wheels.

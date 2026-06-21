@@ -84,19 +84,21 @@ run_train() {
     ln -s "${BASE}/eqr-clean/data/maze-30x30-unique-1k" data/maze-30x30-unique-1k
   fi
   (
-    export WANDB_MODE=offline
+    export WANDB_MODE=disabled
     export OUTPUT_ROOT="${BASE}/outputs/${kind}"
     export CUDA_VISIBLE_DEVICES=0
+    export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
     . "${BASE}/.venv/bin/activate"
-    NPROC_PER_NODE=1 bash scripts/train.sh eqr_maze_unique \
-      max_steps="${MAX_STEPS:-500}" \
+    "${BASE}/.venv/bin/python" pretrain.py --config-name train/eqr_maze_unique \
+      epochs="${EPOCHS:-64}" \
+      train_epochs_per_iter="${TRAIN_EPOCHS_PER_ITER:-${EPOCHS:-64}}" \
       global_batch_size="${GLOBAL_BATCH_SIZE:-128}" \
       eval_interval_steps="${EVAL_INTERVAL_STEPS:-250}" \
       checkpoint_interval_steps="${CHECKPOINT_INTERVAL_STEPS:-500}" \
       heavy_metrics_log_interval="${HEAVY_METRICS_LOG_INTERVAL:-100}" \
       steps_hist_log_interval_steps="${STEPS_HIST_LOG_INTERVAL_STEPS:-100}" \
-      wandb_mode=offline \
-      run_name="${run_name}" \
+      +wandb_mode=disabled \
+      +run_name="${run_name}" \
       "${extra[@]}"
   ) >"${log}" 2>&1 &
   echo $! > "${pidfile}"

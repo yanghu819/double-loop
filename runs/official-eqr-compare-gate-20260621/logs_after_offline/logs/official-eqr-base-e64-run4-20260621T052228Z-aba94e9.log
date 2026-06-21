@@ -1,0 +1,25 @@
+[Info] Run Name: official-eqr-base-e64-run4-20260621T052228Z-aba94e9, Project Name: None
+[Info] Deterministic mode enabled:
+[Info]   - CUDA deterministic: False
+[Info]   - CUDA benchmark: False
+[Info]   - PYTHONHASHSEED: 0
+running on dataset Maze-30x30-unique-1k from data/maze-30x30-unique-1k
+[Info] 
+epochs: 64
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 6
+seq_len: 900
+
+total_samples: 1000
+global_batch_size: 128                         
+Estimated total training steps: 448
+[Info] Steps per epoch: 7
+[Info] Using optimizer: adam_atan2 with args: {}
+[Info] WANDB_RUN_ID: cq3r0dfs, cq3r0dfs
+[Info] Results will be saved in: /huyang2/double-loop/official_eqr_compare/outputs/base/outputs/cq3r0dfs/2026-6-21/5-18-35
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
+W0621 05:19:20.636000 6437 site-packages/torch/distributed/elastic/agent/server/api.py:719] Received Signals.SIGTERM death signal, shutting down workers
+W0621 05:19:20.638000 6437 site-packages/torch/distributed/elastic/multiprocessing/api.py:900] Sending process 6504 closing signal SIGTERM
+scripts/train.sh: line 55:  6437 Killed                  torchrun --standalone --nproc-per-node "${NPROC_PER_NODE:-${default_nproc}}" pretrain.py --config-name "${config_name}" "$@"

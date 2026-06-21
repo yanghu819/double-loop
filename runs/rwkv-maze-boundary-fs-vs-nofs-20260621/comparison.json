@@ -1,0 +1,44 @@
+{
+  "run_name": "rwkv-maze-boundary-fs-vs-nofs-20260621",
+  "source_commit": "3df9e0275d378b7ad5b92c8da8f518df3a1db94a",
+  "hypothesis": "Generic PATH/non-PATH boundary objective should make broad masks costly; FutureSeed should help a causal RWKV preserve useful future context under this pruning pressure.",
+  "conditions": {
+    "nofs": {
+      "score": 0.40887537598609924,
+      "loop_gain": 0.0004004240036010742,
+      "final_loop8": {
+        "path_f1": 0.40887537598609924,
+        "precision": 0.32558515667915344,
+        "recall": 0.582805871963501,
+        "pred_path_frac": 0.23604600131511688,
+        "fp": 143.22265625,
+        "fn": 49.669921875,
+        "token_acc": 0.7856727838516235,
+        "exact": 0.0
+      }
+    },
+    "futureseed": {
+      "score": 0.42779913544654846,
+      "loop_gain": 0.0008009970188140869,
+      "final_loop8": {
+        "path_f1": 0.42779913544654846,
+        "precision": 0.32699254155158997,
+        "recall": 0.627981424331665,
+        "pred_path_frac": 0.2527235448360443,
+        "fp": 152.892578125,
+        "fn": 44.330078125,
+        "token_acc": 0.7808637022972107,
+        "exact": 0.0
+      }
+    }
+  },
+  "delta_futureseed_minus_nofs_path_f1": 0.01892375946044922,
+  "delta_futureseed_minus_nofs_precision": 0.0014073848724365234,
+  "delta_futureseed_minus_nofs_recall": 0.04517555236816406,
+  "delta_futureseed_minus_nofs_pred_path_frac": 0.01667754352092743,
+  "delta_futureseed_minus_nofs_fp": 9.669921875,
+  "delta_futureseed_minus_nofs_fn": -5.33984375,
+  "delta_futureseed_minus_nofs_token_acc": -0.004809081554412842,
+  "decision": "discard_as_final_benchmark_keep_as_weak_mechanism_signal",
+  "lesson": "Boundary pressure can shrink broad masks, but it overprunes; FutureSeed mildly preserves recall/F1 under pressure while loop correction remains near zero."
+}

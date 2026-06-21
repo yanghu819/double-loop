@@ -54,6 +54,11 @@ for scaling to harder spatial reasoning tasks.
   no-FutureSeed loop8 path F1 is `0.4690`; FutureSeed loop8 path F1 is `0.4666`.
   Both arms converge to broad high-recall masks, so this objective does not
   isolate the future-context mechanism.
+- A follow-up generic PATH/non-PATH boundary objective makes broad masks costly
+  but exposes a different failure. no-FutureSeed loop8 path F1 falls to
+  `0.4089`; FutureSeed improves to `0.4278` by preserving recall, but loop gain
+  is still near zero. Treat this as weak evidence that FutureSeed can protect
+  useful future-context signal under pruning pressure, not as a Maze win.
 - Loop evidence is mixed: Sudoku scale-up shows loop matters; Maze visualizations
   often show later loops copying the same operating point. A paper claim about
   loops must report precision, recall, predicted mass, and false positives, not
@@ -138,6 +143,29 @@ Decision:
 - Keep loop as a variable-compute mechanism if late-loop correction is visible.
 - Otherwise position loop as compute reuse and future work for state dynamics.
 
+### E5. Causal Maze Boundary Objective
+
+Hypothesis: the path-weighted Maze objective permits broad-mask shortcuts. A
+generic PATH/non-PATH boundary objective should make false positives expensive
+without adding maze rules or postprocessing. If FutureSeed provides cheap future
+context to a causal backbone, it should help preserve true path cells when the
+model is pushed away from high-recall coverage.
+
+Method: causal RWKV7 state-passing Maze runner, D128/L8, train loops 4, eval
+loops 8, same official `maze-30x30-unique-1k` data. Compare
+`FUTURE_SEED_SCALE=0` and `1` under matched compute. Objective is token CE with
+PATH weight plus a generic PATH-vs-non-PATH margin BCE and per-sample PATH-mass
+calibration.
+
+Decision:
+- Result: weak positive for FutureSeed, negative as a final benchmark.
+  no-FutureSeed loop8 path F1 is `0.4089`; FutureSeed is `0.4278`.
+  The gain is mainly recall (`0.5828 -> 0.6280`), while precision is almost
+  unchanged (`0.3256 -> 0.3270`). Loop gain remains effectively zero.
+- Interpretation: the objective can reduce broad-mask coverage, but it overprunes
+  true path cells. Do not sweep boundary weights. Maze remains useful as a
+  failure analysis tool, not yet as a positive FutureSeed benchmark.
+
 ## Bitter-Lesson Boundaries
 
 Allowed:
@@ -157,6 +185,15 @@ Not allowed:
 
 E1, E2, and the first E3 official-Maze variant are complete. Official Maze is
 useful as a failure analysis tool, but under the current path-weight objective it
-is not a positive FutureSeed benchmark. The next experiment should change the
-proxy or objective so broad masks are not a cheap answer, while still avoiding
-maze rules, search, repair, or selectors.
+is not a positive FutureSeed benchmark. E5 shows that simply penalizing broad
+masks is also not enough: the model trades false positives for false negatives,
+and loops still do not repair.
+
+The next high-ROI experiment should be one of:
+
+1. a proxy/objective where broad coverage is impossible or strongly dominated by
+   the metric without maze-specific rules, or
+2. a simple generic recurrent decision/state mechanism that gives later loops a
+   learned way to preserve true-path margin while lowering false-positive mass.
+
+Do not run another weight/seed/temperature table for Maze.

@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>RWKV Maze Boundary FS vs noFS</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;margin:32px;line-height:1.45;color:#1f2937} img{max-width:100%;border:1px solid #ddd} code{background:#f3f4f6;padding:2px 4px;border-radius:4px} .metric{display:grid;grid-template-columns:220px 160px 160px 160px;gap:8px;margin:16px 0} .metric div{padding:6px 8px;border-bottom:1px solid #eee}</style></head>
+<body>
+<h1>RWKV Maze Boundary Objective: FutureSeed vs No FutureSeed</h1>
+<p><b>Decision:</b> discard as final benchmark, keep as weak mechanism signal. The boundary objective makes broad masks costly, but it overprunes. FutureSeed is mildly better under this pressure, while loop correction remains unsolved.</p>
+<div class='metric'>
+<div><b>metric</b></div><div><b>no FutureSeed</b></div><div><b>FutureSeed</b></div><div><b>delta</b></div>
+<div>path F1</div><div>0.4089</div><div>0.4278</div><div>+0.0189</div>
+<div>precision</div><div>0.3256</div><div>0.3270</div><div>+0.0014</div>
+<div>recall</div><div>0.5828</div><div>0.6280</div><div>+0.0452</div>
+<div>pred frac</div><div>0.2360</div><div>0.2527</div><div>+0.0167</div>
+<div>FP/case</div><div>143.2</div><div>152.9</div><div>+9.6699</div>
+<div>FN/case</div><div>49.7</div><div>44.3</div><div>-5.3398</div>
+<div>loop gain</div><div>0.0004</div><div>0.0008</div><div>+0.0004</div>
+</div>
+<h2>Summary curves</h2><img src='comparison_summary.png'>
+<h2>Hard cases</h2><img src='hard_case_boundary_grid.png'>
+<h2>Per-condition interactive case viewers</h2>
+<ul>
+<li><a href='nofs/output/visualizations/index.html'>No FutureSeed cases</a></li>
+<li><a href='futureseed/output/visualizations/index.html'>FutureSeed cases</a></li>
+</ul>
+</body></html>

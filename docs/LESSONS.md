@@ -163,6 +163,15 @@
   lesson is sharper: the current official Maze objective permits a broad-mask
   shortcut even for a causal recurrent model, so it is not a clean benchmark for
   the cheap-bidirectional mechanism.
+- A generic PATH/non-PATH boundary objective answers the next obvious question:
+  broad masks can be made costly without maze rules, search, repair, or a
+  selector, but the model then overprunes true path cells. In the causal RWKV
+  pair, no-FutureSeed loop8 path F1 is `0.4089` with precision/recall
+  `0.3256/0.5828`; FutureSeed reaches `0.4278` with `0.3270/0.6280`. The
+  FutureSeed gain is a weak recall-preservation signal under pruning pressure,
+  not a Maze success claim, and loop gain remains near zero. Do not continue
+  with boundary-weight sweeps; change the proxy/objective or the generic
+  recurrent decision/state mechanism.
 - The next Maze work should either align training/evaluation with path recovery
   using a generic objective, or test FutureSeed on a causal/recurrent Maze
   backbone where bidirectional information is actually the bottleneck. Do not

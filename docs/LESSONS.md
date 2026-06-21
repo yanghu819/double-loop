@@ -156,6 +156,13 @@
   should be argued as a cheap future-context module for causal/recurrent
   backbones, not as a small patch that always improves an already noncausal
   mixer.
+- Testing a causal RWKV7 state-passing backbone on the same official
+  path-weighted Maze objective does not rescue the benchmark. No-FutureSeed
+  reaches loop8 path F1 `0.4690`; FutureSeed reaches `0.4666`; both have
+  near-zero or negative loop gain and hundreds of false positives per case. The
+  lesson is sharper: the current official Maze objective permits a broad-mask
+  shortcut even for a causal recurrent model, so it is not a clean benchmark for
+  the cheap-bidirectional mechanism.
 - The next Maze work should either align training/evaluation with path recovery
   using a generic objective, or test FutureSeed on a causal/recurrent Maze
   backbone where bidirectional information is actually the bottleneck. Do not

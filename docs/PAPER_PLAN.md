@@ -50,6 +50,10 @@ for scaling to harder spatial reasoning tasks.
   path F1 is `0.4684` versus clean EqR `0.4682`. This suggests EqR's mixer
   already supplies the noncausal interaction that FutureSeed is meant to cheaply
   add to causal/recurrent backbones.
+- Causal RWKV on the same official path-weighted Maze objective is also neutral:
+  no-FutureSeed loop8 path F1 is `0.4690`; FutureSeed loop8 path F1 is `0.4666`.
+  Both arms converge to broad high-recall masks, so this objective does not
+  isolate the future-context mechanism.
 - Loop evidence is mixed: Sudoku scale-up shows loop matters; Maze visualizations
   often show later loops copying the same operating point. A paper claim about
   loops must report precision, recall, predicted mass, and false positives, not
@@ -111,9 +115,12 @@ Prediction: no-FutureSeed should show directional or position bias; FutureSeed
 should improve path recall/F1 and reduce that bias.
 
 Decision:
-- This is the main paper mechanism experiment if official EqR remains neutral.
-- Success supports the title claim directly: FutureSeed gives cheap
-  bidirectional context to causal recurrent reasoners.
+- Result on official path-weighted Maze: negative. RWKV no-FutureSeed reaches
+  loop8 path F1 `0.4690`; RWKV + FutureSeed reaches `0.4666`; loop gains are
+  near zero or negative.
+- Decision: do not use official path-weighted Maze as a positive FutureSeed
+  benchmark. It mostly measures broad PATH coverage and leaves hundreds of false
+  positives per case.
 
 ### E4. Loop Correction Diagnostics
 
@@ -148,8 +155,8 @@ Not allowed:
 
 ## Immediate Next Experiment
 
-E1 and E2 are complete. Official EqR Maze is now a useful path-aware diagnostic,
-but not a FutureSeed-positive result. The next experiment should be E3: a
-matched causal/recurrent Maze backbone with FutureSeed on/off, because the paper
-claim is "FutureSeed cheaply supplies future context where the backbone lacks
-it", not "FutureSeed improves every noncausal mixer".
+E1, E2, and the first E3 official-Maze variant are complete. Official Maze is
+useful as a failure analysis tool, but under the current path-weight objective it
+is not a positive FutureSeed benchmark. The next experiment should change the
+proxy or objective so broad masks are not a cheap answer, while still avoiding
+maze rules, search, repair, or selectors.

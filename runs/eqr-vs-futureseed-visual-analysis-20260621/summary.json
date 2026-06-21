@@ -1,0 +1,43 @@
+{
+  "created_at": "2026-06-21",
+  "question": "What does EqR vs FutureSeed visualization show on Maze and where does loop fail?",
+  "sources": {
+    "maze31_opening": "runs/maze31-futureseed-vs-eqrbase-d320l6-20260618/comparison.json",
+    "maze21_success_cases": "runs/maze21-longviz-fs-s2400-20260617T0610Z-b09efc4/output/visualizations/cases.json",
+    "maze31_failure_cases": "runs/maze31-cleanlong-d320l6-loop8x16-s3000-20260621T021639Z-efa5ee6/output/visualizations/cases.json"
+  },
+  "key_numbers": {
+    "maze31_eqr_baseline_step600_path_f1": 0.0,
+    "maze31_futureseed_step400_train_path_f1": 0.5862,
+    "maze31_futureseed_1200_loop16_eval_path_f1": 0.5344,
+    "maze21_case191_loop1_to_loop10": {
+      "path_f1": [
+        0.5971564054489136,
+        1.0
+      ],
+      "false_positive": [
+        69.0,
+        0.0
+      ],
+      "false_negative": [
+        16.0,
+        0.0
+      ]
+    },
+    "maze31_case123_loop1_to_loop16": {
+      "path_f1": [
+        0.1315789520740509,
+        0.0317460335791111
+      ],
+      "false_positive": [
+        120.0,
+        84.0
+      ],
+      "false_negative": [
+        144.0,
+        160.0
+      ]
+    }
+  },
+  "interpretation": "FutureSeed beats equal-compute EqR baseline on Maze31 opening, but hard Maze31 loop correction is not solved. Maze21 shows the target behavior: late loops remove false positives without new misses. Maze31 shows the failure mode: late loops narrow the mask by deleting true path cells too."
+}

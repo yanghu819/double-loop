@@ -31,9 +31,12 @@ clone_one() {
 prepare_repos() {
   clone_one "${BASE}/eqr-clean"
   clone_one "${BASE}/eqr-futureseed"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_path_loss_patch.py" "${BASE}/eqr-clean"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_path_loss_patch.py" "${BASE}/eqr-futureseed"
   "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_futureseed_patch.py" "${BASE}/eqr-futureseed"
   git -C "${BASE}/eqr-clean" rev-parse HEAD > "${BASE}/artifacts/eqr-clean.sha"
   git -C "${BASE}/eqr-futureseed" rev-parse HEAD > "${BASE}/artifacts/eqr-futureseed-base.sha"
+  git -C "${BASE}/eqr-clean" diff > "${BASE}/artifacts/path_loss.patch"
   git -C "${BASE}/eqr-futureseed" diff > "${BASE}/artifacts/futureseed.patch"
 }
 
@@ -139,6 +142,8 @@ run_train() {
       steps_hist_log_interval_steps="${STEPS_HIST_LOG_INTERVAL_STEPS:-100}" \
       +wandb_mode=disabled \
       +run_name="${run_name}" \
+      arch.loss.path_token_weight="${PATH_TOKEN_WEIGHT:-1.0}" \
+      arch.loss.path_token_id="${PATH_TOKEN_ID:-5}" \
       "${extra[@]}"
   ) >"${log}" 2>&1 &
   echo $! > "${pidfile}"

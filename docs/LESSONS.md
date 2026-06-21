@@ -692,3 +692,21 @@
   clean FutureSeed scaling with more data/time/capacity, or a more substantial
   generic state/update objective that first preserves opening and then rewards
   loop-time correction.
+- Plain longer clean FutureSeed training is not enough to make Maze31 loops
+  self-correct. The
+  `maze31-cleanlong-d320l6-loop8x16-s3000` run removed all extra mechanisms:
+  no learned gate, Tversky, hard correction, feedback, selector, search, repair,
+  maze rules, feature noise, or sweep. It did answer the opening question:
+  training path F1 became nonzero at step500 (`0.5304`) and occasionally reached
+  `0.59` on train batches. But held-out eval degraded badly versus the earlier
+  1200-step clean baseline. Loop1 path F1 was `0.3998`; loop16 fell to
+  `0.2995`, for loop gain `-0.1003`. Later loops did reduce predicted path mass
+  (`pred_frac 0.1504 -> 0.0928`) and false positives (`78.23 -> 47.76`), but
+  recall collapsed (`0.3573 -> 0.2227`) and false negatives increased
+  (`119.35 -> 144.28`). Lesson: more steps on the current clean D320/L6 setup
+  improve neither generalization nor correction. The model learns a narrower
+  mask, not a better path. Do not run 5000-step clean repeats on this exact
+  setup. The next bitter-lesson compliant move should either stabilize opening
+  with a generic curriculum/data schedule or change FutureSeed/loop state
+  dynamics so later loops preserve true-path mass while pruning false-positive
+  mass.

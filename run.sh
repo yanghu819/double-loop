@@ -18,9 +18,9 @@ export PATH="$REPO_ROOT/.cache/bin:$PATH"
 mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
 
 case "$MODE" in
-  smoke|full|eqr_probe|eqr_maze_probe) ;;
+  smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe) ;;
   *)
-    printf 'Usage: %s [smoke|full|eqr_probe|eqr_maze_probe]\n' "$0" >&2
+    printf 'Usage: %s [smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe]\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -206,6 +206,58 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
   ) 2>&1 | tee -a "$LOG_DIR/run.log"
 
   python3 "$REPO_ROOT/scripts/record_experiment.py" --run-dir "$RUN_DIR" --mode "$MODE"
+  printf 'completed run_dir=%s\n' "$RUN_DIR"
+  exit 0
+fi
+
+if [[ "$MODE" == "rwkv_maze_probe" ]]; then
+  RWKV_MAZE_ARGS=(
+    --repo-root "$REPO_ROOT"
+    --data-dir "${RWKV_MAZE_DATA_DIR:-$REPO_ROOT/official_eqr_compare/eqr-clean/data/maze-30x30-unique-1k}"
+    --out-dir "$OUT_DIR"
+    --run-name "$RUN_NAME"
+    --condition "${RWKV_MAZE_CONDITION:-}"
+    --steps "${RWKV_MAZE_STEPS:-800}"
+    --batch "${RWKV_MAZE_BATCH:-64}"
+    --eval-n "${RWKV_MAZE_EVAL_N:-512}"
+    --eval-batch "${RWKV_MAZE_EVAL_BATCH:-64}"
+    --d-model "${D_MODEL:-128}"
+    --layers "${LAYERS:-8}"
+    --heads "${HEADS:-8}"
+    --head-dim "${HEAD_DIM:-16}"
+    --channel-mult "${CHANNEL_MULT:-4}"
+    --l-cycles "${L_CYCLES:-2}"
+    --train-loops "${MAX_LOOPS:-4}"
+    --eval-loops "${EVAL_LOOPS:-8}"
+    --lambda "${LAMBDA:-0.95}"
+    --future-seed-scale "${FUTURE_SEED_SCALE:-1.0}"
+    --future-seed-decay "${FUTURE_SEED_DECAY:-0.0}"
+    --future-seed-update "${FUTURE_SEED_UPDATE:-fixed}"
+    --rwkv-kernel "${RWKV_KERNEL:-statepassing}"
+    --forward-dtype "${FORWARD_DTYPE:-bfloat16}"
+    --path-weight "${RWKV_MAZE_PATH_WEIGHT:-8.0}"
+    --loop-loss "${LOOP_LOSS:-all}"
+    --lr "${LR:-3e-4}"
+    --weight-decay "${WEIGHT_DECAY:-0.1}"
+    --grad-clip "${GRAD_CLIP:-1.0}"
+    --seed "${SEED:-52}"
+    --log-every "${LOG_EVERY:-100}"
+    --viz-cases "${RWKV_MAZE_VIZ_CASES:-64}"
+  )
+  if [[ "${ACTIVATION_CHECKPOINT:-0}" == "1" ]]; then
+    RWKV_MAZE_ARGS+=(--activation-checkpoint)
+  fi
+
+  printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"
+  (
+    cd "$REPO_ROOT"
+    if [[ -n "$PYTHON_BIN" ]]; then
+      "$PYTHON_BIN" scripts/rwkv_maze_probe.py "${RWKV_MAZE_ARGS[@]}"
+    else
+      UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python scripts/rwkv_maze_probe.py "${RWKV_MAZE_ARGS[@]}"
+    fi
+  ) 2>&1 | tee -a "$LOG_DIR/run.log"
+
   printf 'completed run_dir=%s\n' "$RUN_DIR"
   exit 0
 fi

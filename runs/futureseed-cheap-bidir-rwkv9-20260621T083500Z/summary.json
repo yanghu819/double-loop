@@ -1,0 +1,404 @@
+{
+  "generated_at_utc": "2026-06-21T09:00:33.269877+00:00",
+  "hypothesis": "FutureSeed cheaply injects future/noncausal context into a causal RWKV recurrence.",
+  "sha": "955e266ca018744d7e92d39216e30c69c4840230",
+  "runs": {
+    "No FutureSeed": {
+      "run_name": "bidir-rwkv9-nofs-s800-20260621T083500Z-955e266",
+      "config": {
+        "size": 9,
+        "box_rows": 0,
+        "box_cols": 0,
+        "steps": 800,
+        "batch": 192,
+        "grad_accum_steps": 1,
+        "d_model": 96,
+        "layers": 8,
+        "heads": 8,
+        "head_dim": 12,
+        "channel_mult": 4,
+        "l_cycles": 2,
+        "max_loops": 5,
+        "lambda_": 0.95,
+        "loop_update_mode": "fixed",
+        "loop_update_gate_init": 0.95,
+        "future_seed_scale": 0.0,
+        "future_seed_decay": 0.0,
+        "future_seed_update": "fixed",
+        "loop_feedback_scale": 0.0,
+        "loop_time_scale": 0.0,
+        "scratch_mode": "none",
+        "scratch_scale": 1.0,
+        "scratch_noise_scale": 0.0,
+        "scratch_gauss_weight": 0.0,
+        "scratch_gauss_projections": 0,
+        "scratch_gate_bias": -2.0,
+        "scratch_decay_bias": 2.0,
+        "activation_checkpoint": false,
+        "resume_train_checkpoint": "",
+        "train_checkpoint_dir": "",
+        "save_train_checkpoint_every": 0,
+        "forward_dtype": "bfloat16",
+        "rwkv_kernel": "statepassing",
+        "loop_loss": "final",
+        "loop_loss_start": 1,
+        "loop_loss_power": 2.0,
+        "loop_loss_min_weight": 0.05,
+        "noise_scale": 0.0,
+        "feature_buffer_size": 8192,
+        "feature_buffer_add": 2048,
+        "rollout_ks": "1",
+        "rollout_loop_values": "1,3,5",
+        "rollout_noise_scale": 0.0,
+        "lr": 0.002,
+        "weight_decay": 0.001,
+        "holes_min": 2,
+        "holes_max": 4,
+        "hole_stages": "4-8:300,8-12:500",
+        "hole_pattern": "random",
+        "eval_holes": 12,
+        "eval_holes_list": "8,12,16",
+        "eval_n": 512,
+        "eval_checkpoint_steps": "",
+        "eval_checkpoint_stage_offsets": "",
+        "eval_checkpoint_holes_list": "",
+        "blank_loss_weight": 20.0,
+        "case_index": 0,
+        "case_bank_holes": "",
+        "case_bank_n": 0,
+        "case_bank_eval_n": 256,
+        "case_bank_loop_values": "",
+        "seed": 52,
+        "log_every": 100,
+        "out_dir": "/huyang2/double-loop/.worktrees/futureseed-bidir-955e266-20260621T0850Z/runs/bidir-rwkv9-nofs-s800-20260621T083500Z-955e266/output",
+        "cpu": false
+      },
+      "train_steps": [
+        {
+          "stage": "1:4-8",
+          "step": 100,
+          "ce": 0.8978,
+          "total": 0.8978,
+          "loop1": 0.8955,
+          "loop_last": 0.8978
+        },
+        {
+          "stage": "1:4-8",
+          "step": 200,
+          "ce": 0.7439,
+          "total": 0.7439,
+          "loop1": 0.7455,
+          "loop_last": 0.7439
+        },
+        {
+          "stage": "1:4-8",
+          "step": 300,
+          "ce": 0.6485,
+          "total": 0.6485,
+          "loop1": 0.649,
+          "loop_last": 0.6485
+        },
+        {
+          "stage": "2:8-12",
+          "step": 400,
+          "ce": 0.7193,
+          "total": 0.7193,
+          "loop1": 0.7183,
+          "loop_last": 0.7193
+        },
+        {
+          "stage": "2:8-12",
+          "step": 500,
+          "ce": 0.6177,
+          "total": 0.6177,
+          "loop1": 0.6252,
+          "loop_last": 0.6177
+        },
+        {
+          "stage": "2:8-12",
+          "step": 600,
+          "ce": 0.5344,
+          "total": 0.5344,
+          "loop1": 0.5386,
+          "loop_last": 0.5344
+        },
+        {
+          "stage": "2:8-12",
+          "step": 700,
+          "ce": 0.4844,
+          "total": 0.4844,
+          "loop1": 0.4887,
+          "loop_last": 0.4844
+        },
+        {
+          "stage": "2:8-12",
+          "step": 800,
+          "ce": 0.4779,
+          "total": 0.4779,
+          "loop1": 0.4806,
+          "loop_last": 0.4779
+        }
+      ],
+      "train_sec": 466.96436834335327,
+      "cuda_max_memory_allocated_mb": 20143.58837890625,
+      "loop1": {
+        "exact": 0.009765625,
+        "blank_acc": 0.6648762822151184,
+        "early": 0.4595765173435211,
+        "mid": 0.7063685059547424,
+        "late": 0.8347436785697937,
+        "gap": -0.3751671612262726
+      },
+      "loop3": {
+        "exact": 0.013671875,
+        "blank_acc": 0.6678059697151184,
+        "early": 0.4682386815547943,
+        "mid": 0.7034516334533691,
+        "late": 0.8377302289009094,
+        "gap": -0.3694915473461151
+      },
+      "loop5": {
+        "exact": 0.015625,
+        "blank_acc": 0.6687825322151184,
+        "early": 0.46968239545822144,
+        "mid": 0.7044239044189453,
+        "late": 0.8382279872894287,
+        "gap": -0.3685455918312073
+      },
+      "holes": {
+        "8": {
+          "exact": 0.0625,
+          "blank_acc": 0.693359375,
+          "early": 0.4779145419597626,
+          "late": 0.8583086133003235,
+          "gap": -0.3803940713405609
+        },
+        "12": {
+          "exact": 0.015625,
+          "blank_acc": 0.6687825322151184,
+          "early": 0.46968239545822144,
+          "late": 0.8382279872894287,
+          "gap": -0.3685455918312073
+        },
+        "16": {
+          "exact": 0.0,
+          "blank_acc": 0.635986328125,
+          "early": 0.4155084192752838,
+          "late": 0.8198757767677307,
+          "gap": -0.4043673574924469
+        }
+      },
+      "case_html": "runs/bidir-rwkv9-nofs-s800-20260621T083500Z-955e266/output/futureseed_loop_case_seed52.html",
+      "run_index": "runs/bidir-rwkv9-nofs-s800-20260621T083500Z-955e266/visualizations/index.html",
+      "score_json": {
+        "git_sha": "955e266ca018744d7e92d39216e30c69c4840230",
+        "score": 0.015625,
+        "score_key": "metrics.eval_clean.loop5.label_exact"
+      },
+      "git_dirty": true
+    },
+    "FutureSeed": {
+      "run_name": "bidir-rwkv9-fs-s800-20260621T083500Z-955e266",
+      "config": {
+        "size": 9,
+        "box_rows": 0,
+        "box_cols": 0,
+        "steps": 800,
+        "batch": 192,
+        "grad_accum_steps": 1,
+        "d_model": 96,
+        "layers": 8,
+        "heads": 8,
+        "head_dim": 12,
+        "channel_mult": 4,
+        "l_cycles": 2,
+        "max_loops": 5,
+        "lambda_": 0.95,
+        "loop_update_mode": "fixed",
+        "loop_update_gate_init": 0.95,
+        "future_seed_scale": 1.0,
+        "future_seed_decay": 0.0,
+        "future_seed_update": "fixed",
+        "loop_feedback_scale": 0.0,
+        "loop_time_scale": 0.0,
+        "scratch_mode": "none",
+        "scratch_scale": 1.0,
+        "scratch_noise_scale": 0.0,
+        "scratch_gauss_weight": 0.0,
+        "scratch_gauss_projections": 0,
+        "scratch_gate_bias": -2.0,
+        "scratch_decay_bias": 2.0,
+        "activation_checkpoint": false,
+        "resume_train_checkpoint": "",
+        "train_checkpoint_dir": "",
+        "save_train_checkpoint_every": 0,
+        "forward_dtype": "bfloat16",
+        "rwkv_kernel": "statepassing",
+        "loop_loss": "final",
+        "loop_loss_start": 1,
+        "loop_loss_power": 2.0,
+        "loop_loss_min_weight": 0.05,
+        "noise_scale": 0.0,
+        "feature_buffer_size": 8192,
+        "feature_buffer_add": 2048,
+        "rollout_ks": "1",
+        "rollout_loop_values": "1,3,5",
+        "rollout_noise_scale": 0.0,
+        "lr": 0.002,
+        "weight_decay": 0.001,
+        "holes_min": 2,
+        "holes_max": 4,
+        "hole_stages": "4-8:300,8-12:500",
+        "hole_pattern": "random",
+        "eval_holes": 12,
+        "eval_holes_list": "8,12,16",
+        "eval_n": 512,
+        "eval_checkpoint_steps": "",
+        "eval_checkpoint_stage_offsets": "",
+        "eval_checkpoint_holes_list": "",
+        "blank_loss_weight": 20.0,
+        "case_index": 0,
+        "case_bank_holes": "",
+        "case_bank_n": 0,
+        "case_bank_eval_n": 256,
+        "case_bank_loop_values": "",
+        "seed": 52,
+        "log_every": 100,
+        "out_dir": "/huyang2/double-loop/.worktrees/futureseed-bidir-955e266-20260621T0850Z/runs/bidir-rwkv9-fs-s800-20260621T083500Z-955e266/output",
+        "cpu": false
+      },
+      "train_steps": [
+        {
+          "stage": "1:4-8",
+          "step": 100,
+          "ce": 0.8597,
+          "total": 0.8597,
+          "loop1": 0.8559,
+          "loop_last": 0.8597
+        },
+        {
+          "stage": "1:4-8",
+          "step": 200,
+          "ce": 0.6075,
+          "total": 0.6075,
+          "loop1": 0.6094,
+          "loop_last": 0.6075
+        },
+        {
+          "stage": "1:4-8",
+          "step": 300,
+          "ce": 0.288,
+          "total": 0.288,
+          "loop1": 0.3191,
+          "loop_last": 0.288
+        },
+        {
+          "stage": "2:8-12",
+          "step": 400,
+          "ce": 0.1937,
+          "total": 0.1937,
+          "loop1": 0.2192,
+          "loop_last": 0.1937
+        },
+        {
+          "stage": "2:8-12",
+          "step": 500,
+          "ce": 0.0857,
+          "total": 0.0857,
+          "loop1": 0.1156,
+          "loop_last": 0.0857
+        },
+        {
+          "stage": "2:8-12",
+          "step": 600,
+          "ce": 0.0224,
+          "total": 0.0224,
+          "loop1": 0.0482,
+          "loop_last": 0.0224
+        },
+        {
+          "stage": "2:8-12",
+          "step": 700,
+          "ce": 0.0109,
+          "total": 0.0109,
+          "loop1": 0.0245,
+          "loop_last": 0.0109
+        },
+        {
+          "stage": "2:8-12",
+          "step": 800,
+          "ce": 0.0097,
+          "total": 0.0097,
+          "loop1": 0.0305,
+          "loop_last": 0.0097
+        }
+      ],
+      "train_sec": 459.0935411453247,
+      "cuda_max_memory_allocated_mb": 20357.77880859375,
+      "loop1": {
+        "exact": 0.8046875,
+        "blank_acc": 0.9801432490348816,
+        "early": 0.9797882437705994,
+        "mid": 0.9766650199890137,
+        "late": 0.984071671962738,
+        "gap": -0.004283428192138672
+      },
+      "loop3": {
+        "exact": 0.951171875,
+        "blank_acc": 0.9939778447151184,
+        "early": 0.9947064518928528,
+        "mid": 0.9922216534614563,
+        "late": 0.9950224161148071,
+        "gap": -0.0003159642219543457
+      },
+      "loop5": {
+        "exact": 0.94921875,
+        "blank_acc": 0.9939778447151184,
+        "early": 0.9947064518928528,
+        "mid": 0.9917355179786682,
+        "late": 0.9955201745033264,
+        "gap": -0.0008137226104736328
+      },
+      "holes": {
+        "8": {
+          "exact": 0.990234375,
+          "blank_acc": 0.998291015625,
+          "early": 0.9971035718917847,
+          "late": 1.0,
+          "gap": -0.002896428108215332
+        },
+        "12": {
+          "exact": 0.94921875,
+          "blank_acc": 0.9939778447151184,
+          "early": 0.9947064518928528,
+          "late": 0.9955201745033264,
+          "gap": -0.0008137226104736328
+        },
+        "16": {
+          "exact": 0.80078125,
+          "blank_acc": 0.9805908203125,
+          "early": 0.9798829555511475,
+          "late": 0.9835586547851562,
+          "gap": -0.003675699234008789
+        }
+      },
+      "case_html": "runs/bidir-rwkv9-fs-s800-20260621T083500Z-955e266/output/futureseed_loop_case_seed52.html",
+      "run_index": "runs/bidir-rwkv9-fs-s800-20260621T083500Z-955e266/visualizations/index.html",
+      "score_json": {
+        "git_sha": "955e266ca018744d7e92d39216e30c69c4840230",
+        "score": 0.94921875,
+        "score_key": "metrics.eval_clean.loop5.label_exact"
+      },
+      "git_dirty": true
+    }
+  },
+  "insight": {
+    "loop5_exact_gain": 0.93359375,
+    "loop5_blank_acc_gain": 0.3251953125,
+    "loop5_gap_abs_reduction": 0.36773186922073364,
+    "loop1_exact_gain": 0.794921875,
+    "loop1_gap_abs_reduction": 0.3708837330341339,
+    "train_ce_step800_ratio_fs_over_nofs": 0.020297133291483575,
+    "train_time_overhead_frac": -0.01685530573981875
+  }
+}

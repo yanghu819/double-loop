@@ -105,6 +105,27 @@
   spend budget on rollout selector work while FutureSeed is enabled and the
   oracle gap remains tiny.
 
+## 2026-06-21 FutureSeed as cheap bidirectional context
+
+- The paired RWKV9 GPU1 probe at source SHA `955e266` directly tested the
+  current paper story: FutureSeed should let a causal/recurrent backbone cheaply
+  access future/noncausal information. The protocol held model, CUDA kernel,
+  curriculum, seed, batch, loops, and step budget fixed, changing only
+  `FUTURE_SEED_SCALE=0` versus `FUTURE_SEED_SCALE=1`.
+- Without FutureSeed, the model was trainable but position-biased: h12 loop5
+  exact was `0.0156`, blank accuracy was `0.6688`, and early blank cells were
+  far worse than late blank cells (`0.4697` versus `0.8382`). This is the
+  failure mode expected from a causal scan that sees future constraints too
+  late.
+- With FutureSeed, h12 loop5 exact reached `0.9492`, blank accuracy reached
+  `0.9940`, and the early/late blank accuracy gap nearly vanished (`0.9947`
+  versus `0.9955`). Step800 train CE also fell from `0.4779` without FutureSeed
+  to `0.0097` with FutureSeed at essentially the same wall time.
+- Treat this as a strong mechanism win for FutureSeed-as-future-boundary-condition,
+  not as an official EqR/Maze superiority claim. The next high-ROI validation is
+  the same diagnostic in the official EqR code path or a causal Maze backbone;
+  Sudoku seed sweeps are low value.
+
 ## 2026-06-15 D320 effective-batch h120 scaling
 
 - D320 width was not fairly judged by the earlier batch48 run. With microbatch

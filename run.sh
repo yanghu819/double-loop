@@ -236,6 +236,8 @@ if [[ "$MODE" == "rwkv_maze_probe" ]]; then
     --rwkv-kernel "${RWKV_KERNEL:-statepassing}"
     --forward-dtype "${FORWARD_DTYPE:-bfloat16}"
     --path-weight "${RWKV_MAZE_PATH_WEIGHT:-8.0}"
+    --path-binary-weight "${RWKV_MAZE_PATH_BINARY_WEIGHT:-0.0}"
+    --path-budget-weight "${RWKV_MAZE_PATH_BUDGET_WEIGHT:-0.0}"
     --loop-loss "${LOOP_LOSS:-all}"
     --lr "${LR:-3e-4}"
     --weight-decay "${WEIGHT_DECAY:-0.1}"

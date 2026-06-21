@@ -8,7 +8,7 @@ selector tricks.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-MAZE-004 | proposed | Official Maze path-weight permits broad-mask shortcuts; a better paper proxy should make false positives costly without maze rules. | Design a generic contrastive/set objective or task where broad PATH coverage is not a cheap solution; reuse RWKV/FS runner. | GPU1 A100 | TBD | loop gain and FP reduction, not just recall | gated on P-MAZE-003 negative |
+| P-MAZE-004 | in-progress | Official Maze path-weight permits broad-mask shortcuts; a better paper proxy should make false positives costly without maze rules. | Add a generic PATH-vs-non-PATH margin objective plus per-sample PATH-mass calibration to the causal RWKV Maze runner; compare no-FutureSeed vs FutureSeed under matched compute. | GPU1 A100 | ~45m | precision up, pred PATH frac/FP down, recall not collapsed; FutureSeed opens only if cheap future context was hidden by broad-mask objective | launched after P-MAZE-003 negative |
 
 ## B. Completed Plan
 

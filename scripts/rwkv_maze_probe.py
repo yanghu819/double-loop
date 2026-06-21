@@ -176,6 +176,60 @@ def weighted_loop_loss(logits_by_loop: List[torch.Tensor], labels: torch.Tensor,
     return torch.stack(losses).mean()
 
 
+def path_margin_objective_loss(
+    logits_by_loop: List[torch.Tensor],
+    labels: torch.Tensor,
+    loop_loss: str,
+) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+    """Generic foreground decision-boundary loss for sparse PATH labels.
+
+    PATH is treated as a foreground class against the strongest non-PATH class.
+    This keeps the objective tied to the hard argmax boundary instead of only
+    increasing PATH softmax confidence.
+    """
+    selected = logits_by_loop if loop_loss == "all" else [logits_by_loop[-1]]
+    valid = labels != PAD_ID
+    true_path = (labels == PATH_ID) & valid
+    non_path = (~true_path) & valid
+    valid_f = valid.to(torch.float32)
+    true_f = true_path.to(torch.float32)
+    pos_count = true_f.sum().clamp_min(1.0)
+    neg_count = non_path.to(torch.float32).sum().clamp_min(1.0)
+    valid_count_per_case = valid_f.sum(dim=1).clamp_min(1.0)
+    true_frac = true_f.sum(dim=1) / valid_count_per_case
+
+    binary_losses: List[torch.Tensor] = []
+    budget_losses: List[torch.Tensor] = []
+    pos_margins: List[torch.Tensor] = []
+    neg_margins: List[torch.Tensor] = []
+    prob_fracs: List[torch.Tensor] = []
+    for logits in selected:
+        logits_f = logits.float()
+        non_path_logits = torch.cat([logits_f[..., :PATH_ID], logits_f[..., PATH_ID + 1 :]], dim=-1)
+        margin = logits_f[..., PATH_ID] - non_path_logits.max(dim=-1).values
+        bce = F.binary_cross_entropy_with_logits(margin, true_f, reduction="none")
+        pos_loss = (bce * true_f).sum() / pos_count
+        neg_loss = (bce * non_path.to(torch.float32)).sum() / neg_count
+        binary_losses.append(0.5 * (pos_loss + neg_loss))
+        path_prob = torch.sigmoid(margin) * valid_f
+        prob_frac = path_prob.sum(dim=1) / valid_count_per_case
+        budget_losses.append((prob_frac - true_frac).abs().mean())
+        if true_path.any():
+            pos_margins.append(margin[true_path].mean())
+        if non_path.any():
+            neg_margins.append(margin[non_path].mean())
+        prob_fracs.append(prob_frac.mean())
+
+    zero = labels.new_zeros((), dtype=torch.float32)
+    diag = {
+        "path_margin_pos": torch.stack(pos_margins).mean() if pos_margins else zero,
+        "path_margin_neg": torch.stack(neg_margins).mean() if neg_margins else zero,
+        "path_prob_frac": torch.stack(prob_fracs).mean() if prob_fracs else zero,
+        "path_true_frac": true_frac.mean(),
+    }
+    return torch.stack(binary_losses).mean(), torch.stack(budget_losses).mean(), diag
+
+
 def metrics_from_pred(pred: torch.Tensor, labels: torch.Tensor) -> PathMetrics:
     valid = labels != PAD_ID
     token_acc = (((pred == labels) & valid).sum(dim=1).float() / valid.sum(dim=1).clamp_min(1).float()).mean()
@@ -368,6 +422,8 @@ def main() -> None:
     p.add_argument("--rwkv-kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="statepassing")
     p.add_argument("--forward-dtype", choices=("float32", "bfloat16"), default="bfloat16")
     p.add_argument("--path-weight", type=float, default=8.0)
+    p.add_argument("--path-binary-weight", type=float, default=0.0)
+    p.add_argument("--path-budget-weight", type=float, default=0.0)
     p.add_argument("--loop-loss", choices=("final", "all"), default="all")
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--weight-decay", type=float, default=0.1)
@@ -420,7 +476,13 @@ def main() -> None:
         opt.zero_grad(set_to_none=True)
         with forward_autocast(args.forward_dtype, device):
             logits_by_loop, _trace = model.forward_trace(xb, loops=args.train_loops)
-            loss = weighted_loop_loss(logits_by_loop, yb, args.path_weight, args.loop_loss)
+            ce_loss = weighted_loop_loss(logits_by_loop, yb, args.path_weight, args.loop_loss)
+            path_binary_loss, path_budget_loss, path_diag = path_margin_objective_loss(logits_by_loop, yb, args.loop_loss)
+            loss = (
+                ce_loss
+                + float(args.path_binary_weight) * path_binary_loss
+                + float(args.path_budget_weight) * path_budget_loss
+            )
         loss.backward()
         if args.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
@@ -442,6 +504,13 @@ def main() -> None:
                 "step": step,
                 "elapsed_sec": time.time() - t0,
                 "loss": float(loss.detach().cpu()),
+                "ce_loss": float(ce_loss.detach().cpu()),
+                "path_binary_loss": float(path_binary_loss.detach().cpu()),
+                "path_budget_loss": float(path_budget_loss.detach().cpu()),
+                "path_margin_pos": float(path_diag["path_margin_pos"].detach().cpu()),
+                "path_margin_neg": float(path_diag["path_margin_neg"].detach().cpu()),
+                "path_prob_frac": float(path_diag["path_prob_frac"].detach().cpu()),
+                "path_true_frac": float(path_diag["path_true_frac"].detach().cpu()),
                 "loop1_path_f1": loop1.path_f1,
                 "loop_last_path_f1": final.path_f1,
                 "loop_gain": final.path_f1 - loop1.path_f1,
@@ -454,7 +523,8 @@ def main() -> None:
             history.append(row)
             print(
                 "[rwkv_maze] "
-                f"step={step:04d} loss={row['loss']:.4f} "
+                f"step={step:04d} loss={row['loss']:.4f} ce={row['ce_loss']:.4f} "
+                f"bin={row['path_binary_loss']:.4f} budget={row['path_budget_loss']:.4f} "
                 f"loop1={row['loop1_path_f1']:.4f} loop{args.eval_loops}={row['loop_last_path_f1']:.4f} "
                 f"gain={row['loop_gain']:+.4f} pred={row['loop_last_pred_path_frac']:.4f} "
                 f"fp={row['loop_last_fp']:.1f} fn={row['loop_last_fn']:.1f}",

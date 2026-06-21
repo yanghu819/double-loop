@@ -1,0 +1,26 @@
+{
+  "experiment": "official-eqr-maze-cases-20260621",
+  "official_eqr_sha": "aba94e9cde0f273ce644db5261cd6915ba6561f0",
+  "source_sha": "ff3b0cc42c7d2ceab98e580dc0bac155245c9461",
+  "gpu": "GPU1",
+  "epochs": 256,
+  "train_steps": 1792,
+  "global_batch_size": 128,
+  "eval_cases": 64,
+  "loops": [
+    1,
+    4,
+    8,
+    16
+  ],
+  "conditions": [
+    "official_eqr_base",
+    "official_eqr_futureseed"
+  ],
+  "constraints": [
+    "no selector",
+    "no search",
+    "no repair",
+    "no maze-specific postprocessing"
+  ]
+}

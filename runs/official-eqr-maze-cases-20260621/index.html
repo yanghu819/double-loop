@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Official EqR Maze Case Evidence</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f5f5f2;color:#202124}main{max-width:1380px;margin:0 auto;padding:26px}h1{font-size:28px;margin:0 0 8px}h2{font-size:18px;margin:26px 0 10px}p{line-height:1.45}.note{background:#fff;border-left:5px solid #475569;padding:12px;margin:16px 0}.bad{border-left-color:#b42318}.good{border-left-color:#067647}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd;margin:10px 0 18px}td,th{border-bottom:1px solid #e5e5e5;padding:7px 8px;font-size:13px;text-align:left}th{background:#eee}.frames{display:grid;grid-template-columns:1fr 1fr;gap:14px}iframe{width:100%;height:760px;border:1px solid #ccc;background:#fff;border-radius:6px}code{background:#eee;padding:1px 4px;border-radius:4px}</style></head><body><main>
+<h1>Official EqR Maze Case Evidence</h1>
+<p>Question: on the official EqR Maze code path, what changes with and without FutureSeed?</p>
+<div class="note good"><b>What is solid:</b> this uses official locuslab EqR clones, official Maze30 unique data, official checkpoints, and the same EMA loading path as <code>evaluate.py</code>. No local online maze sampler, no repair, no selector.</div>
+<div class="note bad"><b>Main finding:</b> the e256 official pair does not solve Maze paths. Token accuracy is about 0.868 for both, but path F1 on visualized official cases is about 0.001 because both models almost never emit PATH. Token accuracy alone is misleading here.</div>
+<h2>Official Aggregate e256 Metrics</h2>
+<table><thead><tr><th>metric</th><th>EqR base</th><th>EqR + FutureSeed</th><th>FS - base</th></tr></thead><tbody>
+<tr><td>final token accuracy</td><td>0.868250</td><td>0.868221</td><td>-0.000029</td></tr>
+<tr><td>final exact</td><td>0.000000</td><td>0.000000</td><td>0.000000</td></tr>
+<tr><td>final residual16</td><td>404.176</td><td>409.458</td><td>5.282</td></tr>
+<tr><td>step500 token accuracy</td><td>0.622738</td><td>0.649879</td><td>0.027141</td></tr>
+</tbody></table>
+<h2>Path-Aware Case Metrics</h2>
+<table><thead><tr><th>loop</th><th>base_token_acc</th><th>fs_token_acc</th><th>d_token_acc</th><th>base_path_f1</th><th>fs_path_f1</th><th>d_path_f1</th><th>base_pred_path_frac</th><th>fs_pred_path_frac</th><th>base_fp</th><th>fs_fp</th><th>base_fn</th><th>fs_fn</th></tr></thead><tbody><tr><td>1</td><td>0.866632</td><td>0.866493</td><td>-0.000139</td><td>0.000544</td><td>0.000770</td><td>0.000225</td><td>0.000104</td><td>0.000156</td><td>0.062500</td><td>0.093750</td><td>117.328125</td><td>117.312500</td></tr><tr><td>4</td><td>0.869306</td><td>0.869410</td><td>0.000104</td><td>0.001676</td><td>0.002224</td><td>0.000548</td><td>0.000312</td><td>0.000295</td><td>0.187500</td><td>0.125000</td><td>117.265625</td><td>117.218750</td></tr><tr><td>8</td><td>0.869392</td><td>0.869253</td><td>-0.000139</td><td>0.000254</td><td>0.000558</td><td>0.000304</td><td>0.000122</td><td>0.000139</td><td>0.093750</td><td>0.093750</td><td>117.343750</td><td>117.328125</td></tr><tr><td>16</td><td>0.869444</td><td>0.869306</td><td>-0.000139</td><td>0.001050</td><td>0.001113</td><td>0.000063</td><td>0.000243</td><td>0.000278</td><td>0.156250</td><td>0.187500</td><td>117.296875</td><td>117.296875</td></tr></tbody></table>
+<div class="note"><b>Decision:</b> We should not claim FutureSeed beats EqR on Maze from e256. The right next experiment is already running on GPU1: official e512 matched baseline vs FutureSeed, then the same path-aware visualization on final checkpoints.</div>
+<h2>Case Views</h2>
+<p><a href="visuals/official-eqr-e256-base-cases-20260621T1055Z/index.html">Base case page</a> · <a href="visuals/official-eqr-e256-futureseed-cases-20260621T1055Z/index.html">FutureSeed case page</a> · <a href="summary.json">summary.json</a></p>
+<div class="frames"><iframe src="visuals/official-eqr-e256-base-cases-20260621T1055Z/index.html"></iframe><iframe src="visuals/official-eqr-e256-futureseed-cases-20260621T1055Z/index.html"></iframe></div>
+</main></body></html>

@@ -126,6 +126,29 @@
   the same diagnostic in the official EqR code path or a causal Maze backbone;
   Sudoku seed sweeps are low value.
 
+## 2026-06-21 Official EqR Maze baseline
+
+- The fair Maze comparison must be anchored in the official EqR codebase, not the
+  no-Hydra proxy runner. The current official clone is upstream SHA
+  `aba94e9cde0f273ce644db5261cd6915ba6561f0`; the clean baseline uses that
+  code path, and the FutureSeed condition applies only the FutureSeed patch plus
+  a runtime SDPA fallback for the local CUDA environment.
+- Official scalar token accuracy is not a valid Maze success signal by itself.
+  In the matched e256 and e512 official runs, both clean EqR and FutureSeed reach
+  about `0.87` token accuracy with exact `0`, while path-aware visualization on
+  official test cases shows loop16 path F1 near zero. The models mostly predict
+  non-PATH classes; this looks accurate only because PATH is a minority token.
+- The e512 pair keeps the same conclusion: base final step3500 has token acc
+  `0.868423`, residual16 `8.001`, and path F1 `0.001273`; FutureSeed has token
+  acc `0.868430`, residual16 `7.920`, and path F1 `0.0`. FutureSeed still shows
+  an early step500 optimization signal, but it does not solve official Maze or
+  beat the path-aware baseline under this budget.
+- The next Maze work should either align training/evaluation with path recovery
+  using a generic objective, or test FutureSeed on a causal/recurrent Maze
+  backbone where bidirectional information is actually the bottleneck. Do not
+  claim Maze progress from token accuracy, and do not add selector, repair,
+  search, or maze-specific postprocessing to patch this result.
+
 ## 2026-06-15 D320 effective-batch h120 scaling
 
 - D320 width was not fairly judged by the earlier batch48 run. With microbatch

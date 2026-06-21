@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>official-eqr-maze-e512-20260621</title><style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f6f6f3;color:#202124}
+main{max-width:1200px;margin:0 auto;padding:28px}
+h1{font-size:26px;margin:0 0 8px} h2{font-size:18px;margin:24px 0 10px}
+p{line-height:1.45}.note{background:#fff;border-left:5px solid #475569;padding:11px 13px;margin:14px 0}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px}.card b{display:block;font-size:21px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd;margin:10px 0 18px}
+th,td{border-bottom:1px solid #e5e5e5;padding:8px;text-align:left;font-size:13px}th{background:#eee}
+a{color:#155eef;text-decoration:none}code{background:#eee;padding:1px 4px;border-radius:4px}.pos{color:#067647}.neg{color:#b42318}
+</style></head>
+<body><main>
+<h1>official-eqr-maze-e512-20260621</h1>
+<p>Official EqR Maze comparison: clean EqR baseline versus the same official code path patched only with FutureSeed. Metrics below are path-aware and computed from official test cases with no selector, search, repair, or maze-specific postprocessing.</p>
+<div class="note">Matched official EqR Maze e512 pair on GPU1. Clean EqR baseline uses official upstream SHA aba94e9; FutureSeed branch applies only the FutureSeed patch plus runtime SDPA fallback. No selector, search, repair, or maze-specific postprocessing.</div>
+<div class="cards">
+<div class="card"><b>0.0013</b><span>base final path F1</span></div>
+<div class="card"><b>0.0000</b><span>FutureSeed final path F1</span></div>
+<div class="card"><b>-0.00127</b><span>FutureSeed delta</span></div>
+<div class="card"><b>128</b><span>test cases</span></div>
+</div>
+<p><a href="visuals/official-eqr-e512-base-cases-20260621T1110Z/index.html">Open base hard-case visualization</a> | <a href="visuals/official-eqr-e512-futureseed-cases-20260621T1110Z/index.html">Open FutureSeed hard-case visualization</a></p>
+<h2>Loop Metrics</h2>
+<table><thead><tr><th>loop</th><th>base F1</th><th>FS F1</th><th>delta F1</th><th>base precision</th><th>FS precision</th><th>base recall</th><th>FS recall</th><th>base pred frac</th><th>FS pred frac</th><th>base FP</th><th>FS FP</th><th>base FN</th><th>FS FN</th></tr></thead><tbody>
+<tr><td>loop1</td><td>0.0008</td><td>0.0000</td><td class='neg'>-0.00079</td><td>0.0391</td><td>0.0000</td><td>0.0004</td><td>0.0000</td><td>0.0001</td><td>0.0000</td><td>0.1</td><td>0.0</td><td>116.9</td><td>116.9</td></tr><tr><td>loop4</td><td>0.0015</td><td>0.0001</td><td class='neg'>-0.00133</td><td>0.0820</td><td>0.0078</td><td>0.0007</td><td>0.0001</td><td>0.0001</td><td>0.0000</td><td>0.0</td><td>0.0</td><td>116.8</td><td>116.9</td></tr><tr><td>loop8</td><td>0.0016</td><td>0.0001</td><td class='neg'>-0.00149</td><td>0.0672</td><td>0.0078</td><td>0.0008</td><td>0.0001</td><td>0.0002</td><td>0.0000</td><td>0.1</td><td>0.0</td><td>116.8</td><td>116.9</td></tr><tr><td>loop16</td><td>0.0013</td><td>0.0000</td><td class='neg'>-0.00127</td><td>0.0651</td><td>0.0000</td><td>0.0006</td><td>0.0000</td><td>0.0002</td><td>0.0000</td><td>0.1</td><td>0.0</td><td>116.8</td><td>116.9</td></tr>
+</tbody></table>
+<h2>Provenance</h2>
+<table><tbody>
+<tr><th>base checkpoint</th><td><code>/huyang2/double-loop/official_eqr_compare/outputs/base/outputs/e84hkp46/2026-6-21/10-54-5/checkpoints/step_3584_e84hkp46.pth</code></td></tr>
+<tr><th>FutureSeed checkpoint</th><td><code>/huyang2/double-loop/official_eqr_compare/outputs/futureseed/outputs/1al6gstb/2026-6-21/10-59-10/checkpoints/step_3584_1al6gstb.pth</code></td></tr>
+<tr><th>base repo</th><td><code>/huyang2/double-loop/official_eqr_compare/eqr-clean</code></td></tr>
+<tr><th>FutureSeed repo</th><td><code>/huyang2/double-loop/official_eqr_compare/eqr-futureseed</code></td></tr>
+</tbody></table>
+</main></body></html>

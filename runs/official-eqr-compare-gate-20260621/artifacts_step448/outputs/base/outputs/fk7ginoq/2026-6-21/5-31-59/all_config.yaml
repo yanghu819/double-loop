@@ -1,0 +1,60 @@
+arch:
+  name: eqr@EqRModel
+  short_name: EqR
+  loss:
+    name: losses@ACTLossHead
+    loss_type: stablemax_cross_entropy
+  halt_exploration_prob: 0.1
+  halt_max_steps: 16
+  H_cycles: 3
+  L_cycles: 4
+  H_layers: 0
+  L_layers: 1
+  hidden_size: 128
+  num_heads: 8
+  expansion: 4
+  pos_encodings: rope
+  board_height: null
+  board_width: null
+  forward_dtype: bfloat16
+  mlp_t: false
+  lambda_: 0.95
+  noise_scale: 0.01
+  H_init_std: 1.0
+  L_init_std: 1.0
+dataset:
+  name: Maze-30x30-unique-1k
+  data_path: data/maze-30x30-unique-1k
+  evaluators: []
+global_batch_size: 128
+epochs: 64
+train_epochs_per_iter: 64
+eval_interval_steps: 250
+checkpoint_interval_steps: 500
+heavy_metrics_log_interval: 100
+steps_hist_log_interval_steps: 100
+lr: 0.0001
+lr_min_ratio: 1.0
+lr_warmup_steps: 2000
+target_q_update_every: 4
+beta1: 0.9
+beta2: 0.95
+weight_decay: 1.0
+load_weights_only: false
+ema: true
+ema_rate: 0.999
+gradient_checkpoint: false
+grad_norm_log_interval_steps: null
+wandb_mode: disabled
+run_name: official-eqr-base-sdpa-e64-20260621T053554Z-aba94e9
+wandb_meta:
+  id: fk7ginoq
+  name: official-eqr-base-sdpa-e64-20260621T053554Z-aba94e9
+  project: null
+  entity: dummy
+  dir: /huyang2/double-loop/official_eqr_compare/outputs/base/outputs/fk7ginoq/2026-6-21/5-31-59
+  url: null
+  mode: disabled
+  resume: null
+  tags:
+  - Maze-30x30-unique-1k

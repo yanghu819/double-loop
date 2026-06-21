@@ -101,9 +101,7 @@ AdamATan2 <class 'adam_atan2.adam_atan2.AdamATan2'>
 adam_atan2_backend /huyang2/double-loop/official_eqr_compare/.venv/lib/python3.10/site-packages/adam_atan2_backend.cpython-310-x86_64-linux-gnu.so
 ```
 
-## Current Blocker
-
-Official EqR still has not produced a completed train/eval result.
+## Official Step448 Pair
 
 The official launcher needed wrapper fixes:
 
@@ -118,28 +116,58 @@ The official launcher needed wrapper fixes:
 - single-GPU direct Python launching avoids the local `torchrun`/distributed
   wait path and is appropriate because official `pretrain.py` only initializes
   distributed when `LOCAL_RANK` is present.
+- the installed `flash-attn` package is ABI-incompatible with the container's
+  PyTorch, so the launcher applies a runtime-only attention fallback to PyTorch
+  SDPA when FlashAttention import fails. This fallback is applied equally to
+  `eqr-clean` and `eqr-futureseed`; it changes the attention kernel path, not
+  the task, loss, optimizer, dataset, selector, repair, search, or model claim.
 
-After those fixes, the base run reaches training step 0:
-
-```text
-run_name=official-eqr-base-direct-e64-20260621T052644Z-aba94e9
-epochs: 64
-Estimated total training steps: 448
-Using optimizer: adam_atan2
-Training [l94]:   0%|          | 0/448 [00:00<?, ?it/s, loss=0]
-```
-
-It then stalls in unkillable `D` state:
+After these fixes, the official short-budget pair completed on GPU1:
 
 ```text
-PID 7302 wchan: cxiWaitEventWait
-GPU: 503 MiB / 81920 MiB, 0% util
-SIGKILL did not remove the process
+base run:
+  official-eqr-base-sdpa-e64-20260621T053554Z-aba94e9
+  checkpoint: outputs/base/outputs/fk7ginoq/2026-6-21/5-31-59/checkpoints/step_448_fk7ginoq.pth
+  final train loss: 0.466513
+
+futureseed run:
+  official-eqr-futureseed-sdpa-e64-20260621T053908Z-aba94e9
+  checkpoint: outputs/futureseed/outputs/5vl2vfof/2026-6-21/5-35-15/checkpoints/step_448_5vl2vfof.pth
+  final train loss: 0.504108
 ```
 
-This is now an AIStation/container runtime blocker, not a missing Python
-package or missing Hugging Face data issue. GPU1 should be restarted before the
-next official compare attempt.
+Both were evaluated with the official `evaluate.py` entrypoint and the official
+`config/eval/depth_breadth.yaml` settings:
+
+```text
+halt_max_steps: 16
+noise_scale: 0.5
+init_std: 1.0
+global_batch_size: 128
+eval batches: 8
+```
+
+Final checkpoint metrics:
+
+| metric | clean EqR | FutureSeed | delta |
+| --- | ---: | ---: | ---: |
+| `all/accuracy` | `0.5158277588` | `0.5576755981` | `+0.0418478394` |
+| `all/exact_accuracy` | `0.0` | `0.0` | `+0.0` |
+| `all/lm_loss` | `1.4151149902` | `1.3903227539` | `-0.0247922363` |
+| `all/total_loss` | `1.4784158936` | `1.4536179199` | `-0.0247979736` |
+| `all/residual_of_1_steps` | `593.314` | `587.955` | `-5.359` |
+| `all/residual_of_8_steps` | `471.817` | `482.472` | `+10.655` |
+| `all/residual_of_16_steps` | `436.811` | `437.060` | `+0.249` |
+
+Interpretation:
+
+- This is the first completed official-code, official-data EqR vs FutureSeed
+  gate.
+- FutureSeed has a real positive short-budget signal at token/loss level:
+  `+4.18` accuracy points and lower loss.
+- It is not solved reasoning: exact accuracy is still zero for both.
+- Extra loops are not yet the source of the win: FutureSeed is better at loop1
+  residual but not at loop8 or loop16 residual.
 
 ## Remote State
 
@@ -171,18 +199,38 @@ Pulled artifacts:
 - `logs_after_offline/logs/adam_backend_source_build_nvcc12.log`
 - `logs_after_offline/logs/adam_backend_cu117_fallback_build.log`
 - `logs_after_offline/logs/official-eqr-base-direct-e64-20260621T052644Z-aba94e9.log`
+- `artifacts_step448/official-eqr-pair-step448-20260621T0541Z.tgz`
+- `artifacts_step448/logs/official-eqr-base-sdpa-e64-20260621T053554Z-aba94e9.log`
+- `artifacts_step448/logs/official-eqr-futureseed-sdpa-e64-20260621T053908Z-aba94e9.log`
+- `artifacts_step448/logs/eval-official-base-final-step448-20260621T0537Z.log`
+- `artifacts_step448/logs/eval-official-futureseed-final-step448-20260621T0538Z.log`
+- `artifacts_step448/outputs/**/eval_metrics_step_448.json`
+- `score_step448.json`
+- `leaderboard_step448.csv`
+- `official_eqr_pair_step448.png`
+- `index.html`
 
 ## Decision
 
-Do not claim official EqR has been reproduced yet.
+We can now claim a completed official EqR sanity reproduction under a short
+budget, with one explicit runtime kernel fallback. We should not claim that
+FutureSeed+loop beats EqR as a reasoning method yet.
 
-Do not run a nominal "official" baseline by silently replacing `AdamATan2` with
-AdamW; that would make the baseline less faithful.
+The result supports a narrower and useful claim:
 
-The next valid step is to restart GPU1, verify the uploaded offline packages and
-data are still under `/huyang2/double-loop/official_eqr_compare`, then rerun the
-direct-Python official base sanity. If it passes, run the matched FutureSeed
-sanity under the same launcher and budget.
+```text
+FutureSeed improves official EqR optimization under the same short budget, but
+the current FutureSeed insertion has not made later loops perform correction.
+```
+
+The next valid experiment is not another local maze-probe table. It should use
+the official EqR code path and scale the budget or loop-specific readout:
+
+- longer official-budget run to see whether the token/loss advantage becomes
+  exact accuracy;
+- or a targeted official eval that reports whether increasing halt steps
+  reduces residual/exact failures rather than merely changing the operating
+  point.
 
 Current short-run command shape:
 
@@ -195,5 +243,12 @@ CUDA_VISIBLE_DEVICES=0 EPOCHS=64 TRAIN_EPOCHS_PER_ITER=64 GLOBAL_BATCH_SIZE=128 
   scripts/official_eqr_compare/run_official_eqr_compare.sh train-futureseed
 ```
 
-If the 500-step sanity pair is healthy, extend to the official budget axis
-rather than adding local maze-specific tricks.
+Official final eval command shape:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 EVAL_GLOBAL_BATCH_SIZE=128 \
+  scripts/official_eqr_compare/run_official_eqr_compare.sh eval-base <checkpoint.pth>
+
+CUDA_VISIBLE_DEVICES=0 EVAL_GLOBAL_BATCH_SIZE=128 \
+  scripts/official_eqr_compare/run_official_eqr_compare.sh eval-futureseed <checkpoint.pth>
+```

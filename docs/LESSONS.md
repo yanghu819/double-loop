@@ -742,3 +742,23 @@
   `cxiWaitEventWait` with 503MiB GPU memory and 0% util. Next official EqR
   attempt should restart GPU1 first, then rerun the direct-Python base/FutureSeed
   pair from the already staged offline data and wheels.
+- The official EqR comparison is now a completed short-budget gate, and it
+  changes the evidence boundary. On 2026-06-21, the official upstream EqR SHA
+  `aba94e9cde0f273ce644db5261cd6915ba6561f0` was run on the official
+  `maze-30x30-unique-1k` data for 64 epochs / 448 steps with the official
+  `AdamATan2` optimizer backend. The dependency path was kept honest by staging
+  wheels and Hugging Face data locally before uploading to GPU1; `adam-atan2`
+  still needed a dependency-only A100 `sm80` source build because available
+  CUDA-nvcc wheels did not contain `bin/nvcc`. The installed FlashAttention was
+  ABI-incompatible with PyTorch 2.7.0+cu126, so the launcher applies the same
+  runtime PyTorch SDPA fallback to clean EqR and FutureSeed. This is a kernel
+  compatibility change, not a task/model/loss/repair/search trick. The
+  official final eval at step448 gives FutureSeed a real token-level signal
+  over clean EqR (`all/accuracy 0.5577 vs 0.5158`, `total_loss 1.4536 vs
+  1.4784`), but exact accuracy is still `0.0` for both and loop16 residual is
+  not better (`437.060` vs `436.811`). Lesson: the honest claim is now
+  "FutureSeed improves official-code short-budget optimization", not
+  "FutureSeed+loop solves Maze reasoning" and not "later loops perform
+  correction". Next work should stay on the official EqR path and scale budget
+  or loop-specific readout; do not fall back to local maze-probe tables,
+  selector, repair, or human-rule postprocessing.

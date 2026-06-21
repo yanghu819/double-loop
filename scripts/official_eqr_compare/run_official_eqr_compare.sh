@@ -55,6 +55,45 @@ print("adam_atan2_backend", adam_atan2_backend.__file__)
 PY
 }
 
+apply_attention_runtime_fallback() {
+  local repo="$1"
+  "${BASE}/.venv/bin/python" - "${repo}" <<'PY'
+from pathlib import Path
+import sys
+
+repo = Path(sys.argv[1])
+path = repo / "models" / "layers.py"
+text = path.read_text(encoding="utf-8")
+marker = "Runtime compatibility fallback: use PyTorch SDPA"
+if marker in text:
+    print(f"attention fallback already present in {path}")
+    raise SystemExit(0)
+
+old = '''        if q.is_cuda:
+            if flash_attn_func is None:
+                colored_exception(RuntimeError, "flash_attn is not installed but CUDA attention was requested.")
+            y = flash_attn_func(q=q, k=k, v=v, causal=self.causal)
+            if isinstance(y, tuple):
+                y = y[0]
+        else:
+            y = F.scaled_dot_product_attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3), v.permute(0, 2, 1, 3), is_causal=self.causal).permute(0, 2, 1, 3)
+'''
+new = '''        if q.is_cuda and flash_attn_func is not None:
+            y = flash_attn_func(q=q, k=k, v=v, causal=self.causal)
+            if isinstance(y, tuple):
+                y = y[0]
+        else:
+            # Runtime compatibility fallback: use PyTorch SDPA when the installed
+            # flash-attn package is absent or ABI-incompatible with torch.
+            y = F.scaled_dot_product_attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3), v.permute(0, 2, 1, 3), is_causal=self.causal).permute(0, 2, 1, 3)
+'''
+if old not in text:
+    raise RuntimeError(f"attention block did not match in {path}")
+path.write_text(text.replace(old, new, 1), encoding="utf-8")
+print(f"attention fallback applied to {path}")
+PY
+}
+
 download_data() {
   cd "${BASE}/eqr-clean"
   "${BASE}/.venv/bin/python" -m pip install huggingface_hub >/dev/null
@@ -74,6 +113,7 @@ run_train() {
   fi
 
   check_official_optimizer
+  apply_attention_runtime_fallback "${repo}"
 
   local run_name="${RUN_NAME:-official-eqr-${kind}-$(date -u +%Y%m%dT%H%M%SZ)}"
   local log="${BASE}/logs/${run_name}.log"
@@ -107,6 +147,38 @@ run_train() {
   echo "log=${log}"
 }
 
+run_eval() {
+  local kind="$1"
+  local checkpoint="${2:-}"
+  if [[ -z "${checkpoint}" ]]; then
+    echo "usage: $0 eval-base|eval-futureseed <checkpoint-path>" >&2
+    exit 2
+  fi
+
+  local repo="${BASE}/eqr-clean"
+  if [[ "${kind}" == "futureseed" ]]; then
+    repo="${BASE}/eqr-futureseed"
+  elif [[ "${kind}" != "base" ]]; then
+    echo "unknown eval kind: ${kind}" >&2
+    exit 2
+  fi
+
+  apply_attention_runtime_fallback "${repo}"
+  cd "${repo}"
+  (
+    export WANDB_MODE=disabled
+    export OUTPUT_ROOT="${BASE}/outputs/${kind}"
+    export CUDA_VISIBLE_DEVICES=0
+    export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
+    . "${BASE}/.venv/bin/activate"
+    "${BASE}/.venv/bin/python" evaluate.py \
+      eval_yaml=config/eval/depth_breadth.yaml \
+      checkpoint="${checkpoint}" \
+      global_batch_size="${EVAL_GLOBAL_BATCH_SIZE:-128}" \
+      suffix="${EVAL_SUFFIX:-final_D16_B1_N0.5_S1.0}"
+  )
+}
+
 case "${ACTION}" in
   prepare)
     prepare_repos
@@ -124,6 +196,12 @@ case "${ACTION}" in
   train-futureseed)
     run_train futureseed
     ;;
+  eval-base)
+    run_eval base "${2:-}"
+    ;;
+  eval-futureseed)
+    run_eval futureseed "${2:-}"
+    ;;
   status)
     echo "BASE=${BASE}"
     find "${BASE}" -maxdepth 2 -type f \( -name "*.pid" -o -name "*.sha" -o -name "*.patch" \) -print 2>/dev/null | sort || true
@@ -131,7 +209,7 @@ case "${ACTION}" in
     ;;
   *)
     cat >&2 <<EOF
-usage: $0 prepare|check|download-data|train-base|train-futureseed|status
+usage: $0 prepare|check|download-data|train-base|train-futureseed|eval-base|eval-futureseed|status
 EOF
     exit 2
     ;;

@@ -260,6 +260,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
 
     api = import_official_eqr(repo)
+    steps = parse_steps(args.steps_text)
+    max_step = max(steps)
     ckpt, ckpt_path = api["_load_checkpoint"](str(checkpoint))
     eval_cfg = api["EvalConfig"](
         checkpoint=str(checkpoint),
@@ -271,7 +273,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     )
     config = api["_base_config"](eval_cfg, ckpt, ckpt_path, 0)
     overrides: Dict[str, Any] = {
-        "arch.halt_max_steps": max(args.steps),
+        "arch.halt_max_steps": max_step,
         "arch.noise_scale": args.noise_scale,
         "arch.H_init_std": args.h_init_std,
         "arch.L_init_std": args.l_init_std,
@@ -315,8 +317,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = train_state.model.to(device)
-    steps = parse_steps(args.steps_text)
-    max_step = max(steps)
     selected_step_set = set(steps)
 
     all_records: List[Dict[str, Any]] = []

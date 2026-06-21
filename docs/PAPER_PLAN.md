@@ -42,9 +42,14 @@ for scaling to harder spatial reasoning tasks.
   `0.0156` and early blank cells are much worse than late blank cells. With
   FutureSeed, h12 loop5 exact is `0.9492` and the early/late gap nearly
   disappears.
-- Strong negative boundary: official EqR Maze e256/e512 token accuracy is high
-  but path F1 is near zero. This means official token accuracy is not a usable
-  success metric for maze path recovery.
+- Strong boundary: official EqR Maze e256/e512 token accuracy is high but path
+  F1 is near zero under plain token CE. A generic path-token-weighted objective
+  opens path recovery to loop16 path F1 about `0.468`, but the model predicts a
+  broad high-recall mask rather than a clean path.
+- Official EqR + FutureSeed is neutral under the path-aware objective: loop16
+  path F1 is `0.4684` versus clean EqR `0.4682`. This suggests EqR's mixer
+  already supplies the noncausal interaction that FutureSeed is meant to cheaply
+  add to causal/recurrent backbones.
 - Loop evidence is mixed: Sudoku scale-up shows loop matters; Maze visualizations
   often show later loops copying the same operating point. A paper claim about
   loops must report precision, recall, predicted mass, and false positives, not
@@ -69,10 +74,10 @@ should move away from zero by step500-1000. If it still predicts no PATH, Maze i
 not ready for FutureSeed claims under this setup.
 
 Decision:
-- Continue to E2 if base loop16 path F1 reaches at least `0.10` without all-PATH
-  collapse.
-- Stop this branch if pred_path_frac stays below `0.01` after step1000 or jumps
-  above `0.50` with low precision.
+- Result: passed the viability gate. Clean EqR reaches loop16 path F1 `0.4682`
+  with recall `0.9998`, precision `0.3064`, and pred PATH frac `0.4325`.
+- Interpretation: objective alignment works, but the task remains a broad-mask
+  diagnostic rather than solved path finding.
 
 ### E2. Official EqR Maze FutureSeed Under Matched Objective
 
@@ -87,10 +92,10 @@ Prediction: a real FutureSeed win should show better path F1, better recall at
 similar predicted mass, or earlier opening at step500/1000.
 
 Decision:
-- Claim official EqR support only if FutureSeed improves path F1 by at least
-  `+0.03` or reaches the same path F1 with materially fewer steps.
-- If deltas are tiny, keep the paper claim restricted to causal/RWKV backbones
-  and use EqR as a boundary result.
+- Result: neutral. FutureSeed loop16 path F1 `0.4684`, clean EqR `0.4682`,
+  delta `+0.0001`; hard-case false positives remain about `270` per case.
+- Decision: do not claim FutureSeed beats official EqR. Use EqR as the strong
+  noncausal baseline and boundary result.
 
 ### E3. Causal Maze Backbone With FutureSeed On/Off
 
@@ -143,6 +148,8 @@ Not allowed:
 
 ## Immediate Next Experiment
 
-Run E1 first. It decides whether official EqR Maze can be used as a fair
-FutureSeed comparison at all. If E1 opens PATH, run E2. If E1 fails, pivot to E3
-and make causal/RWKV Maze the main non-Sudoku evidence.
+E1 and E2 are complete. Official EqR Maze is now a useful path-aware diagnostic,
+but not a FutureSeed-positive result. The next experiment should be E3: a
+matched causal/recurrent Maze backbone with FutureSeed on/off, because the paper
+claim is "FutureSeed cheaply supplies future context where the backbone lacks
+it", not "FutureSeed improves every noncausal mixer".

@@ -143,6 +143,19 @@
   acc `0.868430`, residual16 `7.920`, and path F1 `0.0`. FutureSeed still shows
   an early step500 optimization signal, but it does not solve official Maze or
   beat the path-aware baseline under this budget.
+- Adding a generic path-token weight (`path_token_id=5`, `path_token_weight=8`)
+  changes the official Maze failure mode from "predict almost no PATH" to "broad
+  high-recall mask". Clean EqR reaches loop16 path F1 `0.4682`, precision
+  `0.3064`, recall `0.9998`, and predicted PATH fraction `0.4325` against true
+  `0.1326`. This makes Maze usable as a path-aware diagnostic but not a solved
+  task.
+- Under that same path-aware objective, FutureSeed is neutral on official EqR:
+  loop16 path F1 is `0.4684`, only `+0.0001` over clean EqR, and the hard-case
+  false positives remain about `270` per case. This supports the mechanistic
+  boundary that EqR's mixer already supplies noncausal interaction, so FutureSeed
+  should be argued as a cheap future-context module for causal/recurrent
+  backbones, not as a small patch that always improves an already noncausal
+  mixer.
 - The next Maze work should either align training/evaluation with path recovery
   using a generic objective, or test FutureSeed on a causal/recurrent Maze
   backbone where bidirectional information is actually the bottleneck. Do not

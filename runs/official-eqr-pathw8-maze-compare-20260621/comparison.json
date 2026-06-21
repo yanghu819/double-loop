@@ -1,0 +1,298 @@
+{
+  "timestamp_utc": "2026-06-21T12:03:31.366173+00:00",
+  "source_sha": "fe831c9",
+  "official_eqr_sha": "aba94e9cde0f273ce644db5261cd6915ba6561f0",
+  "objective": {
+    "path_token_weight": 8.0,
+    "path_token_id": 5
+  },
+  "dataset": "maze-30x30-unique-1k",
+  "eval_cases": 256,
+  "runs": {
+    "base": {
+      "run_name": "official-eqr-pathw8-base-e256-final-20260621T1148Z",
+      "condition": "base-pathw8-final",
+      "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/base/outputs/zui8n95t/2026-6-21/11-41-40/checkpoints/step_1792_zui8n95t.pth",
+      "checkpoint_step": 1792,
+      "aggregate_by_step": {
+        "1": {
+          "exact": 0.0,
+          "path_f1": 0.4664035888970367,
+          "path_fn": 0.1640625,
+          "path_fp": 271.5078125,
+          "path_precision": 0.30498174029966213,
+          "path_recall": 0.998614478228953,
+          "path_tp": 119.13671875,
+          "pred_path_frac": 0.4340494791666667,
+          "token_acc": 0.6965364583333333,
+          "true_path_frac": 0.1325564236111111
+        },
+        "4": {
+          "exact": 0.0,
+          "path_f1": 0.46841853442133696,
+          "path_fn": 0.00390625,
+          "path_fp": 269.83203125,
+          "path_precision": 0.30657608291252914,
+          "path_recall": 0.999969482421875,
+          "path_tp": 119.296875,
+          "pred_path_frac": 0.43236545138888893,
+          "token_acc": 0.7000911458333333,
+          "true_path_frac": 0.1325564236111111
+        },
+        "8": {
+          "exact": 0.0,
+          "path_f1": 0.4683751277899101,
+          "path_fn": 0.00390625,
+          "path_fp": 269.87890625,
+          "path_precision": 0.30653953873968204,
+          "path_recall": 0.9999651227678572,
+          "path_tp": 119.296875,
+          "pred_path_frac": 0.4324175347222223,
+          "token_acc": 0.7000347222222223,
+          "true_path_frac": 0.1325564236111111
+        },
+        "16": {
+          "exact": 0.0,
+          "path_f1": 0.46824101690710884,
+          "path_fn": 0.02734375,
+          "path_fp": 269.9453125,
+          "path_precision": 0.30644162613644316,
+          "path_recall": 0.9997674492029309,
+          "path_tp": 119.2734375,
+          "pred_path_frac": 0.4324652777777779,
+          "token_acc": 0.6999348958333333,
+          "true_path_frac": 0.1325564236111111
+        }
+      },
+      "loop_gain_f1_16_minus_1": 0.0018374280100721396,
+      "loop_gain_pred_frac_16_minus_1": -0.0015842013888888173,
+      "train_eval": [
+        {
+          "step": 250,
+          "accuracy": 0.44873779296875,
+          "exact_accuracy": 0.0,
+          "lm_loss": 2.175978759765625,
+          "path_ce": 0.020743072509765623,
+          "non_path_ce": 0.013371953964233399,
+          "residual_of_16_steps": 246.55
+        },
+        {
+          "step": 500,
+          "accuracy": 0.43918557739257813,
+          "exact_accuracy": 0.0,
+          "lm_loss": 1.738045654296875,
+          "path_ce": 0.016159868240356444,
+          "non_path_ce": 0.01120155429840088,
+          "residual_of_16_steps": 288.53
+        },
+        {
+          "step": 750,
+          "accuracy": 0.4764400024414063,
+          "exact_accuracy": 0.0,
+          "lm_loss": 1.0200416259765626,
+          "path_ce": 0.007164311408996582,
+          "non_path_ce": 0.0093590669631958,
+          "residual_of_16_steps": 17.155
+        },
+        {
+          "step": 1000,
+          "accuracy": 0.6223411254882812,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.6604324951171875,
+          "path_ce": 0.0039248788356781,
+          "non_path_ce": 0.006915541648864746,
+          "residual_of_16_steps": 149.566
+        },
+        {
+          "step": 1250,
+          "accuracy": 0.6855700073242188,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.540049072265625,
+          "path_ce": 0.0029981324672698974,
+          "non_path_ce": 0.00590779972076416,
+          "residual_of_16_steps": 184.016
+        },
+        {
+          "step": 1500,
+          "accuracy": 0.698405517578125,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.456199462890625,
+          "path_ce": 0.002503229856491089,
+          "non_path_ce": 0.005026077747344971,
+          "residual_of_16_steps": 14.065
+        },
+        {
+          "step": 1750,
+          "accuracy": 0.6993289794921875,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.43642120361328124,
+          "path_ce": 0.0023360533714294435,
+          "non_path_ce": 0.004878867626190186,
+          "residual_of_16_steps": 11.275
+        }
+      ]
+    },
+    "futureseed": {
+      "run_name": "official-eqr-pathw8-fs-e256-final-20260621T1155Z",
+      "condition": "futureseed-pathw8-final",
+      "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed/outputs/kr9vj9vj/2026-6-21/11-52-24/checkpoints/step_1792_kr9vj9vj.pth",
+      "checkpoint_step": 1792,
+      "aggregate_by_step": {
+        "1": {
+          "exact": 0.0,
+          "path_f1": 0.46573242547238214,
+          "path_fn": 0.109375,
+          "path_fp": 272.43359375,
+          "path_precision": 0.304365490864958,
+          "path_recall": 0.9991036057327369,
+          "path_tp": 119.19140625,
+          "pred_path_frac": 0.43513888888888885,
+          "token_acc": 0.6957552083333334,
+          "true_path_frac": 0.13255642361111114
+        },
+        "4": {
+          "exact": 0.0,
+          "path_f1": 0.4683736053834342,
+          "path_fn": 0.015625,
+          "path_fp": 269.83984375,
+          "path_precision": 0.3065458551361717,
+          "path_recall": 0.9998664380551601,
+          "path_tp": 119.28515625,
+          "pred_path_frac": 0.4323611111111112,
+          "token_acc": 0.6999175347222222,
+          "true_path_frac": 0.13255642361111114
+        },
+        "8": {
+          "exact": 0.0,
+          "path_f1": 0.4683004434135487,
+          "path_fn": 0.0234375,
+          "path_fp": 269.8984375,
+          "path_precision": 0.3064899831818402,
+          "path_recall": 0.9998148710730029,
+          "path_tp": 119.27734375,
+          "pred_path_frac": 0.4324175347222223,
+          "token_acc": 0.6998263888888889,
+          "true_path_frac": 0.13255642361111114
+        },
+        "16": {
+          "exact": 0.0,
+          "path_f1": 0.4683540664508644,
+          "path_fn": 0.015625,
+          "path_fp": 269.8671875,
+          "path_precision": 0.30653061355912015,
+          "path_recall": 0.9998810044459275,
+          "path_tp": 119.28515625,
+          "pred_path_frac": 0.4323914930555556,
+          "token_acc": 0.6998654513888889,
+          "true_path_frac": 0.13255642361111114
+        }
+      },
+      "loop_gain_f1_16_minus_1": 0.002621640978482276,
+      "loop_gain_pred_frac_16_minus_1": -0.002747395833333277,
+      "train_eval": [
+        {
+          "step": 250,
+          "accuracy": 0.414836669921875,
+          "exact_accuracy": 0.0,
+          "lm_loss": 2.1743955078125,
+          "path_ce": 0.02058062744140625,
+          "non_path_ce": 0.013558005332946777,
+          "residual_of_16_steps": 266.714
+        },
+        {
+          "step": 500,
+          "accuracy": 0.5789344482421875,
+          "exact_accuracy": 0.0,
+          "lm_loss": 1.7098548583984374,
+          "path_ce": 0.016467472076416016,
+          "non_path_ce": 0.0103236722946167,
+          "residual_of_16_steps": 253.555
+        },
+        {
+          "step": 750,
+          "accuracy": 0.472989990234375,
+          "exact_accuracy": 0.0,
+          "lm_loss": 1.0066719970703124,
+          "path_ce": 0.006966736316680908,
+          "non_path_ce": 0.009360876083374024,
+          "residual_of_16_steps": 16.815
+        },
+        {
+          "step": 1000,
+          "accuracy": 0.60229443359375,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.666590087890625,
+          "path_ce": 0.0038811025619506835,
+          "non_path_ce": 0.007076266288757324,
+          "residual_of_16_steps": 158.162
+        },
+        {
+          "step": 1250,
+          "accuracy": 0.6841433715820312,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.5374644165039062,
+          "path_ce": 0.0030656447410583494,
+          "non_path_ce": 0.005781611442565918,
+          "residual_of_16_steps": 162.529
+        },
+        {
+          "step": 1500,
+          "accuracy": 0.69875439453125,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.45279702758789064,
+          "path_ce": 0.0025217418670654295,
+          "non_path_ce": 0.004943954467773438,
+          "residual_of_16_steps": 9.817
+        },
+        {
+          "step": 1750,
+          "accuracy": 0.69930224609375,
+          "exact_accuracy": 0.0,
+          "lm_loss": 0.4359686584472656,
+          "path_ce": 0.002288219690322876,
+          "non_path_ce": 0.004928570747375488,
+          "residual_of_16_steps": 10.798
+        }
+      ]
+    }
+  },
+  "delta_futureseed_minus_base": {
+    "1": {
+      "path_f1": -0.0006711634246545639,
+      "path_precision": -0.0006162494347041192,
+      "path_recall": 0.0004891275037839371,
+      "pred_path_frac": 0.0010894097222221566,
+      "path_fp": 0.92578125,
+      "path_fn": -0.0546875,
+      "token_acc": -0.0007812499999999556
+    },
+    "4": {
+      "path_f1": -4.492903790276337e-05,
+      "path_precision": -3.022777635741658e-05,
+      "path_recall": -0.00010304436671493278,
+      "pred_path_frac": -4.340277777736823e-06,
+      "path_fp": 0.0078125,
+      "path_fn": 0.01171875,
+      "token_acc": -0.00017361111111113825
+    },
+    "8": {
+      "path_f1": -7.468437636137804e-05,
+      "path_precision": -4.955555784186272e-05,
+      "path_recall": -0.00015025169485427536,
+      "pred_path_frac": 0.0,
+      "path_fp": 0.01953125,
+      "path_fn": 0.01953125,
+      "token_acc": -0.0002083333333333659
+    },
+    "16": {
+      "path_f1": 0.0001130495437555723,
+      "path_precision": 8.898742267698934e-05,
+      "path_recall": 0.00011355524299661024,
+      "pred_path_frac": -7.378472222230315e-05,
+      "path_fp": -0.078125,
+      "path_fn": -0.01171875,
+      "token_acc": -6.94444444444553e-05
+    }
+  },
+  "decision": "FutureSeed is neutral on official EqR under path-aware objective; use official EqR as boundary/baseline, and test cheap bidirectionality on causal/recurrent backbones."
+}

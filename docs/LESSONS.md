@@ -710,3 +710,15 @@
   with a generic curriculum/data schedule or change FutureSeed/loop state
   dynamics so later loops preserve true-path mass while pruning false-positive
   mass.
+- The previous Maze31 `EqR baseline` should be described as a patched
+  no-Hydra online-proxy baseline, not a faithful official EqR reproduction.
+  Official EqR comparison requires the upstream `locuslab/eqr` pipeline at
+  `aba94e9cde0f273ce644db5261cd6915ba6561f0`, official `eqr_maze_unique`
+  data/config, `scripts/train.sh eqr_maze_unique`, FlashAttention, and a
+  working `adam_atan2_backend`. The `official-eqr-compare-gate-20260621`
+  preparation created isolated `eqr-clean` and `eqr-futureseed` clones, with
+  the FutureSeed patch restricted to 2 files and 45 insertions, but did not run
+  training: `adam_atan2_backend` was missing after install attempts, and
+  `huggingface_hub` timed out on `locuslab/EqR-data`. Do not claim official EqR
+  reproduction until those two gates pass; do not silently replace AdamATan2
+  with AdamW and call it official.

@@ -79,6 +79,13 @@ class FullMetrics:
     solved_valid_clue: float
     clue_ok: float
     blank_acc: float
+    blank_acc_early: float
+    blank_acc_mid: float
+    blank_acc_late: float
+    blank_acc_early_late_gap: float
+    blank_frac_early: float
+    blank_frac_mid: float
+    blank_frac_late: float
     avg_filled: float
 
 
@@ -1167,13 +1174,35 @@ def metrics_from_predictions(pred: torch.Tensor, labels: torch.Tensor, clue_mask
     clue_ok = ((pred == labels) | ~clue_mask).all(dim=1)
     valid = torch.tensor([valid_board(pred[i]) for i in range(pred.shape[0])], device=pred.device)
     blanks = ~clue_mask
-    blank_acc = ((pred == labels) & blanks).sum().float() / blanks.sum().clamp_min(1)
+    blank_correct = (pred == labels) & blanks
+    blank_acc = blank_correct.sum().float() / blanks.sum().clamp_min(1)
+    positions = torch.arange(CELLS, device=pred.device)
+    first_cut = CELLS // 3
+    second_cut = (2 * CELLS) // 3
+
+    def bucket_stats(mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        bucket = blanks & mask.unsqueeze(0)
+        denom = bucket.sum().clamp_min(1)
+        acc = (blank_correct & bucket).sum().float() / denom
+        frac = bucket.sum().float() / blanks.sum().clamp_min(1)
+        return acc, frac
+
+    early_acc, early_frac = bucket_stats(positions < first_cut)
+    mid_acc, mid_frac = bucket_stats((positions >= first_cut) & (positions < second_cut))
+    late_acc, late_frac = bucket_stats(positions >= second_cut)
     return FullMetrics(
         label_exact=exact.float().mean().item(),
         valid_sudoku=valid.float().mean().item(),
         solved_valid_clue=(valid & clue_ok).float().mean().item(),
         clue_ok=clue_ok.float().mean().item(),
         blank_acc=blank_acc.item(),
+        blank_acc_early=early_acc.item(),
+        blank_acc_mid=mid_acc.item(),
+        blank_acc_late=late_acc.item(),
+        blank_acc_early_late_gap=(early_acc - late_acc).item(),
+        blank_frac_early=early_frac.item(),
+        blank_frac_mid=mid_frac.item(),
+        blank_frac_late=late_frac.item(),
         avg_filled=pred.ne(BLANK).float().mean().item(),
     )
 
@@ -1245,7 +1274,10 @@ def fs_metrics_from_trace(trace: Dict[str, torch.Tensor]) -> Dict[str, float]:
 def metric_line(m: Dict[str, float]) -> str:
     return (
         f"exact={m['label_exact']:.4f}, valid={m['valid_sudoku']:.4f}, "
-        f"solved={m['solved_valid_clue']:.4f}, blank_acc={m['blank_acc']:.4f}"
+        f"solved={m['solved_valid_clue']:.4f}, blank_acc={m['blank_acc']:.4f}, "
+        f"early={m.get('blank_acc_early', 0.0):.4f}, "
+        f"late={m.get('blank_acc_late', 0.0):.4f}, "
+        f"early_late_gap={m.get('blank_acc_early_late_gap', 0.0):+.4f}"
     )
 
 

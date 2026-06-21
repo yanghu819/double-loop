@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+BASE="${OFFICIAL_EQR_BASE:-/huyang2/double-loop/official_eqr_compare}"
+EQR_URL="${EQR_URL:-https://github.com/locuslab/eqr.git}"
+EQR_SHA="${EQR_SHA:-aba94e9cde0f273ce644db5261cd6915ba6561f0}"
+PYTHON_BIN="${PYTHON_BIN:-python}"
+ACTION="${1:-status}"
+
+export XDG_CACHE_HOME="${BASE}/.cache"
+export PIP_CACHE_DIR="${BASE}/.cache/pip"
+export HF_HOME="${BASE}/.cache/huggingface"
+export WANDB_MODE="${WANDB_MODE:-offline}"
+export OUTPUT_ROOT="${BASE}/outputs"
+export TORCH_EXTENSIONS_DIR="${BASE}/.cache/torch_extensions"
+
+mkdir -p "${BASE}"/{logs,artifacts,outputs,.cache/torch_extensions}
+
+clone_one() {
+  local dst="$1"
+  if [[ ! -d "${dst}/.git" ]]; then
+    git clone "${EQR_URL}" "${dst}"
+  fi
+  git -C "${dst}" fetch --quiet origin "${EQR_SHA}" || true
+  git -C "${dst}" checkout --detach "${EQR_SHA}"
+  git -C "${dst}" reset --hard "${EQR_SHA}"
+  git -C "${dst}" clean -fdx
+}
+
+prepare_repos() {
+  clone_one "${BASE}/eqr-clean"
+  clone_one "${BASE}/eqr-futureseed"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_futureseed_patch.py" "${BASE}/eqr-futureseed"
+  git -C "${BASE}/eqr-clean" rev-parse HEAD > "${BASE}/artifacts/eqr-clean.sha"
+  git -C "${BASE}/eqr-futureseed" rev-parse HEAD > "${BASE}/artifacts/eqr-futureseed-base.sha"
+  git -C "${BASE}/eqr-futureseed" diff > "${BASE}/artifacts/futureseed.patch"
+}
+
+prepare_env() {
+  if [[ ! -x "${BASE}/.venv/bin/python" ]]; then
+    python -m venv --system-site-packages "${BASE}/.venv"
+  fi
+  # Keep this minimal. FlashAttention is usually supplied by the AIStation image.
+  "${BASE}/.venv/bin/python" -m pip install --upgrade pip setuptools wheel
+  "${BASE}/.venv/bin/python" -m pip install hydra-core omegaconf coolname argdantic colorama huggingface_hub adam-atan2
+}
+
+check_official_optimizer() {
+  "${BASE}/.venv/bin/python" - <<'PY'
+from adam_atan2 import AdamATan2
+import adam_atan2_backend
+print("AdamATan2", AdamATan2)
+print("adam_atan2_backend", adam_atan2_backend.__file__)
+PY
+}
+
+apply_attention_runtime_fallback() {
+  local repo="$1"
+  "${BASE}/.venv/bin/python" - "${repo}" <<'PY'
+from pathlib import Path
+import sys
+
+repo = Path(sys.argv[1])
+path = repo / "models" / "layers.py"
+text = path.read_text(encoding="utf-8")
+marker = "Runtime compatibility fallback: use PyTorch SDPA"
+if marker in text:
+    print(f"attention fallback already present in {path}")
+    raise SystemExit(0)
+
+old = '''        if q.is_cuda:
+            if flash_attn_func is None:
+                colored_exception(RuntimeError, "flash_attn is not installed but CUDA attention was requested.")
+            y = flash_attn_func(q=q, k=k, v=v, causal=self.causal)
+            if isinstance(y, tuple):
+                y = y[0]
+        else:
+            y = F.scaled_dot_product_attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3), v.permute(0, 2, 1, 3), is_causal=self.causal).permute(0, 2, 1, 3)
+'''
+new = '''        if q.is_cuda and flash_attn_func is not None:
+            y = flash_attn_func(q=q, k=k, v=v, causal=self.causal)
+            if isinstance(y, tuple):
+                y = y[0]
+        else:
+            # Runtime compatibility fallback: use PyTorch SDPA when the installed
+            # flash-attn package is absent or ABI-incompatible with torch.
+            y = F.scaled_dot_product_attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3), v.permute(0, 2, 1, 3), is_causal=self.causal).permute(0, 2, 1, 3)
+'''
+if old not in text:
+    raise RuntimeError(f"attention block did not match in {path}")
+path.write_text(text.replace(old, new, 1), encoding="utf-8")
+print(f"attention fallback applied to {path}")
+PY
+}
+
+download_data() {
+  cd "${BASE}/eqr-clean"
+  "${BASE}/.venv/bin/python" -m pip install huggingface_hub >/dev/null
+  bash scripts/download_artifacts.sh
+}
+
+run_train() {
+  local kind="$1"
+  local repo="${BASE}/eqr-clean"
+  local extra=()
+  if [[ "${kind}" == "futureseed" ]]; then
+    repo="${BASE}/eqr-futureseed"
+    extra+=(arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
+  elif [[ "${kind}" != "base" ]]; then
+    echo "unknown run kind: ${kind}" >&2
+    exit 2
+  fi
+
+  check_official_optimizer
+  apply_attention_runtime_fallback "${repo}"
+
+  local run_name="${RUN_NAME:-official-eqr-${kind}-$(date -u +%Y%m%dT%H%M%SZ)}"
+  local log="${BASE}/logs/${run_name}.log"
+  local pidfile="${BASE}/artifacts/${run_name}.pid"
+  cd "${repo}"
+  mkdir -p data
+  if [[ ! -e data/maze-30x30-unique-1k ]]; then
+    ln -s "${BASE}/eqr-clean/data/maze-30x30-unique-1k" data/maze-30x30-unique-1k
+  fi
+  (
+    export WANDB_MODE=disabled
+    export OUTPUT_ROOT="${BASE}/outputs/${kind}"
+    export CUDA_VISIBLE_DEVICES=0
+    export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
+    . "${BASE}/.venv/bin/activate"
+    "${BASE}/.venv/bin/python" pretrain.py --config-name train/eqr_maze_unique \
+      epochs="${EPOCHS:-64}" \
+      train_epochs_per_iter="${TRAIN_EPOCHS_PER_ITER:-${EPOCHS:-64}}" \
+      global_batch_size="${GLOBAL_BATCH_SIZE:-128}" \
+      eval_interval_steps="${EVAL_INTERVAL_STEPS:-250}" \
+      checkpoint_interval_steps="${CHECKPOINT_INTERVAL_STEPS:-500}" \
+      heavy_metrics_log_interval="${HEAVY_METRICS_LOG_INTERVAL:-100}" \
+      steps_hist_log_interval_steps="${STEPS_HIST_LOG_INTERVAL_STEPS:-100}" \
+      +wandb_mode=disabled \
+      +run_name="${run_name}" \
+      "${extra[@]}"
+  ) >"${log}" 2>&1 &
+  echo $! > "${pidfile}"
+  echo "run_name=${run_name}"
+  echo "pid=$(cat "${pidfile}")"
+  echo "log=${log}"
+}
+
+run_eval() {
+  local kind="$1"
+  local checkpoint="${2:-}"
+  if [[ -z "${checkpoint}" ]]; then
+    echo "usage: $0 eval-base|eval-futureseed <checkpoint-path>" >&2
+    exit 2
+  fi
+
+  local repo="${BASE}/eqr-clean"
+  if [[ "${kind}" == "futureseed" ]]; then
+    repo="${BASE}/eqr-futureseed"
+  elif [[ "${kind}" != "base" ]]; then
+    echo "unknown eval kind: ${kind}" >&2
+    exit 2
+  fi
+
+  apply_attention_runtime_fallback "${repo}"
+  cd "${repo}"
+  (
+    export WANDB_MODE=disabled
+    export OUTPUT_ROOT="${BASE}/outputs/${kind}"
+    export CUDA_VISIBLE_DEVICES=0
+    export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
+    . "${BASE}/.venv/bin/activate"
+    "${BASE}/.venv/bin/python" evaluate.py \
+      eval_yaml=config/eval/depth_breadth.yaml \
+      checkpoint="${checkpoint}" \
+      global_batch_size="${EVAL_GLOBAL_BATCH_SIZE:-128}" \
+      suffix="${EVAL_SUFFIX:-final_D16_B1_N0.5_S1.0}"
+  )
+}
+
+case "${ACTION}" in
+  prepare)
+    prepare_repos
+    prepare_env
+    ;;
+  check)
+    check_official_optimizer
+    ;;
+  download-data)
+    download_data
+    ;;
+  train-base)
+    run_train base
+    ;;
+  train-futureseed)
+    run_train futureseed
+    ;;
+  eval-base)
+    run_eval base "${2:-}"
+    ;;
+  eval-futureseed)
+    run_eval futureseed "${2:-}"
+    ;;
+  status)
+    echo "BASE=${BASE}"
+    find "${BASE}" -maxdepth 2 -type f \( -name "*.pid" -o -name "*.sha" -o -name "*.patch" \) -print 2>/dev/null | sort || true
+    pgrep -af '[p]retrain.py|[t]orchrun|[o]fficial-eqr' || true
+    ;;
+  *)
+    cat >&2 <<EOF
+usage: $0 prepare|check|download-data|train-base|train-futureseed|eval-base|eval-futureseed|status
+EOF
+    exit 2
+    ;;
+esac

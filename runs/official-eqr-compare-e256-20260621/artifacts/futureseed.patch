@@ -1,0 +1,89 @@
+diff --git a/config/arch/eqr.yaml b/config/arch/eqr.yaml
+index 52c52ef..394f9b9 100644
+--- a/config/arch/eqr.yaml
++++ b/config/arch/eqr.yaml
+@@ -25,5 +25,7 @@ mlp_t: false
+ 
+ lambda_: 0.95
+ noise_scale: 0.01
++future_seed_scale: 0.0
++future_seed_gate_bias: -2.0
+ H_init_std: 1.0
+ L_init_std: 1.0
+diff --git a/models/eqr.py b/models/eqr.py
+index 8084f2b..a149299 100644
+--- a/models/eqr.py
++++ b/models/eqr.py
+@@ -55,6 +55,8 @@ class EqRConfig(BaseModel):
+     puzzle_emb_ndim: int = 0
+     lambda_: float = 0.95
+     noise_scale: float = 0.01
++    future_seed_scale: float = 0.0
++    future_seed_gate_bias: float = -2.0
+     H_init_std: float = 1.0
+     L_init_std: float = 1.0
+ 
+@@ -89,6 +91,27 @@ class ReasoningBlock(nn.Module):
+         return rms_norm(hidden_states + self.mlp(hidden_states), variance_epsilon=self.norm_eps)
+ 
+ 
++class FutureSeedMixer(nn.Module):
++    def __init__(self, hidden_size: int, rms_norm_eps: float, scale: float, gate_bias: float) -> None:
++        super().__init__()
++        self.future_seed_scale = float(scale)
++        self.norm_eps = float(rms_norm_eps)
++        self.gate_logit = nn.Parameter(torch.tensor(float(gate_bias)))
++        self.proj = CastedLinear(hidden_size, hidden_size, bias=False)
++        with torch.no_grad():
++            self.proj.weight.zero_()
++            idx = torch.arange(hidden_size)
++            self.proj.weight[idx, idx] = 1.0
++
++    def forward(self, target: torch.Tensor, seed: torch.Tensor) -> torch.Tensor:
++        scale = float(self.future_seed_scale)
++        if scale == 0.0:
++            return target
++        seeded = self.proj(rms_norm(seed, variance_epsilon=self.norm_eps)).to(target.dtype)
++        gate = torch.sigmoid(self.gate_logit.to(torch.float32)).to(target.dtype) * scale
++        return target + gate * seeded
++
++
+ class NoisyReasoningModule(nn.Module):
+     def __init__(self, config: EqRConfig, layers: List[ReasoningBlock]) -> None:
+         super().__init__()
+@@ -129,6 +152,22 @@ class InnerNetwork(nn.Module):
+ 
+         self._init_pos()
+         self.L_level = NoisyReasoningModule(config, [ReasoningBlock(config) for _ in range(config.L_layers)])
++        if float(config.future_seed_scale) != 0.0:
++            self.future_seed_l_from_h = FutureSeedMixer(
++                config.hidden_size,
++                config.rms_norm_eps,
++                config.future_seed_scale,
++                config.future_seed_gate_bias,
++            )
++            self.future_seed_h_from_l = FutureSeedMixer(
++                config.hidden_size,
++                config.rms_norm_eps,
++                config.future_seed_scale,
++                config.future_seed_gate_bias,
++            )
++        else:
++            self.future_seed_l_from_h = None
++            self.future_seed_h_from_l = None
+         self.H_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.H_init_std), persistent=False)
+         self.L_init = nn.Buffer(trunc_normal_init_(torch.empty(config.hidden_size, dtype=self.forward_dtype), std=config.L_init_std), persistent=False)
+         with torch.no_grad():
+@@ -193,8 +232,12 @@ class InnerNetwork(nn.Module):
+         return carry
+ 
+     def latent_recursion(self, z_H: torch.Tensor, z_L: torch.Tensor, x: torch.Tensor, seq: Dict[str, CosSin]) -> Tuple[torch.Tensor, torch.Tensor]:
++        if self.future_seed_l_from_h is not None:
++            z_L = self.future_seed_l_from_h(z_L, z_H)
+         for _ in range(self.config.L_cycles):
+             z_L = self.L_level(z_L, z_H + x, **seq)
++        if self.future_seed_h_from_l is not None:
++            z_H = self.future_seed_h_from_l(z_H, z_L)
+         z_H = self.L_level(z_H, z_L, **seq)
+         return z_H, z_L
+ 

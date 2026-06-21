@@ -1,0 +1,137 @@
+{
+  "budget": {
+    "epochs": 256,
+    "eval_global_batch_size": 128,
+    "global_batch_size": 128,
+    "halt_max_steps": 16,
+    "train_steps": 1792
+  },
+  "decision": "FutureSeed has a real early optimization signal in official EqR at step448/500, but under e256 matched training it does not beat clean EqR on final exact or residual; treat current patch as opening/init aid, not a proven stronger long-budget backbone.",
+  "deltas": {
+    "final_accuracy_futureseed_minus_base": -2.8869628906247335e-05,
+    "final_exact_futureseed_minus_base": 0.0,
+    "final_lm_loss_futureseed_minus_base": -0.00047842407226561523,
+    "final_residual16_futureseed_minus_base": 5.282000000000039,
+    "final_total_loss_futureseed_minus_base": -0.0006649475097656454
+  },
+  "experiment": "official-eqr-compare-e256-20260621",
+  "final_eval": {
+    "base": {
+      "accuracy": 0.86825,
+      "checkpoint_path": "/huyang2/double-loop/official_eqr_compare/outputs/base/outputs/tumxl7n5/2026-6-21/7-22-31/checkpoints",
+      "eval_time_sec": 23.607889652252197,
+      "exact_accuracy": 0.0,
+      "lm_loss": 0.344040771484375,
+      "residual_of_16_steps": 404.176,
+      "residual_of_1_steps": 545.976,
+      "run_name": "official-eqr-base-sdpa-e256-20260621T072623Z-aba94e9",
+      "total_loss": 0.39881076049804687
+    },
+    "futureseed": {
+      "accuracy": 0.8682211303710937,
+      "checkpoint_path": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed/outputs/0bcrekyk/2026-6-21/7-28-27/checkpoints",
+      "eval_time_sec": 17.89416790008545,
+      "exact_accuracy": 0.0,
+      "lm_loss": 0.3435623474121094,
+      "residual_of_16_steps": 409.458,
+      "residual_of_1_steps": 549.324,
+      "run_name": "official-eqr-futureseed-sdpa-e256-20260621T072817Z-aba94e9",
+      "total_loss": 0.3981458129882812
+    }
+  },
+  "gpu": "GPU1 A100 80GB CUDA_VISIBLE_DEVICES=0",
+  "hypothesis": "FutureSeed should keep or enlarge its official EqR short-budget advantage under longer matched training if it is a final-capability module rather than only an early optimization aid.",
+  "launcher_git_sha": "aca164e94f08b6b3029e08fbb3802b9d89639379",
+  "official_eqr_sha": "aba94e9cde0f273ce644db5261cd6915ba6561f0",
+  "remote_base": "/huyang2/double-loop/official_eqr_compare",
+  "timestamp_utc": "2026-06-21T07:42:12.078192+00:00",
+  "train_eval": {
+    "base": [
+      {
+        "accuracy": 0.6227378540039062,
+        "exact_accuracy": 0.0,
+        "lm_loss": 1.3286136474609376,
+        "residual_of_16_steps": 322.635,
+        "residual_of_1_steps": 473.447,
+        "step": 500,
+        "steps": 16.0,
+        "total_loss": 1.3918399658203124,
+        "zH_zL_cos_sim": 0.9593724975585938
+      },
+      {
+        "accuracy": 0.859537841796875,
+        "exact_accuracy": 0.0,
+        "lm_loss": 0.635174560546875,
+        "residual_of_16_steps": 75.535,
+        "residual_of_1_steps": 442.298,
+        "step": 1000,
+        "steps": 16.0,
+        "total_loss": 0.6968817138671874,
+        "zH_zL_cos_sim": 0.9492620239257813
+      },
+      {
+        "accuracy": 0.8682233276367187,
+        "exact_accuracy": 0.0,
+        "lm_loss": 0.36386727905273436,
+        "residual_of_16_steps": 13.219,
+        "residual_of_1_steps": 432.08,
+        "step": 1500,
+        "steps": 16.0,
+        "total_loss": 0.42140765380859374,
+        "zH_zL_cos_sim": 0.91609375
+      }
+    ],
+    "futureseed": [
+      {
+        "accuracy": 0.6498789672851563,
+        "exact_accuracy": 0.0,
+        "lm_loss": 1.3163485107421875,
+        "residual_of_16_steps": 313.089,
+        "residual_of_1_steps": 529.743,
+        "step": 500,
+        "steps": 16.0,
+        "total_loss": 1.379581298828125,
+        "zH_zL_cos_sim": 0.963671630859375
+      },
+      {
+        "accuracy": 0.8443389282226562,
+        "exact_accuracy": 0.0,
+        "lm_loss": 0.6265174560546874,
+        "residual_of_16_steps": 125.187,
+        "residual_of_1_steps": 447.978,
+        "step": 1000,
+        "steps": 16.0,
+        "total_loss": 0.688255859375,
+        "zH_zL_cos_sim": 0.9509454345703126
+      },
+      {
+        "accuracy": 0.8679489135742188,
+        "exact_accuracy": 0.0,
+        "lm_loss": 0.3661728210449219,
+        "residual_of_16_steps": 17.432,
+        "residual_of_1_steps": 452.472,
+        "step": 1500,
+        "steps": 16.0,
+        "total_loss": 0.42340817260742186,
+        "zH_zL_cos_sim": 0.92482763671875
+      }
+    ]
+  },
+  "train_eval_deltas": {
+    "1000": {
+      "accuracy_fs_minus_base": -0.015198913574218764,
+      "residual16_fs_minus_base": 49.652,
+      "total_loss_fs_minus_base": -0.008625854492187446
+    },
+    "1500": {
+      "accuracy_fs_minus_base": -0.00027441406249995026,
+      "residual16_fs_minus_base": 4.212999999999999,
+      "total_loss_fs_minus_base": 0.0020005187988281214
+    },
+    "500": {
+      "accuracy_fs_minus_base": 0.027141113281250018,
+      "residual16_fs_minus_base": -9.545999999999992,
+      "total_loss_fs_minus_base": -0.012258666992187361
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "base_checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/base/outputs/tumxl7n5/2026-6-21/7-22-31/checkpoints/step_1792_tumxl7n5.pth",
+  "constraints": [
+    "GPU1 only",
+    "CUDA_VISIBLE_DEVICES=0",
+    "no selector",
+    "no repair",
+    "no search",
+    "no task-specific rule"
+  ],
+  "eval_suffix": "official_final256_D16_B1_N0.5_S1.0",
+  "futureseed_checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed/outputs/0bcrekyk/2026-6-21/7-28-27/checkpoints/step_1792_0bcrekyk.pth",
+  "run_name_base": "official-eqr-base-sdpa-e256-20260621T072623Z-aba94e9",
+  "run_name_futureseed": "official-eqr-futureseed-sdpa-e256-20260621T072817Z-aba94e9",
+  "train_base_command": "RUN_NAME=official-eqr-base-sdpa-e256-20260621T072623Z-aba94e9 EPOCHS=256 TRAIN_EPOCHS_PER_ITER=256 GLOBAL_BATCH_SIZE=128 EVAL_INTERVAL_STEPS=500 CHECKPOINT_INTERVAL_STEPS=1000 HEAVY_METRICS_LOG_INTERVAL=250 STEPS_HIST_LOG_INTERVAL_STEPS=250 bash scripts/official_eqr_compare/run_official_eqr_compare.sh train-base",
+  "train_futureseed_command": "RUN_NAME=official-eqr-futureseed-sdpa-e256-20260621T072817Z-aba94e9 EPOCHS=256 TRAIN_EPOCHS_PER_ITER=256 GLOBAL_BATCH_SIZE=128 EVAL_INTERVAL_STEPS=500 CHECKPOINT_INTERVAL_STEPS=1000 HEAVY_METRICS_LOG_INTERVAL=250 STEPS_HIST_LOG_INTERVAL_STEPS=250 FUTURE_SEED_SCALE=1 bash scripts/official_eqr_compare/run_official_eqr_compare.sh train-futureseed"
+}

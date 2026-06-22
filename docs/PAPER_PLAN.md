@@ -209,17 +209,21 @@ Not allowed:
 
 ## Immediate Next Experiment
 
-E1, E2, and the first E3 official-Maze variant are complete. Official Maze is
-useful as a failure analysis tool, but under the current path-weight objective it
-is not a positive FutureSeed benchmark. E5 shows that simply penalizing broad
-masks is also not enough: the model trades false positives for false negatives,
-and loops still do not repair.
+E1, E2, and the first E3 official-Maze variants are complete. They show that
+token accuracy is misleading, broad-mask path recovery is easy to learn, and
+extra decision heads or mass objectives do not yet make loops reliably repair
+false positives.
 
-The next high-ROI experiment should be one of:
+The next high-ROI experiment is now the official EqR comparison gate in
+`docs/NEXT_STAGE_OFFICIAL_EQR_TASK.md`: reproduce the official EqR mixer
+baseline without changing its semantics, then compare one contribution-separated
+FutureSeed replacement/compression variant under matched compute.
 
-1. a proxy/objective where broad coverage is impossible or strongly dominated by
-   the metric without maze-specific rules, or
-2. a simple generic recurrent decision/state mechanism that gives later loops a
-   learned way to preserve true-path margin while lowering false-positive mass.
+The paper claim is allowed to proceed only if FutureSeed either improves hard
+path F1 by `>= +0.03` without broad-mask inflation, or reaches the same F1 with
+`>=20%` lower train/inference compute. If the official EqR baseline cannot be
+reproduced, stop there. If FutureSeed only increases token accuracy or
+predicted-path coverage without improving FP/FN, treat it as a negative result
+and visualize the failure.
 
 Do not run another weight/seed/temperature table for Maze.

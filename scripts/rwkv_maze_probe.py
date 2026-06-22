@@ -90,6 +90,7 @@ class FutureSeedLoopMaze(nn.Module):
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.out_norm = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, VOCAB_SIZE, bias=False)
+        self.path_budget_head = nn.Linear(d_model, 1)
 
     def input_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
         positions = torch.arange(self.seq_len, dtype=torch.long, device=inputs.device)
@@ -121,8 +122,10 @@ class FutureSeedLoopMaze(nn.Module):
                 if "future_seed_gate" in l_diag:
                     l_gates.append(l_diag["future_seed_gate"])
             z_h, h_diag, h_seed_memory = self._depth_update(z_h, z_l, h_seed_memory)
-            logits_by_loop.append(self.head(self.out_norm(z_h)))
+            normed_h = self.out_norm(z_h)
+            logits_by_loop.append(self.head(normed_h))
             trace = dict(h_diag)
+            trace["path_budget_logit"] = self.path_budget_head(normed_h.mean(dim=1)).squeeze(-1)
             if l_gates:
                 trace["future_seed_gate_l"] = torch.stack(l_gates).mean()
             else:
@@ -230,6 +233,57 @@ def path_margin_objective_loss(
     return torch.stack(binary_losses).mean(), torch.stack(budget_losses).mean(), diag
 
 
+def path_count_loss(
+    traces: List[Dict[str, torch.Tensor]],
+    labels: torch.Tensor,
+    loop_loss: str,
+) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    selected = traces if loop_loss == "all" else [traces[-1]]
+    valid = labels != PAD_ID
+    true_path = (labels == PATH_ID) & valid
+    valid_count = valid.to(torch.float32).sum(dim=1).clamp_min(1.0)
+    target_frac = true_path.to(torch.float32).sum(dim=1) / valid_count
+    losses: List[torch.Tensor] = []
+    pred_fracs: List[torch.Tensor] = []
+    abs_errs: List[torch.Tensor] = []
+    for trace in selected:
+        logits = trace["path_budget_logit"].float()
+        loss = F.binary_cross_entropy_with_logits(logits, target_frac, reduction="mean")
+        pred_frac = torch.sigmoid(logits)
+        losses.append(loss)
+        pred_fracs.append(pred_frac.mean())
+        abs_errs.append((pred_frac - target_frac).abs().mean())
+    zero = labels.new_zeros((), dtype=torch.float32)
+    diag = {
+        "path_count_pred_frac": torch.stack(pred_fracs).mean() if pred_fracs else zero,
+        "path_count_true_frac": target_frac.mean(),
+        "path_count_abs_err": torch.stack(abs_errs).mean() if abs_errs else zero,
+    }
+    return torch.stack(losses).mean(), diag
+
+
+def budget_decode_pred(logits: torch.Tensor, budget_logit: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    """Decode PATH as a learned-size foreground set from generic class margins."""
+    logits_f = logits.float()
+    valid = labels != PAD_ID
+    non_path_logits = torch.cat([logits_f[..., :PATH_ID], logits_f[..., PATH_ID + 1 :]], dim=-1)
+    non_path_pred = non_path_logits.argmax(dim=-1)
+    margin = logits_f[..., PATH_ID] - non_path_logits.max(dim=-1).values
+    pred = non_path_pred.clone()
+    valid_count = valid.sum(dim=1)
+    budget_frac = torch.sigmoid(budget_logit.float()).clamp(0.0, 1.0)
+    budget_count = torch.round(budget_frac * valid_count.to(torch.float32)).to(torch.long)
+    budget_count = torch.minimum(torch.maximum(budget_count, torch.zeros_like(budget_count)), valid_count)
+    masked_margin = margin.masked_fill(~valid, -1e9)
+    for batch_idx in range(logits.shape[0]):
+        k = int(budget_count[batch_idx].item())
+        if k <= 0:
+            continue
+        top_idx = torch.topk(masked_margin[batch_idx], k=k, largest=True).indices
+        pred[batch_idx, top_idx] = PATH_ID
+    return pred
+
+
 def metrics_from_pred(pred: torch.Tensor, labels: torch.Tensor) -> PathMetrics:
     valid = labels != PAD_ID
     token_acc = (((pred == labels) & valid).sum(dim=1).float() / valid.sum(dim=1).clamp_min(1).float()).mean()
@@ -269,25 +323,34 @@ def evaluate(
     loops: int,
     device: torch.device,
     forward_dtype: str,
+    budget_decoder: bool,
 ) -> Dict[str, PathMetrics]:
     model.eval()
     n = min(int(eval_n), inputs.shape[0])
     all_preds: Dict[int, List[torch.Tensor]] = {idx: [] for idx in range(1, loops + 1)}
+    all_budget_preds: Dict[int, List[torch.Tensor]] = {idx: [] for idx in range(1, loops + 1)}
     all_labels: List[torch.Tensor] = []
     for start in range(0, n, batch):
         end = min(start + batch, n)
         x = torch.as_tensor(inputs[start:end], dtype=torch.long, device=device)
         y = torch.as_tensor(labels[start:end], dtype=torch.long, device=device)
         with forward_autocast(forward_dtype, device):
-            logits_by_loop, _trace = model.forward_trace(x, loops=loops)
-        for loop_idx, logits in enumerate(logits_by_loop, start=1):
+            logits_by_loop, traces = model.forward_trace(x, loops=loops)
+        for loop_idx, (logits, trace) in enumerate(zip(logits_by_loop, traces), start=1):
             all_preds[loop_idx].append(logits.argmax(dim=-1).detach().cpu())
+            if budget_decoder:
+                budget_pred = budget_decode_pred(logits, trace["path_budget_logit"], y)
+                all_budget_preds[loop_idx].append(budget_pred.detach().cpu())
         all_labels.append(y.detach().cpu())
     labels_cat = torch.cat(all_labels, dim=0)
     metrics: Dict[str, PathMetrics] = {}
     for loop_idx, chunks in all_preds.items():
         pred_cat = torch.cat(chunks, dim=0)
         metrics[f"loop{loop_idx}"] = metrics_from_pred(pred_cat, labels_cat)
+    if budget_decoder:
+        for loop_idx, chunks in all_budget_preds.items():
+            pred_cat = torch.cat(chunks, dim=0)
+            metrics[f"budget_loop{loop_idx}"] = metrics_from_pred(pred_cat, labels_cat)
     return metrics
 
 
@@ -341,6 +404,7 @@ def write_visuals(
     cases: int,
     device: torch.device,
     forward_dtype: str,
+    budget_decoder: bool,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     n = min(int(cases), inputs.shape[0])
@@ -348,13 +412,26 @@ def write_visuals(
     y = torch.as_tensor(labels[:n], dtype=torch.long, device=device)
     model.eval()
     with forward_autocast(forward_dtype, device):
-        logits_by_loop, _trace = model.forward_trace(x, loops=loops)
+        logits_by_loop, traces = model.forward_trace(x, loops=loops)
     pred1 = logits_by_loop[0].argmax(dim=-1).detach().cpu()
     pred_last = logits_by_loop[-1].argmax(dim=-1).detach().cpu()
+    if budget_decoder:
+        budget_pred1 = budget_decode_pred(logits_by_loop[0], traces[0]["path_budget_logit"], y).detach().cpu()
+        budget_pred_last = budget_decode_pred(logits_by_loop[-1], traces[-1]["path_budget_logit"], y).detach().cpu()
+    else:
+        budget_pred1 = None
+        budget_pred_last = None
     labs = y.detach().cpu()
     m1 = [asdict(metrics_from_pred(pred1[i : i + 1], labs[i : i + 1])) for i in range(n)]
     ml = [asdict(metrics_from_pred(pred_last[i : i + 1], labs[i : i + 1])) for i in range(n)]
-    order = sorted(range(n), key=lambda i: (ml[i]["path_fp"] + ml[i]["path_fn"], 1.0 - ml[i]["path_f1"]), reverse=True)
+    if budget_decoder and budget_pred_last is not None:
+        bm1 = [asdict(metrics_from_pred(budget_pred1[i : i + 1], labs[i : i + 1])) for i in range(n)]
+        bml = [asdict(metrics_from_pred(budget_pred_last[i : i + 1], labs[i : i + 1])) for i in range(n)]
+        order = sorted(range(n), key=lambda i: (bml[i]["path_fp"] + bml[i]["path_fn"], 1.0 - bml[i]["path_f1"]), reverse=True)
+    else:
+        bm1 = []
+        bml = []
+        order = sorted(range(n), key=lambda i: (ml[i]["path_fp"] + ml[i]["path_fn"], 1.0 - ml[i]["path_f1"]), reverse=True)
     chosen = order[: min(8, n)]
     case_payload = []
     html_cases = []
@@ -369,23 +446,42 @@ def write_visuals(
                 "pred_loop1": pred1[idx].tolist(),
                 f"pred_loop{loops}": pred_last[idx].tolist(),
             }
+            | (
+                {
+                    "budget_loop1": bm1[idx],
+                    f"budget_loop{loops}": bml[idx],
+                    "budget_pred_loop1": budget_pred1[idx].tolist(),
+                    f"budget_pred_loop{loops}": budget_pred_last[idx].tolist(),
+                }
+                if budget_decoder and budget_pred1 is not None and budget_pred_last is not None
+                else {}
+            )
         )
         html_cases.append("<section class='case'>")
+        if budget_decoder and bml:
+            suffix = (
+                f", budget loop{loops} F1 {bml[idx]['path_f1']:.3f}, "
+                f"budget FP/FN {bml[idx]['path_fp']:.0f}/{bml[idx]['path_fn']:.0f}"
+            )
+        else:
+            suffix = ""
         html_cases.append(
             f"<h2>Case {idx}: loop1 F1 {m1[idx]['path_f1']:.3f} -> loop{loops} F1 {ml[idx]['path_f1']:.3f}, "
-            f"FP {m1[idx]['path_fp']:.0f}->{ml[idx]['path_fp']:.0f}, FN {m1[idx]['path_fn']:.0f}->{ml[idx]['path_fn']:.0f}</h2>"
+            f"FP {m1[idx]['path_fp']:.0f}->{ml[idx]['path_fp']:.0f}, FN {m1[idx]['path_fn']:.0f}->{ml[idx]['path_fn']:.0f}{suffix}</h2>"
         )
         html_cases.append("<div class='boards'>")
         html_cases.append(render_board(x[idx].detach().cpu().tolist(), None, "Input"))
         html_cases.append(render_board(labs[idx].tolist(), None, "Target"))
         html_cases.append(render_board(pred1[idx].tolist(), labs[idx].tolist(), "Loop 1"))
         html_cases.append(render_board(pred_last[idx].tolist(), labs[idx].tolist(), f"Loop {loops}"))
+        if budget_decoder and budget_pred_last is not None:
+            html_cases.append(render_board(budget_pred_last[idx].tolist(), labs[idx].tolist(), f"Budget loop {loops}"))
         html_cases.append("</div></section>")
     (out_dir / "cases.json").write_text(json.dumps(case_payload, indent=2), encoding="utf-8")
     css = """
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f6f7f9;color:#202124}
 main{max-width:1500px;margin:0 auto;padding:24px}.case{background:#fff;border:1px solid #d0d7de;border-radius:8px;padding:12px;margin:16px 0}
-.boards{display:grid;grid-template-columns:repeat(4,max-content);gap:14px;align-items:start}
+.boards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,max-content));gap:14px;align-items:start}
 table.maze{border-collapse:collapse}.maze td{width:7px;height:7px;min-width:7px;max-width:7px;padding:0;text-align:center;font-size:5px;line-height:7px}
 .wall{background:#111827}.open{background:#f8fafc}.start{background:#16a34a;color:#fff}.goal{background:#dc2626;color:#fff}.path{background:#2563eb;color:#fff}
 .tp{box-shadow:inset 0 0 0 1px #22c55e}.fp{background:#f97316!important;color:#111}.fn{background:#fee2e2!important;box-shadow:inset 0 0 0 1px #dc2626}
@@ -424,6 +520,8 @@ def main() -> None:
     p.add_argument("--path-weight", type=float, default=8.0)
     p.add_argument("--path-binary-weight", type=float, default=0.0)
     p.add_argument("--path-budget-weight", type=float, default=0.0)
+    p.add_argument("--path-count-weight", type=float, default=0.0)
+    p.add_argument("--budget-decoder", action="store_true")
     p.add_argument("--loop-loss", choices=("final", "all"), default="all")
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--weight-decay", type=float, default=0.1)
@@ -475,13 +573,15 @@ def main() -> None:
         xb, yb = sample_batch(train_x, train_y, args.batch, np_rng, device)
         opt.zero_grad(set_to_none=True)
         with forward_autocast(args.forward_dtype, device):
-            logits_by_loop, _trace = model.forward_trace(xb, loops=args.train_loops)
+            logits_by_loop, traces = model.forward_trace(xb, loops=args.train_loops)
             ce_loss = weighted_loop_loss(logits_by_loop, yb, args.path_weight, args.loop_loss)
             path_binary_loss, path_budget_loss, path_diag = path_margin_objective_loss(logits_by_loop, yb, args.loop_loss)
+            count_loss, count_diag = path_count_loss(traces, yb, args.loop_loss)
             loss = (
                 ce_loss
                 + float(args.path_binary_weight) * path_binary_loss
                 + float(args.path_budget_weight) * path_budget_loss
+                + float(args.path_count_weight) * count_loss
             )
         loss.backward()
         if args.grad_clip > 0:
@@ -497,9 +597,12 @@ def main() -> None:
                 loops=args.eval_loops,
                 device=device,
                 forward_dtype=args.forward_dtype,
+                budget_decoder=args.budget_decoder,
             )
             loop1 = eval_metrics["loop1"]
             final = eval_metrics[f"loop{args.eval_loops}"]
+            budget_loop1 = eval_metrics.get("budget_loop1")
+            budget_final = eval_metrics.get(f"budget_loop{args.eval_loops}")
             row = {
                 "step": step,
                 "elapsed_sec": time.time() - t0,
@@ -507,10 +610,14 @@ def main() -> None:
                 "ce_loss": float(ce_loss.detach().cpu()),
                 "path_binary_loss": float(path_binary_loss.detach().cpu()),
                 "path_budget_loss": float(path_budget_loss.detach().cpu()),
+                "path_count_loss": float(count_loss.detach().cpu()),
                 "path_margin_pos": float(path_diag["path_margin_pos"].detach().cpu()),
                 "path_margin_neg": float(path_diag["path_margin_neg"].detach().cpu()),
                 "path_prob_frac": float(path_diag["path_prob_frac"].detach().cpu()),
                 "path_true_frac": float(path_diag["path_true_frac"].detach().cpu()),
+                "path_count_pred_frac": float(count_diag["path_count_pred_frac"].detach().cpu()),
+                "path_count_true_frac": float(count_diag["path_count_true_frac"].detach().cpu()),
+                "path_count_abs_err": float(count_diag["path_count_abs_err"].detach().cpu()),
                 "loop1_path_f1": loop1.path_f1,
                 "loop_last_path_f1": final.path_f1,
                 "loop_gain": final.path_f1 - loop1.path_f1,
@@ -520,14 +627,35 @@ def main() -> None:
                 "loop_last_fp": final.path_fp,
                 "loop_last_fn": final.path_fn,
             }
+            if budget_loop1 is not None and budget_final is not None:
+                row.update(
+                    {
+                        "budget_loop1_path_f1": budget_loop1.path_f1,
+                        "budget_loop_last_path_f1": budget_final.path_f1,
+                        "budget_loop_gain": budget_final.path_f1 - budget_loop1.path_f1,
+                        "budget_loop_last_precision": budget_final.path_precision,
+                        "budget_loop_last_recall": budget_final.path_recall,
+                        "budget_loop_last_pred_path_frac": budget_final.pred_path_frac,
+                        "budget_loop_last_fp": budget_final.path_fp,
+                        "budget_loop_last_fn": budget_final.path_fn,
+                    }
+                )
             history.append(row)
+            budget_msg = ""
+            if budget_final is not None:
+                budget_msg = (
+                    f" budget_loop{args.eval_loops}={budget_final.path_f1:.4f}"
+                    f" bpred={budget_final.pred_path_frac:.4f}"
+                    f" bfp={budget_final.path_fp:.1f} bfn={budget_final.path_fn:.1f}"
+                )
             print(
                 "[rwkv_maze] "
                 f"step={step:04d} loss={row['loss']:.4f} ce={row['ce_loss']:.4f} "
-                f"bin={row['path_binary_loss']:.4f} budget={row['path_budget_loss']:.4f} "
+                f"bin={row['path_binary_loss']:.4f} budget={row['path_budget_loss']:.4f} count={row['path_count_loss']:.4f} "
                 f"loop1={row['loop1_path_f1']:.4f} loop{args.eval_loops}={row['loop_last_path_f1']:.4f} "
                 f"gain={row['loop_gain']:+.4f} pred={row['loop_last_pred_path_frac']:.4f} "
-                f"fp={row['loop_last_fp']:.1f} fn={row['loop_last_fn']:.1f}",
+                f"fp={row['loop_last_fp']:.1f} fn={row['loop_last_fn']:.1f} "
+                f"count_pred={row['path_count_pred_frac']:.4f}{budget_msg}",
                 flush=True,
             )
     final_metrics = evaluate(
@@ -539,6 +667,7 @@ def main() -> None:
         loops=args.eval_loops,
         device=device,
         forward_dtype=args.forward_dtype,
+        budget_decoder=args.budget_decoder,
     )
     write_visuals(
         model,
@@ -549,9 +678,12 @@ def main() -> None:
         cases=args.viz_cases,
         device=device,
         forward_dtype=args.forward_dtype,
+        budget_decoder=args.budget_decoder,
     )
     final = final_metrics[f"loop{args.eval_loops}"]
     loop1 = final_metrics["loop1"]
+    score_metric = final_metrics[f"budget_loop{args.eval_loops}"] if args.budget_decoder else final
+    score_loop1 = final_metrics["budget_loop1"] if args.budget_decoder else loop1
     payload = {
         "run_name": args.run_name,
         "condition": args.condition,
@@ -560,12 +692,12 @@ def main() -> None:
         "config": vars(args),
         "train_history": history,
         "final_metrics": {key: asdict(value) for key, value in final_metrics.items()},
-        "score": final.path_f1,
-        "score_key": f"final_metrics.loop{args.eval_loops}.path_f1",
-        "loop_gain": final.path_f1 - loop1.path_f1,
+        "score": score_metric.path_f1,
+        "score_key": f"final_metrics.{'budget_' if args.budget_decoder else ''}loop{args.eval_loops}.path_f1",
+        "loop_gain": score_metric.path_f1 - score_loop1.path_f1,
         "peak_cuda_mem_gb": torch.cuda.max_memory_allocated(device) / 1e9,
         "elapsed_sec": time.time() - t0,
-        "decision": "FutureSeed-positive" if args.future_seed_scale > 0 and final.path_f1 >= 0.03 else "record-only",
+        "decision": "FutureSeed-positive" if args.future_seed_scale > 0 and score_metric.path_f1 >= 0.03 else "record-only",
     }
     (args.out_dir / "rwkv_maze_probe.json").write_text(json.dumps(jsonable(payload), indent=2), encoding="utf-8")
     readme = [
@@ -581,14 +713,24 @@ def main() -> None:
         f"- precision/recall: `{final.path_precision:.4f}` / `{final.path_recall:.4f}`",
         f"- pred PATH frac: `{final.pred_path_frac:.4f}`",
         f"- FP/FN per case: `{final.path_fp:.1f}` / `{final.path_fn:.1f}`",
+        f"- budget decoder: `{args.budget_decoder}`",
         "",
         "No selector, search, repair, or maze-specific postprocessing is used.",
         "",
         "- `rwkv_maze_probe.json`: metrics and config",
         "- `visualizations/index.html`: hard-case loop visualization",
     ]
+    if args.budget_decoder:
+        readme[17:17] = [
+            f"- budget loop1 path F1: `{score_loop1.path_f1:.4f}`",
+            f"- budget loop{args.eval_loops} path F1: `{score_metric.path_f1:.4f}`",
+            f"- budget loop gain: `{score_metric.path_f1 - score_loop1.path_f1:+.4f}`",
+            f"- budget precision/recall: `{score_metric.path_precision:.4f}` / `{score_metric.path_recall:.4f}`",
+            f"- budget pred PATH frac: `{score_metric.pred_path_frac:.4f}`",
+            f"- budget FP/FN per case: `{score_metric.path_fp:.1f}` / `{score_metric.path_fn:.1f}`",
+        ]
     (args.out_dir / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
-    print(json.dumps({"run_name": args.run_name, "score": final.path_f1, "loop_gain": final.path_f1 - loop1.path_f1}, indent=2))
+    print(json.dumps({"run_name": args.run_name, "score": score_metric.path_f1, "loop_gain": score_metric.path_f1 - score_loop1.path_f1}, indent=2))
 
 
 if __name__ == "__main__":

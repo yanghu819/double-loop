@@ -238,6 +238,7 @@ if [[ "$MODE" == "rwkv_maze_probe" ]]; then
     --path-weight "${RWKV_MAZE_PATH_WEIGHT:-8.0}"
     --path-binary-weight "${RWKV_MAZE_PATH_BINARY_WEIGHT:-0.0}"
     --path-budget-weight "${RWKV_MAZE_PATH_BUDGET_WEIGHT:-0.0}"
+    --path-count-weight "${RWKV_MAZE_PATH_COUNT_WEIGHT:-0.0}"
     --loop-loss "${LOOP_LOSS:-all}"
     --lr "${LR:-3e-4}"
     --weight-decay "${WEIGHT_DECAY:-0.1}"
@@ -248,6 +249,9 @@ if [[ "$MODE" == "rwkv_maze_probe" ]]; then
   )
   if [[ "${ACTIVATION_CHECKPOINT:-0}" == "1" ]]; then
     RWKV_MAZE_ARGS+=(--activation-checkpoint)
+  fi
+  if [[ "${RWKV_MAZE_BUDGET_DECODER:-0}" == "1" ]]; then
+    RWKV_MAZE_ARGS+=(--budget-decoder)
   fi
 
   printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"

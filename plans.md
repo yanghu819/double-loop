@@ -8,6 +8,7 @@ selector tricks.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-MAZE-005 | in-progress | Maze failure may be a decision-boundary/calibration bottleneck: the causal RWKV may rank true PATH cells above false positives, but raw argmax cannot convert that ranking into a sparse mask. | Add a generic learned path-budget head and learned-budget decoder to the RWKV Maze runner. Train only with supervised path fraction, then decode PATH as top model-scored cells under the model's own predicted budget; compare no-FutureSeed vs FutureSeed under matched compute. | GPU1 A100 | ~45m | budget decoder reduces FP/pred frac without recall collapse; FutureSeed improves budgeted F1 or recall at matched budget | running |
 
 ## B. Completed Plan
 

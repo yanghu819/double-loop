@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-06-22T05:26:14.691996+00:00",
+  "source_sha": "97404e11ac9b55f83659a4f559a444a4d2856999",
+  "hypothesis": "Learned path-budget decoder tests whether Maze failure is mostly decision-boundary calibration or true-path ranking.",
+  "conditions": {
+    "nofs": {
+      "run_name": "rwkv-maze-budget-nofs-s800-20260622T0442Z-97404e1",
+      "elapsed_sec": 944.3842265605927,
+      "peak_cuda_mem_gb": 40.489458688,
+      "raw_loop1_path_f1": 0.4657958149909973,
+      "raw_loop8_path_f1": 0.4652262330055237,
+      "raw_loop_gain": -0.0005695819854736328,
+      "raw_precision": 0.31142568588256836,
+      "raw_recall": 0.9333202242851257,
+      "raw_pred_path_frac": 0.396325945854187,
+      "raw_fp": 245.755859375,
+      "raw_fn": 7.951171875,
+      "budget_loop1_path_f1": 0.33612877130508423,
+      "budget_loop8_path_f1": 0.3386804461479187,
+      "budget_loop_gain": 0.0025516748428344727,
+      "budget_precision": 0.3360540270805359,
+      "budget_recall": 0.3431929051876068,
+      "budget_pred_path_frac": 0.13447482883930206,
+      "budget_fp": 80.353515625,
+      "budget_fn": 78.21484375,
+      "path_count_pred_frac": 0.13818058371543884,
+      "path_count_true_frac": 0.13371527194976807,
+      "path_count_abs_err": 0.009826475754380226
+    },
+    "futureseed": {
+      "run_name": "rwkv-maze-budget-fs-s800-20260622T0501Z-97404e1",
+      "elapsed_sec": 873.9658439159393,
+      "peak_cuda_mem_gb": 40.541118464,
+      "raw_loop1_path_f1": 0.46840956807136536,
+      "raw_loop8_path_f1": 0.4684298038482666,
+      "raw_loop_gain": 2.0235776901245117e-05,
+      "raw_precision": 0.3107834756374359,
+      "raw_recall": 0.9640224575996399,
+      "raw_pred_path_frac": 0.41034072637557983,
+      "raw_fp": 254.736328125,
+      "raw_fn": 4.318359375,
+      "budget_loop1_path_f1": 0.32904165983200073,
+      "budget_loop8_path_f1": 0.32894790172576904,
+      "budget_loop_gain": -9.375810623168945e-05,
+      "budget_precision": 0.33184945583343506,
+      "budget_recall": 0.32774412631988525,
+      "budget_pred_path_frac": 0.1301041692495346,
+      "budget_fp": 78.23046875,
+      "budget_fn": 80.025390625,
+      "path_count_pred_frac": 0.13259243965148926,
+      "path_count_true_frac": 0.13371527194976807,
+      "path_count_abs_err": 0.009504102170467377
+    }
+  },
+  "delta": {
+    "raw_loop8_path_f1": 0.00320357084274292,
+    "raw_loop_gain": 0.0005898177623748779,
+    "budget_loop8_path_f1": -0.009732544422149658,
+    "budget_loop_gain": -0.002645432949066162,
+    "budget_recall": -0.015448778867721558,
+    "budget_fp": -2.123046875,
+    "budget_fn": 1.810546875,
+    "path_count_abs_err": -0.0003223735839128494
+  },
+  "interpretation": [
+    "The learned budget head estimates path fraction accurately in both conditions, so total path mass is not the main missing signal.",
+    "Raw argmax remains a broad high-recall mask with near-zero loop gain; extra loops do not prune false positives.",
+    "Budget decoding reduces false positives but creates about 78-80 false negatives per case, which means true-path cells are not ranked above false-positive cells reliably.",
+    "FutureSeed does not improve this Maze budget/ranking bottleneck in this probe; FS budget F1 is slightly lower than noFS."
+  ]
+}

@@ -178,6 +178,29 @@
   claim Maze progress from token accuracy, and do not add selector, repair,
   search, or maze-specific postprocessing to patch this result.
 
+## 2026-06-22 RWKV Maze budget decoder
+
+- The learned path-budget decoder answers a sharper calibration question. A
+  generic count head can learn the true PATH fraction on official Maze30: final
+  count absolute error is about `0.0095-0.0098`, and predicted path fraction is
+  close to the true `0.1337`.
+- This does not solve path recovery. Decoding the top model-ranked cells under
+  the learned budget cuts false positives from about `246-255` per case to about
+  `78-80`, but creates about `78-80` false negatives. The model knows roughly how
+  many PATH cells to choose, but it does not rank true-path cells above false
+  positives reliably.
+- FutureSeed is neutral-to-negative on this probe: budget loop8 path F1 is
+  `0.3289` versus no-FutureSeed `0.3387`, and raw loop gain remains near zero in
+  both conditions. Do not claim Maze support for FutureSeed from this result.
+- Do not sweep budget/count weights. The missing piece is a generic ranking or
+  self-correction signal that makes later loops move true-vs-false PATH ordering,
+  not another mass-calibration head.
+- After AIStation/GPU restart, a stale project-local torch extension cache can
+  make `StatePassingRWKV7.apply` hang before the first step with low GPU
+  utilization. Rebuild only the specific project cache directory such as
+  `/huyang2/double-loop/.cache/torch_extensions/rwkv7_statepassing_clampw_n16`
+  before changing modeling code.
+
 ## 2026-06-15 D320 effective-batch h120 scaling
 
 - D320 width was not fairly judged by the earlier batch48 run. With microbatch

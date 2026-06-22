@@ -6,8 +6,8 @@
 - Status: in-progress
 - Machine: GPU1 A100
 - Start time UTC: 2026-06-22T03:33:52Z
-- Source commit: pending implementation commit
-- Remote work dir: pending detached SHA worktree
+- Source commit: `97404e11ac9b55f83659a4f559a444a4d2856999`
+- Remote work dir: `/huyang2/double-loop/.worktrees/rwkv-maze-budget-detach-97404e1`
 
 ## 2. Hypothesis
 
@@ -99,15 +99,63 @@ Kill criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Remote smoke: `/huyang2/double-loop/.worktrees/rwkv-maze-budget-detach-97404e1/runs/rwkv-maze-budget-smoke-rebuild-20260622T044054-97404e1`
+- Remote noFS run: `/huyang2/double-loop/.worktrees/rwkv-maze-budget-detach-97404e1/runs/rwkv-maze-budget-nofs-s800-20260622T0442Z-97404e1`
+- Remote FutureSeed run: `/huyang2/double-loop/.worktrees/rwkv-maze-budget-detach-97404e1/runs/rwkv-maze-budget-fs-s800-20260622T0501Z-97404e1`
+- Local archive/dashboard:
+  `runs/rwkv-maze-budget-decoder-fs-vs-nofs-20260622/index.html`
+- Statepassing diagnostic logs:
+  `/huyang2/double-loop/artifacts/launch/rwkv_maze_stage_diag_statepassing_rebuild_20260622T043915Z.log`
+
+Engineering note:
+
+- Initial statepassing smoke hung before the first training step with GPU util near
+  zero. A stage diagnostic isolated the hang to `StatePassingRWKV7.apply`.
+- The same model completed forward/backward with `rwkv_kernel=torch`, so the new
+  budget decoder code was not the cause.
+- A synthetic statepassing call also hung at `T=96`; deleting only the project
+  cache directory
+  `/huyang2/double-loop/.cache/torch_extensions/rwkv7_statepassing_clampw_n16`
+  forced a rebuild. After rebuild, the real Maze forward/backward completed.
+- Lesson: after GPU/container restart, stale project-local torch extension cache
+  can make statepassing appear to hang. Rebuild the specific head-dim extension
+  before changing modeling code.
 
 ## 7. Results
 
-Pending.
+| condition | raw loop8 F1 | raw gain | raw P/R | raw pred frac | raw FP/FN | budget loop8 F1 | budget gain | budget P/R | budget pred frac | budget FP/FN | count abs err |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| noFS | 0.4652 | -0.0006 | 0.3114 / 0.9333 | 0.3963 | 245.8 / 8.0 | 0.3387 | +0.0026 | 0.3361 / 0.3432 | 0.1345 | 80.4 / 78.2 | 0.0098 |
+| FutureSeed | 0.4684 | +0.0000 | 0.3108 / 0.9640 | 0.4103 | 254.7 / 4.3 | 0.3289 | -0.0001 | 0.3318 / 0.3277 | 0.1301 | 78.2 / 80.0 | 0.0095 |
+
+Step-level signal:
+
+- By step100 both conditions had already learned a high-recall raw broad mask:
+  raw loop8 path F1 about `0.4673`, precision about `0.31`, recall near `1.0`,
+  and predicted PATH fraction about `0.432`.
+- The path-count head also learned quickly: final predicted path fraction was
+  `0.1382` noFS and `0.1326` FutureSeed against true `0.1337`.
+- The budget decoder used that count signal to reduce false positives from about
+  `246-255` raw FP/case to about `78-80`, but it also introduced about `78-80`
+  false negatives per case.
+- Loop did not produce correction in either condition. Raw loop1->loop8 and
+  budget loop1->loop8 gains were all within about `0.003`.
 
 ## 8. Conclusions
 
-Pending.
+- Discard this specific budget-decoder direction as a scoring path. It answers a
+  useful question but does not solve Maze: total PATH mass calibration is not the
+  missing piece.
+- The bottleneck is true-vs-false PATH ranking and late-loop correction. The
+  model can estimate how many cells should be PATH, but the top-ranked set does
+  not contain enough true-path cells.
+- FutureSeed is neutral-to-negative on this Maze probe: budget loop8 F1 is
+  `0.3289` versus noFS `0.3387`. This reinforces the boundary from official EqR
+  and causal RWKV Maze: Maze broad-mask/path-ranking failure is not the same as
+  the Sudoku cheap-bidirectional failure.
+- Next high-ROI work should not sweep count/budget loss weights. It should either
+  change the generic training signal toward ranking/self-correction, or select a
+  causal proxy where future-context access is the actual bottleneck.
 
 ## 9. Submission Record
 

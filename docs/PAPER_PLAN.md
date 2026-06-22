@@ -59,6 +59,12 @@ for scaling to harder spatial reasoning tasks.
   `0.4089`; FutureSeed improves to `0.4278` by preserving recall, but loop gain
   is still near zero. Treat this as weak evidence that FutureSeed can protect
   useful future-context signal under pruning pressure, not as a Maze win.
+- A learned path-budget decoder separates mass calibration from ranking. Both
+  no-FutureSeed and FutureSeed learn the total PATH fraction accurately, but
+  budgeted decoding misses many true-path cells: no-FutureSeed budget loop8 F1
+  is `0.3387`, FutureSeed is `0.3289`, and both produce about `78-80` false
+  negatives per case. This shows the Maze bottleneck is not simply predicted
+  mass; it is true-vs-false PATH ordering and late-loop correction.
 - Loop evidence is mixed: Sudoku scale-up shows loop matters; Maze visualizations
   often show later loops copying the same operating point. A paper claim about
   loops must report precision, recall, predicted mass, and false positives, not
@@ -165,6 +171,26 @@ Decision:
 - Interpretation: the objective can reduce broad-mask coverage, but it overprunes
   true path cells. Do not sweep boundary weights. Maze remains useful as a
   failure analysis tool, not yet as a positive FutureSeed benchmark.
+
+### E6. Causal Maze Learned Budget Decoder
+
+Hypothesis: the path-weighted Maze failure may be a calibration problem: the
+causal RWKV logits may rank true PATH cells above false positives, while raw
+argmax uses the wrong boundary.
+
+Method: add a generic learned path-count head and decode PATH as the top
+model-ranked cells under the model's own predicted budget. Compare no-FutureSeed
+and FutureSeed under matched compute. No oracle true count, selector, search,
+repair, or maze rules.
+
+Decision:
+- Result: negative but informative. The budget head learns path fraction well
+  (`abs_err≈0.0095-0.0098`), but budget decoding trades false positives for false
+  negatives. no-FutureSeed budget loop8 F1 is `0.3387`; FutureSeed is `0.3289`.
+- Interpretation: the model has mass calibration but lacks ranking/correction.
+  FutureSeed does not repair this Maze bottleneck. Do not sweep count/budget
+  weights; the next useful Maze experiment must target generic ranking or
+  self-correction directly.
 
 ## Bitter-Lesson Boundaries
 

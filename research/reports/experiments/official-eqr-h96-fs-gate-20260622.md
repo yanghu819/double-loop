@@ -3,12 +3,12 @@
 ## 1. Metainfo
 
 - Plan ID: `P-EQR-007`
-- Status: in-progress
+- Status: discarded
 - Machine: AIStation GPU1 only
-- Remote worktree: `/huyang2/double-loop/.worktrees/official-eqr-h96-gate`
+- Remote worktree: `/huyang2/double-loop/.worktrees/official-eqr-gate-787a612`
 - Remote official EqR base: `/huyang2/double-loop/official_eqr_compare`
-- Launcher code commit: `f14bcfd2a275b8e2ad4609c6bcffcbf0f40691d5`
-- Remote checkout SHA: to be filled after launch
+- Launcher code commit: `72dedd97cc0937b6e22904d7d646f916a8150925`
+- Remote checkout SHA: `72dedd97cc0937b6e22904d7d646f916a8150925`
 - Date: 2026-06-22 Asia/Shanghai
 
 ## 2. Hypothesis
@@ -42,7 +42,12 @@ rules, repair, search, selector, or oracle decoding.
 
 ## 4. Environment
 
-To be filled from remote launch.
+- AIStation row: GPU1 only
+- Host: `c6kh0j2k6jo50-0`
+- GPU: NVIDIA A800-SXM4-80GB
+- Remote root: `/huyang2/double-loop`
+- Official EqR base: `/huyang2/double-loop/official_eqr_compare`
+- Python env: `/huyang2/double-loop/official_eqr_compare/.venv`
 
 ## 5. Commands
 
@@ -51,7 +56,7 @@ Train compressed base:
 ```bash
 CUDA_VISIBLE_DEVICES=0 EPOCHS=256 TRAIN_EPOCHS_PER_ITER=256 GLOBAL_BATCH_SIZE=128 \
 PATH_TOKEN_WEIGHT=8 EQR_EXTRA_OVERRIDES='arch.hidden_size=96 arch.num_heads=8' \
-RUN_NAME=official-eqr-h96-base-pathw8-e256-20260622TBD \
+RUN_NAME=official-eqr-h96-base-pathw8-e256-20260622T0710Z-72dedd9 \
   /huyang2/double-loop/.worktrees/official-eqr-h96-gate/scripts/official_eqr_compare/run_official_eqr_compare.sh train-base
 ```
 
@@ -61,33 +66,62 @@ Train compressed FutureSeed:
 CUDA_VISIBLE_DEVICES=0 EPOCHS=256 TRAIN_EPOCHS_PER_ITER=256 GLOBAL_BATCH_SIZE=128 \
 PATH_TOKEN_WEIGHT=8 EQR_EXTRA_OVERRIDES='arch.hidden_size=96 arch.num_heads=8' \
 FUTURE_SEED_SCALE=1 FUTURE_SEED_GATE_BIAS=-2 \
-RUN_NAME=official-eqr-h96-fs-pathw8-e256-20260622TBD \
+RUN_NAME=official-eqr-h96-fs-pathw8-e256-20260622T0716Z-72dedd9 \
   /huyang2/double-loop/.worktrees/official-eqr-h96-gate/scripts/official_eqr_compare/run_official_eqr_compare.sh train-futureseed
 ```
 
-Visual/eval commands will be filled after checkpoint paths are known.
+Visual/eval commands:
+
+```bash
+ART=/huyang2/double-loop/official_eqr_compare/artifacts/official-eqr-h96-fs-gate-20260622
+/huyang2/double-loop/official_eqr_compare/.venv/bin/python scripts/official_eqr_compare/visualize_official_eqr_cases.py \
+  --repo /huyang2/double-loop/official_eqr_compare/eqr-clean \
+  --checkpoint /huyang2/double-loop/official_eqr_compare/outputs/base/outputs/oz2y29i2/2026-6-22/7-52-54/checkpoints/step_1792_oz2y29i2.pth \
+  --out-dir "$ART/base" --run-name official-eqr-h96-base-pathw8-e256-cases-20260622 \
+  --condition h96_base --dataset-data-path /huyang2/double-loop/official_eqr_compare/eqr-clean/data/maze-30x30-unique-1k \
+  --batch-size 16 --max-cases 256 --num-vis-cases 8 --steps 1,4,8,16
+/huyang2/double-loop/official_eqr_compare/.venv/bin/python scripts/official_eqr_compare/visualize_official_eqr_cases.py \
+  --repo /huyang2/double-loop/official_eqr_compare/eqr-futureseed \
+  --checkpoint /huyang2/double-loop/official_eqr_compare/outputs/futureseed/outputs/8fqokij1/2026-6-22/7-58-17/checkpoints/step_1792_8fqokij1.pth \
+  --out-dir "$ART/futureseed" --run-name official-eqr-h96-futureseed-pathw8-e256-cases-20260622 \
+  --condition h96_futureseed --dataset-data-path /huyang2/double-loop/official_eqr_compare/eqr-clean/data/maze-30x30-unique-1k \
+  --batch-size 16 --max-cases 256 --num-vis-cases 8 --steps 1,4,8,16
+```
 
 ## 6. Artifacts
 
-Pending.
+- Remote artifact root: `/huyang2/double-loop/official_eqr_compare/artifacts/official-eqr-h96-fs-gate-20260622`
+- Local archive: `runs/official-eqr-h96-fs-gate-20260622`
+- Summary: `runs/official-eqr-h96-fs-gate-20260622/summary/summary.json`
+- Summary HTML: `runs/official-eqr-h96-fs-gate-20260622/summary/index.html`
+- Base visuals: `runs/official-eqr-h96-fs-gate-20260622/base/index.html`
+- FutureSeed visuals: `runs/official-eqr-h96-fs-gate-20260622/futureseed/index.html`
+- Base checkpoint: `/huyang2/double-loop/official_eqr_compare/outputs/base/outputs/oz2y29i2/2026-6-22/7-52-54/checkpoints/step_1792_oz2y29i2.pth`
+- FutureSeed checkpoint: `/huyang2/double-loop/official_eqr_compare/outputs/futureseed/outputs/8fqokij1/2026-6-22/7-58-17/checkpoints/step_1792_8fqokij1.pth`
 
 ## 7. Results
 
-Pending.
+Final path-aware loop16 on 256 official test cases:
 
-Required readouts:
+| condition | params | train wall | path F1 | precision | recall | pred PATH frac | FP/case | FN/case |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| H96 base | 111,938 | ~3m08s | 0.467337 | 0.305645 | 1.000000 | 0.433689 | 271.02 | 0.00 |
+| H96 FutureSeed | 130,372 | ~3m20s | 0.467160 | 0.305495 | 1.000000 | 0.433906 | 271.21 | 0.00 |
 
-- loop1/4/8/16 path F1, precision, recall, pred_path_frac, FP/FN
-- loop1 to loop16 gain
-- params and train wall time
-- whether FutureSeed reaches D128 baseline with materially fewer params
-- hard-case visuals
+Delta: FutureSeed path F1 `-0.000178`; pred PATH frac `+0.000217`; FP `+0.20`.
 
 ## 8. Conclusions
 
-Pending.
+Discard as positive Maze evidence. Compressing the official EqR hidden size to
+H96 does not expose a FutureSeed advantage. Both arms reproduce the same
+high-recall broad-mask operating point: recall is `1.0`, precision remains about
+`0.306`, and false positives remain about `271` cells per case.
 
-Kill criteria:
+This completes the EqR mixer-compression gate. Do not sweep hidden size, gate
+bias, seed, or path weight. The next Maze work must change the generic recurrent
+state/training dynamics so later loops can leave the broad-mask attractor.
+
+Predeclared kill criteria checked:
 
 - Any run leaves GPU1 or uses CPU smoke.
 - Official EqR data/config path differs between arms.

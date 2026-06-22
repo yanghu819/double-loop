@@ -285,14 +285,18 @@ hit the step300 broad-mask kill rule. Maze should therefore remain failure
 analysis unless the next mechanism changes the recurrent decision/state dynamics
 more substantially while still staying generic.
 
-The next Maze-related implementation is now P-MAZE-007, an instrumentation fix
-rather than a new score attempt: abortable probes must dump hard-case
-input/target/loop1/4/8/16 visuals before termination. The verification probe is
-allowed to use a strict broad-mask threshold to force an early abort, but its
-metrics are not positive model evidence. A new Maze mechanism is only worth
-running if it creates a different state variable for true-vs-false PATH
-competition; another loss-weight, corruption-mix, temperature, or seed sweep is
-explicitly low ROI.
+P-MAZE-007 is complete. Abortable probes now dump hard-case
+input/target/loop1/4/8/16 visuals before termination. The verification run is
+not positive model evidence: at step100, loop1 and loop16 were the same broad
+mask (`F1 0.4614 -> 0.4614`, precision `0.3006 -> 0.3006`, recall `1.0`,
+FP `272.1 -> 272.1`). Its value is that future Maze failures are now auditable.
+
+The next Maze mechanism is only worth running if it creates a genuinely
+different state variable for true-vs-false PATH competition; another
+loss-weight, corruption-mix, temperature, or seed sweep is explicitly low ROI.
+For small runner probes, prefer a minimal Git archive of required source paths
+when full worktree/source snapshot checkout stalls on historical tracked
+artifacts.
 
 The paper claim is allowed to proceed only if FutureSeed either improves hard
 path F1 by `>= +0.03` without broad-mask inflation, or reaches the same F1 with

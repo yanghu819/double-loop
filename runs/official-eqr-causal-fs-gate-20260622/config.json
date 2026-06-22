@@ -1,0 +1,42 @@
+{
+  "run_name": "official-eqr-causal-fs-gate-20260622",
+  "plan_id": "P-EQR-006",
+  "date": "2026-06-22",
+  "launcher_git_sha": "118c245f804de717e99b95c4e116ae4851b80bfc",
+  "official_eqr_upstream_sha": "aba94e9cde0f273ce644db5261cd6915ba6561f0",
+  "remote_worktree": "/huyang2/double-loop/.worktrees/official-eqr-gate-787a612",
+  "remote_artifact_dir": "/huyang2/double-loop/official_eqr_compare/artifacts/official-eqr-causal-fs-gate-20260622",
+  "dataset": "maze-30x30-unique-1k",
+  "objective": "path-token-weighted official EqR token objective",
+  "path_token_weight": 8,
+  "epochs": 256,
+  "estimated_train_steps": 1792,
+  "global_batch_size": 128,
+  "eval_case_batch_size": 16,
+  "eval_loops": [1, 4, 8, 16],
+  "conditions": {
+    "causal": {
+      "description": "official EqR code path with patched causal attention and no FutureSeed",
+      "params": 263938,
+      "train_wall_time": "03:35",
+      "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/causal/outputs/2vv420kh/2026-6-22/6-29-17/checkpoints/step_1792_2vv420kh.pth"
+    },
+    "causal_futureseed": {
+      "description": "same causal attention code path with FutureSeed hooks enabled",
+      "future_seed_scale": 1,
+      "future_seed_gate_bias": -2,
+      "params": 296708,
+      "train_wall_time": "03:24",
+      "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/causal-futureseed/outputs/vtp4wuzf/2026-6-22/6-34-9/checkpoints/step_1792_vtp4wuzf.pth"
+    }
+  },
+  "constraints": [
+    "GPU1 only via CUDA_VISIBLE_DEVICES=0",
+    "no CPU smoke",
+    "no GPU2",
+    "no selector",
+    "no search",
+    "no repair",
+    "no maze-specific postprocessing"
+  ]
+}

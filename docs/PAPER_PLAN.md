@@ -65,6 +65,13 @@ for scaling to harder spatial reasoning tasks.
   is `0.3387`, FutureSeed is `0.3289`, and both produce about `78-80` false
   negatives per case. This shows the Maze bottleneck is not simply predicted
   mass; it is true-vs-false PATH ordering and late-loop correction.
+- The official EqR causalized-mixer gate is negative as a FutureSeed result.
+  With the same official code path, path-weighted objective, and e256 budget,
+  causal base loop16 path F1 is `0.468067`; causal+FutureSeed is `0.468157`
+  (`+0.000090`). Both arms still predict a broad high-recall mask with
+  precision about `0.306`, recall about `1.0`, predicted PATH fraction about
+  `0.433`, and roughly `270` false positives per case. FutureSeed has an early
+  step500 optimization edge, but no final path-aware win.
 - Loop evidence is mixed: Sudoku scale-up shows loop matters; Maze visualizations
   often show later loops copying the same operating point. A paper claim about
   loops must report precision, recall, predicted mass, and false positives, not
@@ -192,6 +199,28 @@ Decision:
   weights; the next useful Maze experiment must target generic ranking or
   self-correction directly.
 
+### E7. Official EqR Causalized-Mixer Gate
+
+Hypothesis: if FutureSeed cheaply supplies future-side information, removing
+full noncausal attention from the official EqR mixer should create a condition
+where FutureSeed helps a causalized EqR path recover Maze structure.
+
+Method: official EqR upstream SHA `aba94e9`, same official
+`maze-30x30-unique-1k` data, same path-weighted objective, same e256 budget,
+same path-aware visualization. Compare causalized EqR no-FutureSeed against the
+same causalized code path patched with FutureSeed. No selector, search, repair,
+or maze-specific postprocessing.
+
+Decision:
+- Result: negative. causal base loop16 path F1 `0.468067`, causal+FutureSeed
+  `0.468157`, delta `+0.000090`.
+- Loop behavior remains broad-mask fixed point. Loop1 to loop16 gains are only
+  about `+0.0018`, and false positives remain around `270` per case.
+- Interpretation: causalizing EqR does not make this Maze proxy expose the cheap
+  bidirectional value. The path-weighted objective still mostly rewards high
+  recall broad masks. Do not sweep FutureSeed gate bias, seed, path weight, or
+  causal-attention details.
+
 ## Bitter-Lesson Boundaries
 
 Allowed:
@@ -214,10 +243,12 @@ token accuracy is misleading, broad-mask path recovery is easy to learn, and
 extra decision heads or mass objectives do not yet make loops reliably repair
 false positives.
 
-The next high-ROI experiment is now the official EqR comparison gate in
-`docs/NEXT_STAGE_OFFICIAL_EQR_TASK.md`: reproduce the official EqR mixer
-baseline without changing its semantics, then compare one contribution-separated
-FutureSeed replacement/compression variant under matched compute.
+The next high-ROI experiment is not another causal Maze variant. The remaining
+official-EqR question is a true mixer-compression gate: reduce EqR mixer
+capacity/compute in one controlled way, then test whether FutureSeed recovers
+path-aware performance or reaches the same F1 with less compute. If that also
+stays broad-mask neutral, the paper should stop using Maze as positive evidence
+and keep it only as a failure analysis proxy.
 
 The paper claim is allowed to proceed only if FutureSeed either improves hard
 path F1 by `>= +0.03` without broad-mask inflation, or reaches the same F1 with

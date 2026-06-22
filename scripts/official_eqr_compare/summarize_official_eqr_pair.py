@@ -106,7 +106,7 @@ a{color:#155eef;text-decoration:none}code{background:#eee;padding:1px 4px;border
 <html><head><meta charset="utf-8"><title>{html.escape(experiment)}</title><style>{style}</style></head>
 <body><main>
 <h1>{html.escape(experiment)}</h1>
-<p>Official EqR Maze comparison: clean EqR baseline versus the same official code path patched only with FutureSeed. Metrics below are path-aware and computed from official test cases with no selector, search, repair, or maze-specific postprocessing.</p>
+<p>Matched official EqR Maze comparison: base condition versus the same code path patched with FutureSeed. Metrics below are path-aware and computed from official test cases with no selector, search, repair, or maze-specific postprocessing.</p>
 <div class="note">{html.escape(notes)}</div>
 <div class="cards">
 <div class="card"><b>{fmt(final['base_path_f1'])}</b><span>base final path F1</span></div>
@@ -182,7 +182,7 @@ def main() -> None:
     elif final["d_path_f1"] < -0.02:
         summary["decision"] = "FutureSeed hurts path-aware Maze behavior under the matched official EqR protocol."
     else:
-        summary["decision"] = "FutureSeed does not clearly beat the clean official EqR baseline on path-aware Maze behavior under this budget."
+        summary["decision"] = "FutureSeed does not clearly beat the matched base condition on path-aware Maze behavior under this budget."
 
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     write_csv(out_dir / "path_case_summary.csv", rows)

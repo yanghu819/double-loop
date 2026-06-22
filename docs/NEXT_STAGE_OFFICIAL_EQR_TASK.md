@@ -117,3 +117,28 @@ Date: 2026-06-22
 3. 只跑一条最高信息量 matched-compute probe。
 4. 如果 baseline 复现失败，立即停下修复复现，不跑 FutureSeed。
 5. 如果 FutureSeed 只扩大 broad mask，立即停下并可视化失败，不扫超参。
+
+## 2026-06-22 Gate Result
+
+Completed `official-eqr-causal-fs-gate-20260622` on GPU1.
+
+- Base condition: official EqR code path with causalized attention.
+- FutureSeed condition: same causalized path plus FutureSeed hooks.
+- Dataset/objective: official `maze-30x30-unique-1k`, path-token weight `8`.
+- Budget: e256 pair, 1792 estimated train steps, path-aware 256-case visual eval.
+
+Result:
+
+- causal base loop16 path F1: `0.468067`
+- causal+FutureSeed loop16 path F1: `0.468157`
+- delta: `+0.000090`
+- precision/recall/pred PATH fraction stay effectively unchanged:
+  about `0.306 / 1.0 / 0.433`
+- false positives stay about `270` per case
+- loop1 to loop16 gain remains tiny in both arms
+
+Decision: this causalized-mixer gate is not positive evidence. Do not sweep
+seed, gate bias, path weight, or causal attention details. The next official EqR
+question is mixer compression: can FutureSeed recover performance when part of
+the EqR mixer compute is removed? If not, Maze should remain a failure-analysis
+proxy rather than a main positive benchmark.

@@ -1,0 +1,57 @@
+nohup: ignoring input
+[Info] override arch.halt_max_steps=16
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] 
+epochs: 256
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 6
+seq_len: 900
+
+total_samples: 1000
+global_batch_size: 16                         
+Estimated total training steps: 15872
+[Info] Steps per epoch: 62
+[Info] Using optimizer: adam_atan2 with args: {}
+Adjusted 8 checkpoint key(s) to include '_orig_mod' segments.
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+{
+  "run_name": "official-eqr-causal-pathw8-e256-cases-20260622",
+  "condition": "causal",
+  "processed_cases": 256,
+  "elapsed_sec": 10.089666604995728
+}
+[Info] override arch.halt_max_steps=16
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] 
+epochs: 256
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 6
+seq_len: 900
+
+total_samples: 1000
+global_batch_size: 16                         
+Estimated total training steps: 15872
+[Info] Steps per epoch: 62
+[Info] Using optimizer: adam_atan2 with args: {}
+Adjusted 12 checkpoint key(s) to include '_orig_mod' segments.
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+{
+  "run_name": "official-eqr-causal-futureseed-pathw8-e256-cases-20260622",
+  "condition": "causal_futureseed",
+  "processed_cases": 256,
+  "elapsed_sec": 7.231385946273804
+}
+{
+  "out_dir": "/huyang2/double-loop/official_eqr_compare/artifacts/official-eqr-causal-fs-gate-20260622/summary",
+  "decision": "FutureSeed does not clearly beat the clean official EqR baseline on path-aware Maze behavior under this budget."
+}

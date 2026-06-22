@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>official-eqr-causal-fs-gate-20260622</title><style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f6f6f3;color:#202124}
+main{max-width:1200px;margin:0 auto;padding:28px}
+h1{font-size:26px;margin:0 0 8px} h2{font-size:18px;margin:24px 0 10px}
+p{line-height:1.45}.note{background:#fff;border-left:5px solid #475569;padding:11px 13px;margin:14px 0}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px}.card b{display:block;font-size:21px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd;margin:10px 0 18px}
+th,td{border-bottom:1px solid #e5e5e5;padding:8px;text-align:left;font-size:13px}th{background:#eee}
+a{color:#155eef;text-decoration:none}code{background:#eee;padding:1px 4px;border-radius:4px}.pos{color:#067647}.neg{color:#b42318}
+</style></head>
+<body><main>
+<h1>official-eqr-causal-fs-gate-20260622</h1>
+<p>Matched official EqR Maze comparison: base condition versus the same code path patched with FutureSeed. Metrics below are path-aware and computed from official test cases with no selector, search, repair, or maze-specific postprocessing.</p>
+<div class="note">causalized-EqR-mixer-gate</div>
+<div class="cards">
+<div class="card"><b>0.4681</b><span>base final path F1</span></div>
+<div class="card"><b>0.4682</b><span>FutureSeed final path F1</span></div>
+<div class="card"><b>0.00009</b><span>FutureSeed delta</span></div>
+<div class="card"><b>256</b><span>test cases</span></div>
+</div>
+<p><a href="/Users/torusmini/Documents/double-loop-gpu1/.codex-transfer/localrepo/runs/official-eqr-causal-fs-gate-20260622/causal/index.html">Open base hard-case visualization</a> | <a href="/Users/torusmini/Documents/double-loop-gpu1/.codex-transfer/localrepo/runs/official-eqr-causal-fs-gate-20260622/causal_futureseed/index.html">Open FutureSeed hard-case visualization</a></p>
+<h2>Loop Metrics</h2>
+<table><thead><tr><th>loop</th><th>base F1</th><th>FS F1</th><th>delta F1</th><th>base precision</th><th>FS precision</th><th>base recall</th><th>FS recall</th><th>base pred frac</th><th>FS pred frac</th><th>base FP</th><th>FS FP</th><th>base FN</th><th>FS FN</th></tr></thead><tbody>
+<tr><td>loop1</td><td>0.4662</td><td>0.4664</td><td class='pos'>0.00016</td><td>0.3048</td><td>0.3049</td><td>0.9991</td><td>0.9993</td><td>0.4346</td><td>0.4345</td><td>271.9</td><td>271.8</td><td>0.1</td><td>0.1</td></tr><tr><td>loop4</td><td>0.4682</td><td>0.4682</td><td class='neg'>-0.00006</td><td>0.3064</td><td>0.3064</td><td>1.0000</td><td>0.9999</td><td>0.4326</td><td>0.4326</td><td>270.0</td><td>270.1</td><td>0.0</td><td>0.0</td></tr><tr><td>loop8</td><td>0.4682</td><td>0.4682</td><td class='neg'>-0.00004</td><td>0.3064</td><td>0.3064</td><td>1.0000</td><td>0.9999</td><td>0.4326</td><td>0.4326</td><td>270.1</td><td>270.1</td><td>0.0</td><td>0.0</td></tr><tr><td>loop16</td><td>0.4681</td><td>0.4682</td><td class='pos'>0.00009</td><td>0.3063</td><td>0.3064</td><td>1.0000</td><td>1.0000</td><td>0.4328</td><td>0.4327</td><td>270.2</td><td>270.1</td><td>0.0</td><td>0.0</td></tr>
+</tbody></table>
+<h2>Provenance</h2>
+<table><tbody>
+<tr><th>base checkpoint</th><td><code>/huyang2/double-loop/official_eqr_compare/outputs/causal/outputs/2vv420kh/2026-6-22/6-29-17/checkpoints/step_1792_2vv420kh.pth</code></td></tr>
+<tr><th>FutureSeed checkpoint</th><td><code>/huyang2/double-loop/official_eqr_compare/outputs/causal-futureseed/outputs/vtp4wuzf/2026-6-22/6-34-9/checkpoints/step_1792_vtp4wuzf.pth</code></td></tr>
+<tr><th>base repo</th><td><code>/huyang2/double-loop/official_eqr_compare/eqr-causal</code></td></tr>
+<tr><th>FutureSeed repo</th><td><code>/huyang2/double-loop/official_eqr_compare/eqr-causal-futureseed</code></td></tr>
+</tbody></table>
+</main></body></html>

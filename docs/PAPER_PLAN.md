@@ -77,6 +77,12 @@ for scaling to harder spatial reasoning tasks.
   keep recall at `1.0`, predicted PATH fraction around `0.434`, and roughly
   `271` false positives per case. Compression did not reveal hidden FutureSeed
   value on this Maze objective.
+- The generic RWKV denoising-attractor feedback probe is negative. no-FutureSeed
+  DAT at step300 has loop1/loop16 path F1 `0.4683/0.4680` and FP
+  `268.3->269.0`; FutureSeed DAT has `0.4691/0.4688` and FP `265.9->266.4`.
+  DAT loss decreases, but the feedback loop learns the same broad-mask fixed
+  point. FutureSeed changes the operating point only slightly (`+0.0008`
+  loop16 F1 over no-FS), not the loop correction behavior.
 - Loop evidence is mixed: Sudoku scale-up shows loop matters; Maze visualizations
   often show later loops copying the same operating point. A paper claim about
   loops must report precision, recall, predicted mass, and false positives, not
@@ -273,12 +279,17 @@ remaining Maze work worth running is a generic recurrent state/training
 dynamics experiment that directly tests whether loops can leave the broad-mask
 attractor without search, repair, selector, or maze-specific rules.
 
-The immediate experiment is a minimal denoising-attractor training probe in the
-RWKV Maze runner: feed each loop a learned embedding of the previous predicted
-token distribution, train corrupted output states to return to the clean target,
-and require later-loop improvement without rewarding earlier-loop degradation.
-If that does not reduce false positives while preserving recall, stop Maze
-mechanism work and keep Maze as failure analysis.
+The denoising-attractor probe is now complete and negative. It did not reduce
+false positives while preserving recall; both no-FutureSeed and FutureSeed arms
+hit the step300 broad-mask kill rule. Maze should therefore remain failure
+analysis unless the next mechanism changes the recurrent decision/state dynamics
+more substantially while still staying generic.
+
+The next Maze-related implementation should be an instrumentation fix, not a
+new score attempt: abortable probes must dump hard-case input/target/loop1/4/8/16
+visuals before termination. A new Maze mechanism is only worth running if it
+creates a different state variable for true-vs-false PATH competition; another
+loss-weight, corruption-mix, temperature, or seed sweep is explicitly low ROI.
 
 The paper claim is allowed to proceed only if FutureSeed either improves hard
 path F1 by `>= +0.03` without broad-mask inflation, or reaches the same F1 with

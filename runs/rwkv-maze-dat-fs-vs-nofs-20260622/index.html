@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8"><title>RWKV Maze DAT FS vs no-FS</title><style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:24px;color:#18202a}table{border-collapse:collapse;font-size:13px}td,th{border:1px solid #c9d1d9;padding:6px 8px}th{background:#eef2f6}.bad{color:#b42318;font-weight:700}.note{max-width:960px;line-height:1.45}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:18px}</style></head><body><h1>RWKV Maze DAT: FutureSeed vs no-FS</h1><p class="note"><b>Decision:</b> <span class="bad">discard / kill at step300</span>. Both arms converge to the same broad-mask operating point. FutureSeed does not convert DAT feedback into loop-level false-positive pruning on this Maze30 probe.</p><ul><li>no-FS step300: F1 0.4683 -> 0.4680, FP 268.3 -> 269.0</li><li>FS step300: F1 0.4691 -> 0.4688, FP 265.9 -> 266.4</li><li>FS - noFS loop16 F1: +0.0008; FS - noFS loop16 FP: -2.6</li></ul><div class="grid"><svg viewBox="0 0 720 220" role="img" aria-label="loop16 path F1">
+<rect width="720" height="220" fill="#fff"/>
+<text x="50" y="18" font-size="14" font-family="monospace">loop16 path F1</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="3" points="52.2,188.9 266.7,21.2 483.3,21.4 700.0,20.9"/>
+<circle cx="52.2" cy="188.9" r="4" fill="#1f77b4"><title>nofs step 1: 0.3130</title></circle>
+<circle cx="266.7" cy="21.2" r="4" fill="#1f77b4"><title>nofs step 100: 0.4677</title></circle>
+<circle cx="483.3" cy="21.4" r="4" fill="#1f77b4"><title>nofs step 200: 0.4675</title></circle>
+<circle cx="700.0" cy="20.9" r="4" fill="#1f77b4"><title>nofs step 300: 0.4680</title></circle>
+<polyline fill="none" stroke="#d62728" stroke-width="3" points="52.2,190.0 266.7,21.6 483.3,21.0 700.0,20.0"/>
+<circle cx="52.2" cy="190.0" r="4" fill="#d62728"><title>futureseed step 1: 0.3120</title></circle>
+<circle cx="266.7" cy="21.6" r="4" fill="#d62728"><title>futureseed step 100: 0.4673</title></circle>
+<circle cx="483.3" cy="21.0" r="4" fill="#d62728"><title>futureseed step 200: 0.4679</title></circle>
+<circle cx="700.0" cy="20.0" r="4" fill="#d62728"><title>futureseed step 300: 0.4688</title></circle>
+<text x="50" y="212" font-size="11" font-family="monospace">blue=no-FS red=FS; x=step; y range 0.3120..0.4688</text>
+</svg><svg viewBox="0 0 720 220" role="img" aria-label="loop16 false positives">
+<rect width="720" height="220" fill="#fff"/>
+<text x="50" y="18" font-size="14" font-family="monospace">loop16 false positives</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="3" points="52.2,23.8 266.7,186.1 483.3,185.3 700.0,186.5"/>
+<circle cx="52.2" cy="23.8" r="4" fill="#1f77b4"><title>nofs step 1: 389.3000</title></circle>
+<circle cx="266.7" cy="186.1" r="4" fill="#1f77b4"><title>nofs step 100: 269.3000</title></circle>
+<circle cx="483.3" cy="185.3" r="4" fill="#1f77b4"><title>nofs step 200: 269.9000</title></circle>
+<circle cx="700.0" cy="186.5" r="4" fill="#1f77b4"><title>nofs step 300: 269.0000</title></circle>
+<polyline fill="none" stroke="#d62728" stroke-width="3" points="52.2,20.0 266.7,185.0 483.3,186.2 700.0,190.0"/>
+<circle cx="52.2" cy="20.0" r="4" fill="#d62728"><title>futureseed step 1: 392.1000</title></circle>
+<circle cx="266.7" cy="185.0" r="4" fill="#d62728"><title>futureseed step 100: 270.1000</title></circle>
+<circle cx="483.3" cy="186.2" r="4" fill="#d62728"><title>futureseed step 200: 269.2000</title></circle>
+<circle cx="700.0" cy="190.0" r="4" fill="#d62728"><title>futureseed step 300: 266.4000</title></circle>
+<text x="50" y="212" font-size="11" font-family="monospace">blue=no-FS red=FS; x=step; y range 266.4000..392.1000</text>
+</svg><svg viewBox="0 0 720 220" role="img" aria-label="loop gain: loop16 F1 - loop1 F1">
+<rect width="720" height="220" fill="#fff"/>
+<text x="50" y="18" font-size="14" font-family="monospace">loop gain: loop16 F1 - loop1 F1</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="3" points="52.2,190.0 266.7,40.0 483.3,50.0 700.0,70.0"/>
+<circle cx="52.2" cy="190.0" r="4" fill="#1f77b4"><title>nofs step 1: -0.0015</title></circle>
+<circle cx="266.7" cy="40.0" r="4" fill="#1f77b4"><title>nofs step 100: 0.0000</title></circle>
+<circle cx="483.3" cy="50.0" r="4" fill="#1f77b4"><title>nofs step 200: -0.0001</title></circle>
+<circle cx="700.0" cy="70.0" r="4" fill="#1f77b4"><title>nofs step 300: -0.0003</title></circle>
+<polyline fill="none" stroke="#d62728" stroke-width="3" points="52.2,20.0 266.7,40.0 483.3,50.0 700.0,70.0"/>
+<circle cx="52.2" cy="20.0" r="4" fill="#d62728"><title>futureseed step 1: 0.0002</title></circle>
+<circle cx="266.7" cy="40.0" r="4" fill="#d62728"><title>futureseed step 100: 0.0000</title></circle>
+<circle cx="483.3" cy="50.0" r="4" fill="#d62728"><title>futureseed step 200: -0.0001</title></circle>
+<circle cx="700.0" cy="70.0" r="4" fill="#d62728"><title>futureseed step 300: -0.0003</title></circle>
+<text x="50" y="212" font-size="11" font-family="monospace">blue=no-FS red=FS; x=step; y range -0.0015..0.0002</text>
+</svg><svg viewBox="0 0 720 220" role="img" aria-label="loop16 predicted PATH fraction">
+<rect width="720" height="220" fill="#fff"/>
+<text x="50" y="18" font-size="14" font-family="monospace">loop16 predicted PATH fraction</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="3" points="52.2,24.9 266.7,184.5 483.3,183.3 700.0,184.8"/>
+<circle cx="52.2" cy="24.9" r="4" fill="#1f77b4"><title>nofs step 1: 0.5375</title></circle>
+<circle cx="266.7" cy="184.5" r="4" fill="#1f77b4"><title>nofs step 100: 0.4311</title></circle>
+<circle cx="483.3" cy="183.3" r="4" fill="#1f77b4"><title>nofs step 200: 0.4319</title></circle>
+<circle cx="700.0" cy="184.8" r="4" fill="#1f77b4"><title>nofs step 300: 0.4309</title></circle>
+<polyline fill="none" stroke="#d62728" stroke-width="3" points="52.2,20.0 266.7,182.8 483.3,184.6 700.0,190.0"/>
+<circle cx="52.2" cy="20.0" r="4" fill="#d62728"><title>futureseed step 1: 0.5408</title></circle>
+<circle cx="266.7" cy="182.8" r="4" fill="#d62728"><title>futureseed step 100: 0.4322</title></circle>
+<circle cx="483.3" cy="184.6" r="4" fill="#d62728"><title>futureseed step 200: 0.4310</title></circle>
+<circle cx="700.0" cy="190.0" r="4" fill="#d62728"><title>futureseed step 300: 0.4274</title></circle>
+<text x="50" y="212" font-size="11" font-family="monospace">blue=no-FS red=FS; x=step; y range 0.4274..0.5408</text>
+</svg></div><h2>Logged Readouts</h2><table><thead><tr><th>arm</th><th>step</th><th>loop1 F1</th><th>loop16 F1</th><th>gain</th><th>pred frac</th><th>FP</th><th>FN</th><th>DAT</th><th>improve</th></tr></thead><tbody><tr><td>nofs</td><td>1</td><td>0.3145</td><td>0.3130</td><td>-0.0015</td><td>0.5463 -> 0.5375</td><td>395.5 -> 389.3</td><td>22.7 -> 24.4</td><td>2.4517</td><td>0.0039</td></tr><tr><td>nofs</td><td>100</td><td>0.4677</td><td>0.4677</td><td>+0.0000</td><td>0.4311 -> 0.4311</td><td>269.3 -> 269.3</td><td>0.1 -> 0.1</td><td>0.2727</td><td>0.0100</td></tr><tr><td>nofs</td><td>200</td><td>0.4676</td><td>0.4675</td><td>-0.0001</td><td>0.4317 -> 0.4319</td><td>269.7 -> 269.9</td><td>0.0 -> 0.0</td><td>0.2235</td><td>0.0103</td></tr><tr><td>nofs</td><td>300</td><td>0.4683</td><td>0.4680</td><td>-0.0003</td><td>0.4300 -> 0.4309</td><td>268.3 -> 269.0</td><td>0.2 -> 0.1</td><td>0.2179</td><td>0.0101</td></tr><tr><td>futureseed</td><td>1</td><td>0.3118</td><td>0.3120</td><td>+0.0002</td><td>0.5545 -> 0.5408</td><td>402.5 -> 392.1</td><td>22.4 -> 24.3</td><td>2.4517</td><td>0.0039</td></tr><tr><td>futureseed</td><td>100</td><td>0.4673</td><td>0.4673</td><td>+0.0000</td><td>0.4322 -> 0.4322</td><td>270.1 -> 270.1</td><td>0.0 -> 0.0</td><td>0.2693</td><td>0.0102</td></tr><tr><td>futureseed</td><td>200</td><td>0.4680</td><td>0.4679</td><td>-0.0001</td><td>0.4308 -> 0.4310</td><td>269.0 -> 269.2</td><td>0.1 -> 0.1</td><td>0.2196</td><td>0.0097</td></tr><tr><td>futureseed</td><td>300</td><td>0.4691</td><td>0.4688</td><td>-0.0003</td><td>0.4268 -> 0.4274</td><td>265.9 -> 266.4</td><td>0.7 -> 0.6</td><td>0.2108</td><td>0.0097</td></tr></tbody></table><h2>Visualization Gap</h2><p class="note">Per-case input/target/loop1/loop4/loop8/loop16 grids were not produced because both runs were intentionally killed at step300 before the runner reached final <code>write_visuals()</code>. This is recorded as a runner issue: abort paths need to dump hard-case visuals before terminating.</p></body></html>

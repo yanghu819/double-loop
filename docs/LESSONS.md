@@ -201,6 +201,27 @@
   `/huyang2/double-loop/.cache/torch_extensions/rwkv7_statepassing_clampw_n16`
   before changing modeling code.
 
+## 2026-06-22 RWKV Maze denoising-attractor feedback
+
+- The generic denoising-attractor training probe is negative. Both no-FutureSeed
+  and FutureSeed DAT were killed at the predeclared step300 gate on official
+  Maze30 because loop16 did not reduce false positives relative to loop1.
+  no-FutureSeed: F1 `0.4683 -> 0.4680`, FP `268.3 -> 269.0`; FutureSeed:
+  F1 `0.4691 -> 0.4688`, FP `265.9 -> 266.4`.
+- DAT is mechanically learnable: DAT loss falls to about `0.21-0.22`, and the
+  model reaches the familiar high-recall path-mask operating point. The problem
+  is that denoising corrupted token distributions back to labels still teaches a
+  fixed point for the same broad mask, not a comparison that separates true PATH
+  cells from false positives.
+- FutureSeed only shifts the operating point slightly on this probe
+  (`+0.0008` loop16 F1 over no-FS at step300) and does not change loop dynamics:
+  both arms have loop gain `-0.0003`. Do not sweep corruption mix, DAT weight,
+  logit temperature, batch size, or seed for this mechanism.
+- Abortable Maze probes must dump hard-case visuals before termination. This run
+  produced a metric dashboard from logs, but no input/target/loop1/4/8/16 case
+  grids because the final visual writer is only called at normal completion.
+  Fix instrumentation before the next abortable Maze probe.
+
 ## 2026-06-15 D320 effective-batch h120 scaling
 
 - D320 width was not fairly judged by the earlier batch48 run. With microbatch

@@ -7,7 +7,8 @@
 - Machine: AIStation GPU1 only
 - Remote worktree: `/huyang2/double-loop/.worktrees/official-eqr-h96-gate`
 - Remote official EqR base: `/huyang2/double-loop/official_eqr_compare`
-- Launcher source SHA: to be filled after commit
+- Launcher code commit: `f14bcfd2a275b8e2ad4609c6bcffcbf0f40691d5`
+- Remote checkout SHA: to be filled after launch
 - Date: 2026-06-22 Asia/Shanghai
 
 ## 2. Hypothesis

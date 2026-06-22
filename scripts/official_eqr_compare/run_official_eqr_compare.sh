@@ -40,6 +40,20 @@ prepare_repos() {
   git -C "${BASE}/eqr-futureseed" diff > "${BASE}/artifacts/futureseed.patch"
 }
 
+prepare_causal_repos() {
+  clone_one "${BASE}/eqr-causal"
+  clone_one "${BASE}/eqr-causal-futureseed"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_path_loss_patch.py" "${BASE}/eqr-causal"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_causal_attention_patch.py" "${BASE}/eqr-causal"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_path_loss_patch.py" "${BASE}/eqr-causal-futureseed"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_causal_attention_patch.py" "${BASE}/eqr-causal-futureseed"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_futureseed_patch.py" "${BASE}/eqr-causal-futureseed"
+  git -C "${BASE}/eqr-causal" rev-parse HEAD > "${BASE}/artifacts/eqr-causal.sha"
+  git -C "${BASE}/eqr-causal-futureseed" rev-parse HEAD > "${BASE}/artifacts/eqr-causal-futureseed-base.sha"
+  git -C "${BASE}/eqr-causal" diff > "${BASE}/artifacts/causal.patch"
+  git -C "${BASE}/eqr-causal-futureseed" diff > "${BASE}/artifacts/causal_futureseed.patch"
+}
+
 prepare_env() {
   if [[ ! -x "${BASE}/.venv/bin/python" ]]; then
     python -m venv --system-site-packages "${BASE}/.venv"
@@ -107,13 +121,27 @@ run_train() {
   local kind="$1"
   local repo="${BASE}/eqr-clean"
   local extra=()
-  if [[ "${kind}" == "futureseed" ]]; then
-    repo="${BASE}/eqr-futureseed"
-    extra+=(arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
-  elif [[ "${kind}" != "base" ]]; then
-    echo "unknown run kind: ${kind}" >&2
-    exit 2
-  fi
+  case "${kind}" in
+    base)
+      repo="${BASE}/eqr-clean"
+      ;;
+    futureseed)
+      repo="${BASE}/eqr-futureseed"
+      extra+=(arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
+      ;;
+    causal)
+      repo="${BASE}/eqr-causal"
+      extra+=(arch.attention_causal=true)
+      ;;
+    causal-futureseed)
+      repo="${BASE}/eqr-causal-futureseed"
+      extra+=(arch.attention_causal=true arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
+      ;;
+    *)
+      echo "unknown run kind: ${kind}" >&2
+      exit 2
+      ;;
+  esac
 
   check_official_optimizer
   apply_attention_runtime_fallback "${repo}"
@@ -156,17 +184,29 @@ run_eval() {
   local kind="$1"
   local checkpoint="${2:-}"
   if [[ -z "${checkpoint}" ]]; then
-    echo "usage: $0 eval-base|eval-futureseed <checkpoint-path>" >&2
+    echo "usage: $0 eval-base|eval-futureseed|eval-causal|eval-causal-futureseed <checkpoint-path>" >&2
     exit 2
   fi
 
   local repo="${BASE}/eqr-clean"
-  if [[ "${kind}" == "futureseed" ]]; then
-    repo="${BASE}/eqr-futureseed"
-  elif [[ "${kind}" != "base" ]]; then
-    echo "unknown eval kind: ${kind}" >&2
-    exit 2
-  fi
+  case "${kind}" in
+    base)
+      repo="${BASE}/eqr-clean"
+      ;;
+    futureseed)
+      repo="${BASE}/eqr-futureseed"
+      ;;
+    causal)
+      repo="${BASE}/eqr-causal"
+      ;;
+    causal-futureseed)
+      repo="${BASE}/eqr-causal-futureseed"
+      ;;
+    *)
+      echo "unknown eval kind: ${kind}" >&2
+      exit 2
+      ;;
+  esac
 
   apply_attention_runtime_fallback "${repo}"
   cd "${repo}"
@@ -189,6 +229,9 @@ case "${ACTION}" in
     prepare_repos
     prepare_env
     ;;
+  prepare-causal)
+    prepare_causal_repos
+    ;;
   check)
     check_official_optimizer
     ;;
@@ -201,11 +244,23 @@ case "${ACTION}" in
   train-futureseed)
     run_train futureseed
     ;;
+  train-causal)
+    run_train causal
+    ;;
+  train-causal-futureseed)
+    run_train causal-futureseed
+    ;;
   eval-base)
     run_eval base "${2:-}"
     ;;
   eval-futureseed)
     run_eval futureseed "${2:-}"
+    ;;
+  eval-causal)
+    run_eval causal "${2:-}"
+    ;;
+  eval-causal-futureseed)
+    run_eval causal-futureseed "${2:-}"
     ;;
   status)
     echo "BASE=${BASE}"
@@ -214,7 +269,7 @@ case "${ACTION}" in
     ;;
   *)
     cat >&2 <<EOF
-usage: $0 prepare|check|download-data|train-base|train-futureseed|eval-base|eval-futureseed|status
+usage: $0 prepare|prepare-causal|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|status
 EOF
     exit 2
     ;;

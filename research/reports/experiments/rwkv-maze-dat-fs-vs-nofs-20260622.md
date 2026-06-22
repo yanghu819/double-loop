@@ -6,6 +6,9 @@
 - Status: in-progress
 - Machine: AIStation GPU1 only
 - Remote work dir: `/huyang2/double-loop/.worktrees/rwkv-maze-dat-20260622`
+- Runtime Python: `/opt/conda/bin/python`
+- Required PATH prefix: `/opt/conda/bin` for `ninja` when JIT-building the
+  RWKV CUDA statepassing extension
 - Date: 2026-06-22 Asia/Shanghai
 - Local implementation timestamp: 2026-06-22T11:36:02Z
 
@@ -47,6 +50,7 @@ To be filled from remote launch.
 No-FutureSeed:
 
 ```bash
+export PATH=/opt/conda/bin:$PATH
 CUDA_VISIBLE_DEVICES=0 /opt/conda/bin/python scripts/rwkv_maze_probe.py \
   --repo-root /huyang2/double-loop/.worktrees/rwkv-maze-dat-20260622 \
   --data-dir /huyang2/double-loop/official_eqr_compare/eqr-clean/data/maze-30x30-unique-1k \
@@ -63,6 +67,7 @@ CUDA_VISIBLE_DEVICES=0 /opt/conda/bin/python scripts/rwkv_maze_probe.py \
 FutureSeed:
 
 ```bash
+export PATH=/opt/conda/bin:$PATH
 CUDA_VISIBLE_DEVICES=0 /opt/conda/bin/python scripts/rwkv_maze_probe.py \
   --repo-root /huyang2/double-loop/.worktrees/rwkv-maze-dat-20260622 \
   --data-dir /huyang2/double-loop/official_eqr_compare/eqr-clean/data/maze-30x30-unique-1k \

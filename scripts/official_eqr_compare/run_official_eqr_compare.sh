@@ -142,6 +142,13 @@ run_train() {
       exit 2
       ;;
   esac
+  if [[ -n "${EQR_EXTRA_OVERRIDES:-}" ]]; then
+    # Space-separated Hydra overrides, e.g.
+    # EQR_EXTRA_OVERRIDES='arch.hidden_size=96 arch.num_heads=8'.
+    # Keep values shell-quoted by the caller if they contain spaces.
+    read -r -a user_overrides <<< "${EQR_EXTRA_OVERRIDES}"
+    extra+=("${user_overrides[@]}")
+  fi
 
   check_official_optimizer
   apply_attention_runtime_fallback "${repo}"
@@ -160,6 +167,7 @@ run_train() {
     export CUDA_VISIBLE_DEVICES=0
     export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
     . "${BASE}/.venv/bin/activate"
+    echo "[Info] EQR_EXTRA_OVERRIDES=${EQR_EXTRA_OVERRIDES:-}"
     "${BASE}/.venv/bin/python" pretrain.py --config-name train/eqr_maze_unique \
       epochs="${EPOCHS:-64}" \
       train_epochs_per_iter="${TRAIN_EPOCHS_PER_ITER:-${EPOCHS:-64}}" \

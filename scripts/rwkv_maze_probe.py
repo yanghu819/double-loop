@@ -841,6 +841,11 @@ def main() -> None:
                 "path_count_true_frac": float(count_diag["path_count_true_frac"].detach().cpu()),
                 "path_count_abs_err": float(count_diag["path_count_abs_err"].detach().cpu()),
                 "loop1_path_f1": loop1.path_f1,
+                "loop1_precision": loop1.path_precision,
+                "loop1_recall": loop1.path_recall,
+                "loop1_pred_path_frac": loop1.pred_path_frac,
+                "loop1_fp": loop1.path_fp,
+                "loop1_fn": loop1.path_fn,
                 "loop_last_path_f1": final.path_f1,
                 "loop_gain": final.path_f1 - loop1.path_f1,
                 "loop_last_precision": final.path_precision,
@@ -853,6 +858,11 @@ def main() -> None:
                 row.update(
                     {
                         "budget_loop1_path_f1": budget_loop1.path_f1,
+                        "budget_loop1_precision": budget_loop1.path_precision,
+                        "budget_loop1_recall": budget_loop1.path_recall,
+                        "budget_loop1_pred_path_frac": budget_loop1.pred_path_frac,
+                        "budget_loop1_fp": budget_loop1.path_fp,
+                        "budget_loop1_fn": budget_loop1.path_fn,
                         "budget_loop_last_path_f1": budget_final.path_f1,
                         "budget_loop_gain": budget_final.path_f1 - budget_loop1.path_f1,
                         "budget_loop_last_precision": budget_final.path_precision,
@@ -876,8 +886,8 @@ def main() -> None:
                 f"bin={row['path_binary_loss']:.4f} budget={row['path_budget_loss']:.4f} count={row['path_count_loss']:.4f} "
                 f"dat={row['dat_loss']:.4f} improve={row['dat_improve']:.4f} "
                 f"loop1={row['loop1_path_f1']:.4f} loop{args.eval_loops}={row['loop_last_path_f1']:.4f} "
-                f"gain={row['loop_gain']:+.4f} pred={row['loop_last_pred_path_frac']:.4f} "
-                f"fp={row['loop_last_fp']:.1f} fn={row['loop_last_fn']:.1f} "
+                f"gain={row['loop_gain']:+.4f} pred={row['loop1_pred_path_frac']:.4f}->{row['loop_last_pred_path_frac']:.4f} "
+                f"fp={row['loop1_fp']:.1f}->{row['loop_last_fp']:.1f} fn={row['loop1_fn']:.1f}->{row['loop_last_fn']:.1f} "
                 f"count_pred={row['path_count_pred_frac']:.4f}{budget_msg}",
                 flush=True,
             )
@@ -933,9 +943,9 @@ def main() -> None:
         f"- loop1 path F1: `{loop1.path_f1:.4f}`",
         f"- loop{args.eval_loops} path F1: `{final.path_f1:.4f}`",
         f"- loop gain: `{final.path_f1 - loop1.path_f1:+.4f}`",
-        f"- precision/recall: `{final.path_precision:.4f}` / `{final.path_recall:.4f}`",
-        f"- pred PATH frac: `{final.pred_path_frac:.4f}`",
-        f"- FP/FN per case: `{final.path_fp:.1f}` / `{final.path_fn:.1f}`",
+        f"- precision/recall: `{loop1.path_precision:.4f}` / `{loop1.path_recall:.4f}` -> `{final.path_precision:.4f}` / `{final.path_recall:.4f}`",
+        f"- pred PATH frac: `{loop1.pred_path_frac:.4f}` -> `{final.pred_path_frac:.4f}`",
+        f"- FP/FN per case: `{loop1.path_fp:.1f}` / `{loop1.path_fn:.1f}` -> `{final.path_fp:.1f}` / `{final.path_fn:.1f}`",
         f"- feedback mode: `{args.feedback_mode}`",
         f"- DAT weight: `{args.dat_weight}`",
         f"- budget decoder: `{args.budget_decoder}`",

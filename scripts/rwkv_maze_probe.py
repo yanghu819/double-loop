@@ -661,6 +661,141 @@ h1{font-size:24px}h2{font-size:15px}h3{font-size:13px;margin:8px 0}
     (out_dir / "index.html").write_text(html_doc, encoding="utf-8")
 
 
+def write_probe_summary(
+    *,
+    model: FutureSeedLoopMaze,
+    inputs: np.ndarray,
+    labels: np.ndarray,
+    args: argparse.Namespace,
+    history: List[Dict[str, Any]],
+    final_metrics: Dict[str, PathMetrics],
+    t0: float,
+    device: torch.device,
+    aborted: bool,
+    abort_info: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    write_visuals(
+        model,
+        inputs,
+        labels,
+        args.out_dir / "visualizations",
+        loops=args.eval_loops,
+        cases=args.viz_cases,
+        device=device,
+        forward_dtype=args.forward_dtype,
+        budget_decoder=args.budget_decoder,
+    )
+    final = final_metrics[f"loop{args.eval_loops}"]
+    loop1 = final_metrics["loop1"]
+    score_metric = final_metrics[f"budget_loop{args.eval_loops}"] if args.budget_decoder else final
+    score_loop1 = final_metrics["budget_loop1"] if args.budget_decoder else loop1
+    payload = {
+        "run_name": args.run_name,
+        "condition": args.condition,
+        "task": "official_maze30_rwkv_path",
+        "data_dir": args.data_dir,
+        "config": vars(args),
+        "train_history": history,
+        "final_metrics": {key: asdict(value) for key, value in final_metrics.items()},
+        "score": score_metric.path_f1,
+        "score_key": f"final_metrics.{'budget_' if args.budget_decoder else ''}loop{args.eval_loops}.path_f1",
+        "loop_gain": score_metric.path_f1 - score_loop1.path_f1,
+        "peak_cuda_mem_gb": torch.cuda.max_memory_allocated(device) / 1e9,
+        "elapsed_sec": time.time() - t0,
+        "aborted": bool(aborted),
+        "abort": abort_info or None,
+        "decision": "aborted" if aborted else (
+            "FutureSeed-positive" if args.future_seed_scale > 0 and score_metric.path_f1 >= 0.03 else "record-only"
+        ),
+    }
+    (args.out_dir / "rwkv_maze_probe.json").write_text(json.dumps(jsonable(payload), indent=2), encoding="utf-8")
+    if aborted and abort_info is not None:
+        (args.out_dir / "abort.json").write_text(json.dumps(jsonable(abort_info), indent=2), encoding="utf-8")
+
+    readme = [
+        f"# {args.run_name}",
+        "",
+        "Official Maze30 path recovery with a causal RWKV7 state-passing backbone.",
+        "",
+        f"- status: `{'aborted' if aborted else 'completed'}`",
+        f"- condition: `{args.condition}`",
+        f"- future_seed_scale: `{args.future_seed_scale}`",
+        f"- loop1 path F1: `{loop1.path_f1:.4f}`",
+        f"- loop{args.eval_loops} path F1: `{final.path_f1:.4f}`",
+        f"- loop gain: `{final.path_f1 - loop1.path_f1:+.4f}`",
+        f"- precision/recall: `{loop1.path_precision:.4f}` / `{loop1.path_recall:.4f}` -> `{final.path_precision:.4f}` / `{final.path_recall:.4f}`",
+        f"- pred PATH frac: `{loop1.pred_path_frac:.4f}` -> `{final.pred_path_frac:.4f}`",
+        f"- FP/FN per case: `{loop1.path_fp:.1f}` / `{loop1.path_fn:.1f}` -> `{final.path_fp:.1f}` / `{final.path_fn:.1f}`",
+        f"- feedback mode: `{args.feedback_mode}`",
+        f"- DAT weight: `{args.dat_weight}`",
+        f"- budget decoder: `{args.budget_decoder}`",
+    ]
+    if args.budget_decoder:
+        readme.extend(
+            [
+                f"- budget loop1 path F1: `{score_loop1.path_f1:.4f}`",
+                f"- budget loop{args.eval_loops} path F1: `{score_metric.path_f1:.4f}`",
+                f"- budget loop gain: `{score_metric.path_f1 - score_loop1.path_f1:+.4f}`",
+                f"- budget precision/recall: `{score_metric.path_precision:.4f}` / `{score_metric.path_recall:.4f}`",
+                f"- budget pred PATH frac: `{score_metric.pred_path_frac:.4f}`",
+                f"- budget FP/FN per case: `{score_metric.path_fp:.1f}` / `{score_metric.path_fn:.1f}`",
+            ]
+        )
+    if abort_info is not None:
+        readme.extend(
+            [
+                "",
+                "## Abort",
+                "",
+                f"- reason: `{abort_info.get('reason', '')}`",
+                f"- step: `{abort_info.get('step', '')}`",
+            ]
+        )
+    readme.extend(
+        [
+            "",
+            "No selector, search, repair, or maze-specific postprocessing is used.",
+            "",
+            "- `rwkv_maze_probe.json`: metrics and config",
+            "- `visualizations/index.html`: hard-case loop visualization",
+        ]
+    )
+    (args.out_dir / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
+    return payload
+
+
+def broad_mask_abort_info(args: argparse.Namespace, row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if int(args.broad_mask_kill_step) <= 0 or int(row["step"]) < int(args.broad_mask_kill_step):
+        return None
+    prefix = "budget_" if args.broad_mask_target == "budget" and args.budget_decoder else ""
+    precision_key = f"{prefix}loop_last_precision"
+    final_fp_key = f"{prefix}loop_last_fp"
+    loop1_fp_key = f"{prefix}loop1_fp"
+    pred_frac_key = f"{prefix}loop_last_pred_path_frac"
+    if precision_key not in row or final_fp_key not in row or loop1_fp_key not in row:
+        return None
+    precision = float(row[precision_key])
+    final_fp = float(row[final_fp_key])
+    loop1_fp = float(row[loop1_fp_key])
+    fp_drop = loop1_fp - final_fp
+    pred_frac = float(row.get(pred_frac_key, 0.0))
+    if precision < float(args.broad_mask_min_precision) and fp_drop <= float(args.broad_mask_min_fp_drop):
+        return {
+            "reason": "broad_mask_low_precision_no_fp_drop",
+            "step": int(row["step"]),
+            "target": args.broad_mask_target,
+            "min_precision": float(args.broad_mask_min_precision),
+            "min_fp_drop": float(args.broad_mask_min_fp_drop),
+            "precision": precision,
+            "pred_path_frac": pred_frac,
+            "loop1_fp": loop1_fp,
+            "loop_last_fp": final_fp,
+            "fp_drop": fp_drop,
+            "row": row,
+        }
+    return None
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--repo-root", type=Path, required=True)
@@ -711,6 +846,10 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=52)
     p.add_argument("--log-every", type=int, default=100)
     p.add_argument("--viz-cases", type=int, default=64)
+    p.add_argument("--broad-mask-kill-step", type=int, default=0)
+    p.add_argument("--broad-mask-min-precision", type=float, default=0.35)
+    p.add_argument("--broad-mask-min-fp-drop", type=float, default=0.0)
+    p.add_argument("--broad-mask-target", choices=("raw", "budget"), default="raw")
     args = p.parse_args()
 
     if args.dat_weight > 0 and args.feedback_mode == "none":
@@ -891,6 +1030,34 @@ def main() -> None:
                 f"count_pred={row['path_count_pred_frac']:.4f}{budget_msg}",
                 flush=True,
             )
+            abort_info = broad_mask_abort_info(args, row)
+            if abort_info is not None:
+                payload = write_probe_summary(
+                    model=model,
+                    inputs=test_x,
+                    labels=test_y,
+                    args=args,
+                    history=history,
+                    final_metrics=eval_metrics,
+                    t0=t0,
+                    device=device,
+                    aborted=True,
+                    abort_info=abort_info,
+                )
+                print(
+                    json.dumps(
+                        {
+                            "run_name": args.run_name,
+                            "aborted": True,
+                            "reason": abort_info["reason"],
+                            "score": payload["score"],
+                            "loop_gain": payload["loop_gain"],
+                        },
+                        indent=2,
+                    ),
+                    flush=True,
+                )
+                return
     final_metrics = evaluate(
         model,
         test_x,
@@ -902,70 +1069,18 @@ def main() -> None:
         forward_dtype=args.forward_dtype,
         budget_decoder=args.budget_decoder,
     )
-    write_visuals(
-        model,
-        test_x,
-        test_y,
-        args.out_dir / "visualizations",
-        loops=args.eval_loops,
-        cases=args.viz_cases,
+    payload = write_probe_summary(
+        model=model,
+        inputs=test_x,
+        labels=test_y,
+        args=args,
+        history=history,
+        final_metrics=final_metrics,
+        t0=t0,
         device=device,
-        forward_dtype=args.forward_dtype,
-        budget_decoder=args.budget_decoder,
+        aborted=False,
     )
-    final = final_metrics[f"loop{args.eval_loops}"]
-    loop1 = final_metrics["loop1"]
-    score_metric = final_metrics[f"budget_loop{args.eval_loops}"] if args.budget_decoder else final
-    score_loop1 = final_metrics["budget_loop1"] if args.budget_decoder else loop1
-    payload = {
-        "run_name": args.run_name,
-        "condition": args.condition,
-        "task": "official_maze30_rwkv_path",
-        "data_dir": args.data_dir,
-        "config": vars(args),
-        "train_history": history,
-        "final_metrics": {key: asdict(value) for key, value in final_metrics.items()},
-        "score": score_metric.path_f1,
-        "score_key": f"final_metrics.{'budget_' if args.budget_decoder else ''}loop{args.eval_loops}.path_f1",
-        "loop_gain": score_metric.path_f1 - score_loop1.path_f1,
-        "peak_cuda_mem_gb": torch.cuda.max_memory_allocated(device) / 1e9,
-        "elapsed_sec": time.time() - t0,
-        "decision": "FutureSeed-positive" if args.future_seed_scale > 0 and score_metric.path_f1 >= 0.03 else "record-only",
-    }
-    (args.out_dir / "rwkv_maze_probe.json").write_text(json.dumps(jsonable(payload), indent=2), encoding="utf-8")
-    readme = [
-        f"# {args.run_name}",
-        "",
-        "Official Maze30 path recovery with a causal RWKV7 state-passing backbone.",
-        "",
-        f"- condition: `{args.condition}`",
-        f"- future_seed_scale: `{args.future_seed_scale}`",
-        f"- loop1 path F1: `{loop1.path_f1:.4f}`",
-        f"- loop{args.eval_loops} path F1: `{final.path_f1:.4f}`",
-        f"- loop gain: `{final.path_f1 - loop1.path_f1:+.4f}`",
-        f"- precision/recall: `{loop1.path_precision:.4f}` / `{loop1.path_recall:.4f}` -> `{final.path_precision:.4f}` / `{final.path_recall:.4f}`",
-        f"- pred PATH frac: `{loop1.pred_path_frac:.4f}` -> `{final.pred_path_frac:.4f}`",
-        f"- FP/FN per case: `{loop1.path_fp:.1f}` / `{loop1.path_fn:.1f}` -> `{final.path_fp:.1f}` / `{final.path_fn:.1f}`",
-        f"- feedback mode: `{args.feedback_mode}`",
-        f"- DAT weight: `{args.dat_weight}`",
-        f"- budget decoder: `{args.budget_decoder}`",
-        "",
-        "No selector, search, repair, or maze-specific postprocessing is used.",
-        "",
-        "- `rwkv_maze_probe.json`: metrics and config",
-        "- `visualizations/index.html`: hard-case loop visualization",
-    ]
-    if args.budget_decoder:
-        readme[17:17] = [
-            f"- budget loop1 path F1: `{score_loop1.path_f1:.4f}`",
-            f"- budget loop{args.eval_loops} path F1: `{score_metric.path_f1:.4f}`",
-            f"- budget loop gain: `{score_metric.path_f1 - score_loop1.path_f1:+.4f}`",
-            f"- budget precision/recall: `{score_metric.path_precision:.4f}` / `{score_metric.path_recall:.4f}`",
-            f"- budget pred PATH frac: `{score_metric.pred_path_frac:.4f}`",
-            f"- budget FP/FN per case: `{score_metric.path_fp:.1f}` / `{score_metric.path_fn:.1f}`",
-        ]
-    (args.out_dir / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
-    print(json.dumps({"run_name": args.run_name, "score": score_metric.path_f1, "loop_gain": score_metric.path_f1 - score_loop1.path_f1}, indent=2))
+    print(json.dumps({"run_name": args.run_name, "score": payload["score"], "loop_gain": payload["loop_gain"]}, indent=2))
 
 
 if __name__ == "__main__":

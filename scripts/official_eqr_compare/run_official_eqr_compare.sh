@@ -54,6 +54,22 @@ prepare_causal_repos() {
   git -C "${BASE}/eqr-causal-futureseed" diff > "${BASE}/artifacts/causal_futureseed.patch"
 }
 
+prepare_bidir_repos() {
+  clone_one "${BASE}/eqr-causal-cheap"
+  clone_one "${BASE}/eqr-causal-bidir-futureseed"
+  if [[ "${APPLY_PATH_LOSS_PATCH:-0}" == "1" ]]; then
+    "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_path_loss_patch.py" "${BASE}/eqr-causal-cheap"
+    "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_path_loss_patch.py" "${BASE}/eqr-causal-bidir-futureseed"
+  fi
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_causal_attention_patch.py" "${BASE}/eqr-causal-cheap"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_causal_attention_patch.py" "${BASE}/eqr-causal-bidir-futureseed"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_bidir_futureseed_patch.py" "${BASE}/eqr-causal-bidir-futureseed"
+  git -C "${BASE}/eqr-causal-cheap" rev-parse HEAD > "${BASE}/artifacts/eqr-causal-cheap.sha"
+  git -C "${BASE}/eqr-causal-bidir-futureseed" rev-parse HEAD > "${BASE}/artifacts/eqr-causal-bidir-futureseed-base.sha"
+  git -C "${BASE}/eqr-causal-cheap" diff > "${BASE}/artifacts/causal_cheap.patch"
+  git -C "${BASE}/eqr-causal-bidir-futureseed" diff > "${BASE}/artifacts/causal_bidir_futureseed.patch"
+}
+
 prepare_env() {
   if [[ ! -x "${BASE}/.venv/bin/python" ]]; then
     python -m venv --system-site-packages "${BASE}/.venv"
@@ -137,6 +153,14 @@ run_train() {
       repo="${BASE}/eqr-causal-futureseed"
       extra+=(arch.attention_causal=true arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
       ;;
+    causal-cheap)
+      repo="${BASE}/eqr-causal-cheap"
+      extra+=(arch.attention_causal=true)
+      ;;
+    causal-bidir-futureseed)
+      repo="${BASE}/eqr-causal-bidir-futureseed"
+      extra+=(arch.attention_causal=true arch.future_seed_mode=reverse_causal arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
+      ;;
     *)
       echo "unknown run kind: ${kind}" >&2
       exit 2
@@ -156,10 +180,26 @@ run_train() {
   local run_name="${RUN_NAME:-official-eqr-${kind}-$(date -u +%Y%m%dT%H%M%SZ)}"
   local log="${BASE}/logs/${run_name}.log"
   local pidfile="${BASE}/artifacts/${run_name}.pid"
+  local train_config="${EQR_TRAIN_CONFIG:-train/eqr_maze_unique}"
+  local default_path_loss_overrides=1
+  if [[ "${kind}" == "causal-cheap" || "${kind}" == "causal-bidir-futureseed" ]]; then
+    default_path_loss_overrides="${APPLY_PATH_LOSS_PATCH:-0}"
+  fi
+  local loss_overrides=()
+  if [[ "${ENABLE_PATH_TOKEN_LOSS_OVERRIDES:-${default_path_loss_overrides}}" != "0" ]]; then
+    loss_overrides+=(arch.loss.path_token_weight="${PATH_TOKEN_WEIGHT:-1.0}" arch.loss.path_token_id="${PATH_TOKEN_ID:-5}")
+  fi
   cd "${repo}"
   mkdir -p data
   if [[ ! -e data/maze-30x30-unique-1k ]]; then
     ln -s "${BASE}/eqr-clean/data/maze-30x30-unique-1k" data/maze-30x30-unique-1k
+  fi
+  if [[ -n "${EQR_DATA_LINKS:-}" ]]; then
+    for spec in ${EQR_DATA_LINKS}; do
+      local name="${spec%%=*}"
+      local path="${spec#*=}"
+      ln -sfn "${path}" "data/${name}"
+    done
   fi
   (
     export WANDB_MODE=disabled
@@ -168,7 +208,8 @@ run_train() {
     export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
     . "${BASE}/.venv/bin/activate"
     echo "[Info] EQR_EXTRA_OVERRIDES=${EQR_EXTRA_OVERRIDES:-}"
-    "${BASE}/.venv/bin/python" pretrain.py --config-name train/eqr_maze_unique \
+    echo "[Info] EQR_TRAIN_CONFIG=${train_config}"
+    "${BASE}/.venv/bin/python" pretrain.py --config-name "${train_config}" \
       epochs="${EPOCHS:-64}" \
       train_epochs_per_iter="${TRAIN_EPOCHS_PER_ITER:-${EPOCHS:-64}}" \
       global_batch_size="${GLOBAL_BATCH_SIZE:-128}" \
@@ -178,8 +219,7 @@ run_train() {
       steps_hist_log_interval_steps="${STEPS_HIST_LOG_INTERVAL_STEPS:-100}" \
       +wandb_mode=disabled \
       +run_name="${run_name}" \
-      arch.loss.path_token_weight="${PATH_TOKEN_WEIGHT:-1.0}" \
-      arch.loss.path_token_id="${PATH_TOKEN_ID:-5}" \
+      "${loss_overrides[@]}" \
       "${extra[@]}"
   ) >"${log}" 2>&1 &
   echo $! > "${pidfile}"
@@ -210,6 +250,12 @@ run_eval() {
     causal-futureseed)
       repo="${BASE}/eqr-causal-futureseed"
       ;;
+    causal-cheap)
+      repo="${BASE}/eqr-causal-cheap"
+      ;;
+    causal-bidir-futureseed)
+      repo="${BASE}/eqr-causal-bidir-futureseed"
+      ;;
     *)
       echo "unknown eval kind: ${kind}" >&2
       exit 2
@@ -225,7 +271,7 @@ run_eval() {
     export PYTHONPATH="${BASE}/.venv/lib/python3.10/site-packages${PYTHONPATH:+:${PYTHONPATH}}"
     . "${BASE}/.venv/bin/activate"
     "${BASE}/.venv/bin/python" evaluate.py \
-      eval_yaml=config/eval/depth_breadth.yaml \
+      eval_yaml="${EQR_EVAL_YAML:-config/eval/depth_breadth.yaml}" \
       checkpoint="${checkpoint}" \
       global_batch_size="${EVAL_GLOBAL_BATCH_SIZE:-128}" \
       suffix="${EVAL_SUFFIX:-final_D16_B1_N0.5_S1.0}"
@@ -239,6 +285,10 @@ case "${ACTION}" in
     ;;
   prepare-causal)
     prepare_causal_repos
+    ;;
+  prepare-bidir)
+    prepare_bidir_repos
+    prepare_env
     ;;
   check)
     check_official_optimizer
@@ -258,6 +308,12 @@ case "${ACTION}" in
   train-causal-futureseed)
     run_train causal-futureseed
     ;;
+  train-causal-cheap)
+    run_train causal-cheap
+    ;;
+  train-causal-bidir-futureseed)
+    run_train causal-bidir-futureseed
+    ;;
   eval-base)
     run_eval base "${2:-}"
     ;;
@@ -270,6 +326,12 @@ case "${ACTION}" in
   eval-causal-futureseed)
     run_eval causal-futureseed "${2:-}"
     ;;
+  eval-causal-cheap)
+    run_eval causal-cheap "${2:-}"
+    ;;
+  eval-causal-bidir-futureseed)
+    run_eval causal-bidir-futureseed "${2:-}"
+    ;;
   status)
     echo "BASE=${BASE}"
     find "${BASE}" -maxdepth 2 -type f \( -name "*.pid" -o -name "*.sha" -o -name "*.patch" \) -print 2>/dev/null | sort || true
@@ -277,7 +339,7 @@ case "${ACTION}" in
     ;;
   *)
     cat >&2 <<EOF
-usage: $0 prepare|prepare-causal|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|status
+usage: $0 prepare|prepare-causal|prepare-bidir|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|train-causal-cheap|train-causal-bidir-futureseed|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|eval-causal-cheap|eval-causal-bidir-futureseed|status
 EOF
     exit 2
     ;;

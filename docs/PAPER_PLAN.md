@@ -324,6 +324,9 @@ official-codebase cheap-bidirectional probe:
   future-token seed source.
 - Prefer Sudoku sample efficiency for the first probe because Maze path-weight
   has repeatedly collapsed to a broad-mask attractor.
+- For official Sudoku, explicitly override `arch.mlp_t=false`; the upstream
+  Sudoku training config sets `mlp_t=true`, which uses a noncausal token-MLP
+  mixer and makes `attention_causal=true` meaningless.
 - Keep the mechanism generic: no Sudoku rules, no solver, no selector, no
   best-of-K oracle, no repair.
 - Success means FutureSeed helps the cheap backbone approach the official EqR

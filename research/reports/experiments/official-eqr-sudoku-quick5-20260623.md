@@ -144,6 +144,14 @@ to `0 MiB`, and remote artifact
 next resume should start missing seeds from seed2 using the latest committed
 resume-safe source SHA.
 
+GPU1 reopened as work-platform `d6e90210-2156-4a6a-a7d0-256ca62bbfde` and was
+validated with an idle `NVIDIA A800-SXM4-80GB`. Resume launch at
+`2026-06-23T16:32:49Z` used detached source SHA
+`95aa1dc93da84fe6b10acf66fcba4c165a20621a`, with completed `seed1.json`
+present, and started missing seeds `2 3 4` as launcher PID `124`. Follow-up
+check showed seed2 `evaluate.py` active with GPU1 at `63762 MiB / 81920 MiB`
+and `100%` utilization.
+
 ## 8. Conclusions
 
 Pending.

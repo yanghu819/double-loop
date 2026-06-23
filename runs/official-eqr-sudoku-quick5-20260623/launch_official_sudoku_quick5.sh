@@ -86,9 +86,10 @@ keys = [
 rows = []
 for seed, path in seed_files:
     data = json.loads(path.read_text())
+    metrics = data.get("metrics", data)
     row = {"seed": seed, "path": str(path)}
     for key in keys:
-        row[key] = float(data[key])
+        row[key] = float(metrics[key])
     rows.append(row)
 
 summary = {

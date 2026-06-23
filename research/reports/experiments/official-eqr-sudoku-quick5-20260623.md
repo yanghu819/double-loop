@@ -123,6 +123,18 @@ after the resume launch, again at about `600s/it`, with GPU1 still at
 pre-halt progress point under the new detached source SHA; no metrics have
 landed yet, as expected before seed completion.
 
+Seed1 completed at `2026-06-23T15:08:28Z` and `metrics/seed1.json` was copied
+from the official EqR `eval_preds` directory; seed2 launched immediately after.
+Seed1 metrics:
+
+| seed | top1 exact | top4 exact | majority exact | any-correct |
+|---:|---:|---:|---:|---:|
+| 1 | 0.99072265625 | 0.9866943359375 | 0.98681640625 | 0.99072265625 |
+
+The official metric JSON stores values under a top-level `metrics` dictionary,
+so the resume launcher aggregation was updated to read `data["metrics"]` when
+present and fall back to flat JSON for older copied artifacts.
+
 ## 8. Conclusions
 
 Pending.

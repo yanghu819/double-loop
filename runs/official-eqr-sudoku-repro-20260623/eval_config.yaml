@@ -1,0 +1,116 @@
+arch:
+  name: eqr@EqRModel
+  short_name: TRM_MLP_Langevin_FR
+  loss:
+    name: losses@InferenceLossHead
+    loss_type: stablemax_cross_entropy
+  halt_exploration_prob: 0.1
+  halt_max_steps: 64
+  H_cycles: 3
+  L_cycles: 6
+  H_layers: 0
+  L_layers: 2
+  hidden_size: 512
+  num_heads: 8
+  expansion: 4
+  puzzle_emb_ndim: 512
+  pos_encodings: none
+  forward_dtype: bfloat16
+  mlp_t: true
+  puzzle_emb_len: 16
+  no_ACT_continue: true
+  lambda_: 0.95
+  noise_scale: 0.5
+  H_init_std: 1.0
+  L_init_std: 1.0
+dataset:
+  name: Sudoku-1k
+  data_path: data/sudoku-extreme-1k-aug-1000
+  evaluators: []
+optimizer_kwargs: {}
+global_batch_size: 128
+epochs: 50000
+lr: 0.0001
+lr_min_ratio: 1.0
+lr_warmup_steps: 2000
+gradient_accumulation_steps: 1
+weight_decay: 1.0
+beta1: 0.9
+beta2: 0.95
+grad_clip_norm: null
+target_q_update_every: 4
+project_name: Efficient_Deq
+entity: MDEQGA
+run_name: TRM_MLP_LANGEVIN_FRZ_RANDOM_Z_EMA_SUDOKU-1K
+checkpoint_path: /huyang2/double-loop/official_eqr_sudoku_repro_20260623/downloaded_checkpoints/sudoku-extreme
+resume: false
+load_checkpoint: null
+load_weights_only: false
+load_strict: false
+seed: 0
+train_epochs_per_iter: 5000
+eval_interval_steps: 5000
+eval_save_outputs: []
+eval_save_carry: false
+heavy_metrics_log_interval: 100
+steps_hist_log_interval_steps: 1000
+steps_hist_plotly: true
+checkpoint_interval_steps: 10000
+max_steps: null
+wandb_mode: null
+ema: true
+ema_rate: 0.999
+debug: false
+debug_trace_steps: 0
+grad_norm_log_interval_steps: null
+hidden_state_log_interval_steps: null
+gradient_checkpoint: false
+retain_graph: false
+eval_sync_max_wait_time: 300.0
+eval_sync_poll_interval: 2.0
+eval_sync_status_log_interval: 10.0
+eval_description: null
+eval_dir: /huyang2/double-loop/official_eqr_sudoku_repro_20260623/downloaded_checkpoints/eval_preds/step_50000_sudoku_lite_D64_B128_N0.5_S1_seed0_rerun_20260623T081821Z_arch_halt_max_steps-64_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0
+convergence_window: 3
+convergence_top_k: 4
+convergence_vis_plots: []
+optimizer:
+  name: adam_atan2
+  kwargs: {}
+halt_manager:
+  enabled: false
+  base_max_steps: 16
+  max_ceiling: 512
+  applied_rules:
+  - hit_max
+  - topk
+  - divergence
+  - label_mismatch
+  - label_low_confidence
+  max_hit_threshold: 3
+  topk: 1
+  topk_streak: 2
+  convergence_reference_step: 16
+  convergence_delta: 0.02
+  convergence_patience: 2
+  label_mismatch_patience: 2
+  label_confidence_threshold: 0.5
+  label_confidence_patience: 2
+  warmup_updates: 0
+  growth_factor: 1.5
+  growth_step: 2
+  min_increment: 1
+  max_records: 500000
+  decay: 0.0
+amp_initial_scale: 65536.0
+puzzle_emb_lr: 0.0001
+puzzle_emb_weight_decay: 1.0
+resource_log_interval_steps: 2500
+fork_from_ckpt: false
+track_deq_traces: false
+server:
+  servers:
+  - ucsd-serv12
+  - ucsd-serv13
+  - ucsd-serv9
+  ckpt_map: {}

@@ -1,0 +1,40 @@
+nohup: ignoring input
+time_utc=2026-06-23T06:26:00Z
+base=/huyang2/double-loop/official_eqr_sudoku_repro_20260623
+repo=/huyang2/double-loop/official_eqr_sudoku_repro_20260623/eqr-official
+repo_head=aba94e9cde0f273ce644db5261cd6915ba6561f0
+repo_status_lines=0
+checkpoint=/huyang2/double-loop/official_eqr_sudoku_repro_20260623/downloaded_checkpoints/sudoku-extreme/eqr.pth
+258b1f0a90003a2db0de0c8df7831683ffce00de295ed4bba15dc8e599920d26  /huyang2/double-loop/official_eqr_sudoku_repro_20260623/downloaded_checkpoints/sudoku-extreme/eqr.pth
+1875b5e14fd6ca8b5bacbe2c0fd09efc661faeb7a1d44cff3d530b09525bb293  /huyang2/double-loop/official_eqr_sudoku_repro_20260623/artifacts/eqr-data-full.tgz
+torch 2.7.0+cu126 cuda True NVIDIA A800-SXM4-80GB
+adam_atan2_backend /huyang2/double-loop/official_eqr_compare/.venv/lib/python3.10/site-packages/adam_atan2_backend.cpython-310-x86_64-linux-gnu.so
+python 3.10.11 (main, May 16 2023, 00:28:57) [GCC 11.2.0]
+applied sdpa fallback
+[run_lite] seed=0 suffix=sudoku_lite_D64_B128_N0.5_S1_seed0
+[Info] evaluating 1 checkpoint(s)
+[Info] 
+epochs: 50000
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 11
+seq_len: 81
+
+total_samples: 1000
+global_batch_size: 128                         
+Estimated total training steps: 350000
+[Info] Steps per epoch: 7
+[Info] Using optimizer: adam_atan2 with args: {}
+Adjusted 13 checkpoint key(s) to include '_orig_mod' segments.
+[Info] override arch.halt_max_steps=64
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] override halt_max_steps=64
+[Info] override noise_scale=0.5
+[Info] override H_init_std=1.0
+[Info] override L_init_std=1.0
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+Eval (1 ranks):   0%|          | 0/16 [00:00<?, ?it/s]Terminated

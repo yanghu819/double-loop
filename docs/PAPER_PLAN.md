@@ -72,6 +72,12 @@ for scaling to harder spatial reasoning tasks.
   precision about `0.306`, recall about `1.0`, predicted PATH fraction about
   `0.433`, and roughly `270` false positives per case. FutureSeed has an early
   step500 optimization edge, but no final path-aware win.
+- Important caveat: the current official EqR FutureSeed patch is a cross-level
+  H/L latent injection. It is useful as an add-on boundary test, but it is not
+  a clean "cheap bidirectional" implementation under causal attention because
+  it does not introduce an independent future-token source. The neutral Maze
+  causal/compression results should therefore not be over-read as disproving the
+  broader FutureSeed mechanism.
 - The official EqR H96 mixer-compression gate is also negative. H96 base loop16
   path F1 is `0.467337`; H96+FutureSeed is `0.467160` (`-0.000178`). Both arms
   keep recall at `1.0`, predicted PATH fraction around `0.434`, and roughly
@@ -299,10 +305,27 @@ when full worktree/source snapshot checkout stalls on historical tracked
 artifacts.
 
 The paper claim is allowed to proceed only if FutureSeed either improves hard
-path F1 by `>= +0.03` without broad-mask inflation, or reaches the same F1 with
-`>=20%` lower train/inference compute. If the official EqR baseline cannot be
-reproduced, stop there. If FutureSeed only increases token accuracy or
-predicted-path coverage without improving FP/FN, treat it as a negative result
-and visualize the failure.
+path F1 by `>= +0.03` without broad-mask inflation, improves official Sudoku
+sample-efficiency/exact under a matched cheap backbone, or reaches the same
+accuracy with `>=20%` lower train/inference compute. If the official EqR
+baseline cannot be reproduced, stop there. If FutureSeed only increases token
+accuracy or predicted-path coverage without improving exact/FP/FN, treat it as
+a negative result and visualize the failure.
 
 Do not run another weight/seed/temperature table for Maze.
+
+After the official Sudoku quick 5-seed baseline gate completes, the highest-ROI
+next experiment is not another old-patch gate sweep. It is a single
+official-codebase cheap-bidirectional probe:
+
+- Use official EqR as the strong noncausal ceiling, not as the place where the
+  add-on must beat full attention.
+- Compare a cheap/causal backbone against the same backbone with a genuine
+  future-token seed source.
+- Prefer Sudoku sample efficiency for the first probe because Maze path-weight
+  has repeatedly collapsed to a broad-mask attractor.
+- Keep the mechanism generic: no Sudoku rules, no solver, no selector, no
+  best-of-K oracle, no repair.
+- Success means FutureSeed helps the cheap backbone approach the official EqR
+  ceiling faster or cheaper. Failure means the current FutureSeed formulation
+  needs to change, not that we should tune gate bias or seed tables.

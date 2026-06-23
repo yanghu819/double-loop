@@ -135,6 +135,15 @@ The official metric JSON stores values under a top-level `metrics` dictionary,
 so the resume launcher aggregation was updated to read `data["metrics"]` when
 present and fall back to flat JSON for older copied artifacts.
 
+Seed2 was preempted intentionally at `2026-06-23T16:07:30Z` after reaching
+`5/16` eval batches. GPU1 had only about `806s` remaining, while a full official
+seed takes about `9600s`; continuing could not produce a valid per-seed metric.
+Exact PIDs `201`, `510`, `579`, and `587` were terminated, GPU memory returned
+to `0 MiB`, and remote artifact
+`seed2_preempt_insufficient_lease_20260623T1607Z.json` records the event. The
+next resume should start missing seeds from seed2 using the latest committed
+resume-safe source SHA.
+
 ## 8. Conclusions
 
 Pending.

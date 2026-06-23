@@ -1,0 +1,93 @@
+nohup: ignoring input
+time_utc=2026-06-23T04:24:38Z
+base=/huyang2/double-loop/official_eqr_repro_20260623
+repo=/huyang2/double-loop/official_eqr_repro_20260623/eqr-official
+repo_head=aba94e9cde0f273ce644db5261cd6915ba6561f0
+repo_status_lines=0
+checkpoint=/huyang2/double-loop/official_eqr_repro_20260623/downloaded_checkpoints/maze-unique/eqr.pth
+9cb8ab682519f290c3ec157b5a16829e51afff27773651fbd01a260b8748b138  /huyang2/double-loop/official_eqr_repro_20260623/downloaded_checkpoints/maze-unique/eqr.pth
+torch 2.7.0+cu126 cuda True NVIDIA A800-SXM4-80GB
+adam_atan2_backend /huyang2/double-loop/official_eqr_compare/.venv/lib/python3.10/site-packages/adam_atan2_backend.cpython-310-x86_64-linux-gnu.so
+python 3.10.11 (main, May 16 2023, 00:28:57) [GCC 11.2.0]
+applied sdpa fallback
+[run_eval] label=D16_B1 args=global_batch_size=128
+[Info] evaluating 1 checkpoint(s)
+[Info]
+epochs: 150000
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 6
+seq_len: 900
+
+total_samples: 1000
+global_batch_size: 128
+Estimated total training steps: 1050000
+[Info] Steps per epoch: 7
+[Info] Using optimizer: adam_atan2 with args: {}
+Adjusted 9 checkpoint key(s) to include '_orig_mod' segments.
+[Info] override arch.halt_max_steps=16
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] override halt_max_steps=16
+[Info] override noise_scale=0.5
+[Info] override H_init_std=1.0
+[Info] override L_init_std=1.0
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+Eval (1 ranks):   0%|          | 0/8 [00:00<?, ?it/s]Eval (1 ranks):  12%|█▎        | 1/8 [00:25<02:59, 25.64s/it]Eval (1 ranks):  25%|██▌       | 2/8 [00:26<01:05, 10.92s/it]Eval (1 ranks):  38%|███▊      | 3/8 [00:26<00:31,  6.22s/it]Eval (1 ranks):  50%|█████     | 4/8 [00:27<00:16,  4.01s/it]Eval (1 ranks):  62%|██████▎   | 5/8 [00:28<00:08,  2.78s/it]Eval (1 ranks):  75%|███████▌  | 6/8 [00:28<00:04,  2.05s/it]Eval (1 ranks):  88%|████████▊ | 7/8 [00:29<00:01,  1.58s/it]Eval (1 ranks): 100%|██████████| 8/8 [00:29<00:00,  1.27s/it]                                                             [Info] saved /huyang2/double-loop/official_eqr_repro_20260623/downloaded_checkpoints/eval_preds/step_135000_D16_B1_N0.5_S1.0_arch_halt_max_steps-16_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0/eval_metrics_step_135000.json
+[run_eval] label=D64_B1 args=halt_max_steps=64 global_batch_size=64
+[Info] evaluating 1 checkpoint(s)
+[Info]
+epochs: 150000
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 6
+seq_len: 900
+
+total_samples: 1000
+global_batch_size: 64
+Estimated total training steps: 2250000
+[Info] Steps per epoch: 15
+[Info] Using optimizer: adam_atan2 with args: {}
+Adjusted 9 checkpoint key(s) to include '_orig_mod' segments.
+[Info] override arch.halt_max_steps=64
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] override halt_max_steps=64
+[Info] override noise_scale=0.5
+[Info] override H_init_std=1.0
+[Info] override L_init_std=1.0
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+Eval (1 ranks):   0%|          | 0/16 [00:00<?, ?it/s]Eval (1 ranks):   6%|▋         | 1/16 [00:19<04:48, 19.26s/it]Eval (1 ranks):  12%|█▎        | 2/16 [00:20<02:01,  8.68s/it]Eval (1 ranks):  19%|█▉        | 3/16 [00:21<01:08,  5.30s/it]Eval (1 ranks):  25%|██▌       | 4/16 [00:23<00:44,  3.70s/it]Eval (1 ranks):  31%|███▏      | 5/16 [00:24<00:31,  2.83s/it]Eval (1 ranks):  38%|███▊      | 6/16 [00:25<00:22,  2.30s/it]Eval (1 ranks):  44%|████▍     | 7/16 [00:26<00:17,  1.96s/it]Eval (1 ranks):  50%|█████     | 8/16 [00:28<00:13,  1.74s/it]Eval (1 ranks):  56%|█████▋    | 9/16 [00:29<00:11,  1.60s/it]Eval (1 ranks):  62%|██████▎   | 10/16 [00:30<00:08,  1.50s/it]Eval (1 ranks):  69%|██████▉   | 11/16 [00:31<00:07,  1.43s/it]Eval (1 ranks):  75%|███████▌  | 12/16 [00:33<00:05,  1.38s/it]Eval (1 ranks):  81%|████████▏ | 13/16 [00:34<00:04,  1.35s/it]Eval (1 ranks):  88%|████████▊ | 14/16 [00:35<00:02,  1.32s/it]Eval (1 ranks):  94%|█████████▍| 15/16 [00:37<00:01,  1.31s/it]Eval (1 ranks): 100%|██████████| 16/16 [00:38<00:00,  1.30s/it]                                                               [Info] saved /huyang2/double-loop/official_eqr_repro_20260623/downloaded_checkpoints/eval_preds/step_135000_D64_B1_N0.5_S1.0_arch_halt_max_steps-64_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0/eval_metrics_step_135000.json
+[run_eval] label=D64_B128 args=halt_max_steps=64 different_init=128 convergence_top_k=1 global_batch_size=16
+[Info] evaluating 1 checkpoint(s)
+[Info]
+epochs: 150000
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 6
+seq_len: 900
+
+total_samples: 1000
+global_batch_size: 16
+Estimated total training steps: 9300000
+[Info] Steps per epoch: 62
+[Info] Using optimizer: adam_atan2 with args: {}
+Adjusted 9 checkpoint key(s) to include '_orig_mod' segments.
+[Info] override arch.halt_max_steps=64
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] override halt_max_steps=64
+[Info] override noise_scale=0.5
+[Info] override H_init_std=1.0
+[Info] override L_init_std=1.0
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+Eval (1 ranks):   0%|          | 0/63 [00:00<?, ?it/s]Eval (1 ranks):   2%|▏         | 1/63 [01:01<1:03:44, 61.69s/it]Eval (1 ranks):   3%|▎         | 2/63 [01:39<48:32, 47.75s/it]  Eval (1 ranks):   5%|▍         | 3/63 [02:17<43:19, 43.33s/it]Eval (1 ranks):   6%|▋         | 4/63 [02:55<40:36, 41.29s/it]Eval (1 ranks):   8%|▊         | 5/63 [03:34<38:48, 40.15s/it]Eval (1 ranks):  10%|▉         | 6/63 [04:12<37:29, 39.46s/it]Eval (1 ranks):  11%|█         | 7/63 [04:50<36:25, 39.03s/it]Eval (1 ranks):  13%|█▎        | 8/63 [05:28<35:30, 38.74s/it]Eval (1 ranks):  14%|█▍        | 9/63 [06:06<34:41, 38.55s/it]Eval (1 ranks):  16%|█▌        | 10/63 [06:44<33:55, 38.41s/it]Eval (1 ranks):  17%|█▋        | 11/63 [07:22<33:13, 38.33s/it]Eval (1 ranks):  19%|█▉        | 12/63 [08:00<32:31, 38.26s/it]Eval (1 ranks):  21%|██        | 13/63 [08:38<31:49, 38.19s/it]Eval (1 ranks):  22%|██▏       | 14/63 [09:16<31:09, 38.15s/it]Eval (1 ranks):  24%|██▍       | 15/63 [09:55<30:29, 38.11s/it]Eval (1 ranks):  25%|██▌       | 16/63 [10:33<29:49, 38.08s/it]Eval (1 ranks):  27%|██▋       | 17/63 [11:11<29:10, 38.06s/it]Eval (1 ranks):  29%|██▊       | 18/63 [11:49<28:31, 38.04s/it]Eval (1 ranks):  30%|███       | 19/63 [12:27<27:53, 38.04s/it]Eval (1 ranks):  32%|███▏      | 20/63 [13:05<27:15, 38.04s/it]Eval (1 ranks):  33%|███▎      | 21/63 [13:43<26:37, 38.04s/it]Eval (1 ranks):  35%|███▍      | 22/63 [14:21<25:59, 38.04s/it]Eval (1 ranks):  37%|███▋      | 23/63 [14:59<25:21, 38.04s/it]Eval (1 ranks):  38%|███▊      | 24/63 [15:37<24:43, 38.04s/it]Eval (1 ranks):  40%|███▉      | 25/63 [16:15<24:05, 38.04s/it]Eval (1 ranks):  41%|████▏     | 26/63 [16:53<23:27, 38.04s/it]Eval (1 ranks):  43%|████▎     | 27/63 [17:31<22:49, 38.04s/it]Eval (1 ranks):  44%|████▍     | 28/63 [18:09<22:11, 38.04s/it]Eval (1 ranks):  46%|████▌     | 29/63 [18:47<21:33, 38.04s/it]Eval (1 ranks):  48%|████▊     | 30/63 [19:25<20:55, 38.04s/it]Eval (1 ranks):  49%|████▉     | 31/63 [20:03<20:17, 38.04s/it]Eval (1 ranks):  51%|█████     | 32/63 [20:41<19:39, 38.04s/it]Eval (1 ranks):  52%|█████▏    | 33/63 [21:19<19:01, 38.04s/it]Eval (1 ranks):  54%|█████▍    | 34/63 [21:57<18:23, 38.04s/it]Eval (1 ranks):  56%|█████▌    | 35/63 [22:35<17:45, 38.04s/it]Eval (1 ranks):  57%|█████▋    | 36/63 [23:13<17:07, 38.04s/it]Eval (1 ranks):  59%|█████▊    | 37/63 [23:51<16:29, 38.04s/it]Eval (1 ranks):  60%|██████    | 38/63 [24:29<15:51, 38.04s/it]Eval (1 ranks):  62%|██████▏   | 39/63 [25:07<15:13, 38.04s/it]Eval (1 ranks):  63%|██████▎   | 40/63 [25:45<14:34, 38.04s/it]Eval (1 ranks):  65%|██████▌   | 41/63 [26:23<13:56, 38.04s/it]Eval (1 ranks):  67%|██████▋   | 42/63 [27:02<13:18, 38.04s/it]Eval (1 ranks):  68%|██████▊   | 43/63 [27:40<12:40, 38.04s/it]Eval (1 ranks):  70%|██████▉   | 44/63 [28:18<12:02, 38.04s/it]Eval (1 ranks):  71%|███████▏  | 45/63 [28:56<11:24, 38.04s/it]Eval (1 ranks):  73%|███████▎  | 46/63 [29:34<10:46, 38.04s/it]Eval (1 ranks):  75%|███████▍  | 47/63 [30:12<10:08, 38.04s/it]Eval (1 ranks):  76%|███████▌  | 48/63 [30:50<09:30, 38.02s/it]Eval (1 ranks):  78%|███████▊  | 49/63 [31:28<08:52, 38.01s/it]Eval (1 ranks):  79%|███████▉  | 50/63 [32:06<08:14, 38.00s/it]Eval (1 ranks):  81%|████████  | 51/63 [32:44<07:36, 38.01s/it]Eval (1 ranks):  83%|████████▎ | 52/63 [33:22<06:58, 38.01s/it]Eval (1 ranks):  84%|████████▍ | 53/63 [34:00<06:20, 38.01s/it]Eval (1 ranks):  86%|████████▌ | 54/63 [34:38<05:42, 38.01s/it]Eval (1 ranks):  87%|████████▋ | 55/63 [35:16<05:04, 38.01s/it]Eval (1 ranks):  89%|████████▉ | 56/63 [35:54<04:26, 38.01s/it]Eval (1 ranks):  90%|█████████ | 57/63 [36:32<03:48, 38.00s/it]Eval (1 ranks):  92%|█████████▏| 58/63 [37:10<03:09, 37.99s/it]Eval (1 ranks):  94%|█████████▎| 59/63 [37:48<02:32, 38.01s/it]Eval (1 ranks):  95%|█████████▌| 60/63 [38:26<01:54, 38.02s/it]Eval (1 ranks):  97%|█████████▋| 61/63 [39:04<01:16, 38.02s/it]Eval (1 ranks):  98%|█████████▊| 62/63 [39:42<00:38, 38.01s/it]Eval (1 ranks): 100%|██████████| 63/63 [40:20<00:00, 38.00s/it]                                                               [Info] saved /huyang2/double-loop/official_eqr_repro_20260623/downloaded_checkpoints/eval_preds/step_135000_D64_B128_N0.5_S1.0_arch_halt_max_steps-64_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0/eval_metrics_step_135000.json

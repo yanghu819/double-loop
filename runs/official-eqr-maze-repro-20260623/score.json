@@ -1,0 +1,44 @@
+{
+  "bad_default_diagnostic": {
+    "D64_B128_noise0.5_convergence_top1_exact_accuracy": 0.007936507936507936,
+    "D64_B128_noise0.5_token_accuracy": 0.8611013793945312,
+    "interpretation": "Generic depth_breadth default noise_scale=0.5 is not the released Maze checkpoint reproduction setting."
+  },
+  "environment_note": "Official FlashAttention path is blocked on this glibc2.31/CUDA11.7-nvcc host; PyTorch SDPA fallback was used and reproduced Maze exact targets once noise_scale=0.01 was set.",
+  "paper_targets": {
+    "D16_B1": 0.822,
+    "D64_B1": 0.889,
+    "D64_B128": 0.93
+  },
+  "primary_score": 0.9444444444444444,
+  "primary_score_key": "D64_B128_N0.01.convergence_top_k/exact_accuracy",
+  "reproduced": {
+    "D16_B1": {
+      "exact_accuracy": 0.827,
+      "noise_scale": 0.01,
+      "token_accuracy": 0.984574462890625
+    },
+    "D64_B1": {
+      "exact_accuracy": 0.892,
+      "noise_scale": 0.01,
+      "token_accuracy": 0.9915233764648438
+    },
+    "D64_B128": {
+      "all_exact_mean_over_inits": 0.892375,
+      "all_token_accuracy_mean_over_inits": 0.9909806518554688,
+      "any_correct": 0.9920634920634921,
+      "convergence_top1_exact_accuracy": 0.9444444444444444,
+      "majority_vote_exact_accuracy": 0.9771825396825397,
+      "noise_scale": 0.01,
+      "pass_at_1": 0.8932291666666666
+    }
+  },
+  "run_name": "official-eqr-maze-repro-20260623",
+  "source": {
+    "checkpoint_sha256": "9cb8ab682519f290c3ec157b5a16829e51afff27773651fbd01a260b8748b138",
+    "local_repo_sha": "d5c3a5745b823d6a32ae2dd38a7bbec615d4c2df",
+    "official_eqr_sha": "aba94e9cde0f273ce644db5261cd6915ba6561f0",
+    "remote_work_dir": "/huyang2/double-loop/official_eqr_repro_20260623"
+  },
+  "timestamp_utc": "2026-06-23T06:13:57.365223+00:00"
+}

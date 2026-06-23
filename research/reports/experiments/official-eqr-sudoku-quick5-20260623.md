@@ -75,6 +75,11 @@ This run fills seeds 1-4 and will aggregate all 5 seeds.
 Launch check at `2026-06-23T11:18:16Z`: seed1 was running on GPU1 with about
 `63762 MiB / 81920 MiB` memory in use and `100%` GPU utilization.
 
+Progress check at `2026-06-23T11:45:54Z`: seed1 was still healthy at `2/16`
+eval batches. Runtime was about `600s` per eval batch under GPU1 SDPA fallback,
+with about `71954 MiB / 81920 MiB` memory in use and `100%` GPU utilization.
+No per-seed metrics had landed yet, as expected before seed1 completion.
+
 ## 8. Conclusions
 
 Pending.

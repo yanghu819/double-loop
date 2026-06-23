@@ -1,0 +1,13 @@
+{
+  "run_name": "rwkv-maze-state64-d256l12-actckpt-b32-lr1e4-20260623",
+  "source_sha": "2c061c310f55d613f787dca6ed4ed8cdbf834b10",
+  "stopped_at_utc": "2026-06-23T03:15:30Z",
+  "reason": "stopped_after_step200_for_time_window",
+  "details": "GPU1 had about 786 seconds remaining; step200 arrived at elapsed 28m58s, so waiting for step300 risked AIStation timeout and loss of metadata. The step100 and step200 readouts already answered the state64 viability question.",
+  "metrics": [
+    {"step": 1, "loss": 1.8267, "loop1_f1": 0.3341, "loop16_f1": 0.3305, "gain": -0.0035, "pred_frac": "0.3784->0.3455", "fp": "263.6->239.7", "fn": "42.3->48.0"},
+    {"step": 100, "loss": 0.3741, "loop1_f1": 0.4681, "loop16_f1": 0.4681, "gain": 0.0, "pred_frac": "0.4328->0.4328", "fp": "270.2->270.2", "fn": "0.0->0.0"},
+    {"step": 200, "loss": 0.3701, "loop1_f1": 0.4686, "loop16_f1": 0.4686, "gain": 0.0, "pred_frac": "0.4322->0.4322", "fp": "269.7->269.7", "fn": "0.0->0.0"}
+  ],
+  "decision": "state64 recurrent capacity sharply improves the operating point versus state32 broad mask, but does not create late-loop correction; head_dim64 is also slow. Next scaling should prefer more heads/width at head_dim32 or a simpler recurrent decision state, not larger head_dim."
+}

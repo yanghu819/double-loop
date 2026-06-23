@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: P-MAZE-009
-- Status: in-progress
+- Status: done
 - Machine: AIStation GPU1 only
 - Start timestamp: 2026-06-23T02:43:00Z
 - Local branch: `codex/gpu1-experiment-tracking`
@@ -61,36 +61,54 @@ and writes logs under
 
 ## 6. Artifacts
 
-Planned:
+Actual:
 
 - `runs/rwkv-maze-state64-d256l12-actckpt-b32-lr1e4-20260623/launch.env`
 - `runs/rwkv-maze-state64-d256l12-actckpt-b32-lr1e4-20260623/launch.log`
-- `runs/rwkv-maze-state64-d256l12-actckpt-b32-lr1e4-20260623/rwkv_maze_probe.json`
-- `runs/rwkv-maze-state64-d256l12-actckpt-b32-lr1e4-20260623/abort.json` if killed
+- `runs/rwkv-maze-state64-d256l12-actckpt-b32-lr1e4-20260623/abort.json`
+
+The run was manually stopped after step200 because GPU1 had about `786s`
+remaining and waiting for step300 risked platform timeout. The step100/200
+readouts already answered the viability question.
 
 ## 7. Results
 
-Pending.
+| step | loss | loop1 F1 | loop16 F1 | gain | pred frac loop1->16 | FP loop1->16 | FN loop1->16 |
+|---:|---:|---:|---:|---:|---|---|---|
+| 1 | 1.8267 | 0.3341 | 0.3305 | -0.0035 | 0.3784->0.3455 | 263.6->239.7 | 42.3->48.0 |
+| 100 | 0.3741 | 0.4681 | 0.4681 | +0.0000 | 0.4328->0.4328 | 270.2->270.2 | 0.0->0.0 |
+| 200 | 0.3701 | 0.4686 | 0.4686 | +0.0000 | 0.4322->0.4322 | 269.7->269.7 | 0.0->0.0 |
 
-Primary readouts:
+Comparison to the previous state32 D256/L12 activation-checkpoint b64 run:
 
-- whether step100 arrives within a practical GPU window
-- loop1 vs loop16 path F1
-- loop1 vs loop16 precision/recall/pred_path_frac
-- loop1 vs loop16 FP/FN
-- comparison against state32 b64 step100/200 broad-mask plateau
+| run | step | loop16 F1 | pred frac loop16 | FP loop16 | FN loop16 | loop gain |
+|---|---:|---:|---:|---:|---:|---:|
+| state32 b64 | 200 | 0.3144 | 0.7097 | 519.4 | 0.0 | +0.0171 |
+| state64 b32 | 200 | 0.4686 | 0.4322 | 269.7 | 0.0 | +0.0000 |
 
 ## 8. Conclusions
 
-Pending.
+This is a high-information mixed result.
 
-Decision rule:
+Positive: increasing recurrent state capacity from 32x32 heads to 64x64 heads
+changes the learned operating point dramatically. The model no longer sits in
+the extreme state32 broad-mask regime: loop16 F1 rises from `0.3144` to
+`0.4686`, pred_path_frac drops from `0.7097` to `0.4322`, and FP/case drops
+from `519.4` to `269.7` with zero FN.
 
-- Continue head_dim64 state scaling only if batch32 reaches step100/200 and
-  loop16 shows stronger FP/pred_frac reduction than state32 without recall
-  collapse.
-- Stop head_dim64 state scaling if throughput remains poor or if the readout
-  repeats broad-mask behavior.
+Negative: the improvement is not late-loop correction. At step100 and step200,
+loop1 and loop16 are identical. So expanded state capacity helps the one-pass
+path-weighted solution become EqR-like, but it does not make recurrent loops
+repair false positives.
+
+Throughput boundary: head_dim64 is expensive. b64 did not reach step100 in
+`~15.5m`; b32 reached step200 in `~29m`. Do not continue head_dim64 as the
+default Maze scaling axis.
+
+Next decision: keep the insight that recurrent state capacity matters, but
+scale it through a more efficient axis, likely head_dim32 with more heads/width
+or a simple learned recurrent decision state. Do not spend the next budget on
+head_dim64 lengthening, selector, search, repair, or loss-weight sweeps.
 
 ## 9. Submission Record
 

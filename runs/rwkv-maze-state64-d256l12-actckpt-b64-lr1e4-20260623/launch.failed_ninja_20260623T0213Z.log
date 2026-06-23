@@ -1,0 +1,103 @@
++ export CUDA_VISIBLE_DEVICES=0
++ CUDA_VISIBLE_DEVICES=0
++ export TORCH_EXTENSIONS_DIR=/huyang2/double-loop/.cache/torch_extensions
++ TORCH_EXTENSIONS_DIR=/huyang2/double-loop/.cache/torch_extensions
++ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
++ PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
++ export TORCH_CUDA_ARCH_LIST=8.0
++ TORCH_CUDA_ARCH_LIST=8.0
++ export XDG_CACHE_HOME=/huyang2/double-loop/.cache
++ XDG_CACHE_HOME=/huyang2/double-loop/.cache
++ export UV_CACHE_DIR=/huyang2/double-loop/.cache/uv
++ UV_CACHE_DIR=/huyang2/double-loop/.cache/uv
++ export PATH=/huyang2/double-loop/.cache/bin:/opt/conda/bin:/usr/local/cuda-11.7/bin:/opt/conda/bin:/opt/conda/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
++ PATH=/huyang2/double-loop/.cache/bin:/opt/conda/bin:/usr/local/cuda-11.7/bin:/opt/conda/bin:/opt/conda/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
++ export SOURCE_SNAPSHOT_MODE=lean
++ SOURCE_SNAPSHOT_MODE=lean
++ date -u +%Y-%m-%dT%H:%M:%SZ
+2026-06-23T02:13:42Z
++ hostname
+4bpq1kh6m5tuc-0
++ /opt/conda/bin/python --version
+Python 3.10.11
++ /opt/conda/bin/python -
+torch 2.7.0+cu126 cuda 12.6 is_available True
++ nvidia-smi
+Tue Jun 23 02:13:45 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.54.14              Driver Version: 550.54.14      CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A800-SXM4-80GB          On  |   00000000:99:00.0 Off |                    0 |
+| N/A   26C    P0             61W /  400W |       0MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
++ cd /huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49
++ exec /opt/conda/bin/python scripts/rwkv_maze_probe.py --repo-root /huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49 --data-dir /huyang2/double-loop/official_eqr_compare/eqr-clean/data/maze-30x30-unique-1k --out-dir /huyang2/double-loop/runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623 --run-name rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623 --condition clean-fs-d256-l12-state64-actckpt-b64-lr1e4 --steps 800 --batch 64 --eval-n 256 --eval-batch 16 --d-model 256 --layers 12 --heads 4 --head-dim 64 --channel-mult 4 --l-cycles 2 --train-loops 8 --eval-loops 16 --lambda 0.95 --future-seed-scale 1 --future-seed-decay 0 --future-seed-update fixed --feedback-mode none --rwkv-kernel statepassing --forward-dtype bfloat16 --path-weight 8 --loop-loss all --lr 1e-4 --weight-decay 0.1 --grad-clip 1 --seed 52 --log-every 100 --viz-cases 64 --activation-checkpoint --broad-mask-kill-step 800 --broad-mask-min-precision 0.38 --broad-mask-min-fp-drop 10 --broad-mask-target raw
+Traceback (most recent call last):
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/scripts/rwkv_maze_probe.py", line 1087, in <module>
+    main()
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/scripts/rwkv_maze_probe.py", line 903, in main
+    logits_by_loop, traces = model.forward_trace(xb, loops=args.train_loops)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/scripts/rwkv_maze_probe.py", line 143, in forward_trace
+    z_l, l_diag, l_seed_memory = self._depth_update(z_l, z_h + x, l_seed_memory)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/scripts/rwkv_maze_probe.py", line 114, in _depth_update
+    updated, diag, next_seed_memory = self.reasoner(hidden + injection, seed_memory=seed_memory)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 617, in forward
+    x, previous_state = torch_checkpoint(
+  File "/opt/conda/lib/python3.10/site-packages/torch/_compile.py", line 51, in inner
+    return disable_fn(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 838, in _fn
+    return fn(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 495, in checkpoint
+    ret = function(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 618, in <lambda>
+    lambda block_input: block(block_input, initial_state=None),
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 493, in forward
+    time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 259, in forward
+    y, terminal_state = self._forward_statepassing(
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 410, in _forward_statepassing
+    y_bf16, terminal_state = StatePassingRWKV7.apply(s0, r_bf16, w_bf16, k_bf16, v_bf16, a_bf16, b_bf16)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/rwkv7_cuda/statepassing.py", line 132, in apply
+    return _StatePassingRWKV7Fn.apply(s0, r, w, k, v, a, b)
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/function.py", line 575, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/rwkv7_cuda/statepassing.py", line 82, in forward
+    _load_statepassing(head_dim)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-state64-d256l12-20260623-bb68d49/experiments/rwkv_fs_sudoku/rwkv7_cuda/statepassing.py", line 57, in _load_statepassing
+    load(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 1623, in load
+    return _jit_compile(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2103, in _jit_compile
+    return _import_module_from_library(name, build_directory, is_python_module)
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2547, in _import_module_from_library
+    torch.ops.load_library(filepath)
+  File "/opt/conda/lib/python3.10/site-packages/torch/_ops.py", line 1392, in load_library
+    ctypes.CDLL(path)
+  File "/opt/conda/lib/python3.10/ctypes/__init__.py", line 374, in __init__
+    self._handle = _dlopen(self._name, mode)
+OSError: /huyang2/double-loop/.cache/torch_extensions/rwkv7_statepassing_clampw_n64/rwkv7_statepassing_clampw_n64.so: cannot open shared object file: No such file or directory

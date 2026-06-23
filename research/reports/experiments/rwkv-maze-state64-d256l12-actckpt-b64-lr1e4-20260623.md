@@ -3,11 +3,11 @@
 ## 1. Metainfo
 
 - Plan ID: P-MAZE-009
-- Status: in-progress
+- Status: failed
 - Machine: AIStation GPU1 only
 - Start timestamp: 2026-06-23T02:12:51Z
 - Local branch: `codex/gpu1-experiment-tracking`
-- Source SHA: recorded in `launch.env` at launch
+- Source SHA: `e3420cff9581853726c20a13825182a581ec2ccc`
 
 ## 2. Hypothesis
 
@@ -69,37 +69,37 @@ and writes logs under
 
 ## 6. Artifacts
 
-Planned:
+Actual:
 
 - `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/launch.env`
 - `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/launch.log`
-- `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/rwkv_maze_probe.json`
-- `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/abort.json` if killed
-- hard-case visual HTML if the runner reaches or triggers visual output
+- `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/abort.json`
+- `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/launch.failed_ninja_20260623T0213Z.log`
+- `runs/rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623/launch.failed_ninja_20260623T0223Z.log`
 
 ## 7. Results
 
-Pending.
+The first two launches exposed an infrastructure issue: the conda `ninja`
+binary core-dumped while building `rwkv7_statepassing_clampw_n64.so`. Commit
+`e3420cf` added a wrapper fallback that directly runs the generated nvcc/c++
+commands when ninja fails. The head_dim64 kernel then compiled and ran.
 
-Primary readouts:
+The actual b64 training run was stopped before step100 for speed low ROI:
 
-- loop1 vs loop16 path F1
-- loop1 vs loop16 precision/recall/pred_path_frac
-- loop1 vs loop16 FP/FN hard-case change
-- step100/200/300 CE and broad-mask behavior
-- wall time and GPU memory versus state32 scale run
+| step | loop1 F1 | loop16 F1 | gain | pred frac loop1->16 | FP loop1->16 | FN loop1->16 |
+|---:|---:|---:|---:|---|---|---|
+| 1 | 0.3350 | 0.3285 | -0.0065 | 0.3707->0.3375 | 257.6->234.1 | 43.3->49.6 |
+
+After about `15.5m`, only step1 had logged. GPU utilization was active and
+memory was about `24.6GB`, so this was compute throughput, not CPU fallback or
+idle memory.
 
 ## 8. Conclusions
 
-Pending.
-
-Decision rule:
-
-- Continue state-capacity scaling only if loop16 FP drop clearly exceeds the
-  state32 run's `~44` FP/case reduction and pred_path_frac moves below `0.65`
-  without a meaningful FN increase.
-- Stop this axis if state64 repeats `F1<=0.32` and pred_path_frac `>0.65` by
-  step200/300, or if runtime/memory cost makes the same signal low ROI.
+Batch64 state64 is not a practical training point on this GPU1 lease. It
+answers a useful engineering question: head_dim64 statepassing can compile and
+run, but the throughput is too poor for an 800-step experiment. The mechanism
+question was continued with the batch32 viability probe under the same plan.
 
 ## 9. Submission Record
 

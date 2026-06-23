@@ -1,0 +1,9 @@
+{
+  "run_name": "rwkv-maze-state64-d256l12-actckpt-b64-lr1e4-20260623",
+  "source_sha": "e3420cff9581853726c20a13825182a581ec2ccc",
+  "aborted_at_utc": "2026-06-23T02:41:30Z",
+  "reason": "speed_low_roi_before_step100",
+  "details": "head_dim64 statepassing compiled and ran on GPU1, but after about 15.5 minutes it had only logged step1. GPU utilization was active and memory was about 24.6GB, so this was compute throughput, not idle fallback. Full 800-step run would exceed the available GPU1 window and has poor ROI.",
+  "last_metric": {"step": 1, "loop1_f1": 0.3350, "loop16_f1": 0.3285, "gain": -0.0065, "pred_frac": "0.3707->0.3375", "fp": "257.6->234.1", "fn": "43.3->49.6"},
+  "next_action": "fallback to the same state64 mechanism at batch32 as a viability probe; if still too slow or broad-mask, stop head_dim64 state scaling."
+}

@@ -5,11 +5,12 @@
 - Plan ID: `P-EQR-010`
 - Status: in-progress
 - Machine: AIStation `GPU1` only
-- Start time UTC: `2026-06-23T09:30:00Z`
+- Start time UTC: `2026-06-23T11:17:56Z`
 - Local branch: `codex/gpu1-experiment-tracking`
 - Remote work dir: `/huyang2/double-loop/official_eqr_sudoku_repro_20260623`
-- Source SHA for launcher/tracking: pending detached launch SHA; recorded in
-  remote `source.sha` after launch.
+- Source SHA for launcher/tracking:
+  `265a5c09479d90586bebaf63252d232156640ae2`
+- Remote launcher PID: `946`
 
 ## 2. Hypothesis
 
@@ -46,6 +47,15 @@ cd /huyang2/double-loop/.worktrees/official-eqr-sudoku-quick5-ca6128f
 bash runs/official-eqr-sudoku-quick5-20260623/launch_official_sudoku_quick5.sh
 ```
 
+Actual detached launch worktree:
+
+```bash
+cd /huyang2/double-loop/.worktrees/official-eqr-sudoku-quick5-265a5c0
+nohup bash runs/official-eqr-sudoku-quick5-20260623/launch_official_sudoku_quick5.sh \
+  > /huyang2/double-loop/official_eqr_sudoku_repro_20260623/artifacts/sudoku_quick5_20260623/launcher.nohup.log 2>&1 &
+echo $! > /huyang2/double-loop/official_eqr_sudoku_repro_20260623/artifacts/sudoku_quick5_20260623/launcher.pid
+```
+
 ## 6. Artifacts
 
 - Remote launcher output:
@@ -61,6 +71,9 @@ bash runs/official-eqr-sudoku-quick5-20260623/launch_official_sudoku_quick5.sh
 
 Pending. Seed0 was already reproduced in `official-eqr-sudoku-repro-20260623`.
 This run fills seeds 1-4 and will aggregate all 5 seeds.
+
+Launch check at `2026-06-23T11:18:16Z`: seed1 was running on GPU1 with about
+`63762 MiB / 81920 MiB` memory in use and `100%` GPU utilization.
 
 ## 8. Conclusions
 

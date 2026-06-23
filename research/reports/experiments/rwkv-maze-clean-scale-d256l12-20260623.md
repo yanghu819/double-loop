@@ -3,11 +3,11 @@
 ## 1. Metainfo
 
 - Plan ID: P-MAZE-008
-- Status: in progress
+- Status: aborted
 - Machine: AIStation GPU1 only
 - Start timestamp: 2026-06-22T23:28:20Z
 - Local branch: `codex/gpu1-experiment-tracking`
-- Parent/source SHA before launch: `096207200ef91146366358d0e273f3aa8f7db8fa`
+- Source SHA: `68845e4979efebcb30232a52297239367ebf84df`
 
 ## 2. Hypothesis
 
@@ -29,7 +29,8 @@ This is a single scaling gate, not a hidden-size table.
 - Boundary/budget decoder: disabled
 - Model: D256/L12/H8/head_dim32/channel_mult4
 - Loops: train loops 8, eval loops 16
-- Batch/eval: batch16, eval_n256, eval_batch16
+- Batch/eval: batch16, eval_n256, eval_batch8
+- Activation checkpointing: enabled
 - Steps: 1200, log every 100
 - Early gate: at step800, abort if loop16 precision remains below `0.38` and
   loop16 has not dropped at least `10` FP/case relative to loop1.
@@ -45,28 +46,38 @@ This is a single scaling gate, not a hidden-size table.
 
 ## 5. Commands
 
-Exact launch command will be recorded from the generated launch script after the
-GitHub-truth planning commit is pushed and archived on GPU1.
+Launched from:
+
+```bash
+bash /huyang2/double-loop/artifacts/launch/run_rwkv_maze_clean_scale_d256l12_20260623.sh
+```
 
 ## 6. Artifacts
 
-Expected:
+Actual:
 
-- `runs/rwkv-maze-clean-scale-d256l12-20260623/rwkv_maze_probe.json`
-- `runs/rwkv-maze-clean-scale-d256l12-20260623/README.md`
-- `runs/rwkv-maze-clean-scale-d256l12-20260623/visualizations/index.html`
-- `runs/rwkv-maze-clean-scale-d256l12-20260623/visualizations/cases.json`
-- `runs/rwkv-maze-clean-scale-d256l12-20260623/abort.json` if early gate fires
+- `runs/rwkv-maze-clean-scale-d256l12-20260623/abort.json`
 - `runs/rwkv-maze-clean-scale-d256l12-20260623/launch.log`
 - `runs/rwkv-maze-clean-scale-d256l12-20260623/launch.env`
 
 ## 7. Results
 
-Pending.
+| step | CE | loop1 F1 | loop16 F1 | gain | pred frac loop1->16 | FP loop1->16 | FN loop1->16 |
+|---:|---:|---:|---:|---:|---|---|---|
+| 1 | 1.8267 | 0.3162 | 0.3279 | +0.0118 | 0.6577->0.6113 | 479.4->440.2 | 6.7->9.4 |
+
+The run was intentionally stopped after step1 because activation-checkpoint
+batch16 used only about `12.2` GB on an 80GB card. It was a useful sanity signal
+for loop pruning, but not a real scale-up run.
 
 ## 8. Conclusions
 
-Pending.
+The initial loop-pruning sign was positive: loop16 cut about `39` FP/case at
+step1. However, the configuration was too conservative for an 80GB GPU, so it
+could not answer the user's scale-up question.
+
+Decision: abort and relaunch the same hypothesis with more aggressive memory
+usage.
 
 ## 9. Submission Record
 

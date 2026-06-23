@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/scripts/rwkv_maze_probe.py", line 1087, in <module>
+    main()
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/scripts/rwkv_maze_probe.py", line 903, in main
+    logits_by_loop, traces = model.forward_trace(xb, loops=args.train_loops)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/scripts/rwkv_maze_probe.py", line 143, in forward_trace
+    z_l, l_diag, l_seed_memory = self._depth_update(z_l, z_h + x, l_seed_memory)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/scripts/rwkv_maze_probe.py", line 114, in _depth_update
+    updated, diag, next_seed_memory = self.reasoner(hidden + injection, seed_memory=seed_memory)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 632, in forward
+    x, previous_state = block(x, initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 493, in forward
+    time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 259, in forward
+    y, terminal_state = self._forward_statepassing(
+  File "/huyang2/double-loop/artifacts/source/rwkv-maze-clean-scale-d256l12-20260623-68845e4/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 413, in _forward_statepassing
+    return self.out(y * gate), terminal_state.to(original_dtype)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 16.00 MiB. GPU 0 has a total capacity of 79.32 GiB of which 17.00 MiB is free. Process 127247 has 79.29 GiB memory in use. Of the allocated memory 78.76 GiB is allocated by PyTorch, and 38.09 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

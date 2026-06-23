@@ -1,0 +1,16 @@
+{
+  "run_name": "rwkv-maze-clean-scale-d256l12-actckpt-b64-20260623",
+  "aborted": true,
+  "reason": "nan_at_step100_large_batch_lr3e-4",
+  "timestamp_utc": "2026-06-23T00:29:20Z",
+  "source_sha": "68845e4979efebcb30232a52297239367ebf84df",
+  "observed": {
+    "step1_loop1_f1": 0.3137,
+    "step1_loop16_f1": 0.3228,
+    "step1_fp_loop1": 487.5,
+    "step1_fp_loop16": 452.6,
+    "step100_loss": "nan",
+    "step100_loop16_f1": 0.0
+  },
+  "notes": "Activation-checkpoint batch64 fit and used GPU, but lr=3e-4 became NaN by step100. Next scale probe lowers lr to 1e-4 without changing architecture/objective."
+}

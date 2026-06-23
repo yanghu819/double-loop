@@ -1,0 +1,22 @@
+{
+  "run_name": "rwkv-maze-clean-scale-d256l12-actckpt-b64-lr1e4-20260623",
+  "aborted": true,
+  "reason": "step200_broad_mask_plateau_low_roi",
+  "timestamp_utc": "2026-06-23T01:21:20Z",
+  "source_sha": "68845e4979efebcb30232a52297239367ebf84df",
+  "observed": {
+    "step100_ce": 0.8921,
+    "step100_loop16_f1": 0.3140,
+    "step100_pred_frac_loop16": 0.7106,
+    "step100_fp_loop1": 564.3,
+    "step100_fp_loop16": 520.2,
+    "step100_fn_loop16": 0.0,
+    "step200_ce": 0.9004,
+    "step200_loop16_f1": 0.3144,
+    "step200_pred_frac_loop16": 0.7097,
+    "step200_fp_loop1": 563.2,
+    "step200_fp_loop16": 519.4,
+    "step200_fn_loop16": 0.0
+  },
+  "notes": "Lower LR stabilized batch64, and loop16 consistently reduced false positives without false negatives, but step100-step200 plateaued at a very broad mask. Continuing to step800 was judged low ROI for the pure-scale question."
+}

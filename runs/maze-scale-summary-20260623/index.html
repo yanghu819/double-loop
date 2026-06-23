@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maze30 Clean Scale Gate 20260623</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18212f;
+      --muted: #5b6678;
+      --line: #d8dee8;
+      --panel: #f6f8fb;
+      --bad: #b42318;
+      --warn: #a15c07;
+      --good: #13795b;
+      --blue: #1d5fd1;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.15;
+    }
+    h2 {
+      margin: 28px 0 10px;
+      font-size: 18px;
+    }
+    p {
+      max-width: 900px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .tile {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--panel);
+    }
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .value {
+      margin-top: 6px;
+      font-size: 22px;
+      font-weight: 650;
+    }
+    .bad { color: var(--bad); }
+    .warn { color: var(--warn); }
+    .good { color: var(--good); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child,
+    th:nth-child(2), td:nth-child(2) {
+      text-align: left;
+    }
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+    .bar {
+      height: 9px;
+      background: #dfe6f1;
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 110px;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+    }
+    .note {
+      border-left: 4px solid var(--warn);
+      padding: 10px 14px;
+      background: #fff7ed;
+      color: #593300;
+      margin-top: 14px;
+    }
+    code {
+      background: #eef2f7;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+      table { font-size: 12px; }
+      th, td { padding: 6px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Maze30 Clean Scale Gate</h1>
+  <p>
+    One clean scaling attempt for FutureSeed + loop on official Maze30. No DAT,
+    no boundary decoder, no selector, no repair, no maze rules. The question was
+    whether pure scale can move the model from broad coverage toward real
+    late-loop pruning.
+  </p>
+
+  <div class="grid">
+    <div class="tile">
+      <div class="label">No-checkpoint fit</div>
+      <div class="value bad">Failed</div>
+      <p>D256/L12 train8/eval16 OOMed even at batch14 on A800 80GB.</p>
+    </div>
+    <div class="tile">
+      <div class="label">Stable scale point</div>
+      <div class="value warn">b64 + ckpt + lr1e-4</div>
+      <p>Runs stably, but plateaus by step200.</p>
+    </div>
+    <div class="tile">
+      <div class="label">Main insight</div>
+      <div class="value warn">Loop prunes, but not enough</div>
+      <p>Loop16 cuts about 44 FP/case at step100-200 with FN=0, but mask remains broad.</p>
+    </div>
+  </div>
+
+  <h2>Resource Boundary</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Run</th>
+        <th>Config</th>
+        <th>Outcome</th>
+        <th>Requested alloc</th>
+        <th>Free at fail</th>
+        <th>Allocated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>nockpt-b24</td>
+        <td>D256/L12 train8 batch24</td>
+        <td class="bad">OOM before step1</td>
+        <td>22 MiB</td>
+        <td>13 MiB</td>
+        <td>78.76 GiB</td>
+      </tr>
+      <tr>
+        <td>nockpt-b16</td>
+        <td>D256/L12 train8 batch16</td>
+        <td class="bad">OOM before step1</td>
+        <td>16 MiB</td>
+        <td>17 MiB</td>
+        <td>78.76 GiB</td>
+      </tr>
+      <tr>
+        <td>nockpt-b15</td>
+        <td>D256/L12 train8 batch15</td>
+        <td class="bad">OOM before step1</td>
+        <td>54 MiB</td>
+        <td>59 MiB</td>
+        <td>78.69 GiB</td>
+      </tr>
+      <tr>
+        <td>nockpt-b14</td>
+        <td>D256/L12 train8 batch14</td>
+        <td class="bad">OOM before step1</td>
+        <td>14 MiB</td>
+        <td>15 MiB</td>
+        <td>78.77 GiB</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Training Readout</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Run</th>
+        <th>Step</th>
+        <th>CE</th>
+        <th>Loop1 F1</th>
+        <th>Loop16 F1</th>
+        <th>Gain</th>
+        <th>Pred frac</th>
+        <th>FP</th>
+        <th>FN</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ckpt-b64 lr3e-4</td>
+        <td>1</td>
+        <td>1.8253</td>
+        <td>0.3137</td>
+        <td>0.3228</td>
+        <td class="good">+0.0091</td>
+        <td>0.6673 -> 0.6253</td>
+        <td>487.5 -> 452.6</td>
+        <td>6.2 -> 9.1</td>
+      </tr>
+      <tr>
+        <td>ckpt-b64 lr3e-4</td>
+        <td>100</td>
+        <td class="bad">NaN</td>
+        <td>0.0000</td>
+        <td>0.0000</td>
+        <td>0.0000</td>
+        <td>0.0000 -> 0.0000</td>
+        <td>0.0 -> 0.0</td>
+        <td>119.3 -> 119.3</td>
+      </tr>
+      <tr>
+        <td>ckpt-b64 lr1e-4</td>
+        <td>100</td>
+        <td>0.8921</td>
+        <td>0.2968</td>
+        <td>0.3140</td>
+        <td class="good">+0.0172</td>
+        <td>0.7596 -> 0.7106</td>
+        <td>564.3 -> 520.2</td>
+        <td>0.0 -> 0.0</td>
+      </tr>
+      <tr>
+        <td>ckpt-b64 lr1e-4</td>
+        <td>200</td>
+        <td>0.9004</td>
+        <td>0.2972</td>
+        <td>0.3144</td>
+        <td class="good">+0.0171</td>
+        <td>0.7583 -> 0.7097</td>
+        <td>563.2 -> 519.4</td>
+        <td>0.0 -> 0.0</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Plateau View</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Step100</th>
+        <th>Step200</th>
+        <th>Change</th>
+        <th>Visual</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Loop16 path F1</td>
+        <td>0.3140</td>
+        <td>0.3144</td>
+        <td>+0.0004</td>
+        <td><div class="bar"><span style="width:31.44%"></span></div></td>
+      </tr>
+      <tr>
+        <td>Loop16 pred path frac</td>
+        <td>0.7106</td>
+        <td>0.7097</td>
+        <td>-0.0009</td>
+        <td><div class="bar"><span style="width:70.97%"></span></div></td>
+      </tr>
+      <tr>
+        <td>Loop16 FP/case</td>
+        <td>520.2</td>
+        <td>519.4</td>
+        <td>-0.8</td>
+        <td><div class="bar"><span style="width:86.57%"></span></div></td>
+      </tr>
+      <tr>
+        <td>Loop16 FN/case</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td><div class="bar"><span style="width:0%"></span></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    Decision: pure scale produced a real loop-pruning signal, but by step200 the
+    model was stuck in an even wider recall-preserving mask. Continue blindly to
+    step800 was stopped as low ROI. The next mechanism should keep the generic
+    scaling spirit but change how the loss or state turns pruning pressure into
+    a sharper decision boundary.
+  </div>
+
+  <p>
+    Source SHA:
+    <code>68845e4979efebcb30232a52297239367ebf84df</code>.
+    GPU: AIStation GPU1 only.
+  </p>
+</main>
+</body>
+</html>

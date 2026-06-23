@@ -12,6 +12,7 @@ class ReverseCausalFutureSeed(nn.Module):
         super().__init__()
         self.scale = float(config.future_seed_scale)
         self.norm_eps = float(config.rms_norm_eps)
+        self.puzzle_emb_len = int(config.puzzle_emb_len)
         self.gate_logit = nn.Parameter(torch.tensor(float(config.future_seed_gate_bias)))
         self.attn = Attention(
             hidden_size=config.hidden_size,
@@ -27,16 +28,33 @@ class ReverseCausalFutureSeed(nn.Module):
             idx = torch.arange(config.hidden_size)
             self.proj.weight[idx, idx] = 1.0
 
+    def _body_cos_sin(self, cos_sin: CosSin) -> CosSin:
+        prefix_len = self.puzzle_emb_len
+        if prefix_len <= 0 or cos_sin is None:
+            return cos_sin
+        cos, sin = cos_sin
+        if isinstance(cos, tuple) or isinstance(sin, tuple):
+            raise ValueError("ReverseCausalFutureSeed does not support puzzle prefix with 2D RoPE.")
+        return cos[prefix_len:], sin[prefix_len:]
+
     def forward(self, hidden_states: torch.Tensor, cos_sin: CosSin) -> torch.Tensor:
         if self.scale == 0.0:
             return torch.zeros_like(hidden_states)
-        reversed_states = torch.flip(hidden_states, dims=(1,))
+        prefix_len = self.puzzle_emb_len
+        if prefix_len > 0:
+            prefix, body = hidden_states[:, :prefix_len], hidden_states[:, prefix_len:]
+        else:
+            prefix, body = None, hidden_states
+        seed_cos_sin = self._body_cos_sin(cos_sin)
+        reversed_states = torch.flip(body, dims=(1,))
         seed = rms_norm(
-            reversed_states + self.attn(cos_sin=cos_sin, hidden_states=reversed_states),
+            reversed_states + self.attn(cos_sin=seed_cos_sin, hidden_states=reversed_states),
             variance_epsilon=self.norm_eps,
         )
         seed = rms_norm(seed + self.mlp(seed), variance_epsilon=self.norm_eps)
         seed = torch.flip(seed, dims=(1,))
+        if prefix is not None:
+            seed = torch.cat((torch.zeros_like(prefix), seed), dim=1)
         gate = torch.sigmoid(self.gate_logit.to(torch.float32)).to(seed.dtype) * self.scale
         return gate * self.proj(seed).to(hidden_states.dtype)
 '''

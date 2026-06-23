@@ -80,6 +80,11 @@ eval batches. Runtime was about `600s` per eval batch under GPU1 SDPA fallback,
 with about `71954 MiB / 81920 MiB` memory in use and `100%` GPU utilization.
 No per-seed metrics had landed yet, as expected before seed1 completion.
 
+Progress check at `2026-06-23T12:06:53Z`: seed1 was still healthy at `4/16`
+eval batches, with the same about `600s` per eval batch, `71954 MiB / 81920
+MiB` memory in use, and `100%` GPU utilization. No FutureSeed or other training
+job was launched while this official baseline gate was running.
+
 ## 8. Conclusions
 
 Pending.

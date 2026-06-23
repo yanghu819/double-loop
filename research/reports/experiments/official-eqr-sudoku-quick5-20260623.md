@@ -85,6 +85,24 @@ eval batches, with the same about `600s` per eval batch, `71954 MiB / 81920
 MiB` memory in use, and `100%` GPU utilization. No FutureSeed or other training
 job was launched while this official baseline gate was running.
 
+Progress/interruption check at `2026-06-23T12:11-12:15Z`: seed1 advanced to
+`5/16` eval batches with GPU1 still at `100%` utilization and about `71954 MiB /
+81920 MiB` in use. A later helper call failed to acquire a shell link; row
+status then reported GPU1 `Halt` with remaining time `-111`. This was an
+AIStation/runtime interruption, not a model/eval error. GPU1 was reopened with
+new work-platform id `881d650b-7eb9-4c95-9793-fdc1f1b47b99` and was still
+`Pending` as of the last status check. After it reaches `Running`, inspect the
+remote artifacts before relaunching; do not assume seed1 wrote metrics.
+
+Post-restart inspection at `2026-06-23T13:00Z`: GPU1 was `Running`, SSH/CUDA
+probe passed, and the GPU was idle. The quick5 artifact directory had no
+`summary.json` and no files under `metrics/`; `logs/seed1.log` ended at `5/16`
+eval batches. This confirms seed1 did not complete before the AIStation halt.
+The launcher was made resume-safe so completed seed metrics are skipped on
+future restarts and summary generation only happens after seeds `1,2,3,4` are
+all present. The next launch should rerun missing seeds from the committed
+resume-safe source SHA, still on GPU1 only.
+
 ## 8. Conclusions
 
 Pending.

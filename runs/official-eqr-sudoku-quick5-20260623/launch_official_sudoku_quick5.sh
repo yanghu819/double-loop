@@ -27,6 +27,10 @@ sha256sum "${CKPT}" | tee "${OUT}/checkpoint.sha256"
 git rev-parse HEAD | tee "${OUT}/eqr_official.sha"
 
 for seed in ${SEEDS}; do
+  if [[ -s "${OUT}/metrics/seed${seed}.json" ]]; then
+    echo "[seed ${seed}] skip existing ${OUT}/metrics/seed${seed}.json $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a "${OUT}/queue.log"
+    continue
+  fi
   suffix="sudoku_lite_D64_B128_N0.5_S1_seed${seed}_${STAMP}"
   log="${OUT}/logs/seed${seed}.log"
   echo "[seed ${seed}] launch $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a "${OUT}/queue.log"
@@ -45,6 +49,17 @@ for seed in ${SEEDS}; do
   cp "${metric_path}" "${OUT}/metrics/seed${seed}.json"
   echo "[seed ${seed}] done metric=${metric_path} $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a "${OUT}/queue.log"
 done
+
+missing=()
+for seed in 1 2 3 4; do
+  if [[ ! -s "${OUT}/metrics/seed${seed}.json" ]]; then
+    missing+=("${seed}")
+  fi
+done
+if (( ${#missing[@]} > 0 )); then
+  echo "[summary] missing seed metrics: ${missing[*]}; rerun with SEEDS=\"${missing[*]}\" after GPU restart" | tee -a "${OUT}/queue.log"
+  exit 0
+fi
 
 python - <<'PY' "${OUT}" "${BASE}"
 from __future__ import annotations

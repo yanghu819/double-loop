@@ -9,8 +9,9 @@
 - Local branch: `codex/gpu1-experiment-tracking`
 - Remote work dir: `/huyang2/double-loop/official_eqr_sudoku_repro_20260623`
 - Source SHA for launcher/tracking:
-  `265a5c09479d90586bebaf63252d232156640ae2`
-- Remote launcher PID: `946`
+  initial `265a5c09479d90586bebaf63252d232156640ae2`; resume
+  `1e9cd09b6f828443595cb26c94121032a7a3c8dc`
+- Remote launcher PID: initial `946`; resume `201`
 
 ## 2. Hypothesis
 
@@ -102,6 +103,14 @@ The launcher was made resume-safe so completed seed metrics are skipped on
 future restarts and summary generation only happens after seeds `1,2,3,4` are
 all present. The next launch should rerun missing seeds from the committed
 resume-safe source SHA, still on GPU1 only.
+
+Resume launch at `2026-06-23T12:28:06Z`: worktree
+`/huyang2/double-loop/.worktrees/official-eqr-sudoku-quick5-1e9cd09` was created
+at detached SHA `1e9cd09b6f828443595cb26c94121032a7a3c8dc`, an
+`aistation_halt_abort_20260623T1215Z.json` artifact was written, and the
+resume-safe launcher started as PID `201`. Follow-up check showed seed1
+`evaluate.py` active with GPU1 at `63762 MiB / 81920 MiB` and `100%`
+utilization. No other FutureSeed or method experiment is running.
 
 ## 8. Conclusions
 

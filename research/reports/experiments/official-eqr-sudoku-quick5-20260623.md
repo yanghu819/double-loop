@@ -112,6 +112,11 @@ resume-safe launcher started as PID `201`. Follow-up check showed seed1
 `evaluate.py` active with GPU1 at `63762 MiB / 81920 MiB` and `100%`
 utilization. No other FutureSeed or method experiment is running.
 
+Health check after resume at `2026-06-23T12:41Z`: seed1 reached `1/16` eval
+batches at `600.10s/it`; GPU1 was using `71954 MiB / 81920 MiB` at `100%`
+utilization. No metrics were expected yet because the launcher copies a
+per-seed metric JSON only after the full seed completes.
+
 ## 8. Conclusions
 
 Pending.

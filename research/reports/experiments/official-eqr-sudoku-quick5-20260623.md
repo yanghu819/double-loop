@@ -117,6 +117,12 @@ batches at `600.10s/it`; GPU1 was using `71954 MiB / 81920 MiB` at `100%`
 utilization. No metrics were expected yet because the launcher copies a
 per-seed metric JSON only after the full seed completes.
 
+Progress check at `2026-06-23T13:18:17Z`: seed1 reached `5/16` eval batches
+after the resume launch, again at about `600s/it`, with GPU1 still at
+`71954 MiB / 81920 MiB` and `100%` utilization. This reproduces the earlier
+pre-halt progress point under the new detached source SHA; no metrics have
+landed yet, as expected before seed completion.
+
 ## 8. Conclusions
 
 Pending.

@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-EQR-013`
-- Status: implementation ready, pending GPU1 launch
+- Status: done
 - Machine: AIStation `GPU1` only
 - Local branch: `codex/gpu1-experiment-tracking`
 
@@ -80,15 +80,76 @@ paired step250/500 metrics, and truncate if the replacement is clearly losing.
 
 ## 6. Artifacts
 
-Pending.
+- Source SHA for vectorized replacement: `735fa2b4df06e42039f28dafbf172295644bb14c`
+- Baseline SHA for official mixer-base arm: `c9b5bd76a227521489c56ea9c4a7c2847740bb56`
+- Remote comparison JSON:
+  `/huyang2/double-loop/official_eqr_compare/artifacts/mixer_replacement_sudoku_20260624T0610Z-mixerreplace-735fa2b-vectorized/comparison_step250_500.json`
+- Local comparison JSON:
+  `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/comparison_step250_500.json`
+- Baseline train log:
+  `/huyang2/double-loop/official_eqr_compare/logs/official-eqr-mixer-base-sudoku-20260624T0520Z-mixerreplace-c9b5bd7.log`
+- FutureSeed train log:
+  `/huyang2/double-loop/official_eqr_compare/logs/official-eqr-futureseed-mixer-sudoku-20260624T0610Z-mixerreplace-735fa2b-vectorized.log`
+- FutureSeed step500 standalone eval JSON:
+  `/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/177ddj3j/2026-6-24/6-9-10/eval_preds/step_500_step500_vectorized_arch_halt_max_steps-16_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0/eval_metrics_step_500.json`
+- Abort records:
+  `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_futureseed_compile.json`,
+  `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_eval_too_slow.json`,
+  `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_step500_train_eval_interrupted.json`
 
 ## 7. Results
 
-Pending.
+| step | arm | accuracy | exact | lm_loss | total_loss | residual1 | residual16 |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 250 | official mixer-base | 0.091652 | 0.000000 | 2.554581 | 2.558680 | 243.356 | 229.549 |
+| 250 | FutureSeed mixer | 0.105617 | 0.000000 | 2.483983 | 2.488077 | 233.214 | 162.895 |
+| 250 | FS - base | +0.013965 | 0.000000 | -0.070598 | -0.070603 | -10.142 | -66.655 |
+| 500 | official mixer-base | 0.098043 | 0.000000 | 2.522132 | 2.526218 | 242.984 | 228.938 |
+| 500 | FutureSeed mixer | 0.178486 | 0.000000 | 2.339771 | 2.343806 | 262.142 | 214.241 |
+| 500 | FS - base | +0.080443 | 0.000000 | -0.182361 | -0.182412 | +19.158 | -14.698 |
+
+Important caveat: step250 is train-time eval under the training config
+(`arch.noise_scale=0.01`). The original step500 train-time eval was interrupted
+when the AIStation lease halted, so step500 for the FutureSeed arm comes from a
+standalone official `evaluate.py` run, whose default overrides include
+`arch.noise_scale=0.5`. This still shows the vectorized replacement checkpoint
+is much better than baseline on token accuracy/loss, but step500 is not a
+perfectly matched train-time-eval point.
+
+Execution failures were informative:
+
+- The first FutureSeed mixer replacement used a Python loop over sequence
+  positions. `torch.compile` stalled at step0.
+- Running that same Python-loop scan with `DISABLE_COMPILE=1` unblocked
+  training but made official eval infeasible, around seconds per eval batch.
+- Commit `735fa2b` replaced the loop with a generic parallel-prefix recurrent
+  scan. This made the arm compile and run at about `3.6` official eval batches/s
+  on GPU1.
 
 ## 8. Conclusions
 
-Pending.
+Positive as a quick gate: in the official EqR codebase, directly replacing the
+official Sudoku token mixer with a generic FutureSeed scan mixer gives a clear
+early optimization advantage over the official mixer-base at the same small
+budget. This is the first clean evidence in this thread for the paper story
+the user wanted: FutureSeed can be framed as a cheap learned bidirectional
+information path, not just an add-on beside EqR.
+
+Do not overclaim. Exact accuracy is still zero at these tiny budgets, the
+step500 comparison has the standalone-eval noise caveat, and this is Sudoku,
+not Maze. The next high-ROI experiment is not a seed sweep; it is a matched
+official EqR replacement run with the vectorized mixer from the start, using a
+more appropriate budget/eval setup:
+
+- either Sudoku sample-efficiency until exact opens, with matched train-time
+  eval for both arms;
+- or official Maze released/proxy eval only after the replacement path is
+  proven compute-efficient and stable.
+
+Key lesson for implementation: FutureSeed as a paper mechanism needs an
+efficient scan implementation. A Python recurrent loop is not a valid
+cheap-bidirectional mechanism. The vectorized prefix scan is acceptable for
+this gate; a real CUDA/parallel scan kernel is the cleaner long-term path.
 
 ## 9. Submission Record
 

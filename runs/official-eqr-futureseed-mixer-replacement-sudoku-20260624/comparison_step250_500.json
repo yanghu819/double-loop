@@ -1,0 +1,75 @@
+{
+  "arms": {
+    "futureseed-mixer": {
+      "250": {
+        "accuracy": 0.10561711480512599,
+        "exact_accuracy": 0.0,
+        "lm_loss": 2.483983327262492,
+        "residual_of_16_steps": 162.89470323047593,
+        "residual_of_1_steps": 233.2136258059633,
+        "steps": 16.0,
+        "total_loss": 2.488077005861121
+      },
+      "500": {
+        "accuracy": 0.1784863160677033,
+        "exact_accuracy": 0.0,
+        "lm_loss": 2.3397708888184567,
+        "residual_of_16_steps": 214.24062291561216,
+        "residual_of_1_steps": 262.14209552823417,
+        "steps": 16.0,
+        "total_loss": 2.343806470649454
+      }
+    },
+    "mixer-base": {
+      "250": {
+        "accuracy": 0.09165210428561968,
+        "exact_accuracy": 0.0,
+        "lm_loss": 2.5545811001310357,
+        "residual_of_16_steps": 229.54922821474693,
+        "residual_of_1_steps": 243.35594839942667,
+        "steps": 16.0,
+        "total_loss": 2.5586801005709745
+      },
+      "500": {
+        "accuracy": 0.09804300742574257,
+        "exact_accuracy": 0.0,
+        "lm_loss": 2.5221317640603047,
+        "residual_of_16_steps": 228.93821460502477,
+        "residual_of_1_steps": 242.98359926771462,
+        "steps": 16.0,
+        "total_loss": 2.526218346870521
+      }
+    }
+  },
+  "baseline_log": "/huyang2/double-loop/official_eqr_compare/logs/official-eqr-mixer-base-sudoku-20260624T0520Z-mixerreplace-c9b5bd7.log",
+  "baseline_source_sha": "c9b5bd76a227521489c56ea9c4a7c2847740bb56",
+  "delta_futureseed_minus_base": {
+    "250": {
+      "accuracy": 0.013965010519506313,
+      "exact_accuracy": 0.0,
+      "lm_loss": -0.07059777286854363,
+      "residual_of_16_steps": -66.654524984271,
+      "residual_of_1_steps": -10.142322593463376,
+      "steps": 0.0,
+      "total_loss": -0.07060309470985349
+    },
+    "500": {
+      "accuracy": 0.08044330864196073,
+      "exact_accuracy": 0.0,
+      "lm_loss": -0.18236087524184796,
+      "residual_of_16_steps": -14.697591689412604,
+      "residual_of_1_steps": 19.15849626051954,
+      "steps": 0.0,
+      "total_loss": -0.18241187622106692
+    }
+  },
+  "futureseed_step500_eval_json": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/177ddj3j/2026-6-24/6-9-10/eval_preds/step_500_step500_vectorized_arch_halt_max_steps-16_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0/eval_metrics_step_500.json",
+  "futureseed_train_log": "/huyang2/double-loop/official_eqr_compare/logs/official-eqr-futureseed-mixer-sudoku-20260624T0610Z-mixerreplace-735fa2b-vectorized.log",
+  "notes": [
+    "FutureSeed mixer arm uses vectorized parallel-prefix scan from 735fa2b.",
+    "Baseline official EqR mixer-base is unchanged official code from c9b5bd7 paired gate.",
+    "Standalone step500 eval uses official evaluate.py defaults, including arch.noise_scale=0.5; step250 is train-time eval with training config."
+  ],
+  "run": "official-eqr-futureseed-mixer-replacement-sudoku-20260624",
+  "source_sha": "735fa2b4df06e42039f28dafbf172295644bb14c"
+}

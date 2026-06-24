@@ -126,33 +126,25 @@
   the same diagnostic in the official EqR code path or a causal Maze backbone;
   Sudoku seed sweeps are low value.
 
-## 2026-06-24 Official EqR FutureSeed mixer replacement
+## 2026-06-24 Off-mainline bidirectional scan correction
 
-- The official-codebase mixer-replacement test is now sharper than the early
-  quick gate. The FutureSeed scan is no longer a toy Python loop: commit
-  `d9c2600` added a Triton CUDA custom-autograd backend whose output and
-  gradients match the prefix fallback, and the scan microcheck was about
-  `12.2x` faster after warmup.
-- Under bounded official Sudoku eval, FutureSeed-as-token-mixer replacement
-  gives real early sample efficiency: step448 accuracy `0.1881` versus base
-  `0.0955`, and e256 accuracy `0.4207` versus base `0.3668`. This supports the
-  narrow statement that FutureSeed can provide an early cheap future-context
-  direction.
-- The e1024 gate reverses the result. Official mixer-base reaches
-  `accuracy=0.6644`, `exact=0.0249`, `lm_loss=0.7664`; FutureSeed replacement
-  stays at `accuracy=0.4231`, `exact=0`, `lm_loss=1.4029`. The lower
-  FutureSeed residual16 (`3.065` versus base `4.979`) is a bad sign here: the
-  loop has converged, but to a stable wrong answer.
-- Paper boundary: do not claim that FutureSeed can simply replace EqR's learned
-  noncausal mixer at long budget. The stronger, cleaner claim is that
-  FutureSeed is an efficient future-context or initialization mechanism, and
-  the open modeling problem is how to combine it with enough learned
-  normalization/mixing/state dynamics to avoid stable wrong attractors.
-- Next experiments should change the generic mechanism, not the table: no seed
-  sweep, no longer same replacement, no gate-bias/hidden-size grid. Valid next
-  directions are a simple gated/normalized FutureSeed state update or a hybrid
-  where FutureSeed supplies cheap future context while the model keeps learned
-  mixer capacity for final decisions.
+- Correction: the official EqR "FutureSeed mixer replacement" experiment was
+  misnamed. It used a forward+reverse token scan as a mixer replacement. That is
+  not the FutureSeed algorithm. FutureSeed in this project means cross-layer
+  terminal-state seeding: one recurrent layer processes the full sequence, then
+  its terminal state seeds the next recurrent layer's initial state.
+- Do not call a right-to-left scan FutureSeed. Do not use the bidirectional scan
+  result as evidence for or against the FutureSeed mainline.
+- The archived scan mixer had an early sample-efficiency signal, but it failed
+  the e1024 gate: official mixer-base reached `accuracy=0.6644`, `exact=0.0249`,
+  `lm_loss=0.7664`, while the scan replacement stayed at `accuracy=0.4231`,
+  `exact=0`, `lm_loss=1.4029`. Its lower residual16 (`3.065` versus base
+  `4.979`) means stable wrong convergence, not better reasoning.
+- The patch script is now disabled by default and requires
+  `ALLOW_OFF_MAINLINE_BIDIR_SCAN=1` to reproduce the archived side probe.
+- Next FutureSeed experiments must preserve the actual mechanism: terminal
+  recurrent state -> normalized/gated seed -> next layer or next loop initial
+  state. No hidden reverse scan should be introduced under the FutureSeed name.
 
 ## 2026-06-21 Official EqR Maze baseline
 

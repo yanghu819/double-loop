@@ -1,4 +1,10 @@
-# official-eqr-futureseed-mixer-replacement-sudoku-20260624
+# official-eqr-bidirectional-scan-mixer-replacement-sudoku-20260624
+
+Correction added after review: this was misnamed in earlier records. The
+experiment below is an off-mainline bidirectional scan mixer replacement probe.
+It is not the FutureSeed algorithm used in the main RWKV/EqR experiments.
+FutureSeed is cross-layer terminal-state seeding; it is not "add a right-to-left
+scan".
 
 ## 1. Metainfo
 
@@ -9,16 +15,13 @@
 
 ## 2. Hypothesis
 
-The previous cheap-bidirectional probe was not the clean paper experiment: it
-added a future source to a causalized EqR branch. The clean experiment is to
-keep the official EqR codebase and replace the ReasoningBlock token mixer with
-a generic FutureSeed recurrent mixer.
+This was intended to test whether a cheap recurrent scan mixer could replace
+the official EqR token mixer. The implementation used a forward scan plus a
+reverse scan. That is not the FutureSeed mechanism.
 
-If FutureSeed is a cheap bidirectional information mechanism, a
-FutureSeed-scan mixer should approach the official EqR mixer baseline under a
-matched small Sudoku budget, or show a clear early optimization advantage. If it
-cannot compete even on this quick gate, the current FutureSeed replacement is
-not ready as the main paper method.
+Valid interpretation: this is a negative off-mainline probe for a naive
+bidirectional scan mixer. It must not be used to claim that FutureSeed itself
+failed or succeeded.
 
 ## 3. Configuration
 
@@ -27,9 +30,10 @@ Compare exactly two arms:
 - `mixer-base`: official EqR Sudoku mixer baseline, using upstream
   `train/eqr_sudoku` semantics. This means `arch.mlp_t=true` unless explicitly
   overridden by the official config.
-- `futureseed-mixer`: same official EqR codebase and config, but
-  `ReasoningBlock` token mixing is replaced by `FutureSeedScanMixer`, selected
-  with `arch.mixer_replacement_mode=future_seed_scan`.
+- `bidirectional-scan-mixer`: same official EqR codebase and config, but
+  `ReasoningBlock` token mixing is replaced by a forward+reverse recurrent
+  scan mixer, selected with `arch.mixer_replacement_mode=bidirectional_scan`.
+  Older run artifacts used the misnamed `future_seed_scan` config value.
 
 Shared quick gate:
 
@@ -56,6 +60,7 @@ Official EqR compare root:
 The implementation adds:
 
 - `scripts/official_eqr_compare/apply_futureseed_mixer_replacement_patch.py`
+  (archived and now disabled by default because it is not FutureSeed)
 - `prepare-mixer-replacement`
 - `train-mixer-base`
 - `train-futureseed-mixer`
@@ -132,7 +137,7 @@ perfectly matched train-time-eval point.
 
 Execution failures were informative:
 
-- The first FutureSeed mixer replacement used a Python loop over sequence
+- The first bidirectional scan mixer replacement used a Python loop over sequence
   positions. `torch.compile` stalled at step0.
 - Running that same Python-loop scan with `DISABLE_COMPILE=1` unblocked
   training but made official eval infeasible, around seconds per eval batch.
@@ -143,7 +148,7 @@ Execution failures were informative:
   A800, it matched the prefix fallback to numerical tolerance and ran the scan
   microcheck in `0.00527s` versus `0.06410s` for the prefix fallback after
   warmup, about `12.2x` faster.
-- The Triton backend also trained through the official EqR FutureSeed mixer
+- The Triton backend also trained through this off-mainline scan-mixer
   path for `448/448` Sudoku steps with final train loss `1.626443`. This was a
   backend viability run only: train-time eval was disabled after the first
   full-eval launch expanded to `3304` eval batches and was killed as low ROI.
@@ -167,36 +172,31 @@ matched budgets. All rows use the same tiny official eval gate:
 | e1024/step7168 | FutureSeed mixer | 1.408197 | 0.423050 | 0.000000 | 1.402906 | 198.346 | 6.381 | 3.238 | 3.065 | 14.814 |
 | e1024/step7168 | FS - base | +0.640518 | -0.241350 | -0.024902 | +0.636548 | +2.422 | +1.548 | -1.611 | -1.914 | +6.857 |
 
-This is the key decision point. The CUDA FutureSeed mixer wins clearly at
-step448 and still wins token/loss at e256. By e1024, the official mixer-base
-opens exact accuracy and dominates accuracy/loss. FutureSeed still has lower
-late-loop residual at e1024, but that is no longer a positive sign: it means the
-recurrent state has converged to a stable wrong attractor.
+This is the key decision point for the off-mainline scan mixer only. The scan
+mixer wins clearly at step448 and still wins token/loss at e256. By e1024, the
+official mixer-base opens exact accuracy and dominates accuracy/loss. The scan
+mixer still has lower late-loop residual at e1024, but that is no longer a
+positive sign: it means the recurrent state has converged to a stable wrong
+attractor.
 
 ## 8. Conclusions
 
 Mixed, and now much more precise.
 
-Positive part: FutureSeed-as-mixer-replacement is real enough to test. The
-Python loop was invalid for the claim, but the Triton CUDA scan is numerically
-checked and fast enough. Under bounded official eval, FutureSeed gives a strong
-early sample-efficiency and state-contraction signal at step448 and e256.
+Positive part: the off-mainline scan mixer is real enough to test as its own
+mechanism. The Python loop was invalid for any efficiency claim, but the Triton
+CUDA scan is numerically checked and fast enough. Under bounded official eval,
+the scan mixer gives a strong early sample-efficiency and state-contraction
+signal at step448 and e256.
 
-Negative part: this exact replacement is not a long-budget win. At e1024 the
+Negative part: this replacement is not a long-budget win. At e1024 the
 official mixer-base reaches nonzero exact (`0.024902`) and much better token
-accuracy (`0.664400` vs `0.423050`). The FutureSeed arm's lower residual8/16 is
+accuracy (`0.664400` vs `0.423050`). The scan arm's lower residual8/16 is
 a warning, not a success: it stabilizes faster, but around the wrong answer.
 
-Decision: stop simply extending this replacement. The next high-ROI work is a
-modeling change that keeps the FutureSeed idea but prevents the stable-wrong
-attractor. Two clean options remain within the bitter-lesson boundary:
-
-- use FutureSeed as a cheap future-context source or initialization while
-  retaining enough learned noncausal mixing/normalization capacity for final
-  decisions;
-- add a simple generic gated/normalized FutureSeed state update so loop can
-  keep moving decision boundaries instead of collapsing into a fixed wrong
-  state.
+Decision: do not continue this off-mainline scan-mixer replacement. It should
+not be described as FutureSeed. The actual FutureSeed line remains cross-layer
+terminal-state seeding, and any next experiment must preserve that definition.
 
 Do not respond by running seeds, hidden-size tables, gate-bias tables, or longer
 training of the same replacement.

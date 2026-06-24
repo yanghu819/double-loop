@@ -71,6 +71,10 @@ prepare_bidir_repos() {
 }
 
 prepare_mixer_replacement_repos() {
+  if [[ "${ALLOW_OFF_MAINLINE_BIDIR_SCAN:-0}" != "1" ]]; then
+    echo "Refusing prepare-mixer-replacement: this is an archived off-mainline bidirectional scan probe, not FutureSeed. Set ALLOW_OFF_MAINLINE_BIDIR_SCAN=1 only to reproduce that side probe." >&2
+    exit 2
+  fi
   clone_one "${BASE}/eqr-mixer-base"
   clone_one "${BASE}/eqr-futureseed-mixer"
   "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_futureseed_mixer_replacement_patch.py" "${BASE}/eqr-futureseed-mixer"
@@ -175,8 +179,12 @@ run_train() {
       repo="${BASE}/eqr-mixer-base"
       ;;
     futureseed-mixer)
+      if [[ "${ALLOW_OFF_MAINLINE_BIDIR_SCAN:-0}" != "1" ]]; then
+        echo "Refusing futureseed-mixer: this old launcher name is an archived bidirectional scan side probe, not FutureSeed." >&2
+        exit 2
+      fi
       repo="${BASE}/eqr-futureseed-mixer"
-      extra+=(arch.mixer_replacement_mode=future_seed_scan)
+      extra+=(arch.mixer_replacement_mode=bidirectional_scan)
       ;;
     *)
       echo "unknown run kind: ${kind}" >&2
@@ -277,6 +285,10 @@ run_eval() {
       repo="${BASE}/eqr-mixer-base"
       ;;
     futureseed-mixer)
+      if [[ "${ALLOW_OFF_MAINLINE_BIDIR_SCAN:-0}" != "1" ]]; then
+        echo "Refusing eval-futureseed-mixer: this old launcher name is an archived bidirectional scan side probe, not FutureSeed." >&2
+        exit 2
+      fi
       repo="${BASE}/eqr-futureseed-mixer"
       ;;
     *)

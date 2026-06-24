@@ -2,12 +2,19 @@
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 from pathlib import Path
 
 
-FUTURESEED_SCAN_MIXER = '''
+# IMPORTANT:
+# This archived probe is not the FutureSeed algorithm used by the mainline
+# RWKV/Sudoku/Maze experiments. It injects a forward+reverse token scan as a
+# mixer replacement. Keep it disabled by default so future runs do not mistake a
+# right-to-left scan for FutureSeed.
+BIDIRECTIONAL_SCAN_MIXER = '''
 
-import os as _futureseed_os
+import os as _bidir_scan_os
 
 try:
     import triton
@@ -19,7 +26,7 @@ except Exception:
 
 if triton is not None:
     @triton.jit
-    def _futureseed_scan_fwd_kernel(impulse, decay, out, B: tl.constexpr, L: tl.constexpr, D: tl.constexpr, BLOCK_D: tl.constexpr):
+    def _bidir_scan_fwd_kernel(impulse, decay, out, B: tl.constexpr, L: tl.constexpr, D: tl.constexpr, BLOCK_D: tl.constexpr):
         b = tl.program_id(0)
         d_block = tl.program_id(1)
         offsets = d_block * BLOCK_D + tl.arange(0, BLOCK_D)
@@ -34,7 +41,7 @@ if triton is not None:
 
 
     @triton.jit
-    def _futureseed_scan_bwd_kernel(
+    def _bidir_scan_bwd_kernel(
         grad_out,
         state,
         decay,
@@ -65,18 +72,18 @@ if triton is not None:
         tl.store(grad_decay_parts + b * D + offsets, grad_decay, mask=mask)
 
 
-    class _FutureSeedScanFunction(torch.autograd.Function):
+    class _BidirectionalScanFunction(torch.autograd.Function):
         @staticmethod
         def forward(ctx, impulse: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
             if impulse.ndim != 3:
-                raise ValueError(f"FutureSeed scan expects [B, L, D], got {tuple(impulse.shape)}")
+                raise ValueError(f"Bidirectional scan expects [B, L, D], got {tuple(impulse.shape)}")
             B, L, D = impulse.shape
             impulse32 = impulse.contiguous().to(torch.float32)
             decay32 = decay.contiguous().to(torch.float32)
             state = torch.empty_like(impulse32)
             block_d = 64
             grid = (B, triton.cdiv(D, block_d))
-            _futureseed_scan_fwd_kernel[grid](impulse32, decay32, state, B, L, D, BLOCK_D=block_d, num_warps=2)
+            _bidir_scan_fwd_kernel[grid](impulse32, decay32, state, B, L, D, BLOCK_D=block_d, num_warps=2)
             ctx.save_for_backward(state, decay32)
             return state
 
@@ -89,7 +96,7 @@ if triton is not None:
             grad_decay_parts = torch.empty((B, D), device=grad_out.device, dtype=torch.float32)
             block_d = 64
             grid = (B, triton.cdiv(D, block_d))
-            _futureseed_scan_bwd_kernel[grid](
+            _bidir_scan_bwd_kernel[grid](
                 grad_out,
                 state,
                 decay,
@@ -104,7 +111,7 @@ if triton is not None:
             return grad_impulse, grad_decay_parts.sum(dim=0)
 
 
-class FutureSeedScanMixer(nn.Module):
+class BidirectionalScanMixer(nn.Module):
     def __init__(self, config: EqRConfig) -> None:
         super().__init__()
         self.hidden_size = int(config.hidden_size)
@@ -112,12 +119,12 @@ class FutureSeedScanMixer(nn.Module):
         self.forward_proj = CastedLinear(config.hidden_size, config.hidden_size * 2, bias=False)
         self.reverse_proj = CastedLinear(config.hidden_size, config.hidden_size * 2, bias=False)
         self.out_proj = CastedLinear(config.hidden_size, config.hidden_size, bias=False)
-        decay = float(config.future_seed_scan_decay_init)
+        decay = float(config.bidirectional_scan_decay_init)
         decay = min(max(decay, 1e-4), 1.0 - 1e-4)
         decay_logit = math.log(decay / (1.0 - decay))
         self.forward_decay_logit = nn.Parameter(torch.full((config.hidden_size,), decay_logit))
         self.reverse_decay_logit = nn.Parameter(torch.full((config.hidden_size,), decay_logit))
-        self.mix_gate_logit = nn.Parameter(torch.tensor(float(config.future_seed_mix_gate_bias)))
+        self.mix_gate_logit = nn.Parameter(torch.tensor(float(config.bidirectional_scan_mix_gate_bias)))
 
     def _shift_right(self, tensor: torch.Tensor, offset: int, fill: float) -> torch.Tensor:
         pad_shape = list(tensor.shape)
@@ -134,9 +141,9 @@ class FutureSeedScanMixer(nn.Module):
         decay = decay_flat.view(1, 1, -1)
         impulse = (1.0 - decay) * write_gate * value
 
-        backend = _futureseed_os.environ.get("FUTURESEED_SCAN_BACKEND", "triton").lower()
+        backend = _bidir_scan_os.environ.get("BIDIRECTIONAL_SCAN_BACKEND", "triton").lower()
         if backend == "triton" and triton is not None and impulse.is_cuda:
-            return _FutureSeedScanFunction.apply(impulse, decay_flat).to(x.dtype)
+            return _BidirectionalScanFunction.apply(impulse, decay_flat).to(x.dtype)
 
         # Parallel prefix form of y[t] = decay * y[t - 1] + impulse[t].
         # This keeps the mechanism recurrent while avoiding a Python loop over
@@ -176,34 +183,34 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
 def patch_eqr_model(eqr_dir: Path) -> None:
     path = eqr_dir / "models" / "eqr.py"
     text = path.read_text(encoding="utf-8")
-    if "class FutureSeedScanMixer" in text:
+    if "class BidirectionalScanMixer" in text:
         return
 
     text = replace_once(
         text,
         "    noise_scale: float = 0.01\n    H_init_std: float = 1.0\n",
-        "    noise_scale: float = 0.01\n    mixer_replacement_mode: str = \"none\"\n    future_seed_scan_decay_init: float = 0.9\n    future_seed_mix_gate_bias: float = 0.0\n    H_init_std: float = 1.0\n",
+        "    noise_scale: float = 0.01\n    mixer_replacement_mode: str = \"none\"\n    bidirectional_scan_decay_init: float = 0.9\n    bidirectional_scan_mix_gate_bias: float = 0.0\n    H_init_std: float = 1.0\n",
         "EqRConfig mixer replacement fields",
     )
 
     text = replace_once(
         text,
         "\n\nclass ReasoningBlock(nn.Module):\n",
-        FUTURESEED_SCAN_MIXER + "\n\nclass ReasoningBlock(nn.Module):\n",
-        "FutureSeedScanMixer insertion",
+        BIDIRECTIONAL_SCAN_MIXER + "\n\nclass ReasoningBlock(nn.Module):\n",
+        "BidirectionalScanMixer insertion",
     )
 
     text = replace_once(
         text,
         "        if config.mlp_t:\n            self.mlp_t = SwiGLU(hidden_size=config.seq_len, expansion=config.expansion)\n        else:\n            self.self_attn = Attention(\n",
-        "        self.mixer_replacement_mode = str(config.mixer_replacement_mode).lower()\n        if self.mixer_replacement_mode == \"future_seed_scan\":\n            self.future_seed_scan_mixer = FutureSeedScanMixer(config)\n        elif self.mixer_replacement_mode != \"none\":\n            raise ValueError(f\"Unknown mixer_replacement_mode '{config.mixer_replacement_mode}'\")\n        elif config.mlp_t:\n            self.mlp_t = SwiGLU(hidden_size=config.seq_len, expansion=config.expansion)\n        else:\n            self.self_attn = Attention(\n",
+        "        self.mixer_replacement_mode = str(config.mixer_replacement_mode).lower()\n        if self.mixer_replacement_mode == \"bidirectional_scan\":\n            self.bidirectional_scan_mixer = BidirectionalScanMixer(config)\n        elif self.mixer_replacement_mode != \"none\":\n            raise ValueError(f\"Unknown mixer_replacement_mode '{config.mixer_replacement_mode}'\")\n        elif config.mlp_t:\n            self.mlp_t = SwiGLU(hidden_size=config.seq_len, expansion=config.expansion)\n        else:\n            self.self_attn = Attention(\n",
         "ReasoningBlock mixer init replacement",
     )
 
     text = replace_once(
         text,
         "        if self.config.mlp_t:\n            hidden_states = hidden_states.transpose(1, 2)\n            hidden_states = rms_norm(hidden_states + self.mlp_t(hidden_states), variance_epsilon=self.norm_eps)\n            hidden_states = hidden_states.transpose(1, 2)\n        else:\n            hidden_states = rms_norm(\n                hidden_states + self.self_attn(cos_sin=cos_sin, hidden_states=hidden_states),\n                variance_epsilon=self.norm_eps,\n            )\n",
-        "        if self.mixer_replacement_mode == \"future_seed_scan\":\n            hidden_states = rms_norm(\n                hidden_states + self.future_seed_scan_mixer(hidden_states),\n                variance_epsilon=self.norm_eps,\n            )\n        elif self.config.mlp_t:\n            hidden_states = hidden_states.transpose(1, 2)\n            hidden_states = rms_norm(hidden_states + self.mlp_t(hidden_states), variance_epsilon=self.norm_eps)\n            hidden_states = hidden_states.transpose(1, 2)\n        else:\n            hidden_states = rms_norm(\n                hidden_states + self.self_attn(cos_sin=cos_sin, hidden_states=hidden_states),\n                variance_epsilon=self.norm_eps,\n            )\n",
+        "        if self.mixer_replacement_mode == \"bidirectional_scan\":\n            hidden_states = rms_norm(\n                hidden_states + self.bidirectional_scan_mixer(hidden_states),\n                variance_epsilon=self.norm_eps,\n            )\n        elif self.config.mlp_t:\n            hidden_states = hidden_states.transpose(1, 2)\n            hidden_states = rms_norm(hidden_states + self.mlp_t(hidden_states), variance_epsilon=self.norm_eps)\n            hidden_states = hidden_states.transpose(1, 2)\n        else:\n            hidden_states = rms_norm(\n                hidden_states + self.self_attn(cos_sin=cos_sin, hidden_states=hidden_states),\n                variance_epsilon=self.norm_eps,\n            )\n",
         "ReasoningBlock forward mixer replacement",
     )
 
@@ -218,20 +225,29 @@ def patch_arch_config(eqr_dir: Path) -> None:
     text = replace_once(
         text,
         "noise_scale: 0.01\nH_init_std: 1.0\n",
-        "noise_scale: 0.01\nmixer_replacement_mode: none\nfuture_seed_scan_decay_init: 0.9\nfuture_seed_mix_gate_bias: 0.0\nH_init_std: 1.0\n",
+        "noise_scale: 0.01\nmixer_replacement_mode: none\nbidirectional_scan_decay_init: 0.9\nbidirectional_scan_mix_gate_bias: 0.0\nH_init_std: 1.0\n",
         "arch mixer replacement defaults",
     )
     path.write_text(text, encoding="utf-8")
 
 
 def main() -> None:
+    if os.environ.get("ALLOW_OFF_MAINLINE_BIDIR_SCAN") != "1":
+        print(
+            "Refusing to apply this patch by default. This file is an archived "
+            "off-mainline bidirectional scan mixer probe, not the FutureSeed "
+            "algorithm. Set ALLOW_OFF_MAINLINE_BIDIR_SCAN=1 only when explicitly "
+            "reproducing that archived negative probe.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
     parser = argparse.ArgumentParser()
     parser.add_argument("eqr_dir", type=Path)
     args = parser.parse_args()
     eqr_dir = args.eqr_dir.resolve()
     patch_eqr_model(eqr_dir)
     patch_arch_config(eqr_dir)
-    print(f"FutureSeed mixer replacement patch applied to {eqr_dir}")
+    print(f"Off-mainline bidirectional scan mixer patch applied to {eqr_dir}")
 
 
 if __name__ == "__main__":

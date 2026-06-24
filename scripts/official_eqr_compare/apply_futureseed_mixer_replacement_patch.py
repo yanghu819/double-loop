@@ -7,6 +7,103 @@ from pathlib import Path
 
 FUTURESEED_SCAN_MIXER = '''
 
+import os as _futureseed_os
+
+try:
+    import triton
+    import triton.language as tl
+except Exception:
+    triton = None
+    tl = None
+
+
+if triton is not None:
+    @triton.jit
+    def _futureseed_scan_fwd_kernel(impulse, decay, out, B: tl.constexpr, L: tl.constexpr, D: tl.constexpr, BLOCK_D: tl.constexpr):
+        b = tl.program_id(0)
+        d_block = tl.program_id(1)
+        offsets = d_block * BLOCK_D + tl.arange(0, BLOCK_D)
+        mask = offsets < D
+        dec = tl.load(decay + offsets, mask=mask, other=0.0).to(tl.float32)
+        state = tl.zeros((BLOCK_D,), dtype=tl.float32)
+        base = b * L * D + offsets
+        for t in range(0, L):
+            impulse_t = tl.load(impulse + base + t * D, mask=mask, other=0.0).to(tl.float32)
+            state = dec * state + impulse_t
+            tl.store(out + base + t * D, state, mask=mask)
+
+
+    @triton.jit
+    def _futureseed_scan_bwd_kernel(
+        grad_out,
+        state,
+        decay,
+        grad_impulse,
+        grad_decay_parts,
+        B: tl.constexpr,
+        L: tl.constexpr,
+        D: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        b = tl.program_id(0)
+        d_block = tl.program_id(1)
+        offsets = d_block * BLOCK_D + tl.arange(0, BLOCK_D)
+        mask = offsets < D
+        dec = tl.load(decay + offsets, mask=mask, other=0.0).to(tl.float32)
+        adjoint = tl.zeros((BLOCK_D,), dtype=tl.float32)
+        grad_decay = tl.zeros((BLOCK_D,), dtype=tl.float32)
+        base = b * L * D + offsets
+        for rev_t in range(0, L):
+            t = L - 1 - rev_t
+            adjoint += tl.load(grad_out + base + t * D, mask=mask, other=0.0).to(tl.float32)
+            tl.store(grad_impulse + base + t * D, adjoint, mask=mask)
+            prev_state = tl.zeros((BLOCK_D,), dtype=tl.float32)
+            if t > 0:
+                prev_state = tl.load(state + base + (t - 1) * D, mask=mask, other=0.0).to(tl.float32)
+            grad_decay += adjoint * prev_state
+            adjoint = adjoint * dec
+        tl.store(grad_decay_parts + b * D + offsets, grad_decay, mask=mask)
+
+
+    class _FutureSeedScanFunction(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, impulse: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+            if impulse.ndim != 3:
+                raise ValueError(f"FutureSeed scan expects [B, L, D], got {tuple(impulse.shape)}")
+            B, L, D = impulse.shape
+            impulse32 = impulse.contiguous().to(torch.float32)
+            decay32 = decay.contiguous().to(torch.float32)
+            state = torch.empty_like(impulse32)
+            block_d = 64
+            grid = (B, triton.cdiv(D, block_d))
+            _futureseed_scan_fwd_kernel[grid](impulse32, decay32, state, B, L, D, BLOCK_D=block_d, num_warps=2)
+            ctx.save_for_backward(state, decay32)
+            return state
+
+        @staticmethod
+        def backward(ctx, grad_state: torch.Tensor):
+            state, decay = ctx.saved_tensors
+            B, L, D = state.shape
+            grad_out = grad_state.contiguous().to(torch.float32)
+            grad_impulse = torch.empty_like(grad_out)
+            grad_decay_parts = torch.empty((B, D), device=grad_out.device, dtype=torch.float32)
+            block_d = 64
+            grid = (B, triton.cdiv(D, block_d))
+            _futureseed_scan_bwd_kernel[grid](
+                grad_out,
+                state,
+                decay,
+                grad_impulse,
+                grad_decay_parts,
+                B,
+                L,
+                D,
+                BLOCK_D=block_d,
+                num_warps=2,
+            )
+            return grad_impulse, grad_decay_parts.sum(dim=0)
+
+
 class FutureSeedScanMixer(nn.Module):
     def __init__(self, config: EqRConfig) -> None:
         super().__init__()
@@ -33,8 +130,13 @@ class FutureSeedScanMixer(nn.Module):
         write_gate, value = projected.chunk(2, dim=-1)
         write_gate = torch.sigmoid(write_gate.to(torch.float32))
         value = torch.tanh(value.to(torch.float32))
-        decay = torch.sigmoid(decay_logit.to(torch.float32)).view(1, 1, -1)
+        decay_flat = torch.sigmoid(decay_logit.to(torch.float32))
+        decay = decay_flat.view(1, 1, -1)
         impulse = (1.0 - decay) * write_gate * value
+
+        backend = _futureseed_os.environ.get("FUTURESEED_SCAN_BACKEND", "triton").lower()
+        if backend == "triton" and triton is not None and impulse.is_cuda:
+            return _FutureSeedScanFunction.apply(impulse, decay_flat).to(x.dtype)
 
         # Parallel prefix form of y[t] = decay * y[t - 1] + impulse[t].
         # This keeps the mechanism recurrent while avoiding a Python loop over

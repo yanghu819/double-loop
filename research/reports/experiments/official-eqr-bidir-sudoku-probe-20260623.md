@@ -60,8 +60,19 @@ Planned remote artifact root:
 
 ## 7. Results
 
-Launch target after stopping seed3/4. This is a single mechanism probe, not a
-seed sweep:
+Launched at `2026-06-24T03:37:41Z` from detached source SHA
+`45fe80a4b31426b81fae6dda99997871af6c6a4c` on GPU1. Remote launcher:
+
+- Worktree:
+  `/huyang2/double-loop/.worktrees/official-eqr-bidir-probe-45fe80a`
+- Launch root:
+  `/huyang2/double-loop/artifacts/launch/official-eqr-bidir-sudoku-20260624`
+- Run stamp: `20260624T033741Z-45fe80a`
+- Log root:
+  `/huyang2/double-loop/official_eqr_compare/artifacts/bidir_sudoku_probe_20260624T033741Z-45fe80a`
+- Launcher PID: `430`
+
+This is a single mechanism probe, not a seed sweep:
 
 - causal-cheap: causal attention, `arch.mlp_t=false`, no future-token source.
 - causal-bidir-futureseed: same backbone plus reverse-causal FutureSeed on input
@@ -74,6 +85,14 @@ exact or lower eval loss under the same train budget. If both arms are bad or
 indistinguishable, the claim weakens and the next move should not be a seed
 sweep; it should be either a larger single-budget scale-up or a different
 generic FutureSeed state mechanism.
+
+Early health check: causal-cheap training started as PID `581` with official
+EqR command `pretrain.py --config-name train/eqr_sudoku`, overrides
+`arch.attention_causal=true arch.mlp_t=false arch.hidden_size=192
+arch.num_heads=6 arch.halt_max_steps=16 arch.noise_scale=0.01`. GPU1 was active
+on `NVIDIA A100-SXM4-80GB`, around `1717 MiB / 81920 MiB`, `94%` utilization
+during the first eval pass. The launcher will run causal-cheap first, then
+causal-bidir-futureseed under the same budget.
 
 ## 8. Conclusions
 

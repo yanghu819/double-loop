@@ -1,0 +1,52 @@
+{
+  "run_name": "official-eqr-mixer-replacement-triton-e1024-matched-eval-20260624T1015Z-ce2e76b",
+  "git_sha": "ce2e76bed92d2f271518f0bf23f251c8eec492e5",
+  "status": "completed",
+  "metric_kind": "matched_e1024_tiny_official_eval",
+  "eval_setup": {
+    "max_eval_steps": 16,
+    "global_batch_size": 128,
+    "halt_max_steps": 16,
+    "noise_scale": 0.01,
+    "different_init": 1,
+    "futureseed_backend": "triton"
+  },
+  "base": {
+    "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/mixer-base/outputs/y9l15z0t/2026-6-24/9-53-24/checkpoints/step_7168_y9l15z0t.pth",
+    "train_final_loss": 0.767679,
+    "eval_time_sec": 7.956933259963989,
+    "accuracy": 0.6644001007080078,
+    "exact_accuracy": 0.02490234375,
+    "lm_loss": 0.7663573026657104,
+    "total_loss": 0.7918518781661987,
+    "residual_of_1_steps": 195.92333984375,
+    "residual_of_4_steps": 4.83349609375,
+    "residual_of_8_steps": 4.84912109375,
+    "residual_of_16_steps": 4.97900390625
+  },
+  "futureseed": {
+    "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/d8w7plle/2026-6-24/9-59-30/checkpoints/step_7168_d8w7plle.pth",
+    "train_final_loss": 1.408197,
+    "eval_time_sec": 14.81361174583435,
+    "accuracy": 0.4230504631996155,
+    "exact_accuracy": 0.0,
+    "lm_loss": 1.4029057025909424,
+    "total_loss": 1.4029057025909424,
+    "residual_of_1_steps": 198.345703125,
+    "residual_of_4_steps": 6.38134765625,
+    "residual_of_8_steps": 3.23828125,
+    "residual_of_16_steps": 3.0654296875
+  },
+  "delta_futureseed_minus_base": {
+    "accuracy": -0.24134963750839233,
+    "exact_accuracy": -0.02490234375,
+    "lm_loss": 0.6365483999252319,
+    "total_loss": 0.6110538244247437,
+    "residual_of_1_steps": 2.42236328125,
+    "residual_of_4_steps": 1.5478515625,
+    "residual_of_8_steps": -1.61083984375,
+    "residual_of_16_steps": -1.91357421875,
+    "eval_time_sec": 6.856678485870361
+  },
+  "decision": "Discard simply training this mixer replacement longer. FutureSeed wins the early matched gates, but by e1024 the official mixer-base reaches nonzero exact and much better accuracy/loss. The lower FutureSeed residual8/16 now indicates a stable wrong attractor, not better reasoning."
+}

@@ -42,6 +42,14 @@ for scaling to harder spatial reasoning tasks.
   `0.0156` and early blank cells are much worse than late blank cells. With
   FutureSeed, h12 loop5 exact is `0.9492` and the early/late gap nearly
   disappears.
+- Official EqR mixer replacement is now a mixed boundary, not a clean win.
+  After replacing the official Sudoku token mixer with a Triton/CUDA
+  FutureSeed scan mixer, FutureSeed wins early bounded evals: step448 accuracy
+  `0.1881` versus base `0.0955`, and e256 `0.4207` versus base `0.3668`. At
+  e1024 this reverses: official mixer-base reaches `accuracy=0.6644`,
+  `exact=0.0249`, `lm_loss=0.7664`, while FutureSeed stays at
+  `accuracy=0.4231`, `exact=0`, `lm_loss=1.4029`. Lower late residual for
+  FutureSeed at e1024 means stable wrong convergence, not solved reasoning.
 - Strong boundary: official EqR Maze e256/e512 token accuracy is high but path
   F1 is near zero under plain token CE. A generic path-token-weighted objective
   opens path recovery to loop16 path F1 about `0.468`, but the model predicts a
@@ -314,21 +322,25 @@ a negative result and visualize the failure.
 
 Do not run another weight/seed/temperature table for Maze.
 
-After the official Sudoku quick 5-seed baseline gate completes, the highest-ROI
-next experiment is not another old-patch gate sweep. It is a single
-official-codebase cheap-bidirectional probe:
+The official-codebase FutureSeed mixer replacement probe is now complete. It
+shows early sample efficiency but fails the e1024 long-budget gate. The next
+paper experiment should not be another old-patch gate or a longer run of the
+same replacement.
 
-- Use official EqR as the strong noncausal ceiling, not as the place where the
-  add-on must beat full attention.
-- Compare a cheap/causal backbone against the same backbone with a genuine
-  future-token seed source.
-- Prefer Sudoku sample efficiency for the first probe because Maze path-weight
-  has repeatedly collapsed to a broad-mask attractor.
-- For official Sudoku, explicitly override `arch.mlp_t=false`; the upstream
-  Sudoku training config sets `mlp_t=true`, which uses a noncausal token-MLP
-  mixer and makes `attention_causal=true` meaningless.
+The highest-ROI next experiment is a simple generic mechanism change that keeps
+the FutureSeed idea but avoids the stable-wrong attractor:
+
+- Use official EqR as the strong noncausal ceiling and baseline.
+- Keep FutureSeed as cheap future context, but do not require it to fully
+  replace all learned token mixing at long budget.
+- Test either a gated/normalized FutureSeed state update or a minimal hybrid
+  mixer where FutureSeed supplies a future-conditioned initialization while
+  learned mixing capacity handles final decisions.
+- Prefer Sudoku sample efficiency/exact for the first official-codebase gate
+  because Maze path-weight repeatedly collapses to broad masks.
 - Keep the mechanism generic: no Sudoku rules, no solver, no selector, no
   best-of-K oracle, no repair.
-- Success means FutureSeed helps the cheap backbone approach the official EqR
-  ceiling faster or cheaper. Failure means the current FutureSeed formulation
-  needs to change, not that we should tune gate bias or seed tables.
+- Success means FutureSeed improves matched official sample efficiency without
+  losing long-budget exact, or reaches the same quality with less recurrent
+  compute. Failure means the current formulation is only an early optimization
+  aid, not a standalone mixer replacement.

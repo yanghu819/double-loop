@@ -126,6 +126,34 @@
   the same diagnostic in the official EqR code path or a causal Maze backbone;
   Sudoku seed sweeps are low value.
 
+## 2026-06-24 Official EqR FutureSeed mixer replacement
+
+- The official-codebase mixer-replacement test is now sharper than the early
+  quick gate. The FutureSeed scan is no longer a toy Python loop: commit
+  `d9c2600` added a Triton CUDA custom-autograd backend whose output and
+  gradients match the prefix fallback, and the scan microcheck was about
+  `12.2x` faster after warmup.
+- Under bounded official Sudoku eval, FutureSeed-as-token-mixer replacement
+  gives real early sample efficiency: step448 accuracy `0.1881` versus base
+  `0.0955`, and e256 accuracy `0.4207` versus base `0.3668`. This supports the
+  narrow statement that FutureSeed can provide an early cheap future-context
+  direction.
+- The e1024 gate reverses the result. Official mixer-base reaches
+  `accuracy=0.6644`, `exact=0.0249`, `lm_loss=0.7664`; FutureSeed replacement
+  stays at `accuracy=0.4231`, `exact=0`, `lm_loss=1.4029`. The lower
+  FutureSeed residual16 (`3.065` versus base `4.979`) is a bad sign here: the
+  loop has converged, but to a stable wrong answer.
+- Paper boundary: do not claim that FutureSeed can simply replace EqR's learned
+  noncausal mixer at long budget. The stronger, cleaner claim is that
+  FutureSeed is an efficient future-context or initialization mechanism, and
+  the open modeling problem is how to combine it with enough learned
+  normalization/mixing/state dynamics to avoid stable wrong attractors.
+- Next experiments should change the generic mechanism, not the table: no seed
+  sweep, no longer same replacement, no gate-bias/hidden-size grid. Valid next
+  directions are a simple gated/normalized FutureSeed state update or a hybrid
+  where FutureSeed supplies cheap future context while the model keeps learned
+  mixer capacity for final decisions.
+
 ## 2026-06-21 Official EqR Maze baseline
 
 - The fair Maze comparison must be anchored in the official EqR codebase, not the

@@ -1,0 +1,46 @@
+{
+  "run_name": "official-eqr-mixer-replacement-triton-matched-eval-20260624T0940Z-ce2e76b",
+  "git_sha": "ce2e76bed92d2f271518f0bf23f251c8eec492e5",
+  "status": "completed",
+  "metric_kind": "matched_tiny_official_eval",
+  "eval_setup": {
+    "max_eval_steps": 16,
+    "global_batch_size": 128,
+    "halt_max_steps": 16,
+    "noise_scale": 0.01,
+    "different_init": 1,
+    "futureseed_backend": "triton"
+  },
+  "base": {
+    "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/mixer-base/outputs/xiwv39nc/2026-6-24/9-38-32/checkpoints/step_448_xiwv39nc.pth",
+    "train_final_loss": 2.359425,
+    "eval_time_sec": 8.557674884796143,
+    "accuracy": 0.09549816697835922,
+    "exact_accuracy": 0.0,
+    "lm_loss": 2.5349323749542236,
+    "total_loss": 2.538283109664917,
+    "residual_of_1_steps": 238.7998046875,
+    "residual_of_16_steps": 229.12548828125
+  },
+  "futureseed": {
+    "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/2zycadqg/2026-6-24/9-25-39/checkpoints/step_448_2zycadqg.pth",
+    "train_final_loss": 1.626443,
+    "eval_time_sec": 13.011803150177002,
+    "accuracy": 0.18807870149612427,
+    "exact_accuracy": 0.0,
+    "lm_loss": 2.3132450580596924,
+    "total_loss": 2.316542387008667,
+    "residual_of_1_steps": 226.28076171875,
+    "residual_of_16_steps": 150.869140625
+  },
+  "delta_futureseed_minus_base": {
+    "accuracy": 0.09258053451776505,
+    "exact_accuracy": 0.0,
+    "lm_loss": -0.22168731689453125,
+    "total_loss": -0.22174072265625,
+    "residual_of_1_steps": -12.51904296875,
+    "residual_of_16_steps": -78.25634765625,
+    "eval_time_sec": 4.454128265380859
+  },
+  "decision": "Continue exactly one longer matched scale gate. The CUDA FutureSeed mixer has a strong sample-efficiency/state-contraction signal, but exact is still zero, so this is not a solved-task claim."
+}

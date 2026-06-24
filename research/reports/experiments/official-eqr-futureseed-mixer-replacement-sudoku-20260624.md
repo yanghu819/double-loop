@@ -92,6 +92,13 @@ paired step250/500 metrics, and truncate if the replacement is clearly losing.
   `runs/fs-triton-backward-check-20260624-d9c2600/result.json`
 - Triton train-only backend viability run:
   `runs/official-eqr-fs-mixer-triton-sudoku-trainonly-20260624T0930Z-d9c2600/`
+- Matched CUDA/Triton tiny eval gates:
+  `runs/official-eqr-mixer-replacement-triton-matched-eval-20260624T0940Z-ce2e76b/`,
+  `runs/official-eqr-mixer-replacement-triton-e256-matched-eval-20260624T0955Z-ce2e76b/`,
+  `runs/official-eqr-mixer-replacement-triton-e1024-matched-eval-20260624T1015Z-ce2e76b/`
+- Matched e1024 train-only logs:
+  `runs/official-eqr-mixer-base-trainonly-e1024-20260624T1000Z-ce2e76b/`,
+  `runs/official-eqr-futureseed-mixer-triton-trainonly-e1024-20260624T1010Z-ce2e76b/`
 - Baseline train log:
   `/huyang2/double-loop/official_eqr_compare/logs/official-eqr-mixer-base-sudoku-20260624T0520Z-mixerreplace-c9b5bd7.log`
 - FutureSeed train log:
@@ -141,33 +148,58 @@ Execution failures were informative:
   backend viability run only: train-time eval was disabled after the first
   full-eval launch expanded to `3304` eval batches and was killed as low ROI.
 
+### CUDA/Triton matched scale gate
+
+After the CUDA scan backend was validated, I ran bounded official eval for three
+matched budgets. All rows use the same tiny official eval gate:
+`max_eval_steps=16`, batch `128`, `halt_max_steps=16`, `noise_scale=0.01`,
+`different_init=1`.
+
+| budget | arm | train loss | accuracy | exact | lm_loss | residual1 | residual4 | residual8 | residual16 | eval sec |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| step448 | official mixer-base | 2.359425 | 0.095498 | 0.000000 | 2.534932 | 238.800 | 229.108 | 229.149 | 229.125 | 8.558 |
+| step448 | FutureSeed mixer | 1.626443 | 0.188079 | 0.000000 | 2.313245 | 226.281 | 154.876 | 150.535 | 150.869 | 13.012 |
+| step448 | FS - base | -0.732982 | +0.092581 | 0.000000 | -0.221687 | -12.519 | -74.232 | -78.614 | -78.256 | +4.454 |
+| e256/step1792 | official mixer-base | 1.120432 | 0.366766 | 0.000000 | 1.803480 | 165.761 | 63.063 | 60.984 | 61.583 | 7.541 |
+| e256/step1792 | FutureSeed mixer | 1.448282 | 0.420693 | 0.000000 | 1.523322 | 188.403 | 35.650 | 13.391 | 7.973 | 15.192 |
+| e256/step1792 | FS - base | +0.327850 | +0.053928 | 0.000000 | -0.280157 | +22.642 | -27.413 | -47.593 | -53.610 | +7.651 |
+| e1024/step7168 | official mixer-base | 0.767679 | 0.664400 | 0.024902 | 0.766357 | 195.923 | 4.833 | 4.849 | 4.979 | 7.957 |
+| e1024/step7168 | FutureSeed mixer | 1.408197 | 0.423050 | 0.000000 | 1.402906 | 198.346 | 6.381 | 3.238 | 3.065 | 14.814 |
+| e1024/step7168 | FS - base | +0.640518 | -0.241350 | -0.024902 | +0.636548 | +2.422 | +1.548 | -1.611 | -1.914 | +6.857 |
+
+This is the key decision point. The CUDA FutureSeed mixer wins clearly at
+step448 and still wins token/loss at e256. By e1024, the official mixer-base
+opens exact accuracy and dominates accuracy/loss. FutureSeed still has lower
+late-loop residual at e1024, but that is no longer a positive sign: it means the
+recurrent state has converged to a stable wrong attractor.
+
 ## 8. Conclusions
 
-Positive as a quick gate: in the official EqR codebase, directly replacing the
-official Sudoku token mixer with a generic FutureSeed scan mixer gives a clear
-early optimization advantage over the official mixer-base at the same small
-budget. This is the first clean evidence in this thread for the paper story
-the user wanted: FutureSeed can be framed as a cheap learned bidirectional
-information path, not just an add-on beside EqR.
+Mixed, and now much more precise.
 
-Do not overclaim. Exact accuracy is still zero at these tiny budgets, the
-step500 comparison has the standalone-eval noise caveat, and this is Sudoku,
-not Maze. The next high-ROI experiment is not a seed sweep; it is a matched
-official EqR replacement run with the vectorized mixer from the start, using a
-more appropriate budget/eval setup:
+Positive part: FutureSeed-as-mixer-replacement is real enough to test. The
+Python loop was invalid for the claim, but the Triton CUDA scan is numerically
+checked and fast enough. Under bounded official eval, FutureSeed gives a strong
+early sample-efficiency and state-contraction signal at step448 and e256.
 
-- either Sudoku sample-efficiency until exact opens, with matched train-time
-  eval for both arms;
-- or official Maze released/proxy eval only after the replacement path is
-  proven compute-efficient and stable.
+Negative part: this exact replacement is not a long-budget win. At e1024 the
+official mixer-base reaches nonzero exact (`0.024902`) and much better token
+accuracy (`0.664400` vs `0.423050`). The FutureSeed arm's lower residual8/16 is
+a warning, not a success: it stabilizes faster, but around the wrong answer.
 
-Key lesson for implementation: FutureSeed as a paper mechanism needs an
-efficient scan implementation. A Python recurrent loop is not a valid
-cheap-bidirectional mechanism. The replacement now has a real CUDA path through
-Triton, while the vectorized prefix scan remains the fallback. The next paper
-question is no longer "can FutureSeed be implemented efficiently enough to be
-credible"; it is "under matched official EqR eval, does the CUDA FutureSeed
-mixer win on sample efficiency, final quality, or compute?"
+Decision: stop simply extending this replacement. The next high-ROI work is a
+modeling change that keeps the FutureSeed idea but prevents the stable-wrong
+attractor. Two clean options remain within the bitter-lesson boundary:
+
+- use FutureSeed as a cheap future-context source or initialization while
+  retaining enough learned noncausal mixing/normalization capacity for final
+  decisions;
+- add a simple generic gated/normalized FutureSeed state update so loop can
+  keep moving decision boundaries instead of collapsing into a fixed wrong
+  state.
+
+Do not respond by running seeds, hidden-size tables, gate-bias tables, or longer
+training of the same replacement.
 
 ## 9. Submission Record
 

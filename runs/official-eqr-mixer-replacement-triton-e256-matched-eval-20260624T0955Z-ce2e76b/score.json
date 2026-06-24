@@ -1,0 +1,53 @@
+{
+  "run_name": "official-eqr-mixer-replacement-triton-e256-matched-eval-20260624T0955Z-ce2e76b",
+  "git_sha": "ce2e76bed92d2f271518f0bf23f251c8eec492e5",
+  "status": "completed",
+  "metric_kind": "matched_e256_tiny_official_eval",
+  "eval_setup": {
+    "max_eval_steps": 16,
+    "global_batch_size": 128,
+    "halt_max_steps": 16,
+    "noise_scale": 0.01,
+    "different_init": 1,
+    "futureseed_backend": "triton"
+  },
+  "base": {
+    "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/mixer-base/outputs/evhcux02/2026-6-24/9-44-44/checkpoints/step_1792_evhcux02.pth",
+    "train_final_loss": 1.120432,
+    "eval_time_sec": 7.541339635848999,
+    "accuracy": 0.3667655289173126,
+    "exact_accuracy": 0.0,
+    "lm_loss": 1.8034796714782715,
+    "total_loss": 1.8038883209228516,
+    "residual_of_1_steps": 165.76123046875,
+    "residual_of_4_steps": 63.06298828125,
+    "residual_of_8_steps": 60.984375,
+    "residual_of_16_steps": 61.5830078125
+  },
+  "futureseed": {
+    "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/njrnbwbc/2026-6-24/9-46-52/checkpoints/step_1792_njrnbwbc.pth",
+    "train_final_loss": 1.448282,
+    "eval_time_sec": 15.19225287437439,
+    "accuracy": 0.42069345712661743,
+    "exact_accuracy": 0.0,
+    "lm_loss": 1.5233224630355835,
+    "total_loss": 1.5240007638931274,
+    "residual_of_1_steps": 188.4033203125,
+    "residual_of_4_steps": 35.64990234375,
+    "residual_of_8_steps": 13.39111328125,
+    "residual_of_16_steps": 7.97265625
+  },
+  "delta_futureseed_minus_base": {
+    "accuracy": 0.05392792820930481,
+    "exact_accuracy": 0.0,
+    "lm_loss": -0.280157208442688,
+    "total_loss": -0.2798875570297241,
+    "residual_of_1_steps": 22.64208984375,
+    "residual_of_4_steps": -27.4130859375,
+    "residual_of_8_steps": -47.59326171875,
+    "residual_of_16_steps": -53.6103515625,
+    "eval_time_sec": 7.650913238525391
+  },
+  "decision": "Continue one longer matched scale gate. FutureSeed still improves official tiny eval and late-loop residual at 1792 steps, but exact remains zero."
+}
+

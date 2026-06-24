@@ -70,6 +70,16 @@ prepare_bidir_repos() {
   git -C "${BASE}/eqr-causal-bidir-futureseed" diff > "${BASE}/artifacts/causal_bidir_futureseed.patch"
 }
 
+prepare_mixer_replacement_repos() {
+  clone_one "${BASE}/eqr-mixer-base"
+  clone_one "${BASE}/eqr-futureseed-mixer"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_futureseed_mixer_replacement_patch.py" "${BASE}/eqr-futureseed-mixer"
+  git -C "${BASE}/eqr-mixer-base" rev-parse HEAD > "${BASE}/artifacts/eqr-mixer-base.sha"
+  git -C "${BASE}/eqr-futureseed-mixer" rev-parse HEAD > "${BASE}/artifacts/eqr-futureseed-mixer-base.sha"
+  git -C "${BASE}/eqr-mixer-base" diff > "${BASE}/artifacts/mixer_base.patch"
+  git -C "${BASE}/eqr-futureseed-mixer" diff > "${BASE}/artifacts/futureseed_mixer_replacement.patch"
+}
+
 prepare_env() {
   if [[ ! -x "${BASE}/.venv/bin/python" ]]; then
     python -m venv --system-site-packages "${BASE}/.venv"
@@ -161,6 +171,13 @@ run_train() {
       repo="${BASE}/eqr-causal-bidir-futureseed"
       extra+=(arch.attention_causal=true arch.future_seed_mode=reverse_causal arch.future_seed_scale="${FUTURE_SEED_SCALE:-1.0}" arch.future_seed_gate_bias="${FUTURE_SEED_GATE_BIAS:--2.0}")
       ;;
+    mixer-base)
+      repo="${BASE}/eqr-mixer-base"
+      ;;
+    futureseed-mixer)
+      repo="${BASE}/eqr-futureseed-mixer"
+      extra+=(arch.mixer_replacement_mode=future_seed_scan)
+      ;;
     *)
       echo "unknown run kind: ${kind}" >&2
       exit 2
@@ -182,7 +199,7 @@ run_train() {
   local pidfile="${BASE}/artifacts/${run_name}.pid"
   local train_config="${EQR_TRAIN_CONFIG:-train/eqr_maze_unique}"
   local default_path_loss_overrides=1
-  if [[ "${kind}" == "causal-cheap" || "${kind}" == "causal-bidir-futureseed" ]]; then
+  if [[ "${kind}" == "causal-cheap" || "${kind}" == "causal-bidir-futureseed" || "${kind}" == "mixer-base" || "${kind}" == "futureseed-mixer" ]]; then
     default_path_loss_overrides="${APPLY_PATH_LOSS_PATCH:-0}"
   fi
   local loss_overrides=()
@@ -256,6 +273,12 @@ run_eval() {
     causal-bidir-futureseed)
       repo="${BASE}/eqr-causal-bidir-futureseed"
       ;;
+    mixer-base)
+      repo="${BASE}/eqr-mixer-base"
+      ;;
+    futureseed-mixer)
+      repo="${BASE}/eqr-futureseed-mixer"
+      ;;
     *)
       echo "unknown eval kind: ${kind}" >&2
       exit 2
@@ -290,6 +313,10 @@ case "${ACTION}" in
     prepare_bidir_repos
     prepare_env
     ;;
+  prepare-mixer-replacement)
+    prepare_mixer_replacement_repos
+    prepare_env
+    ;;
   check)
     check_official_optimizer
     ;;
@@ -314,6 +341,12 @@ case "${ACTION}" in
   train-causal-bidir-futureseed)
     run_train causal-bidir-futureseed
     ;;
+  train-mixer-base)
+    run_train mixer-base
+    ;;
+  train-futureseed-mixer)
+    run_train futureseed-mixer
+    ;;
   eval-base)
     run_eval base "${2:-}"
     ;;
@@ -332,6 +365,12 @@ case "${ACTION}" in
   eval-causal-bidir-futureseed)
     run_eval causal-bidir-futureseed "${2:-}"
     ;;
+  eval-mixer-base)
+    run_eval mixer-base "${2:-}"
+    ;;
+  eval-futureseed-mixer)
+    run_eval futureseed-mixer "${2:-}"
+    ;;
   status)
     echo "BASE=${BASE}"
     find "${BASE}" -maxdepth 2 -type f \( -name "*.pid" -o -name "*.sha" -o -name "*.patch" \) -print 2>/dev/null | sort || true
@@ -339,7 +378,7 @@ case "${ACTION}" in
     ;;
   *)
     cat >&2 <<EOF
-usage: $0 prepare|prepare-causal|prepare-bidir|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|train-causal-cheap|train-causal-bidir-futureseed|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|eval-causal-cheap|eval-causal-bidir-futureseed|status
+usage: $0 prepare|prepare-causal|prepare-bidir|prepare-mixer-replacement|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|train-causal-cheap|train-causal-bidir-futureseed|train-mixer-base|train-futureseed-mixer|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|eval-causal-cheap|eval-causal-bidir-futureseed|eval-mixer-base|eval-futureseed-mixer|status
 EOF
     exit 2
     ;;

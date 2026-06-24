@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>Native RWKV FutureSeed Sudoku Gate</title><style>body{font:14px system-ui,sans-serif;margin:32px;line-height:1.45}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:6px 10px;text-align:right}td:first-child,th:first-child{text-align:left}code{background:#f4f4f4;padding:1px 4px}</style><h1>Native RWKV FutureSeed Sudoku Gate</h1><p>Corrected FutureSeed: forward RWKV terminal recurrent state seeds the next RWKV layer. No reverse scan.</p><h2>Decision</h2><p><strong>Discard as positive evidence.</strong> It runs and trains, but does not beat no-FS at this E64 D16/B1 gate.</p><table><thead><tr><th>arm</th><th>train final loss</th><th>eval acc</th><th>exact</th><th>lm loss</th><th>residual16</th><th>eval time</th></tr></thead><tbody><tr><td>rwkv-mixer</td><td>1.592871</td><td>0.165159628</td><td>0.000000</td><td>2.370409</td><td>222.312012</td><td>74.67s</td></tr><tr><td>rwkv-native-fs-mixer</td><td>1.590624</td><td>0.165147573</td><td>0.000000</td><td>2.369608</td><td>222.399414</td><td>124.47s</td></tr></tbody></table><h2>Delta</h2><pre>{
+  &quot;fs_minus_nofs_accuracy&quot;: -1.2055039405822754e-05,
+  &quot;fs_minus_nofs_exact_accuracy&quot;: 0.0,
+  &quot;fs_minus_nofs_lm_loss&quot;: -0.0008013248443603516,
+  &quot;fs_minus_nofs_total_loss&quot;: -0.0008080005645751953,
+  &quot;fs_minus_nofs_residual_16&quot;: 0.08740234375,
+  &quot;fs_eval_time_over_nofs&quot;: 1.6669138490212323,
+  &quot;fs_train_final_loss_minus_nofs&quot;: -0.002246999999999888
+}</pre><p>Artifact: <code>/Users/torusmini/Documents/double-loop-gpu1/.codex-transfer/localrepo/runs/rwkv_native_fs_sudoku_gate_20260624T121426Z_cb1b5a1-e64-d16b1</code></p>

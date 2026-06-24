@@ -1,0 +1,29 @@
+attention fallback already present in /huyang2/double-loop/official_eqr_compare_shared/eqr-rwkv-mixer/models/layers.py
+[Info] evaluating 1 checkpoint(s)
+[Info] 
+epochs: 64
+total_groups: 1000
+mean_puzzle_examples: 1.0
+puzzle_ids: 1
+vocab_size: 11
+seq_len: 81
+
+total_samples: 1000
+global_batch_size: 128                         
+Estimated total training steps: 448
+[Info] Steps per epoch: 7
+[Info] Using optimizer: adam_atan2 with args: {}
+[Info] override arch.halt_max_steps=16
+[Info] override arch.noise_scale=0.5
+[Info] override arch.H_init_std=1.0
+[Info] override arch.L_init_std=1.0
+[Info] override halt_max_steps=16
+[Info] override noise_scale=0.5
+[Info] override H_init_std=1.0
+[Info] override L_init_std=1.0
+[Info] runtime arch.noise_scale=0.5
+[Info] runtime reset stds={'z_H': 1.0, 'z_L': 1.0}
+Eval (1 ranks):   0%|          | 0/16 [00:00<?, ?it/s]/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+Eval (1 ranks):   6%|▋         | 1/16 [00:25<06:28, 25.91s/it]Eval (1 ranks):  12%|█▎        | 2/16 [00:28<02:53, 12.41s/it]Eval (1 ranks):  19%|█▉        | 3/16 [00:31<01:45,  8.15s/it]Eval (1 ranks):  25%|██▌       | 4/16 [00:35<01:14,  6.22s/it]Eval (1 ranks):  31%|███▏      | 5/16 [00:38<00:55,  5.04s/it]Eval (1 ranks):  38%|███▊      | 6/16 [00:41<00:44,  4.44s/it]Eval (1 ranks):  44%|████▍     | 7/16 [00:43<00:33,  3.76s/it]Eval (1 ranks):  50%|█████     | 8/16 [00:47<00:29,  3.71s/it]Eval (1 ranks):  56%|█████▋    | 9/16 [00:50<00:24,  3.56s/it]Eval (1 ranks):  62%|██████▎   | 10/16 [00:53<00:19,  3.27s/it]Eval (1 ranks):  69%|██████▉   | 11/16 [00:56<00:15,  3.15s/it]Eval (1 ranks):  75%|███████▌  | 12/16 [00:59<00:12,  3.11s/it]Eval (1 ranks):  81%|████████▏ | 13/16 [01:01<00:09,  3.01s/it]Eval (1 ranks):  88%|████████▊ | 14/16 [01:04<00:05,  2.94s/it]Eval (1 ranks):  94%|█████████▍| 15/16 [01:07<00:02,  2.78s/it]Eval (1 ranks): 100%|██████████| 16/16 [01:10<00:00,  2.85s/it]                                                               [Info] saved /huyang2/double-loop/official_eqr_compare_shared/outputs/rwkv-mixer/outputs/jc2jg7it/2026-6-24/12-2-19/eval_preds/step_448_sudoku_gate_e64_d16b1_rwkv-mixer_arch_halt_max_steps-16_arch_noise_scale-0.5_arch_H_init_std-1.0_arch_L_init_std-1.0/eval_metrics_step_448.json

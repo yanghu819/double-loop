@@ -1,0 +1,4 @@
+Question: Can native FutureSeed state seeding make a forward RWKV replacement for the official EqR mixer better than the same RWKV without FutureSeed?
+Prediction: native-FS should train/evaluate better than no-FS at matched D192/L2 RWKV, or this exact FutureSeed formulation is not yet a viable mixer replacement.
+Budget: reuse completed no-FS E64 checkpoint, train one native-FS E64 arm, evaluate both with bounded D16/B1/N0.5 official evaluate.py gate.
+Kill: stop on dtype/custom-op/compile failure or eval hanging beyond the bounded D16/B1 gate; do not sweep seed/gate.

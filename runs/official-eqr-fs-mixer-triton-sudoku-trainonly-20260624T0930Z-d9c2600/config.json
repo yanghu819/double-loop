@@ -1,0 +1,30 @@
+{
+  "run_name": "official-eqr-fs-mixer-triton-sudoku-trainonly-20260624T0930Z-d9c2600",
+  "git_sha": "d9c2600e47d0b5e0950bf884ba8a155de3e6e198",
+  "timestamp_utc": "2026-06-24T09:30:00Z",
+  "machine": "AIStation GPU1",
+  "remote_worktree": "/huyang2/double-loop/.worktrees/fs-triton-d9c2600",
+  "official_eqr_base": "/huyang2/double-loop/official_eqr_compare",
+  "official_eqr_output_dir": "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/2zycadqg/2026-6-24/9-25-39",
+  "python": "/huyang2/double-loop/official_eqr_compare/.venv/bin/python",
+  "cuda_visible_devices": "0",
+  "futureseed_scan_backend": "triton",
+  "disable_compile": true,
+  "train_config": "train/eqr_sudoku",
+  "dataset_link": {
+    "sudoku-extreme-1k-aug-1000": "/huyang2/double-loop/official_eqr_sudoku_repro_20260623/data/sudoku-extreme-1k-aug-1000"
+  },
+  "command": "RUN_NAME=official-eqr-fs-mixer-triton-sudoku-trainonly-20260624T0930Z-d9c2600 OFFICIAL_EQR_BASE=/huyang2/double-loop/official_eqr_compare PYTHON_BIN=/huyang2/double-loop/official_eqr_compare/.venv/bin/python EQR_TRAIN_CONFIG=train/eqr_sudoku EQR_DATA_LINKS=sudoku-extreme-1k-aug-1000=/huyang2/double-loop/official_eqr_sudoku_repro_20260623/data/sudoku-extreme-1k-aug-1000 FUTURESEED_SCAN_BACKEND=triton DISABLE_COMPILE=1 EPOCHS=64 TRAIN_EPOCHS_PER_ITER=64 GLOBAL_BATCH_SIZE=128 EVAL_INTERVAL_STEPS=999999 CHECKPOINT_INTERVAL_STEPS=250 HEAVY_METRICS_LOG_INTERVAL=100 STEPS_HIST_LOG_INTERVAL_STEPS=100 EQR_EXTRA_OVERRIDES='arch.hidden_size=192 arch.num_heads=6 arch.halt_max_steps=16 arch.noise_scale=0.01' bash scripts/official_eqr_compare/run_official_eqr_compare.sh train-futureseed-mixer",
+  "arch_overrides": {
+    "hidden_size": 192,
+    "num_heads": 6,
+    "halt_max_steps": 16,
+    "noise_scale": 0.01
+  },
+  "global_batch_size": 128,
+  "epochs": 64,
+  "estimated_steps": 448,
+  "eval_interval_steps": 999999,
+  "checkpoint_interval_steps": 250
+}
+

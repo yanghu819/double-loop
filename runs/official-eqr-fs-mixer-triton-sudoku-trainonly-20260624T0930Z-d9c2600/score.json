@@ -1,0 +1,26 @@
+{
+  "run_name": "official-eqr-fs-mixer-triton-sudoku-trainonly-20260624T0930Z-d9c2600",
+  "git_sha": "d9c2600e47d0b5e0950bf884ba8a155de3e6e198",
+  "status": "completed",
+  "metric_kind": "train_only_backend_viability",
+  "steps_completed": 448,
+  "total_steps": 448,
+  "wall_clock_from_tqdm_sec": 56,
+  "final_train_loss": 1.626443,
+  "final_train_iter_per_sec": 7.97,
+  "checkpoint_paths_remote": [
+    "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/2zycadqg/2026-6-24/9-25-39/checkpoints/step_250_2zycadqg.pth",
+    "/huyang2/double-loop/official_eqr_compare/outputs/futureseed-mixer/outputs/2zycadqg/2026-6-24/9-25-39/checkpoints/step_448_2zycadqg.pth"
+  ],
+  "checkpoint_sizes_bytes": {
+    "step_250_2zycadqg.pth": 23524131,
+    "step_448_2zycadqg.pth": 23520611
+  },
+  "gpu_after_run": {
+    "utilization_gpu_percent": 0,
+    "memory_used_mib": 0,
+    "memory_total_mib": 81920
+  },
+  "interpretation": "The Triton FutureSeed scan backend can train through the official EqR FutureSeed mixer replacement path on GPU1. This run intentionally disabled train-time eval, because the preceding full-eval launch expanded to 3304 eval batches and was killed as low ROI. This is not a Sudoku quality score."
+}
+

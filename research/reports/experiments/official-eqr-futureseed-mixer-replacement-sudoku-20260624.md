@@ -81,11 +81,17 @@ paired step250/500 metrics, and truncate if the replacement is clearly losing.
 ## 6. Artifacts
 
 - Source SHA for vectorized replacement: `735fa2b4df06e42039f28dafbf172295644bb14c`
+- Source SHA for Triton CUDA scan backend:
+  `d9c2600e47d0b5e0950bf884ba8a155de3e6e198`
 - Baseline SHA for official mixer-base arm: `c9b5bd76a227521489c56ea9c4a7c2847740bb56`
 - Remote comparison JSON:
   `/huyang2/double-loop/official_eqr_compare/artifacts/mixer_replacement_sudoku_20260624T0610Z-mixerreplace-735fa2b-vectorized/comparison_step250_500.json`
 - Local comparison JSON:
   `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/comparison_step250_500.json`
+- Triton CUDA backend microcheck:
+  `runs/fs-triton-backward-check-20260624-d9c2600/result.json`
+- Triton train-only backend viability run:
+  `runs/official-eqr-fs-mixer-triton-sudoku-trainonly-20260624T0930Z-d9c2600/`
 - Baseline train log:
   `/huyang2/double-loop/official_eqr_compare/logs/official-eqr-mixer-base-sudoku-20260624T0520Z-mixerreplace-c9b5bd7.log`
 - FutureSeed train log:
@@ -95,7 +101,8 @@ paired step250/500 metrics, and truncate if the replacement is clearly losing.
 - Abort records:
   `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_futureseed_compile.json`,
   `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_eval_too_slow.json`,
-  `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_step500_train_eval_interrupted.json`
+  `runs/official-eqr-futureseed-mixer-replacement-sudoku-20260624/abort_step500_train_eval_interrupted.json`,
+  `runs/official-eqr-fs-mixer-triton-sudoku-abort-20260624T0926Z-d9c2600/abort.json`
 
 ## 7. Results
 
@@ -125,6 +132,14 @@ Execution failures were informative:
 - Commit `735fa2b` replaced the loop with a generic parallel-prefix recurrent
   scan. This made the arm compile and run at about `3.6` official eval batches/s
   on GPU1.
+- Commit `d9c2600` added a Triton CUDA custom-autograd scan backend. On GPU1
+  A800, it matched the prefix fallback to numerical tolerance and ran the scan
+  microcheck in `0.00527s` versus `0.06410s` for the prefix fallback after
+  warmup, about `12.2x` faster.
+- The Triton backend also trained through the official EqR FutureSeed mixer
+  path for `448/448` Sudoku steps with final train loss `1.626443`. This was a
+  backend viability run only: train-time eval was disabled after the first
+  full-eval launch expanded to `3304` eval batches and was killed as low ROI.
 
 ## 8. Conclusions
 
@@ -148,8 +163,11 @@ more appropriate budget/eval setup:
 
 Key lesson for implementation: FutureSeed as a paper mechanism needs an
 efficient scan implementation. A Python recurrent loop is not a valid
-cheap-bidirectional mechanism. The vectorized prefix scan is acceptable for
-this gate; a real CUDA/parallel scan kernel is the cleaner long-term path.
+cheap-bidirectional mechanism. The replacement now has a real CUDA path through
+Triton, while the vectorized prefix scan remains the fallback. The next paper
+question is no longer "can FutureSeed be implemented efficiently enough to be
+credible"; it is "under matched official EqR eval, does the CUDA FutureSeed
+mixer win on sample efficiency, final quality, or compute?"
 
 ## 9. Submission Record
 

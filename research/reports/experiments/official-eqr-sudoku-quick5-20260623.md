@@ -152,6 +152,19 @@ present, and started missing seeds `2 3 4` as launcher PID `124`. Follow-up
 check showed seed2 `evaluate.py` active with GPU1 at `63762 MiB / 81920 MiB`
 and `100%` utilization.
 
+Seed2 completed at `2026-06-23T19:12:57Z` and `metrics/seed2.json` was copied.
+Seed2 metrics:
+
+| seed | top1 exact | top4 exact | majority exact | any-correct |
+|---:|---:|---:|---:|---:|
+| 2 | 0.9931640625 | 0.9859619140625 | 0.984375 | 0.9931640625 |
+
+The same launcher advanced to seed3, but GPU1 later halted before seed3
+completion. Post-restart inspection at `2026-06-24T02:48:33Z` found
+`seed1.json` and `seed2.json` only, no `summary.json`, no active eval process,
+and `logs/seed3.log` stopped at `7/16` eval batches. Seed3 therefore remains
+missing and must be rerun from the start with seed4.
+
 ## 8. Conclusions
 
 Pending.

@@ -12,8 +12,10 @@ DATA_ROOT="${DATA_ROOT:-${ROOT}/official_eqr_sudoku_repro_20260623/eqr-official/
 
 mkdir -p "${LOG_ROOT}"
 
-if [[ ! -f "${QUICK5}/summary.json" ]]; then
-  echo "[abort] official Sudoku quick5 baseline summary is not present: ${QUICK5}/summary.json" >&2
+QUICK_BASELINE_MIN_METRICS="${QUICK_BASELINE_MIN_METRICS:-2}"
+quick_metric_count="$(find "${QUICK5}/metrics" -maxdepth 1 -type f -name 'seed*.json' 2>/dev/null | wc -l | tr -d ' ')"
+if (( quick_metric_count < QUICK_BASELINE_MIN_METRICS )); then
+  echo "[abort] official Sudoku quick baseline has only ${quick_metric_count} metric file(s); need ${QUICK_BASELINE_MIN_METRICS}: ${QUICK5}/metrics" >&2
   exit 10
 fi
 
@@ -41,7 +43,7 @@ export EQR_TRAIN_CONFIG="train/eqr_sudoku"
 export EQR_DATA_LINKS="sudoku-extreme-1k-aug-1000=${DATA_ROOT}"
 export ENABLE_PATH_TOKEN_LOSS_OVERRIDES=0
 export GLOBAL_BATCH_SIZE="${GLOBAL_BATCH_SIZE:-128}"
-export EPOCHS="${EPOCHS:-128}"
+export EPOCHS="${EPOCHS:-64}"
 export TRAIN_EPOCHS_PER_ITER="${TRAIN_EPOCHS_PER_ITER:-${EPOCHS}}"
 export EVAL_INTERVAL_STEPS="${EVAL_INTERVAL_STEPS:-250}"
 export CHECKPOINT_INTERVAL_STEPS="${CHECKPOINT_INTERVAL_STEPS:-250}"
@@ -53,6 +55,7 @@ export EQR_EXTRA_OVERRIDES="${EQR_EXTRA_OVERRIDES:-arch.mlp_t=false arch.hidden_
 
 echo "[config] RUN_STAMP=${RUN_STAMP}" | tee "${LOG_ROOT}/launch.log"
 echo "[config] OFFICIAL_EQR_BASE=${OFFICIAL_EQR_BASE}" | tee -a "${LOG_ROOT}/launch.log"
+echo "[config] QUICK_BASELINE_METRICS=${quick_metric_count} min=${QUICK_BASELINE_MIN_METRICS}" | tee -a "${LOG_ROOT}/launch.log"
 echo "[config] EQR_EXTRA_OVERRIDES=${EQR_EXTRA_OVERRIDES}" | tee -a "${LOG_ROOT}/launch.log"
 echo "[config] EPOCHS=${EPOCHS} GLOBAL_BATCH_SIZE=${GLOBAL_BATCH_SIZE}" | tee -a "${LOG_ROOT}/launch.log"
 

@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-EQR-010`
-- Status: in-progress
+- Status: stopped after quick gate; not continuing 5-seed table fill
 - Machine: AIStation `GPU1` only
 - Start time UTC: `2026-06-23T11:17:56Z`
 - Local branch: `codex/gpu1-experiment-tracking`
@@ -176,7 +176,17 @@ purpose of continuing seeds. Missing seeds `3 4` were relaunched at
 
 ## 8. Conclusions
 
-Pending.
+Stopped early by decision on `2026-06-24`: the goal is not to fill a 5-seed
+table. Official Maze released-checkpoint metrics were already reproduced
+against the paper, and Sudoku quick seed0/1/2 are in the expected official
+range. That is enough to establish the baseline/eval path for the next
+decision. Continuing seeds 3/4 has low information gain relative to testing the
+mechanism claim. Seed3 was stopped at about `3/16` eval batches; seed4 was not
+run.
+
+Next decision: run the single high-information official EqR FutureSeed probe:
+causal cheap backbone vs causal cheap + reverse-causal FutureSeed, one run each,
+same data and train budget, no seed sweep.
 
 ## 9. Submission Record
 

@@ -82,7 +82,7 @@ class NativeRWKVTimeMix(nn.Module):
         self.value = CastedLinear(d_model, d_model, bias=False)
         self.gate = CastedLinear(d_model, d_model, bias=False)
         self.out = CastedLinear(d_model, d_model, bias=False)
-        self.group_norm = nn.GroupNorm(heads, d_model, eps=64e-5)
+        self.group_norm_eps = 64e-5
 
         scale = d_model**0.5
         with torch.no_grad():
@@ -210,6 +210,13 @@ class NativeRWKVTimeMix(nn.Module):
                 return False
         return True
 
+    def _head_rms_norm(self, y: torch.Tensor) -> torch.Tensor:
+        batch_size, seq_len, channels = y.shape
+        dtype = y.dtype
+        y = y.view(batch_size, seq_len, self.heads, self.head_dim).to(torch.float32)
+        y = y * torch.rsqrt(y.square().mean(dim=-1, keepdim=True) + self.group_norm_eps)
+        return y.to(dtype).view(batch_size, seq_len, channels)
+
     @staticmethod
     def _pad_time(t: torch.Tensor, pad_len: int, value: float = 0.0) -> torch.Tensor:
         if pad_len <= 0:
@@ -248,7 +255,7 @@ class NativeRWKVTimeMix(nn.Module):
             s0 = initial_state.to(device=r.device, dtype=torch.float32)
         y_bf16, terminal_state = StatePassingRWKV7.apply(s0, r_bf16, w_bf16, k_bf16, v_bf16, a_bf16, b_bf16)
         y = y_bf16[:, :seq_len].reshape(batch_size, seq_len, heads * head_dim).to(original_dtype)
-        y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)
+        y = self._head_rms_norm(y)
         return self.out(y * gate).to(original_dtype), terminal_state.to(original_dtype)
 
     def _forward_wind(
@@ -281,7 +288,7 @@ class NativeRWKVTimeMix(nn.Module):
             s0 = initial_state.to(device=r.device, dtype=torch.bfloat16)
         y_bf16, terminal_state_bf16 = WindRWKV7.apply(w_bf16, q_bf16, k_bf16, v_bf16, z_bf16, a_bf16, s0)
         y = y_bf16[:, :seq_len].reshape(batch_size, seq_len, heads * head_dim).to(original_dtype)
-        y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)
+        y = self._head_rms_norm(y)
         return self.out(y * gate).to(original_dtype), terminal_state_bf16.to(original_dtype)
 
     def _forward_torch(
@@ -317,7 +324,7 @@ class NativeRWKVTimeMix(nn.Module):
             )
             outputs.append(torch.einsum("bhij,bhj->bhi", memory, r[:, t]).reshape(batch_size, channels))
         y = torch.stack(outputs, dim=1)
-        y = self.group_norm(y.reshape(batch_size * seq_len, channels)).reshape(batch_size, seq_len, channels)
+        y = self._head_rms_norm(y)
         return self.out(y * gate), memory
 
 
@@ -430,6 +437,23 @@ def patch_eqr_model(eqr_dir: Path) -> None:
     path = eqr_dir / "models" / "eqr.py"
     text = path.read_text(encoding="utf-8")
     if "class NativeFutureSeedRWKVMixer" in text:
+        text = text.replace(
+            "        self.group_norm = nn.GroupNorm(heads, d_model, eps=64e-5)\n",
+            "        self.group_norm_eps = 64e-5\n",
+        )
+        if "    def _head_rms_norm(self, y: torch.Tensor) -> torch.Tensor:\n" not in text:
+            text = text.replace(
+                "    @staticmethod\n    def _pad_time(t: torch.Tensor, pad_len: int, value: float = 0.0) -> torch.Tensor:\n",
+                "    def _head_rms_norm(self, y: torch.Tensor) -> torch.Tensor:\n        batch_size, seq_len, channels = y.shape\n        dtype = y.dtype\n        y = y.view(batch_size, seq_len, self.heads, self.head_dim).to(torch.float32)\n        y = y * torch.rsqrt(y.square().mean(dim=-1, keepdim=True) + self.group_norm_eps)\n        return y.to(dtype).view(batch_size, seq_len, channels)\n\n    @staticmethod\n    def _pad_time(t: torch.Tensor, pad_len: int, value: float = 0.0) -> torch.Tensor:\n",
+            )
+        text = text.replace(
+            "        y = self.group_norm(y.reshape(batch_size * seq_len, heads * head_dim)).reshape(batch_size, seq_len, heads * head_dim)\n",
+            "        y = self._head_rms_norm(y)\n",
+        )
+        text = text.replace(
+            "        y = self.group_norm(y.reshape(batch_size * seq_len, channels)).reshape(batch_size, seq_len, channels)\n",
+            "        y = self._head_rms_norm(y)\n",
+        )
         text = text.replace(
             "        self.norm = nn.LayerNorm(hidden_size)\n        self.norm_eps = float(config.rms_norm_eps)\n",
             "        self.norm_eps = float(config.rms_norm_eps)\n",

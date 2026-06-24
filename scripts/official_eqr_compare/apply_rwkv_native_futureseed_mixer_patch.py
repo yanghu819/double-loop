@@ -328,7 +328,6 @@ class NativeRWKVRecurrentLayer(nn.Module):
         heads = int(config.num_heads)
         if hidden_size % heads != 0:
             raise ValueError(f"hidden_size {hidden_size} must be divisible by num_heads {heads}")
-        self.norm = nn.LayerNorm(hidden_size)
         self.norm_eps = float(config.rms_norm_eps)
         self.future_seed_logit = nn.Parameter(
             torch.full((1, heads, 1, 1), float(config.rwkv_future_seed_gate_bias))
@@ -348,7 +347,8 @@ class NativeRWKVRecurrentLayer(nn.Module):
         *,
         initial_state: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        mixed, terminal_state = self.time_mix(self.norm(hidden_states), initial_state=initial_state)
+        normalized = rms_norm(hidden_states, variance_epsilon=self.norm_eps)
+        mixed, terminal_state = self.time_mix(normalized, initial_state=initial_state)
         return rms_norm(hidden_states + mixed, variance_epsilon=self.norm_eps), terminal_state
 
 
@@ -430,6 +430,15 @@ def patch_eqr_model(eqr_dir: Path) -> None:
     path = eqr_dir / "models" / "eqr.py"
     text = path.read_text(encoding="utf-8")
     if "class NativeFutureSeedRWKVMixer" in text:
+        text = text.replace(
+            "        self.norm = nn.LayerNorm(hidden_size)\n        self.norm_eps = float(config.rms_norm_eps)\n",
+            "        self.norm_eps = float(config.rms_norm_eps)\n",
+        )
+        text = text.replace(
+            "        mixed, terminal_state = self.time_mix(self.norm(hidden_states), initial_state=initial_state)\n        return rms_norm(hidden_states + mixed, variance_epsilon=self.norm_eps), terminal_state\n",
+            "        normalized = rms_norm(hidden_states, variance_epsilon=self.norm_eps)\n        mixed, terminal_state = self.time_mix(normalized, initial_state=initial_state)\n        return rms_norm(hidden_states + mixed, variance_epsilon=self.norm_eps), terminal_state\n",
+        )
+        path.write_text(text, encoding="utf-8")
         return
 
     text = replace_once(

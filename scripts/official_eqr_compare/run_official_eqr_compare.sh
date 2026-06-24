@@ -84,6 +84,20 @@ prepare_mixer_replacement_repos() {
   git -C "${BASE}/eqr-futureseed-mixer" diff > "${BASE}/artifacts/futureseed_mixer_replacement.patch"
 }
 
+prepare_rwkv_native_repos() {
+  clone_one "${BASE}/eqr-official-mixer-base"
+  clone_one "${BASE}/eqr-rwkv-mixer"
+  clone_one "${BASE}/eqr-rwkv-native-fs-mixer"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_rwkv_native_futureseed_mixer_patch.py" "${BASE}/eqr-rwkv-mixer"
+  "${PYTHON_BIN}" "${REPO_ROOT}/scripts/official_eqr_compare/apply_rwkv_native_futureseed_mixer_patch.py" "${BASE}/eqr-rwkv-native-fs-mixer"
+  git -C "${BASE}/eqr-official-mixer-base" rev-parse HEAD > "${BASE}/artifacts/eqr-official-mixer-base.sha"
+  git -C "${BASE}/eqr-rwkv-mixer" rev-parse HEAD > "${BASE}/artifacts/eqr-rwkv-mixer-base.sha"
+  git -C "${BASE}/eqr-rwkv-native-fs-mixer" rev-parse HEAD > "${BASE}/artifacts/eqr-rwkv-native-fs-mixer-base.sha"
+  git -C "${BASE}/eqr-official-mixer-base" diff > "${BASE}/artifacts/official_mixer_base.patch"
+  git -C "${BASE}/eqr-rwkv-mixer" diff > "${BASE}/artifacts/rwkv_mixer.patch"
+  git -C "${BASE}/eqr-rwkv-native-fs-mixer" diff > "${BASE}/artifacts/rwkv_native_futureseed_mixer.patch"
+}
+
 prepare_env() {
   if [[ ! -x "${BASE}/.venv/bin/python" ]]; then
     python -m venv --system-site-packages "${BASE}/.venv"
@@ -186,6 +200,28 @@ run_train() {
       repo="${BASE}/eqr-futureseed-mixer"
       extra+=(arch.mixer_replacement_mode=bidirectional_scan)
       ;;
+    official-mixer-base)
+      repo="${BASE}/eqr-official-mixer-base"
+      ;;
+    rwkv-mixer)
+      repo="${BASE}/eqr-rwkv-mixer"
+      extra+=(
+        arch.mixer_replacement_mode=rwkv
+        arch.rwkv_mixer_layers="${RWKV_MIXER_LAYERS:-2}"
+        arch.rwkv_mixer_kernel="${RWKV_MIXER_KERNEL:-statepassing}"
+        arch.rwkv_future_seed_scale=0.0
+      )
+      ;;
+    rwkv-native-fs-mixer)
+      repo="${BASE}/eqr-rwkv-native-fs-mixer"
+      extra+=(
+        arch.mixer_replacement_mode=rwkv_native_futureseed
+        arch.rwkv_mixer_layers="${RWKV_MIXER_LAYERS:-2}"
+        arch.rwkv_mixer_kernel="${RWKV_MIXER_KERNEL:-statepassing}"
+        arch.rwkv_future_seed_scale="${RWKV_FUTURE_SEED_SCALE:-1.0}"
+        arch.rwkv_future_seed_gate_bias="${RWKV_FUTURE_SEED_GATE_BIAS:-0.0}"
+      )
+      ;;
     *)
       echo "unknown run kind: ${kind}" >&2
       exit 2
@@ -207,7 +243,7 @@ run_train() {
   local pidfile="${BASE}/artifacts/${run_name}.pid"
   local train_config="${EQR_TRAIN_CONFIG:-train/eqr_maze_unique}"
   local default_path_loss_overrides=1
-  if [[ "${kind}" == "causal-cheap" || "${kind}" == "causal-bidir-futureseed" || "${kind}" == "mixer-base" || "${kind}" == "futureseed-mixer" ]]; then
+  if [[ "${kind}" == "causal-cheap" || "${kind}" == "causal-bidir-futureseed" || "${kind}" == "mixer-base" || "${kind}" == "futureseed-mixer" || "${kind}" == "official-mixer-base" || "${kind}" == "rwkv-mixer" || "${kind}" == "rwkv-native-fs-mixer" ]]; then
     default_path_loss_overrides="${APPLY_PATH_LOSS_PATCH:-0}"
   fi
   local loss_overrides=()
@@ -291,6 +327,15 @@ run_eval() {
       fi
       repo="${BASE}/eqr-futureseed-mixer"
       ;;
+    official-mixer-base)
+      repo="${BASE}/eqr-official-mixer-base"
+      ;;
+    rwkv-mixer)
+      repo="${BASE}/eqr-rwkv-mixer"
+      ;;
+    rwkv-native-fs-mixer)
+      repo="${BASE}/eqr-rwkv-native-fs-mixer"
+      ;;
     *)
       echo "unknown eval kind: ${kind}" >&2
       exit 2
@@ -329,6 +374,10 @@ case "${ACTION}" in
     prepare_mixer_replacement_repos
     prepare_env
     ;;
+  prepare-rwkv-native-fs)
+    prepare_rwkv_native_repos
+    prepare_env
+    ;;
   check)
     check_official_optimizer
     ;;
@@ -359,6 +408,15 @@ case "${ACTION}" in
   train-futureseed-mixer)
     run_train futureseed-mixer
     ;;
+  train-official-mixer-base)
+    run_train official-mixer-base
+    ;;
+  train-rwkv-mixer)
+    run_train rwkv-mixer
+    ;;
+  train-rwkv-native-fs-mixer)
+    run_train rwkv-native-fs-mixer
+    ;;
   eval-base)
     run_eval base "${2:-}"
     ;;
@@ -383,6 +441,15 @@ case "${ACTION}" in
   eval-futureseed-mixer)
     run_eval futureseed-mixer "${2:-}"
     ;;
+  eval-official-mixer-base)
+    run_eval official-mixer-base "${2:-}"
+    ;;
+  eval-rwkv-mixer)
+    run_eval rwkv-mixer "${2:-}"
+    ;;
+  eval-rwkv-native-fs-mixer)
+    run_eval rwkv-native-fs-mixer "${2:-}"
+    ;;
   status)
     echo "BASE=${BASE}"
     find "${BASE}" -maxdepth 2 -type f \( -name "*.pid" -o -name "*.sha" -o -name "*.patch" \) -print 2>/dev/null | sort || true
@@ -390,7 +457,7 @@ case "${ACTION}" in
     ;;
   *)
     cat >&2 <<EOF
-usage: $0 prepare|prepare-causal|prepare-bidir|prepare-mixer-replacement|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|train-causal-cheap|train-causal-bidir-futureseed|train-mixer-base|train-futureseed-mixer|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|eval-causal-cheap|eval-causal-bidir-futureseed|eval-mixer-base|eval-futureseed-mixer|status
+usage: $0 prepare|prepare-causal|prepare-bidir|prepare-mixer-replacement|prepare-rwkv-native-fs|check|download-data|train-base|train-futureseed|train-causal|train-causal-futureseed|train-causal-cheap|train-causal-bidir-futureseed|train-mixer-base|train-futureseed-mixer|train-official-mixer-base|train-rwkv-mixer|train-rwkv-native-fs-mixer|eval-base|eval-futureseed|eval-causal|eval-causal-futureseed|eval-causal-cheap|eval-causal-bidir-futureseed|eval-mixer-base|eval-futureseed-mixer|eval-official-mixer-base|eval-rwkv-mixer|eval-rwkv-native-fs-mixer|status
 EOF
     exit 2
     ;;

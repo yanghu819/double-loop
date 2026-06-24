@@ -165,6 +165,15 @@ completion. Post-restart inspection at `2026-06-24T02:48:33Z` found
 and `logs/seed3.log` stopped at `7/16` eval batches. Seed3 therefore remains
 missing and must be rerun from the start with seed4.
 
+GPU1 reopened as work-platform `783e31e7-1b0a-40f4-b1d9-6b38968f7671` and
+validated as an idle `NVIDIA A100-SXM4-80GB`. Because GitHub push for local
+tracking commit `d3af3de` temporarily failed with `Empty reply from server`,
+the resume launch used already-pushed detached source SHA
+`6af61e42f83056cd6e75a9841c4604ab3c6e83f9`; launcher code is unchanged for the
+purpose of continuing seeds. Missing seeds `3 4` were relaunched at
+`2026-06-24T02:54:55Z` as launcher PID `184`, with seed3 active on GPU1 at
+`63765 MiB / 81920 MiB` and `100%` utilization.
+
 ## 8. Conclusions
 
 Pending.

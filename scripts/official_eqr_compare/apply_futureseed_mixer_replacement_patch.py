@@ -22,18 +22,34 @@ class FutureSeedScanMixer(nn.Module):
         self.reverse_decay_logit = nn.Parameter(torch.full((config.hidden_size,), decay_logit))
         self.mix_gate_logit = nn.Parameter(torch.tensor(float(config.future_seed_mix_gate_bias)))
 
+    def _shift_right(self, tensor: torch.Tensor, offset: int, fill: float) -> torch.Tensor:
+        pad_shape = list(tensor.shape)
+        pad_shape[1] = offset
+        pad = tensor.new_full(pad_shape, fill)
+        return torch.cat((pad, tensor[:, :-offset]), dim=1)
+
     def _scan(self, x: torch.Tensor, proj: CastedLinear, decay_logit: torch.Tensor) -> torch.Tensor:
         projected = proj(x)
         write_gate, value = projected.chunk(2, dim=-1)
-        write_gate = torch.sigmoid(write_gate.to(torch.float32)).to(x.dtype)
-        value = torch.tanh(value.to(torch.float32)).to(x.dtype)
-        decay = torch.sigmoid(decay_logit.to(torch.float32)).to(x.dtype).view(1, -1)
-        state = torch.zeros((x.shape[0], x.shape[-1]), dtype=x.dtype, device=x.device)
-        outputs = []
-        for idx in range(x.shape[1]):
-            state = decay * state + (1.0 - decay) * write_gate[:, idx] * value[:, idx]
-            outputs.append(state)
-        return torch.stack(outputs, dim=1)
+        write_gate = torch.sigmoid(write_gate.to(torch.float32))
+        value = torch.tanh(value.to(torch.float32))
+        decay = torch.sigmoid(decay_logit.to(torch.float32)).view(1, 1, -1)
+        impulse = (1.0 - decay) * write_gate * value
+
+        # Parallel prefix form of y[t] = decay * y[t - 1] + impulse[t].
+        # This keeps the mechanism recurrent while avoiding a Python loop over
+        # sequence positions, which otherwise makes official EqR eval infeasible.
+        coeff = decay.expand(1, x.shape[1], x.shape[-1])
+        state = impulse
+        offset = 1
+        while offset < x.shape[1]:
+            coeff_prev = self._shift_right(coeff, offset, 1.0)
+            state_prev = self._shift_right(state, offset, 0.0)
+            valid = (torch.arange(x.shape[1], device=x.device).view(1, -1, 1) >= offset)
+            state = torch.where(valid, state + coeff * state_prev, state)
+            coeff = torch.where(valid, coeff * coeff_prev, coeff)
+            offset *= 2
+        return state.to(x.dtype)
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         normalized = rms_norm(hidden_states, variance_epsilon=self.norm_eps)

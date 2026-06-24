@@ -1,0 +1,90 @@
+{
+  "arms": {
+    "causal-bidir-futureseed": {
+      "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/causal-bidir-futureseed/outputs/bihmpwpk/2026-6-24/4-34-12/checkpoints/step_750_bihmpwpk.pth",
+      "eval_records": [
+        {
+          "metrics": {
+            "accuracy": 0.09955979687418694,
+            "exact_accuracy": 0.0,
+            "lm_loss": 2.5615923303988306,
+            "residual_of_16_steps": 83.33986461235708,
+            "residual_of_1_steps": 221.25883070868005,
+            "steps": 16.0,
+            "total_loss": 2.5656830524189544
+          },
+          "step": 250
+        },
+        {
+          "metrics": {
+            "accuracy": 0.11430728437377302,
+            "exact_accuracy": 0.0,
+            "lm_loss": 2.41297030294286,
+            "residual_of_16_steps": 111.64562686560103,
+            "residual_of_1_steps": 212.27223228772948,
+            "steps": 16.0,
+            "total_loss": 2.4169446835987944
+          },
+          "step": 500
+        }
+      ],
+      "log": "/huyang2/double-loop/official_eqr_compare/logs/official-eqr-causal-bidir-futureseed-sudoku-20260624T0415Z-bidir256-45fe80a.log",
+      "num_eval_records": 2
+    },
+    "causal-cheap": {
+      "checkpoint": "/huyang2/double-loop/official_eqr_compare/outputs/causal-cheap/outputs/xl9ej4k4/2026-6-24/4-12-8/checkpoints/step_750_xl9ej4k4.pth",
+      "eval_records": [
+        {
+          "metrics": {
+            "accuracy": 0.09318390760928696,
+            "exact_accuracy": 0.0,
+            "lm_loss": 2.5436098286130573,
+            "residual_of_16_steps": 167.75961361066828,
+            "residual_of_1_steps": 235.80037181931286,
+            "steps": 16.0,
+            "total_loss": 2.5477070551058927
+          },
+          "step": 250
+        },
+        {
+          "metrics": {
+            "accuracy": 0.1133032765098655,
+            "exact_accuracy": 0.0,
+            "lm_loss": 2.4121723224042424,
+            "residual_of_16_steps": 121.44524180081649,
+            "residual_of_1_steps": 221.93260893217845,
+            "steps": 16.0,
+            "total_loss": 2.4161344332593795
+          },
+          "step": 500
+        }
+      ],
+      "log": "/huyang2/double-loop/official_eqr_compare/logs/official-eqr-causal-cheap-sudoku-20260624T0415Z-bidir256-45fe80a.log",
+      "num_eval_records": 2
+    }
+  },
+  "delta_fs_minus_cheap_by_step": {
+    "250": {
+      "accuracy": 0.006375889264899973,
+      "exact_accuracy": 0.0,
+      "lm_loss": 0.01798250178577332,
+      "residual_of_16_steps": -84.4197489983112,
+      "residual_of_1_steps": -14.541541110632807,
+      "steps": 0.0,
+      "total_loss": 0.017975997313061765
+    },
+    "500": {
+      "accuracy": 0.0010040078639075162,
+      "exact_accuracy": 0.0,
+      "lm_loss": 0.0007979805386177929,
+      "residual_of_16_steps": -9.799614935215459,
+      "residual_of_1_steps": -9.660376644448974,
+      "steps": 0.0,
+      "total_loss": 0.000810250339414953
+    }
+  },
+  "log_root": "/huyang2/double-loop/official_eqr_compare/artifacts/bidir_sudoku_probe_20260624T0415Z-bidir256-45fe80a",
+  "run_stamp": "20260624T0415Z-bidir256-45fe80a",
+  "source_sha": "45fe80a4b31426b81fae6dda99997871af6c6a4c",
+  "truncated": true
+}

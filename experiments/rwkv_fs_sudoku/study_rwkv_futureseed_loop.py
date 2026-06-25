@@ -31,9 +31,11 @@ except Exception:  # pragma: no cover - CUDA extension is optional for CPU smoke
         return False, "rwkv7_cuda import failed"
 
 try:
-    from fla.ops.gated_delta_rule import chunk_gated_delta_rule
+    from fla.ops.gated_delta_rule.chunk import chunk_gated_delta_rule
+    from fla.ops.gated_delta_rule.naive import naive_recurrent_gated_delta_rule
 except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
     chunk_gated_delta_rule = None
+    naive_recurrent_gated_delta_rule = None
     FLA_IMPORT_ERROR = exc
 else:
     FLA_IMPORT_ERROR = None
@@ -46,7 +48,7 @@ def load_fla_short_convolution() -> type:
 
 
 def fla_gdn_available() -> Tuple[bool, str]:
-    if chunk_gated_delta_rule is None:
+    if chunk_gated_delta_rule is None or naive_recurrent_gated_delta_rule is None:
         return False, f"flash-linear-attention import failed: {FLA_IMPORT_ERROR}"
     return True, "ok"
 
@@ -632,8 +634,8 @@ class GDNTimeMix(nn.Module):
         ok, reason = fla_gdn_available()
         if not ok:
             raise RuntimeError(f"BACKBONE=gdn requires flash-linear-attention: {reason}")
-        if mode != "chunk":
-            raise ValueError("GDN training uses FLA chunk mode; fused_recurrent has no backward.")
+        if mode not in {"chunk", "naive_recurrent"}:
+            raise ValueError("GDN mode must be 'chunk' or 'naive_recurrent'.")
         if d_model != heads * head_dim:
             raise ValueError("GDN baseline currently keeps d_model == heads * head_dim for matched state size.")
         self.d_model = d_model
@@ -721,22 +723,43 @@ class GDNTimeMix(nn.Module):
         expected = (batch_size, self.heads, self.head_v_dim, self.head_dim)
         if initial_state is not None and tuple(initial_state.shape) != expected:
             raise ValueError(f"GDN initial_state shape {tuple(initial_state.shape)} does not match {expected}")
-        o, terminal_state = chunk_gated_delta_rule(
-            q=q,
-            k=k,
-            v=v,
-            g=self.a_proj(x),
-            beta=self.b_proj(x),
-            initial_state=initial_state,
-            output_final_state=True,
-            use_qk_l2norm_in_kernel=True,
-            use_gate_in_kernel=True,
-            A_log=self.A_log,
-            dt_bias=self.dt_bias,
-            use_beta_sigmoid_in_kernel=True,
-            allow_neg_eigval=self.allow_neg_eigval,
-            state_v_first=True,
-        )
+        if self.mode == "chunk":
+            o, terminal_state = chunk_gated_delta_rule(
+                q=q,
+                k=k,
+                v=v,
+                g=self.a_proj(x),
+                beta=self.b_proj(x),
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
+                use_gate_in_kernel=True,
+                A_log=self.A_log,
+                dt_bias=self.dt_bias,
+                use_beta_sigmoid_in_kernel=True,
+                allow_neg_eigval=self.allow_neg_eigval,
+                state_v_first=True,
+            )
+        else:
+            if self.allow_neg_eigval:
+                raise ValueError("GDN naive_recurrent mode does not support --gdn_allow_neg_eigval.")
+            assert naive_recurrent_gated_delta_rule is not None
+            g_raw = self.a_proj(x).float()
+            g = -self.A_log.float().exp().view(1, 1, self.heads) * F.softplus(
+                g_raw + self.dt_bias.float().view(1, 1, self.heads)
+            )
+            beta = torch.sigmoid(self.b_proj(x).float())
+            internal_initial = initial_state.transpose(-1, -2).contiguous() if initial_state is not None else None
+            o, internal_terminal = naive_recurrent_gated_delta_rule(
+                q=F.normalize(q.float(), dim=-1, p=2.0),
+                k=F.normalize(k.float(), dim=-1, p=2.0),
+                v=v.float(),
+                g=g,
+                beta=beta,
+                initial_state=internal_initial,
+                output_final_state=True,
+            )
+            terminal_state = internal_terminal.transpose(-1, -2).contiguous()
         y = self._norm_gate(o, x).reshape(batch_size, seq_len, self.value_dim)
         return self.o_proj(y), terminal_state.to(x.dtype)
 
@@ -3071,8 +3094,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         ok, reason = fla_gdn_available()
         if not ok:
             raise ValueError(f"--backbone gdn is unavailable: {reason}")
-        if args.gdn_mode != "chunk":
-            raise ValueError("--gdn_mode must be chunk for training; FLA fused_recurrent GDN has no backward.")
+        if args.gdn_mode not in {"chunk", "naive_recurrent"}:
+            raise ValueError("--gdn_mode must be chunk or naive_recurrent.")
         if args.gdn_expand_v <= 0:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
@@ -3398,7 +3421,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--backbone", choices=("rwkv", "gdn"), default="rwkv")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
-    p.add_argument("--gdn_mode", choices=("chunk",), default="chunk")
+    p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)
     p.add_argument("--gdn_use_short_conv", type=int, choices=(0, 1), default=1)
     p.add_argument("--gdn_conv_size", type=int, default=4)

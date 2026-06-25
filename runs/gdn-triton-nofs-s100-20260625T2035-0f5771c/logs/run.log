@@ -1,0 +1,24 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c
+git_sha=0f5771c8557ca757a3e7fd1bd2b16e5f70bf44fc
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+[future_seed_loop stage=1:8-16] step=0025 ce=1.7234 total=1.7234 loop1=1.7206 loop_last=1.7234 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:8-16] step=0050 ce=1.5147 total=1.5147 loop1=1.5106 loop_last=1.5147 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0075 ce=1.7061 total=1.7061 loop1=1.7025 loop_last=1.7061 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0100 ce=1.6005 total=1.6005 loop1=1.5980 loop_last=1.6005 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2354, early=0.2484, late=0.2385, early_late_gap=+0.0099
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2344, early=0.2527, late=0.2392, early_late_gap=+0.0135
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+hole-transfer metrics
+holes=16 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2344, early=0.2527, late=0.2392, early_late_gap=+0.0135; indep=0.0000, exact/indep=0.00
+holes=8  exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2700, early=0.2525, late=0.2840, early_late_gap=-0.0315; indep=0.0000, exact/indep=0.00
+holes=24 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1950, early=0.1912, late=0.1998, early_late_gap=-0.0086; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c/output/futureseed_loop_case_seed52.html

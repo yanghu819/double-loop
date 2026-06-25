@@ -1,0 +1,63 @@
+nohup: ignoring input
+Preparing worktree (detached HEAD 0f5771c8)
+Updating files:  31% (1043/3337)Updating files:  32% (1068/3337)Updating files:  33% (1102/3337)Updating files:  34% (1135/3337)Updating files:  35% (1168/3337)Updating files:  36% (1202/3337)Updating files:  37% (1235/3337)Updating files:  38% (1269/3337)Updating files:  39% (1302/3337)Updating files:  40% (1335/3337)Updating files:  41% (1369/3337)Updating files:  42% (1402/3337)Updating files:  43% (1435/3337)Updating files:  44% (1469/3337)Updating files:  45% (1502/3337)Updating files:  46% (1536/3337)Updating files:  47% (1569/3337)Updating files:  48% (1602/3337)Updating files:  49% (1636/3337)Updating files:  50% (1669/3337)Updating files:  51% (1702/3337)Updating files:  52% (1736/3337)Updating files:  53% (1769/3337)Updating files:  54% (1802/3337)Updating files:  55% (1836/3337)Updating files:  56% (1869/3337)Updating files:  57% (1903/3337)Updating files:  58% (1936/3337)Updating files:  59% (1969/3337)Updating files:  60% (2003/3337)Updating files:  61% (2036/3337)Updating files:  62% (2069/3337)Updating files:  63% (2103/3337)Updating files:  64% (2136/3337)Updating files:  65% (2170/3337)Updating files:  66% (2203/3337)Updating files:  67% (2236/3337)Updating files:  67% (2237/3337)Updating files:  68% (2270/3337)Updating files:  69% (2303/3337)Updating files:  70% (2336/3337)Updating files:  71% (2370/3337)Updating files:  72% (2403/3337)Updating files:  73% (2437/3337)Updating files:  74% (2470/3337)Updating files:  75% (2503/3337)Updating files:  76% (2537/3337)Updating files:  77% (2570/3337)Updating files:  78% (2603/3337)Updating files:  79% (2637/3337)Updating files:  80% (2670/3337)Updating files:  81% (2703/3337)Updating files:  82% (2737/3337)Updating files:  83% (2770/3337)Updating files:  84% (2804/3337)Updating files:  85% (2837/3337)Updating files:  86% (2870/3337)Updating files:  87% (2904/3337)Updating files:  88% (2937/3337)Updating files:  89% (2970/3337)Updating files:  90% (3004/3337)Updating files:  91% (3037/3337)Updating files:  92% (3071/3337)Updating files:  93% (3104/3337)Updating files:  94% (3137/3337)Updating files:  95% (3171/3337)Updating files:  96% (3204/3337)Updating files:  96% (3220/3337)Updating files:  97% (3237/3337)Updating files:  98% (3271/3337)Updating files:  99% (3304/3337)Updating files: 100% (3337/3337)Updating files: 100% (3337/3337), done.
+HEAD is now at 0f5771c8 Strengthen GDN Triton kernel alignment tests
+## HEAD (no branch)
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c
+git_sha=0f5771c8557ca757a3e7fd1bd2b16e5f70bf44fc
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+[future_seed_loop stage=1:8-16] step=0025 ce=1.7234 total=1.7234 loop1=1.7206 loop_last=1.7234 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:8-16] step=0050 ce=1.5147 total=1.5147 loop1=1.5106 loop_last=1.5147 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0075 ce=1.7061 total=1.7061 loop1=1.7025 loop_last=1.7061 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0100 ce=1.6005 total=1.6005 loop1=1.5980 loop_last=1.6005 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2354, early=0.2484, late=0.2385, early_late_gap=+0.0099
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2344, early=0.2527, late=0.2392, early_late_gap=+0.0135
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+hole-transfer metrics
+holes=16 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2344, early=0.2527, late=0.2392, early_late_gap=+0.0135; indep=0.0000, exact/indep=0.00
+holes=8  exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2700, early=0.2525, late=0.2840, early_late_gap=-0.0315; indep=0.0000, exact/indep=0.00
+holes=24 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.1950, early=0.1912, late=0.1998, early_late_gap=-0.0086; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=gdn-triton-nofs-s100-20260625T2035-0f5771c score=0.0 key=metrics.eval_clean.loop2.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/gdn-triton-nofs-0f5771c-20260625T2035/runs/gdn-triton-nofs-s100-20260625T2035-0f5771c
+Preparing worktree (detached HEAD 0f5771c8)
+Updating files:  21% (732/3337)Updating files:  22% (735/3337)Updating files:  23% (768/3337)Updating files:  24% (801/3337)Updating files:  25% (835/3337)Updating files:  26% (868/3337)Updating files:  27% (901/3337)Updating files:  28% (935/3337)Updating files:  29% (968/3337)Updating files:  30% (1002/3337)Updating files:  31% (1035/3337)Updating files:  32% (1068/3337)Updating files:  33% (1102/3337)Updating files:  34% (1135/3337)Updating files:  35% (1168/3337)Updating files:  36% (1202/3337)Updating files:  37% (1235/3337)Updating files:  38% (1269/3337)Updating files:  39% (1302/3337)Updating files:  40% (1335/3337)Updating files:  41% (1369/3337)Updating files:  42% (1402/3337)Updating files:  43% (1435/3337)Updating files:  44% (1469/3337)Updating files:  45% (1502/3337)Updating files:  46% (1536/3337)Updating files:  47% (1569/3337)Updating files:  48% (1602/3337)Updating files:  49% (1636/3337)Updating files:  50% (1669/3337)Updating files:  51% (1702/3337)Updating files:  52% (1736/3337)Updating files:  53% (1769/3337)Updating files:  54% (1802/3337)Updating files:  54% (1816/3337)Updating files:  55% (1836/3337)Updating files:  56% (1869/3337)Updating files:  57% (1903/3337)Updating files:  58% (1936/3337)Updating files:  59% (1969/3337)Updating files:  60% (2003/3337)Updating files:  61% (2036/3337)Updating files:  62% (2069/3337)Updating files:  63% (2103/3337)Updating files:  64% (2136/3337)Updating files:  65% (2170/3337)Updating files:  66% (2203/3337)Updating files:  67% (2236/3337)Updating files:  68% (2270/3337)Updating files:  69% (2303/3337)Updating files:  70% (2336/3337)Updating files:  71% (2370/3337)Updating files:  72% (2403/3337)Updating files:  73% (2437/3337)Updating files:  74% (2470/3337)Updating files:  75% (2503/3337)Updating files:  76% (2537/3337)Updating files:  77% (2570/3337)Updating files:  78% (2603/3337)Updating files:  79% (2637/3337)Updating files:  80% (2670/3337)Updating files:  81% (2703/3337)Updating files:  82% (2737/3337)Updating files:  83% (2770/3337)Updating files:  84% (2804/3337)Updating files:  84% (2813/3337)Updating files:  85% (2837/3337)Updating files:  86% (2870/3337)Updating files:  87% (2904/3337)Updating files:  88% (2937/3337)Updating files:  89% (2970/3337)Updating files:  90% (3004/3337)Updating files:  91% (3037/3337)Updating files:  92% (3071/3337)Updating files:  93% (3104/3337)Updating files:  94% (3137/3337)Updating files:  95% (3171/3337)Updating files:  96% (3204/3337)Updating files:  97% (3237/3337)Updating files:  98% (3271/3337)Updating files:  99% (3304/3337)Updating files: 100% (3337/3337)Updating files: 100% (3337/3337), done.
+HEAD is now at 0f5771c8 Strengthen GDN Triton kernel alignment tests
+## HEAD (no branch)
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-triton-fs-0f5771c-20260625T2035/runs/gdn-triton-fs-s100-20260625T2035-0f5771c
+git_sha=0f5771c8557ca757a3e7fd1bd2b16e5f70bf44fc
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+[future_seed_loop stage=1:8-16] step=0025 ce=1.7301 total=1.7301 loop1=1.7278 loop_last=1.7301 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:8-16] step=0050 ce=1.5260 total=1.5260 loop1=1.5229 loop_last=1.5260 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0075 ce=1.7357 total=1.7357 loop1=1.7339 loop_last=1.7357 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0100 ce=1.6116 total=1.6116 loop1=1.6077 loop_last=1.6116 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2417, early=0.2434, late=0.2571, early_late_gap=-0.0137
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=7.541, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2385, early=0.2383, late=0.2571, early_late_gap=-0.0187
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=7.541, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+hole-transfer metrics
+holes=16 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2385, early=0.2383, late=0.2571, early_late_gap=-0.0187; indep=0.0000, exact/indep=0.00
+holes=8  exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2681, early=0.2482, late=0.2825, early_late_gap=-0.0343; indep=0.0000, exact/indep=0.00
+holes=24 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2010, early=0.1971, late=0.2100, early_late_gap=-0.0128; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/gdn-triton-fs-0f5771c-20260625T2035/runs/gdn-triton-fs-s100-20260625T2035-0f5771c/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-triton-fs-0f5771c-20260625T2035/runs/gdn-triton-fs-s100-20260625T2035-0f5771c/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-triton-fs-0f5771c-20260625T2035/runs/gdn-triton-fs-s100-20260625T2035-0f5771c/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=gdn-triton-fs-s100-20260625T2035-0f5771c score=0.0 key=metrics.eval_clean.loop2.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/gdn-triton-fs-0f5771c-20260625T2035/runs/gdn-triton-fs-s100-20260625T2035-0f5771c

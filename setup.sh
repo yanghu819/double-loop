@@ -64,8 +64,10 @@ import importlib.util
 
 modules = {
     "colorama": "colorama>=0.4.6",
+    "einops": "einops>=0.8.0",
     "numpy": "numpy>=2.0",
     "pydantic": "pydantic>=2.0",
+    "transformers": "transformers>=4.45.0",
 }
 for module, package in modules.items():
     if importlib.util.find_spec(module) is None:
@@ -75,11 +77,20 @@ PY
 
   if [[ -n "$missing" ]]; then
     local pip_args=(--target "$target" --upgrade)
-    if compgen -G "$REPO_ROOT/wheelhouse/*.whl" >/dev/null; then
-      pip_args+=(--no-index --find-links "$REPO_ROOT/wheelhouse")
-    fi
     # shellcheck disable=SC2086
     "$py_bin" -m pip install "${pip_args[@]}" $missing
+  fi
+
+  if ! PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
+import importlib.util
+raise SystemExit(0 if importlib.util.find_spec("fla") is not None else 1)
+PY
+  then
+    local fla_args=(--target "$target" --upgrade --no-deps)
+    if compgen -G "$REPO_ROOT/wheelhouse/flash_linear_attention*.whl" >/dev/null || compgen -G "$REPO_ROOT/wheelhouse/flash-linear-attention*.whl" >/dev/null; then
+      fla_args+=(--no-index --find-links "$REPO_ROOT/wheelhouse")
+    fi
+    "$py_bin" -m pip install "${fla_args[@]}" "flash-linear-attention @ git+https://github.com/fla-org/flash-linear-attention.git@9b20d26dc4922e67c1332ef77e30b71111406d96"
   fi
 
   printf '%s\n' "$target" > "$REPO_ROOT/.cache/python-extra-path"

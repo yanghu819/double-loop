@@ -368,7 +368,12 @@ COMMON_ARGS=(
   --scratch_gate_bias "${SCRATCH_GATE_BIAS:--2.0}"
   --scratch_decay_bias "${SCRATCH_DECAY_BIAS:-2.0}"
   --forward_dtype "${FORWARD_DTYPE:-float32}"
+  --backbone "${BACKBONE:-rwkv}"
   --rwkv_kernel "${RWKV_KERNEL:-auto}"
+  --gdn_mode "${GDN_MODE:-chunk}"
+  --gdn_expand_v "${GDN_EXPAND_V:-1.0}"
+  --gdn_use_short_conv "${GDN_USE_SHORT_CONV:-1}"
+  --gdn_conv_size "${GDN_CONV_SIZE:-4}"
   --lambda_ "${LAMBDA:-0.95}"
   --loop_update_mode "${LOOP_UPDATE_MODE:-fixed}"
   --loop_update_gate_init "${LOOP_UPDATE_GATE_INIT:-0.95}"
@@ -385,6 +390,10 @@ COMMON_ARGS=(
 
 if [[ "${ACTIVATION_CHECKPOINT:-0}" == "1" ]]; then
   COMMON_ARGS+=(--activation_checkpoint)
+fi
+
+if [[ "${GDN_ALLOW_NEG_EIGVAL:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--gdn_allow_neg_eigval)
 fi
 
 if [[ -n "${RESUME_TRAIN_CHECKPOINT:-}" ]]; then

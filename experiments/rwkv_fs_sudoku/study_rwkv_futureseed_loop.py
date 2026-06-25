@@ -30,6 +30,22 @@ except Exception:  # pragma: no cover - CUDA extension is optional for CPU smoke
     def wind_available(head_dim: int) -> Tuple[bool, str]:
         return False, "rwkv7_cuda import failed"
 
+try:
+    from fla.modules import ShortConvolution
+    from fla.ops.gated_delta_rule import chunk_gated_delta_rule
+except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
+    ShortConvolution = None
+    chunk_gated_delta_rule = None
+    FLA_IMPORT_ERROR = exc
+else:
+    FLA_IMPORT_ERROR = None
+
+
+def fla_gdn_available() -> Tuple[bool, str]:
+    if chunk_gated_delta_rule is None:
+        return False, f"flash-linear-attention import failed: {FLA_IMPORT_ERROR}"
+    return True, "ok"
+
 
 N = 9
 BOX_ROWS = 3
@@ -592,6 +608,177 @@ class RWKVBlock(nn.Module):
         return x, terminal_state
 
 
+class GDNTimeMix(nn.Module):
+    """FLA Gated DeltaNet token mixer with explicit recurrent state I/O."""
+
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        *,
+        expand_v: float,
+        mode: str,
+        use_short_conv: bool,
+        conv_size: int,
+        allow_neg_eigval: bool,
+        norm_eps: float = 1e-5,
+    ) -> None:
+        super().__init__()
+        ok, reason = fla_gdn_available()
+        if not ok:
+            raise RuntimeError(f"BACKBONE=gdn requires flash-linear-attention: {reason}")
+        if mode != "chunk":
+            raise ValueError("GDN training uses FLA chunk mode; fused_recurrent has no backward.")
+        if d_model != heads * head_dim:
+            raise ValueError("GDN baseline currently keeps d_model == heads * head_dim for matched state size.")
+        self.d_model = d_model
+        self.heads = heads
+        self.head_dim = head_dim
+        self.head_v_dim = int(head_dim * float(expand_v))
+        if not math.isclose(float(self.head_v_dim), head_dim * float(expand_v), rel_tol=1e-5):
+            raise ValueError("--gdn_expand_v must produce an integer value head dimension.")
+        self.value_dim = heads * self.head_v_dim
+        self.mode = mode
+        self.use_short_conv = bool(use_short_conv)
+        self.allow_neg_eigval = bool(allow_neg_eigval)
+        self.norm_eps = float(norm_eps)
+
+        self.q_proj = nn.Linear(d_model, heads * head_dim, bias=False)
+        self.k_proj = nn.Linear(d_model, heads * head_dim, bias=False)
+        self.v_proj = nn.Linear(d_model, self.value_dim, bias=False)
+        self.a_proj = nn.Linear(d_model, heads, bias=False)
+        self.b_proj = nn.Linear(d_model, heads, bias=False)
+        self.g_proj = nn.Linear(d_model, self.value_dim, bias=False)
+        self.o_proj = nn.Linear(self.value_dim, d_model, bias=False)
+        self.o_norm_weight = nn.Parameter(torch.ones(self.head_v_dim))
+
+        a = torch.empty(heads, dtype=torch.float32).uniform_(1.0, 16.0)
+        self.A_log = nn.Parameter(torch.log(a))
+        self.A_log._no_weight_decay = True
+        dt = torch.exp(torch.rand(heads, dtype=torch.float32) * (math.log(0.1) - math.log(0.001)) + math.log(0.001))
+        dt = torch.clamp(dt, min=1e-4)
+        self.dt_bias = nn.Parameter(dt + torch.log(-torch.expm1(-dt)))
+        self.dt_bias._no_weight_decay = True
+
+        if self.use_short_conv:
+            assert ShortConvolution is not None
+            self.q_conv1d = ShortConvolution(heads * head_dim, kernel_size=int(conv_size), bias=False, activation="silu")
+            self.k_conv1d = ShortConvolution(heads * head_dim, kernel_size=int(conv_size), bias=False, activation="silu")
+            self.v_conv1d = ShortConvolution(self.value_dim, kernel_size=int(conv_size), bias=False, activation="silu")
+        else:
+            self.q_conv1d = None
+            self.k_conv1d = None
+            self.v_conv1d = None
+
+        scale = d_model**0.5
+        self.q_proj.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
+        self.k_proj.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
+        self.v_proj.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
+        self.a_proj.weight.data.zero_()
+        self.b_proj.weight.data.zero_()
+        self.g_proj.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
+        nn.init.zeros_(self.o_proj.weight)
+
+    def _project_qkv(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        q = self.q_proj(x)
+        k = self.k_proj(x)
+        v = self.v_proj(x)
+        if self.use_short_conv:
+            assert self.q_conv1d is not None and self.k_conv1d is not None and self.v_conv1d is not None
+            q, _ = self.q_conv1d(q, output_final_state=False)
+            k, _ = self.k_conv1d(k, output_final_state=False)
+            v, _ = self.v_conv1d(v, output_final_state=False)
+        else:
+            q = F.silu(q)
+            k = F.silu(k)
+            v = F.silu(v)
+        return q, k, v
+
+    def _norm_gate(self, o: torch.Tensor, gate_source: torch.Tensor) -> torch.Tensor:
+        gate = self.g_proj(gate_source).view(gate_source.shape[0], gate_source.shape[1], self.heads, self.head_v_dim)
+        rms = o.float().square().mean(dim=-1, keepdim=True).add(self.norm_eps).rsqrt().to(o.dtype)
+        weight = self.o_norm_weight.to(device=o.device, dtype=o.dtype).view(1, 1, 1, self.head_v_dim)
+        return o * rms * weight * F.silu(gate)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if not x.is_cuda:
+            raise RuntimeError("BACKBONE=gdn is CUDA-only; CPU fallback is intentionally disabled.")
+        q, k, v = self._project_qkv(x)
+        batch_size, seq_len, _channels = x.shape
+        q = q.view(batch_size, seq_len, self.heads, self.head_dim)
+        k = k.view(batch_size, seq_len, self.heads, self.head_dim)
+        v = v.view(batch_size, seq_len, self.heads, self.head_v_dim)
+        expected = (batch_size, self.heads, self.head_v_dim, self.head_dim)
+        if initial_state is not None and tuple(initial_state.shape) != expected:
+            raise ValueError(f"GDN initial_state shape {tuple(initial_state.shape)} does not match {expected}")
+        o, terminal_state = chunk_gated_delta_rule(
+            q=q,
+            k=k,
+            v=v,
+            g=self.a_proj(x),
+            beta=self.b_proj(x),
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+            use_gate_in_kernel=True,
+            A_log=self.A_log,
+            dt_bias=self.dt_bias,
+            use_beta_sigmoid_in_kernel=True,
+            allow_neg_eigval=self.allow_neg_eigval,
+            state_v_first=True,
+        )
+        y = self._norm_gate(o, x).reshape(batch_size, seq_len, self.value_dim)
+        return self.o_proj(y), terminal_state.to(x.dtype)
+
+
+class GDNBlock(nn.Module):
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        channel_mult: int,
+        *,
+        gdn_mode: str,
+        gdn_expand_v: float,
+        gdn_use_short_conv: bool,
+        gdn_conv_size: int,
+        gdn_allow_neg_eigval: bool,
+    ) -> None:
+        super().__init__()
+        self.ln_time = nn.LayerNorm(d_model)
+        self.ln_channel = nn.LayerNorm(d_model)
+        self.time_mix = GDNTimeMix(
+            d_model,
+            heads,
+            head_dim,
+            expand_v=gdn_expand_v,
+            mode=gdn_mode,
+            use_short_conv=gdn_use_short_conv,
+            conv_size=gdn_conv_size,
+            allow_neg_eigval=gdn_allow_neg_eigval,
+        )
+        self.channel_mix = ChannelMix(d_model, channel_mult)
+        self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+        x = x + time_out
+        x = x + self.channel_mix(self.ln_channel(x))
+        return x, terminal_state
+
+
 class FutureSeedRWKV(nn.Module):
     def __init__(
         self,
@@ -606,12 +793,21 @@ class FutureSeedRWKV(nn.Module):
         future_seed_update: str = "fixed",
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
+        backbone: str = "rwkv",
+        gdn_mode: str = "chunk",
+        gdn_expand_v: float = 1.0,
+        gdn_use_short_conv: bool = True,
+        gdn_conv_size: int = 4,
+        gdn_allow_neg_eigval: bool = False,
     ) -> None:
         super().__init__()
         if layers < 2:
             raise ValueError("FutureSeed needs at least two layers.")
         if future_seed_update not in {"fixed", "learned", "loop_residual"}:
             raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
+        if backbone not in {"rwkv", "gdn"}:
+            raise ValueError("backbone must be one of: rwkv, gdn.")
+        self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
         self.future_seed_update = future_seed_update
@@ -624,20 +820,35 @@ class FutureSeedRWKV(nn.Module):
             )
         else:
             self.register_parameter("future_seed_update_logit", None)
-        self.blocks = nn.ModuleList(
-            [
-                RWKVBlock(
-                    d_model,
-                    heads,
-                    head_dim,
-                    channel_mult,
-                    layer_id=layer_id,
-                    layers=layers,
-                    rwkv_kernel=rwkv_kernel,
+        blocks: List[nn.Module] = []
+        for layer_id in range(layers):
+            if backbone == "rwkv":
+                blocks.append(
+                    RWKVBlock(
+                        d_model,
+                        heads,
+                        head_dim,
+                        channel_mult,
+                        layer_id=layer_id,
+                        layers=layers,
+                        rwkv_kernel=rwkv_kernel,
+                    )
                 )
-                for layer_id in range(layers)
-            ]
-        )
+            else:
+                blocks.append(
+                    GDNBlock(
+                        d_model,
+                        heads,
+                        head_dim,
+                        channel_mult,
+                        gdn_mode=gdn_mode,
+                        gdn_expand_v=gdn_expand_v,
+                        gdn_use_short_conv=gdn_use_short_conv,
+                        gdn_conv_size=gdn_conv_size,
+                        gdn_allow_neg_eigval=gdn_allow_neg_eigval,
+                    )
+                )
+        self.blocks = nn.ModuleList(blocks)
 
     def forward(
         self,
@@ -970,6 +1181,12 @@ class FutureSeedLoopSudoku(nn.Module):
         scratch_decay_bias: float,
         activation_checkpoint: bool,
         rwkv_kernel: str,
+        backbone: str,
+        gdn_mode: str,
+        gdn_expand_v: float,
+        gdn_use_short_conv: bool,
+        gdn_conv_size: int,
+        gdn_allow_neg_eigval: bool,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -998,6 +1215,12 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_update=future_seed_update,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
+            backbone=backbone,
+            gdn_mode=gdn_mode,
+            gdn_expand_v=gdn_expand_v,
+            gdn_use_short_conv=gdn_use_short_conv,
+            gdn_conv_size=gdn_conv_size,
+            gdn_allow_neg_eigval=gdn_allow_neg_eigval,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -1457,6 +1680,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         scratch_decay_bias=args.scratch_decay_bias,
         activation_checkpoint=args.activation_checkpoint,
         rwkv_kernel=args.rwkv_kernel,
+        backbone=args.backbone,
+        gdn_mode=args.gdn_mode,
+        gdn_expand_v=args.gdn_expand_v,
+        gdn_use_short_conv=args.gdn_use_short_conv,
+        gdn_conv_size=args.gdn_conv_size,
+        gdn_allow_neg_eigval=args.gdn_allow_neg_eigval,
     ).to(device)
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
@@ -1831,6 +2060,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "grad_accum_steps": args.grad_accum_steps,
         "effective_batch": args.batch * max(1, int(args.grad_accum_steps)),
         "rwkv_kernel": args.rwkv_kernel,
+        "backbone": args.backbone,
+        "gdn_mode": args.gdn_mode,
+        "gdn_expand_v": args.gdn_expand_v,
+        "gdn_use_short_conv": bool(args.gdn_use_short_conv),
+        "gdn_conv_size": args.gdn_conv_size,
+        "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
         "resume_train_checkpoint": resume_info,
@@ -2828,11 +3063,21 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
-    if args.rwkv_kernel in {"cuda", "statepassing"}:
+    if args.backbone == "gdn":
+        ok, reason = fla_gdn_available()
+        if not ok:
+            raise ValueError(f"--backbone gdn is unavailable: {reason}")
+        if args.gdn_mode != "chunk":
+            raise ValueError("--gdn_mode must be chunk for training; FLA fused_recurrent GDN has no backward.")
+        if args.gdn_expand_v <= 0:
+            raise ValueError("--gdn_expand_v must be positive.")
+        if args.gdn_conv_size < 1:
+            raise ValueError("--gdn_conv_size must be positive.")
+    if args.backbone == "rwkv" and args.rwkv_kernel in {"cuda", "statepassing"}:
         ok, reason = statepassing_available(args.head_dim)
         if not ok:
             raise ValueError(f"--rwkv_kernel {args.rwkv_kernel} is unavailable: {reason}")
-    if args.rwkv_kernel == "wind":
+    if args.backbone == "rwkv" and args.rwkv_kernel == "wind":
         ok, reason = wind_available(args.head_dim)
         if not ok:
             raise ValueError(f"--rwkv_kernel wind is unavailable: {reason}")
@@ -2846,7 +3091,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--forward_dtype=bfloat16 requires CUDA; CPU/MPS fallback is disabled for this run")
     print(
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
-        f"mainline=future_seed_loop rwkv_kernel={args.rwkv_kernel} forward_dtype={args.forward_dtype}",
+        f"mainline=future_seed_loop backbone={args.backbone} rwkv_kernel={args.rwkv_kernel} "
+        f"gdn_mode={args.gdn_mode} forward_dtype={args.forward_dtype}",
         flush=True,
     )
 
@@ -2992,6 +3238,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "scratch_gate_bias": args.scratch_gate_bias,
         "scratch_decay_bias": args.scratch_decay_bias,
         "rwkv_kernel": args.rwkv_kernel,
+        "backbone": args.backbone,
+        "gdn_mode": args.gdn_mode,
+        "gdn_expand_v": args.gdn_expand_v,
+        "gdn_use_short_conv": bool(args.gdn_use_short_conv),
+        "gdn_conv_size": args.gdn_conv_size,
+        "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
         "forward_dtype": args.forward_dtype,
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
@@ -3140,7 +3392,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
+    p.add_argument("--backbone", choices=("rwkv", "gdn"), default="rwkv")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
+    p.add_argument("--gdn_mode", choices=("chunk",), default="chunk")
+    p.add_argument("--gdn_expand_v", type=float, default=1.0)
+    p.add_argument("--gdn_use_short_conv", type=int, choices=(0, 1), default=1)
+    p.add_argument("--gdn_conv_size", type=int, default=4)
+    p.add_argument("--gdn_allow_neg_eigval", action="store_true")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
     p.add_argument("--loop_loss_start", type=int, default=1)
     p.add_argument("--loop_loss_power", type=float, default=2.0)

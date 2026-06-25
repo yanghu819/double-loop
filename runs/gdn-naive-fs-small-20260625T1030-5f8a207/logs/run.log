@@ -1,0 +1,26 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-fla-9336e94-20260625T1708/runs/gdn-naive-fs-small-20260625T1030-5f8a207
+git_sha=a81a35da0003d0aebfef1ce585589deb5301e7b3
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=naive_recurrent forward_dtype=bfloat16
+[future_seed_loop stage=1:8-16] step=0020 ce=1.7942 total=1.7942 loop1=1.7868 loop_last=1.7942 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:8-16] step=0040 ce=1.6101 total=1.6101 loop1=1.6075 loop_last=1.6101 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0060 ce=1.7384 total=1.7384 loop1=1.7389 loop_last=1.7384 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0080 ce=1.7074 total=1.7074 loop1=1.7060 loop_last=1.7074 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:16-24] step=0100 ce=1.6113 total=1.6113 loop1=1.6070 loop_last=1.6113 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2466, early=0.2526, late=0.2522, early_late_gap=+0.0003
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=7.537, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2383, early=0.2349, late=0.2448, early_late_gap=-0.0098
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=7.537, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+hole-transfer metrics
+holes=16 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2383, early=0.2349, late=0.2448, early_late_gap=-0.0098; indep=0.0000, exact/indep=0.00
+holes=8  exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2520, early=0.2045, late=0.2599, early_late_gap=-0.0555; indep=0.0000, exact/indep=0.00
+holes=24 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2061, early=0.2042, late=0.2127, early_late_gap=-0.0085; indep=0.0000, exact/indep=0.00
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/gdn-fla-9336e94-20260625T1708/runs/gdn-naive-fs-small-20260625T1030-5f8a207/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-fla-9336e94-20260625T1708/runs/gdn-naive-fs-small-20260625T1030-5f8a207/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-fla-9336e94-20260625T1708/runs/gdn-naive-fs-small-20260625T1030-5f8a207/output/futureseed_loop_case_seed52.html

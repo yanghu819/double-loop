@@ -426,12 +426,17 @@ if [[ "$MODE" == "smoke" ]]; then
     --log_every 1
   )
 else
+  if [[ ${FULL_ROLLOUT_KS+x} ]]; then
+    FULL_ROLLOUT_KS_ARG="$FULL_ROLLOUT_KS"
+  else
+    FULL_ROLLOUT_KS_ARG="1,4,8,16"
+  fi
   RUN_ARGS=(
     "${COMMON_ARGS[@]}"
     --steps "${FULL_STEPS:-300}"
     --batch "${FULL_BATCH:-32}"
     --eval_n "${FULL_EVAL_N:-256}"
-    --rollout_ks "${FULL_ROLLOUT_KS:-1,4,8,16}"
+    --rollout_ks "$FULL_ROLLOUT_KS_ARG"
     --log_every "${FULL_LOG_EVERY:-50}"
   )
 fi

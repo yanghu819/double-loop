@@ -31,14 +31,18 @@ except Exception:  # pragma: no cover - CUDA extension is optional for CPU smoke
         return False, "rwkv7_cuda import failed"
 
 try:
-    from fla.modules import ShortConvolution
     from fla.ops.gated_delta_rule import chunk_gated_delta_rule
 except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
-    ShortConvolution = None
     chunk_gated_delta_rule = None
     FLA_IMPORT_ERROR = exc
 else:
     FLA_IMPORT_ERROR = None
+
+
+def load_fla_short_convolution() -> type:
+    from fla.modules.convolution import ShortConvolution
+
+    return ShortConvolution
 
 
 def fla_gdn_available() -> Tuple[bool, str]:
@@ -662,7 +666,7 @@ class GDNTimeMix(nn.Module):
         self.dt_bias._no_weight_decay = True
 
         if self.use_short_conv:
-            assert ShortConvolution is not None
+            ShortConvolution = load_fla_short_convolution()
             self.q_conv1d = ShortConvolution(heads * head_dim, kernel_size=int(conv_size), bias=False, activation="silu")
             self.k_conv1d = ShortConvolution(heads * head_dim, kernel_size=int(conv_size), bias=False, activation="silu")
             self.v_conv1d = ShortConvolution(self.value_dim, kernel_size=int(conv_size), bias=False, activation="silu")

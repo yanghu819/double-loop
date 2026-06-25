@@ -40,6 +40,14 @@ except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
 else:
     FLA_IMPORT_ERROR = None
 
+try:
+    from gdn_triton import gdn_triton_recurrent
+except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
+    gdn_triton_recurrent = None
+    GDN_TRITON_IMPORT_ERROR = exc
+else:
+    GDN_TRITON_IMPORT_ERROR = None
+
 
 def load_fla_short_convolution() -> type:
     from fla.modules.convolution import ShortConvolution
@@ -50,6 +58,12 @@ def load_fla_short_convolution() -> type:
 def fla_gdn_available() -> Tuple[bool, str]:
     if chunk_gated_delta_rule is None or naive_recurrent_gated_delta_rule is None:
         return False, f"flash-linear-attention import failed: {FLA_IMPORT_ERROR}"
+    return True, "ok"
+
+
+def gdn_triton_available() -> Tuple[bool, str]:
+    if gdn_triton_recurrent is None:
+        return False, f"local GDN Triton import failed: {GDN_TRITON_IMPORT_ERROR}"
     return True, "ok"
 
 
@@ -631,11 +645,20 @@ class GDNTimeMix(nn.Module):
         norm_eps: float = 1e-5,
     ) -> None:
         super().__init__()
-        ok, reason = fla_gdn_available()
-        if not ok:
-            raise RuntimeError(f"BACKBONE=gdn requires flash-linear-attention: {reason}")
-        if mode not in {"chunk", "naive_recurrent"}:
-            raise ValueError("GDN mode must be 'chunk' or 'naive_recurrent'.")
+        if mode in {"chunk", "naive_recurrent"}:
+            ok, reason = fla_gdn_available()
+            if not ok:
+                raise RuntimeError(f"BACKBONE=gdn requires flash-linear-attention: {reason}")
+        elif mode == "triton_recurrent":
+            ok, reason = gdn_triton_available()
+            if not ok:
+                raise RuntimeError(f"BACKBONE=gdn GDN_MODE=triton_recurrent requires local Triton kernel: {reason}")
+            if use_short_conv:
+                ok, reason = fla_gdn_available()
+                if not ok:
+                    raise RuntimeError(f"--gdn_use_short_conv 1 still requires flash-linear-attention: {reason}")
+        else:
+            raise ValueError("GDN mode must be 'chunk', 'naive_recurrent', or 'triton_recurrent'.")
         if d_model != heads * head_dim:
             raise ValueError("GDN baseline currently keeps d_model == heads * head_dim for matched state size.")
         self.d_model = d_model
@@ -740,7 +763,7 @@ class GDNTimeMix(nn.Module):
                 allow_neg_eigval=self.allow_neg_eigval,
                 state_v_first=True,
             )
-        else:
+        elif self.mode == "naive_recurrent":
             if self.allow_neg_eigval:
                 raise ValueError("GDN naive_recurrent mode does not support --gdn_allow_neg_eigval.")
             assert naive_recurrent_gated_delta_rule is not None
@@ -760,6 +783,23 @@ class GDNTimeMix(nn.Module):
                 output_final_state=True,
             )
             terminal_state = internal_terminal.transpose(-1, -2).contiguous()
+        else:
+            assert gdn_triton_recurrent is not None
+            g_raw = self.a_proj(x).float()
+            g = -self.A_log.float().exp().view(1, 1, self.heads) * F.softplus(
+                g_raw + self.dt_bias.float().view(1, 1, self.heads)
+            )
+            beta = torch.sigmoid(self.b_proj(x).float())
+            if self.allow_neg_eigval:
+                beta = beta * 2.0
+            o, terminal_state = gdn_triton_recurrent(
+                q=F.normalize(q.float(), dim=-1, p=2.0),
+                k=F.normalize(k.float(), dim=-1, p=2.0),
+                v=v.float(),
+                g=g,
+                beta=beta,
+                initial_state=initial_state,
+            )
         y = self._norm_gate(o, x).reshape(batch_size, seq_len, self.value_dim)
         return self.o_proj(y), terminal_state.to(x.dtype)
 
@@ -3091,11 +3131,20 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
     if args.backbone == "gdn":
-        ok, reason = fla_gdn_available()
-        if not ok:
-            raise ValueError(f"--backbone gdn is unavailable: {reason}")
-        if args.gdn_mode not in {"chunk", "naive_recurrent"}:
-            raise ValueError("--gdn_mode must be chunk or naive_recurrent.")
+        if args.gdn_mode in {"chunk", "naive_recurrent"}:
+            ok, reason = fla_gdn_available()
+            if not ok:
+                raise ValueError(f"--backbone gdn is unavailable: {reason}")
+        elif args.gdn_mode == "triton_recurrent":
+            ok, reason = gdn_triton_available()
+            if not ok:
+                raise ValueError(f"--gdn_mode triton_recurrent is unavailable: {reason}")
+            if args.gdn_use_short_conv:
+                ok, reason = fla_gdn_available()
+                if not ok:
+                    raise ValueError(f"--gdn_use_short_conv 1 is unavailable: {reason}")
+        else:
+            raise ValueError("--gdn_mode must be chunk, naive_recurrent, or triton_recurrent.")
         if args.gdn_expand_v <= 0:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
@@ -3421,7 +3470,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument("--backbone", choices=("rwkv", "gdn"), default="rwkv")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
-    p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent"), default="chunk")
+    p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent", "triton_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)
     p.add_argument("--gdn_use_short_conv", type=int, choices=(0, 1), default=1)
     p.add_argument("--gdn_conv_size", type=int, default=4)

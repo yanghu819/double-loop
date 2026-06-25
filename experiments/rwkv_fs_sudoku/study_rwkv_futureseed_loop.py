@@ -159,6 +159,102 @@ def make_batch(
     return inputs.to(device), labels.to(device), clue_mask.to(device)
 
 
+class OfficialSudokuDataset:
+    """Read official EqR Sudoku npy arrays and map tokens to this runner's ids."""
+
+    def __init__(self, data_dir: Path, split: str) -> None:
+        try:
+            import numpy as np
+        except Exception as exc:  # pragma: no cover - dependency is required only for official data.
+            raise RuntimeError("Official Sudoku data mode requires numpy.") from exc
+        self._np = np
+        self.split = str(split)
+        split_dir = Path(data_dir) / self.split
+        self.inputs = np.load(split_dir / "all__inputs.npy", mmap_mode="r")
+        self.labels = np.load(split_dir / "all__labels.npy", mmap_mode="r")
+        if self.inputs.shape != self.labels.shape:
+            raise ValueError(f"Official Sudoku inputs/labels shape mismatch: {self.inputs.shape} vs {self.labels.shape}")
+        if len(self.inputs.shape) != 2 or int(self.inputs.shape[1]) != CELLS:
+            raise ValueError(f"Official Sudoku expects shape [N, {CELLS}], got {self.inputs.shape}")
+
+    def __len__(self) -> int:
+        return int(self.inputs.shape[0])
+
+    def _map_arrays(
+        self,
+        input_values,
+        label_values,
+        *,
+        device: torch.device,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        input_tensor = torch.as_tensor(input_values.astype("int64", copy=False), dtype=torch.long)
+        label_tensor = torch.as_tensor(label_values.astype("int64", copy=False), dtype=torch.long)
+        clue_mask = input_tensor.ne(1)
+        mapped_inputs = torch.where(clue_mask, input_tensor - 2, torch.full_like(input_tensor, BLANK))
+        mapped_labels = label_tensor - 2
+        if bool((mapped_labels < 0).any() or (mapped_labels >= N).any()):
+            raise ValueError("Official Sudoku labels must map into [0, N).")
+        if bool((mapped_inputs < 0).any() or (mapped_inputs > BLANK).any()):
+            raise ValueError("Official Sudoku inputs must map into [0, BLANK].")
+        return mapped_inputs.to(device), mapped_labels.to(device), clue_mask.to(device)
+
+    def sample_batch(
+        self,
+        batch_size: int,
+        rng: random.Random,
+        *,
+        device: torch.device,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        indices = [rng.randrange(len(self)) for _ in range(batch_size)]
+        return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
+
+    def fixed_batch(
+        self,
+        batch_size: int,
+        seed: int,
+        *,
+        device: torch.device,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if batch_size > len(self):
+            raise ValueError(f"Requested eval_n={batch_size}, but official split {self.split!r} has only {len(self)} rows.")
+        rng = random.Random(seed)
+        indices = rng.sample(range(len(self)), batch_size)
+        return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
+
+
+def official_sudoku_enabled(args: argparse.Namespace) -> bool:
+    return bool(str(args.official_sudoku_data_dir).strip())
+
+
+def make_train_batch(
+    args: argparse.Namespace,
+    official_train: Optional[OfficialSudokuDataset],
+    batch_size: int,
+    holes_min: int,
+    holes_max: int,
+    rng: random.Random,
+    *,
+    device: torch.device,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    if official_train is not None:
+        return official_train.sample_batch(batch_size, rng, device=device)
+    return make_batch(batch_size, holes_min, holes_max, args.hole_pattern, rng, device=device)
+
+
+def make_eval_batch(
+    args: argparse.Namespace,
+    official_eval: Optional[OfficialSudokuDataset],
+    batch_size: int,
+    holes: int,
+    seed: int,
+    *,
+    device: torch.device,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    if official_eval is not None:
+        return official_eval.fixed_batch(batch_size, seed, device=device)
+    return make_batch(batch_size, holes, holes, args.hole_pattern, random.Random(seed), device=device)
+
+
 class RWKVTimeMix(nn.Module):
     """RWKV-style WKV block with CUDA RWKV7 paths and a torch fallback."""
 
@@ -1327,6 +1423,16 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
     rng = random.Random(args.seed + 1000)
+    official_train = (
+        OfficialSudokuDataset(Path(args.official_sudoku_data_dir), args.official_sudoku_train_split)
+        if official_sudoku_enabled(args)
+        else None
+    )
+    official_eval = (
+        OfficialSudokuDataset(Path(args.official_sudoku_data_dir), args.official_sudoku_eval_split)
+        if official_sudoku_enabled(args)
+        else None
+    )
     model = FutureSeedLoopSudoku(
         d_model=args.d_model,
         layers=args.layers,
@@ -1387,12 +1493,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         out_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_holes = parse_eval_checkpoint_holes(args)
         checkpoint_batches = {
-            holes: make_batch(
+            holes: make_eval_batch(
+                args,
+                official_eval,
                 args.eval_n,
                 holes,
-                holes,
-                args.hole_pattern,
-                random.Random(args.seed + 13000 + holes * 17),
+                args.seed + 13000 + holes * 17,
                 device=device,
             )
             for holes in checkpoint_holes
@@ -1473,11 +1579,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_loop_update_gate_l = 0.0
             accum_loop_update_gate_h = 0.0
             for _accum_idx in range(accum_count):
-                inputs, labels, clue_mask = make_batch(
+                inputs, labels, clue_mask = make_train_batch(
+                    args,
+                    official_train,
                     args.batch,
                     holes_min,
                     holes_max,
-                    args.hole_pattern,
                     rng,
                     device=device,
                 )
@@ -1738,6 +1845,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_time_scale": args.loop_time_scale,
+        "data_source": "official_sudoku" if official_train is not None else "generated_random_holes",
+        "official_sudoku_data_dir": str(args.official_sudoku_data_dir) if official_train is not None else "",
+        "official_sudoku_train_split": str(args.official_sudoku_train_split) if official_train is not None else "",
+        "official_sudoku_eval_split": str(args.official_sudoku_eval_split) if official_train is not None else "",
+        "official_train_size": len(official_train) if official_train is not None else 0,
+        "official_eval_size": len(official_eval) if official_eval is not None else 0,
         "eval_checkpoint_steps": checkpoint_steps,
         "eval_checkpoint_holes": sorted(checkpoint_batches),
         "checkpoint_evals": checkpoint_evals,
@@ -2725,6 +2838,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError(f"--rwkv_kernel wind is unavailable: {reason}")
     if args.hole_pattern != "random":
         raise ValueError("--hole_pattern now supports only 'random'; structured hole probes were removed from the clean mainline.")
+    if official_sudoku_enabled(args) and N != 9:
+        raise ValueError("--official_sudoku_data_dir currently supports only 9x9 official EqR Sudoku arrays.")
 
     device = choose_device(args.cpu)
     if args.forward_dtype == "bfloat16" and device.type != "cuda":
@@ -2738,14 +2853,20 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    official_eval = (
+        OfficialSudokuDataset(Path(args.official_sudoku_data_dir), args.official_sudoku_eval_split)
+        if official_sudoku_enabled(args)
+        else None
+    )
+
     model, train_stats = train_model(args, device=device)
     checkpoint_evals = train_stats.pop("checkpoint_evals", {})
-    batch = make_batch(
+    batch = make_eval_batch(
+        args,
+        official_eval,
         args.eval_n,
         args.eval_holes,
-        args.eval_holes,
-        args.hole_pattern,
-        random.Random(args.seed + 999),
+        args.seed + int(args.official_eval_seed_offset),
         device=device,
     )
     inputs, labels, clue_mask = batch
@@ -2799,27 +2920,34 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             )
 
     eval_holes_values = parse_eval_holes(args)
-    for holes in eval_holes_values:
-        if holes == args.eval_holes:
-            metrics["eval_by_holes"][f"holes{holes}"] = {"eval_clean": clean}
-            continue
-        extra_batch = make_batch(
-            args.eval_n,
-            holes,
-            holes,
-            args.hole_pattern,
-            random.Random(args.seed + 999 + holes * 17),
-            device=device,
-        )
-        hole_clean, _hole_preds = evaluate_model(
-            model,
-            extra_batch,
-            max_loops=args.max_loops,
-            noise_scale=0.0,
-            seed=args.seed + 4000 + holes,
-            forward_dtype=args.forward_dtype,
-        )
-        metrics["eval_by_holes"][f"holes{holes}"] = {"eval_clean": hole_clean}
+    if official_eval is None:
+        for holes in eval_holes_values:
+            if holes == args.eval_holes:
+                metrics["eval_by_holes"][f"holes{holes}"] = {"eval_clean": clean}
+                continue
+            extra_batch = make_eval_batch(
+                args,
+                None,
+                args.eval_n,
+                holes,
+                args.seed + 999 + holes * 17,
+                device=device,
+            )
+            hole_clean, _hole_preds = evaluate_model(
+                model,
+                extra_batch,
+                max_loops=args.max_loops,
+                noise_scale=0.0,
+                seed=args.seed + 4000 + holes,
+                forward_dtype=args.forward_dtype,
+            )
+            metrics["eval_by_holes"][f"holes{holes}"] = {"eval_clean": hole_clean}
+    else:
+        metrics["eval_official"] = {
+            "split": args.official_sudoku_eval_split,
+            "eval_n": args.eval_n,
+            "seed": args.seed + int(args.official_eval_seed_offset),
+        }
 
     l1 = metrics["eval_clean"]["loop1"]["label_exact"]
     last_key = f"loop{args.max_loops}"
@@ -2837,6 +2965,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "box_cols": BOX_COLS,
         "hole_pattern": args.hole_pattern,
         "hole_stages": parse_hole_stages(args),
+        "data_source": "official_sudoku" if official_eval is not None else "generated_random_holes",
+        "official_sudoku_data_dir": str(args.official_sudoku_data_dir) if official_eval is not None else "",
+        "official_sudoku_train_split": str(args.official_sudoku_train_split) if official_eval is not None else "",
+        "official_sudoku_eval_split": str(args.official_sudoku_eval_split) if official_eval is not None else "",
+        "official_eval_seed_offset": int(args.official_eval_seed_offset),
         "max_loops": args.max_loops,
         "loop_loss": args.loop_loss,
         "loop_loss_start": args.loop_loss_start,
@@ -2945,11 +3078,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     f"residual_exact={row['selector_residual']['label_exact']:.4f} "
                     f"disagree={row['trajectory_token_disagreement']:.4f}"
                 )
-    if len(eval_holes_values) > 1:
+    if official_eval is None and len(eval_holes_values) > 1:
         print("\nhole-transfer metrics")
         for holes in eval_holes_values:
             loop_last = metrics["eval_by_holes"][f"holes{holes}"]["eval_clean"][last_key]
             print(f"holes={holes:<2d} {metric_line(loop_last)}; {coupling_line(loop_last, holes)}")
+    if official_eval is not None:
+        print(
+            f"\nofficial sudoku eval split={args.official_sudoku_eval_split} "
+            f"eval_n={args.eval_n} seed={args.seed + int(args.official_eval_seed_offset)}"
+        )
     if metrics.get("case_bank"):
         print("\ncase-bank artifacts")
         for hole_key, row in metrics["case_bank"]["holes"].items():
@@ -3022,6 +3160,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval_holes", type=int, default=8)
     p.add_argument("--eval_holes_list", default="")
     p.add_argument("--eval_n", type=int, default=128)
+    p.add_argument("--official_sudoku_data_dir", default="")
+    p.add_argument("--official_sudoku_train_split", default="train")
+    p.add_argument("--official_sudoku_eval_split", default="test")
+    p.add_argument("--official_eval_seed_offset", type=int, default=999)
     p.add_argument("--eval_checkpoint_steps", default="")
     p.add_argument("--eval_checkpoint_stage_offsets", default="")
     p.add_argument("--eval_checkpoint_holes_list", default="")

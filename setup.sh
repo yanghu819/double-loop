@@ -88,9 +88,10 @@ PY
   then
     local fla_args=(--target "$target" --upgrade --no-deps)
     if compgen -G "$REPO_ROOT/wheelhouse/flash_linear_attention*.whl" >/dev/null || compgen -G "$REPO_ROOT/wheelhouse/flash-linear-attention*.whl" >/dev/null; then
-      fla_args+=(--no-index --find-links "$REPO_ROOT/wheelhouse")
+      "$py_bin" -m pip install "${fla_args[@]}" --no-index --find-links "$REPO_ROOT/wheelhouse" "flash-linear-attention"
+    else
+      "$py_bin" -m pip install "${fla_args[@]}" "flash-linear-attention @ git+https://github.com/fla-org/flash-linear-attention.git@9b20d26dc4922e67c1332ef77e30b71111406d96"
     fi
-    "$py_bin" -m pip install "${fla_args[@]}" "flash-linear-attention @ git+https://github.com/fla-org/flash-linear-attention.git@9b20d26dc4922e67c1332ef77e30b71111406d96"
   fi
 
   printf '%s\n' "$target" > "$REPO_ROOT/.cache/python-extra-path"

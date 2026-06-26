@@ -1,0 +1,27 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-scale-fs-clean-be2815b-20260626/runs/gdn-realbwd-official-sudoku-scale-fs-clean-20260626T0105-be2815b
+git_sha=be2815bd27ece12df237ed01456e651d1dac5212
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+[future_seed_loop stage=1:2-4] step=0100 ce=1.7918 total=1.7918 loop1=1.7923 loop_last=1.7918 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:2-4] step=0200 ce=1.3550 total=1.3550 loop1=1.3611 loop_last=1.3550 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:2-4] step=0300 ce=1.1813 total=1.1813 loop1=1.2066 loop_last=1.1813 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:2-4] step=0400 ce=1.1387 total=1.1387 loop1=1.2079 loop_last=1.1387 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:2-4] step=0500 ce=1.0861 total=1.0861 loop1=1.2054 loop_last=1.0861 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:2-4] step=0600 ce=1.0667 total=1.0667 loop1=1.2253 loop_last=1.0667 upd_l=0.950 upd_h=0.950 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0010, valid=0.0010, solved=0.0010, blank_acc=0.4444, early=0.4555, late=0.4288, early_late_gap=+0.0267
+        fs_gate=0.476, fs_update=1.000, fs_state_norm=7.617, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4910, early=0.4904, late=0.4908, early_late_gap=-0.0004
+        fs_gate=0.476, fs_update=1.000, fs_state_norm=7.617, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0107, valid=0.0107, solved=0.0107, blank_acc=0.4927, early=0.4931, late=0.4914, early_late_gap=+0.0017
+        fs_gate=0.476, fs_update=1.000, fs_state_norm=7.617, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0107, valid=0.0107, solved=0.0107, blank_acc=0.4925, early=0.4925, late=0.4913, early_late_gap=+0.0012
+        fs_gate=0.476, fs_update=1.000, fs_state_norm=7.617, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=1024 seed=1051
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-scale-fs-clean-be2815b-20260626/runs/gdn-realbwd-official-sudoku-scale-fs-clean-20260626T0105-be2815b/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-scale-fs-clean-be2815b-20260626/runs/gdn-realbwd-official-sudoku-scale-fs-clean-20260626T0105-be2815b/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-scale-fs-clean-be2815b-20260626/runs/gdn-realbwd-official-sudoku-scale-fs-clean-20260626T0105-be2815b/output/futureseed_loop_case_seed52.html

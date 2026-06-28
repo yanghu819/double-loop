@@ -212,6 +212,42 @@ class OfficialSudokuDataset:
             raise ValueError(f"Official Sudoku inputs/labels shape mismatch: {self.inputs.shape} vs {self.labels.shape}")
         if len(self.inputs.shape) != 2 or int(self.inputs.shape[1]) != CELLS:
             raise ValueError(f"Official Sudoku expects shape [N, {CELLS}], got {self.inputs.shape}")
+        self.blank_counts = (self.inputs == 1).sum(axis=1).astype("int16", copy=False)
+        self._range_cache: Dict[Tuple[int, int], Any] = {}
+
+    def blank_summary(self) -> Dict[str, Any]:
+        counts = self.blank_counts
+        hist: Dict[str, int] = {}
+        unique, freq = self._np.unique(counts, return_counts=True)
+        for blank_count, count in zip(unique.tolist(), freq.tolist()):
+            hist[str(int(blank_count))] = int(count)
+        return {
+            "min": int(counts.min()),
+            "max": int(counts.max()),
+            "mean": float(counts.mean()),
+            "histogram": hist,
+        }
+
+    def _indices_for_blank_range(self, holes_min: int, holes_max: int):
+        lo = max(0, int(holes_min))
+        hi = min(CELLS, int(holes_max))
+        if hi < lo:
+            raise ValueError(f"Invalid official Sudoku blank-count range: {holes_min}-{holes_max}")
+        key = (lo, hi)
+        cached = self._range_cache.get(key)
+        if cached is not None:
+            return cached
+        mask = (self.blank_counts >= lo) & (self.blank_counts <= hi)
+        indices = self._np.flatnonzero(mask)
+        if indices.size == 0:
+            summary = self.blank_summary()
+            raise ValueError(
+                "Official Sudoku split "
+                f"{self.split!r} has no samples with blank_count in {lo}-{hi}; "
+                f"available range is {summary['min']}-{summary['max']}."
+            )
+        self._range_cache[key] = indices
+        return indices
 
     def __len__(self) -> int:
         return int(self.inputs.shape[0])
@@ -239,9 +275,15 @@ class OfficialSudokuDataset:
         batch_size: int,
         rng: random.Random,
         *,
+        holes_min: Optional[int] = None,
+        holes_max: Optional[int] = None,
         device: torch.device,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        indices = [rng.randrange(len(self)) for _ in range(batch_size)]
+        if holes_min is None or holes_max is None:
+            indices = [rng.randrange(len(self)) for _ in range(batch_size)]
+        else:
+            candidates = self._indices_for_blank_range(int(holes_min), int(holes_max))
+            indices = candidates[[rng.randrange(len(candidates)) for _ in range(batch_size)]]
         return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
 
     def fixed_batch(
@@ -273,7 +315,13 @@ def make_train_batch(
     device: torch.device,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     if official_train is not None:
-        return official_train.sample_batch(batch_size, rng, device=device)
+        return official_train.sample_batch(
+            batch_size,
+            rng,
+            holes_min=holes_min,
+            holes_max=holes_max,
+            device=device,
+        )
     return make_batch(batch_size, holes_min, holes_max, args.hole_pattern, rng, device=device)
 
 
@@ -2153,6 +2201,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "official_sudoku_eval_split": str(args.official_sudoku_eval_split) if official_train is not None else "",
         "official_train_size": len(official_train) if official_train is not None else 0,
         "official_eval_size": len(official_eval) if official_eval is not None else 0,
+        "official_train_blank_summary": official_train.blank_summary() if official_train is not None else {},
+        "official_eval_blank_summary": official_eval.blank_summary() if official_eval is not None else {},
         "eval_checkpoint_steps": checkpoint_steps,
         "eval_checkpoint_holes": sorted(checkpoint_batches),
         "checkpoint_evals": checkpoint_evals,
@@ -3291,6 +3341,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "official_sudoku_data_dir": str(args.official_sudoku_data_dir) if official_eval is not None else "",
         "official_sudoku_train_split": str(args.official_sudoku_train_split) if official_eval is not None else "",
         "official_sudoku_eval_split": str(args.official_sudoku_eval_split) if official_eval is not None else "",
+        "official_train_blank_summary": train_stats.get("official_train_blank_summary", {}),
+        "official_eval_blank_summary": train_stats.get("official_eval_blank_summary", {}),
         "official_eval_seed_offset": int(args.official_eval_seed_offset),
         "max_loops": args.max_loops,
         "loop_loss": args.loop_loss,

@@ -6,9 +6,11 @@
 - plan ID: `P-GDN-015`
 - machine: AIStation GPU1 only
 - remote root: `/huyang2/double-loop`
-- source commit: to be filled after launch commit
+- source commit: `4dfba713ba427b8b8ab83cd9fea072de2a480645`
 - local branch: `codex/gpu1-experiment-tracking`
 - planned: 2026-06-29 07:08 UTC
+- launched: 2026-06-29 09:19 UTC after GPU1 queue cleared
+- recorded: 2026-06-29 09:36 UTC
 
 ## 2. Hypothesis
 
@@ -58,6 +60,14 @@ RUN_STAMP=20260629T0708Z \
 bash /huyang2/double-loop/artifacts/launch/start_gdn_d192_fs_feedback_attractor_s1500_20260629.sh
 ```
 
+Actual launch:
+
+```bash
+SOURCE_SHA=4dfba713ba427b8b8ab83cd9fea072de2a480645 \
+RUN_STAMP=20260629T0708Z \
+bash /huyang2/double-loop/artifacts/launch/start_gdn_d192_fs_feedback_attractor_s1500_20260629.sh
+```
+
 Kill criteria:
 
 - OOM or CUDA kernel failure: stop exact PID and record infrastructure failure.
@@ -73,15 +83,92 @@ Success criteria:
 
 ## 6. Artifacts
 
-To be filled after run completion.
+- run root: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71`
+- config: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/config.json`
+- score: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/score.json`
+- log: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/logs/run.log`
+- result JSON/MD/HTML: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/futureseed_loop_seed52.{json,md,html}`
+- checkpoint evals: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/checkpoint_eval_step000800.json`, `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/checkpoint_eval_step001200.json`
+- official case-bank visualization: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/case_bank/official/index.html`
+- visualization hub: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/visualizations/index.html`
+- source snapshot: `runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/source_snapshot.tar.gz`
 
 ## 7. Results
 
-Pending.
+Run completed without abort on GPU1.
+
+Training and runtime:
+
+- final train CE: `0.98678`
+- loop1 train loss: `1.17613`
+- loop5 train loss: `0.98678`
+- train time: `989.6s`
+- max CUDA allocated: `48068.6 MB`
+- max CUDA reserved: `50560.0 MB`
+- final train feedback norm: `1.7137`
+- final train corruption fraction: `0.3509`
+- final corrupted-feedback confidence: `0.6923`
+
+Checkpoint slope:
+
+| step | CE | loop5 exact | loop5 blank acc | feedback norm |
+|---:|---:|---:|---:|---:|
+| 800 | `0.99035` | `0.01758` | `0.51084` | `1.1010` |
+| 1200 | `0.93318` | `0.01855` | `0.52293` | `1.4944` |
+| 1500 | `0.98678` | `0.02930` | `0.53081` | `1.7137` |
+
+Final loop dynamics on official eval, `eval_n=2048`:
+
+| loop | exact | blank acc | feedback in | feedback next |
+|---:|---:|---:|---:|---:|
+| 1 | `0.00635` | `0.45938` | `0.0000` | `1.7273` |
+| 2 | `0.02930` | `0.51879` | `1.7273` | `1.7143` |
+| 3 | `0.02930` | `0.52968` | `1.7143` | `1.7145` |
+| 4 | `0.02930` | `0.53071` | `1.7145` | `1.7148` |
+| 5 | `0.02930` | `0.53081` | `1.7148` | `1.7149` |
+
+The feedback path is active, but it does not unlock late-loop exact. Exact jumps loop1->2 and then stays flat. Blank accuracy still creeps from loop3 to loop5 (`0.52968 -> 0.53081`), but full-board exact does not move.
+
+Official case-bank, `eval_n=256`, blank counts `46-64`, mean `55.74`:
+
+- final loop5 exact: `0.03516`
+- final loop5 blank acc: `0.53073`
+- selected visual cases: `3` solved-by-loop and `3` hard failures.
+
+Case trajectories, loops `[1,2,3,5]`:
+
+| case | holes | wrong cells |
+|---|---:|---|
+| `official_solved_by_loop_01_b0121` | 47 | `7,0,0,0` |
+| `official_solved_by_loop_02_b0131` | 49 | `5,0,0,0` |
+| `official_solved_by_loop_03_b0089` | 47 | `4,0,0,0` |
+| `official_hard_failure_01_b0231` | 56 | `26,13,4,5` |
+| `official_hard_failure_02_b0177` | 54 | `21,9,7,7` |
+| `official_hard_failure_03_b0073` | 54 | `19,11,10,9` |
 
 ## 8. Conclusions
 
-Pending.
+Decision: discard as a positive mechanism result.
+
+What worked:
+
+- The feedback/corruption mechanism is not dead code. `loop_feedback_next_norm` grew from `0.102` at step100 to `1.714` by step1500, with corruption fraction close to the requested `0.35`.
+- Training remained stable at D192/L10/batch128 on GPU1 and kept the same rough exact plateau as the clean D192 baseline.
+- The result gives a clean boundary: a generic prediction-feedback channel can be learned, but making it robust to corrupted previous probabilities is not by itself enough to create board-level correction.
+
+What failed:
+
+- Full-board exact did not exceed the existing D192/L10 plateau. Final loop5 exact is `0.029296875`, the same as the clean 1500-step baseline.
+- Later loops still do not act like a sustained self-correction process. Loop2 reaches `0.02930` exact; loops 3/4/5 stay there.
+- Hard cases do not show reliable loop3->loop5 repair. One hard case worsened `4 -> 5` wrong cells, one stayed `7 -> 7`, and one only nudged `10 -> 9`.
+
+Mechanism lesson:
+
+EqR-style "attractor" cannot be reduced to "feed previous predictions back with random corruption." That creates a trainable channel, but the channel learns a stable operating point rather than a better decision boundary. The next useful direction should change the state/update representation itself or introduce a more direct generic global-consistency target. Do not sweep corruption probability, mix, seed, or feedback scale.
+
+Paper implication:
+
+FutureSeed remains a strong opening mechanism for RWKV/GDN. This experiment narrows the missing piece: the current loop has enough signal to use feedback, but not enough structure to turn local blank accuracy into full-board exact. The honest story is now "FutureSeed opens cheap recurrent backbones; sustained exact reasoning requires better generic recurrent state dynamics."
 
 ## 9. Submission Record
 

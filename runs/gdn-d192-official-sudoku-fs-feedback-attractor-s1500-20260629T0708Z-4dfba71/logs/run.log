@@ -1,0 +1,46 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-d192-feedback-attractor-s1500-4dfba71-20260629/runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71
+git_sha=4dfba713ba427b8b8ab83cd9fea072de2a480645
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=800,1200 holes=16
+[future_seed_loop stage=1:45-64] step=0100 ce=1.7995 total=1.7995 loop1=1.7999 loop_last=1.7995 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.102 fb_corrupt=0.346 fb_conf=0.560 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0200 ce=1.2864 total=1.2864 loop1=1.3133 loop_last=1.2864 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.146 fb_corrupt=0.352 fb_conf=0.646 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0300 ce=1.1177 total=1.1177 loop1=1.2263 loop_last=1.1177 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.377 fb_corrupt=0.357 fb_conf=0.674 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0400 ce=1.0834 total=1.0834 loop1=1.2571 loop_last=1.0834 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.647 fb_corrupt=0.356 fb_conf=0.683 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0500 ce=1.0447 total=1.0447 loop1=1.1930 loop_last=1.0447 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.825 fb_corrupt=0.345 fb_conf=0.685 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0600 ce=1.0340 total=1.0340 loop1=1.1783 loop_last=1.0340 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.943 fb_corrupt=0.351 fb_conf=0.692 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0700 ce=1.0445 total=1.0445 loop1=1.1863 loop_last=1.0445 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.005 fb_corrupt=0.353 fb_conf=0.680 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=0800 ce=0.9904 total=0.9904 loop1=1.1563 loop_last=0.9904 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.101 fb_corrupt=0.353 fb_conf=0.700 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0800 holes16] loop5 exact=0.0176 blank=0.5108
+[future_seed_loop stage=1:45-64] step=0900 ce=1.0089 total=1.0089 loop1=1.1727 loop_last=1.0089 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.183 fb_corrupt=0.352 fb_conf=0.694 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=1000 ce=1.0200 total=1.0200 loop1=1.2176 loop_last=1.0200 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.289 fb_corrupt=0.353 fb_conf=0.697 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=1100 ce=1.0074 total=1.0074 loop1=1.2210 loop_last=1.0074 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.394 fb_corrupt=0.351 fb_conf=0.700 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=1200 ce=0.9332 total=0.9332 loop1=1.1155 loop_last=0.9332 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.494 fb_corrupt=0.341 fb_conf=0.703 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=1200 holes16] loop5 exact=0.0186 blank=0.5229
+[future_seed_loop stage=1:45-64] step=1300 ce=0.9852 total=0.9852 loop1=1.1634 loop_last=0.9852 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.569 fb_corrupt=0.357 fb_conf=0.700 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=1400 ce=1.0254 total=1.0254 loop1=1.2258 loop_last=1.0254 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.648 fb_corrupt=0.346 fb_conf=0.689 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:45-64] step=1500 ce=0.9868 total=0.9868 loop1=1.1761 loop_last=0.9868 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=1.714 fb_corrupt=0.351 fb_conf=0.692 scratch_delta=0.000 scratch_gauss=0.0000
+
+full-board metrics
+loop=1 exact=0.0063, valid=0.0063, solved=0.0063, blank_acc=0.4594, early=0.4525, late=0.4607, early_late_gap=-0.0081
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=7.811, fs_decay=0.00, fb_in=0.000, fb_next=1.727, fb_corrupt=0.000, fb_conf=0.708, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0293, valid=0.0293, solved=0.0293, blank_acc=0.5188, early=0.5172, late=0.5217, early_late_gap=-0.0045
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=7.811, fs_decay=0.00, fb_in=1.727, fb_next=1.714, fb_corrupt=0.000, fb_conf=0.676, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0293, valid=0.0293, solved=0.0293, blank_acc=0.5297, early=0.5286, late=0.5333, early_late_gap=-0.0048
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=7.811, fs_decay=0.00, fb_in=1.714, fb_next=1.714, fb_corrupt=0.000, fb_conf=0.673, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0293, valid=0.0293, solved=0.0293, blank_acc=0.5307, early=0.5294, late=0.5348, early_late_gap=-0.0053
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=7.811, fs_decay=0.00, fb_in=1.714, fb_next=1.715, fb_corrupt=0.000, fb_conf=0.672, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0293, valid=0.0293, solved=0.0293, blank_acc=0.5308, early=0.5296, late=0.5348, early_late_gap=-0.0053
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=7.811, fs_decay=0.00, fb_in=1.715, fb_next=1.715, fb_corrupt=0.000, fb_conf=0.672, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=2048 seed=1051
+
+case-bank artifacts
+official exact=0.0352 blank_acc=0.5307 selected={'solved_by_loop': 3, 'almost_solved': 0, 'hard_failure': 3}
+  index=/huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-d192-feedback-attractor-s1500-4dfba71-20260629/runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/case_bank/official/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-d192-feedback-attractor-s1500-4dfba71-20260629/runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/case_bank/official/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-d192-feedback-attractor-s1500-4dfba71-20260629/runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-d192-feedback-attractor-s1500-4dfba71-20260629/runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-realbwd-official-sudoku-d192-feedback-attractor-s1500-4dfba71-20260629/runs/gdn-d192-official-sudoku-fs-feedback-attractor-s1500-20260629T0708Z-4dfba71/output/futureseed_loop_case_seed52.html

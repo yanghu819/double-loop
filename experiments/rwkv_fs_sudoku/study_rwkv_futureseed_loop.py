@@ -1655,6 +1655,52 @@ def loss_from_logits(
     return (loss * weights).sum() / weights.sum().clamp_min(1.0)
 
 
+def exact_margin_loss_from_logits(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    clue_mask: torch.Tensor,
+    *,
+    tau: float,
+    target: float,
+) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    logits_f = logits.float()
+    blank_mask = ~clue_mask
+    blank_counts = blank_mask.sum(dim=-1)
+    valid = blank_counts > 0
+    zero = logits_f.new_zeros(())
+    if not bool(valid.any()):
+        return zero, {
+            "exact_margin_loss": zero,
+            "exact_margin_softmin": zero,
+            "exact_margin_hardmin": zero,
+            "exact_margin_mean": zero,
+        }
+
+    safe_labels = labels.clamp(min=0, max=logits_f.shape[-1] - 1)
+    true_logits = logits_f.gather(-1, safe_labels.unsqueeze(-1)).squeeze(-1)
+    true_class = F.one_hot(safe_labels, num_classes=logits_f.shape[-1]).to(dtype=torch.bool)
+    other_logits = logits_f.masked_fill(true_class, -torch.inf).amax(dim=-1)
+    margins = true_logits - other_logits
+
+    masked_margins = margins.masked_fill(~blank_mask, torch.inf)
+    tau_value = max(float(tau), 1e-4)
+    valid_margins = masked_margins[valid]
+    valid_counts = blank_counts[valid].to(dtype=logits_f.dtype)
+    # Soft minimum over blank cells per sample. The log(count) correction makes the
+    # diagnostic comparable when official samples have different blank counts.
+    softmin = -tau_value * torch.logsumexp(-valid_margins / tau_value, dim=-1)
+    softmin = softmin + tau_value * valid_counts.clamp_min(1).log()
+    hardmin = valid_margins.amin(dim=-1)
+    loss = F.softplus(logits_f.new_tensor(float(target)) - softmin).mean()
+    selected = margins[blank_mask]
+    return loss, {
+        "exact_margin_loss": loss.detach(),
+        "exact_margin_softmin": softmin.detach().mean(),
+        "exact_margin_hardmin": hardmin.detach().mean(),
+        "exact_margin_mean": selected.detach().mean() if selected.numel() else zero,
+    }
+
+
 def loop_weight_tensor(
     num_loops: int,
     *,
@@ -1818,6 +1864,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_loop1_loss = 0.0
     last_loop_last_loss = 0.0
     last_loop_weights: List[float] = []
+    last_exact_margin_loss = 0.0
+    last_exact_margin_softmin = 0.0
+    last_exact_margin_hardmin = 0.0
+    last_exact_margin_mean = 0.0
     last_scratch_gauss_loss = 0.0
     last_scratch_gate = 0.0
     last_scratch_decay = 0.0
@@ -1872,6 +1922,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_loop1_loss = float(last_metrics.get("loop1_loss", 0.0))
         last_loop_last_loss = float(last_metrics.get("loop_last_loss", 0.0))
         last_loop_weights = [float(x) for x in last_metrics.get("loop_weights", [])]
+        last_exact_margin_loss = float(last_metrics.get("exact_margin_loss", 0.0))
+        last_exact_margin_softmin = float(last_metrics.get("exact_margin_softmin", 0.0))
+        last_exact_margin_hardmin = float(last_metrics.get("exact_margin_hardmin", 0.0))
+        last_exact_margin_mean = float(last_metrics.get("exact_margin_mean", 0.0))
         last_scratch_gauss_loss = float(last_metrics.get("scratch_gauss_loss", 0.0))
         last_scratch_gate = float(last_metrics.get("scratch_gate", 0.0))
         last_scratch_decay = float(last_metrics.get("scratch_decay", 0.0))
@@ -1913,6 +1967,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_total_loss = 0.0
             accum_loop1_loss = 0.0
             accum_loop_last_loss = 0.0
+            accum_exact_margin_loss = 0.0
+            accum_exact_margin_softmin = 0.0
+            accum_exact_margin_hardmin = 0.0
+            accum_exact_margin_mean = 0.0
             accum_scratch_gauss_loss = 0.0
             accum_scratch_gate = 0.0
             accum_scratch_decay = 0.0
@@ -1957,12 +2015,36 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     if scratch_gauss_terms
                     else supervised_loss.new_zeros(())
                 )
-                loss = supervised_loss + float(args.scratch_gauss_weight) * scratch_gauss_loss
+                if float(args.exact_margin_weight) > 0 and global_step >= int(args.exact_margin_start_step):
+                    exact_margin_loss, exact_margin_diag = exact_margin_loss_from_logits(
+                        loop_logits[-1],
+                        labels,
+                        clue_mask,
+                        tau=args.exact_margin_tau,
+                        target=args.exact_margin_target,
+                    )
+                else:
+                    exact_margin_loss = supervised_loss.new_zeros(())
+                    exact_margin_diag = {
+                        "exact_margin_loss": exact_margin_loss.detach(),
+                        "exact_margin_softmin": exact_margin_loss.detach(),
+                        "exact_margin_hardmin": exact_margin_loss.detach(),
+                        "exact_margin_mean": exact_margin_loss.detach(),
+                    }
+                loss = (
+                    supervised_loss
+                    + float(args.scratch_gauss_weight) * scratch_gauss_loss
+                    + float(args.exact_margin_weight) * exact_margin_loss
+                )
                 (loss / float(accum_count)).backward()
                 accum_ce_loss += float(ce_loss.detach().cpu())
                 accum_total_loss += float(loss.detach().cpu())
                 accum_loop1_loss += float(loop_losses[0].detach().cpu())
                 accum_loop_last_loss += float(loop_losses[-1].detach().cpu())
+                accum_exact_margin_loss += float(exact_margin_diag["exact_margin_loss"].cpu())
+                accum_exact_margin_softmin += float(exact_margin_diag["exact_margin_softmin"].cpu())
+                accum_exact_margin_hardmin += float(exact_margin_diag["exact_margin_hardmin"].cpu())
+                accum_exact_margin_mean += float(exact_margin_diag["exact_margin_mean"].cpu())
                 accum_scratch_gauss_loss += float(scratch_gauss_loss.detach().cpu())
                 if _fs_trace:
                     trace_last = _fs_trace[-1]
@@ -1997,6 +2079,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_loop1_loss = accum_loop1_loss / float(accum_count)
             last_loop_last_loss = accum_loop_last_loss / float(accum_count)
             last_loop_weights = [float(x) for x in loop_weights.detach().cpu().tolist()]
+            last_exact_margin_loss = accum_exact_margin_loss / float(accum_count)
+            last_exact_margin_softmin = accum_exact_margin_softmin / float(accum_count)
+            last_exact_margin_hardmin = accum_exact_margin_hardmin / float(accum_count)
+            last_exact_margin_mean = accum_exact_margin_mean / float(accum_count)
             last_scratch_gauss_loss = accum_scratch_gauss_loss / float(accum_count)
             last_scratch_gate = accum_scratch_gate / float(accum_count)
             last_scratch_decay = accum_scratch_decay / float(accum_count)
@@ -2011,6 +2097,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
                     f"step={global_step:04d} ce={last_ce_loss:.4f} total={last_total_loss:.4f} "
                     f"loop1={last_loop1_loss:.4f} loop_last={last_loop_last_loss:.4f} "
+                    f"exact_margin={last_exact_margin_loss:.4f} "
+                    f"softmin={last_exact_margin_softmin:.3f} "
                     f"upd_l={last_loop_update_gate_l:.3f} upd_h={last_loop_update_gate_h:.3f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
@@ -2028,6 +2116,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "total_loss": last_total_loss,
                         "loop1_loss": last_loop1_loss,
                         "loop_last_loss": last_loop_last_loss,
+                        "exact_margin_loss": last_exact_margin_loss,
+                        "exact_margin_softmin": last_exact_margin_softmin,
+                        "exact_margin_hardmin": last_exact_margin_hardmin,
+                        "exact_margin_mean": last_exact_margin_mean,
                         "scratch_gauss_loss": last_scratch_gauss_loss,
                         "scratch_gate": last_scratch_gate,
                         "scratch_decay": last_scratch_decay,
@@ -2085,6 +2177,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "loop1_loss": last_loop1_loss,
                             "loop_last_loss": last_loop_last_loss,
                             "loop_weights": last_loop_weights,
+                            "exact_margin_loss": last_exact_margin_loss,
+                            "exact_margin_softmin": last_exact_margin_softmin,
+                            "exact_margin_hardmin": last_exact_margin_hardmin,
+                            "exact_margin_mean": last_exact_margin_mean,
                             "scratch_gauss_loss": last_scratch_gauss_loss,
                             "scratch_gate": last_scratch_gate,
                             "scratch_decay": last_scratch_decay,
@@ -2125,6 +2221,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "loop1_loss": last_loop1_loss,
                         "loop_last_loss": last_loop_last_loss,
                         "loop_weights": last_loop_weights,
+                        "exact_margin_loss": last_exact_margin_loss,
+                        "exact_margin_softmin": last_exact_margin_softmin,
+                        "exact_margin_hardmin": last_exact_margin_hardmin,
+                        "exact_margin_mean": last_exact_margin_mean,
                         "scratch_gauss_loss": last_scratch_gauss_loss,
                         "scratch_gate": last_scratch_gate,
                         "scratch_decay": last_scratch_decay,
@@ -2132,6 +2232,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "scratch_residual": last_scratch_residual,
                         "scratch_proj_var": last_scratch_proj_var,
                         "scratch_proj_rank": last_scratch_proj_rank,
+                        "loop_update_gate_l": last_loop_update_gate_l,
+                        "loop_update_gate_h": last_loop_update_gate_h,
                     },
                     reason="periodic",
                 )
@@ -2150,6 +2252,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "loop_loss_power": args.loop_loss_power,
         "loop_loss_min_weight": args.loop_loss_min_weight,
         "loop_loss_weights": last_loop_weights,
+        "exact_margin_weight": args.exact_margin_weight,
+        "exact_margin_tau": args.exact_margin_tau,
+        "exact_margin_target": args.exact_margin_target,
+        "exact_margin_start_step": args.exact_margin_start_step,
+        "exact_margin_loss": last_exact_margin_loss,
+        "exact_margin_softmin": last_exact_margin_softmin,
+        "exact_margin_hardmin": last_exact_margin_hardmin,
+        "exact_margin_mean": last_exact_margin_mean,
         "noise_mode": "feature_diff",
         "scratch_mode": args.scratch_mode,
         "scratch_scale": args.scratch_scale,
@@ -3072,6 +3182,8 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             f"scratch={train.get('scratch_mode', 'none')}, "
             f"scratch_delta={train.get('scratch_delta', 0.0):.3f}, "
             f"scratch_gauss={train.get('scratch_gauss_loss', 0.0):.4f}, "
+            f"exact_margin={train.get('exact_margin_loss', 0.0):.4f}, "
+            f"exact_softmin={train.get('exact_margin_softmin', 0.0):.3f}, "
             f"loop1_loss={train.get('train_loop1_loss', 0.0):.4f}, "
             f"loop_last_loss={train.get('train_loop_last_loss', 0.0):.4f}, "
             f"sec={train.get('train_sec', 0.0):.1f}"
@@ -3175,6 +3287,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--scratch_gauss_weight requires --scratch_mode gated")
     if args.scratch_gauss_weight > 0 and args.scratch_gauss_projections == 0:
         raise ValueError("--scratch_gauss_weight requires positive --scratch_gauss_projections")
+    if args.exact_margin_weight < 0:
+        raise ValueError("--exact_margin_weight must be non-negative")
+    if args.exact_margin_tau <= 0:
+        raise ValueError("--exact_margin_tau must be positive")
+    if args.exact_margin_start_step < 0:
+        raise ValueError("--exact_margin_start_step must be non-negative")
     if args.forward_dtype not in {"float32", "bfloat16"}:
         raise ValueError("--forward_dtype must be 'float32' or 'bfloat16'")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
@@ -3349,6 +3467,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "loop_loss_start": args.loop_loss_start,
         "loop_loss_power": args.loop_loss_power,
         "loop_loss_min_weight": args.loop_loss_min_weight,
+        "exact_margin_weight": args.exact_margin_weight,
+        "exact_margin_tau": args.exact_margin_tau,
+        "exact_margin_target": args.exact_margin_target,
+        "exact_margin_start_step": args.exact_margin_start_step,
         "noise_mode": "feature_diff",
         "feature_buffer_size": args.feature_buffer_size,
         "future_seed_scale": args.future_seed_scale,
@@ -3515,6 +3637,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--scratch_gauss_projections", type=int, default=0)
     p.add_argument("--scratch_gate_bias", type=float, default=-2.0)
     p.add_argument("--scratch_decay_bias", type=float, default=2.0)
+    p.add_argument("--exact_margin_weight", type=float, default=0.0)
+    p.add_argument("--exact_margin_tau", type=float, default=0.5)
+    p.add_argument("--exact_margin_target", type=float, default=0.0)
+    p.add_argument("--exact_margin_start_step", type=int, default=0)
     p.add_argument("--activation_checkpoint", action="store_true")
     p.add_argument("--resume_train_checkpoint", default="")
     p.add_argument("--train_checkpoint_dir", default="")

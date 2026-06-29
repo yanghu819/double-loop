@@ -2856,7 +2856,7 @@ def case_cell_diagnostic(
     return row
 
 
-def write_case_bank_index(path: Path, *, holes: int, selected: Dict[str, List[Dict[str, Any]]], summary: Dict[str, Any]) -> None:
+def write_case_bank_index(path: Path, *, label: str, selected: Dict[str, List[Dict[str, Any]]], summary: Dict[str, Any]) -> None:
     cards = []
     for kind, cases in selected.items():
         rows = []
@@ -2888,7 +2888,7 @@ def write_case_bank_index(path: Path, *, holes: int, selected: Dict[str, List[Di
 <html>
 <head>
 <meta charset="utf-8">
-<title>{N}x{N} h{holes} case bank</title>
+<title>{N}x{N} {html.escape(label)} case bank</title>
 <style>
 body {{ margin: 24px; background: #f6f8fa; color: #24292f; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }}
 h1 {{ margin: 0 0 8px; font-size: 26px; letter-spacing: 0; }}
@@ -2905,7 +2905,7 @@ a {{ color: #1f6feb; }}
 </style>
 </head>
 <body>
-<h1>{N}x{N} h{holes} FutureSeed loop case bank</h1>
+<h1>{N}x{N} {html.escape(label)} FutureSeed loop case bank</h1>
 <p>Eval sample: <code>{summary['eval_n']}</code>. Final loop exact: <code>{summary['final_exact']:.4f}</code>. Final loop blank accuracy: <code>{summary['final_blank_acc']:.4f}</code>. This artifact is diagnostic only; it does not change training.</p>
 <div class="grid">{''.join(cards)}</div>
 </body>
@@ -2920,21 +2920,30 @@ def export_case_bank(
     out_dir: Path,
     *,
     holes_values: List[int],
+    official_eval: Optional[OfficialSudokuDataset],
     eval_n: int,
     cases_per_kind: int,
     loop_values: List[int],
     seed: int,
     forward_dtype: str,
 ) -> Dict[str, Any]:
-    if cases_per_kind <= 0 or not holes_values:
+    if cases_per_kind <= 0:
+        return {}
+    if official_eval is None and not holes_values:
         return {}
     bank_root = out_dir / "case_bank"
     bank_root.mkdir(parents=True, exist_ok=True)
     device = next(model.parameters()).device
     feature_buffer = getattr(model, "feature_noise_buffer", None)
     artifacts: Dict[str, Any] = {"case_bank_root": str(bank_root.resolve()), "holes": {}}
-    for holes in holes_values:
-        batch = make_batch(eval_n, holes, holes, "random", random.Random(seed + 91000 + holes * 97), device=device)
+    groups: List[Tuple[int, str, Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]] = []
+    if official_eval is not None:
+        groups.append((0, "official", official_eval.fixed_batch(eval_n, seed + 91000, device=device)))
+    else:
+        for holes in holes_values:
+            batch = make_batch(eval_n, holes, holes, "random", random.Random(seed + 91000 + holes * 97), device=device)
+            groups.append((holes, f"h{holes}", batch))
+    for holes, group_label, batch in groups:
         inputs, labels, clue_mask = batch
         max_loop = max(loop_values)
         with forward_autocast(forward_dtype, device):
@@ -2954,7 +2963,7 @@ def export_case_bank(
             top2 = probs.topk(k=2, dim=-1).values
             margins.append((top2[..., 0] - top2[..., 1]).detach().cpu())
 
-        holes_dir = bank_root / f"h{holes}"
+        holes_dir = bank_root / group_label
         holes_dir.mkdir(parents=True, exist_ok=True)
         clue_cpu = clue_mask.detach().cpu()
         labels_cpu = labels.detach().cpu()
@@ -3013,8 +3022,10 @@ def export_case_bank(
             final_wrong = loops[final_key]["wrong_count"]
             final_blank_acc = loops[final_key]["blank_acc"]
             final_conflicts = loops[final_key]["conflict_unit_count"]
+            blank_count = len(blank_indices)
             case = {
-                "holes": holes,
+                "holes": blank_count,
+                "group": group_label,
                 "batch_index": idx,
                 "loops": loops,
                 "_puzzle": puzzle,
@@ -3042,9 +3053,9 @@ def export_case_bank(
                 if case["batch_index"] in used:
                     continue
                 used.add(case["batch_index"])
-                stem = f"h{holes}_{kind}_{len(selected[kind]) + 1:02d}_b{case['batch_index']:04d}"
+                stem = f"{group_label}_{kind}_{len(selected[kind]) + 1:02d}_b{case['batch_index']:04d}"
                 case["stem"] = stem
-                case["title"] = f"{N}x{N} h{holes} {kind} #{len(selected[kind]) + 1}"
+                case["title"] = f"{N}x{N} {group_label} {kind} #{len(selected[kind]) + 1}"
                 html_path = holes_dir / f"{stem}.html"
                 write_case_bank_case_html(html_path, case, loop_values)
                 case["html_path"] = str(html_path.resolve())
@@ -3054,9 +3065,14 @@ def export_case_bank(
 
         final_logits = loop_logits[loop_values[-1] - 1]
         final_metrics, _final_preds = metrics_from_logits(final_logits, labels, clue_mask)
+        blank_counts = (~clue_mask).sum(dim=-1).detach().cpu().float()
         holes_summary = {
             "holes": holes,
+            "group": group_label,
             "eval_n": eval_n,
+            "blank_count_min": int(blank_counts.min().item()) if blank_counts.numel() else 0,
+            "blank_count_max": int(blank_counts.max().item()) if blank_counts.numel() else 0,
+            "blank_count_mean": float(blank_counts.mean().item()) if blank_counts.numel() else 0.0,
             "loop_values": loop_values,
             "final_loop": loop_values[-1],
             "final_exact": final_metrics.label_exact,
@@ -3074,10 +3090,10 @@ def export_case_bank(
                 indent=2,
             )
             + "\n",
-            encoding="utf-8",
+                encoding="utf-8",
         )
-        write_case_bank_index(index_path, holes=holes, selected=selected, summary=holes_summary)
-        artifacts["holes"][f"h{holes}"] = {
+        write_case_bank_index(index_path, label=group_label, selected=selected, summary=holes_summary)
+        artifacts["holes"][group_label] = {
             "index_html": str(index_path.resolve()),
             "cases_json": str(json_path.resolve()),
             "summary": holes_summary,
@@ -3529,11 +3545,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         case_bank_loop_values = sorted({1, min(2, args.max_loops), min(3, args.max_loops), args.max_loops})
     elif args.max_loops not in case_bank_loop_values:
         case_bank_loop_values = sorted(set(case_bank_loop_values + [args.max_loops]))
-    if args.case_bank_n > 0 and case_bank_holes:
+    if args.case_bank_n > 0 and (case_bank_holes or official_eval is not None):
         case_bank = export_case_bank(
             model,
             out_dir,
             holes_values=case_bank_holes,
+            official_eval=official_eval,
             eval_n=args.case_bank_eval_n,
             cases_per_kind=args.case_bank_n,
             loop_values=case_bank_loop_values,

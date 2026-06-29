@@ -6,9 +6,10 @@
 - plan ID: `P-GDN-014`
 - machine: AIStation GPU1 only
 - remote root: `/huyang2/double-loop`
-- source commit: pending launch SHA
+- source commit: `e2375df572c59dc68b924e996e668946c7b88eb5`
 - local branch: `codex/gpu1-experiment-tracking`
-- planned launch time: 2026-06-29 UTC
+- launched: 2026-06-29 04:55 UTC
+- recorded: 2026-06-29 05:24 UTC
 
 ## 2. Hypothesis
 
@@ -53,8 +54,8 @@ Forbidden mechanisms: no CPU smoke, no GPU2, no selector, no repair, no Sudoku r
 Launch from GitHub-truth SHA:
 
 ```bash
-SOURCE_SHA=<launch-sha> \
-RUN_STAMP=<utc-stamp> \
+SOURCE_SHA=e2375df572c59dc68b924e996e668946c7b88eb5 \
+RUN_STAMP=20260629T0455Z \
 bash /huyang2/double-loop/artifacts/launch/start_gdn_d192_fs_expandv2_s1500_20260629.sh
 ```
 
@@ -73,15 +74,95 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending launch.
+- run root: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df`
+- config: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/config.json`
+- score: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/score.json`
+- log: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/logs/run.log`
+- result JSON/MD/HTML: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/output/futureseed_loop_seed52.{json,md,html}`
+- checkpoint evals: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/output/checkpoint_eval_step000800.json`, `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/output/checkpoint_eval_step001200.json`
+- official case-bank visualization: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/output/case_bank/official/index.html`
+- visualization hub: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/visualizations/index.html`
+- source snapshot: `runs/gdn-d192-official-sudoku-fs-expandv2-s1500-20260629T0455Z-e2375df/source_snapshot.tar.gz`
+
+Preflight note: two initial launches exited before GPU training. The first missed `HOLES_MIN=45 HOLES_MAX=64`; the second used an invalid full SHA. The committed launch fix is `e2375df`, and the recorded run above is the only GPU-consuming run.
 
 ## 7. Results
 
-Pending.
+Run completed without abort on GPU1.
+
+Training and runtime:
+
+- final train CE: `0.98117`
+- loop1 train loss: `1.16870`
+- loop5 train loss: `0.98117`
+- train time: `1722.4s`
+- max CUDA allocated: `37131 MB`
+- max CUDA reserved: `39814 MB`
+- final FutureSeed state norm: `10.895`
+- final FutureSeed gate mean: `0.481`
+
+Checkpoint slope:
+
+| step | CE | loop5 exact | loop5 blank acc |
+|---:|---:|---:|---:|
+| 800 | `0.99455` | `0.01758` | `0.51404` |
+| 1200 | `0.93593` | `0.01758` | `0.52879` |
+| 1500 | `0.98117` | `0.02930` | `0.53637` |
+
+Final loop dynamics on official eval, `eval_n=2048`:
+
+| loop | exact | blank acc |
+|---:|---:|---:|
+| 1 | `0.00098` | `0.45604` |
+| 2 | `0.02539` | `0.51097` |
+| 3 | `0.02930` | `0.53122` |
+| 4 | `0.02930` | `0.53565` |
+| 5 | `0.02930` | `0.53637` |
+
+Compared with the clean D192/L10 GDN+FutureSeed 1500-step baseline, this is not an exact-score win: loop5 exact ties `0.02930`. It does improve soft metrics slightly: blank accuracy is higher than the earlier D192/L10 1500 baseline (`0.5364` vs `0.5337`) and train CE is slightly lower (`0.9812` vs `0.9875`). Compared with P-GDN-013, it also shows better blank accuracy and a lower CE, but the same exact plateau.
+
+Official case-bank, `eval_n=256`, blank counts `46-64`, mean `55.74`:
+
+- final loop5 exact: `0.03516`
+- final loop5 blank acc: `0.54103`
+- selected visual cases: `3` solved-by-loop and `3` hard failures.
+
+Case trajectories, loops `[1,2,3,5]`:
+
+| case | holes | wrong cells | changed cells | conflict units |
+|---|---:|---|---|---|
+| `official_solved_by_loop_01_b0089` | 47 | `9,2,0,0` | `0,7,2,0` | `12,4,0,0` |
+| `official_solved_by_loop_02_b0131` | 49 | `6,1,0,0` | `0,7,1,0` | `14,3,0,0` |
+| `official_solved_by_loop_03_b0095` | 47 | `4,0,0,0` | `0,4,0,0` | `8,0,0,0` |
+| `official_hard_failure_01_b0083` | 56 | `23,15,9,5` | `0,24,11,6` | `25,17,15,4` |
+| `official_hard_failure_02_b0229` | 55 | `24,17,9,6` | `0,23,11,4` | `27,20,14,11` |
+| `official_hard_failure_03_b0178` | 55 | `21,11,10,6` | `0,20,13,4` | `23,19,18,13` |
 
 ## 8. Conclusions
 
-Pending.
+This is a weak partial positive for recurrent state capacity, but a negative decision for continuing simple `GDN_EXPAND_V` sweeps.
+
+What worked:
+
+- ExpandV2 makes optimization easier. CE is lower throughout the run, and blank accuracy improves over the fixed-value D192/L10 baseline.
+- The hard-case visualizations are slightly more alive than P-GDN-013. Hard failures keep changing through loop5, and final wrong counts such as `5/6/6` are mildly better than the frozen loop8 failures from P-GDN-013.
+- This supports the idea that recurrent state capacity is a real axis, not a fake knob.
+
+What failed:
+
+- Full-board exact did not open. Final loop5 exact is exactly `0.029296875`, tying the existing D192/L10 plateau.
+- Checkpoint1200 already showed the core mismatch: CE and blank acc improved, while exact stayed flat at `0.01758`.
+- More value state alone does not solve the global consistency bottleneck.
+
+Decision:
+
+- Do not run an `expand_v` table (`1.5/2/3`) as the next step.
+- Do not claim state capacity alone solves the plateau.
+- The next useful experiment should change how loop state is updated or trained, while staying generic: the model needs a mechanism that turns improved per-cell confidence into full-board consistency, not just more room in the state tensor.
+
+Paper implication:
+
+FutureSeed+GDN now has a clean story: FutureSeed opens the model; bigger recurrent state improves soft solving; but exact Sudoku exposes the missing piece. The remaining bottleneck is not obvious compute starvation, it is the state/update rule that should convert local improvements into globally consistent boards.
 
 ## 9. Submission Record
 

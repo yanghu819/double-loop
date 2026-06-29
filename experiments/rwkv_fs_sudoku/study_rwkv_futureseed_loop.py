@@ -1287,6 +1287,10 @@ class FutureSeedLoopSudoku(nn.Module):
         future_seed_decay: float,
         future_seed_update: str,
         loop_feedback_scale: float,
+        loop_feedback_detach: bool,
+        loop_feedback_corrupt_prob: float,
+        loop_feedback_corrupt_mix: float,
+        loop_feedback_corrupt_mode: str,
         loop_time_scale: float,
         scratch_mode: str,
         scratch_scale: float,
@@ -1311,6 +1315,12 @@ class FutureSeedLoopSudoku(nn.Module):
             raise ValueError("loop_update_mode must be 'fixed' or 'learned_gate'.")
         self.loop_update_mode = loop_update_mode
         self.loop_feedback_scale = float(loop_feedback_scale)
+        self.loop_feedback_detach = bool(loop_feedback_detach)
+        self.loop_feedback_corrupt_prob = float(loop_feedback_corrupt_prob)
+        self.loop_feedback_corrupt_mix = float(loop_feedback_corrupt_mix)
+        if loop_feedback_corrupt_mode not in {"random_token", "uniform"}:
+            raise ValueError("loop_feedback_corrupt_mode must be 'random_token' or 'uniform'.")
+        self.loop_feedback_corrupt_mode = loop_feedback_corrupt_mode
         self.loop_time_scale = float(loop_time_scale)
         if scratch_mode not in {"none", "gated"}:
             raise ValueError("scratch_mode must be 'none' or 'gated'.")
@@ -1462,6 +1472,37 @@ class FutureSeedLoopSudoku(nn.Module):
         }
         return updated, diag
 
+    def feedback_probs_from_logits(self, logits: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        probs = logits.float().softmax(dim=-1)
+        if self.loop_feedback_detach:
+            probs = probs.detach()
+        zero = probs.new_zeros(())
+        diag: Dict[str, torch.Tensor] = {
+            "loop_feedback_clean_confidence": probs.max(dim=-1).values.mean().detach(),
+            "loop_feedback_entropy": (-(probs.clamp_min(1e-8).log() * probs).sum(dim=-1).mean()).detach(),
+            "loop_feedback_corrupt_frac": zero,
+            "loop_feedback_corrupt_mix": probs.new_tensor(float(self.loop_feedback_corrupt_mix)),
+        }
+        if self.training and self.loop_feedback_corrupt_prob > 0 and self.loop_feedback_corrupt_mix > 0:
+            mask = torch.rand((*probs.shape[:-1], 1), device=probs.device) < float(self.loop_feedback_corrupt_prob)
+            if self.loop_feedback_corrupt_mode == "uniform":
+                corrupt_target = torch.full_like(probs, 1.0 / float(probs.shape[-1]))
+            else:
+                random_ids = torch.randint(0, probs.shape[-1], probs.shape[:-1], device=probs.device)
+                corrupt_target = F.one_hot(random_ids, num_classes=probs.shape[-1]).to(dtype=probs.dtype)
+            mix = min(max(float(self.loop_feedback_corrupt_mix), 0.0), 1.0)
+            corrupted = probs * (1.0 - mix) + corrupt_target * mix
+            probs = torch.where(mask, corrupted, probs)
+            diag["loop_feedback_corrupt_frac"] = mask.float().mean().detach()
+            diag["loop_feedback_corrupt_confidence"] = probs.max(dim=-1).values.mean().detach()
+            diag["loop_feedback_corrupt_entropy"] = (
+                -(probs.clamp_min(1e-8).log() * probs).sum(dim=-1).mean()
+            ).detach()
+        else:
+            diag["loop_feedback_corrupt_confidence"] = diag["loop_feedback_clean_confidence"]
+            diag["loop_feedback_corrupt_entropy"] = diag["loop_feedback_entropy"]
+        return probs.to(dtype=logits.dtype), diag
+
     def depth_update(
         self,
         hidden: torch.Tensor,
@@ -1579,11 +1620,19 @@ class FutureSeedLoopSudoku(nn.Module):
             scratch, scratch_diag = self.update_scratch(scratch, z_h)
             fs_diag.update(scratch_diag)
             if self.loop_feedback is not None and self.loop_feedback_scale > 0:
-                feedback = self.loop_feedback(logits.softmax(dim=-1)) * self.loop_feedback_scale
+                feedback_probs, feedback_diag = self.feedback_probs_from_logits(logits)
+                feedback = self.loop_feedback(feedback_probs) * self.loop_feedback_scale
+                fs_diag.update(feedback_diag)
                 fs_diag["loop_feedback_next_norm"] = feedback.norm(dim=-1).mean()
             else:
                 feedback = None
                 fs_diag["loop_feedback_next_norm"] = zero
+                fs_diag["loop_feedback_clean_confidence"] = zero
+                fs_diag["loop_feedback_entropy"] = zero
+                fs_diag["loop_feedback_corrupt_frac"] = zero
+                fs_diag["loop_feedback_corrupt_mix"] = zero
+                fs_diag["loop_feedback_corrupt_confidence"] = zero
+                fs_diag["loop_feedback_corrupt_entropy"] = zero
             fs_trace.append(fs_diag)
         return loop_logits, fs_trace
 
@@ -1783,6 +1832,9 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
         parts.append(f"fb_next={m['loop_feedback_next_norm']:.3f}")
+    if m.get("loop_feedback_corrupt_mix", 0.0) > 0:
+        parts.append(f"fb_corrupt={m.get('loop_feedback_corrupt_frac', 0.0):.3f}")
+        parts.append(f"fb_conf={m.get('loop_feedback_corrupt_confidence', 0.0):.3f}")
     if "loop_time_norm" in m:
         parts.append(f"loop_time={m['loop_time_norm']:.3f}")
     if "loop_update_gate_l" in m:
@@ -1832,6 +1884,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_decay=args.future_seed_decay,
         future_seed_update=args.future_seed_update,
         loop_feedback_scale=args.loop_feedback_scale,
+        loop_feedback_detach=bool(args.loop_feedback_detach),
+        loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
+        loop_feedback_corrupt_mix=args.loop_feedback_corrupt_mix,
+        loop_feedback_corrupt_mode=args.loop_feedback_corrupt_mode,
         loop_time_scale=args.loop_time_scale,
         scratch_mode=args.scratch_mode,
         scratch_scale=args.scratch_scale,
@@ -1877,6 +1933,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_scratch_proj_rank = 0.0
     last_loop_update_gate_l = 0.0
     last_loop_update_gate_h = 0.0
+    last_loop_feedback_next_norm = 0.0
+    last_loop_feedback_corrupt_frac = 0.0
+    last_loop_feedback_corrupt_confidence = 0.0
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -1935,6 +1994,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_scratch_proj_rank = float(last_metrics.get("scratch_proj_rank", 0.0))
         last_loop_update_gate_l = float(last_metrics.get("loop_update_gate_l", 0.0))
         last_loop_update_gate_h = float(last_metrics.get("loop_update_gate_h", 0.0))
+        last_loop_feedback_next_norm = float(last_metrics.get("loop_feedback_next_norm", 0.0))
+        last_loop_feedback_corrupt_frac = float(last_metrics.get("loop_feedback_corrupt_frac", 0.0))
+        last_loop_feedback_corrupt_confidence = float(last_metrics.get("loop_feedback_corrupt_confidence", 0.0))
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -1980,6 +2042,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_scratch_proj_rank = 0.0
             accum_loop_update_gate_l = 0.0
             accum_loop_update_gate_h = 0.0
+            accum_loop_feedback_next_norm = 0.0
+            accum_loop_feedback_corrupt_frac = 0.0
+            accum_loop_feedback_corrupt_confidence = 0.0
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
                     args,
@@ -2072,6 +2137,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     accum_loop_update_gate_h += float(
                         trace_last.get("loop_update_gate_h", ce_loss.new_zeros(())).detach().cpu()
                     )
+                    accum_loop_feedback_next_norm += float(
+                        trace_last.get("loop_feedback_next_norm", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_loop_feedback_corrupt_frac += float(
+                        trace_last.get("loop_feedback_corrupt_frac", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_loop_feedback_corrupt_confidence += float(
+                        trace_last.get("loop_feedback_corrupt_confidence", ce_loss.new_zeros(())).detach().cpu()
+                    )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
@@ -2092,6 +2166,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_scratch_proj_rank = accum_scratch_proj_rank / float(accum_count)
             last_loop_update_gate_l = accum_loop_update_gate_l / float(accum_count)
             last_loop_update_gate_h = accum_loop_update_gate_h / float(accum_count)
+            last_loop_feedback_next_norm = accum_loop_feedback_next_norm / float(accum_count)
+            last_loop_feedback_corrupt_frac = accum_loop_feedback_corrupt_frac / float(accum_count)
+            last_loop_feedback_corrupt_confidence = accum_loop_feedback_corrupt_confidence / float(accum_count)
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -2100,6 +2177,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"exact_margin={last_exact_margin_loss:.4f} "
                     f"softmin={last_exact_margin_softmin:.3f} "
                     f"upd_l={last_loop_update_gate_l:.3f} upd_h={last_loop_update_gate_h:.3f} "
+                    f"fb_next={last_loop_feedback_next_norm:.3f} "
+                    f"fb_corrupt={last_loop_feedback_corrupt_frac:.3f} "
+                    f"fb_conf={last_loop_feedback_corrupt_confidence:.3f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -2129,6 +2209,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "scratch_proj_rank": last_scratch_proj_rank,
                         "loop_update_gate_l": last_loop_update_gate_l,
                         "loop_update_gate_h": last_loop_update_gate_h,
+                        "loop_feedback_next_norm": last_loop_feedback_next_norm,
+                        "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
+                        "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
                     },
                     "eval_by_holes": {},
                 }
@@ -2190,6 +2273,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "scratch_proj_rank": last_scratch_proj_rank,
                             "loop_update_gate_l": last_loop_update_gate_l,
                             "loop_update_gate_h": last_loop_update_gate_h,
+                            "loop_feedback_next_norm": last_loop_feedback_next_norm,
+                            "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
+                            "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
                         },
                         reason="eval_checkpoint",
                     )
@@ -2234,6 +2320,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "scratch_proj_rank": last_scratch_proj_rank,
                         "loop_update_gate_l": last_loop_update_gate_l,
                         "loop_update_gate_h": last_loop_update_gate_h,
+                        "loop_feedback_next_norm": last_loop_feedback_next_norm,
+                        "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
+                        "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
                     },
                     reason="periodic",
                 )
@@ -2279,6 +2368,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_update_gate_l": last_loop_update_gate_l,
         "loop_update_gate_h": last_loop_update_gate_h,
+        "loop_feedback_next_norm": last_loop_feedback_next_norm,
+        "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
+        "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "microbatch": args.batch,
@@ -2304,6 +2396,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         "future_seed_update": args.future_seed_update,
         "loop_feedback_scale": args.loop_feedback_scale,
+        "loop_feedback_detach": bool(args.loop_feedback_detach),
+        "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
+        "loop_feedback_corrupt_mix": args.loop_feedback_corrupt_mix,
+        "loop_feedback_corrupt_mode": args.loop_feedback_corrupt_mode,
         "loop_time_scale": args.loop_time_scale,
         "data_source": "official_sudoku" if official_train is not None else "generated_random_holes",
         "official_sudoku_data_dir": str(args.official_sudoku_data_dir) if official_train is not None else "",
@@ -3289,6 +3385,14 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--future_seed_decay must be in [0, 1)")
     if args.loop_feedback_scale < 0:
         raise ValueError("--loop_feedback_scale must be non-negative")
+    if args.loop_feedback_detach not in {0, 1}:
+        raise ValueError("--loop_feedback_detach must be 0 or 1")
+    if not (0.0 <= args.loop_feedback_corrupt_prob <= 1.0):
+        raise ValueError("--loop_feedback_corrupt_prob must be in [0, 1]")
+    if not (0.0 <= args.loop_feedback_corrupt_mix <= 1.0):
+        raise ValueError("--loop_feedback_corrupt_mix must be in [0, 1]")
+    if args.loop_feedback_corrupt_prob > 0 and args.loop_feedback_scale <= 0:
+        raise ValueError("--loop_feedback_corrupt_prob > 0 requires --loop_feedback_scale > 0")
     if args.loop_time_scale < 0:
         raise ValueError("--loop_time_scale must be non-negative")
     if args.scratch_scale < 0:
@@ -3495,6 +3599,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
+        "loop_feedback_detach": bool(args.loop_feedback_detach),
+        "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
+        "loop_feedback_corrupt_mix": args.loop_feedback_corrupt_mix,
+        "loop_feedback_corrupt_mode": args.loop_feedback_corrupt_mode,
         "loop_time_scale": args.loop_time_scale,
         "scratch_mode": args.scratch_mode,
         "scratch_scale": args.scratch_scale,
@@ -3646,6 +3754,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--future_seed_update", choices=("fixed", "learned", "loop_residual"), default="fixed")
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
+    p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
+    p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)
+    p.add_argument("--loop_feedback_corrupt_mix", type=float, default=0.0)
+    p.add_argument("--loop_feedback_corrupt_mode", choices=("random_token", "uniform"), default="random_token")
     p.add_argument("--loop_time_scale", type=float, default=0.0)
     p.add_argument("--scratch_mode", choices=("none", "gated"), default="none")
     p.add_argument("--scratch_scale", type=float, default=1.0)

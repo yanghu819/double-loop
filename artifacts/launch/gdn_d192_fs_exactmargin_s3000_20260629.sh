@@ -45,7 +45,7 @@ if [ -n "$FILTERED_STATUS" ]; then
   exit 2
 fi
 
-rm -f "$LOG" "$LOG.nohup" "$PID"
+rm -f "$LOG" "$LOG.nohup"
 cd "$WT"
 {
   echo "launch_sha=$(git rev-parse HEAD)"

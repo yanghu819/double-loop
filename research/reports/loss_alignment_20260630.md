@@ -1,0 +1,77 @@
+# EqR vs FutureSeed Loss Alignment Report
+
+- generated_at_utc: `2026-06-30T03:58:39+00:00`
+- source_sha: `6846154e23df4b227fa44b55a4d95eb6219dc3fd`
+- scope: existing artifacts only; no GPU training was launched for this report
+
+## Question
+
+We want to know whether the gap to EqR is a missing hand-crafted trick, a missing loss, or a more basic scale/state-dynamics issue. The report therefore aligns loss anatomy, training CE, loop-level behavior, noise robustness, and hard-case evidence.
+
+## Official EqR Facts
+
+- Official EqR released checkpoints were reproduced before this report: Sudoku quick gate top1 `0.9917`, top4 exact `0.9868`, majority exact `0.9873`.
+- Maze released checkpoint reproduction: D16/B1 exact `0.8270`, D64/B1 exact `0.8920`, D64/B128 convergence exact `0.9444`.
+- EqR loss is not a solver: the source path uses token loss plus a halting classifier. The relevant local audit points are `repos/eqr/models/losses/loss_heads.py:114` for LM loss, `:115` for halt BCE, and `:124` for `lm_loss + 0.5 * q_halt_loss`.
+- EqR's non-clean ingredient is latent recurrence noise: `repos/eqr/models/eqr.py:549-572` adds Gaussian or feature-diff noise inside recurrent state updates; default train config has `noise_scale: 0.01` in `repos/eqr/config/arch/eqr.yaml:27`.
+- Important eval detail: Sudoku released quick eval uses `noise_scale=0.5`; Maze released checkpoint needs `noise_scale=0.01`. The Maze report showed `0.5` gives misleading token accuracy but near-zero exact.
+
+## GDN/FutureSeed Run Alignment
+
+| run | group | steps | train CE | loop CE gain | loop1 exact | final exact | exact gain | loop1 blank | final blank | blank gain | sec |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| D128/L6 no-FS 600 | opening gate | 600 | 1.6355 | 0.0039 | 0.0000 | 0.0000 | 0.0000 | 0.2666 | 0.2686 | 0.0020 | 200.8 |
+| D128/L6 FS 600 | opening gate | 600 | 1.0667 | 0.1586 | 0.0010 | 0.0107 | 0.0098 | 0.4444 | 0.4925 | 0.0481 | 212.1 |
+| D192/L10 no-FS 600 | opening gate | 600 | 1.6369 | 0.0037 | 0.0000 | 0.0000 | 0.0000 | 0.2663 | 0.2674 | 0.0011 | 442.6 |
+| D192/L10 FS 600 | opening gate | 600 | 1.0479 | 0.1362 | 0.0034 | 0.0176 | 0.0142 | 0.4603 | 0.5021 | 0.0418 | 407.3 |
+| D192/L10 FS 1500 | clean scale | 1500 | 0.9875 | 0.2178 | 0.0054 | 0.0293 | 0.0239 | 0.4547 | 0.5337 | 0.0790 | 1003.1 |
+| D192/L10 FS 3000 | clean scale | 3000 | 0.9633 | 0.2339 | 0.0044 | 0.0298 | 0.0254 | 0.4644 | 0.5418 | 0.0775 | 1569.4 |
+| D256/L10 FS 1500 | capacity gate | 1500 | 0.9991 | 0.2573 | 0.0020 | 0.0288 | 0.0269 | 0.4481 | 0.5300 | 0.0819 | 2104.5 |
+| D192/L10 loop-resid 1500 | state tweak | 1500 | 0.9901 | 0.2293 | 0.0078 | 0.0293 | 0.0215 | 0.4520 | 0.5344 | 0.0824 | 917.8 |
+| D192/L10 hardcurr 4000 | data pressure | 4000 | 0.9903 | 0.2747 | 0.0029 | 0.0312 | 0.0283 | 0.4503 | 0.5462 | 0.0959 | 2703.2 |
+| D192/L10 exact-margin 3000 | loss pressure | 3000 | 0.9902 | 0.1781 | 0.0020 | 0.0293 | 0.0273 | 0.4436 | 0.5362 | 0.0927 | 1745.1 |
+| D192/L10 loop8 1500 | loop-depth diagnostic | 1500 | 1.0133 | 0.1214 | 0.0083 | 0.0293 | 0.0210 | 0.4651 | 0.5226 | 0.0575 | 1409.1 |
+| D192/L10 expand_v2 1500 | state capacity | 1500 | 0.9812 | 0.1875 | 0.0010 | 0.0293 | 0.0283 | 0.4560 | 0.5364 | 0.0803 | 1722.4 |
+| D192/L10 feedback-attractor 1500 | feedback objective | 1500 | 0.9868 | 0.1894 | 0.0063 | 0.0293 | 0.0229 | 0.4594 | 0.5308 | 0.0714 | 989.6 |
+| D192/L10 latent-noise0.01 1500 | EqR-style noise | 1500 | 0.9861 | 0.2330 | 0.0054 | 0.0293 | 0.0239 | 0.4475 | 0.5351 | 0.0877 | 1039.1 |
+
+## Direct Deltas
+
+- D192 no-FS -> FS at 600 steps: train CE delta `-0.5890`, exact delta `0.0176`, blank delta `0.2347`, time ratio `0.920`. This is the cleanest evidence that FutureSeed opens the GDN backbone.
+- D192 FS 1500 -> 3000: train CE delta `-0.0242`, exact delta `0.0005`, blank delta `0.0081`. Soft cell accuracy keeps improving, full-board exact barely moves.
+- Latent-noise0.01 vs clean 1500: final exact `0.0293` vs `0.0293`; final blank `0.5351` vs `0.5337`. It is healthy but not a plateau breaker.
+
+## Loop Behavior
+
+- D192/L10 FS 1500: exact/blank by loop = L1 0.0054/0.4547, L2 0.0293/0.5177, L3 0.0293/0.5323, L4 0.0293/0.5334, L5 0.0293/0.5337
+- D192/L10 FS 3000: exact/blank by loop = L1 0.0044/0.4644, L2 0.0283/0.5133, L3 0.0288/0.5385, L4 0.0293/0.5410, L5 0.0298/0.5418
+- D192/L10 loop8 1500: exact/blank by loop = L1 0.0083/0.4651, L2 0.0288/0.5048, L3 0.0293/0.5215, L4 0.0293/0.5223, L5 0.0293/0.5225, L6 0.0293/0.5226, L7 0.0293/0.5226, L8 0.0293/0.5226
+- D192/L10 latent-noise0.01 1500: exact/blank by loop = L1 0.0054/0.4475, L2 0.0288/0.5138, L3 0.0293/0.5342, L4 0.0293/0.5350, L5 0.0293/0.5351
+
+Checkpoint probes:
+- D192/L10 FS 3000 step1500: loop5 exact 0.0181, blank 0.5246
+- D192/L10 FS 3000 step2200: loop5 exact 0.0181, blank 0.5309
+- D192/L10 latent-noise0.01 1500 step800: loop5 exact 0.0225, blank 0.5246
+- D192/L10 latent-noise0.01 1500 step1200: loop5 exact 0.0215, blank 0.5284
+
+## EqR-Codebase Replacement Boundary
+
+- Official EqR mixer-replacement e1024 boundary: official mixer base reached acc `0.6644`, exact `0.0249`, LM loss `0.7664`; the archived scan/FutureSeed-mixer side branch reached acc `0.4231`, exact `0.0000`, LM loss `1.4029`. Lower residual there was a stable wrong attractor, not success.
+- Corrected native RWKV FutureSeed inside official EqR codebase at the tiny gate was essentially tied: no-FS acc `0.1652`, FS acc `0.1651`, FS-minus-noFS exact `0.0000`, FS eval time ratio `1.667`.
+
+## Diagnosis
+
+1. The missing piece is not an obvious EqR loss trick. EqR's core objective is still token CE plus halt BCE, with latent noise and a strong recurrent/noncausal architecture.
+2. FutureSeed is real as an opening mechanism. In matched GDN official Sudoku, no-FS stays near random-ish blank accuracy while FS sharply lowers CE and reaches nonzero exact.
+3. After opening, our failure is the exact-vs-blank conversion. CE and blank accuracy keep improving, but full-board exact stays around `0.03`; that means a few cells per board remain wrong and dominate exact.
+4. Loop currently front-loads the work. Loop1->2/3 gives most of the gain; later loops usually copy the same operating point. More loop count alone is low ROI until state dynamics changes.
+5. Noise is scale-sensitive but not the answer by itself. `0.03` was too strong; `0.01` trained normally and reproduced the same plateau.
+
+## Next Decision
+
+Do not run another noise table, margin-loss table, feedback table, or same-config long run. The highest-ROI next experiment is a clean bigger-state/backbone scaling run only if it changes state capacity, not just token width, plus diagnostic eval CE by loop. If that still leaves exact flat while CE/blank improve, the core FutureSeed formulation needs a simpler recurrent state update that keeps useful uncertainty across loops instead of freezing after loop3.
+
+## Generated Files
+
+- JSON: `research/reports/loss_alignment_20260630.json`
+- HTML: `research/reports/loss_alignment_20260630.html`

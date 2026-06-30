@@ -1,0 +1,77 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29
+git_sha=83ccd29bb7c51a01f88fbf75bc79cbecd1d7c14a
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=rwkv rwkv_kernel=statepassing gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=500,1000,1500,2000 holes=56
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:46-64] step=0100 ce=1.9225 total=1.9225 loop1=1.9235 loop_last=1.9225 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0200 ce=1.7104 total=1.7104 loop1=1.7161 loop_last=1.7104 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0300 ce=1.2305 total=1.2305 loop1=1.3375 loop_last=1.2305 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0400 ce=1.1467 total=1.1467 loop1=1.2941 loop_last=1.1467 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0500 ce=1.1107 total=1.1107 loop1=1.2153 loop_last=1.1107 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes56] loop8 exact=0.0039 blank=0.4758
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/train_state_step000500.pt
+[future_seed_loop stage=1:46-64] step=0600 ce=1.0533 total=1.0533 loop1=1.2062 loop_last=1.0533 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0700 ce=1.0719 total=1.0719 loop1=1.2654 loop_last=1.0719 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0800 ce=1.0459 total=1.0459 loop1=1.2271 loop_last=1.0459 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=0900 ce=1.0305 total=1.0305 loop1=1.2749 loop_last=1.0305 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1000 ce=1.0397 total=1.0397 loop1=1.2605 loop_last=1.0397 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=1000 holes56] loop8 exact=0.0156 blank=0.5020
+[train_checkpoint step=1000] path=/huyang2/double-loop/models/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/train_state_step001000.pt
+[future_seed_loop stage=1:46-64] step=1100 ce=1.0076 total=1.0076 loop1=1.3010 loop_last=1.0076 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1200 ce=1.0048 total=1.0048 loop1=1.2857 loop_last=1.0048 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1300 ce=0.9999 total=0.9999 loop1=1.2600 loop_last=0.9999 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1400 ce=0.9952 total=0.9952 loop1=1.2831 loop_last=0.9952 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1500 ce=1.0157 total=1.0157 loop1=1.2939 loop_last=1.0157 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=1500 holes56] loop8 exact=0.0156 blank=0.5089
+[train_checkpoint step=1500] path=/huyang2/double-loop/models/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/train_state_step001500.pt
+[future_seed_loop stage=1:46-64] step=1600 ce=0.9533 total=0.9533 loop1=1.3449 loop_last=0.9533 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1700 ce=1.0214 total=1.0214 loop1=1.3807 loop_last=1.0214 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1800 ce=1.0135 total=1.0135 loop1=1.3338 loop_last=1.0135 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=1900 ce=1.0037 total=1.0037 loop1=1.3114 loop_last=1.0037 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-64] step=2000 ce=0.9882 total=0.9882 loop1=1.3881 loop_last=0.9882 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=2000 holes56] loop8 exact=0.0156 blank=0.5190
+[train_checkpoint step=2000] path=/huyang2/double-loop/models/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/train_state_step002000.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4408, early=0.4228, late=0.4511, early_late_gap=-0.0282
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.4976, early=0.4873, late=0.5071, early_late_gap=-0.0197
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5285, early=0.5255, late=0.5332, early_late_gap=-0.0077
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5305, early=0.5278, late=0.5359, early_late_gap=-0.0081
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5306, early=0.5272, late=0.5353, early_late_gap=-0.0081
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=6 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5310, early=0.5280, late=0.5355, early_late_gap=-0.0075
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=7 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5310, early=0.5283, late=0.5353, early_late_gap=-0.0070
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=8 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5310, early=0.5286, late=0.5351, early_late_gap=-0.0065
+        fs_gate=0.537, fs_update=1.000, fs_state_norm=8.585, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.9883, valid=0.9883, solved=0.9883, blank_acc=0.9993, early=0.9993, late=0.9994, early_late_gap=-0.0001
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5432, early=0.5421, late=0.5416, early_late_gap=+0.0005
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4893, early=0.4888, late=0.4861, early_late_gap=+0.0027
+
+case-bank artifacts
+official_b46_50 exact=0.9922 blank_acc=0.9998 selected={'solved_by_loop': 2, 'almost_solved': 2, 'hard_failure': 0}
+  index=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5326 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4898 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/rwkv-maskcliff-83ccd29-20260630T1231Z/runs/rwkv-official-maskcliff-d256l12-s2000-20260630T1240Z-83ccd29/output/futureseed_loop_case_seed52.html

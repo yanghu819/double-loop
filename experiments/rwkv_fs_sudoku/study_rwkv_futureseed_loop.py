@@ -299,6 +299,22 @@ class OfficialSudokuDataset:
         indices = rng.sample(range(len(self)), batch_size)
         return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
 
+    def fixed_batch_by_blank_range(
+        self,
+        batch_size: int,
+        seed: int,
+        *,
+        holes_min: int,
+        holes_max: int,
+        device: torch.device,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        candidates = self._indices_for_blank_range(int(holes_min), int(holes_max))
+        rng = random.Random(seed)
+        count = min(int(batch_size), int(len(candidates)))
+        positions = rng.sample(range(len(candidates)), count)
+        indices = candidates[positions]
+        return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
+
 
 def official_sudoku_enabled(args: argparse.Namespace) -> bool:
     return bool(str(args.official_sudoku_data_dir).strip())
@@ -3017,6 +3033,7 @@ def export_case_bank(
     *,
     holes_values: List[int],
     official_eval: Optional[OfficialSudokuDataset],
+    official_blank_ranges: Optional[List[Tuple[str, int, int]]] = None,
     eval_n: int,
     cases_per_kind: int,
     loop_values: List[int],
@@ -3034,7 +3051,18 @@ def export_case_bank(
     artifacts: Dict[str, Any] = {"case_bank_root": str(bank_root.resolve()), "holes": {}}
     groups: List[Tuple[int, str, Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]] = []
     if official_eval is not None:
-        groups.append((0, "official", official_eval.fixed_batch(eval_n, seed + 91000, device=device)))
+        if official_blank_ranges:
+            for offset, (label, lo, hi) in enumerate(official_blank_ranges):
+                batch = official_eval.fixed_batch_by_blank_range(
+                    eval_n,
+                    seed + 91000 + offset * 997 + lo * 37 + hi,
+                    holes_min=lo,
+                    holes_max=hi,
+                    device=device,
+                )
+                groups.append((hi, f"official_{label}", batch))
+        else:
+            groups.append((0, "official", official_eval.fixed_batch(eval_n, seed + 91000, device=device)))
     else:
         for holes in holes_values:
             batch = make_batch(eval_n, holes, holes, "random", random.Random(seed + 91000 + holes * 97), device=device)
@@ -3213,6 +3241,26 @@ def parse_eval_holes(args: argparse.Namespace) -> List[int]:
     return deduped
 
 
+def parse_official_eval_blank_ranges(raw: str) -> List[Tuple[str, int, int]]:
+    ranges: List[Tuple[str, int, int]] = []
+    for item in str(raw).split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if "-" in item:
+            lo_raw, hi_raw = item.split("-", 1)
+            lo = int(lo_raw.strip())
+            hi = int(hi_raw.strip())
+        else:
+            lo = hi = int(item)
+        if lo < 0 or hi > CELLS or hi < lo:
+            raise ValueError(f"--official_eval_blank_ranges entries must be blank ranges within [0, {CELLS}], got {item!r}")
+        label = f"b{lo}" if lo == hi else f"b{lo}_{hi}"
+        if label not in {existing[0] for existing in ranges}:
+            ranges.append((label, lo, hi))
+    return ranges
+
+
 def parse_eval_checkpoint_holes(args: argparse.Namespace) -> List[int]:
     raw = str(args.eval_checkpoint_holes_list).strip()
     if not raw:
@@ -3368,6 +3416,15 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
             holes = int(hole_key.removeprefix("holes"))
             loop3 = hole_metrics["eval_clean"][f"loop{task.get('max_loops', 3)}"]
             lines.append(f"- {hole_key}: {metric_line(loop3)}; {coupling_line(loop3, holes)}")
+    if metrics.get("official_eval_by_blank_range"):
+        lines.extend(["", "## Official Blank-Range Eval", ""])
+        for range_key, row in metrics["official_eval_by_blank_range"].items():
+            loop_last = row["eval_clean"][f"loop{task.get('max_loops', 3)}"]
+            lo, hi = row.get("blank_range", [0, 0])
+            lines.append(
+                f"- {range_key} ({lo}-{hi}, n={row.get('eval_n', 0)}): "
+                f"{metric_line(loop_last)}"
+            )
     lines.extend(["", "## Decision", "", metrics["decision"], "", "## Artifacts", ""])
     for name, value in artifacts.items():
         lines.append(f"- {name}: {value}")
@@ -3530,6 +3587,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             )
 
     eval_holes_values = parse_eval_holes(args)
+    official_eval_blank_ranges = parse_official_eval_blank_ranges(args.official_eval_blank_ranges)
     if official_eval is None:
         for holes in eval_holes_values:
             if holes == args.eval_holes:
@@ -3558,6 +3616,30 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "eval_n": args.eval_n,
             "seed": args.seed + int(args.official_eval_seed_offset),
         }
+        if official_eval_blank_ranges:
+            metrics["official_eval_by_blank_range"] = {}
+            for offset, (label, lo, hi) in enumerate(official_eval_blank_ranges):
+                range_batch = official_eval.fixed_batch_by_blank_range(
+                    args.eval_n,
+                    args.seed + int(args.official_eval_seed_offset) + 17000 + offset * 997 + lo * 37 + hi,
+                    holes_min=lo,
+                    holes_max=hi,
+                    device=device,
+                )
+                range_clean, _range_preds = evaluate_model(
+                    model,
+                    range_batch,
+                    max_loops=args.max_loops,
+                    noise_scale=0.0,
+                    seed=args.seed + 9000 + offset,
+                    forward_dtype=args.forward_dtype,
+                )
+                actual_n = int(range_batch[0].shape[0])
+                metrics["official_eval_by_blank_range"][label] = {
+                    "blank_range": [lo, hi],
+                    "eval_n": actual_n,
+                    "eval_clean": range_clean,
+                }
 
     l1 = metrics["eval_clean"]["loop1"]["label_exact"]
     last_key = f"loop{args.max_loops}"
@@ -3581,6 +3663,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "official_sudoku_eval_split": str(args.official_sudoku_eval_split) if official_eval is not None else "",
         "official_train_blank_summary": train_stats.get("official_train_blank_summary", {}),
         "official_eval_blank_summary": train_stats.get("official_eval_blank_summary", {}),
+        "official_eval_blank_ranges": [
+            {"label": label, "min": lo, "max": hi} for label, lo, hi in official_eval_blank_ranges
+        ],
         "official_eval_seed_offset": int(args.official_eval_seed_offset),
         "max_loops": args.max_loops,
         "loop_loss": args.loop_loss,
@@ -3659,6 +3744,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             out_dir,
             holes_values=case_bank_holes,
             official_eval=official_eval,
+            official_blank_ranges=official_eval_blank_ranges,
             eval_n=args.case_bank_eval_n,
             cases_per_kind=args.case_bank_n,
             loop_values=case_bank_loop_values,
@@ -3715,6 +3801,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             f"\nofficial sudoku eval split={args.official_sudoku_eval_split} "
             f"eval_n={args.eval_n} seed={args.seed + int(args.official_eval_seed_offset)}"
         )
+        if metrics.get("official_eval_by_blank_range"):
+            print("\nofficial blank-range metrics")
+            for range_key, row in metrics["official_eval_by_blank_range"].items():
+                lo, hi = row["blank_range"]
+                loop_last = row["eval_clean"][last_key]
+                print(f"{range_key} blanks={lo}-{hi} n={row['eval_n']} {metric_line(loop_last)}")
     if metrics.get("case_bank"):
         print("\ncase-bank artifacts")
         for hole_key, row in metrics["case_bank"]["holes"].items():
@@ -3805,6 +3897,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--official_sudoku_train_split", default="train")
     p.add_argument("--official_sudoku_eval_split", default="test")
     p.add_argument("--official_eval_seed_offset", type=int, default=999)
+    p.add_argument("--official_eval_blank_ranges", default="")
     p.add_argument("--eval_checkpoint_steps", default="")
     p.add_argument("--eval_checkpoint_stage_offsets", default="")
     p.add_argument("--eval_checkpoint_holes_list", default="")

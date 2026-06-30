@@ -420,6 +420,9 @@ fi
 if [[ -n "${EVAL_HOLES_LIST:-}" ]]; then
   COMMON_ARGS+=(--eval_holes_list "$EVAL_HOLES_LIST")
 fi
+if [[ -n "${OFFICIAL_EVAL_BLANK_RANGES:-}" ]]; then
+  COMMON_ARGS+=(--official_eval_blank_ranges "$OFFICIAL_EVAL_BLANK_RANGES")
+fi
 if [[ -n "${EVAL_CHECKPOINT_STEPS:-}" ]]; then
   COMMON_ARGS+=(--eval_checkpoint_steps "$EVAL_CHECKPOINT_STEPS")
 fi

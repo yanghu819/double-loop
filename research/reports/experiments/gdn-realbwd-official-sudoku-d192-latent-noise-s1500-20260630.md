@@ -3,11 +3,11 @@
 ## 1. Metainfo
 
 - Plan ID: P-GDN-016
-- Run name: `gdn-d192-official-sudoku-fs-latentnoise-s1500-20260630T0256Z`
+- Run name: `gdn-d192-official-sudoku-fs-latentnoise001-s1500-20260630T0315Z`
 - Machine: AIStation GPU1 only
 - Local repo: `/Users/torusmini/Documents/double-loop-gpu1/.codex-transfer/localrepo`
 - Remote repo: `/huyang2/double-loop`
-- Planned start: 2026-06-30 10:56 CST / 2026-06-30T02:56Z
+- Planned start: 2026-06-30 11:15 CST / 2026-06-30T03:15Z
 
 ## 2. Hypothesis
 
@@ -24,7 +24,7 @@ If EqR-style latent noise is the missing training pressure, a single noisy-state
 - Loop: `MAX_LOOPS=5`, fixed native FutureSeed
 - Train: `FULL_STEPS=1500`, `FULL_BATCH=128`, `FULL_EVAL_N=2048`, `FORWARD_DTYPE=bfloat16`
 - Loss: normal blank-weighted CE, no exact-margin, no feedback corruption, no scratch objective
-- Single intervention: `NOISE_SCALE=0.03`, existing feature-diff latent noise in `depth_update`
+- Single intervention: `NOISE_SCALE=0.01`, existing feature-diff latent noise in `depth_update`, matching the official EqR training default magnitude
 - Checkpoints: eval at steps `800,1200`
 - Case bank: `CASE_BANK_N=3`, `CASE_BANK_EVAL_N=256`, `CASE_BANK_LOOP_VALUES=1,2,3,5`
 
@@ -34,6 +34,7 @@ If EqR-style latent noise is the missing training pressure, a single noisy-state
 - No CPU smoke
 - Cache/env/model/artifacts remain under `/huyang2/double-loop`
 - Expected SHA: to be filled after pre-launch commit
+- Prelaunch calibration: a `NOISE_SCALE=0.03` attempt from SHA `0e205c2` was stopped by exact PID after step800 because it was clearly too strong (`CE=1.2037`, clean checkpoint loop5 exact `0.0000`, blank `0.4408`). It wrote `abort.json` remotely and is treated as an early abort, not the formal quality run.
 
 ## 5. Commands
 
@@ -47,8 +48,8 @@ MAX_LOOPS=5 FULL_STEPS=1500 FULL_BATCH=128 FULL_EVAL_N=2048 \
 EVAL_CHECKPOINT_STEPS=800,1200 CASE_BANK_N=3 CASE_BANK_EVAL_N=256 CASE_BANK_LOOP_VALUES=1,2,3,5 \
 FORWARD_DTYPE=bfloat16 LR=0.0015 WEIGHT_DECAY=0.001 BLANK_LOSS_WEIGHT=8 \
 FUTURE_SEED_SCALE=1 FUTURE_SEED_UPDATE=fixed \
-NOISE_SCALE=0.03 LOOP_FEEDBACK_SCALE=0 SCRATCH_MODE=none EXACT_MARGIN_WEIGHT=0 \
-RUN_NAME=gdn-d192-official-sudoku-fs-latentnoise-s1500-20260630T0256Z-<sha> \
+NOISE_SCALE=0.01 LOOP_FEEDBACK_SCALE=0 SCRATCH_MODE=none EXACT_MARGIN_WEIGHT=0 \
+RUN_NAME=gdn-d192-official-sudoku-fs-latentnoise001-s1500-20260630T0315Z-<sha> \
 ./run.sh full
 ```
 

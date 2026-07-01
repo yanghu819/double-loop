@@ -1,0 +1,80 @@
+nohup: ignoring input
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea
+git_sha=29c8aea514c3647d77f867e7c473e6aee358ff47
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=1000,2000,3000 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.3350 total=1.3350 loop1=1.3337 loop_last=1.3350 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-50] step=0200 ce=0.1541 total=0.1541 loop1=0.3569 loop_last=0.1541 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-50] step=0300 ce=0.0669 total=0.0669 loop1=0.3718 loop_last=0.0669 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-50] step=0400 ce=0.0447 total=0.0447 loop1=0.4845 loop_last=0.0447 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-50] step=0500 ce=0.0216 total=0.0216 loop1=0.3941 loop_last=0.0216 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0600 ce=1.0442 total=1.0442 loop1=1.2910 loop_last=1.0442 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0700 ce=1.0026 total=1.0026 loop1=1.1398 loop_last=1.0026 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0800 ce=0.9977 total=0.9977 loop1=1.1509 loop_last=0.9977 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0900 ce=0.9626 total=0.9626 loop1=1.1209 loop_last=0.9626 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1000 ce=0.9747 total=0.9747 loop1=1.1209 loop_last=0.9747 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=1000 holes53] loop5 exact=0.0205 blank=0.5112
+[train_checkpoint step=1000] path=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/checkpoints/train_state_step001000.pt
+[future_seed_loop stage=2:51-55] step=1100 ce=0.9511 total=0.9511 loop1=1.1230 loop_last=0.9511 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1200 ce=0.9564 total=0.9564 loop1=1.1525 loop_last=0.9564 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1300 ce=0.9560 total=0.9560 loop1=1.1332 loop_last=0.9560 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1400 ce=0.9580 total=0.9580 loop1=1.1238 loop_last=0.9580 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1500 ce=0.9646 total=0.9646 loop1=1.1593 loop_last=0.9646 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1600 ce=0.9653 total=0.9653 loop1=1.1556 loop_last=0.9653 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1700 ce=0.9479 total=0.9479 loop1=1.1264 loop_last=0.9479 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1800 ce=0.9071 total=0.9071 loop1=1.0981 loop_last=0.9071 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=1900 ce=0.9156 total=0.9156 loop1=1.1458 loop_last=0.9156 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2000 ce=0.9189 total=0.9189 loop1=1.1470 loop_last=0.9189 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=2000 holes53] loop5 exact=0.0215 blank=0.5390
+[train_checkpoint step=2000] path=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/checkpoints/train_state_step002000.pt
+[future_seed_loop stage=2:51-55] step=2100 ce=0.8968 total=0.8968 loop1=1.1408 loop_last=0.8968 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2200 ce=0.9126 total=0.9126 loop1=1.1419 loop_last=0.9126 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2300 ce=0.8694 total=0.8694 loop1=1.1328 loop_last=0.8694 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2400 ce=0.8414 total=0.8414 loop1=1.1317 loop_last=0.8414 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2500 ce=0.9049 total=0.9049 loop1=1.1530 loop_last=0.9049 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2600 ce=0.8479 total=0.8479 loop1=1.1382 loop_last=0.8479 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2700 ce=0.8455 total=0.8455 loop1=1.1547 loop_last=0.8455 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2800 ce=0.8278 total=0.8278 loop1=1.1723 loop_last=0.8278 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=2900 ce=0.8753 total=0.8753 loop1=1.2421 loop_last=0.8753 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=3000 ce=0.8863 total=0.8863 loop1=1.1910 loop_last=0.8863 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=3000 holes53] loop5 exact=0.0303 blank=0.5580
+[train_checkpoint step=3000] path=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/checkpoints/train_state_step003000.pt
+
+full-board metrics
+loop=1 exact=0.0020, valid=0.0020, solved=0.0020, blank_acc=0.4425, early=0.4410, late=0.4344, early_late_gap=+0.0066
+        fs_gate=0.478, fs_update=1.000, fs_state_norm=15.296, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0273, valid=0.0273, solved=0.0273, blank_acc=0.5054, early=0.5034, late=0.5086, early_late_gap=-0.0052
+        fs_gate=0.478, fs_update=1.000, fs_state_norm=15.296, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0283, valid=0.0283, solved=0.0283, blank_acc=0.5447, early=0.5455, late=0.5472, early_late_gap=-0.0017
+        fs_gate=0.478, fs_update=1.000, fs_state_norm=15.296, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0381, valid=0.0381, solved=0.0381, blank_acc=0.5564, early=0.5529, late=0.5572, early_late_gap=-0.0043
+        fs_gate=0.478, fs_update=1.000, fs_state_norm=15.296, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0381, valid=0.0381, solved=0.0381, blank_acc=0.5571, early=0.5542, late=0.5576, early_late_gap=-0.0034
+        fs_gate=0.478, fs_update=1.000, fs_state_norm=15.296, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=1024 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=1024 exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000, early=1.0000, late=1.0000, early_late_gap=+0.0000
+b51_55 blanks=51-55 n=1024 exact=0.0098, valid=0.0098, solved=0.0098, blank_acc=0.6019, early=0.5981, late=0.6020, early_late_gap=-0.0039
+b56_64 blanks=56-64 n=1024 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.5157, early=0.5128, late=0.5156, early_late_gap=-0.0028
+
+case-bank artifacts
+official_b46_50 exact=1.0000 blank_acc=1.0000 selected={'solved_by_loop': 2, 'almost_solved': 0, 'hard_failure': 0}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0039 blank_acc=0.5916 selected={'solved_by_loop': 1, 'almost_solved': 1, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0039 blank_acc=0.5039 selected={'solved_by_loop': 1, 'almost_solved': 1, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea score=0.0380859375 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea

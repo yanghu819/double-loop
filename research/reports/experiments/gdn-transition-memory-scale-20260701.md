@@ -3,12 +3,13 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-004`
-- Status: in-progress
+- Status: completed
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 11:01:25 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Intended source SHA: current pushed branch SHA for this record
+- Source SHA: `29c8aea514c3647d77f867e7c473e6aee358ff47`
+- Run name: `gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea`
 
 ## 2. Hypothesis
 
@@ -51,7 +52,16 @@ This is one high-information probe, not an ablation table.
 
 ## 4. Environment
 
-Pending launch.
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z`
+- Run dir:
+  `/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea`
+- Device: GPU1 only, `CUDA_VISIBLE_DEVICES=0`
+- GPU: A800-SXM4-80GB
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- Git dirty at launch: false
+- Peak CUDA memory: `63453.6 MB` allocated, `64420.0 MB` reserved
 
 ## 5. Commands
 
@@ -106,15 +116,117 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Local run copy:
+  `runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea`
+- Git-archived visualization/report copy:
+  `research/reports/visualizations/gdn-transition-memory-scale-20260701`
+- Main JSON:
+  `research/reports/visualizations/gdn-transition-memory-scale-20260701/output/futureseed_loop_seed52.json`
+- Case-bank HTML:
+  `research/reports/visualizations/gdn-transition-memory-scale-20260701/output/case_bank/official_b51_55/index.html`
+  and
+  `research/reports/visualizations/gdn-transition-memory-scale-20260701/output/case_bank/official_b56_64/index.html`
+- Dashboard:
+  `research/reports/visualizations/gdn-transition-memory-scale-20260701/visualizations/index.html`
+- Logs:
+  `research/reports/visualizations/gdn-transition-memory-scale-20260701/logs/run.log`
+- Checkpoints were generated remotely for checkpoint eval, but were not pulled
+  into the Git archive.
 
 ## 7. Results
 
-Pending.
+Training:
+
+| step | stage | train CE |
+|---:|---|---:|
+| 100 | 46-50 | 1.3350 |
+| 300 | 46-50 | 0.0669 |
+| 500 | 46-50 | 0.0216 |
+| 1000 | 51-55 | 0.9747 |
+| 2000 | 51-55 | 0.9189 |
+| 2400 | 51-55 | 0.8414 |
+| 3000 | 51-55 | 0.8863 |
+
+Checkpoint eval on holes53:
+
+| checkpoint | loop5 exact | loop5 blank_acc |
+|---:|---:|---:|
+| 1000 | 0.0205 | 0.5112 |
+| 2000 | 0.0215 | 0.5390 |
+| 3000 | 0.0303 | 0.5580 |
+
+Final mixed official eval, `eval_n=1024`:
+
+| loop | exact | blank_acc | clue_ok |
+|---:|---:|---:|---:|
+| 1 | 0.0020 | 0.4425 | 0.8652 |
+| 2 | 0.0273 | 0.5054 | 0.9961 |
+| 3 | 0.0283 | 0.5447 | 0.9990 |
+| 4 | 0.0381 | 0.5564 | 1.0000 |
+| 5 | 0.0381 | 0.5571 | 1.0000 |
+
+Official blank-range eval:
+
+| blank range | loop1 exact | loop1 blank_acc | loop5 exact | loop5 blank_acc |
+|---|---:|---:|---:|---:|
+| 46-50 | 0.0820 | 0.9392 | 1.0000 | 1.0000 |
+| 51-55 | 0.0000 | 0.4654 | 0.0098 | 0.6019 |
+| 56-64 | 0.0000 | 0.4112 | 0.0078 | 0.5157 |
+
+Case-bank trajectories:
+
+| group | case | holes | loop1 wrong/conflict | loop2 | loop3 | loop5 |
+|---|---|---:|---:|---:|---:|---:|
+| 51-55 | solved b0123 | 53 | 20 / 26 | 14 / 22 | 2 / 4 | 0 / 0 |
+| 51-55 | almost b0052 | 53 | 25 / 23 | 13 / 20 | 5 / 13 | 3 / 9 |
+| 51-55 | hard b0177 | 55 | 23 / 25 | 13 / 17 | 8 / 10 | 5 / 3 |
+| 51-55 | hard b0047 | 55 | 17 / 19 | 10 / 16 | 8 / 12 | 6 / 3 |
+| 56-64 | solved b0091 | 57 | 25 / 27 | 18 / 23 | 11 / 20 | 0 / 0 |
+| 56-64 | almost b0138 | 56 | 28 / 26 | 13 / 22 | 10 / 19 | 4 / 10 |
+| 56-64 | hard b0210 | 56 | 24 / 25 | 20 / 23 | 10 / 19 | 5 / 9 |
+| 56-64 | hard b0056 | 57 | 21 / 26 | 21 / 24 | 14 / 21 | 9 / 13 |
+
+Comparison to the previous short GDN mask-cliff diagnostic:
+
+- Previous P-DIAG-003 at D192/L10/1000 steps, normal state:
+  `46-50 exact=0.9863`, `51-55 exact=0`, `56-64 exact=0`,
+  `51-55 blank_acc=0.5457`.
+- This run with `GDN_EXPAND_V=4.0` and focused 51-55 hard stage:
+  `46-50 exact=1.0000`, `51-55 exact=0.0098`, `56-64 exact=0.0078`,
+  `51-55 blank_acc=0.6019`.
+- Mixed official loop gain is real:
+  loop1->loop5 exact `0.0020 -> 0.0381`, blank_acc
+  `0.4425 -> 0.5571`.
 
 ## 8. Conclusions
 
-Pending.
+Decision: mark as weak positive, not a solved result.
+
+The strong success criterion was not met: `51-55` loop5 exact is `0.0098`,
+well below the `>=0.05` gate. Still, the result is not the same cliff as the
+previous diagnostic. Larger recurrent value/state plus a focused transition
+curriculum opens nonzero exact on `51-55`, improves `51-55` blank accuracy from
+about `0.5457` to `0.6019`, preserves the solved `46-50` bucket, and the
+case-bank shows loop5 genuinely reducing wrong cells in hard boards.
+
+Mechanism insight:
+
+- The `51+` cliff is not simply "FutureSeed cannot handle many blanks".
+  Recurrent state capacity changes the boundary.
+- The remaining bottleneck is exact/global consistency: train CE is still
+  high around `0.88` at step3000, and many hard cases stop with a few wrong
+  but stable cells.
+- Do not run an `expand_v` table. The single `expand_v=4` probe already
+  answers the useful question: memory/state scaling matters, but simple state
+  expansion alone is not enough.
+
+Next high-ROI move:
+
+- If we keep scaling, change only one meaningful axis: a more efficient bigger
+  state run with stronger throughput, or a simple generic recurrent state
+  formulation that preserves alternatives across loops.
+- Avoid loss-weight, seed, margin, noise, or threshold sweeps. They have already
+  failed to convert blank accuracy into full-board exact.
 
 ## 9. Submission Record
 

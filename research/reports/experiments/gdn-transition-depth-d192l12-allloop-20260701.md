@@ -3,12 +3,13 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-009`
-- Status: planned
+- Status: in-progress
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 16:36:00 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: pending launch commit
+- Source SHA: `13921d16166c1d7464d26e80de26dd2dde7c0a53`
+- Run name: `gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1`
 - Parent evidence:
   P-DIAG-008 finite-through-step700 no-checkpoint stability result; user
   correction that EqR uses per-loop supervision.
@@ -61,7 +62,17 @@ This is not a loss-weight table. It is one recipe-alignment probe against EqR.
 
 ## 4. Environment
 
-Pending launch.
+- AIStation row: `GPU1`
+- GPU: NVIDIA A800-SXM4-80GB
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- CUDA visible devices: `0`
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-depth-d192l12-allloop-13921d1-20260701T0845Z`
+- Launch dir:
+  `/huyang2/double-loop/artifacts/launch/gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1`
+- Startup validation: process command contains `--loop_loss all`; GPU memory
+  about `57.8GB`; no GPU2 process.
 
 ## 5. Commands
 
@@ -111,7 +122,11 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Remote run dir:
+  `/huyang2/double-loop/.worktrees/gdn-transition-depth-d192l12-allloop-13921d1-20260701T0845Z/runs/gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1`
+- Local launch script:
+  `artifacts/launch/gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1/launch.sh`
+- Result artifacts pending.
 
 ## 7. Results
 

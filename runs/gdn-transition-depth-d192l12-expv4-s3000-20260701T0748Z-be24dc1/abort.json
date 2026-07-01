@@ -1,0 +1,17 @@
+{
+  "status": "aborted",
+  "run_name": "gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1",
+  "plan_id": "P-DIAG-007",
+  "source_sha": "be24dc165e8ff61469ce87fefdbf261ff4e8352d",
+  "timestamp_utc": "2026-07-01T07:52:28Z",
+  "reason": "NaN loss at step100 under D192/L12 GDN_EXPAND_V=4.0 activation-checkpoint depth scaling gate",
+  "observed": "[future_seed_loop stage=1:46-50] step=0100 ce=nan total=nan loop1=nan loop_last=nan",
+  "decision": "Stop exact PIDs; do not continue depth scaling at this LR/activation-checkpoint setup.",
+  "killed_pids": [
+    1101,
+    1103,
+    1135,
+    1136,
+    1137
+  ]
+}

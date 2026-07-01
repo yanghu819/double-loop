@@ -3,12 +3,12 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-007`
-- Status: in-progress
+- Status: failed
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 15:45:00 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: pending launch commit
+- Source SHA: `be24dc165e8ff61469ce87fefdbf261ff4e8352d`
 - Parent evidence:
   `gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e`
   and failed D224/L12 NaN boundary
@@ -57,7 +57,17 @@ This is one conservative scaling gate, not a depth table.
 
 ## 4. Environment
 
-Pending launch.
+- AIStation row: `GPU1`
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-depth-d192l12-be24dc1-20260701T0748Z`
+- Remote run:
+  `/huyang2/double-loop/.worktrees/gdn-transition-depth-d192l12-be24dc1-20260701T0748Z/runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1`
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- Source SHA in executed worktree:
+  `be24dc165e8ff61469ce87fefdbf261ff4e8352d`
+- Git dirty at launch: `0`
+- GPU row: `GPU1`, `CUDA_VISIBLE_DEVICES=0`
 
 ## 5. Commands
 
@@ -109,15 +119,59 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Local run archive:
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1`
+- Abort metadata:
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1/abort.json`
+- Config:
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1/config.json`
+- Log:
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1/logs/run.log`
+- Source provenance:
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1/source_HEAD.txt`
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1/source.patch`
+  `runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1/source_snapshot.tar.gz`
 
 ## 7. Results
 
-Pending.
+The conservative D192/L12 depth run was stopped at the first logged training
+point:
+
+```text
+[future_seed_loop stage=1:46-50] step=0100 ce=nan total=nan loop1=nan loop_last=nan
+```
+
+Abort:
+
+- Timestamp: `2026-07-01T07:52:28Z`
+- Reason: NaN loss at step100 under D192/L12, `GDN_EXPAND_V=4.0`,
+  activation-checkpoint depth scaling
+- Killed exact PIDs: `1101`, `1103`, `1135`, `1136`, `1137`
+- GPU after kill: `0 MiB`, utilization `0%`
+
+No quality metric should be read from this run.
 
 ## 8. Conclusions
 
-Pending.
+Decision: failed, discard this activation-checkpoint depth run.
+
+The important inference is that P-DIAG-006 and P-DIAG-007 share
+`ACTIVATION_CHECKPOINT=1`, and both fail at step100 with NaN before the hard
+51-55 stage. The D192/L10 expand_v4 runs without activation checkpoint were
+numerically stable.
+
+This makes the next question sharper:
+
+- Is the NaN caused by activation checkpointing around the custom GDN recurrent
+  path?
+- Or does any 12-layer expand_v4 setup fail under the current optimizer?
+
+Next decision:
+
+- Do not lower LR as a table.
+- Run one no-activation-checkpoint D192/L12 gate with smaller microbatch to keep
+  memory within GPU1. If it trains, activation checkpoint is the culprit. If it
+  still NaNs, depth/optimizer stability is the culprit.
 
 ## 9. Submission Record
 

@@ -1,0 +1,7 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-depth-d192l12-be24dc1-20260701T0748Z/runs/gdn-transition-depth-d192l12-expv4-s3000-20260701T0748Z-be24dc1
+git_sha=be24dc165e8ff61469ce87fefdbf261ff4e8352d
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=1000,2000,3000 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=nan total=nan loop1=nan loop_last=nan exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000

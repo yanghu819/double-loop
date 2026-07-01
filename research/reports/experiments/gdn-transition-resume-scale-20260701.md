@@ -3,12 +3,12 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-005`
-- Status: in-progress
+- Status: done
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 14:10:33 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: current pushed branch SHA for this record
+- Source SHA: `33b477e38eb151228b63030ad8a513637d004286`
 - Parent run: `gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea`
 - Parent checkpoint:
   `/huyang2/double-loop/.worktrees/gdn-transition-memory-29c8aea-20260701T0301Z/runs/gdn-transition-memory-expv4-s3000-20260701T0301Z-29c8aea/checkpoints/train_state_step003000.pt`
@@ -60,7 +60,24 @@ This is one resume scaling gate, not a long-run table.
 
 ## 4. Environment
 
-Pending launch.
+- AIStation row: `GPU1`
+- Verified GPU after restart: NVIDIA A800-SXM4-80GB, CUDA visible as device 0
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-resume-33b477e-20260701T0620Z`
+- Remote run:
+  `/huyang2/double-loop/.worktrees/gdn-transition-resume-33b477e-20260701T0620Z/runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e`
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- Source SHA in executed worktree:
+  `33b477e38eb151228b63030ad8a513637d004286`
+- Git dirty at launch: `0`
+- GPU memory during the corrected run: about `65GB / 80GB`
+
+Launch note: an earlier same-name resume attempt at `2026-07-01 14:20 +0800`
+was killed before training because the launch script omitted explicit
+`LR=0.0015` and fell back to `2e-3`. That attempt wrote `abort.json` remotely
+and is not counted as a quality run. The result below is from the corrected
+`lr=0.0015` launch.
 
 ## 5. Commands
 
@@ -118,15 +135,107 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Local run archive:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e`
+- Local visualization:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/visualizations/index.html`
+- Remote metadata tarball:
+  `/huyang2/double-loop/artifacts/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e-metadata-light.tgz`
+- Config:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/config.json`
+- Score:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/score.json`
+- Log:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/logs/run.log`
+- Checkpoint eval JSON:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/checkpoint_eval_step003600.json`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/checkpoint_eval_step004200.json`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/checkpoint_eval_step004500.json`
+- Final result JSON/MD/HTML:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/futureseed_loop_seed52.json`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/futureseed_loop_seed52.md`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/futureseed_loop_case_seed52.html`
+- Case-bank visualizations:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/case_bank/official_b46_50/index.html`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/case_bank/official_b51_55/index.html`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/output/case_bank/official_b56_64/index.html`
+- Source provenance:
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/source_HEAD.txt`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/source.patch`
+  `runs/gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e/source_snapshot.tar.gz`
 
 ## 7. Results
 
-Pending.
+Score key: `metrics.eval_clean.loop5.label_exact`
+
+Final mixed official eval:
+
+| loop | exact | blank_acc |
+|---:|---:|---:|
+| 1 | 0.0088 | 0.4558 |
+| 2 | 0.0283 | 0.5101 |
+| 3 | 0.0293 | 0.5563 |
+| 4 | 0.0449 | 0.5794 |
+| 5 | 0.0537 | 0.5823 |
+
+Checkpoint holes53 eval:
+
+| step | loop1 exact | loop5 exact | loop5 blank_acc |
+|---:|---:|---:|---:|
+| parent 3000 | - | 0.0303 | 0.5580 |
+| 3600 | 0.0029 | 0.0361 | 0.5698 |
+| 4200 | 0.0049 | 0.0381 | 0.5797 |
+| 4500 | 0.0049 | 0.0615 | 0.5899 |
+
+Official blank-range eval at final loop5:
+
+| blank range | loop1 exact | loop5 exact | loop5 blank_acc |
+|---|---:|---:|---:|
+| 46-50 | 0.2178 | 1.0000 | 1.0000 |
+| 51-55 | 0.0000 | 0.0459 | 0.6555 |
+| 56-64 | 0.0000 | 0.0332 | 0.5334 |
+
+Loop gain is now real on the transition regime, not just an early-loop toy
+effect. Mixed exact improves `0.0088 -> 0.0537`, and holes53 checkpoint loop5
+exact improves from parent `0.0303` to `0.0615`.
+
+The strong `51-55 >= 0.05` gate is narrowly missed: final blank-range `51-55`
+loop5 exact is `0.0459`, although holes53 checkpoint eval reaches `0.0615`.
+This discrepancy is expected because the official range samples `51-55`, while
+checkpoint eval fixes holes to `53`.
 
 ## 8. Conclusions
 
-Pending.
+Decision: weak positive, keep the direction, but do not continue same-shape
+long training as the next default.
+
+What changed:
+
+- `GDN_EXPAND_V=4.0` plus more hard-stage training gives a real transition
+  signal. The old `51-55` zero-exact cliff is no longer absolute.
+- Loop is useful here: loop5 substantially beats loop1 on exact and blank
+  accuracy, and the visual case-bank contains solved-by-loop and almost-solved
+  hard cases.
+- The 46-50 bucket remains solved, so the hard-stage continuation did not
+  destroy the easy regime.
+
+What did not change:
+
+- Full board exact is still low. `51-55` exact remains below the strong `0.05`
+  gate, and `56-64` is still weak.
+- Same-state training is not a clean upper-bound strategy by itself. It helps,
+  but the jump is late and expensive, and blank accuracy around `0.65` in
+  51-55 still leaves too many boards with at least one wrong blank.
+
+Next decision:
+
+- Do one more bitter-lesson-friendly scale move only if it changes effective
+  capacity, not just total steps. The best next candidate is an efficient
+  larger-state/larger-model run that keeps the 51-55 curriculum and checkpoint
+  evals, such as D224/L12 or D192/L12 with `GDN_EXPAND_V=4.0`, chosen by GPU
+  memory feasibility.
+- Do not run an expand-v table, seed table, margin/noise/loss table, selector,
+  search, repair, or Sudoku-specific rule.
 
 ## 9. Submission Record
 

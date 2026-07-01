@@ -1,0 +1,17 @@
+{
+  "status": "aborted",
+  "run_name": "gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0",
+  "plan_id": "P-DIAG-006",
+  "source_sha": "2d37cb02f0f8ce9e6a038d164220a40544d5c944",
+  "timestamp_utc": "2026-07-01T07:33:38Z",
+  "reason": "NaN loss at step100 under D224/L12 GDN_EXPAND_V=4.0 activation-checkpoint scaling gate",
+  "observed": "[future_seed_loop stage=1:46-50] step=0100 ce=nan total=nan loop1=nan loop_last=nan",
+  "decision": "Stop exact PIDs; do not continue this run. Treat as optimization stability boundary for this aggressive capacity scale, not a solved scaling direction.",
+  "killed_pids": [
+    448,
+    447,
+    446,
+    413,
+    412
+  ]
+}

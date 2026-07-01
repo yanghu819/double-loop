@@ -3,12 +3,12 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-006`
-- Status: in-progress
+- Status: failed
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 15:20:00 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: pending commit for this plan
+- Source SHA: `2d37cb02f0f8ce9e6a038d164220a40544d5c944`
 - Parent evidence:
   `gdn-transition-resume-expv4-lr15-s4500-20260701T0622Z-33b477e`
 
@@ -65,7 +65,17 @@ This is a single high-information scaling gate, not a width/depth sweep.
 
 ## 4. Environment
 
-Pending launch.
+- AIStation row: `GPU1`
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-deepstate-d224l12-2d37cb0-20260701T0730Z`
+- Remote run:
+  `/huyang2/double-loop/.worktrees/gdn-transition-deepstate-d224l12-2d37cb0-20260701T0730Z/runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0`
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- Source SHA in executed worktree:
+  `2d37cb02f0f8ce9e6a038d164220a40544d5c944`
+- Git dirty at launch: `0`
+- GPU row: `GPU1`, `CUDA_VISIBLE_DEVICES=0`
 
 ## 5. Commands
 
@@ -118,15 +128,58 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Local run archive:
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0`
+- Abort metadata:
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0/abort.json`
+- Config:
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0/config.json`
+- Log:
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0/logs/run.log`
+- Source provenance:
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0/source_HEAD.txt`
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0/source.patch`
+  `runs/gdn-transition-deepstate-d224l12-expv4-s3000-20260701T0730Z-2d37cb0/source_snapshot.tar.gz`
 
 ## 7. Results
 
-Pending.
+The aggressive D224/L12 run was stopped at the first logged training point:
+
+```text
+[future_seed_loop stage=1:46-50] step=0100 ce=nan total=nan loop1=nan loop_last=nan
+```
+
+Abort:
+
+- Timestamp: `2026-07-01T07:33:38Z`
+- Reason: NaN loss at step100 under D224/L12, `GDN_EXPAND_V=4.0`,
+  activation-checkpoint scaling
+- Killed exact PIDs: `448`, `447`, `446`, `413`, `412`
+- GPU after kill: `0 MiB`, utilization `0%`
+
+No quality metric should be read from this run. It is an optimization stability
+boundary, not a model-quality comparison.
 
 ## 8. Conclusions
 
-Pending.
+Decision: failed, discard this exact aggressive scale shape.
+
+The useful information is not that capacity scaling is bad; it is narrower:
+
+- D224/L12 + expand_v4 + existing LR `0.0015` is numerically unstable by step100.
+- The failure happens in the easy `46-50` stage, before the intended 51-55
+  transition question can be tested.
+- This suggests the next scaling move must either stabilize the large-capacity
+  optimizer or choose a smaller effective capacity jump.
+
+Next decision:
+
+- Do not continue this run.
+- Do not sweep width/depth/LR as a table.
+- The highest-ROI follow-up is one stability-rescue gate with a single
+  conservative change, or a less aggressive capacity move:
+  D192/L12 expand_v4 at the proven LR, or D224/L12 with one lower LR and the
+  same kill-at-step100 rule.
 
 ## 9. Submission Record
 

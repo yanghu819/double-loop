@@ -1,0 +1,19 @@
+{
+  "status": "early_stopped_lease_boundary",
+  "timestamp_utc": "2026-07-01T11:04:17Z",
+  "reason": "AIStation GPU1 lease was under one minute; stopped by exact known PIDs to preserve artifacts instead of letting the platform hard-kill the run.",
+  "run_name": "gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d",
+  "source_sha": "e97469d41fe88b4beddbfc8213e4c4151aa39d5a",
+  "known_pids": {"wrapper": 4084, "python": 4121},
+  "last_observed": {
+    "step": 250,
+    "stage": "51-55",
+    "train_ce": 1.1265,
+    "train_total": 1.1290,
+    "loop1_ce": 1.1386,
+    "loop_last_ce": 1.1265,
+    "checkpoint_eval_step100_holes53_loop5_exact": 0.0,
+    "checkpoint_eval_step100_holes53_loop5_blank": 0.2443
+  },
+  "lesson": "D224/L12 no-checkpoint all-loop GDN/FutureSeed fits on 80GB at microbatch 32, stays finite, and hard-stage CE decreases quickly; quality cannot be judged from this short lease-bound probe. Next step is a long D224 resume from the saved step200 checkpoint after GPU1 is renewed."
+}

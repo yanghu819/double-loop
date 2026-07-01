@@ -1,0 +1,51 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d
+git_sha=e97469d41fe88b4beddbfc8213e4c4151aa39d5a
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=100,300 holes=53
+[future_seed_loop stage=1:46-50] step=0050 ce=1.7843 total=1.7836 loop1=1.7821 loop_last=1.7843 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=1:46-50] step=0100 ce=1.4368 total=1.4357 loop1=1.4339 loop_last=1.4368 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0100 holes53] loop5 exact=0.0000 blank=0.2443
+[train_checkpoint step=0100] path=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/checkpoints/train_state_step000100.pt
+[future_seed_loop stage=2:51-55] step=0150 ce=1.4890 total=1.4889 loop1=1.4895 loop_last=1.4890 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.2633 total=1.2633 loop1=1.2656 loop_last=1.2633 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0200] path=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/checkpoints/train_state_step000200.pt
+[future_seed_loop stage=2:51-55] step=0250 ce=1.1265 total=1.1290 loop1=1.1386 loop_last=1.1265 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.0738 total=1.0768 loop1=1.0882 loop_last=1.0738 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0300 holes53] loop5 exact=0.0020 blank=0.4704
+[train_checkpoint step=0300] path=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/checkpoints/train_state_step000300.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4623, early=0.4522, late=0.4780, early_late_gap=-0.0258
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=15.925, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4708, early=0.4588, late=0.4875, early_late_gap=-0.0287
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=15.925, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4713, early=0.4609, late=0.4864, early_late_gap=-0.0255
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=15.925, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4714, early=0.4613, late=0.4861, early_late_gap=-0.0248
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=15.925, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4717, early=0.4608, late=0.4867, early_late_gap=-0.0259
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=15.925, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.0449, valid=0.0449, solved=0.0449, blank_acc=0.9173, early=0.8973, late=0.9491, early_late_gap=-0.0518
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4944, early=0.4840, late=0.5064, early_late_gap=-0.0224
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4429, early=0.4327, late=0.4551, early_late_gap=-0.0224
+
+case-bank artifacts
+official_b46_50 exact=0.0703 blank_acc=0.9179 selected={'solved_by_loop': 2, 'almost_solved': 2, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.4815 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4532 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 2}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/official_b56_64/cases.json
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/futureseed_loop_case_seed52.html

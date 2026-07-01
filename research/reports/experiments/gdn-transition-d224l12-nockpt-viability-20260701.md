@@ -3,12 +3,17 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-010`
-- Status: planned
+- Status: done
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 18:48:31 +0800`
+- Run start: `2026-07-01 18:50 +0800`
+- Run archived: `2026-07-01 19:04 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: pending plan commit
+- Source SHA: `e97469d41fe88b4beddbfc8213e4c4151aa39d5a`
+- Run name: `gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d`
+- Remote run dir: `/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-e97469d-20260701T1050Z/runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d`
+- Local archive: `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d`
 - Parent evidence:
   - P-DIAG-006 D224/L12 with activation checkpoint reached NaN at step100.
   - P-DIAG-008 D192/L12 no-checkpoint stayed finite through step700.
@@ -58,7 +63,16 @@ a score claim and not a sweep.
 
 ## 4. Environment
 
-Pending launch.
+- GPU: AIStation `GPU1`, A800 80GB
+- CUDA visibility: `CUDA_VISIBLE_DEVICES=0`
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- Device: `cuda`
+- GDN mode: `triton_recurrent`
+- Forward dtype: `bfloat16`
+- Activation checkpoint: disabled
+- Git dirty at run launch: false
+- Observed memory: about `44.8GB` during the short run
 
 ## 5. Commands
 
@@ -104,15 +118,82 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/config.json`
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/logs/run.log`
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/checkpoint_eval_step000100.json`
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/checkpoint_eval_step000300.json`
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/output/case_bank/`
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/visualizations/index.html`
+- `runs/gdn-transition-d224l12-nockpt-viability-s300-20260701T1050Z-e97469d/abort.json`
+- Remote train checkpoints were intentionally not committed:
+  - `checkpoints/train_state_step000100.pt`
+  - `checkpoints/train_state_step000200.pt`
+  - `checkpoints/train_state_step000300.pt`
 
 ## 7. Results
 
-Pending.
+Training finished the planned 300-step gate before the lease boundary. I still
+wrote `abort.json` after stopping by exact known PIDs because the GPU lease was
+under one minute and I did not want AIStation to hard-kill artifact collection.
+
+Training CE:
+
+| Step | Stage | CE | Total | Loop1 CE | Loop-last CE |
+|---:|---|---:|---:|---:|---:|
+| 50 | 46-50 | 1.7843 | 1.7836 | 1.7821 | 1.7843 |
+| 100 | 46-50 | 1.4368 | 1.4357 | 1.4339 | 1.4368 |
+| 150 | 51-55 | 1.4890 | 1.4889 | 1.4895 | 1.4890 |
+| 200 | 51-55 | 1.2633 | 1.2633 | 1.2656 | 1.2633 |
+| 250 | 51-55 | 1.1265 | 1.1290 | 1.1386 | 1.1265 |
+| 300 | 51-55 | 1.0738 | 1.0768 | 1.0882 | 1.0738 |
+
+Checkpoint eval on holes53:
+
+| Checkpoint | Loop | Exact | Blank acc |
+|---:|---:|---:|---:|
+| 100 | 5 | 0.0000 | 0.2443 |
+| 300 | 1 | 0.0000 | 0.4609 |
+| 300 | 2 | 0.0000 | 0.4679 |
+| 300 | 3 | 0.0000 | 0.4699 |
+| 300 | 4 | 0.0000 | 0.4702 |
+| 300 | 5 | 0.0020 | 0.4704 |
+
+Final official blank-range eval:
+
+| Blank range | Exact | Valid | Solved | Blank acc |
+|---|---:|---:|---:|---:|
+| 46-50 | 0.0449 | 0.0449 | 0.0449 | 0.9173 |
+| 51-55 | 0.0000 | 0.0000 | 0.0000 | 0.4944 |
+| 56-64 | 0.0000 | 0.0000 | 0.0000 | 0.4429 |
+
+Loop gain at step300 exists only as soft accuracy:
+
+- holes53 blank acc loop1 to loop5: `0.4609 -> 0.4704`
+- holes53 exact loop1 to loop5: `0.0000 -> 0.0020`
+- full-board eval loop1 to loop5 blank acc: `0.4623 -> 0.4717`
+- full-board eval loop1 to loop5 exact: `0.0000 -> 0.0000`
 
 ## 8. Conclusions
 
-Pending.
+This is a positive scaling-viability result, not a score result.
+
+The important answer is that D224/L12 no-checkpoint is inside the 80GB envelope:
+it fits, stays finite, and learns the hard `51-55` stage quickly. The prior
+D224/L12 and D192/L12 NaNs are now much more likely to be an activation
+checkpoint/custom GDN backward interaction than an inherent width/depth failure.
+
+Quality is still early. At only 300 steps, `51-55` exact is still zero and
+loop-depth mostly improves blank accuracy rather than full-board exact. But the
+hard-stage CE slope is strong enough to justify one long D224/L12 no-checkpoint
+resume from `train_state_step000300.pt` after GPU1 is renewed.
+
+Decision:
+
+- Continue bigger-network scaling with one long D224/L12 no-checkpoint run.
+- Do not spend the next run on seed, LR, loop-loss, gate, or objective tables.
+- Keep `LOOP_LOSS=all` as the EqR-aligned default.
+- Keep checkpoints remote only; Git receives metadata, logs, metrics, and
+  visualizations.
 
 ## 9. Submission Record
 

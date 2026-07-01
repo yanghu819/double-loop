@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-009`
-- Status: in-progress
+- Status: discarded / stopped after checkpoint1000
 - Local branch: `codex/gpu1-experiment-tracking`
 - Scheduled time: `2026-07-01 16:36:00 +0800`
 - Machine: AIStation `GPU1` only
@@ -124,17 +124,104 @@ Success criteria:
 
 - Remote run dir:
   `/huyang2/double-loop/.worktrees/gdn-transition-depth-d192l12-allloop-13921d1-20260701T0845Z/runs/gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1`
+- Eval-only visualization run:
+  `runs/gdn-transition-depth-d192l12-allloop-step1000-eval-20260701T0930Z-13921d1/`
 - Local launch script:
   `artifacts/launch/gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1/launch.sh`
-- Result artifacts pending.
+- Training checkpoint eval:
+  `runs/gdn-transition-depth-d192l12-allloop-expv4-s3000-20260701T0845Z-13921d1/output/checkpoint_eval_step001000.json`
+- Eval-only score:
+  `runs/gdn-transition-depth-d192l12-allloop-step1000-eval-20260701T0930Z-13921d1/score.json`
+- Eval visualization:
+  `runs/gdn-transition-depth-d192l12-allloop-step1000-eval-20260701T0930Z-13921d1/visualizations/index.html`
+- Case banks:
+  `output/case_bank/official_b46_50/`,
+  `output/case_bank/official_b51_55/`,
+  `output/case_bank/official_b56_64/` under the eval-only run.
 
 ## 7. Results
 
-Pending.
+Training was stopped at checkpoint1000 because the result already answered the
+mechanism question and continuing to step2000 was low ROI.
+
+Training curve:
+
+| Step | Stage | Loop-last CE | Total CE | Loop1 CE | Note |
+|---:|---|---:|---:|---:|---|
+| 100 | 46-50 | 1.4117 | 1.4108 | 1.4094 | finite, all-loop active |
+| 200 | 46-50 | 0.0979 | 0.1063 | 0.1340 | loop1 trained |
+| 300 | 46-50 | 0.0183 | 0.0215 | 0.0332 | loop1 much better than final-only run |
+| 400 | 46-50 | 0.0149 | 0.0167 | 0.0242 | stable |
+| 500 | 46-50 | 0.0020 | 0.0045 | 0.0134 | easy bucket solved |
+| 600 | 51-55 | 1.0038 | 1.0071 | 1.0194 | hard-stage switch finite |
+| 700 | 51-55 | 0.9617 | 0.9660 | 0.9815 | hard-stage CE improves |
+| 800 | 51-55 | 0.9529 | 0.9591 | 0.9810 | plateau-ish |
+| 900 | 51-55 | 0.9628 | 0.9677 | 0.9856 | no clear slope |
+| 1000 | 51-55 | 0.9291 | 0.9362 | 0.9602 | checkpoint eval |
+
+Checkpoint1000 holes53:
+
+| Loop | Exact | Blank Acc |
+|---:|---:|---:|
+| 1 | 0.0205 | 0.5067 |
+| 2 | 0.0215 | 0.5203 |
+| 3 | 0.0215 | 0.5215 |
+| 4 | 0.0215 | 0.5218 |
+| 5 | 0.0215 | 0.5216 |
+
+Eval-only run from the step1000 checkpoint:
+
+| Loop | Exact | Blank Acc |
+|---:|---:|---:|
+| 1 | 0.0283 | 0.5100 |
+| 2 | 0.0283 | 0.5243 |
+| 3 | 0.0283 | 0.5244 |
+| 4 | 0.0283 | 0.5249 |
+| 5 | 0.0283 | 0.5245 |
+
+Official blank-range eval at step1000:
+
+| Range | Exact | Blank Acc | Case-bank selection |
+|---|---:|---:|---|
+| 46-50 | 0.9971 | 0.9999 | 3 solved-by-loop, 2 almost solved |
+| 51-55 | 0.0000 | 0.5447 | 3 hard failures |
+| 56-64 | 0.0000 | 0.4927 | 3 hard failures |
+
+Comparison to final-loop P-DIAG-008:
+
+- All-loop massively improves intermediate loop CE. At step300, final-loop
+  loop1 CE was `0.3720`; all-loop loop1 CE is `0.0332`.
+- At hard-stage step600, final-loop loop1/last CE was `1.4687/1.0316`;
+  all-loop is `1.0194/1.0038`.
+- This improvement does not convert into late-loop exact improvement. Eval-only
+  exact is identical from loop1 through loop5 (`0.0283`), and checkpoint holes53
+  loop5 is only `0.0215`.
 
 ## 8. Conclusions
 
-Pending.
+Decision: discard as a scaling direction, keep as a mechanism lesson.
+
+What worked:
+
+- EqR-style every-loop supervision is active and useful as a training recipe.
+- It makes every loop's state readable and dramatically improves early-loop CE.
+- It remains stable on the D192/L12 no-checkpoint expand_v4 configuration.
+
+What did not work:
+
+- It does not solve the 51-55 blank transition.
+- It mostly moves the same operating point earlier: loop1 is already near
+  loop5, and loop5 adds almost no full-board exact.
+- Continuing this same recipe to step2000/3000 would likely be low ROI compared
+  with changing the state/update capacity.
+
+Lesson:
+
+Every-loop CE should become the fair default when comparing to EqR, but it is
+not the missing board-level consistency mechanism. The next high-ROI work is not
+another loop-loss variant. It should target a more scalable recurrent state or
+update rule that keeps the benefit of readable intermediate states while giving
+later loops a real way to change global decisions.
 
 ## 9. Submission Record
 

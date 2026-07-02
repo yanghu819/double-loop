@@ -6,8 +6,8 @@
 - Status: in-progress
 - Machine: AIStation `GPU1` only
 - Started: 2026-07-02T12:14:12Z
-- Source SHA at planning time: `1491926d3eba0553d4c93f46adee9542cc3f4a21`
-- Run name: `gdn-transition-d256l12-width-s6000-20260702T1214Z-1491926`
+- Source SHA at planning time: `ae31c9f54ffb0abaecf48e2102942431f57d36b3`
+- Formal run name: `gdn-transition-d256l12-width-noconv-s6000-20260702T1236Z-<sha>`
 
 ## 2. Hypothesis
 
@@ -18,7 +18,7 @@ D224/L12/H14/D16 long training opened the 51-55 blank transition, while H7/D32 s
 - Task: official EqR Sudoku arrays, 9x9, random blanks.
 - Backbone: native FutureSeed GDN, real Triton recurrent backward.
 - Model: `D_MODEL=256`, `LAYERS=12`, `HEADS=16`, `HEAD_DIM=16`, `GDN_EXPAND_V=4.0`, `CHANNEL_MULT=4`, `MAX_LOOPS=5`.
-- Training: `LOOP_LOSS=all`, `FULL_BATCH=32`, `GRAD_ACCUM_STEPS=4` if it fits; if OOM, fall back once to `FULL_BATCH=24`, `GRAD_ACCUM_STEPS=6`.
+- Training: `GDN_USE_SHORT_CONV=0`, `LOOP_LOSS=all`, `FULL_BATCH=32`, `GRAD_ACCUM_STEPS=4` if it fits; if OOM, fall back once to `FULL_BATCH=24`, `GRAD_ACCUM_STEPS=6`.
 - Curriculum: `HOLE_STAGES=46-50:100,51-55:5900`.
 - Evaluation: checkpoint eval at `1000,3000,4500,6000` on holes `53,60`; final official blank ranges `46-50,51-55,56-64`; case bank holes `53,60`.
 - Forbidden: GPU2, CPU smoke, selector, search, repair, Sudoku-specific rule, seed/LR/loss/head table.
@@ -37,8 +37,8 @@ Planned command shape:
 CUDA_VISIBLE_DEVICES=0 SMOKE_DONE=1 SKIP_SETUP=1 SOURCE_SNAPSHOT_MODE=lean \
 UPDATE_LEADERBOARD=0 \
 SUDOKU_SIZE=9 HOLE_PATTERN=random \
-OFFICIAL_SUDOKU_DATA_DIR=/huyang2/double-loop/data/eqr/sudoku-extreme-1k-aug-1000 \
-BACKBONE=gdn GDN_MODE=triton_recurrent GDN_EXPAND_V=4.0 \
+OFFICIAL_SUDOKU_DATA_DIR=/huyang2/double-loop/official_eqr_sudoku_repro_20260623/data/sudoku-extreme-1k-aug-1000 \
+BACKBONE=gdn GDN_MODE=triton_recurrent GDN_USE_SHORT_CONV=0 GDN_EXPAND_V=4.0 \
 FORWARD_DTYPE=bfloat16 D_MODEL=256 LAYERS=12 HEADS=16 HEAD_DIM=16 CHANNEL_MULT=4 \
 FUTURE_SEED_SCALE=1 MAX_LOOPS=5 LOOP_LOSS=all \
 HOLE_STAGES=46-50:100,51-55:5900 EVAL_HOLES=53 EVAL_HOLES_LIST=53,60 \
@@ -47,8 +47,12 @@ FULL_BATCH=32 GRAD_ACCUM_STEPS=4 FULL_STEPS=6000 FULL_EVAL_N=2048 FULL_ROLLOUT_K
 EVAL_CHECKPOINT_STEPS=1000,3000,4500,6000 EVAL_CHECKPOINT_HOLES_LIST=53,60 \
 SAVE_TRAIN_CHECKPOINT_EVERY=1000 TRAIN_CHECKPOINT_DIR=/huyang2/double-loop/models/<run_name>/checkpoints \
 CASE_BANK_HOLES=53,60 CASE_BANK_N=8 CASE_BANK_EVAL_N=512 CASE_BANK_LOOP_VALUES=1,2,3,4,5 \
-RUN_NAME=gdn-transition-d256l12-width-s6000-20260702T1214Z-1491926 ./run.sh full
+RUN_NAME=gdn-transition-d256l12-width-noconv-s6000-20260702T1236Z-<sha> ./run.sh full
 ```
+
+Launch note:
+
+- First attempt `gdn-transition-d256l12-width-s6000-20260702T1214Z-ae31c9f` failed before training because the default `GDN_USE_SHORT_CONV=1` requires `fla`, which is intentionally not installed in this environment. It used 3 MiB GPU memory and produced no training result. The formal run uses the same clean GDN path as prior D224 runs: `GDN_USE_SHORT_CONV=0`.
 
 ## 6. Artifacts
 

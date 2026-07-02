@@ -1,0 +1,24 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-tail56-resume7000-4a0330a-20260702T093823Z/runs/gdn-transition-d224l12-tail56-s9000-resume7000-20260702T093823Z-4a0330a
+git_sha=4a0330a57f62c5fb2a6ef0be5e15ef65bfe57def
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=8000,9000 holes=53,60
+resumed_train_checkpoint path=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-tail56-4a0330a-20260702T0441Z/runs/gdn-transition-d224l12-tail56-s9000-20260702T0441Z-4a0330a/checkpoints/train_state_step007000.pt step=7000 reason=eval_checkpoint
+[future_seed_loop stage=3:56-64] step=7100 ce=0.6853 total=0.7809 loop1=1.0118 loop_last=0.6853 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7200 ce=0.7345 total=0.8279 loop1=1.0444 loop_last=0.7345 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7300 ce=0.6921 total=0.7954 loop1=1.0319 loop_last=0.6921 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7400 ce=0.6920 total=0.7838 loop1=1.0209 loop_last=0.6920 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7500 ce=0.5958 total=0.7295 loop1=1.0276 loop_last=0.5958 exact_margin=0.0000
+[train_checkpoint step=7500] path=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-tail56-resume7000-4a0330a-20260702T093823Z/runs/gdn-transition-d224l12-tail56-s9000-resume7000-20260702T093823Z-4a0330a/checkpoints/train_state_step007500.pt
+[future_seed_loop stage=3:56-64] step=7600 ce=0.5882 total=0.7220 loop1=1.0318 loop_last=0.5882 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7700 ce=0.5331 total=0.6699 loop1=0.9914 loop_last=0.5331 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7800 ce=0.5986 total=0.7201 loop1=1.0288 loop_last=0.5986 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=7900 ce=0.4560 total=0.6162 loop1=0.9890 loop_last=0.4560 exact_margin=0.0000
+[future_seed_loop stage=3:56-64] step=8000 ce=0.5631 total=0.7000 loop1=1.0249 loop_last=0.5631 exact_margin=0.0000
+[checkpoint_eval step=8000 holes60] loop5 exact=0.1836 blank=0.6396
+[train_checkpoint step=8000] path=/huyang2/double-loop/.worktrees/gdn-transition-d224l12-tail56-resume7000-4a0330a-20260702T093823Z/runs/gdn-transition-d224l12-tail56-s9000-resume7000-20260702T093823Z-4a0330a/checkpoints/train_state_step008000.pt
+[future_seed_loop stage=3:56-64] step=8100 ce=0.3741 total=0.5561 loop1=0.9943 loop_last=0.3741 exact_margin=0.0000
+Terminated
+post_stop_ps_empty=true
+post_stop_nvidia_smi=0,0,0,81920

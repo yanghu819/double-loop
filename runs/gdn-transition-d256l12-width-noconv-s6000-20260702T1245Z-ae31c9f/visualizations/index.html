@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment Dashboard - gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;background:#f7f7f4;color:#1f2328}
+main{max-width:1180px;margin:auto}.card{background:#fff;border:1px solid #ddd8cf;border-radius:8px;padding:14px;margin:14px 0}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 10px}.muted{color:#6b7280}.links{display:flex;flex-wrap:wrap;gap:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left}th{background:#f3f4f6}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}dt{font-weight:600}.chart{width:100%;height:auto;background:#fbfbf8;border:1px solid #e5e0d8;border-radius:6px}.axis{stroke:#777;stroke-width:1}.tick,.legend-text{font-size:11px;font-family:ui-monospace,Menlo,monospace}
+.pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin-right:6px;font-size:12px}
+</style>
+</head>
+<body><main>
+<h1>gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f</h1>
+<p class="links"><a href="output/checkpoint_eval_step001000.json">result JSON</a> <a href="summary.json">dashboard data</a></p>
+<section class="card"><h2>Run Summary</h2>
+<dl>
+<dt>mode</dt><dd>full</dd>
+<dt>score</dt><dd>0.0214844 <span class="muted">eval_by_holes.holes60.eval_clean.loop5.label_exact</span></dd>
+<dt>git sha</dt><dd>ae31c9f54ffb0abaecf48e2102942431f57d36b3</dd>
+<dt>timestamp</dt><dd>2026-07-02T13:30:57.438667+00:00</dd>
+<dt>aborted</dt><dd>False</dd>
+</dl>
+<p>D256/L12 native-FutureSeed GDN width scaling stopped at step1000 by ROI rule. It fits at batch32 grad_accum4 and trains stably, but step1000 holes53 loop5 exact/blank 0.0176/0.5150 ties exact and trails cheaper D224/H14/D16 0.0176/0.5284; holes60 loop5 0.0215/0.5308 also trails the prior H7/D32 state-geometry blank 0.5390. Decision: do not continue to 3000/6000; raw width is not the next useful scaling axis.</p>
+</section>
+<section class="card"><h2>Training Curve</h2>
+<svg class="chart" viewBox="0 0 760 260" role="img">
+<line x1="56" y1="18" x2="56" y2="218" class="axis"/>
+<line x1="56" y1="218" x2="742" y2="218" class="axis"/>
+<text x="56" y="248" class="tick">step</text>
+<text x="4" y="26" class="tick">1.91</text>
+<text x="4" y="218" class="tick">-0.123</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2" points="56.0,31.8 90.3,60.9 124.6,49.7 158.9,79.1 193.2,94.6 227.5,99.4 261.8,102.9 296.1,104.3 330.4,102.4 364.7,106.6 399.0,108.3 433.3,110.8 467.6,112.7 501.9,111.5 536.2,113.0 570.5,111.1 604.8,115.6 639.1,112.3 673.4,114.5 742.0,118.4"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#2563eb"><title>ce step=50 value=1.7698</title></circle>
+<circle cx="90.3" cy="60.9" r="2.4" fill="#2563eb"><title>ce step=100 value=1.4736</title></circle>
+<circle cx="124.6" cy="49.7" r="2.4" fill="#2563eb"><title>ce step=150 value=1.5874</title></circle>
+<circle cx="158.9" cy="79.1" r="2.4" fill="#2563eb"><title>ce step=200 value=1.2892</title></circle>
+<circle cx="193.2" cy="94.6" r="2.4" fill="#2563eb"><title>ce step=250 value=1.1315</title></circle>
+<circle cx="227.5" cy="99.4" r="2.4" fill="#2563eb"><title>ce step=300 value=1.0832</title></circle>
+<circle cx="261.8" cy="102.9" r="2.4" fill="#2563eb"><title>ce step=350 value=1.0469</title></circle>
+<circle cx="296.1" cy="104.3" r="2.4" fill="#2563eb"><title>ce step=400 value=1.0329</title></circle>
+<circle cx="330.4" cy="102.4" r="2.4" fill="#2563eb"><title>ce step=450 value=1.0518</title></circle>
+<circle cx="364.7" cy="106.6" r="2.4" fill="#2563eb"><title>ce step=500 value=1.0092</title></circle>
+<circle cx="399.0" cy="108.3" r="2.4" fill="#2563eb"><title>ce step=550 value=0.9922</title></circle>
+<circle cx="433.3" cy="110.8" r="2.4" fill="#2563eb"><title>ce step=600 value=0.9664</title></circle>
+<circle cx="467.6" cy="112.7" r="2.4" fill="#2563eb"><title>ce step=650 value=0.9473</title></circle>
+<circle cx="501.9" cy="111.5" r="2.4" fill="#2563eb"><title>ce step=700 value=0.9599</title></circle>
+<circle cx="536.2" cy="113.0" r="2.4" fill="#2563eb"><title>ce step=750 value=0.9443</title></circle>
+<circle cx="570.5" cy="111.1" r="2.4" fill="#2563eb"><title>ce step=800 value=0.9636</title></circle>
+<circle cx="604.8" cy="115.6" r="2.4" fill="#2563eb"><title>ce step=850 value=0.9185</title></circle>
+<circle cx="639.1" cy="112.3" r="2.4" fill="#2563eb"><title>ce step=900 value=0.9514</title></circle>
+<circle cx="673.4" cy="114.5" r="2.4" fill="#2563eb"><title>ce step=950 value=0.9296</title></circle>
+<circle cx="742.0" cy="118.4" r="2.4" fill="#2563eb"><title>ce step=1050 value=0.8899</title></circle>
+<text x="56" y="236" fill="#2563eb" class="legend-text">ce</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2" points="56.0,31.9 90.3,61.0 124.6,49.8 158.9,79.1 193.2,94.4 227.5,99.2 261.8,102.6 296.1,104.0 330.4,102.1 364.7,106.2 399.0,107.9 433.3,110.2 467.6,112.0 501.9,110.9 536.2,112.2 570.5,110.4 604.8,114.7 639.1,111.4 673.4,113.5 742.0,117.2"/>
+<circle cx="56.0" cy="31.9" r="2.4" fill="#dc2626"><title>total step=50 value=1.7691</title></circle>
+<circle cx="90.3" cy="61.0" r="2.4" fill="#dc2626"><title>total step=100 value=1.4728</title></circle>
+<circle cx="124.6" cy="49.8" r="2.4" fill="#dc2626"><title>total step=150 value=1.5869</title></circle>
+<circle cx="158.9" cy="79.1" r="2.4" fill="#dc2626"><title>total step=200 value=1.2892</title></circle>
+<circle cx="193.2" cy="94.4" r="2.4" fill="#dc2626"><title>total step=250 value=1.1333</title></circle>
+<circle cx="227.5" cy="99.2" r="2.4" fill="#dc2626"><title>total step=300 value=1.085</title></circle>
+<circle cx="261.8" cy="102.6" r="2.4" fill="#dc2626"><title>total step=350 value=1.05</title></circle>
+<circle cx="296.1" cy="104.0" r="2.4" fill="#dc2626"><title>total step=400 value=1.0356</title></circle>
+<circle cx="330.4" cy="102.1" r="2.4" fill="#dc2626"><title>total step=450 value=1.0556</title></circle>
+<circle cx="364.7" cy="106.2" r="2.4" fill="#dc2626"><title>total step=500 value=1.0137</title></circle>
+<circle cx="399.0" cy="107.9" r="2.4" fill="#dc2626"><title>total step=550 value=0.9965</title></circle>
+<circle cx="433.3" cy="110.2" r="2.4" fill="#dc2626"><title>total step=600 value=0.9725</title></circle>
+<circle cx="467.6" cy="112.0" r="2.4" fill="#dc2626"><title>total step=650 value=0.9545</title></circle>
+<circle cx="501.9" cy="110.9" r="2.4" fill="#dc2626"><title>total step=700 value=0.9663</title></circle>
+<circle cx="536.2" cy="112.2" r="2.4" fill="#dc2626"><title>total step=750 value=0.9526</title></circle>
+<circle cx="570.5" cy="110.4" r="2.4" fill="#dc2626"><title>total step=800 value=0.9709</title></circle>
+<circle cx="604.8" cy="114.7" r="2.4" fill="#dc2626"><title>total step=850 value=0.9274</title></circle>
+<circle cx="639.1" cy="111.4" r="2.4" fill="#dc2626"><title>total step=900 value=0.9609</title></circle>
+<circle cx="673.4" cy="113.5" r="2.4" fill="#dc2626"><title>total step=950 value=0.9398</title></circle>
+<circle cx="742.0" cy="117.2" r="2.4" fill="#dc2626"><title>total step=1050 value=0.9023</title></circle>
+<text x="98" y="236" fill="#dc2626" class="legend-text">total</text>
+<polyline fill="none" stroke="#16a34a" stroke-width="2" points="56.0,32.0 90.3,61.1 124.6,49.8 158.9,78.9 193.2,93.7 227.5,98.5 261.8,101.5 296.1,103.0 330.4,100.6 364.7,104.7 399.0,106.4 433.3,108.2 467.6,109.5 501.9,108.6 536.2,109.3 570.5,107.8 604.8,111.6 639.1,108.1 673.4,109.9 742.0,112.9"/>
+<circle cx="56.0" cy="32.0" r="2.4" fill="#16a34a"><title>loop1 step=50 value=1.7675</title></circle>
+<circle cx="90.3" cy="61.1" r="2.4" fill="#16a34a"><title>loop1 step=100 value=1.4716</title></circle>
+<circle cx="124.6" cy="49.8" r="2.4" fill="#16a34a"><title>loop1 step=150 value=1.5863</title></circle>
+<circle cx="158.9" cy="78.9" r="2.4" fill="#16a34a"><title>loop1 step=200 value=1.2909</title></circle>
+<circle cx="193.2" cy="93.7" r="2.4" fill="#16a34a"><title>loop1 step=250 value=1.1408</title></circle>
+<circle cx="227.5" cy="98.5" r="2.4" fill="#16a34a"><title>loop1 step=300 value=1.0917</title></circle>
+<circle cx="261.8" cy="101.5" r="2.4" fill="#16a34a"><title>loop1 step=350 value=1.0613</title></circle>
+<circle cx="296.1" cy="103.0" r="2.4" fill="#16a34a"><title>loop1 step=400 value=1.0457</title></circle>
+<circle cx="330.4" cy="100.6" r="2.4" fill="#16a34a"><title>loop1 step=450 value=1.0708</title></circle>
+<circle cx="364.7" cy="104.7" r="2.4" fill="#16a34a"><title>loop1 step=500 value=1.029</title></circle>
+<circle cx="399.0" cy="106.4" r="2.4" fill="#16a34a"><title>loop1 step=550 value=1.0113</title></circle>
+<circle cx="433.3" cy="108.2" r="2.4" fill="#16a34a"><title>loop1 step=600 value=0.9938</title></circle>
+<circle cx="467.6" cy="109.5" r="2.4" fill="#16a34a"><title>loop1 step=650 value=0.9799</title></circle>
+<circle cx="501.9" cy="108.6" r="2.4" fill="#16a34a"><title>loop1 step=700 value=0.9891</title></circle>
+<circle cx="536.2" cy="109.3" r="2.4" fill="#16a34a"><title>loop1 step=750 value=0.9822</title></circle>
+<circle cx="570.5" cy="107.8" r="2.4" fill="#16a34a"><title>loop1 step=800 value=0.9977</title></circle>
+<circle cx="604.8" cy="111.6" r="2.4" fill="#16a34a"><title>loop1 step=850 value=0.9583</title></circle>
+<circle cx="639.1" cy="108.1" r="2.4" fill="#16a34a"><title>loop1 step=900 value=0.9939</title></circle>
+<circle cx="673.4" cy="109.9" r="2.4" fill="#16a34a"><title>loop1 step=950 value=0.9759</title></circle>
+<circle cx="742.0" cy="112.9" r="2.4" fill="#16a34a"><title>loop1 step=1050 value=0.9452</title></circle>
+<text x="161" y="236" fill="#16a34a" class="legend-text">loop1</text>
+<polyline fill="none" stroke="#9333ea" stroke-width="2" points="56.0,31.8 90.3,60.9 124.6,49.7 158.9,79.1 193.2,94.6 227.5,99.4 261.8,102.9 296.1,104.3 330.4,102.4 364.7,106.6 399.0,108.3 433.3,110.8 467.6,112.7 501.9,111.5 536.2,113.0 570.5,111.1 604.8,115.6 639.1,112.3 673.4,114.5 742.0,118.4"/>
+<circle cx="56.0" cy="31.8" r="2.4" fill="#9333ea"><title>loop_last step=50 value=1.7698</title></circle>
+<circle cx="90.3" cy="60.9" r="2.4" fill="#9333ea"><title>loop_last step=100 value=1.4736</title></circle>
+<circle cx="124.6" cy="49.7" r="2.4" fill="#9333ea"><title>loop_last step=150 value=1.5874</title></circle>
+<circle cx="158.9" cy="79.1" r="2.4" fill="#9333ea"><title>loop_last step=200 value=1.2892</title></circle>
+<circle cx="193.2" cy="94.6" r="2.4" fill="#9333ea"><title>loop_last step=250 value=1.1315</title></circle>
+<circle cx="227.5" cy="99.4" r="2.4" fill="#9333ea"><title>loop_last step=300 value=1.0832</title></circle>
+<circle cx="261.8" cy="102.9" r="2.4" fill="#9333ea"><title>loop_last step=350 value=1.0469</title></circle>
+<circle cx="296.1" cy="104.3" r="2.4" fill="#9333ea"><title>loop_last step=400 value=1.0329</title></circle>
+<circle cx="330.4" cy="102.4" r="2.4" fill="#9333ea"><title>loop_last step=450 value=1.0518</title></circle>
+<circle cx="364.7" cy="106.6" r="2.4" fill="#9333ea"><title>loop_last step=500 value=1.0092</title></circle>
+<circle cx="399.0" cy="108.3" r="2.4" fill="#9333ea"><title>loop_last step=550 value=0.9922</title></circle>
+<circle cx="433.3" cy="110.8" r="2.4" fill="#9333ea"><title>loop_last step=600 value=0.9664</title></circle>
+<circle cx="467.6" cy="112.7" r="2.4" fill="#9333ea"><title>loop_last step=650 value=0.9473</title></circle>
+<circle cx="501.9" cy="111.5" r="2.4" fill="#9333ea"><title>loop_last step=700 value=0.9599</title></circle>
+<circle cx="536.2" cy="113.0" r="2.4" fill="#9333ea"><title>loop_last step=750 value=0.9443</title></circle>
+<circle cx="570.5" cy="111.1" r="2.4" fill="#9333ea"><title>loop_last step=800 value=0.9636</title></circle>
+<circle cx="604.8" cy="115.6" r="2.4" fill="#9333ea"><title>loop_last step=850 value=0.9185</title></circle>
+<circle cx="639.1" cy="112.3" r="2.4" fill="#9333ea"><title>loop_last step=900 value=0.9514</title></circle>
+<circle cx="673.4" cy="114.5" r="2.4" fill="#9333ea"><title>loop_last step=950 value=0.9296</title></circle>
+<circle cx="742.0" cy="118.4" r="2.4" fill="#9333ea"><title>loop_last step=1050 value=0.8899</title></circle>
+<text x="224" y="236" fill="#9333ea" class="legend-text">loop_last</text>
+<polyline fill="none" stroke="#f59e0b" stroke-width="2" points="707.7,204.2"/>
+<circle cx="707.7" cy="204.2" r="2.4" fill="#f59e0b"><title>exact step=1000 value=0.0176</title></circle>
+<text x="315" y="236" fill="#f59e0b" class="legend-text">exact</text>
+</svg>
+<table><thead><tr><th>step</th><th>stage</th><th>ce</th><th>total</th><th>loop1</th><th>loop1_ce</th><th>loop_last</th><th>path_f1</th><th>exact</th></tr></thead><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>50</td><td>1:46-50</td><td>1.7698</td><td>1.7691</td><td>1.7675</td><td></td><td>1.7698</td><td></td><td></td></tr><tr><td>100</td><td>1:46-50</td><td>1.4736</td><td>1.4728</td><td>1.4716</td><td></td><td>1.4736</td><td></td><td></td></tr><tr><td>150</td><td>2:51-55</td><td>1.5874</td><td>1.5869</td><td>1.5863</td><td></td><td>1.5874</td><td></td><td></td></tr><tr><td>200</td><td>2:51-55</td><td>1.2892</td><td>1.2892</td><td>1.2909</td><td></td><td>1.2892</td><td></td><td></td></tr><tr><td>250</td><td>2:51-55</td><td>1.1315</td><td>1.1333</td><td>1.1408</td><td></td><td>1.1315</td><td></td><td></td></tr><tr><td>300</td><td>2:51-55</td><td>1.0832</td><td>1.085</td><td>1.0917</td><td></td><td>1.0832</td><td></td><td></td></tr><tr><td>350</td><td>2:51-55</td><td>1.0469</td><td>1.05</td><td>1.0613</td><td></td><td>1.0469</td><td></td><td></td></tr><tr><td>400</td><td>2:51-55</td><td>1.0329</td><td>1.0356</td><td>1.0457</td><td></td><td>1.0329</td><td></td><td></td></tr><tr><td>450</td><td>2:51-55</td><td>1.0518</td><td>1.0556</td><td>1.0708</td><td></td><td>1.0518</td><td></td><td></td></tr><tr><td>500</td><td>2:51-55</td><td>1.0092</td><td>1.0137</td><td>1.029</td><td></td><td>1.0092</td><td></td><td></td></tr><tr><td colspan="9" class="muted">... 11 more rows in summary.json</td></tr></tbody></table>
+</section>
+<section class="card"><h2>Loop Readout</h2>
+<p class="muted">No numeric series available.</p>
+<p class="muted">No rows available.</p>
+</section>
+<section class="card"><h2>Case Visualizations</h2><ul>
+<li class="muted">No per-case trajectories were archived for this run. Future Maze runs now default to saving casebooks.</li>
+</ul></section>
+<section class="card"><h2>Artifacts</h2>
+<table><thead><tr><th>path</th></tr></thead><tbody><tr><td>config.json</td></tr><tr><td>logs/run.log</td></tr><tr><td>metadata.json</td></tr><tr><td>output/checkpoint_eval_step001000.json</td></tr><tr><td>score.json</td></tr></tbody></table>
+</section>
+</main></body></html>

@@ -3,11 +3,11 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-015`
-- Status: in-progress
+- Status: stopped
 - Machine: AIStation `GPU1` only
 - Started: 2026-07-02T12:14:12Z
 - Source SHA at planning time: `ae31c9f54ffb0abaecf48e2102942431f57d36b3`
-- Formal run name: `gdn-transition-d256l12-width-noconv-s6000-20260702T1236Z-<sha>`
+- Formal run name: `gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f`
 
 ## 2. Hypothesis
 
@@ -56,11 +56,38 @@ Launch note:
 
 ## 6. Artifacts
 
-Pending.
+- Remote run dir: `/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f`
+- Remote checkpoint: `/huyang2/double-loop/models/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f/checkpoints/train_state_step001000.pt`
+- Remote transfer tar: `/huyang2/double-loop/artifacts/transfer/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f-metadata-light.tgz`
+- Local transfer tar: `.codex-transfer/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f-metadata-light.tgz`
+- Tar sha256: `597a93ece28005d0ca14a47a4c674525eaf0a32ca7c418b4731feea8e282aabb`
+- Local archive: `runs/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f/`
 
 ## 7. Results
 
-Pending.
+Training stayed finite and fit GPU1 at about `51.8GB`.
+
+| step | stage | CE | loop1 CE | loop5 CE |
+|---:|---|---:|---:|---:|
+| 100 | 46-50 | 1.4736 | 1.4716 | 1.4736 |
+| 300 | 51-55 | 1.0832 | 1.0917 | 1.0832 |
+| 500 | 51-55 | 1.0092 | 1.0290 | 1.0092 |
+| 650 | 51-55 | 0.9473 | 0.9799 | 0.9473 |
+| 1000 | 51-55 | 0.9539 | 0.9931 | 0.9539 |
+
+Checkpoint eval at step1000:
+
+| bucket | loop1 exact | loop1 blank | loop5 exact | loop5 blank | loop gain exact | loop gain blank |
+|---|---:|---:|---:|---:|---:|---:|
+| holes53 | 0.0156 | 0.4940 | 0.0176 | 0.5150 | +0.0020 | +0.0210 |
+| holes60 | 0.0195 | 0.5055 | 0.0215 | 0.5308 | +0.0020 | +0.0253 |
+
+Reference comparisons:
+
+- D224/H14/D16 step1000 holes53 loop5 exact/blank: `0.0176/0.5284`.
+- D224/H7/D32 state-geometry step1000 holes60 loop5 exact/blank: `0.0215/0.5390`.
+- D256/H16/D16 step1000 holes53 loop5 exact/blank: `0.0176/0.5150`.
+- D256/H16/D16 step1000 holes60 loop5 exact/blank: `0.0215/0.5308`.
 
 ## 8. Conclusions
 
@@ -75,6 +102,12 @@ Decision value:
 
 - Positive result supports a bitter-lesson scaling story: native FutureSeed+loop improves with larger generic backbone capacity.
 - Negative result says the bottleneck is not raw width or per-head state size; next work should change the generic recurrent state/update formulation.
+
+Decision:
+
+- Stopped at step1000 by ROI rule.
+- D256/L12 is not a good next scaling axis. It is trainable and fits, but it ties exact and loses blank accuracy against cheaper D224 at the same checkpoint. It also does not beat the H7/D32 state-geometry run on holes60 blank accuracy.
+- This is a useful negative boundary, not a FutureSeed failure. D224/L12 long training remains the current best clean scaling result. The next worthwhile move is either a more efficient/generic recurrent state-update formulation, or a data/curriculum scale move that shows slope against D224, not a D256/D320 width table.
 
 ## 9. Submission Record
 

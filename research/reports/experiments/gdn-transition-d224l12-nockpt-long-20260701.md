@@ -3,12 +3,18 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-011`
-- Status: approved
+- Status: done
 - Local branch: `codex/gpu1-experiment-tracking`
 - Planned time: `2026-07-01 19:25 +0800`
+- Run start: `2026-07-01 19:25 +0800`
+- Run complete: `2026-07-01 21:46 +0800`
+- Archived locally: `2026-07-02 09:58 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: pending launch commit
+- Source SHA: `4346594c0a8bbb78a90bad687a064985892b5cd6`
+- Run name: `gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594`
+- Remote run dir: `/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-long-4346594-20260701T1125Z/runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594`
+- Local archive: `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594`
 - Parent evidence:
   - P-DIAG-005/P-DIAG-004 showed D192/L10 `GDN_EXPAND_V=4.0`
     has real slope on the 51-55 transition, reaching official `51-55`
@@ -62,7 +68,15 @@ This is a single scale test, not an ablation sweep.
 
 ## 4. Environment
 
-Pending launch.
+- GPU: AIStation `GPU1`, A100/A800 80GB class
+- CUDA visibility: `CUDA_VISIBLE_DEVICES=0`
+- Python: `/opt/conda/bin/python`
+- Torch: `2.7.0+cu126`
+- Device: `cuda`
+- GDN mode: `triton_recurrent`
+- Forward dtype: `bfloat16`
+- Activation checkpoint: disabled
+- Git dirty at launch: false
 
 ## 5. Commands
 
@@ -108,15 +122,93 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/config.json`
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/logs/run.log`
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/output/checkpoint_eval_step001000.json`
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/output/checkpoint_eval_step002000.json`
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/output/checkpoint_eval_step003000.json`
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/output/case_bank/`
+- `runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/visualizations/index.html`
+- Remote train checkpoints were intentionally not committed:
+  - `checkpoints/train_state_step000500.pt`
+  - `checkpoints/train_state_step001000.pt`
+  - `checkpoints/train_state_step001500.pt`
+  - `checkpoints/train_state_step002000.pt`
+  - `checkpoints/train_state_step002500.pt`
+  - `checkpoints/train_state_step003000.pt`
 
 ## 7. Results
 
-Pending.
+Training CE on the hard `51-55` stage:
+
+| Step | CE | Total | Loop1 CE | Loop-last CE |
+|---:|---:|---:|---:|---:|
+| 400 | 1.0327 | 1.0378 | 1.0554 | 1.0327 |
+| 500 | 1.0119 | 1.0182 | 1.0402 | 1.0119 |
+| 600 | 0.9766 | 0.9868 | 1.0248 | 0.9766 |
+| 700 | 0.9571 | 0.9681 | 1.0066 | 0.9571 |
+| 800 | 0.9606 | 0.9729 | 1.0180 | 0.9606 |
+| 900 | 0.9504 | 0.9631 | 1.0083 | 0.9504 |
+| 1000 | 0.9498 | 0.9628 | 1.0066 | 0.9498 |
+| 1500 | 0.8944 | 0.9134 | 0.9751 | 0.8944 |
+| 2000 | 0.8517 | 0.8800 | 0.9631 | 0.8517 |
+| 2500 | 0.8441 | 0.8768 | 0.9712 | 0.8441 |
+| 3000 | 0.7943 | 0.8400 | 0.9681 | 0.7943 |
+
+Checkpoint eval on holes53:
+
+| Checkpoint | Loop1 exact / blank | Loop3 exact / blank | Loop5 exact / blank |
+|---:|---:|---:|---:|
+| 1000 | 0.0156 / 0.4985 | 0.0176 / 0.5273 | 0.0176 / 0.5284 |
+| 2000 | 0.0176 / 0.5031 | 0.0195 / 0.5439 | 0.0195 / 0.5449 |
+| 3000 | 0.0176 / 0.5112 | 0.0293 / 0.5724 | 0.0352 / 0.5750 |
+
+Final mixed official eval:
+
+| Loop | Exact | Blank acc |
+|---:|---:|---:|
+| 1 | 0.0215 | 0.5215 |
+| 2 | 0.0234 | 0.5675 |
+| 3 | 0.0371 | 0.5844 |
+| 4 | 0.0352 | 0.5882 |
+| 5 | 0.0410 | 0.5897 |
+
+Final official blank-range eval:
+
+| Blank range | Exact | Valid | Solved | Blank acc |
+|---|---:|---:|---:|---:|
+| 46-50 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| 51-55 | 0.0195 | 0.0195 | 0.0195 | 0.6441 |
+| 56-64 | 0.0137 | 0.0137 | 0.0137 | 0.5266 |
+
+Case-bank summary:
+
+- `46-50`: exact `0.9948`, blank `0.9997`, mostly solved.
+- `51-55`: exact `0.0260`, blank `0.6522`, includes solved-by-loop,
+  almost-solved, and hard failures.
+- `56-64`: exact `0.0000`, blank `0.5231`, almost-solved and hard failures.
 
 ## 8. Conclusions
 
-Pending.
+This run is a mixed scale result:
+
+- Positive: D224/L12 no-checkpoint remains stable through 3000 total steps.
+- Positive: holes53 exact and blank accuracy keep improving from checkpoint1000
+  to checkpoint3000, and depth loop now adds useful full-board refinement
+  (`loop1 -> loop5` mixed exact `0.0215 -> 0.0410`).
+- Negative: the run misses the planned success gate. Step3000 holes53 loop5
+  exact `0.0352` is below the D192/L10 resume checkpoint `0.0615`, and
+  official `51-55` exact `0.0195` is below the D192/L10 resume final `0.0459`.
+
+Decision:
+
+- Do not claim D224/L12 is better than D192/L10 at 3000.
+- Because checkpoint exact still has slope (`0.0176 -> 0.0195 -> 0.0352`)
+  and loop refinement is stronger than earlier runs, one continuation to 6000
+  is justified by the user's long-run scaling request.
+- If D224/L12 still fails to beat the D192/L10 51-55 gate after 6000 total
+  steps, same-family bigger-network scaling should be deprioritized in favor
+  of a cleaner recurrent state formulation.
 
 ## 9. Submission Record
 

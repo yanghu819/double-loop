@@ -1,0 +1,40 @@
+{
+  "run_name": "gdn-transition-stategeom-d224l12-hd32-s6000-20260702T1108Z-c50b48b",
+  "score": 0.021484375,
+  "score_key": "checkpoint_eval_step001000.holes60.loop5.label_exact",
+  "checkpoint_step": 1000,
+  "elapsed_sec": 3212.129834651947,
+  "train": {
+    "ce_loss": 0.9090124815702438,
+    "total_loss": 0.9290929883718491,
+    "loop1_loss": 0.9898940473794937,
+    "loop_last_loss": 0.9090124815702438
+  },
+  "metrics": {
+    "holes53": {
+      "loop1": {"label_exact": 0.00390625, "blank_acc": 0.492780476808548, "clue_ok": 1.0},
+      "loop2": {"label_exact": 0.017578125, "blank_acc": 0.520749568939209, "clue_ok": 1.0},
+      "loop3": {"label_exact": 0.017578125, "blank_acc": 0.5272873640060425, "clue_ok": 1.0},
+      "loop4": {"label_exact": 0.017578125, "blank_acc": 0.5265531539916992, "clue_ok": 1.0},
+      "loop5": {"label_exact": 0.017578125, "blank_acc": 0.5262734889984131, "clue_ok": 1.0},
+      "loop_gain_exact": 0.013671875,
+      "loop_gain_blank": 0.03349301218986511
+    },
+    "holes60": {
+      "loop1": {"label_exact": 0.009765625, "blank_acc": 0.5019970536231995, "clue_ok": 1.0},
+      "loop2": {"label_exact": 0.021484375, "blank_acc": 0.5314273834228516, "clue_ok": 1.0},
+      "loop3": {"label_exact": 0.021484375, "blank_acc": 0.5374886393547058, "clue_ok": 1.0},
+      "loop4": {"label_exact": 0.021484375, "blank_acc": 0.5388199687004089, "clue_ok": 1.0},
+      "loop5": {"label_exact": 0.021484375, "blank_acc": 0.5389600992202759, "clue_ok": 1.0},
+      "loop_gain_exact": 0.01171875,
+      "loop_gain_blank": 0.036963045597076416
+    }
+  },
+  "comparison": {
+    "baseline_d224_h14_d16_step1000_holes53_loop5_exact": 0.0176,
+    "baseline_d224_h14_d16_step1000_holes53_loop5_blank_acc": 0.5284,
+    "observed_memory_gb": 71.5,
+    "baseline_observed_memory_gb": 44.8,
+    "decision": "no same-step quality advantage; much worse memory and throughput"
+  }
+}

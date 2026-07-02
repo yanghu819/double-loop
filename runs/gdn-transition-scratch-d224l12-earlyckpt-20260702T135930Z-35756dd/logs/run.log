@@ -1,0 +1,12 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-scratch-d224l12-s3000-20260702T134526Z-35756dd/runs/gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd
+git_sha=35756ddf2adba5eb5a35ecb1390cf6026e7cd354
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=float32
+checkpoint_eval steps=300,600,1000,2000,3000 holes=53,60
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6463 total=1.6454 loop1=1.6439 loop_last=1.6463 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.501 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.5583 total=1.5583 loop1=1.5593 loop_last=1.5583 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.470 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.2726 total=1.2747 loop1=1.2823 loop_last=1.2726 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.404 scratch_gauss=0.0000
+[checkpoint_eval step=0300 holes53] loop5 exact=0.0000 blank=0.4013
+[train_checkpoint step=0300] path=/huyang2/double-loop/.worktrees/gdn-transition-scratch-d224l12-s3000-20260702T134526Z-35756dd/runs/gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd/checkpoints/train_state_step000300.pt
+[future_seed_loop stage=2:51-55] step=0400 ce=1.2003 total=1.2021 loop1=1.2103 loop_last=1.2003 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.509 scratch_gauss=0.0000

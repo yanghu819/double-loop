@@ -1,0 +1,126 @@
+{
+  "abort": {
+    "checkpoint": "/huyang2/double-loop/.worktrees/gdn-transition-scratch-d224l12-s3000-20260702T134526Z-35756dd/runs/gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd/output/checkpoint_eval_step000300.json",
+    "fixed_d224_reference": {
+      "step300.holes53.loop5.blank_acc": 0.4704,
+      "step300.holes53.loop5.label_exact": 0.002
+    },
+    "metrics": {
+      "holes53.loop1.blank_acc": 0.3973709046840668,
+      "holes53.loop1.label_exact": 0.0,
+      "holes53.loop3.blank_acc": 0.4006922245025635,
+      "holes53.loop3.label_exact": 0.0,
+      "holes53.loop5.blank_acc": 0.4012865722179413,
+      "holes53.loop5.label_exact": 0.0,
+      "holes60.loop1.blank_acc": 0.39751943945884705,
+      "holes60.loop1.label_exact": 0.0,
+      "holes60.loop3.blank_acc": 0.40393105149269104,
+      "holes60.loop3.label_exact": 0.0,
+      "holes60.loop5.blank_acc": 0.4042814075946808,
+      "holes60.loop5.label_exact": 0.0
+    },
+    "reason": "step300 scratch gate underperforms fixed D224 early curve; scratch is active but harmful/slow",
+    "status": "stopped_by_roi_gate",
+    "timestamp": "2026-07-02T14:19:31Z"
+  },
+  "available_artifacts": [
+    "abort.json",
+    "config.json",
+    "logs/run.log",
+    "metadata.json",
+    "output/checkpoint_eval_step000300.json",
+    "score.json"
+  ],
+  "case_links": [],
+  "config": {
+    "git_dirty": false,
+    "git_sha": "35756ddf2adba5eb5a35ecb1390cf6026e7cd354",
+    "mode": "full",
+    "run_dir": "/huyang2/double-loop/.worktrees/gdn-transition-scratch-d224l12-s3000-20260702T134526Z-35756dd/runs/gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd",
+    "run_name": "gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd",
+    "timestamp_utc": "2026-07-02T13:59:38.511510+00:00"
+  },
+  "final_by_hole": [],
+  "generated_at_utc": "2026-07-02T14:26:29.311678+00:00",
+  "git_dirty": false,
+  "git_sha": "35756ddf2adba5eb5a35ecb1390cf6026e7cd354",
+  "has_abort": true,
+  "history": [
+    {
+      "path": "/huyang2/double-loop/.worktrees/gdn-transition-scratch-d224l12-s3000-20260702T134526Z-35756dd/runs/gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd/checkpoints/train_state_step000300.pt",
+      "source_log": "logs/run.log"
+    },
+    {
+      "ce": 1.6463,
+      "exact_margin": 0.0,
+      "fb_conf": 0.0,
+      "fb_corrupt": 0.0,
+      "fb_next": 0.0,
+      "loop1": 1.6439,
+      "loop_last": 1.6463,
+      "scratch_delta": 0.501,
+      "scratch_gauss": 0.0,
+      "softmin": 0.0,
+      "source_log": "logs/run.log",
+      "stage": "1:46-50",
+      "step": 100,
+      "total": 1.6454,
+      "upd_h": 0.95,
+      "upd_l": 0.95
+    },
+    {
+      "ce": 1.5583,
+      "exact_margin": 0.0,
+      "fb_conf": 0.0,
+      "fb_corrupt": 0.0,
+      "fb_next": 0.0,
+      "loop1": 1.5593,
+      "loop_last": 1.5583,
+      "scratch_delta": 0.47,
+      "scratch_gauss": 0.0,
+      "softmin": 0.0,
+      "source_log": "logs/run.log",
+      "stage": "2:51-55",
+      "step": 200,
+      "total": 1.5583,
+      "upd_h": 0.95,
+      "upd_l": 0.95
+    },
+    {
+      "blank": 0.4013,
+      "exact": 0.0,
+      "source_log": "logs/run.log",
+      "step": 300
+    },
+    {
+      "ce": 1.2003,
+      "exact_margin": 0.0,
+      "fb_conf": 0.0,
+      "fb_corrupt": 0.0,
+      "fb_next": 0.0,
+      "loop1": 1.2103,
+      "loop_last": 1.2003,
+      "scratch_delta": 0.509,
+      "scratch_gauss": 0.0,
+      "softmin": 0.0,
+      "source_log": "logs/run.log",
+      "stage": "2:51-55",
+      "step": 400,
+      "total": 1.2021,
+      "upd_h": 0.95,
+      "upd_l": 0.95
+    }
+  ],
+  "hole_rows": [],
+  "loop_deltas": {},
+  "loop_rows": [],
+  "mode": "full",
+  "notes": "P-DIAG-016 stopped at step300: gated scratch active but under fixed D224 early curve",
+  "readme": "",
+  "result_json": "output/checkpoint_eval_step000300.json",
+  "run_name": "gdn-transition-scratch-d224l12-earlyckpt-20260702T135930Z-35756dd",
+  "score": 0.0,
+  "score_key": "eval_by_holes.holes60.eval_clean.loop5.label_exact",
+  "task": {},
+  "timestamp_utc": "2026-07-02T14:26:29.282448+00:00"
+}

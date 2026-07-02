@@ -3,12 +3,16 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-012`
-- Status: in-progress
+- Status: done
 - Local branch: `codex/gpu1-experiment-tracking`
 - Planned time: `2026-07-02 10:05 +0800`
+- Launched: `2026-07-02 10:09 +0800`
+- Completed: `2026-07-02 12:20 +0800`
 - Machine: AIStation `GPU1` only
 - Remote work dir: `/huyang2/double-loop`
-- Source SHA: pending launch commit
+- Source SHA: `c00167e1f6d8623d632d1598203323feda3fc5c0`
+- Run name:
+  `gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e`
 - Parent run: `gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594`
 - Parent checkpoint:
   `/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-long-4346594-20260701T1125Z/runs/gdn-transition-d224l12-nockpt-long-s3000-20260701T1125Z-4346594/checkpoints/train_state_step003000.pt`
@@ -62,7 +66,17 @@ seed/LR/loss/gate table.
 
 ## 4. Environment
 
-Pending launch.
+- AIStation row: `GPU1`
+- Host: `430g41c4b65qj-0`
+- GPU: `NVIDIA A100-SXM4-80GB`
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-continue-c00167e-20260702T0209Z`
+- Run dir:
+  `/huyang2/double-loop/.worktrees/gdn-transition-d224l12-nockpt-continue-c00167e-20260702T0209Z/runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e`
+- Python: `/opt/conda/bin/python`
+- Torch/CUDA from run log: `torch=2.7.0+cu126`, device `cuda`
+- Peak CUDA allocated/reserved is recorded in `output/futureseed_loop_seed52.json`.
+- Checkpoints stayed on remote only and were excluded from the Git archive.
 
 ## 5. Commands
 
@@ -108,15 +122,104 @@ Success criteria:
 
 ## 6. Artifacts
 
-Pending.
+- Local archive:
+  `runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e`
+- Remote archive:
+  `/huyang2/double-loop/artifacts/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e-metadata-light.tgz`
+- Config:
+  `runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e/config.json`
+- Score:
+  `runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e/score.json`
+- Main output:
+  `runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e/output/futureseed_loop_seed52.json`
+- Checkpoint eval JSON:
+  `runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e/output/checkpoint_eval_step004000.json`
+  through `checkpoint_eval_step006000.json`
+- Visual index:
+  `runs/gdn-transition-d224l12-nockpt-continue-s6000-20260702T0209Z-c00167e/visualizations/index.html`
+- Case banks:
+  `output/case_bank/official_b46_50`,
+  `output/case_bank/official_b51_55`,
+  `output/case_bank/official_b56_64`
 
 ## 7. Results
 
-Pending.
+Primary score:
+
+| metric | value |
+|---|---:|
+| `metrics.eval_clean.loop5.label_exact` | `0.20703125` |
+| final loop5 blank accuracy | `0.62158668` |
+| final loop1 exact / blank | `0.0234375 / 0.53704417` |
+| final loop5 exact / blank | `0.20703125 / 0.62158668` |
+
+Final loop curve on the mixed official eval:
+
+| loop | exact | blank_acc |
+|---:|---:|---:|
+| 1 | `0.0234` | `0.5370` |
+| 2 | `0.0352` | `0.5881` |
+| 3 | `0.1289` | `0.6136` |
+| 4 | `0.2031` | `0.6214` |
+| 5 | `0.2070` | `0.6216` |
+
+Holes53 checkpoint eval:
+
+| total step | loop5 exact | loop5 blank_acc |
+|---:|---:|---:|
+| 100 | `0.0000` | `0.2443` |
+| 300 | `0.0020` | `0.4704` |
+| 1000 | `0.0176` | `0.5284` |
+| 2000 | `0.0195` | `0.5449` |
+| 3000 | `0.0352` | `0.5750` |
+| 4000 | `0.0684` | `0.5949` |
+| 5000 | `0.1250` | `0.6111` |
+| 6000 | `0.1680` | `0.6120` |
+
+Official blank-range eval:
+
+| range | loop1 exact / blank | loop5 exact / blank |
+|---|---:|---:|
+| `46-50` | `0.9375 / 0.9983` | `1.0000 / 1.0000` |
+| `51-55` | `0.0000 / 0.5814` | `0.2832 / 0.7139` |
+| `56-64` | `0.0000 / 0.4883` | `0.0801 / 0.5405` |
+
+Case-bank summaries:
+
+| group | final exact | final blank_acc | selected cases |
+|---|---:|---:|---|
+| `official_b46_50` | `1.0000` | `1.0000` | 3 solved-by-loop |
+| `official_b51_55` | `0.3333` | `0.7392` | 3 solved, 3 almost, 3 hard failures |
+| `official_b56_64` | `0.0990` | `0.5612` | 3 solved, 2 almost, 3 hard failures |
 
 ## 8. Conclusions
 
-Pending.
+Decision: keep. This run decisively answers the P-DIAG-012 question: D224/L12
+was not worse because capacity scaling was useless; it needed much longer
+hard-stage training. The holes53 exact curve is not flat. It moves
+`0.0352 -> 0.0684 -> 0.1250 -> 0.1680` from step3000 to step6000, and final
+official `51-55` exact reaches `0.2832`, far above the previous D192/L10
+transition reference (`0.0459`).
+
+The important mechanism signal is loop depth, not just local token accuracy:
+on the final mixed eval, loop1 exact is only `0.0234`, while loop5 exact is
+`0.2070`. On the official `51-55` bucket, loop1 exact is still `0`, but loop5
+exact is `0.2832`. That means the loop is converting partial blank accuracy
+into globally valid boards after the model has enough capacity and hard-stage
+training.
+
+Remaining bottleneck: the `56-64` bucket is opened but still weak
+(`0.0801` exact). The next scaling decision should not be another tiny
+loss/gate/noise tweak. The high-ROI directions are either:
+
+- continue clean capacity/data/compute scaling around this stable D224/L12
+  recipe, or
+- move to a similarly simple generic recurrent-state update only if it can
+  preserve this long-training slope.
+
+This is strong evidence for the bitter-lesson path: no Sudoku repair, no
+selector, no oracle rollout, no maze/Sudoku rule. More model/state plus more
+hard data and every-loop supervision finally moved the transition cliff.
 
 ## 9. Submission Record
 

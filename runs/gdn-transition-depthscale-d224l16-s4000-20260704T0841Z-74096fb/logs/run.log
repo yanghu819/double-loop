@@ -1,0 +1,10 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb/runs/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb
+git_sha=74096fb5e2ea299ea09fef71e0e8f2e36f5a9384
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=float32
+checkpoint_eval steps=1000,2000,3000,4000 holes=53,60,64
+[future_seed_loop stage=1:46-50] step=0100 ce=1.8350 total=1.8349 loop1=1.8347 loop_last=1.8350 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.7421 total=1.7421 loop1=1.7429 loop_last=1.7421 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.4064 total=1.4079 loop1=1.4138 loop_last=1.4064 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.2457 total=1.2482 loop1=1.2579 loop_last=1.2457 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000

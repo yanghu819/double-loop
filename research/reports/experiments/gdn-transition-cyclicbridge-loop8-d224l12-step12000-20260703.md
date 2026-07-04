@@ -6,7 +6,7 @@
 - plan_id: `P-DIAG-020`
 - machine: AIStation `GPU1` only
 - local_start_time: `2026-07-03 15:57 CST`
-- status: `in-progress`
+- status: `failed`
 - branch: `codex/gpu1-experiment-tracking`
 
 ## 2. Hypothesis
@@ -72,15 +72,31 @@ RUN_NAME=gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z ./ru
 
 ## 6. Artifacts
 
-Pending.
+- Remote worktree: `/huyang2/double-loop/.worktrees/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z`
+- First launch dir: `/huyang2/double-loop/artifacts/launch/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z`
+- First partial run dir: `/huyang2/double-loop/.worktrees/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z/runs/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z`
+- Resume100 launch dir: `/huyang2/double-loop/artifacts/launch/gdn-transition-cyclicbridge-loop8-d224l12-step12000-resume100-20260704T0008Z-3f09ea5`
+- Resume100 partial run dir: `/huyang2/double-loop/.worktrees/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z/runs/gdn-transition-cyclicbridge-loop8-d224l12-step12000-resume100-20260704T0008Z-3f09ea5`
+- Abort file: `runs/gdn-transition-cyclicbridge-loop8-d224l12-step12000-resume100-20260704T0008Z-3f09ea5/abort.json`
 
 ## 7. Results
 
-Pending.
+The original loop8/effective-batch256 launch resumed correctly from step8400 and reached:
+
+| step | stage | CE | total | loop1 | loop_last |
+|---:|---|---:|---:|---:|---:|
+| 8500 | 56-64 | `0.5318` | `0.6275` | `1.0331` | `0.5318` |
+| 8600 | 56-64 | `0.4475` | `0.5686` | `1.0671` | `0.4475` |
+
+AIStation halted before the first planned eval/checkpoint at step9000. A resume100 run was launched with `SAVE_TRAIN_CHECKPOINT_EVERY=100`, but it was killed after about eight minutes because it still had not reached the first 100-step log while using about `76GB` GPU memory.
+
+No score/eval result was produced. This is a throughput failure, not evidence against cyclic bridge-hard data.
 
 ## 8. Conclusions
 
-Pending.
+Do not continue loop8 plus effective batch256 on the current D224/L12 GDN formulation. It is the wrong scaling axis: memory is nearly full, throughput is too low, and the information gain per GPU hour is worse than P-DIAG-019.
+
+The useful next move is P-DIAG-021: keep the proven loop5/effective batch128 path, keep cyclic bridge-hard data, train longer, and save train checkpoints every 100 steps so AIStation interruptions do not erase progress.
 
 ## 9. Submission Record
 

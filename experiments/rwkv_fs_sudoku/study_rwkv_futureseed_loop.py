@@ -1314,6 +1314,9 @@ class FutureSeedLoopSudoku(nn.Module):
         scratch_gauss_projections: int,
         scratch_gate_bias: float,
         scratch_decay_bias: float,
+        hidden_agg_noise_scale: float,
+        hidden_agg_noise_temp: float,
+        hidden_agg_noise_detach: bool,
         activation_checkpoint: bool,
         rwkv_kernel: str,
         backbone: str,
@@ -1343,6 +1346,9 @@ class FutureSeedLoopSudoku(nn.Module):
         self.scratch_mode = scratch_mode
         self.scratch_scale = float(scratch_scale)
         self.scratch_noise_scale = float(scratch_noise_scale)
+        self.hidden_agg_noise_scale = float(hidden_agg_noise_scale)
+        self.hidden_agg_noise_temp = float(hidden_agg_noise_temp)
+        self.hidden_agg_noise_detach = bool(hidden_agg_noise_detach)
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -1519,6 +1525,35 @@ class FutureSeedLoopSudoku(nn.Module):
             diag["loop_feedback_corrupt_entropy"] = diag["loop_feedback_entropy"]
         return probs.to(dtype=logits.dtype), diag
 
+    def hidden_aggregate_noise(self, hidden: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        zero = hidden.new_zeros(())
+        if not (self.training and self.hidden_agg_noise_scale > 0):
+            return hidden, {
+                "hidden_agg_noise_norm": zero,
+                "hidden_agg_noise_entropy": zero,
+                "hidden_agg_noise_max_weight": zero,
+            }
+        temp = max(float(self.hidden_agg_noise_temp), 1e-4)
+        score = hidden.detach().float().square().mean(dim=-1)
+        gumbel = -torch.empty_like(score).exponential_().log()
+        weights = F.softmax((score + gumbel) / temp, dim=-1)
+        source = hidden.detach() if self.hidden_agg_noise_detach else hidden
+        pooled = torch.sum(weights.to(dtype=source.dtype).unsqueeze(-1) * source, dim=1, keepdim=True)
+        direction = pooled - source.mean(dim=1, keepdim=True)
+        direction_rms = direction.float().square().mean(dim=-1, keepdim=True).sqrt().clamp(min=1e-6)
+        ref_rms = hidden.detach().float().square().mean(dim=-1, keepdim=True).sqrt().mean(dim=1, keepdim=True)
+        perturb = direction.float() / direction_rms * ref_rms * float(self.hidden_agg_noise_scale)
+        perturb = perturb.to(dtype=hidden.dtype).expand_as(hidden)
+        weight_entropy = -(weights.clamp_min(1e-8).log() * weights).sum(dim=-1)
+        diag = {
+            "hidden_agg_noise_norm": perturb.detach().float().norm(dim=-1).mean().to(dtype=hidden.dtype),
+            "hidden_agg_noise_entropy": (
+                weight_entropy.mean() / math.log(max(int(hidden.shape[1]), 2))
+            ).to(dtype=hidden.dtype),
+            "hidden_agg_noise_max_weight": weights.max(dim=-1).values.mean().to(dtype=hidden.dtype),
+        }
+        return hidden + perturb, diag
+
     def depth_update(
         self,
         hidden: torch.Tensor,
@@ -1548,9 +1583,19 @@ class FutureSeedLoopSudoku(nn.Module):
             if feature_buffer is None:
                 raise ValueError("feature-difference noise requires a FeatureNoiseBuffer")
             out = out + feature_buffer.sample_diff_like(out) * float(noise_scale)
+        if allow_noise:
+            out, hidden_agg_diag = self.hidden_aggregate_noise(out)
+        else:
+            zero = out.new_zeros(())
+            hidden_agg_diag = {
+                "hidden_agg_noise_norm": zero,
+                "hidden_agg_noise_entropy": zero,
+                "hidden_agg_noise_max_weight": zero,
+            }
         if allow_noise and update_feature_buffer and feature_buffer is not None:
             feature_buffer.add(out, max_items=feature_buffer_add)
         diag = dict(diag)
+        diag.update(hidden_agg_diag)
         diag["loop_update_gate"] = update_gate.detach()
         return out, diag, next_seed_memory
 
@@ -1851,6 +1896,10 @@ def fs_line(m: Dict[str, float]) -> str:
     if m.get("loop_feedback_corrupt_mix", 0.0) > 0:
         parts.append(f"fb_corrupt={m.get('loop_feedback_corrupt_frac', 0.0):.3f}")
         parts.append(f"fb_conf={m.get('loop_feedback_corrupt_confidence', 0.0):.3f}")
+    if m.get("hidden_agg_noise_norm", 0.0) > 0:
+        parts.append(f"hagg_norm={m['hidden_agg_noise_norm']:.3f}")
+        parts.append(f"hagg_ent={m.get('hidden_agg_noise_entropy', 0.0):.3f}")
+        parts.append(f"hagg_maxw={m.get('hidden_agg_noise_max_weight', 0.0):.3f}")
     if "loop_time_norm" in m:
         parts.append(f"loop_time={m['loop_time_norm']:.3f}")
     if "loop_update_gate_l" in m:
@@ -1911,6 +1960,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         scratch_gauss_projections=args.scratch_gauss_projections,
         scratch_gate_bias=args.scratch_gate_bias,
         scratch_decay_bias=args.scratch_decay_bias,
+        hidden_agg_noise_scale=args.hidden_agg_noise_scale,
+        hidden_agg_noise_temp=args.hidden_agg_noise_temp,
+        hidden_agg_noise_detach=bool(args.hidden_agg_noise_detach),
         activation_checkpoint=args.activation_checkpoint,
         rwkv_kernel=args.rwkv_kernel,
         backbone=args.backbone,
@@ -1952,6 +2004,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_loop_feedback_next_norm = 0.0
     last_loop_feedback_corrupt_frac = 0.0
     last_loop_feedback_corrupt_confidence = 0.0
+    last_hidden_agg_noise_norm = 0.0
+    last_hidden_agg_noise_entropy = 0.0
+    last_hidden_agg_noise_max_weight = 0.0
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -2013,6 +2068,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_loop_feedback_next_norm = float(last_metrics.get("loop_feedback_next_norm", 0.0))
         last_loop_feedback_corrupt_frac = float(last_metrics.get("loop_feedback_corrupt_frac", 0.0))
         last_loop_feedback_corrupt_confidence = float(last_metrics.get("loop_feedback_corrupt_confidence", 0.0))
+        last_hidden_agg_noise_norm = float(last_metrics.get("hidden_agg_noise_norm", 0.0))
+        last_hidden_agg_noise_entropy = float(last_metrics.get("hidden_agg_noise_entropy", 0.0))
+        last_hidden_agg_noise_max_weight = float(last_metrics.get("hidden_agg_noise_max_weight", 0.0))
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -2061,6 +2119,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_loop_feedback_next_norm = 0.0
             accum_loop_feedback_corrupt_frac = 0.0
             accum_loop_feedback_corrupt_confidence = 0.0
+            accum_hidden_agg_noise_norm = 0.0
+            accum_hidden_agg_noise_entropy = 0.0
+            accum_hidden_agg_noise_max_weight = 0.0
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
                     args,
@@ -2162,6 +2223,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     accum_loop_feedback_corrupt_confidence += float(
                         trace_last.get("loop_feedback_corrupt_confidence", ce_loss.new_zeros(())).detach().cpu()
                     )
+                    accum_hidden_agg_noise_norm += float(
+                        trace_last.get("hidden_agg_noise_norm", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_hidden_agg_noise_entropy += float(
+                        trace_last.get("hidden_agg_noise_entropy", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_hidden_agg_noise_max_weight += float(
+                        trace_last.get("hidden_agg_noise_max_weight", ce_loss.new_zeros(())).detach().cpu()
+                    )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
@@ -2185,6 +2255,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_loop_feedback_next_norm = accum_loop_feedback_next_norm / float(accum_count)
             last_loop_feedback_corrupt_frac = accum_loop_feedback_corrupt_frac / float(accum_count)
             last_loop_feedback_corrupt_confidence = accum_loop_feedback_corrupt_confidence / float(accum_count)
+            last_hidden_agg_noise_norm = accum_hidden_agg_noise_norm / float(accum_count)
+            last_hidden_agg_noise_entropy = accum_hidden_agg_noise_entropy / float(accum_count)
+            last_hidden_agg_noise_max_weight = accum_hidden_agg_noise_max_weight / float(accum_count)
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -2196,6 +2269,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"fb_next={last_loop_feedback_next_norm:.3f} "
                     f"fb_corrupt={last_loop_feedback_corrupt_frac:.3f} "
                     f"fb_conf={last_loop_feedback_corrupt_confidence:.3f} "
+                    f"hagg_norm={last_hidden_agg_noise_norm:.3f} "
+                    f"hagg_ent={last_hidden_agg_noise_entropy:.3f} "
+                    f"hagg_maxw={last_hidden_agg_noise_max_weight:.3f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -2228,6 +2304,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "loop_feedback_next_norm": last_loop_feedback_next_norm,
                         "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
                         "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
+                        "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+                        "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
+                        "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
                     },
                     "eval_by_holes": {},
                 }
@@ -2292,6 +2371,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "loop_feedback_next_norm": last_loop_feedback_next_norm,
                             "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
                             "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
+                            "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+                            "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
+                            "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
                         },
                         reason="eval_checkpoint",
                     )
@@ -2339,6 +2421,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "loop_feedback_next_norm": last_loop_feedback_next_norm,
                         "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
                         "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
+                        "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+                        "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
+                        "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
                     },
                     reason="periodic",
                 )
@@ -2365,7 +2450,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "exact_margin_softmin": last_exact_margin_softmin,
         "exact_margin_hardmin": last_exact_margin_hardmin,
         "exact_margin_mean": last_exact_margin_mean,
-        "noise_mode": "feature_diff",
+        "noise_mode": "+".join(
+            mode
+            for enabled, mode in (
+                (args.noise_scale > 0, "feature_diff"),
+                (args.hidden_agg_noise_scale > 0, "hidden_aggregate"),
+            )
+            if enabled
+        )
+        or "none",
         "scratch_mode": args.scratch_mode,
         "scratch_scale": args.scratch_scale,
         "scratch_noise_scale": args.scratch_noise_scale,
@@ -2387,6 +2480,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "loop_feedback_next_norm": last_loop_feedback_next_norm,
         "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
         "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
+        "hidden_agg_noise_scale": args.hidden_agg_noise_scale,
+        "hidden_agg_noise_temp": args.hidden_agg_noise_temp,
+        "hidden_agg_noise_detach": bool(args.hidden_agg_noise_detach),
+        "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+        "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
+        "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "microbatch": args.batch,
@@ -3464,6 +3563,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--scratch_gauss_weight requires --scratch_mode gated")
     if args.scratch_gauss_weight > 0 and args.scratch_gauss_projections == 0:
         raise ValueError("--scratch_gauss_weight requires positive --scratch_gauss_projections")
+    if args.hidden_agg_noise_scale < 0:
+        raise ValueError("--hidden_agg_noise_scale must be non-negative")
+    if args.hidden_agg_noise_temp <= 0:
+        raise ValueError("--hidden_agg_noise_temp must be positive")
+    if args.hidden_agg_noise_detach not in {0, 1}:
+        raise ValueError("--hidden_agg_noise_detach must be 0 or 1")
     if args.exact_margin_weight < 0:
         raise ValueError("--exact_margin_weight must be non-negative")
     if args.exact_margin_tau <= 0:
@@ -3696,6 +3801,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "scratch_gauss_projections": args.scratch_gauss_projections,
         "scratch_gate_bias": args.scratch_gate_bias,
         "scratch_decay_bias": args.scratch_decay_bias,
+        "hidden_agg_noise_scale": args.hidden_agg_noise_scale,
+        "hidden_agg_noise_temp": args.hidden_agg_noise_temp,
+        "hidden_agg_noise_detach": bool(args.hidden_agg_noise_detach),
         "rwkv_kernel": args.rwkv_kernel,
         "backbone": args.backbone,
         "gdn_mode": args.gdn_mode,
@@ -3858,6 +3966,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--scratch_gauss_projections", type=int, default=0)
     p.add_argument("--scratch_gate_bias", type=float, default=-2.0)
     p.add_argument("--scratch_decay_bias", type=float, default=2.0)
+    p.add_argument("--hidden_agg_noise_scale", type=float, default=0.0)
+    p.add_argument("--hidden_agg_noise_temp", type=float, default=1.0)
+    p.add_argument("--hidden_agg_noise_detach", type=int, choices=(0, 1), default=1)
     p.add_argument("--exact_margin_weight", type=float, default=0.0)
     p.add_argument("--exact_margin_tau", type=float, default=0.5)
     p.add_argument("--exact_margin_target", type=float, default=0.0)

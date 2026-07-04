@@ -2,11 +2,11 @@
 
 ## 1. Metainfo
 
-- run_name: `gdn-transition-depthscale-d224l16-s4000-20260704T-tbd`
+- run_name: `gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb`
 - plan_id: `P-DIAG-022`
 - machine: AIStation `GPU1` only
-- local_start_time: `2026-07-04 CST`
-- status: `prelaunch`
+- local_start_time: `2026-07-04 16:41 CST`
+- status: `running`
 - branch: `codex/gpu1-experiment-tracking`
 
 ## 2. Hypothesis
@@ -19,7 +19,7 @@ No Sudoku repair, no search, no selector, no oracle rollout, no task-specific ru
 
 ## 3. Configuration
 
-- Source SHA: to be filled after prelaunch commit.
+- Source SHA: `74096fb5e2ea299ea09fef71e0e8f2e36f5a9384`.
 - Data: official EqR Sudoku arrays.
 - Backbone: native FutureSeed GDN, D224/L16/H14/D16, `GDN_EXPAND_V=4.0`.
 - Loop: `MAX_LOOPS=5`, `LOOP_LOSS=all`.
@@ -66,12 +66,23 @@ FULL_ROLLOUT_KS="" FULL_LOG_EVERY=100 \
 EVAL_CHECKPOINT_STEPS=1000,2000,3000,4000 EVAL_CHECKPOINT_HOLES_LIST=53,60,64 \
 OFFICIAL_EVAL_BLANK_RANGES=46-50,51-55,56-64 \
 CASE_BANK_HOLES=53,60,64 CASE_BANK_N=4 CASE_BANK_EVAL_N=256 CASE_BANK_LOOP_VALUES=1,3,5 \
-RUN_NAME=gdn-transition-depthscale-d224l16-s4000-<timestamp>-<sha> ./run.sh full
+RUN_NAME=gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb ./run.sh full
 ```
 
 ## 6. Artifacts
 
-Pending.
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb`
+- Remote run directory:
+  `/huyang2/double-loop/.worktrees/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb/runs/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb`
+- Launch script:
+  `/huyang2/double-loop/artifacts/launch/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb.sh`
+- Launcher log:
+  `/huyang2/double-loop/artifacts/launch/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb.launcher.log`
+- PID file:
+  `/huyang2/double-loop/artifacts/launch/gdn-transition-depthscale-d224l16-s4000-20260704T0841Z-74096fb.pid`
+- Current PID at launch: `2319`
+- First status: fits GPU1 at about `63.7GB` used; step100 appeared at about `10.5m` with CE `1.8350`, no OOM/NaN.
 
 ## 7. Results
 

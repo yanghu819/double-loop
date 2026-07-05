@@ -1317,6 +1317,9 @@ class FutureSeedLoopSudoku(nn.Module):
         hidden_agg_noise_scale: float,
         hidden_agg_noise_temp: float,
         hidden_agg_noise_detach: bool,
+        hidden_agg_noise_mode: str,
+        hidden_agg_noise_topk: int,
+        hidden_agg_noise_max_norm: float,
         activation_checkpoint: bool,
         rwkv_kernel: str,
         backbone: str,
@@ -1349,6 +1352,11 @@ class FutureSeedLoopSudoku(nn.Module):
         self.hidden_agg_noise_scale = float(hidden_agg_noise_scale)
         self.hidden_agg_noise_temp = float(hidden_agg_noise_temp)
         self.hidden_agg_noise_detach = bool(hidden_agg_noise_detach)
+        if hidden_agg_noise_mode not in {"gumbel", "soft_group"}:
+            raise ValueError("hidden_agg_noise_mode must be 'gumbel' or 'soft_group'.")
+        self.hidden_agg_noise_mode = hidden_agg_noise_mode
+        self.hidden_agg_noise_topk = int(hidden_agg_noise_topk)
+        self.hidden_agg_noise_max_norm = float(hidden_agg_noise_max_norm)
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -1530,27 +1538,61 @@ class FutureSeedLoopSudoku(nn.Module):
         if not (self.training and self.hidden_agg_noise_scale > 0):
             return hidden, {
                 "hidden_agg_noise_norm": zero,
+                "hidden_agg_noise_raw_norm": zero,
                 "hidden_agg_noise_entropy": zero,
                 "hidden_agg_noise_max_weight": zero,
+                "hidden_agg_noise_clip_frac": zero,
             }
         temp = max(float(self.hidden_agg_noise_temp), 1e-4)
         score = hidden.detach().float().square().mean(dim=-1)
-        gumbel = -torch.empty_like(score).exponential_().log()
-        weights = F.softmax((score + gumbel) / temp, dim=-1)
         source = hidden.detach() if self.hidden_agg_noise_detach else hidden
-        pooled = torch.sum(weights.to(dtype=source.dtype).unsqueeze(-1) * source, dim=1, keepdim=True)
+        if self.hidden_agg_noise_mode == "soft_group":
+            centered = score - score.mean(dim=-1, keepdim=True)
+            normalized = centered / score.std(dim=-1, keepdim=True, unbiased=False).clamp(min=1e-6)
+            noisy_score = normalized + -torch.empty_like(score).exponential_().log()
+            k = min(max(int(self.hidden_agg_noise_topk), 1), int(hidden.shape[1]))
+            if k == int(hidden.shape[1]):
+                weights = F.softmax(noisy_score / temp, dim=-1)
+                pooled = torch.sum(weights.to(dtype=source.dtype).unsqueeze(-1) * source, dim=1, keepdim=True)
+                entropy_denom = math.log(max(k, 2))
+                max_weight = weights.max(dim=-1).values
+                weight_entropy = -(weights.clamp_min(1e-8).log() * weights).sum(dim=-1)
+            else:
+                top_values, top_idx = torch.topk(noisy_score, k=k, dim=-1)
+                weights = F.softmax(top_values / temp, dim=-1)
+                gather_idx = top_idx.unsqueeze(-1).expand(-1, -1, source.shape[-1])
+                selected = torch.gather(source, dim=1, index=gather_idx)
+                pooled = torch.sum(weights.to(dtype=source.dtype).unsqueeze(-1) * selected, dim=1, keepdim=True)
+                entropy_denom = math.log(max(k, 2))
+                max_weight = weights.max(dim=-1).values
+                weight_entropy = -(weights.clamp_min(1e-8).log() * weights).sum(dim=-1)
+        else:
+            gumbel = -torch.empty_like(score).exponential_().log()
+            weights = F.softmax((score + gumbel) / temp, dim=-1)
+            pooled = torch.sum(weights.to(dtype=source.dtype).unsqueeze(-1) * source, dim=1, keepdim=True)
+            entropy_denom = math.log(max(int(hidden.shape[1]), 2))
+            max_weight = weights.max(dim=-1).values
+            weight_entropy = -(weights.clamp_min(1e-8).log() * weights).sum(dim=-1)
         direction = pooled - source.mean(dim=1, keepdim=True)
         direction_rms = direction.float().square().mean(dim=-1, keepdim=True).sqrt().clamp(min=1e-6)
         ref_rms = hidden.detach().float().square().mean(dim=-1, keepdim=True).sqrt().mean(dim=1, keepdim=True)
         perturb = direction.float() / direction_rms * ref_rms * float(self.hidden_agg_noise_scale)
+        raw_norm = perturb.detach().float().norm(dim=-1, keepdim=True)
+        clip_frac = zero
+        if self.hidden_agg_noise_max_norm > 0:
+            cap = perturb.new_tensor(float(self.hidden_agg_noise_max_norm))
+            scale = (cap / raw_norm.clamp(min=1e-6)).clamp(max=1.0)
+            clip_frac = (raw_norm > cap).float().mean().to(dtype=hidden.dtype)
+            perturb = perturb * scale
         perturb = perturb.to(dtype=hidden.dtype).expand_as(hidden)
-        weight_entropy = -(weights.clamp_min(1e-8).log() * weights).sum(dim=-1)
         diag = {
             "hidden_agg_noise_norm": perturb.detach().float().norm(dim=-1).mean().to(dtype=hidden.dtype),
+            "hidden_agg_noise_raw_norm": raw_norm.mean().to(dtype=hidden.dtype),
             "hidden_agg_noise_entropy": (
-                weight_entropy.mean() / math.log(max(int(hidden.shape[1]), 2))
+                weight_entropy.mean() / entropy_denom
             ).to(dtype=hidden.dtype),
-            "hidden_agg_noise_max_weight": weights.max(dim=-1).values.mean().to(dtype=hidden.dtype),
+            "hidden_agg_noise_max_weight": max_weight.mean().to(dtype=hidden.dtype),
+            "hidden_agg_noise_clip_frac": clip_frac,
         }
         return hidden + perturb, diag
 
@@ -1589,8 +1631,10 @@ class FutureSeedLoopSudoku(nn.Module):
             zero = out.new_zeros(())
             hidden_agg_diag = {
                 "hidden_agg_noise_norm": zero,
+                "hidden_agg_noise_raw_norm": zero,
                 "hidden_agg_noise_entropy": zero,
                 "hidden_agg_noise_max_weight": zero,
+                "hidden_agg_noise_clip_frac": zero,
             }
         if allow_noise and update_feature_buffer and feature_buffer is not None:
             feature_buffer.add(out, max_items=feature_buffer_add)
@@ -1963,6 +2007,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         hidden_agg_noise_scale=args.hidden_agg_noise_scale,
         hidden_agg_noise_temp=args.hidden_agg_noise_temp,
         hidden_agg_noise_detach=bool(args.hidden_agg_noise_detach),
+        hidden_agg_noise_mode=args.hidden_agg_noise_mode,
+        hidden_agg_noise_topk=args.hidden_agg_noise_topk,
+        hidden_agg_noise_max_norm=args.hidden_agg_noise_max_norm,
         activation_checkpoint=args.activation_checkpoint,
         rwkv_kernel=args.rwkv_kernel,
         backbone=args.backbone,
@@ -2005,8 +2052,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_loop_feedback_corrupt_frac = 0.0
     last_loop_feedback_corrupt_confidence = 0.0
     last_hidden_agg_noise_norm = 0.0
+    last_hidden_agg_noise_raw_norm = 0.0
     last_hidden_agg_noise_entropy = 0.0
     last_hidden_agg_noise_max_weight = 0.0
+    last_hidden_agg_noise_clip_frac = 0.0
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -2069,8 +2118,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_loop_feedback_corrupt_frac = float(last_metrics.get("loop_feedback_corrupt_frac", 0.0))
         last_loop_feedback_corrupt_confidence = float(last_metrics.get("loop_feedback_corrupt_confidence", 0.0))
         last_hidden_agg_noise_norm = float(last_metrics.get("hidden_agg_noise_norm", 0.0))
+        last_hidden_agg_noise_raw_norm = float(last_metrics.get("hidden_agg_noise_raw_norm", 0.0))
         last_hidden_agg_noise_entropy = float(last_metrics.get("hidden_agg_noise_entropy", 0.0))
         last_hidden_agg_noise_max_weight = float(last_metrics.get("hidden_agg_noise_max_weight", 0.0))
+        last_hidden_agg_noise_clip_frac = float(last_metrics.get("hidden_agg_noise_clip_frac", 0.0))
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -2120,8 +2171,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_loop_feedback_corrupt_frac = 0.0
             accum_loop_feedback_corrupt_confidence = 0.0
             accum_hidden_agg_noise_norm = 0.0
+            accum_hidden_agg_noise_raw_norm = 0.0
             accum_hidden_agg_noise_entropy = 0.0
             accum_hidden_agg_noise_max_weight = 0.0
+            accum_hidden_agg_noise_clip_frac = 0.0
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
                     args,
@@ -2226,11 +2279,17 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     accum_hidden_agg_noise_norm += float(
                         trace_last.get("hidden_agg_noise_norm", ce_loss.new_zeros(())).detach().cpu()
                     )
+                    accum_hidden_agg_noise_raw_norm += float(
+                        trace_last.get("hidden_agg_noise_raw_norm", ce_loss.new_zeros(())).detach().cpu()
+                    )
                     accum_hidden_agg_noise_entropy += float(
                         trace_last.get("hidden_agg_noise_entropy", ce_loss.new_zeros(())).detach().cpu()
                     )
                     accum_hidden_agg_noise_max_weight += float(
                         trace_last.get("hidden_agg_noise_max_weight", ce_loss.new_zeros(())).detach().cpu()
+                    )
+                    accum_hidden_agg_noise_clip_frac += float(
+                        trace_last.get("hidden_agg_noise_clip_frac", ce_loss.new_zeros(())).detach().cpu()
                     )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
@@ -2256,8 +2315,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_loop_feedback_corrupt_frac = accum_loop_feedback_corrupt_frac / float(accum_count)
             last_loop_feedback_corrupt_confidence = accum_loop_feedback_corrupt_confidence / float(accum_count)
             last_hidden_agg_noise_norm = accum_hidden_agg_noise_norm / float(accum_count)
+            last_hidden_agg_noise_raw_norm = accum_hidden_agg_noise_raw_norm / float(accum_count)
             last_hidden_agg_noise_entropy = accum_hidden_agg_noise_entropy / float(accum_count)
             last_hidden_agg_noise_max_weight = accum_hidden_agg_noise_max_weight / float(accum_count)
+            last_hidden_agg_noise_clip_frac = accum_hidden_agg_noise_clip_frac / float(accum_count)
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -2270,8 +2331,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"fb_corrupt={last_loop_feedback_corrupt_frac:.3f} "
                     f"fb_conf={last_loop_feedback_corrupt_confidence:.3f} "
                     f"hagg_norm={last_hidden_agg_noise_norm:.3f} "
+                    f"hagg_raw={last_hidden_agg_noise_raw_norm:.3f} "
                     f"hagg_ent={last_hidden_agg_noise_entropy:.3f} "
                     f"hagg_maxw={last_hidden_agg_noise_max_weight:.3f} "
+                    f"hagg_clip={last_hidden_agg_noise_clip_frac:.3f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -2305,8 +2368,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
                         "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
                         "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+                        "hidden_agg_noise_raw_norm": last_hidden_agg_noise_raw_norm,
                         "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
                         "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
+                        "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
                     },
                     "eval_by_holes": {},
                 }
@@ -2372,8 +2437,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
                             "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
                             "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+                            "hidden_agg_noise_raw_norm": last_hidden_agg_noise_raw_norm,
                             "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
                             "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
+                            "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
                         },
                         reason="eval_checkpoint",
                     )
@@ -2422,8 +2489,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "loop_feedback_corrupt_frac": last_loop_feedback_corrupt_frac,
                         "loop_feedback_corrupt_confidence": last_loop_feedback_corrupt_confidence,
                         "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+                        "hidden_agg_noise_raw_norm": last_hidden_agg_noise_raw_norm,
                         "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
                         "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
+                        "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
                     },
                     reason="periodic",
                 )
@@ -2483,9 +2552,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "hidden_agg_noise_scale": args.hidden_agg_noise_scale,
         "hidden_agg_noise_temp": args.hidden_agg_noise_temp,
         "hidden_agg_noise_detach": bool(args.hidden_agg_noise_detach),
+        "hidden_agg_noise_mode": args.hidden_agg_noise_mode,
+        "hidden_agg_noise_topk": args.hidden_agg_noise_topk,
+        "hidden_agg_noise_max_norm": args.hidden_agg_noise_max_norm,
         "hidden_agg_noise_norm": last_hidden_agg_noise_norm,
+        "hidden_agg_noise_raw_norm": last_hidden_agg_noise_raw_norm,
         "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
         "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
+        "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "microbatch": args.batch,
@@ -3569,6 +3643,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--hidden_agg_noise_temp must be positive")
     if args.hidden_agg_noise_detach not in {0, 1}:
         raise ValueError("--hidden_agg_noise_detach must be 0 or 1")
+    if args.hidden_agg_noise_topk < 1:
+        raise ValueError("--hidden_agg_noise_topk must be positive")
+    if args.hidden_agg_noise_max_norm < 0:
+        raise ValueError("--hidden_agg_noise_max_norm must be non-negative")
     if args.exact_margin_weight < 0:
         raise ValueError("--exact_margin_weight must be non-negative")
     if args.exact_margin_tau <= 0:
@@ -3804,6 +3882,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "hidden_agg_noise_scale": args.hidden_agg_noise_scale,
         "hidden_agg_noise_temp": args.hidden_agg_noise_temp,
         "hidden_agg_noise_detach": bool(args.hidden_agg_noise_detach),
+        "hidden_agg_noise_mode": args.hidden_agg_noise_mode,
+        "hidden_agg_noise_topk": args.hidden_agg_noise_topk,
+        "hidden_agg_noise_max_norm": args.hidden_agg_noise_max_norm,
         "rwkv_kernel": args.rwkv_kernel,
         "backbone": args.backbone,
         "gdn_mode": args.gdn_mode,
@@ -3969,6 +4050,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--hidden_agg_noise_scale", type=float, default=0.0)
     p.add_argument("--hidden_agg_noise_temp", type=float, default=1.0)
     p.add_argument("--hidden_agg_noise_detach", type=int, choices=(0, 1), default=1)
+    p.add_argument("--hidden_agg_noise_mode", choices=("gumbel", "soft_group"), default="gumbel")
+    p.add_argument("--hidden_agg_noise_topk", type=int, default=8)
+    p.add_argument("--hidden_agg_noise_max_norm", type=float, default=0.0)
     p.add_argument("--exact_margin_weight", type=float, default=0.0)
     p.add_argument("--exact_margin_tau", type=float, default=0.5)
     p.add_argument("--exact_margin_target", type=float, default=0.0)

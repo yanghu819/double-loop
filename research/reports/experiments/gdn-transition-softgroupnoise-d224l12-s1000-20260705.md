@@ -3,10 +3,11 @@
 ## 1. Metainfo
 
 - plan_id: P-DIAG-024
-- run_name: gdn-transition-softgroupnoise-d224l12-s1000-20260705T0517Z-pending
+- run_name: gdn-transition-softgroupnoise-d224l12-s1000-20260705T0517Z-75f9936
 - machine: AIStation GPU1 only
-- status: prelaunch
+- status: completed, discarded as main direction
 - created_utc: 2026-07-05T05:17Z
+- completed_utc: 2026-07-05T06:07Z
 
 ## 2. Hypothesis
 
@@ -31,7 +32,7 @@ Prediction: entropy should stay nonzero, perturbation should be clipped to a sma
 - GPU: GPU1 only, `CUDA_VISIBLE_DEVICES=0`
 - Python: `/opt/conda/bin/python`
 - repo branch: `codex/gpu1-experiment-tracking`
-- launch SHA: pending post-commit
+- launch SHA: `75f9936e2dd45eea1af19c331e9986a8065db0f4`
 
 ## 5. Commands
 
@@ -50,20 +51,61 @@ FULL_LOG_EVERY=100 FULL_ROLLOUT_KS=1 SAVE_TRAIN_CHECKPOINT_EVERY=100 \
 EVAL_CHECKPOINT_STEPS=500,1000 EVAL_CHECKPOINT_HOLES_LIST=53,60,64 \
 OFFICIAL_EVAL_BLANK_RANGES=46-50,51-55,56-64 \
 CASE_BANK_HOLES=53,60,64 CASE_BANK_N=4 CASE_BANK_EVAL_N=256 CASE_BANK_LOOP_VALUES=1,3,5 \
-RUN_NAME=gdn-transition-softgroupnoise-d224l12-s1000-20260705T0517Z-<sha> ./run.sh full
+RUN_NAME=gdn-transition-softgroupnoise-d224l12-s1000-20260705T0517Z-75f9936 ./run.sh full
 ```
 
 ## 6. Artifacts
 
-Pending.
+- Remote run dir: `/huyang2/double-loop/.worktrees/pdiag024-softgroup-75f9936/runs/gdn-transition-softgroupnoise-d224l12-s1000-20260705T0517Z-75f9936`
+- Local archive: `runs/gdn-transition-softgroupnoise-d224l12-s1000-20260705T0517Z-75f9936`
+- Included locally: `config.json`, `score.json`, `metadata.json`, `source_HEAD.txt`, `source.patch`, `logs/run.log`, `output/*.json`, `output/*.md`, `output/*.html`, `visualizations/index.html`, `visualizations/summary.json`
+- Excluded from Git: train checkpoints and `source_snapshot.tar.gz`
 
 ## 7. Results
 
-Pending.
+Primary result:
+
+| Metric | loop1 | loop5 | Delta |
+|---|---:|---:|---:|
+| mixed official exact | 0.0195 | 0.0234 | +0.0039 |
+| mixed official blank acc | 0.5003 | 0.5252 | +0.0250 |
+
+Checkpoint evals:
+
+| Step | CE | hidden agg entropy | holes53 loop5 exact/blank | holes60 loop5 exact/blank | holes64 loop5 exact/blank |
+|---:|---:|---:|---:|---:|---:|
+| 500 | 1.0450 | 0.9775 | 0.0078 / 0.4855 | 0.0137 / 0.4943 | 0.0176 / 0.4901 |
+| 1000 | 0.9906 | 0.9797 | 0.0176 / 0.5169 | 0.0215 / 0.5265 | 0.0254 / 0.5196 |
+
+Official blank-range eval at step1000:
+
+| Range | loop1 exact/blank | loop5 exact/blank |
+|---|---:|---:|
+| 46-50 | 0.5879 / 0.9852 | 1.0000 / 1.0000 |
+| 51-55 | 0.0000 / 0.5196 | 0.0000 / 0.5478 |
+| 56-64 | 0.0000 / 0.4645 | 0.0000 / 0.4871 |
+
+Noise diagnostics:
+
+- The noise did not collapse: final `hidden_agg_noise_entropy=0.9797`, `hidden_agg_noise_max_weight=0.1998`.
+- The cap was always active: final `hidden_agg_noise_norm=2.0`, raw norm `1199.08`, `clip_frac=1.0`.
+- Runtime to step1000 was `2908.4s`, peak CUDA allocation about `47.3GB`.
+
+Same-step comparison:
+
+- Clean D224/L12 H14/D16 step1000 baseline from P-DIAG-011 had holes53 loop5 `0.0176/0.5284`.
+- This run has holes53 loop5 `0.0176/0.5169`: exact ties, blank accuracy is lower.
+- H7/D32 state-geometry step1000 had holes60 loop5 `0.0215/0.5390`; this run has holes60 loop5 `0.0215/0.5265`.
 
 ## 8. Conclusions
 
-Pending.
+Decision: discard this as a main direction.
+
+This is a useful boundary, not a useful improvement. P-DIAG-024 fixes the mechanical failure from P-DIAG-023: the aggregate noise is no longer one-hot, it is bounded, and training remains stable. But it does not improve the transition cliff. The model still solves 46-50 blanks and gets exact zero on 51-55 and 56-64 official ranges.
+
+The core lesson is blunt: the user's noise intuition needs to be treated carefully. Smoother stochastic hidden aggregation is trainable, but it is not the missing board-level consistency mechanism at this budget. It also does not beat plain D224/L12 clean scaling at the same step count. Do not sweep `topk/temp/scale/max_norm`; that would be table filling. The stronger evidence remains clean compute/data scaling plus recurrent capacity, especially the D224/L12 6000-12000 step line.
+
+Next high-ROI direction: resume or redesign around the proven D224/L12 long-run line, with a simple generic recurrent state/capacity improvement only if it can be trained at the same or better throughput. Noise should be paused unless it is tied to a clearer scaling mechanism.
 
 ## 9. Submission Record
 

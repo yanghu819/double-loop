@@ -2,11 +2,12 @@
 
 ## 1. Metainfo
 
-- run_name: `gdn-transition-learnedloopgate-d224l12-step13800-20260706T0801Z-6c72675`
+- run_name: `gdn-transition-learnedloopgate-d224l12-step13800-20260706T2140Z-23090be`
 - plan_id: `P-DIAG-025`
 - machine: AIStation `GPU1` only
 - local_prepared_time: `2026-07-06 16:01 CST`
-- status: `approved, blocked before launch by AIStation/VPN timeout`
+- launched_time: `2026-07-06 21:40 CST`
+- status: `in-progress`
 - branch: `codex/gpu1-experiment-tracking`
 
 ## 2. Hypothesis
@@ -19,8 +20,8 @@ This probe asks a sharper mechanism question: is the fixed recurrent update rate
 
 ## 3. Configuration
 
-- Source SHA: `6c72675aca4a06bd4f0333ef1f649434c39a2a10`.
-- Resume checkpoint: P-DIAG-021 `train_state_step012000.pt`, to be verified on GPU1 before launch.
+- Source SHA: `23090befdaff42a353ca282fdfe083120999b2b3`.
+- Resume checkpoint: P-DIAG-021 `train_state_step012000.pt`, verified on GPU1 before launch.
 - Data: official EqR Sudoku arrays.
 - Backbone: native FutureSeed GDN, D224/L12/H14/D16, `GDN_EXPAND_V=4.0`.
 - Loop: `MAX_LOOPS=5`, `LOOP_LOSS=all`.
@@ -52,9 +53,10 @@ Kill criteria:
 
 ## 5. Commands
 
-Planned remote launch after AIStation access is restored:
+Actual remote launch from detached worktree:
 
 ```bash
+cd /huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-23090be-20260706T2120
 CUDA_VISIBLE_DEVICES=0 SMOKE_DONE=1 SKIP_SETUP=1 SOURCE_SNAPSHOT_MODE=lean \
 SUDOKU_SIZE=9 PYTHON_BIN=/opt/conda/bin/python \
 OFFICIAL_SUDOKU_DATA_DIR=/huyang2/double-loop/official_eqr_sudoku_repro_20260623/data/sudoku-extreme-1k-aug-1000 \
@@ -71,27 +73,31 @@ FULL_ROLLOUT_KS="" FULL_LOG_EVERY=100 \
 EVAL_CHECKPOINT_STEPS=12600,13200,13800 EVAL_CHECKPOINT_HOLES_LIST=53,60,64 \
 OFFICIAL_EVAL_BLANK_RANGES=46-50,51-55,56-64 \
 CASE_BANK_HOLES=53,60,64 CASE_BANK_N=4 CASE_BANK_EVAL_N=256 CASE_BANK_LOOP_VALUES=1,3,5 \
-RUN_NAME=gdn-transition-learnedloopgate-d224l12-step13800-20260706T0801Z-6c72675 ./run.sh full
+RUN_NAME=gdn-transition-learnedloopgate-d224l12-step13800-20260706T2140Z-23090be ./run.sh full
 ```
 
 ## 6. Artifacts
 
 - Local record: `research/reports/experiments/gdn-transition-learnedloopgate-d224l12-step13800-20260706.md`
-- Expected remote run dir: `/huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-6c72675/runs/gdn-transition-learnedloopgate-d224l12-step13800-20260706T0801Z-6c72675`
-- Prelaunch block:
-  - AIStation API `status GPU1 GPU2` failed with `connect ETIMEDOUT 172.16.78.10:32206`.
-  - Kimi WebBridge navigation to `https://172.16.78.10:32206/index.html#/developEnv/list` failed with `page load timeout (30s)`.
-  - EasyConnect processes were running, but direct `curl -k -m 5` to the same host timed out.
+- Remote worktree: `/huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-23090be-20260706T2120`
+- Remote run dir: `/huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-23090be-20260706T2120/runs/gdn-transition-learnedloopgate-d224l12-step13800-20260706T2140Z-23090be`
+- Launch script: `/huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-23090be-20260706T2120/artifacts/launch/gdn-transition-learnedloopgate-d224l12-step13800-20260706T2140Z-23090be.sh`
+- Outer log: `/huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-23090be-20260706T2120/artifacts/launch/gdn-transition-learnedloopgate-d224l12-step13800-20260706T2140Z-23090be.outer.log`
+- PID file: `/huyang2/double-loop/.worktrees/pdiag025-learnedloopgate-23090be-20260706T2120/artifacts/launch/gdn-transition-learnedloopgate-d224l12-step13800-20260706T2140Z-23090be.pid`
+- Initial process: `bash ./run.sh full` PID `89`; Python training PID `124`.
+- GPU prelaunch check: `NVIDIA A800-SXM4-80GB`, `0 MiB / 81920 MiB`, util `0%`.
+- Checkpoint verified: `/huyang2/double-loop/.worktrees/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z/runs/gdn-transition-cyclicbridge-loop5-d224l12-step12000-restart1-20260704T0527Z-9c621a5/checkpoints/train_state_step012000.pt`, `161M`.
+- Access note: AIStation repeatedly bounced GPU1 between `Pause` and `Running`; Kimi WebBridge was used only to restore GPU1, and launch used API/SSH after verifying the row name.
+- Aborted prelaunch attempt: `gdn-transition-learnedloopgate-d224l12-step13800-20260706T2125Z-23090be` wrote only setup/resume log, was paused before first train step, and has `abort.json` with reason `AIStation paused after nohup launch before first train step; relaunched with setsid`.
+- Active launch note: `2140Z` uses `setsid bash ... < /dev/null` so the training process survives SSH disconnect.
 
 ## 7. Results
 
-Not launched yet.
+Running. Initial monitor showed Python PID `124`, GPU memory about `48GB`, utilization about `73%`. First required decision readout is checkpoint eval at step `12600`.
 
 ## 8. Conclusions
 
-Pending. The chosen next experiment is not more noise, width, depth, or a seed table. It is a single generic state-dynamics probe from the strongest existing checkpoint.
-
-If AIStation access remains unavailable, this plan should resume exactly from §5 after VPN/browser access is restored.
+Pending. The chosen experiment is not more noise, width, depth, or a seed table. It is a single generic state-dynamics probe from the strongest existing checkpoint.
 
 ## 9. Submission Record
 

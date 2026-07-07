@@ -1,0 +1,16 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/pdiag026-bigbatch-8487bdd-20260707T0648Z/runs/gdn-transition-bigbatch-d224l12-step12600-20260707T0656Z-8487bdd
+git_sha=8487bdd0318b78016f5974f09831abcd7a458308
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=float32
+checkpoint_eval steps=12300,12600 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/.worktrees/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z/runs/gdn-transition-cyclicbridge-loop5-d224l12-step12000-restart1-20260704T0527Z-9c621a5/checkpoints/train_state_step012000.pt step=12000 reason=eval_checkpoint
+[future_seed_loop stage=14:56-64] step=12100 ce=0.0001 total=0.3034 loop1=1.1058 loop_last=0.0001 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12100] path=/huyang2/double-loop/.worktrees/pdiag026-bigbatch-8487bdd-20260707T0648Z/runs/gdn-transition-bigbatch-d224l12-step12600-20260707T0656Z-8487bdd/checkpoints/train_state_step012100.pt
+[future_seed_loop stage=14:56-64] step=12200 ce=0.0000 total=0.2825 loop1=1.0896 loop_last=0.0000 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12200] path=/huyang2/double-loop/.worktrees/pdiag026-bigbatch-8487bdd-20260707T0648Z/runs/gdn-transition-bigbatch-d224l12-step12600-20260707T0656Z-8487bdd/checkpoints/train_state_step012200.pt
+[future_seed_loop stage=14:56-64] step=12300 ce=0.0000 total=0.2619 loop1=1.0889 loop_last=0.0000 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=12300 holes53] loop5 exact=0.1562 blank=0.5919
+[train_checkpoint step=12300] path=/huyang2/double-loop/.worktrees/pdiag026-bigbatch-8487bdd-20260707T0648Z/runs/gdn-transition-bigbatch-d224l12-step12600-20260707T0656Z-8487bdd/checkpoints/train_state_step012300.pt
+[future_seed_loop stage=15:51-64] step=12400 ce=0.0000 total=0.2587 loop1=1.0299 loop_last=0.0000 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12400] path=/huyang2/double-loop/.worktrees/pdiag026-bigbatch-8487bdd-20260707T0648Z/runs/gdn-transition-bigbatch-d224l12-step12600-20260707T0656Z-8487bdd/checkpoints/train_state_step012400.pt

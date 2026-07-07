@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-DIAG-026 Big Batch Stability Gate</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f7f4;
+      color: #181a1f;
+    }
+    main {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+    h2 {
+      margin: 28px 0 10px;
+      font-size: 18px;
+    }
+    p {
+      line-height: 1.55;
+      margin: 8px 0;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid #ba4a28;
+      background: #fff0ea;
+      color: #842f16;
+      font-weight: 700;
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+      border: 1px solid #d9d9d0;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e6e6dd;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    th:first-child, td:first-child {
+      text-align: left;
+    }
+    th {
+      background: #ecece4;
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .panel {
+      background: white;
+      border: 1px solid #d9d9d0;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .metric {
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .muted {
+      color: #5d626d;
+      font-size: 13px;
+    }
+    .bad {
+      color: #b0351c;
+      font-weight: 800;
+    }
+    .ok {
+      color: #237047;
+      font-weight: 800;
+    }
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      table {
+        font-size: 13px;
+      }
+      th, td {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>P-DIAG-026: Big Effective-Batch Stability Gate</h1>
+  <div class="status">Discarded by checkpoint rule</div>
+  <p>
+    This run resumed the strongest D224/L12 native FutureSeed GDN checkpoint and
+    changed only effective batch size from 128 to 256. The question was whether
+    hard-board exact oscillation was mostly noisy optimizer updates.
+  </p>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="muted">step12300 holes60 loop5 exact</div>
+      <div class="metric bad">0.1660</div>
+      <div class="muted">P-DIAG-025 neighbor: 0.2246</div>
+    </section>
+    <section class="panel">
+      <div class="muted">holes60 loop gain</div>
+      <div class="metric ok">+0.1504</div>
+      <div class="muted">Loop compute still exists</div>
+    </section>
+    <section class="panel">
+      <div class="muted">GPU after exact-PID stop</div>
+      <div class="metric ok">0 MiB</div>
+      <div class="muted">PIDs 483/481/448 killed</div>
+    </section>
+  </div>
+
+  <h2>Loop Curves</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Bucket</th>
+        <th>Loop1 exact</th>
+        <th>Loop2 exact</th>
+        <th>Loop3 exact</th>
+        <th>Loop4 exact</th>
+        <th>Loop5 exact</th>
+        <th>Loop gain</th>
+        <th>Loop5 blank</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>holes53</td><td>0.0137</td><td>0.0195</td><td>0.0645</td><td>0.1211</td><td>0.1562</td><td>+0.1426</td><td>0.5919</td></tr>
+      <tr><td>holes60</td><td>0.0156</td><td>0.0234</td><td>0.0723</td><td>0.1250</td><td>0.1660</td><td>+0.1504</td><td>0.6124</td></tr>
+      <tr><td>holes64</td><td>0.0176</td><td>0.0254</td><td>0.0898</td><td>0.1484</td><td>0.1758</td><td>+0.1582</td><td>0.5950</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Decision</h2>
+  <p>
+    The result is not a loop failure: loop1 to loop5 still improves exact by
+    roughly fifteen points. The failure is that every hard bucket shifted below
+    the relevant baseline checkpoint. Larger effective batch did not stabilize
+    hard exact; it made the operating point worse.
+  </p>
+  <p>
+    Next useful work should not be a batch-size table. The hard cliff needs a
+    change in state information, data scale/curriculum, or checkpoint selection,
+    while staying away from solver-style repair, search, selector, or task rules.
+  </p>
+</main>
+</body>
+</html>

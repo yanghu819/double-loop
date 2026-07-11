@@ -112,7 +112,25 @@ runtime check confirmed checkpoint resume at global step1000 and approximately
 
 ## 7. Results
 
-Pending.
+Interim checkpoint readout:
+
+| Step | holes53 loop5 exact / blank | holes60 loop5 exact / blank | holes64 loop5 exact / blank |
+|---:|---:|---:|---:|
+| 1000, original P-DIAG-015 | `0.0176 / 0.5150` | `0.0215 / 0.5308` | not recorded |
+| 2000 | `0.0195 / 0.5403` | `0.0254 / 0.5509` | `0.0371 / 0.5390` |
+| 3000 | `0.0391 / 0.5530` | `0.0430 / 0.5661` | `0.0508 / 0.5532` |
+
+At step3000, holes53 exact is slightly above the D224 matched-step reference
+`0.0352`, while blank accuracy is still below D224 `0.5750`. The exact curve is
+not flat: holes53 doubles from `0.0195` at step2000 to `0.0391` at step3000.
+Harder buckets also retain genuine loop gains at step3000:
+
+- holes60 exact: `0.0195 -> 0.0430`, loop1 to loop5.
+- holes64 exact: `0.0234 -> 0.0508`, loop1 to loop5.
+
+Decision at the predeclared step3000 gate: continue the unchanged run to
+step4500/6000. This is only a weak crossover signal, not a success claim; the
+primary step6000 and official-range gates remain unchanged.
 
 ## 8. Conclusions
 

@@ -3,12 +3,12 @@
 ## 1. Metainfo
 
 - Plan ID: `P-DIAG-027`
-- Status: approved, awaiting GPU1
-- Planned start: 2026-07-11 CST
+- Status: in-progress
+- Start: 2026-07-11 11:06 CST / 2026-07-11T03:06:00Z
 - Machine: AIStation `GPU1` only
 - Branch: `codex/gpu1-experiment-tracking`
-- Source SHA: pending implementation commit
-- Planned run: `gdn-transition-adaptiverms-d224l12-step12600-<timestamp>-<sha>`
+- Source SHA: `e6a3f240ea21fe8d4e6d162d1d3df43a5e7604f8`
+- Run: `gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24`
 
 ## 2. Hypothesis
 
@@ -66,17 +66,37 @@ Kill criteria:
 - Discard after step12600 if the gain moves but hard exact does not improve.
 - Do not sweep gain range, initialization, learning rate, or seed after failure.
 
+CUDA-only zero-initialization gate on GPU1 A800 passed before launch:
+
+- output max absolute difference, unit vs adaptive: `0.0`
+- common-parameter gradient max absolute difference: `0.0`
+- adaptive gain means by loop: `1.0, 1.0`
+- adaptive sample gain standard deviations by loop: `0.0, 0.0`
+- expected new parameters only: `future_seed_norm_slope/bias`
+
 ## 5. Commands
 
-The exact detached SHA, worktree, checkpoint path, launch command, and PID will
-be filled before launch. CUDA-only smoke and training will both use
-`CUDA_VISIBLE_DEVICES=0`; no CPU model smoke is allowed.
+Detached worktree:
+
+`/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z`
+
+Launch script:
+
+`/huyang2/double-loop/artifacts/launch/pdiag027/pdiag027_launch.sh`
+
+The script verifies detached SHA and checkpoint existence, then launches the
+configuration in section 3 with `CUDA_VISIBLE_DEVICES=0`, `SMOKE_DONE=1`,
+`SKIP_SETUP=1`, `SOURCE_SNAPSHOT_MODE=lean`, and
+`PYTHON_BIN=/opt/conda/bin/python`. No CPU model smoke is used.
 
 ## 6. Artifacts
 
-Pending. The run must archive config, score, logs, checkpoint evaluations,
-source SHA/patch, case-bank HTML, visualization index, and `abort.json` if
-stopped.
+- Remote worktree:
+  `/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z`
+- Expected remote run directory:
+  `/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24`
+- CUDA equivalence script:
+  `/huyang2/double-loop/artifacts/launch/pdiag027/pdiag027_equivalence.py`
 
 ## 7. Results
 

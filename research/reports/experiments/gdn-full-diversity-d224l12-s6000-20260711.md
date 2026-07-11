@@ -165,6 +165,30 @@ loop5 raises exact from `0.0254` to `0.0430` and blank accuracy from `0.5211` to
 therefore continues unchanged to step4500/6000 to test whether broader data is
 a delayed generalization gain rather than an immediate optimization gain.
 
+The delayed gain became clear at step4500:
+
+| Bucket | loop1 exact | loop1 blank | loop5 exact | loop5 blank |
+|---|---:|---:|---:|---:|
+| holes53 | `0.0176` | `0.5312` | `0.1055` | `0.6166` |
+| holes60 | `0.0215` | `0.5417` | `0.1172` | `0.6332` |
+| holes64 | `0.0254` | `0.5341` | `0.1230` | `0.6133` |
+
+Holes53 full-board exact is nearly four times its step3000 value (`0.0273` to
+`0.1055`) while blank accuracy rises only `0.0378`. This is the desired change
+in behavior: local improvements have started converting into globally correct
+boards. The loop1-to-loop5 exact gain is now `+0.0879` on holes53, `+0.0957` on
+holes60, and `+0.0977` on holes64, so the model is using recurrent compute rather
+than merely copying one answer.
+
+The second lease was stopped only after the complete step4500 checkpoint and
+evaluation. Exact PIDs `181/179/180/132` were terminated, GPU1 returned to
+`0 MiB`, and `lease_rollover_2.json` records the transition at
+`2026-07-11T19:46:39Z`. Kimi WebBridge restored the same A800 80GB, CPU16,
+GPU1, memory64GB, shm20GB configuration. The new AIStation instance
+`a6d40c23-6af6-4315-b700-2e1c1b362a7b` was probed as an A800 before the third
+leg resumed exact model, optimizer, and RNG state from step4500. Its run is
+`gdn-full-diversity-d224l12-resume4500-s6000-20260711T1950Z-eeb38f5`.
+
 ## 8. Conclusions
 
 Pending.

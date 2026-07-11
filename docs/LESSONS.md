@@ -899,3 +899,17 @@
   correction". Next work should stay on the official EqR path and scale budget
   or loop-specific readout; do not fall back to local maze-probe tables,
   selector, repair, or human-rule postprocessing.
+- Full-diversity data scaling is the strongest clean Sudoku scaling result so
+  far. On 2026-07-12, P-SCALE-029 held D224/L12 native FutureSeed GDN, loop5,
+  every-loop CE, effective batch128, curriculum, and 6000-step compute fixed,
+  but replaced 1,000 source boards repeated through 1,001 augmentations with
+  3,831,994 independent Sudoku-Extreme source rows. Final mixed loop5 exact
+  rises from `0.2070` to `0.2500`; official `51-55` rises `0.2832 -> 0.3926`,
+  and `56-64` rises `0.0801 -> 0.1270`. Holes64 checkpoint exact moves
+  `0.0254 -> 0.2500` from loop1 to loop5. The key operational lesson is to
+  avoid killing larger-data runs at step1000: this run trailed early, reached
+  parity around step3000, then crossed strongly after step4500. The scientific
+  lesson is that independent relational diversity lets later loops convert
+  local token quality into globally valid boards. Prefer more independent data
+  and useful compute on the efficient D224 frontier over blind width, task
+  rules, repair, selector, or loss tables.

@@ -3,9 +3,10 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-029`
-- Status: in-progress
+- Status: done
 - Planned: 2026-07-11 22:43 CST / 2026-07-11T14:43:00Z
 - Launched: 2026-07-11 23:23 CST / 2026-07-11T15:23:21Z
+- Completed: 2026-07-12 05:14 CST / 2026-07-11T21:14:35Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
 - Source SHA: `eeb38f5b6f9b6c1b1df0bbd3ca149daec06a171d`
@@ -189,10 +190,80 @@ GPU1, memory64GB, shm20GB configuration. The new AIStation instance
 leg resumed exact model, optimizer, and RNG state from step4500. Its run is
 `gdn-full-diversity-d224l12-resume4500-s6000-20260711T1950Z-eeb38f5`.
 
+The step6000 checkpoint is the decisive crossover:
+
+| Bucket | loop1 exact | loop2 exact | loop3 exact | loop4 exact | loop5 exact / blank |
+|---|---:|---:|---:|---:|---:|
+| holes53 | `0.0176` | `0.0234` | `0.1445` | `0.1992` | `0.2109 / 0.6344` |
+| holes60 | `0.0215` | `0.0371` | `0.1738` | `0.2305` | `0.2402 / 0.6643` |
+| holes64 | `0.0254` | `0.0430` | `0.1758` | `0.2441` | `0.2500 / 0.6410` |
+
+Matched old-data holes53 at step6000 was `0.1680/0.6120`. Independent-data
+scaling improves exact by `+0.0430` absolute (about `+25.6%` relative) and blank
+accuracy by `+0.0224`. The predeclared primary gate is passed. Holes64 reaches
+the strong `>=0.25` checkpoint gate exactly.
+
+The final 512-board mixed evaluation also shows a large loop effect:
+
+| Loop | exact | blank accuracy |
+|---:|---:|---:|
+| 1 | `0.0234` | `0.5486` |
+| 2 | `0.0273` | `0.6107` |
+| 3 | `0.1738` | `0.6373` |
+| 4 | `0.2383` | `0.6431` |
+| 5 | `0.2500` | `0.6439` |
+
+Most board-level correction begins between loop2 and loop3, after loop2 has
+already captured most of the local blank-accuracy gain. This separates local
+prediction from global convergence: later recurrent compute turns similar
+per-cell quality into many more wholly valid boards.
+
+Official blank-range comparisons against the matched old-data D224/L12 run:
+
+| Range | old loop5 exact | full-diversity loop5 exact | delta |
+|---|---:|---:|---:|
+| 46-50 | `1.0000` | `1.0000` | `0.0000` |
+| 51-55 | `0.2832` | `0.3926` | `+0.1094` |
+| 56-64 | `0.0801` | `0.1270` | `+0.0469` |
+
+The hard-range success gate (`56-64 >=0.12`) is passed without losing the
+already solved easy range. Case-bank evidence is consistent with the aggregate:
+one selected 56-blank board goes from `24` wrong cells at loop1 to `0` at loop3;
+an almost-solved board goes `12 -> 5 -> 1`; the selected 64-blank hard failure
+still improves `25 -> 9 -> 5`. Thus loop computation now performs real
+correction, while the remaining frontier is convergence on the last few
+globally coupled errors.
+
+Recorded cumulative training elapsed is about `16250 s` (`4.51 h`) across three
+GPU1 leases. The final leg reports `44.5 GB` peak allocated CUDA memory. The
+metadata-light bundle SHA256 is
+`f05f50053d4ac7e828ea5359cb7fb4d536749609904574c2a4dba98ce37bd6b1`.
+The remote final run retains its `63,337,147`-byte source snapshot; checkpoints,
+source archives, and data are not committed to GitHub.
+
 ## 8. Conclusions
 
-Pending.
+P-SCALE-029 is a clean positive scaling result. Holding model, recurrent
+compute, optimizer, batch, curriculum, and evaluation fixed while replacing
+1,000 repeatedly augmented source boards with 3,831,994 independent boards
+improves every hard primary readout. The strongest gain is official 51-55 exact
+(`+0.1094` absolute), but the hardest 56-64 range also passes its planned gate.
+
+The mechanism-level lesson is equally important: FutureSeed plus loop was not
+fundamentally capped at local blank accuracy. Once the backbone saw enough
+independent relational structures, loop3/4 began converting a broad partially
+correct state into valid full boards. The useful scaling frontier is therefore
+independent data plus compute on the efficient D224 state, not blind width.
+
+This result does not isolate FutureSeed against a matched full-diversity no-FS
+run, and it is not a final EqR comparison. Those remain separate paper gates.
+Do not weaken this result with dataset-size, seed, loss, or width tables. The
+next high-information experiment is a single longer full-diversity continuation
+on the same efficient backbone, with harder data exposure, to test whether the
+56-64 slope continues before changing the generic state formulation.
 
 ## 9. Submission Record
 
-No tag unless the final mechanism/scaling result is strong and clean.
+- Final score: `0.2500` at `metrics.eval_clean.loop5.label_exact`.
+- Leaderboard row and all three metadata legs are committed.
+- No tag: the project rule requires primary score `>=0.50`.

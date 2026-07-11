@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-SCALE-029 Full-Diversity Scaling</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #637083;
+      --line: #d9dee6;
+      --page: #f4f6f8;
+      --panel: #ffffff;
+      --blue: #1769aa;
+      --green: #16805c;
+      --amber: #a45d00;
+      --red: #b53b35;
+      --violet: #6656a8;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    a { color: var(--blue); }
+    header, section { width: 100%; }
+    .inner { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    header {
+      padding: 26px 0 22px;
+      background: #15212d;
+      color: #fff;
+      border-bottom: 4px solid #2f9e72;
+    }
+    .eyebrow { margin: 0 0 8px; color: #9fd7c1; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    h1 { margin: 0; font-size: 28px; line-height: 1.2; }
+    .subtitle { margin: 8px 0 0; color: #d7e0e8; font-size: 15px; line-height: 1.55; }
+    .verdict {
+      margin-top: 18px;
+      padding: 13px 15px;
+      background: #eff9f4;
+      border-left: 4px solid var(--green);
+      color: #144d3b;
+      font-size: 15px;
+      font-weight: 650;
+    }
+    section { padding: 26px 0; border-bottom: 1px solid var(--line); }
+    section:nth-of-type(even) { background: var(--panel); }
+    h2 { margin: 0 0 6px; font-size: 21px; }
+    .section-note { margin: 0 0 18px; color: var(--muted); line-height: 1.55; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    .kpi { min-height: 116px; padding: 15px; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+    .kpi-label { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .kpi-value { margin-top: 8px; font-size: 30px; line-height: 1; font-weight: 760; font-variant-numeric: tabular-nums; }
+    .kpi-delta { margin-top: 9px; color: var(--green); font-size: 13px; font-weight: 650; }
+    .two-col { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(310px, .7fr); gap: 22px; align-items: start; }
+    .chart-wrap { min-width: 0; padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+    svg.chart { display: block; width: 100%; height: auto; min-height: 270px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 4px 0; color: var(--muted); font-size: 12px; }
+    .legend span::before { content: ""; display: inline-block; width: 16px; height: 3px; margin: 0 6px 3px 0; background: var(--swatch); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid #e8ebef; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f3f5f7; color: #4e5a69; font-size: 11px; text-transform: uppercase; }
+    .matched { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+    .matched li { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .matched strong { color: #465365; }
+    .case-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 10px; }
+    .case-tab {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid #b8c0cb;
+      border-radius: 5px;
+      background: #fff;
+      color: #273445;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .case-tab[aria-selected="true"] { background: #20364a; border-color: #20364a; color: #fff; }
+    .case-summary { margin: 0 0 12px; padding: 10px 12px; background: #fff7e8; border-left: 3px solid var(--amber); color: #6d460d; font-size: 14px; }
+    iframe { width: 100%; height: 820px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    .findings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .finding { padding: 16px 0 0; border-top: 4px solid var(--accent); }
+    .finding h3 { margin: 0 0 7px; font-size: 16px; }
+    .finding p { margin: 0; color: #465365; font-size: 14px; line-height: 1.6; }
+    .limits { margin: 16px 0 0; padding: 14px 16px; background: #fff1f0; border-left: 4px solid var(--red); color: #6b2f2b; line-height: 1.6; }
+    footer { padding: 20px 0 32px; color: var(--muted); font-size: 12px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+
+    @media (max-width: 850px) {
+      .kpis, .findings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two-col { grid-template-columns: 1fr; }
+      iframe { height: 720px; }
+    }
+    @media (max-width: 560px) {
+      .inner { width: min(100% - 20px, 1180px); }
+      h1 { font-size: 23px; }
+      .kpis, .findings { grid-template-columns: 1fr; }
+      .matched li { grid-template-columns: 1fr; gap: 3px; }
+      iframe { height: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="top">
+    <div class="inner">
+      <p class="eyebrow">P-SCALE-029 / GPU1 / source eeb38f5</p>
+      <h1>独立数据 scaling 打开了更难的数独区间</h1>
+      <p class="subtitle">同一个 FutureSeed-GDN、同样 6000 steps、同样 loop5。唯一变化：从 1000 道底题的重复增强，换成 383 万道独立训练题。</p>
+    </div>
+  </header>
+
+  <section>
+    <div class="inner">
+      <div class="verdict">结论：数据多样性是有效 scaling 轴。它同时提高整盘全对率和最难区间，并且 loop 的额外计算真正把错误棋盘改成正确棋盘。</div>
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-label">总体整盘全对</div><div class="kpi-value">25.00%</div><div class="kpi-delta">旧数据 20.70%，+4.30 点</div></div>
+        <div class="kpi"><div class="kpi-label">51–55 blanks</div><div class="kpi-value">39.26%</div><div class="kpi-delta">旧数据 28.32%，+10.94 点</div></div>
+        <div class="kpi"><div class="kpi-label">56–64 blanks</div><div class="kpi-value">12.70%</div><div class="kpi-delta">旧数据 8.01%，+4.69 点</div></div>
+        <div class="kpi"><div class="kpi-label">holes64 loop gain</div><div class="kpi-value">+22.46</div><div class="kpi-delta">2.54% → 25.00% exact</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="inner two-col">
+      <div>
+        <h2>同模型下的数据 scaling 曲线</h2>
+        <p class="section-note">前 3000 steps 新数据没有领先；4500 后开始加速，6000 时明确超过旧曲线。这就是为什么不能在 step1000 草率杀掉更大数据。</p>
+        <div class="chart-wrap">
+          <svg id="scalingChart" class="chart" viewBox="0 0 760 300" role="img" aria-label="holes53 exact accuracy by training step"></svg>
+          <div class="legend"><span style="--swatch:#637083">1000 source × augmentation</span><span style="--swatch:#16805c">3.83M independent sources</span></div>
+        </div>
+      </div>
+      <div>
+        <h2>唯一变量</h2>
+        <p class="section-note">这是数据实验，不是把模型、loss 和 curriculum 一起换掉。</p>
+        <ul class="matched">
+          <li><strong>模型</strong><span>D224 / L12 / H14 / head16</span></li>
+          <li><strong>骨干</strong><span>GDN expand-v4 + native FutureSeed</span></li>
+          <li><strong>计算</strong><span>loop5，每个 loop 都有 CE 监督</span></li>
+          <li><strong>训练</strong><span>effective batch128，6000 steps，BF16</span></li>
+          <li><strong>旧数据</strong><span>1000 个 source group，1001 次增强</span></li>
+          <li><strong>新数据</strong><span>3,831,994 个独立 source rows</span></li>
+          <li><strong>禁用</strong><span>noise、repair、search、selector、规则</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="inner two-col">
+      <div>
+        <h2>不同难度的最终结果</h2>
+        <p class="section-note">提高不是靠容易题遮住难题；51–55 和 56–64 两段都明显上涨。</p>
+        <div class="chart-wrap">
+          <svg id="rangeChart" class="chart" viewBox="0 0 760 300" role="img" aria-label="official exact accuracy by blank range"></svg>
+          <div class="legend"><span style="--swatch:#637083">旧数据 loop5</span><span style="--swatch:#1769aa">独立数据 loop5</span></div>
+        </div>
+      </div>
+      <div>
+        <h2>官方区间</h2>
+        <p class="section-note">Exact 表示 81 个格子全部正确；错一个也算失败。</p>
+        <table>
+          <thead><tr><th>blanks</th><th>旧数据</th><th>新数据</th><th>绝对提升</th></tr></thead>
+          <tbody>
+            <tr><td>46–50</td><td>100.00%</td><td>100.00%</td><td>0.00</td></tr>
+            <tr><td>51–55</td><td>28.32%</td><td>39.26%</td><td style="color:var(--green);font-weight:700">+10.94</td></tr>
+            <tr><td>56–64</td><td>8.01%</td><td>12.70%</td><td style="color:var(--green);font-weight:700">+4.69</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="inner">
+      <h2>Loop 不是重复同一个答案</h2>
+      <p class="section-note">真正的跃迁发生在 loop2 → loop3；loop4/5 继续收尾。holes64 从 2.54% 整盘全对提高到 25.00%。</p>
+      <div class="chart-wrap">
+        <svg id="loopChart" class="chart" viewBox="0 0 960 310" role="img" aria-label="exact accuracy by recurrent loop and blank count"></svg>
+        <div class="legend"><span style="--swatch:#1769aa">holes53</span><span style="--swatch:#a45d00">holes60</span><span style="--swatch:#6656a8">holes64</span></div>
+      </div>
+      <table style="margin-top:14px">
+        <thead><tr><th>bucket</th><th>loop1</th><th>loop2</th><th>loop3</th><th>loop4</th><th>loop5</th></tr></thead>
+        <tbody>
+          <tr><td>holes53 exact</td><td>1.76%</td><td>2.34%</td><td>14.45%</td><td>19.92%</td><td>21.09%</td></tr>
+          <tr><td>holes60 exact</td><td>2.15%</td><td>3.71%</td><td>17.38%</td><td>23.05%</td><td>24.02%</td></tr>
+          <tr><td>holes64 exact</td><td>2.54%</td><td>4.30%</td><td>17.58%</td><td>24.41%</td><td>25.00%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="inner">
+      <h2>最难样例：逐 loop 看模型怎么改错</h2>
+      <p class="section-note">红色格子是错的。切换下面三个 case，直接看 loop1、loop3、loop5 的棋盘，而不是只看平均分。</p>
+      <div class="case-tabs" role="tablist" aria-label="hard case selector">
+        <button class="case-tab" role="tab" aria-selected="true" data-summary="56 blanks：24 个错格 → loop3 全部修完 → loop5 保持正确。" data-src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0040.html">Solved: 24 → 0 → 0</button>
+        <button class="case-tab" role="tab" aria-selected="false" data-summary="56 blanks：12 个错格 → 5 个 → 1 个。loop 有效，但最后一个全局冲突仍没消掉。" data-src="output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0000.html">Almost: 12 → 5 → 1</button>
+        <button class="case-tab" role="tab" aria-selected="false" data-summary="64 blanks：25 个错格 → 9 个 → 5 个。更长 loop 继续修，但 state 还不足以收敛到唯一解。" data-src="output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0046.html">Hard: 25 → 9 → 5</button>
+      </div>
+      <p id="caseSummary" class="case-summary">56 blanks：24 个错格 → loop3 全部修完 → loop5 保持正确。</p>
+      <iframe id="caseFrame" title="Sudoku loop case visualization" src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0040.html"></iframe>
+    </div>
+  </section>
+
+  <section>
+    <div class="inner">
+      <h2>Solid 结论与边界</h2>
+      <div class="findings">
+        <article class="finding" style="--accent:var(--green)"><h3>数据多样性真的有用</h3><p>相同模型和步数下，3.83M 独立题把总体 exact 从 20.70% 推到 25.00%，不是靠改 loss 或规则。</p></article>
+        <article class="finding" style="--accent:var(--blue)"><h3>Loop 需要先学会表示</h3><p>训练早期 loop 增益很小；数据和训练够了以后，loop3 才出现大跳。这说明 loop 是计算，前提是 backbone 已学到可迭代的状态。</p></article>
+        <article class="finding" style="--accent:var(--amber)"><h3>最难题仍没解决</h3><p>56–64 blanks 只有 12.70%。hard case 虽从 25 错降到 5 错，但还没全局收敛，下一步仍应 scale 数据 token 和通用 state capacity。</p></article>
+      </div>
+      <div class="limits"><strong>不能乱讲：</strong>这轮证明的是 full-diversity data scaling 对 FutureSeed-GDN 有效；它还没有单独证明 FutureSeed 优于 full-data no-FS，也没有完成和官方 EqR 的同预算最终对比。</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="inner">Run <code>gdn-full-diversity-d224l12-resume4500-s6000-20260711T1950Z-eeb38f5</code> · Git SHA <code>eeb38f5</code> · GPU1 A800 · no tag because primary score &lt; 0.50</div>
+  </footer>
+
+  <script>
+    if (location.hash === "#top") {
+      history.scrollRestoration = "manual";
+      window.addEventListener("load", () => {
+        window.scrollTo(0, 0);
+        window.setTimeout(() => window.scrollTo(0, 0), 250);
+      });
+    }
+
+    const NS = "http://www.w3.org/2000/svg";
+    const colors = { grid: "#d9dee6", text: "#637083" };
+
+    function add(svg, name, attrs = {}, text = "") {
+      const el = document.createElementNS(NS, name);
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+      if (text) el.textContent = text;
+      svg.appendChild(el);
+      return el;
+    }
+
+    function drawLineChart(id, series, options) {
+      const svg = document.getElementById(id);
+      const w = options.width || 760, h = options.height || 300;
+      const pad = { l: 58, r: 24, t: 20, b: 42 };
+      const x = value => pad.l + (value - options.xMin) / (options.xMax - options.xMin) * (w - pad.l - pad.r);
+      const y = value => h - pad.b - (value - options.yMin) / (options.yMax - options.yMin) * (h - pad.t - pad.b);
+      options.yTicks.forEach(tick => {
+        add(svg, "line", { x1: pad.l, x2: w - pad.r, y1: y(tick), y2: y(tick), stroke: colors.grid, "stroke-width": 1 });
+        add(svg, "text", { x: pad.l - 8, y: y(tick) + 4, fill: colors.text, "font-size": 11, "text-anchor": "end" }, options.yFormat(tick));
+      });
+      options.xTicks.forEach(tick => {
+        add(svg, "text", { x: x(tick), y: h - 16, fill: colors.text, "font-size": 11, "text-anchor": "middle" }, options.xFormat(tick));
+      });
+      add(svg, "line", { x1: pad.l, x2: pad.l, y1: pad.t, y2: h - pad.b, stroke: "#7b8794" });
+      add(svg, "line", { x1: pad.l, x2: w - pad.r, y1: h - pad.b, y2: h - pad.b, stroke: "#7b8794" });
+      series.forEach(s => {
+        add(svg, "polyline", { points: s.values.map(p => `${x(p[0])},${y(p[1])}`).join(" "), fill: "none", stroke: s.color, "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round" });
+        s.values.forEach(p => {
+          const c = add(svg, "circle", { cx: x(p[0]), cy: y(p[1]), r: 4.5, fill: "#fff", stroke: s.color, "stroke-width": 2.5 });
+          add(c, "title", {}, `${s.name}: ${options.xFormat(p[0])}, ${options.yFormat(p[1])}`);
+        });
+      });
+    }
+
+    function drawBars() {
+      const svg = document.getElementById("rangeChart");
+      const w = 760, h = 300, pad = { l: 58, r: 24, t: 20, b: 52 };
+      const groups = ["46–50", "51–55", "56–64"];
+      const oldData = [1, .2832, .0801], newData = [1, .392578125, .126953125];
+      const y = v => h - pad.b - v * (h - pad.t - pad.b);
+      [0, .25, .5, .75, 1].forEach(tick => {
+        add(svg, "line", { x1: pad.l, x2: w - pad.r, y1: y(tick), y2: y(tick), stroke: colors.grid });
+        add(svg, "text", { x: pad.l - 8, y: y(tick) + 4, fill: colors.text, "font-size": 11, "text-anchor": "end" }, `${Math.round(tick * 100)}%`);
+      });
+      const groupW = (w - pad.l - pad.r) / groups.length;
+      groups.forEach((g, i) => {
+        const cx = pad.l + groupW * (i + .5), bw = 54;
+        [[oldData[i], "#637083", -31], [newData[i], "#1769aa", 31]].forEach(([v, color, dx]) => {
+          add(svg, "rect", { x: cx + dx - bw / 2, y: y(v), width: bw, height: h - pad.b - y(v), fill: color, rx: 2 });
+          add(svg, "text", { x: cx + dx, y: Math.max(13, y(v) - 7), fill: color, "font-size": 11, "font-weight": 700, "text-anchor": "middle" }, `${(v * 100).toFixed(i === 0 ? 0 : 1)}%`);
+        });
+        add(svg, "text", { x: cx, y: h - 20, fill: colors.text, "font-size": 12, "text-anchor": "middle" }, g);
+      });
+    }
+
+    drawLineChart("scalingChart", [
+      { name: "old", color: "#637083", values: [[1000,.0176],[2000,.0195],[3000,.0352],[4000,.0684],[5000,.1250],[6000,.1680]] },
+      { name: "full diversity", color: "#16805c", values: [[1000,.017578125],[3000,.02734375],[4500,.10546875],[6000,.2109375]] }
+    ], { xMin: 0, xMax: 6000, yMin: 0, yMax: .24, xTicks: [0,1000,2000,3000,4000,5000,6000], yTicks: [0,.05,.10,.15,.20], xFormat: v => String(v), yFormat: v => `${Math.round(v*100)}%` });
+
+    drawBars();
+
+    drawLineChart("loopChart", [
+      { name: "holes53", color: "#1769aa", values: [[1,.017578125],[2,.0234375],[3,.14453125],[4,.19921875],[5,.2109375]] },
+      { name: "holes60", color: "#a45d00", values: [[1,.021484375],[2,.037109375],[3,.173828125],[4,.23046875],[5,.240234375]] },
+      { name: "holes64", color: "#6656a8", values: [[1,.025390625],[2,.04296875],[3,.17578125],[4,.244140625],[5,.25]] }
+    ], { width: 960, height: 310, xMin: 1, xMax: 5, yMin: 0, yMax: .28, xTicks: [1,2,3,4,5], yTicks: [0,.05,.10,.15,.20,.25], xFormat: v => `loop${v}`, yFormat: v => `${Math.round(v*100)}%` });
+
+    const caseFrame = document.getElementById("caseFrame");
+    const caseSummary = document.getElementById("caseSummary");
+    document.querySelectorAll(".case-tab").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".case-tab").forEach(item => item.setAttribute("aria-selected", "false"));
+        button.setAttribute("aria-selected", "true");
+        caseSummary.textContent = button.dataset.summary;
+        caseFrame.src = button.dataset.src;
+      });
+    });
+  </script>
+</body>
+</html>

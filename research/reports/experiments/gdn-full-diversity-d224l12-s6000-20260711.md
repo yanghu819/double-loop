@@ -118,7 +118,29 @@ data arrays, GPU1 visibility, and raw CSV provenance before executing
 
 Data and CUDA gates passed. The formal run started with `git_dirty=0`,
 `device=cuda`, PyTorch `2.7.0+cu126`, GDN `triton_recurrent`, and about `45 GB`
-allocated on the sole visible A800. Metric checkpoints are pending.
+allocated on the sole visible A800.
+
+The first lease trained through the complete periodic step900 checkpoint. CE
+fell from `1.6346` at step100 to `0.9688` at step900. Exact PIDs
+`2508/2506/2507/2459` were then stopped proactively, GPU1 returned to `0 MiB`,
+and `lease_rollover_1.json` recorded the exact checkpoint. AIStation was restored
+through Kimi WebBridge without changing the A800/image/resource configuration.
+The new container `5bdodqqquitj0-0` was probed as an A800 before resume.
+
+The second leg resumed optimizer, model, and RNG state at global step900. The
+step1000 checkpoint is:
+
+| Bucket | loop1 exact | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|---:|
+| holes53 | `0.0156` | `0.0176` | `0.5145` |
+| holes60 | `0.0156` | `0.0215` | `0.5254` |
+| holes64 | `0.0137` | `0.0215` | `0.5250` |
+
+Matched holes53 is not an early win: exact ties the old-data reference `0.0176`
+while blank accuracy trails `0.5284` by about `0.014`. Train CE is `0.9971`
+versus the old run's approximately `0.95`. This is neither success nor the
+predeclared kill: the experiment continues unchanged to the step3000 crossover
+gate.
 
 ## 8. Conclusions
 

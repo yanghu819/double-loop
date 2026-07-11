@@ -142,6 +142,29 @@ versus the old run's approximately `0.95`. This is neither success nor the
 predeclared kill: the experiment continues unchanged to the step3000 crossover
 gate.
 
+The step3000 crossover gate completed at 2026-07-12 02:20 CST / 2026-07-11
+18:20 UTC:
+
+| Bucket | loop1 exact | loop1 blank | loop5 exact | loop5 blank |
+|---|---:|---:|---:|---:|
+| holes53 | `0.0176` | `0.5174` | `0.0273` | `0.5788` |
+| holes60 | `0.0215` | `0.5279` | `0.0332` | `0.5885` |
+| holes64 | `0.0254` | `0.5211` | `0.0430` | `0.5844` |
+
+The matched old-data holes53 reference at step3000 is exact/blank
+`0.0352/0.5750`. Full diversity is therefore `-0.0078` exact but `+0.0038`
+blank accuracy: it has not yet converted its slightly better local prediction
+quality into more wholly correct boards. It nevertheless passes the
+predeclared continuation rule because exact is above `0.02`, blank accuracy is
+above `0.54`, and train CE continues to improve (`0.9971` at step1000, `0.7939`
+at step3000, then `0.7279` at step3100).
+
+Loop compute is already behaviorally useful at this gate. On holes64, loop1 to
+loop5 raises exact from `0.0254` to `0.0430` and blank accuracy from `0.5211` to
+`0.5844`; holes60 exact similarly rises from `0.0215` to `0.0332`. The run
+therefore continues unchanged to step4500/6000 to test whether broader data is
+a delayed generalization gain rather than an immediate optimization gain.
+
 ## 8. Conclusions
 
 Pending.

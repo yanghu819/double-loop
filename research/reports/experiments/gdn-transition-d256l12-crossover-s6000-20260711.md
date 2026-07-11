@@ -3,12 +3,14 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-028`
-- Status: approved
-- Planned start: 2026-07-11 16:26 CST / 2026-07-11T08:26:05Z
+- Status: in-progress
+- Planned: 2026-07-11 16:26 CST / 2026-07-11T08:26:05Z
+- Launched: 2026-07-11 16:46 CST / 2026-07-11T08:46:00Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
-- Source SHA: assigned by the prelaunch tracking commit
-- Run name: assigned after the source SHA is fixed
+- Tracking-plan SHA: `75fe60cf92baef66546067ed8c194692df7c2b4e`
+- Formal source SHA: `ae31c9f54ffb0abaecf48e2102942431f57d36b3`
+- Run name: `gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f`
 
 ## 2. Hypothesis
 
@@ -72,13 +74,41 @@ Kill criteria:
 
 ## 5. Commands
 
-The exact detached worktree, checkpoint path, launch script, and command will be
-recorded immediately after the prelaunch tracking SHA is pushed and GPU1 is
-probed. No CPU model smoke is permitted.
+The source is the existing clean detached worktree that produced the resumed
+D256 checkpoint:
+
+`/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z`
+
+Before launch, the worktree reported exact HEAD
+`ae31c9f54ffb0abaecf48e2102942431f57d36b3` and zero tracked changes. The
+checkpoint is:
+
+`/huyang2/double-loop/models/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f/checkpoints/train_state_step001000.pt`
+
+The reviewed launch script is:
+
+`/huyang2/double-loop/artifacts/launch/pscale028/pscale028_launch.sh`
+
+It exports the configuration in section 3 with `CUDA_VISIBLE_DEVICES=0`,
+`SMOKE_DONE=1`, `SKIP_SETUP=1`, and `SOURCE_SNAPSHOT_MODE=lean`, then executes
+`./run.sh full`. It was started under `nohup` with exact outer PID `652`; output
+is written to
+`/huyang2/double-loop/artifacts/launch/pscale028/pscale028_launch.out`.
+
+No CPU model smoke was run. GPU-only preflight confirmed PyTorch `2.7.0+cu126`,
+CUDA available, and `NVIDIA A800-SXM4-80GB` at `0 MiB` before launch. The first
+runtime check confirmed checkpoint resume at global step1000 and approximately
+`51886 MiB` allocated on GPU1.
 
 ## 6. Artifacts
 
-Pending launch.
+- Remote run directory:
+  `/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f`
+- Train checkpoints:
+  `/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints`
+- Launch script/log/PID/environment:
+  `/huyang2/double-loop/artifacts/launch/pscale028/`
+- Outer launch PID: `652`
 
 ## 7. Results
 

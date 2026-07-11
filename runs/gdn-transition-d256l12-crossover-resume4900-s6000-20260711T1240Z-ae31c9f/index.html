@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-SCALE-028 D256 Crossover - Negative Result</title>
+  <style>
+    :root { color-scheme: light; --ink:#1d232a; --muted:#5c6670; --line:#d9dee3; --bg:#f4f6f7; --paper:#fff; --bad:#b33a4b; --good:#237a57; --blue:#2878a9; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; letter-spacing:0; }
+    main { max-width:1180px; margin:0 auto; padding:28px 24px 48px; }
+    header { border-top:5px solid var(--bad); padding-top:18px; }
+    h1 { margin:4px 0 12px; font-size:30px; line-height:1.2; }
+    h2 { margin:0 0 16px; font-size:20px; }
+    h3 { margin:0 0 10px; font-size:16px; }
+    p { margin:8px 0; line-height:1.65; }
+    .eyebrow,.muted { color:var(--muted); }
+    .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:24px 0; border:1px solid var(--line); background:var(--paper); }
+    .metric { padding:16px; min-height:112px; border-right:1px solid var(--line); }
+    .metric:last-child { border-right:0; }
+    .metric strong { display:block; margin:5px 0; font-size:25px; }
+    .bad { color:var(--bad); } .good { color:var(--good); } .blue { color:var(--blue); }
+    section { margin-top:18px; padding:20px; background:var(--paper); border:1px solid var(--line); border-radius:6px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:right; }
+    th:first-child,td:first-child { text-align:left; }
+    tr:last-child td { border-bottom:0; }
+    .charts { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .chart { border:1px solid var(--line); padding:12px; min-width:0; }
+    svg { display:block; width:100%; height:auto; }
+    .legend { display:flex; gap:18px; margin:4px 0 10px; font-size:13px; color:var(--muted); }
+    .swatch { display:inline-block; width:12px; height:4px; margin-right:6px; vertical-align:middle; }
+    .cases { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .case { min-width:0; border:1px solid var(--line); }
+    .case h3 { padding:12px; margin:0; border-bottom:1px solid var(--line); }
+    iframe { display:block; width:100%; height:640px; border:0; background:#fff; }
+    .links { display:flex; flex-wrap:wrap; gap:10px 18px; }
+    a { color:#1d628c; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.92em; }
+    @media (max-width:900px) { .metrics,.charts,.cases { grid-template-columns:1fr 1fr; } .metric:nth-child(2) { border-right:0; } }
+    @media (max-width:640px) { main { padding:18px 12px 36px; } h1 { font-size:25px; } .metrics,.charts,.cases { grid-template-columns:1fr; } .metric { border-right:0; border-bottom:1px solid var(--line); } iframe { height:560px; } table { font-size:12px; } th,td { padding:8px 6px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">P-SCALE-028 / GPU1 A800 / source ae31c9f / 6000 steps</div>
+    <h1>D256 变好了，但没有超过 D224</h1>
+    <p>我们没有加新 loss、noise、repair 或规则，只把模型从 D224 加宽到 D256，并给它足够的 hard data 和训练时间。D256 的局部填空准确率最后略高，但整盘全对率只有 D224 的一半。结论不是“scaling law 错了”，而是<strong>普通 width 不是当前 compute-optimal 的 scaling 轴</strong>。</p>
+  </header>
+
+  <div class="metrics">
+    <div class="metric"><span>holes53 step6000 exact</span><strong class="bad">0.0820</strong><span>D224 0.1680，差 -0.0859</span></div>
+    <div class="metric"><span>Official 51-55 exact</span><strong class="bad">0.1504</strong><span>D224 0.2832，差 -0.1328</span></div>
+    <div class="metric"><span>Official 56-64 exact</span><strong class="bad">0.0781</strong><span>D224 0.0801，基本持平</span></div>
+    <div class="metric"><span>Full loop1 → loop5</span><strong class="good">+0.1133</strong><span>loop 仍然有效</span></div>
+  </div>
+
+  <section>
+    <h2>公平读数：更宽不等于更会全局收敛</h2>
+    <table>
+      <thead><tr><th>固定测试</th><th>D224/L12</th><th>D256/L12</th><th>D256 变化</th></tr></thead>
+      <tbody>
+        <tr><td>holes53 step6000 exact</td><td class="blue">0.1680</td><td class="bad">0.0820</td><td class="bad">-0.0859</td></tr>
+        <tr><td>holes53 step6000 blank acc</td><td>0.6120</td><td class="good">0.6156</td><td class="good">+0.0036</td></tr>
+        <tr><td>Official 51-55 exact</td><td class="blue">0.2832</td><td class="bad">0.1504</td><td class="bad">-0.1328</td></tr>
+        <tr><td>Official 56-64 exact</td><td>0.0801</td><td>0.0781</td><td>-0.0020</td></tr>
+        <tr><td>Official 56-64 blank acc</td><td>0.5405</td><td class="good">0.5834</td><td class="good">+0.0429</td></tr>
+      </tbody>
+    </table>
+    <p><strong>最关键的反例：</strong>D256 在 hardest range 的单格准确率更高，却没有得到更多全对棋盘。它学会了更多局部答案，但没有更有效地把这些答案绑成同一个全局一致解。</p>
+  </section>
+
+  <section>
+    <h2>Scaling curve</h2>
+    <div class="charts">
+      <div class="chart">
+        <h3>holes53 loop5 full-board exact</h3>
+        <div class="legend"><span><i class="swatch" style="background:#2878a9"></i>D224</span><span><i class="swatch" style="background:#b33a4b"></i>D256</span></div>
+        <svg viewBox="0 0 540 300" role="img" aria-label="D224 and D256 exact versus training step">
+          <g stroke="#d9dee3" stroke-width="1"><line x1="52" y1="252" x2="520" y2="252"/><line x1="52" y1="196" x2="520" y2="196"/><line x1="52" y1="140" x2="520" y2="140"/><line x1="52" y1="84" x2="520" y2="84"/><line x1="52" y1="28" x2="520" y2="28"/></g>
+          <g fill="#5c6670" font-size="11"><text x="18" y="256">0.00</text><text x="18" y="200">0.05</text><text x="18" y="144">0.10</text><text x="18" y="88">0.15</text><text x="18" y="32">0.20</text><text x="118" y="276">1000</text><text x="196" y="276">2000</text><text x="274" y="276">3000</text><text x="506" y="276">6000</text></g>
+          <polyline fill="none" stroke="#2878a9" stroke-width="4" points="132,232 210,230 287,213 365,175 442,112 520,64"/>
+          <polyline fill="none" stroke="#b33a4b" stroke-width="4" points="132,232 210,230 287,208 404,189 520,160"/>
+          <g fill="#2878a9"><circle cx="132" cy="232" r="4"/><circle cx="210" cy="230" r="4"/><circle cx="287" cy="213" r="4"/><circle cx="365" cy="175" r="4"/><circle cx="442" cy="112" r="4"/><circle cx="520" cy="64" r="4"/></g>
+          <g fill="#b33a4b"><circle cx="132" cy="232" r="4"/><circle cx="210" cy="230" r="4"/><circle cx="287" cy="208" r="4"/><circle cx="404" cy="189" r="4"/><circle cx="520" cy="160" r="4"/></g>
+        </svg>
+        <p class="muted">D256 在 step3000 短暂略高，但 D224 之后明显加速；这不是稳定 crossover。</p>
+      </div>
+      <div class="chart">
+        <h3>D256 step6000：更多 loop 做了什么</h3>
+        <div class="legend"><span><i class="swatch" style="background:#237a57"></i>holes53</span><span><i class="swatch" style="background:#2878a9"></i>holes60</span><span><i class="swatch" style="background:#b33a4b"></i>holes64</span></div>
+        <svg viewBox="0 0 540 300" role="img" aria-label="Loop exact curves at holes53 holes60 and holes64">
+          <g stroke="#d9dee3" stroke-width="1"><line x1="52" y1="252" x2="520" y2="252"/><line x1="52" y1="177" x2="520" y2="177"/><line x1="52" y1="102" x2="520" y2="102"/><line x1="52" y1="27" x2="520" y2="27"/></g>
+          <g fill="#5c6670" font-size="11"><text x="18" y="256">0.00</text><text x="18" y="181">0.05</text><text x="18" y="106">0.10</text><text x="18" y="31">0.15</text><text x="76" y="276">loop1</text><text x="182" y="276">loop2</text><text x="288" y="276">loop3</text><text x="394" y="276">loop4</text><text x="486" y="276">loop5</text></g>
+          <polyline fill="none" stroke="#237a57" stroke-width="4" points="94,226 200,223 306,158 412,135 506,129"/>
+          <polyline fill="none" stroke="#2878a9" stroke-width="4" points="94,220 200,211 306,111 412,59 506,47"/>
+          <polyline fill="none" stroke="#b33a4b" stroke-width="4" points="94,214 200,196 306,126 412,73 506,67"/>
+        </svg>
+        <p class="muted">Loop 依然会把部分 board 从局部猜测推向全局解；失败的是 D256 width 的 compute efficiency，不是 loop 完全没用。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>hardest cases</h2>
+    <p>每个 case 都显示 Puzzle、Solution、loop1/3/5。红色或冲突标记展示仍未修好的格子；可以在面板内滚动。</p>
+    <div class="cases">
+      <div class="case"><h3>56-64 solved by loop</h3><iframe src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0113.html"></iframe></div>
+      <div class="case"><h3>56-64 almost solved</h3><iframe src="output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0050.html"></iframe></div>
+      <div class="case"><h3>56-64 hard failure</h3><iframe src="output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0112.html"></iframe></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>下一步怎么 scale</h2>
+    <p>不要继续 D288/D320 补表。这个结果说明，在当前计算预算下，D224 能更快把局部正确转成整盘正确。下一条 scaling 应优先增加<strong>独立训练题数量、有效 token 数和更高效 recurrent state capacity</strong>，并用参数量、训练 token、FLOPs 和 wall time画 compute-optimal frontier，而不是只把 hidden dimension 做大。</p>
+    <p>简单说：相信 scaling law，但也要按 scaling law 的完整版本做。模型变大时，数据和训练量也必须按比例增加；否则得到的是 under-trained 大模型，不是更强模型。</p>
+  </section>
+
+  <section>
+    <h2>完整证据</h2>
+    <div class="links">
+      <a href="visualizations/index.html">自动 dashboard</a>
+      <a href="output/checkpoint_eval_step006000.json">step6000 JSON</a>
+      <a href="output/case_bank/official_b51_55/index.html">51-55 case bank</a>
+      <a href="output/case_bank/official_b56_64/index.html">56-64 case bank</a>
+      <a href="comparison.json">comparison JSON</a>
+      <a href="launch/lease_rollover_1.json">lease rollover record</a>
+    </div>
+  </section>
+</main>
+</body>
+</html>

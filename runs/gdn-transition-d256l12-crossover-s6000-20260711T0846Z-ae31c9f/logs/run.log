@@ -1,0 +1,89 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f
+git_sha=ae31c9f54ffb0abaecf48e2102942431f57d36b3
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=2000,3000,4500,6000 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/models/gdn-transition-d256l12-width-noconv-s6000-20260702T1245Z-ae31c9f/checkpoints/train_state_step001000.pt step=1000 reason=eval_checkpoint
+[future_seed_loop stage=3:51-64] step=1100 ce=1.0504 total=1.0584 loop1=1.0843 loop_last=1.0504 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1100] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001100.pt
+[future_seed_loop stage=3:51-64] step=1200 ce=1.0415 total=1.0495 loop1=1.0791 loop_last=1.0415 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1200] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001200.pt
+[future_seed_loop stage=3:51-64] step=1300 ce=1.0429 total=1.0539 loop1=1.0916 loop_last=1.0429 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1300] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001300.pt
+[future_seed_loop stage=3:51-64] step=1400 ce=0.9982 total=1.0092 loop1=1.0463 loop_last=0.9982 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1400] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001400.pt
+[future_seed_loop stage=3:51-64] step=1500 ce=1.0151 total=1.0277 loop1=1.0695 loop_last=1.0151 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1500] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001500.pt
+[future_seed_loop stage=3:51-64] step=1600 ce=0.9860 total=1.0005 loop1=1.0467 loop_last=0.9860 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1600] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001600.pt
+[future_seed_loop stage=3:51-64] step=1700 ce=1.0233 total=1.0363 loop1=1.0789 loop_last=1.0233 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1700] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001700.pt
+[future_seed_loop stage=3:51-64] step=1800 ce=1.0083 total=1.0213 loop1=1.0631 loop_last=1.0083 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1800] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001800.pt
+[future_seed_loop stage=3:51-64] step=1900 ce=0.9710 total=0.9899 loop1=1.0456 loop_last=0.9710 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=1900] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step001900.pt
+[future_seed_loop stage=3:51-64] step=2000 ce=1.0065 total=1.0207 loop1=1.0685 loop_last=1.0065 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=2000 holes60] loop5 exact=0.0254 blank=0.5509
+[train_checkpoint step=2000] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002000.pt
+[future_seed_loop stage=4:51-55] step=2100 ce=0.9444 total=0.9607 loop1=1.0104 loop_last=0.9444 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2100] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002100.pt
+[future_seed_loop stage=4:51-55] step=2200 ce=0.9107 total=0.9315 loop1=0.9951 loop_last=0.9107 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2200] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002200.pt
+[future_seed_loop stage=4:51-55] step=2300 ce=0.8769 total=0.8993 loop1=0.9677 loop_last=0.8769 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2300] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002300.pt
+[future_seed_loop stage=4:51-55] step=2400 ce=0.8774 total=0.8997 loop1=0.9690 loop_last=0.8774 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2400] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002400.pt
+[future_seed_loop stage=4:51-55] step=2500 ce=0.8693 total=0.8970 loop1=0.9752 loop_last=0.8693 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2500] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002500.pt
+[future_seed_loop stage=5:56-64] step=2600 ce=1.0331 total=1.0491 loop1=1.0970 loop_last=1.0331 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2600] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002600.pt
+[future_seed_loop stage=5:56-64] step=2700 ce=1.0403 total=1.0581 loop1=1.1035 loop_last=1.0403 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2700] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002700.pt
+[future_seed_loop stage=5:56-64] step=2800 ce=1.0024 total=1.0235 loop1=1.0840 loop_last=1.0024 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2800] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002800.pt
+[future_seed_loop stage=5:56-64] step=2900 ce=1.0969 total=1.1090 loop1=1.1468 loop_last=1.0969 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=2900] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step002900.pt
+[future_seed_loop stage=5:56-64] step=3000 ce=1.0169 total=1.0366 loop1=1.0952 loop_last=1.0169 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=3000 holes60] loop5 exact=0.0430 blank=0.5661
+[train_checkpoint step=3000] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003000.pt
+[future_seed_loop stage=6:51-64] step=3100 ce=0.9370 total=0.9603 loop1=1.0221 loop_last=0.9370 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3100] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003100.pt
+[future_seed_loop stage=6:51-64] step=3200 ce=0.9546 total=0.9791 loop1=1.0475 loop_last=0.9546 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3200] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003200.pt
+[future_seed_loop stage=6:51-64] step=3300 ce=0.9659 total=0.9886 loop1=1.0502 loop_last=0.9659 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3300] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003300.pt
+[future_seed_loop stage=6:51-64] step=3400 ce=0.9734 total=0.9951 loop1=1.0569 loop_last=0.9734 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3400] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003400.pt
+[future_seed_loop stage=6:51-64] step=3500 ce=0.9080 total=0.9409 loop1=1.0302 loop_last=0.9080 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3500] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003500.pt
+[future_seed_loop stage=6:51-64] step=3600 ce=0.8803 total=0.9164 loop1=1.0137 loop_last=0.8803 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3600] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003600.pt
+[future_seed_loop stage=6:51-64] step=3700 ce=0.9483 total=0.9722 loop1=1.0372 loop_last=0.9483 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3700] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003700.pt
+[future_seed_loop stage=6:51-64] step=3800 ce=0.9611 total=0.9868 loop1=1.0575 loop_last=0.9611 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3800] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003800.pt
+[future_seed_loop stage=6:51-64] step=3900 ce=0.9235 total=0.9562 loop1=1.0430 loop_last=0.9235 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=3900] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step003900.pt
+[future_seed_loop stage=6:51-64] step=4000 ce=0.9897 total=1.0129 loop1=1.0744 loop_last=0.9897 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4000] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004000.pt
+[future_seed_loop stage=7:51-55] step=4100 ce=0.8314 total=0.8704 loop1=0.9776 loop_last=0.8314 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4100] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004100.pt
+[future_seed_loop stage=7:51-55] step=4200 ce=0.8264 total=0.8669 loop1=0.9799 loop_last=0.8264 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4200] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004200.pt
+[future_seed_loop stage=7:51-55] step=4300 ce=0.6969 total=0.7632 loop1=0.9363 loop_last=0.6969 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4300] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004300.pt
+[future_seed_loop stage=7:51-55] step=4400 ce=0.7783 total=0.8320 loop1=0.9719 loop_last=0.7783 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4400] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004400.pt
+[future_seed_loop stage=7:51-55] step=4500 ce=0.7565 total=0.8120 loop1=0.9613 loop_last=0.7565 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=4500 holes60] loop5 exact=0.0664 blank=0.5958
+[train_checkpoint step=4500] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004500.pt
+[future_seed_loop stage=8:56-64] step=4600 ce=1.0211 total=1.0450 loop1=1.1088 loop_last=1.0211 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4600] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004600.pt
+[future_seed_loop stage=8:56-64] step=4700 ce=0.9394 total=0.9777 loop1=1.0730 loop_last=0.9394 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4700] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004700.pt
+[future_seed_loop stage=8:56-64] step=4800 ce=0.9401 total=0.9760 loop1=1.0658 loop_last=0.9401 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4800] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004800.pt
+[future_seed_loop stage=8:56-64] step=4900 ce=0.9463 total=0.9862 loop1=1.0800 loop_last=0.9463 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=4900] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004900.pt
+Terminated

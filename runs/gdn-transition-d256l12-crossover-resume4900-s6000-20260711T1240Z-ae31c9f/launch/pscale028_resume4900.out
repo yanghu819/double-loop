@@ -1,0 +1,67 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f
+git_sha=ae31c9f54ffb0abaecf48e2102942431f57d36b3
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=bfloat16
+checkpoint_eval steps=6000 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step004900.pt step=4900 reason=periodic
+[future_seed_loop stage=8:56-64] step=5000 ce=0.9741 total=1.0063 loop1=1.0874 loop_last=0.9741 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5000] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005000.pt
+[future_seed_loop stage=9:51-64] step=5100 ce=0.9123 total=0.9455 loop1=1.0421 loop_last=0.9123 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5100] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005100.pt
+[future_seed_loop stage=9:51-64] step=5200 ce=0.9064 total=0.9423 loop1=1.0343 loop_last=0.9064 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5200] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005200.pt
+[future_seed_loop stage=9:51-64] step=5300 ce=0.9081 total=0.9417 loop1=1.0367 loop_last=0.9081 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5300] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005300.pt
+[future_seed_loop stage=9:51-64] step=5400 ce=0.9262 total=0.9607 loop1=1.0553 loop_last=0.9262 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5400] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005400.pt
+[future_seed_loop stage=9:51-64] step=5500 ce=0.8694 total=0.9132 loop1=1.0242 loop_last=0.8694 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5500] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005500.pt
+[future_seed_loop stage=9:51-64] step=5600 ce=0.8912 total=0.9319 loop1=1.0383 loop_last=0.8912 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5600] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005600.pt
+[future_seed_loop stage=9:51-64] step=5700 ce=0.8648 total=0.9083 loop1=1.0181 loop_last=0.8648 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5700] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005700.pt
+[future_seed_loop stage=9:51-64] step=5800 ce=0.8003 total=0.8592 loop1=1.0088 loop_last=0.8003 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5800] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005800.pt
+[future_seed_loop stage=9:51-64] step=5900 ce=0.7992 total=0.8546 loop1=1.0026 loop_last=0.7992 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=5900] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step005900.pt
+[future_seed_loop stage=9:51-64] step=6000 ce=0.7586 total=0.8255 loop1=0.9923 loop_last=0.7586 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=6000 holes60] loop5 exact=0.1367 blank=0.6408
+[train_checkpoint step=6000] path=/huyang2/double-loop/models/gdn-transition-d256l12-crossover-s6000-20260711T0846Z-ae31c9f/checkpoints/train_state_step006000.pt
+
+full-board metrics
+loop=1 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5383, early=0.5350, late=0.5419, early_late_gap=-0.0069
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=15.059, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0273, valid=0.0273, solved=0.0273, blank_acc=0.6021, early=0.6008, late=0.6036, early_late_gap=-0.0028
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=15.059, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0938, valid=0.0938, solved=0.0938, blank_acc=0.6272, early=0.6206, late=0.6290, early_late_gap=-0.0084
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=15.059, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.1328, valid=0.1328, solved=0.1328, blank_acc=0.6323, early=0.6269, late=0.6319, early_late_gap=-0.0051
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=15.059, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.1367, valid=0.1367, solved=0.1367, blank_acc=0.6327, early=0.6270, late=0.6324, early_late_gap=-0.0054
+        fs_gate=0.471, fs_update=1.000, fs_state_norm=15.059, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=1.0000, valid=1.0000, solved=1.0000, blank_acc=1.0000, early=1.0000, late=1.0000, early_late_gap=+0.0000
+b51_55 blanks=51-55 n=512 exact=0.1504, valid=0.1504, solved=0.1504, blank_acc=0.6956, early=0.6888, late=0.6954, early_late_gap=-0.0065
+b56_64 blanks=56-64 n=512 exact=0.0781, valid=0.0781, solved=0.0781, blank_acc=0.5834, early=0.5776, late=0.5825, early_late_gap=-0.0049
+
+case-bank artifacts
+official_b46_50 exact=1.0000 blank_acc=1.0000 selected={'solved_by_loop': 4, 'almost_solved': 0, 'hard_failure': 0}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.1016 blank_acc=0.6886 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0586 blank_acc=0.5809 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f score=0.13671875 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/gdn-transition-d256l12-width-ae31c9f-20260702T1214Z/runs/gdn-transition-d256l12-crossover-resume4900-s6000-20260711T1240Z-ae31c9f

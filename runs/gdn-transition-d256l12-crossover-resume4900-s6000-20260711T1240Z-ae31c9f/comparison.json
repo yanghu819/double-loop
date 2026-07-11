@@ -1,0 +1,50 @@
+{
+  "plan_id": "P-SCALE-028",
+  "decision": "discard_width_scaling",
+  "source_sha": "ae31c9f54ffb0abaecf48e2102942431f57d36b3",
+  "hypothesis": "D256 may need more training tokens than D224 before a scaling-law crossover appears.",
+  "matched_holes53": {
+    "d224_step6000": {
+      "loop5_exact": 0.16796875,
+      "loop5_blank_acc": 0.6120
+    },
+    "d256_step6000": {
+      "loop5_exact": 0.08203125,
+      "loop5_blank_acc": 0.615565
+    },
+    "exact_delta": -0.0859375,
+    "blank_acc_delta": 0.003565
+  },
+  "official_ranges": {
+    "b51_55": {
+      "d224_exact": 0.2832,
+      "d256_exact": 0.150390625,
+      "delta": -0.132809375
+    },
+    "b56_64": {
+      "d224_exact": 0.0801,
+      "d256_exact": 0.078125,
+      "delta": -0.001975
+    }
+  },
+  "d256_full_loop_exact": [
+    0.0234375,
+    0.02734375,
+    0.09375,
+    0.1328125,
+    0.13671875
+  ],
+  "d256_full_loop_blank_acc": [
+    0.5383,
+    0.6021,
+    0.6272,
+    0.6323,
+    0.6327
+  ],
+  "success_gates": {
+    "holes53_step6000_exact_gt_0_168": false,
+    "official_51_55_exact_ge_0_30": false,
+    "official_56_64_exact_ge_0_10": false
+  },
+  "lesson": "D256 learns and later loops help, but simple width uses more compute while converting local blank accuracy into globally exact boards less efficiently than D224. Do not continue a D288/D320 width table."
+}

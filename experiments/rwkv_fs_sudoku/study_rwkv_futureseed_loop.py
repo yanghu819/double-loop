@@ -1060,7 +1060,7 @@ class FutureSeedRWKV(nn.Module):
                     denom = seed_state.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
                     normalized_state = seed_state / denom_native
                     raw_rms_means.append(denom.mean().to(dtype=x.dtype))
-                    raw_rms_stds.append(denom.std(unbiased=False).to(dtype=x.dtype))
+                    raw_rms_stds.append(denom.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
                     if self.future_seed_norm_mode == "adaptive_rms":
                         assert self.future_seed_norm_slope is not None
                         assert self.future_seed_norm_bias is not None
@@ -1077,7 +1077,7 @@ class FutureSeedRWKV(nn.Module):
                     else:
                         norm_gain = torch.ones_like(denom)
                     norm_gain_means.append(norm_gain.mean().to(dtype=x.dtype))
-                    norm_gain_stds.append(norm_gain.std(unbiased=False).to(dtype=x.dtype))
+                    norm_gain_stds.append(norm_gain.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
                     initial_state = normalized_state * gate * norm_gain.to(dtype=normalized_state.dtype)
                     state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
                 else:

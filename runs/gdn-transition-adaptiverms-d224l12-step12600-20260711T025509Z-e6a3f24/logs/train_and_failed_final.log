@@ -1,0 +1,29 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24
+git_sha=e6a3f240ea21fe8d4e6d162d1d3df43a5e7604f8
+git_dirty=0
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent forward_dtype=float32
+checkpoint_eval steps=12300,12600 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/.worktrees/gdn-transition-cyclicbridge-loop8-d224l12-step12000-20260703T0757Z/runs/gdn-transition-cyclicbridge-loop5-d224l12-step12000-restart1-20260704T0527Z-9c621a5/checkpoints/train_state_step012000.pt step=12000 reason=eval_checkpoint
+[future_seed_loop stage=14:56-64] step=12100 ce=0.0034 total=0.1901 loop1=0.8566 loop_last=0.0034 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12100] path=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/checkpoints/train_state_step012100.pt
+[future_seed_loop stage=14:56-64] step=12200 ce=0.0000 total=0.1641 loop1=0.8075 loop_last=0.0000 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12200] path=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/checkpoints/train_state_step012200.pt
+[future_seed_loop stage=14:56-64] step=12300 ce=0.0057 total=0.1618 loop1=0.7579 loop_last=0.0057 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=12300 holes53] loop5 exact=0.2109 blank=0.6108
+[train_checkpoint step=12300] path=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/checkpoints/train_state_step012300.pt
+[future_seed_loop stage=15:51-64] step=12400 ce=0.0328 total=0.2168 loop1=0.8245 loop_last=0.0328 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12400] path=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/checkpoints/train_state_step012400.pt
+[future_seed_loop stage=15:51-64] step=12500 ce=0.0219 total=0.2163 loop1=0.8521 loop_last=0.0219 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=12500] path=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/checkpoints/train_state_step012500.pt
+[future_seed_loop stage=15:51-64] step=12600 ce=0.0297 total=0.2240 loop1=0.8452 loop_last=0.0297 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=12600 holes53] loop5 exact=0.1895 blank=0.6061
+[train_checkpoint step=12600] path=/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/checkpoints/train_state_step012600.pt
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4179, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 3984, in run
+    case_bank_holes = parse_int_csv(args.case_bank_holes, name="--case_bank_holes", low=1, high=CELLS)
+  File "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2964, in parse_int_csv
+    value = int(item)
+ValueError: invalid literal for int() with base 10: 'official_b46_50:46-50'

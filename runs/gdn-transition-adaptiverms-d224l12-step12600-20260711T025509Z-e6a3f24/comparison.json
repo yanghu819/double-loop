@@ -1,0 +1,37 @@
+{
+  "plan_id": "P-DIAG-027",
+  "verdict": "discard",
+  "source_sha": "e6a3f240ea21fe8d4e6d162d1d3df43a5e7604f8",
+  "baseline": {
+    "name": "P-DIAG-021 unit-RMS step12000",
+    "full_loop5_exact": 0.236328125,
+    "official_51_55_exact": 0.35546875,
+    "official_56_64_exact": 0.158203125,
+    "checkpoint_holes53_loop5_exact": 0.19921875,
+    "checkpoint_holes60_loop5_exact": 0.244140625,
+    "checkpoint_holes64_loop5_exact": 0.232421875
+  },
+  "adaptive_rms": {
+    "name": "P-DIAG-027 adaptive-RMS step12600",
+    "full_loop5_exact": 0.2109375,
+    "official_51_55_exact": 0.341796875,
+    "official_56_64_exact": 0.13671875,
+    "checkpoint_holes53_loop5_exact": 0.189453125,
+    "checkpoint_holes60_loop5_exact": 0.220703125,
+    "checkpoint_holes64_loop5_exact": 0.212890625,
+    "loop1_to_loop5_exact_gain": 0.1875,
+    "loop5_raw_rms_mean": 0.39012306928634644,
+    "loop5_raw_rms_sample_std": 0.05018492415547371,
+    "loop5_gain_mean": 0.9880198240280151,
+    "loop5_gain_sample_std": 0.003099585184827447
+  },
+  "delta_adaptive_minus_baseline": {
+    "full_loop5_exact": -0.025390625,
+    "official_51_55_exact": -0.013671875,
+    "official_56_64_exact": -0.021484375,
+    "checkpoint_holes53_loop5_exact": -0.009765625,
+    "checkpoint_holes60_loop5_exact": -0.0234375,
+    "checkpoint_holes64_loop5_exact": -0.01953125
+  },
+  "mechanism_conclusion": "Raw terminal-state RMS varies across samples, but the learned bounded gain remains almost sample-invariant and becomes mostly a global 0.988x contraction. The discarded magnitude channel is not the missing global-consistency signal."
+}

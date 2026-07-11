@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P-DIAG-027 Adaptive RMS - Negative Result</title>
+<style>
+:root{--ink:#17191c;--muted:#667085;--line:#d7d9dd;--paper:#f5f6f7;--panel:#fff;--base:#2166ac;--test:#b23a48;--good:#2f7d4a;--warn:#9a6700}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0}
+main{max-width:1240px;margin:0 auto;padding:28px 24px 60px}.top{border-top:5px solid var(--test);padding-top:18px}h1{font-size:28px;line-height:1.2;margin:0 0 8px}h2{font-size:18px;margin:0 0 12px}p{line-height:1.6}.verdict{font-size:17px;max-width:920px}.muted{color:var(--muted)}
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:24px 0}.metric{background:var(--panel);padding:14px;min-height:104px}.metric b{display:block;font-size:24px;margin:5px 0}.down{color:var(--test)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;margin-top:16px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:9px 10px;border-bottom:1px solid #e8e9eb;text-align:right}th:first-child,td:first-child{text-align:left}th{color:#475467;background:#fafafa}.base{color:var(--base);font-weight:650}.test{color:var(--test);font-weight:650}
+.legend{display:flex;gap:18px;font-size:13px;color:var(--muted);margin-bottom:8px}.swatch{display:inline-block;width:11px;height:11px;margin-right:6px}.chart{width:100%;height:auto;border:1px solid #e8e9eb;background:#fff}.axis{stroke:#9aa0a6;stroke-width:1}.grid{stroke:#eceff1;stroke-width:1}.tick{font-size:11px;fill:#667085}.note{border-left:4px solid var(--warn);padding:10px 14px;background:#fffaf0;margin-top:12px}
+.mechanism{display:grid;grid-template-columns:1fr 1fr;gap:16px}.signal{border:1px solid var(--line);border-radius:5px;padding:14px}.rail{height:13px;background:#eceff1;margin:9px 0 5px;position:relative}.fill{height:100%}.raw{width:50.2%;background:var(--base)}.gain{width:3.1%;background:var(--test);min-width:3px}
+.links{display:flex;flex-wrap:wrap;gap:9px}.links a{color:#174ea6;text-decoration:none;border-bottom:1px solid #a8c1e8;padding:4px 0}.cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.case{border:1px solid var(--line);border-radius:5px;overflow:hidden}.case h3{font-size:14px;margin:0;padding:10px 12px;background:#fafafa;border-bottom:1px solid var(--line)}iframe{display:block;width:100%;height:660px;border:0;background:#fff}
+@media(max-width:900px){.strip,.mechanism,.cases{grid-template-columns:1fr}.metric{min-height:0}iframe{height:600px}}
+</style>
+</head>
+<body><main>
+<header class="top">
+  <div class="muted">P-DIAG-027 / GPU1 A800 / source e6a3f24</div>
+  <h1>Adaptive RMS 没解决 hard Sudoku</h1>
+  <p class="verdict">FutureSeed 原本会丢掉 state 的绝对大小。我们把这条信息以一个可学习、受限的 gain 放回来。模型确实看到了 raw state 的样本差异，但最终只学成近乎统一的 <b>0.988x</b> 缩放，hard exact 反而全面下降。因此停止这条方向，不扫 gain 范围、学习率或 seed。</p>
+</header>
+
+<div class="strip">
+  <div class="metric"><span class="muted">Full loop5 exact</span><b class="down">0.2109</b><span>vs 0.2363, -0.0254</span></div>
+  <div class="metric"><span class="muted">Official 51-55</span><b class="down">0.3418</b><span>vs 0.3555, -0.0137</span></div>
+  <div class="metric"><span class="muted">Official 56-64</span><b class="down">0.1367</b><span>vs 0.1582, -0.0215</span></div>
+  <div class="metric"><span class="muted">Loop1 -> loop5</span><b>+0.1875</b><span>loop 仍然有用</span></div>
+</div>
+
+<section>
+<h2>公平对比</h2>
+<table><thead><tr><th>固定测试</th><th class="base">旧 unit RMS</th><th class="test">Adaptive RMS</th><th>变化</th></tr></thead><tbody>
+<tr><td>Full loop5 exact</td><td class="base">0.2363</td><td class="test">0.2109</td><td class="down">-0.0254</td></tr>
+<tr><td>Official 51-55 exact</td><td class="base">0.3555</td><td class="test">0.3418</td><td class="down">-0.0137</td></tr>
+<tr><td>Official 56-64 exact</td><td class="base">0.1582</td><td class="test">0.1367</td><td class="down">-0.0215</td></tr>
+<tr><td>holes53 checkpoint exact</td><td class="base">0.1992</td><td class="test">0.1895</td><td class="down">-0.0098</td></tr>
+<tr><td>holes60 checkpoint exact</td><td class="base">0.2441</td><td class="test">0.2207</td><td class="down">-0.0234</td></tr>
+<tr><td>holes64 checkpoint exact</td><td class="base">0.2324</td><td class="test">0.2129</td><td class="down">-0.0195</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>Loop 仍然在算，但后两轮快到平台</h2>
+<div class="legend"><span><i class="swatch" style="background:var(--base)"></i>旧 unit RMS</span><span><i class="swatch" style="background:var(--test)"></i>Adaptive RMS</span></div>
+<svg class="chart" viewBox="0 0 760 300" role="img" aria-label="Loop exact comparison">
+<line class="axis" x1="58" y1="24" x2="58" y2="250"/><line class="axis" x1="58" y1="250" x2="730" y2="250"/>
+<line class="grid" x1="58" y1="198" x2="730" y2="198"/><line class="grid" x1="58" y1="146" x2="730" y2="146"/><line class="grid" x1="58" y1="94" x2="730" y2="94"/><line class="grid" x1="58" y1="42" x2="730" y2="42"/>
+<text class="tick" x="22" y="254">0.00</text><text class="tick" x="22" y="202">0.06</text><text class="tick" x="22" y="150">0.12</text><text class="tick" x="22" y="98">0.18</text><text class="tick" x="22" y="46">0.24</text>
+<polyline fill="none" stroke="var(--base)" stroke-width="3" points="90,230 245,203 400,86 555,54 710,45"/>
+<polyline fill="none" stroke="var(--test)" stroke-width="3" points="90,230 245,201 400,121 555,72 710,67"/>
+<g fill="var(--base)"><circle cx="90" cy="230" r="4"/><circle cx="245" cy="203" r="4"/><circle cx="400" cy="86" r="4"/><circle cx="555" cy="54" r="4"/><circle cx="710" cy="45" r="4"/></g>
+<g fill="var(--test)"><circle cx="90" cy="230" r="4"/><circle cx="245" cy="201" r="4"/><circle cx="400" cy="121" r="4"/><circle cx="555" cy="72" r="4"/><circle cx="710" cy="67" r="4"/></g>
+<text class="tick" x="86" y="274">1</text><text class="tick" x="241" y="274">2</text><text class="tick" x="396" y="274">3</text><text class="tick" x="551" y="274">4</text><text class="tick" x="706" y="274">5</text><text class="tick" x="370" y="292">loop</text>
+</svg>
+<p class="note">Adaptive run 从 loop1 exact 0.0234 涨到 loop5 0.2109，说明 loop 机制本身仍 work；问题是 loop4→5 只涨 0.0059，且整体曲线低于旧模型。这个改动没有让后期继续修错。</p>
+</section>
+
+<section>
+<h2>机制诊断：有原始差异，但 gain 几乎不跟</h2>
+<div class="mechanism">
+  <div class="signal"><b>Raw state RMS 跨样本标准差</b><div class="rail"><div class="fill raw"></div></div><strong>0.0502</strong><p class="muted">不同 board 的 state 大小确实不同，信息源不是常数。</p></div>
+  <div class="signal"><b>Learned gain 跨样本标准差</b><div class="rail"><div class="fill gain"></div></div><strong>0.00310</strong><p class="muted">远低于预设成功线 0.01；平均 gain 0.988，主要是全局收缩。</p></div>
+</div>
+<p class="note">朴素解释：state 大小虽然变化，但它没有携带模型当前最缺的“哪几个格子构成同一个全局冲突”这类结构。恢复一个标量幅度，信息量太小。</p>
+</section>
+
+<section>
+<h2>最难 case：同一模型的三种结局</h2>
+<p class="muted">每个页面都显示输入、真值以及 loop1/3/5；红色格子是错误。可在 iframe 内滚动。</p>
+<div class="cases">
+  <div class="case"><h3>56-64 solved by loop</h3><iframe loading="lazy" src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0203.html"></iframe></div>
+  <div class="case"><h3>56-64 almost solved</h3><iframe loading="lazy" src="output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0208.html"></iframe></div>
+  <div class="case"><h3>56-64 hard failure</h3><iframe loading="lazy" src="output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0019.html"></iframe></div>
+</div>
+</section>
+
+<section>
+<h2>完整证据</h2>
+<div class="links">
+<a href="visualizations/index.html">自动生成 dashboard</a>
+<a href="output/case_bank/official_b51_55/index.html">51-55 case bank</a>
+<a href="output/case_bank/official_b56_64/index.html">56-64 case bank</a>
+<a href="output/checkpoint_eval_step012300.json">step12300 JSON</a>
+<a href="output/checkpoint_eval_step012600.json">step12600 JSON</a>
+<a href="comparison.json">baseline comparison JSON</a>
+<a href="equivalence.json">CUDA equivalence gate</a>
+<a href="recovery.json">final-eval recovery record</a>
+</div>
+</section>
+</main></body></html>

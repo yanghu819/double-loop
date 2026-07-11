@@ -1,0 +1,4781 @@
+{
+  "summary": {
+    "holes": 64,
+    "group": "official_b56_64",
+    "eval_n": 256,
+    "blank_count_min": 56,
+    "blank_count_max": 64,
+    "blank_count_mean": 56.9375,
+    "loop_values": [
+      1,
+      3,
+      5
+    ],
+    "final_loop": 5,
+    "final_exact": 0.1171875,
+    "final_blank_acc": 0.5638720989227295,
+    "selected_counts": {
+      "solved_by_loop": 4,
+      "almost_solved": 2,
+      "hard_failure": 4
+    }
+  },
+  "selected": {
+    "solved_by_loop": [
+      {
+        "holes": 56,
+        "group": "official_b56_64",
+        "batch_index": 203,
+        "loops": {
+          "loop1": {
+            "wrong_count": 33,
+            "blank_acc": 0.4107142857142857,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.9168887734413147,
+            "conflict_unit_count": 26,
+            "conflict_units": [
+              "row 1: 1@R1C4,R1C5",
+              "row 2: 4@R2C1,R2C2; 5@R2C7,R2C9",
+              "row 3: 8@R3C2,R3C8",
+              "row 4: 4@R4C4,R4C5",
+              "row 5: 2@R5C1,R5C5",
+              "row 6: 1@R6C2,R6C8; 7@R6C5,R6C6",
+              "row 7: 7@R7C1,R7C9; 9@R7C6,R7C7",
+              "row 8: 5@R8C5,R8C9",
+              "row 9: 6@R9C2,R9C7",
+              "col 1: 7@R7C1,R8C1; 9@R1C1,R4C1",
+              "col 2: 1@R6C2,R7C2; 8@R3C2,R4C2",
+              "col 3: 9@R3C3,R6C3",
+              "col 4: 2@R2C4,R6C4; 4@R4C4,R8C4",
+              "col 5: 1@R1C5,R9C5; 7@R3C5,R6C5",
+              "col 6: 9@R7C6,R9C6",
+              "col 8: 1@R2C8,R6C8; 6@R4C8,R8C8",
+              "col 9: 4@R5C9,R6C9; 5@R2C9,R8C9",
+              "box 1,1: 4@R2C1,R2C2; 9@R1C1,R3C3",
+              "box 1,2: 1@R1C4,R1C5",
+              "box 1,3: 5@R2C7,R2C9; 8@R1C9,R3C8",
+              "box 2,1: 1@R5C3,R6C2; 9@R4C1,R6C3",
+              "box 2,2: 2@R5C5,R6C4; 4@R4C4,R4C5; 7@R6C5,R6C6",
+              "box 2,3: 4@R5C9,R6C9",
+              "box 3,1: 7@R7C1,R8C1",
+              "box 3,2: 9@R7C6,R9C6",
+              "box 3,3: 6@R8C8,R9C7"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C1",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.329386442899704,
+                "entropy": 1.1975350379943848,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C3",
+                "pred": "6",
+                "truth": "9",
+                "margin": 0.716886043548584,
+                "entropy": 0.8222067356109619,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C4",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.07254728674888611,
+                "entropy": 1.3532719612121582,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C5",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.8560934662818909,
+                "entropy": 0.4572601914405823,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C7",
+                "pred": "2",
+                "truth": "3",
+                "margin": 0.01876235008239746,
+                "entropy": 1.1181398630142212,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C9",
+                "pred": "8",
+                "truth": "1",
+                "margin": 0.6171563267707825,
+                "entropy": 0.7950209975242615,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C2",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.23010003566741943,
+                "entropy": 1.1214171648025513,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C4",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.504597544670105,
+                "entropy": 1.0462017059326172,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C6",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.12632346153259277,
+                "entropy": 0.94895339012146,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C7",
+                "pred": "5",
+                "truth": "9",
+                "margin": 0.23581060767173767,
+                "entropy": 1.3101526498794556,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C8",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.759485125541687,
+                "entropy": 0.553211510181427,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.19077441096305847,
+                "entropy": 1.047015905380249,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C3",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.8862161636352539,
+                "entropy": 0.3744693994522095,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C5",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.0537753701210022,
+                "entropy": 0.9955105781555176,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C6",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.2135312557220459,
+                "entropy": 0.8785967826843262,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C4",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.2456321120262146,
+                "entropy": 1.0393365621566772,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C8",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.10758009552955627,
+                "entropy": 0.8875689506530762,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C1",
+                "pred": "2",
+                "truth": "3",
+                "margin": 0.15505890548229218,
+                "entropy": 1.3453080654144287,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C7",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.3672007918357849,
+                "entropy": 0.6736533641815186,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C2",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.48546159267425537,
+                "entropy": 1.0767810344696045,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C3",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.3858465254306793,
+                "entropy": 1.2286564111709595,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C4",
+                "pred": "2",
+                "truth": "3",
+                "margin": 0.14302560687065125,
+                "entropy": 1.0834972858428955,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C6",
+                "pred": "7",
+                "truth": "5",
+                "margin": 0.7607459425926208,
+                "entropy": 0.4905620515346527,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C9",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.4666776657104492,
+                "entropy": 1.0340338945388794,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C1",
+                "pred": "7",
+                "truth": "2",
+                "margin": 0.015560239553451538,
+                "entropy": 1.0943336486816406,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C6",
+                "pred": "9",
+                "truth": "6",
+                "margin": 0.154392808675766,
+                "entropy": 1.1559336185455322,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C7",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.14785870909690857,
+                "entropy": 1.296734094619751,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C8",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.8370410203933716,
+                "entropy": 0.49562549591064453,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C9",
+                "pred": "5",
+                "truth": "3",
+                "margin": 0.08136987686157227,
+                "entropy": 1.1803290843963623,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.379993200302124,
+                "entropy": 1.259026050567627,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C3",
+                "pred": "2",
+                "truth": "6",
+                "margin": 0.10590314865112305,
+                "entropy": 1.2835032939910889,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C7",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.03273645043373108,
+                "entropy": 1.243302822113037,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C9",
+                "pred": "3",
+                "truth": "8",
+                "margin": 0.3967926800251007,
+                "entropy": 0.8539168834686279,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 6,
+            "blank_acc": 0.8928571428571429,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 32,
+            "hidden_entropy_mean": 0.4619109630584717,
+            "conflict_unit_count": 9,
+            "conflict_units": [
+              "row 3: 9@R3C3,R3C5",
+              "row 8: 6@R8C3,R8C8",
+              "row 9: 8@R9C3,R9C9",
+              "col 2: 3@R3C2,R9C2",
+              "col 3: 9@R1C3,R3C3",
+              "col 7: 6@R5C7,R9C7",
+              "col 9: 8@R8C9,R9C9",
+              "box 1,1: 9@R1C3,R3C3",
+              "box 3,3: 6@R8C8,R9C7; 8@R8C9,R9C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R3C2",
+                "pred": "3",
+                "truth": "2",
+                "margin": 0.1547013223171234,
+                "entropy": 0.7003650665283203,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R3C3",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.2693380117416382,
+                "entropy": 0.7317751049995422,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R8C3",
+                "pred": "6",
+                "truth": "8",
+                "margin": 0.3893393278121948,
+                "entropy": 0.802592396736145,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R8C9",
+                "pred": "8",
+                "truth": "3",
+                "margin": 0.6019236445426941,
+                "entropy": 0.5151693820953369,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R9C3",
+                "pred": "8",
+                "truth": "6",
+                "margin": 0.15507063269615173,
+                "entropy": 1.2314199209213257,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R9C7",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.36038222908973694,
+                "entropy": 0.6438072919845581,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 0,
+            "blank_acc": 1.0,
+            "exact": true,
+            "valid_board": true,
+            "changed_from_previous": 6,
+            "hidden_entropy_mean": 0.1320856660604477,
+            "conflict_unit_count": 0,
+            "conflict_units": [],
+            "wrong_blanks": []
+          }
+        },
+        "kind": "solved_by_loop",
+        "stem": "official_b56_64_solved_by_loop_01_b0203",
+        "title": "9x9 official_b56_64 solved_by_loop #1",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0203.html"
+      },
+      {
+        "holes": 58,
+        "group": "official_b56_64",
+        "batch_index": 47,
+        "loops": {
+          "loop1": {
+            "wrong_count": 33,
+            "blank_acc": 0.43103448275862066,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 1.0536540746688843,
+            "conflict_unit_count": 24,
+            "conflict_units": [
+              "row 2: 3@R2C1,R2C2; 5@R2C6,R2C8",
+              "row 3: 4@R3C1,R3C2",
+              "row 4: 4@R4C1,R4C5; 5@R4C3,R4C8",
+              "row 5: 2@R5C1,R5C6; 4@R5C2,R5C3",
+              "row 6: 2@R6C1,R6C4; 5@R6C2,R6C7",
+              "row 7: 1@R7C4,R7C5; 3@R7C6,R7C8",
+              "row 8: 4@R8C7,R8C9",
+              "row 9: 6@R9C8,R9C9",
+              "col 1: 2@R5C1,R6C1; 4@R3C1,R4C1",
+              "col 2: 4@R3C2,R5C2,R9C2",
+              "col 3: 5@R1C3,R4C3",
+              "col 4: 2@R6C4,R9C4",
+              "col 6: 3@R6C6,R7C6",
+              "col 7: 4@R1C7,R7C7,R8C7",
+              "col 8: 1@R1C8,R5C8; 5@R2C8,R4C8",
+              "col 9: 6@R3C9,R9C9",
+              "box 1,1: 3@R2C1,R2C2; 4@R3C1,R3C2",
+              "box 1,2: 5@R2C6,R3C5",
+              "box 1,3: 7@R2C7,R3C8",
+              "box 2,1: 2@R5C1,R6C1; 4@R4C1,R5C2,R5C3; 5@R4C3,R6C2",
+              "box 2,2: 2@R5C6,R6C4",
+              "box 2,3: 1@R5C8,R6C9; 5@R4C8,R6C7",
+              "box 3,2: 1@R7C4,R7C5; 3@R7C6,R9C5",
+              "box 3,3: 4@R7C7,R8C7,R8C9; 6@R9C8,R9C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C3",
+                "pred": "5",
+                "truth": "1",
+                "margin": 0.030576765537261963,
+                "entropy": 1.3490242958068848,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C8",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.06335422396659851,
+                "entropy": 1.1467100381851196,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C2",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.17893877625465393,
+                "entropy": 1.2947888374328613,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C3",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.1326735019683838,
+                "entropy": 1.2825404405593872,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C5",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.7334786057472229,
+                "entropy": 0.7566303610801697,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C6",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.10078969597816467,
+                "entropy": 1.230085015296936,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C7",
+                "pred": "7",
+                "truth": "6",
+                "margin": 0.2647801637649536,
+                "entropy": 1.2547237873077393,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C8",
+                "pred": "5",
+                "truth": "8",
+                "margin": 0.16104277968406677,
+                "entropy": 1.7375133037567139,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C9",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.07205072045326233,
+                "entropy": 1.2095997333526611,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.015283584594726562,
+                "entropy": 1.3650141954421997,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C9",
+                "pred": "6",
+                "truth": "1",
+                "margin": 0.3073747754096985,
+                "entropy": 1.185332179069519,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C1",
+                "pred": "4",
+                "truth": "5",
+                "margin": 0.20690372586250305,
+                "entropy": 1.348642110824585,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C3",
+                "pred": "5",
+                "truth": "7",
+                "margin": 0.07154107093811035,
+                "entropy": 1.4309015274047852,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C4",
+                "pred": "7",
+                "truth": "8",
+                "margin": 0.41314688324928284,
+                "entropy": 0.6893135905265808,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C8",
+                "pred": "5",
+                "truth": "6",
+                "margin": 0.42986705899238586,
+                "entropy": 1.0107169151306152,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C3",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.0054447948932647705,
+                "entropy": 1.1270501613616943,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C6",
+                "pred": "2",
+                "truth": "3",
+                "margin": 0.2619021236896515,
+                "entropy": 0.9913071393966675,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C1",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.5327420830726624,
+                "entropy": 1.219810962677002,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C2",
+                "pred": "5",
+                "truth": "3",
+                "margin": 0.013359397649765015,
+                "entropy": 1.3836582899093628,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C6",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.009434998035430908,
+                "entropy": 0.7285313606262207,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C9",
+                "pred": "1",
+                "truth": "8",
+                "margin": 0.29752904176712036,
+                "entropy": 1.3638715744018555,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C5",
+                "pred": "1",
+                "truth": "8",
+                "margin": 0.5530502200126648,
+                "entropy": 0.876731276512146,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C6",
+                "pred": "3",
+                "truth": "4",
+                "margin": 0.11813509464263916,
+                "entropy": 1.0120391845703125,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C7",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.36080336570739746,
+                "entropy": 1.186790943145752,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C1",
+                "pred": "5",
+                "truth": "7",
+                "margin": 0.2554537057876587,
+                "entropy": 0.6808144450187683,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C5",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.19818735122680664,
+                "entropy": 1.0843935012817383,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C6",
+                "pred": "7",
+                "truth": "5",
+                "margin": 0.01004636287689209,
+                "entropy": 1.357593297958374,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C7",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.1639980971813202,
+                "entropy": 1.2906219959259033,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C8",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.3819139003753662,
+                "entropy": 0.979260265827179,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "4",
+                "truth": "5",
+                "margin": 0.5233280658721924,
+                "entropy": 0.8430100679397583,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C3",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.43592125177383423,
+                "entropy": 1.1298075914382935,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C4",
+                "pred": "2",
+                "truth": "7",
+                "margin": 0.12559399008750916,
+                "entropy": 0.947303831577301,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C8",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.4145022928714752,
+                "entropy": 1.04248046875,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 1,
+            "blank_acc": 0.9827586206896551,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 32,
+            "hidden_entropy_mean": 0.2211223691701889,
+            "conflict_unit_count": 3,
+            "conflict_units": [
+              "row 1: 1@R1C3,R1C8",
+              "col 8: 1@R1C8,R5C8",
+              "box 1,3: 1@R1C8,R3C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C8",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.17656761407852173,
+                "entropy": 0.8969707489013672,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 0,
+            "blank_acc": 1.0,
+            "exact": true,
+            "valid_board": true,
+            "changed_from_previous": 1,
+            "hidden_entropy_mean": 0.17033369839191437,
+            "conflict_unit_count": 0,
+            "conflict_units": [],
+            "wrong_blanks": []
+          }
+        },
+        "kind": "solved_by_loop",
+        "stem": "official_b56_64_solved_by_loop_02_b0047",
+        "title": "9x9 official_b56_64 solved_by_loop #2",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_solved_by_loop_02_b0047.html"
+      },
+      {
+        "holes": 58,
+        "group": "official_b56_64",
+        "batch_index": 216,
+        "loops": {
+          "loop1": {
+            "wrong_count": 30,
+            "blank_acc": 0.48275862068965514,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.8865705132484436,
+            "conflict_unit_count": 27,
+            "conflict_units": [
+              "row 1: 4@R1C1,R1C6,R1C9; 5@R1C4,R1C5",
+              "row 2: 4@R2C6,R2C9",
+              "row 3: 4@R3C5,R3C9",
+              "row 4: 7@R4C7,R4C8; 8@R4C5,R4C6",
+              "row 5: 5@R5C4,R5C9",
+              "row 6: 7@R6C1,R6C2",
+              "row 7: 4@R7C3,R7C7",
+              "row 8: 6@R8C2,R8C6",
+              "row 9: 1@R9C4,R9C5",
+              "col 1: 5@R2C1,R8C1",
+              "col 2: 1@R2C2,R4C2; 6@R1C2,R8C2,R9C2",
+              "col 3: 2@R1C3,R2C3",
+              "col 4: 1@R6C4,R9C4; 5@R1C4,R5C4",
+              "col 5: 4@R3C5,R5C5",
+              "col 6: 4@R1C6,R2C6; 6@R6C6,R8C6",
+              "col 7: 7@R4C7,R5C7; 8@R1C7,R2C7,R9C7",
+              "col 8: 7@R2C8,R4C8; 9@R3C8,R6C8",
+              "col 9: 4@R1C9,R2C9,R3C9",
+              "box 1,1: 2@R1C3,R2C3; 6@R1C2,R3C3",
+              "box 1,2: 4@R1C6,R2C6,R3C5; 5@R1C4,R1C5",
+              "box 1,3: 4@R1C9,R2C9,R3C9; 8@R1C7,R2C7",
+              "box 2,1: 7@R6C1,R6C2",
+              "box 2,2: 8@R4C5,R4C6",
+              "box 2,3: 7@R4C7,R4C8,R5C7",
+              "box 3,1: 6@R8C2,R9C2",
+              "box 3,2: 1@R9C4,R9C5; 6@R7C4,R8C6",
+              "box 3,3: 8@R7C8,R9C7"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C1",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.09960624575614929,
+                "entropy": 1.0702710151672363,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C3",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.32141417264938354,
+                "entropy": 1.226114273071289,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C5",
+                "pred": "5",
+                "truth": "8",
+                "margin": 0.13867807388305664,
+                "entropy": 1.6101880073547363,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C6",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.038546860218048096,
+                "entropy": 1.2317860126495361,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C7",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.38245537877082825,
+                "entropy": 0.9148255586624146,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C1",
+                "pred": "5",
+                "truth": "4",
+                "margin": 0.6855969429016113,
+                "entropy": 0.7203307151794434,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C2",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.13549140095710754,
+                "entropy": 1.4358880519866943,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C6",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.4566841721534729,
+                "entropy": 1.0248812437057495,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C8",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.6046949625015259,
+                "entropy": 0.7117646932601929,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C9",
+                "pred": "4",
+                "truth": "1",
+                "margin": 0.33247530460357666,
+                "entropy": 1.352165937423706,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C3",
+                "pred": "6",
+                "truth": "9",
+                "margin": 0.5810055732727051,
+                "entropy": 0.8207664489746094,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C4",
+                "pred": "7",
+                "truth": "2",
+                "margin": 0.42499256134033203,
+                "entropy": 0.6135157346725464,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C8",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.046465009450912476,
+                "entropy": 1.390871524810791,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C9",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.18163058161735535,
+                "entropy": 1.481584906578064,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C5",
+                "pred": "8",
+                "truth": "5",
+                "margin": 0.5757285952568054,
+                "entropy": 0.8962893486022949,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C8",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.09536612033843994,
+                "entropy": 0.6963832378387451,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C3",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.12950733304023743,
+                "entropy": 1.0737919807434082,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C4",
+                "pred": "5",
+                "truth": "6",
+                "margin": 0.0596081018447876,
+                "entropy": 0.929008960723877,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C5",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.11064133048057556,
+                "entropy": 0.8941230177879333,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C7",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.18467740714550018,
+                "entropy": 1.3281197547912598,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C1",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.5163604617118835,
+                "entropy": 0.962192177772522,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C6",
+                "pred": "6",
+                "truth": "4",
+                "margin": 0.4571211040019989,
+                "entropy": 1.019666075706482,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C8",
+                "pred": "9",
+                "truth": "6",
+                "margin": 0.2650812864303589,
+                "entropy": 1.083754062652588,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C3",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.4326339066028595,
+                "entropy": 0.9679214954376221,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C4",
+                "pred": "6",
+                "truth": "7",
+                "margin": 0.412950724363327,
+                "entropy": 0.654626727104187,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C5",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.008419334888458252,
+                "entropy": 0.7369020581245422,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C2",
+                "pred": "6",
+                "truth": "9",
+                "margin": 0.25540775060653687,
+                "entropy": 1.0377006530761719,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "6",
+                "truth": "4",
+                "margin": 0.8442142605781555,
+                "entropy": 0.37980917096138,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C4",
+                "pred": "1",
+                "truth": "8",
+                "margin": 0.21588405966758728,
+                "entropy": 0.9448255300521851,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C7",
+                "pred": "8",
+                "truth": "6",
+                "margin": 0.24169345200061798,
+                "entropy": 1.2394928932189941,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 6,
+            "blank_acc": 0.896551724137931,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 30,
+            "hidden_entropy_mean": 0.25697800517082214,
+            "conflict_unit_count": 10,
+            "conflict_units": [
+              "row 2: 5@R2C1,R2C2; 9@R2C6,R2C8",
+              "row 3: 7@R3C5,R3C8",
+              "row 6: 7@R6C1,R6C2",
+              "col 1: 7@R1C1,R6C1",
+              "col 2: 5@R2C2,R8C2",
+              "col 5: 7@R3C5,R5C5",
+              "col 6: 9@R1C6,R2C6",
+              "box 1,1: 5@R2C1,R2C2",
+              "box 1,2: 9@R1C6,R2C6",
+              "box 2,1: 7@R6C1,R6C2"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C1",
+                "pred": "5",
+                "truth": "4",
+                "margin": 0.568091630935669,
+                "entropy": 0.7568581104278564,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R2C6",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.2032550573348999,
+                "entropy": 1.0001471042633057,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R3C5",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.18094930052757263,
+                "entropy": 0.7498563528060913,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R6C1",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.5738286972045898,
+                "entropy": 0.6747882962226868,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R8C1",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.12024092674255371,
+                "entropy": 0.6976203918457031,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R8C2",
+                "pred": "5",
+                "truth": "9",
+                "margin": 0.7318432927131653,
+                "entropy": 0.4604492485523224,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 0,
+            "blank_acc": 1.0,
+            "exact": true,
+            "valid_board": true,
+            "changed_from_previous": 6,
+            "hidden_entropy_mean": 0.12012194097042084,
+            "conflict_unit_count": 0,
+            "conflict_units": [],
+            "wrong_blanks": []
+          }
+        },
+        "kind": "solved_by_loop",
+        "stem": "official_b56_64_solved_by_loop_03_b0216",
+        "title": "9x9 official_b56_64 solved_by_loop #3",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_solved_by_loop_03_b0216.html"
+      },
+      {
+        "holes": 57,
+        "group": "official_b56_64",
+        "batch_index": 158,
+        "loops": {
+          "loop1": {
+            "wrong_count": 30,
+            "blank_acc": 0.4736842105263158,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 1.1042299270629883,
+            "conflict_unit_count": 26,
+            "conflict_units": [
+              "row 1: 5@R1C6,R1C8",
+              "row 2: 6@R2C6,R2C8",
+              "row 3: 4@R3C2,R3C9",
+              "row 4: 7@R4C5,R4C8",
+              "row 5: 4@R5C3,R5C6",
+              "row 6: 9@R6C5,R6C7,R6C8",
+              "row 7: 3@R7C5,R7C8",
+              "row 8: 1@R8C7,R8C8; 8@R8C2,R8C6",
+              "col 1: 3@R1C1,R5C1; 7@R3C1,R9C1",
+              "col 2: 8@R8C2,R9C2; 9@R2C2,R7C2",
+              "col 3: 1@R6C3,R9C3",
+              "col 4: 2@R2C4,R9C4",
+              "col 5: 9@R3C5,R6C5",
+              "col 6: 5@R1C6,R7C6",
+              "col 7: 3@R2C7,R9C7; 5@R3C7,R4C7",
+              "col 8: 5@R1C8,R5C8",
+              "col 9: 2@R5C9,R7C9; 4@R3C9,R4C9",
+              "box 1,1: 7@R1C3,R3C1",
+              "box 1,2: 2@R1C5,R2C4; 6@R2C6,R3C4",
+              "box 1,3: 5@R1C8,R3C7",
+              "box 2,1: 3@R4C2,R5C1",
+              "box 2,2: 7@R4C5,R6C6; 9@R5C4,R6C5",
+              "box 2,3: 5@R4C7,R5C8; 9@R6C7,R6C8",
+              "box 3,1: 8@R8C2,R9C2; 9@R7C2,R8C1",
+              "box 3,2: 5@R7C6,R9C5",
+              "box 3,3: 1@R8C7,R8C8; 3@R7C8,R9C7"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C3",
+                "pred": "7",
+                "truth": "2",
+                "margin": 0.007632017135620117,
+                "entropy": 1.1185249090194702,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C5",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.4428465962409973,
+                "entropy": 1.2056043148040771,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C6",
+                "pred": "5",
+                "truth": "7",
+                "margin": 0.036962270736694336,
+                "entropy": 1.3242897987365723,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C2",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.26239848136901855,
+                "entropy": 1.4199652671813965,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C8",
+                "pred": "6",
+                "truth": "9",
+                "margin": 0.39726126194000244,
+                "entropy": 1.181779384613037,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.0789470374584198,
+                "entropy": 1.3664520978927612,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C4",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.24230647087097168,
+                "entropy": 1.0291283130645752,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C5",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.010701090097427368,
+                "entropy": 1.5096542835235596,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C7",
+                "pred": "5",
+                "truth": "4",
+                "margin": 0.006826817989349365,
+                "entropy": 1.1926425695419312,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C9",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.3773579001426697,
+                "entropy": 1.050358533859253,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C8",
+                "pred": "7",
+                "truth": "1",
+                "margin": 0.5023648738861084,
+                "entropy": 0.8977392911911011,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C1",
+                "pred": "3",
+                "truth": "5",
+                "margin": 0.06032565236091614,
+                "entropy": 1.1201725006103516,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C6",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.18482649326324463,
+                "entropy": 1.0745043754577637,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C8",
+                "pred": "5",
+                "truth": "8",
+                "margin": 0.06870287656784058,
+                "entropy": 0.955534040927887,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C5",
+                "pred": "9",
+                "truth": "6",
+                "margin": 0.05975097417831421,
+                "entropy": 1.22178316116333,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C6",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.11381340026855469,
+                "entropy": 1.0912408828735352,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C8",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.1559010148048401,
+                "entropy": 1.0879182815551758,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C2",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.26465079188346863,
+                "entropy": 1.2937214374542236,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C5",
+                "pred": "3",
+                "truth": "2",
+                "margin": 0.008695840835571289,
+                "entropy": 1.2095786333084106,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C9",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.24462908506393433,
+                "entropy": 1.1988043785095215,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C2",
+                "pred": "8",
+                "truth": "1",
+                "margin": 0.022792577743530273,
+                "entropy": 1.2920886278152466,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C7",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.25757870078086853,
+                "entropy": 1.0507251024246216,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C8",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.06497740745544434,
+                "entropy": 1.221824049949646,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C1",
+                "pred": "7",
+                "truth": "2",
+                "margin": 0.4867812991142273,
+                "entropy": 1.0308165550231934,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "8",
+                "truth": "5",
+                "margin": 0.06271585822105408,
+                "entropy": 1.3471648693084717,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C3",
+                "pred": "1",
+                "truth": "7",
+                "margin": 0.145101398229599,
+                "entropy": 1.0458948612213135,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C4",
+                "pred": "2",
+                "truth": "6",
+                "margin": 0.033673375844955444,
+                "entropy": 1.395838975906372,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C5",
+                "pred": "5",
+                "truth": "3",
+                "margin": 0.3717167377471924,
+                "entropy": 1.171133279800415,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C7",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.14493083953857422,
+                "entropy": 1.0909355878829956,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C9",
+                "pred": "6",
+                "truth": "8",
+                "margin": 0.4791925549507141,
+                "entropy": 0.9890339970588684,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 7,
+            "blank_acc": 0.8771929824561404,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 31,
+            "hidden_entropy_mean": 0.3554895520210266,
+            "conflict_unit_count": 9,
+            "conflict_units": [
+              "row 2: 9@R2C2,R2C8",
+              "row 3: 4@R3C2,R3C7; 6@R3C4,R3C9",
+              "row 8: 6@R8C5,R8C8",
+              "col 4: 6@R3C4,R9C4",
+              "col 5: 6@R6C5,R8C5",
+              "col 6: 3@R2C6,R5C6; 4@R6C6,R8C6",
+              "col 7: 4@R2C7,R3C7",
+              "box 1,3: 4@R2C7,R3C7",
+              "box 3,2: 6@R8C5,R9C4"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C2",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.9119465947151184,
+                "entropy": 0.2250528186559677,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R2C6",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.23036110401153564,
+                "entropy": 1.0578910112380981,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R2C7",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.3258781433105469,
+                "entropy": 0.6623817682266235,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R3C2",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.664085865020752,
+                "entropy": 0.5481871962547302,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R3C4",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.5968908667564392,
+                "entropy": 0.546891987323761,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R8C5",
+                "pred": "6",
+                "truth": "4",
+                "margin": 0.27679935097694397,
+                "entropy": 0.6790131330490112,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R8C6",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.004994809627532959,
+                "entropy": 0.7142478227615356,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "8"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 0,
+            "blank_acc": 1.0,
+            "exact": true,
+            "valid_board": true,
+            "changed_from_previous": 7,
+            "hidden_entropy_mean": 0.1505558341741562,
+            "conflict_unit_count": 0,
+            "conflict_units": [],
+            "wrong_blanks": []
+          }
+        },
+        "kind": "solved_by_loop",
+        "stem": "official_b56_64_solved_by_loop_04_b0158",
+        "title": "9x9 official_b56_64 solved_by_loop #4",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_solved_by_loop_04_b0158.html"
+      }
+    ],
+    "almost_solved": [
+      {
+        "holes": 58,
+        "group": "official_b56_64",
+        "batch_index": 208,
+        "loops": {
+          "loop1": {
+            "wrong_count": 25,
+            "blank_acc": 0.5689655172413793,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 1.0380563735961914,
+            "conflict_unit_count": 24,
+            "conflict_units": [
+              "row 1: 5@R1C1,R1C2",
+              "row 2: 1@R2C2,R2C8; 8@R2C1,R2C3",
+              "row 3: 5@R3C1,R3C4; 7@R3C5,R3C8; 9@R3C3,R3C7",
+              "row 4: 7@R4C1,R4C5",
+              "row 5: 8@R5C1,R5C5",
+              "row 7: 6@R7C8,R7C9",
+              "row 8: 1@R8C1,R8C3",
+              "row 9: 5@R9C4,R9C5",
+              "col 1: 5@R1C1,R3C1; 7@R4C1,R6C1; 8@R2C1,R5C1",
+              "col 2: 1@R2C2,R4C2; 5@R1C2,R5C2",
+              "col 3: 1@R6C3,R8C3",
+              "col 4: 5@R3C4,R9C4; 8@R6C4,R8C4",
+              "col 5: 7@R3C5,R4C5",
+              "col 7: 2@R6C7,R8C7",
+              "col 8: 6@R6C8,R7C8",
+              "col 9: 9@R4C9,R5C9",
+              "box 1,1: 5@R1C1,R1C2,R3C1; 8@R2C1,R2C3",
+              "box 1,3: 9@R1C8,R3C7",
+              "box 2,1: 1@R4C2,R6C3; 7@R4C1,R6C1",
+              "box 2,2: 8@R5C5,R6C4",
+              "box 2,3: 9@R4C9,R5C9",
+              "box 3,1: 1@R8C1,R8C3",
+              "box 3,2: 5@R9C4,R9C5",
+              "box 3,3: 6@R7C8,R7C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C1",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.3336696922779083,
+                "entropy": 1.4271929264068604,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C2",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.15396785736083984,
+                "entropy": 1.4954919815063477,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C3",
+                "pred": "8",
+                "truth": "3",
+                "margin": 0.015764087438583374,
+                "entropy": 1.0999940633773804,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C5",
+                "pred": "6",
+                "truth": "7",
+                "margin": 0.020298242568969727,
+                "entropy": 1.1005116701126099,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C7",
+                "pred": "3",
+                "truth": "5",
+                "margin": 0.9553356170654297,
+                "entropy": 0.11128489673137665,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C1",
+                "pred": "5",
+                "truth": "1",
+                "margin": 0.2569679617881775,
+                "entropy": 1.667750597000122,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "6",
+                "truth": "4",
+                "margin": 0.13847139477729797,
+                "entropy": 1.4493119716644287,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C5",
+                "pred": "7",
+                "truth": "6",
+                "margin": 0.3040928840637207,
+                "entropy": 1.4155088663101196,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C7",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.5140233635902405,
+                "entropy": 0.8489794731140137,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C5",
+                "pred": "7",
+                "truth": "2",
+                "margin": 0.03646090626716614,
+                "entropy": 1.3974521160125732,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C1",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.045983344316482544,
+                "entropy": 1.3756908178329468,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C2",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.8054499626159668,
+                "entropy": 0.5506160259246826,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C9",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.04118061065673828,
+                "entropy": 1.0306118726730347,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C1",
+                "pred": "7",
+                "truth": "5",
+                "margin": 0.044236183166503906,
+                "entropy": 1.574120044708252,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C3",
+                "pred": "1",
+                "truth": "8",
+                "margin": 0.2219410538673401,
+                "entropy": 1.1798204183578491,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C4",
+                "pred": "8",
+                "truth": "7",
+                "margin": 0.19623208045959473,
+                "entropy": 0.9453511238098145,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C9",
+                "pred": "5",
+                "truth": "1",
+                "margin": 0.05138620734214783,
+                "entropy": 0.9678236246109009,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C2",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.08979234099388123,
+                "entropy": 1.1145870685577393,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C7",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.6433570981025696,
+                "entropy": 0.7500138282775879,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C8",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.33263468742370605,
+                "entropy": 1.0999565124511719,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C1",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.0010036826133728027,
+                "entropy": 0.7461989521980286,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C4",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.03997296094894409,
+                "entropy": 1.1127291917800903,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C7",
+                "pred": "2",
+                "truth": "8",
+                "margin": 0.27108484506607056,
+                "entropy": 1.2905641794204712,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.14240756630897522,
+                "entropy": 1.1496655941009521,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C4",
+                "pred": "5",
+                "truth": "8",
+                "margin": 0.317699134349823,
+                "entropy": 1.357185959815979,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 6,
+            "blank_acc": 0.896551724137931,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 26,
+            "hidden_entropy_mean": 0.3248828649520874,
+            "conflict_unit_count": 14,
+            "conflict_units": [
+              "row 3: 9@R3C1,R3C3",
+              "row 5: 5@R5C2,R5C9",
+              "row 6: 2@R6C3,R6C7",
+              "row 9: 9@R9C2,R9C3",
+              "col 1: 9@R3C1,R5C1",
+              "col 2: 5@R1C2,R5C2",
+              "col 3: 9@R3C3,R9C3",
+              "col 4: 1@R1C4,R3C4",
+              "col 7: 5@R2C7,R3C7",
+              "box 1,1: 9@R3C1,R3C3",
+              "box 1,2: 1@R1C4,R3C4",
+              "box 1,3: 5@R2C7,R3C7",
+              "box 2,1: 5@R5C2,R6C1",
+              "box 3,1: 9@R9C2,R9C3"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R3C1",
+                "pred": "9",
+                "truth": "1",
+                "margin": 0.5214929580688477,
+                "entropy": 0.8664416074752808,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R3C4",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.3538918197154999,
+                "entropy": 0.9435110092163086,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R3C7",
+                "pred": "5",
+                "truth": "3",
+                "margin": 0.34696435928344727,
+                "entropy": 0.9755184650421143,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R5C2",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.5009301900863647,
+                "entropy": 1.0413706302642822,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R6C3",
+                "pred": "2",
+                "truth": "8",
+                "margin": 0.1113729178905487,
+                "entropy": 0.8419561982154846,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C3",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.05699208378791809,
+                "entropy": 0.7020159363746643,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 2,
+            "blank_acc": 0.9655172413793104,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 8,
+            "hidden_entropy_mean": 0.28707605600357056,
+            "conflict_unit_count": 4,
+            "conflict_units": [
+              "row 1: 9@R1C1,R1C8",
+              "col 1: 9@R1C1,R5C1",
+              "col 2: 2@R1C2,R5C2",
+              "box 1,1: 9@R1C1,R3C3"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C1",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.010895013809204102,
+                "entropy": 1.12637197971344,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R1C2",
+                "pred": "2",
+                "truth": "5",
+                "margin": 0.0018706917762756348,
+                "entropy": 1.0826969146728516,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "5"
+              }
+            ]
+          }
+        },
+        "kind": "almost_solved",
+        "stem": "official_b56_64_almost_solved_01_b0208",
+        "title": "9x9 official_b56_64 almost_solved #1",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0208.html"
+      },
+      {
+        "holes": 57,
+        "group": "official_b56_64",
+        "batch_index": 178,
+        "loops": {
+          "loop1": {
+            "wrong_count": 19,
+            "blank_acc": 0.6666666666666667,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.6803361177444458,
+            "conflict_unit_count": 22,
+            "conflict_units": [
+              "row 2: 8@R2C1,R2C6",
+              "row 4: 4@R4C5,R4C8,R4C9",
+              "row 5: 3@R5C1,R5C6",
+              "row 6: 3@R6C6,R6C7",
+              "row 7: 8@R7C5,R7C7",
+              "row 8: 4@R8C7,R8C8",
+              "row 9: 9@R9C1,R9C9",
+              "col 2: 4@R5C2,R6C2",
+              "col 3: 8@R4C3,R8C3",
+              "col 5: 4@R1C5,R4C5; 8@R6C5,R7C5",
+              "col 6: 3@R4C6,R5C6,R6C6",
+              "col 7: 8@R5C7,R7C7",
+              "col 8: 4@R2C8,R4C8,R8C8",
+              "box 1,1: 8@R1C2,R2C1",
+              "box 1,2: 9@R1C6,R3C5",
+              "box 1,3: 2@R1C7,R2C9",
+              "box 2,1: 4@R5C2,R6C2",
+              "box 2,2: 3@R4C6,R5C6,R6C6",
+              "box 2,3: 4@R4C8,R4C9",
+              "box 3,1: 9@R7C2,R9C1",
+              "box 3,2: 8@R7C5,R9C4",
+              "box 3,3: 4@R8C7,R8C8"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C1",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.6556137800216675,
+                "entropy": 0.7241536378860474,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C8",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.34221309423446655,
+                "entropy": 0.9785876870155334,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C9",
+                "pred": "2",
+                "truth": "4",
+                "margin": 0.00044161081314086914,
+                "entropy": 1.158825159072876,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C3",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.10731247067451477,
+                "entropy": 0.8032001256942749,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C5",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.16716182231903076,
+                "entropy": 0.6956672072410583,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C1",
+                "pred": "2",
+                "truth": "3",
+                "margin": 0.1619146466255188,
+                "entropy": 1.3219603300094604,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C3",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.008284181356430054,
+                "entropy": 1.2584346532821655,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C5",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.19984227418899536,
+                "entropy": 0.8528096675872803,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C6",
+                "pred": "3",
+                "truth": "4",
+                "margin": 0.3095853626728058,
+                "entropy": 1.022194743156433,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C8",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.1563829779624939,
+                "entropy": 1.351038932800293,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C9",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.18547555804252625,
+                "entropy": 1.2971153259277344,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C1",
+                "pred": "3",
+                "truth": "8",
+                "margin": 0.0023509860038757324,
+                "entropy": 1.1029614210128784,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C2",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.36216485500335693,
+                "entropy": 0.9647427797317505,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C7",
+                "pred": "8",
+                "truth": "4",
+                "margin": 0.05608150362968445,
+                "entropy": 1.098565697669983,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C6",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.0820440948009491,
+                "entropy": 0.8451609015464783,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C2",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.07767462730407715,
+                "entropy": 0.7927647829055786,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C5",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.37518107891082764,
+                "entropy": 1.0984396934509277,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C7",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.3651515245437622,
+                "entropy": 1.2873319387435913,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C9",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.3625584840774536,
+                "entropy": 1.116679310798645,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 8,
+            "blank_acc": 0.8596491228070176,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 16,
+            "hidden_entropy_mean": 0.30495908856391907,
+            "conflict_unit_count": 6,
+            "conflict_units": [
+              "row 4: 3@R4C1,R4C6",
+              "row 5: 4@R5C6,R5C7",
+              "col 1: 3@R4C1,R5C1",
+              "col 7: 4@R5C7,R8C7",
+              "box 2,1: 3@R4C1,R5C1",
+              "box 2,3: 4@R4C9,R5C7"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C8",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.8667004704475403,
+                "entropy": 0.33833402395248413,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R2C9",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.8952414989471436,
+                "entropy": 0.29428088665008545,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R4C6",
+                "pred": "3",
+                "truth": "4",
+                "margin": 0.20530050992965698,
+                "entropy": 0.7013208270072937,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R4C9",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.6988064050674438,
+                "entropy": 0.6706088781356812,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R5C1",
+                "pred": "3",
+                "truth": "8",
+                "margin": 0.1184040904045105,
+                "entropy": 0.7102871537208557,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R5C6",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.0016119778156280518,
+                "entropy": 0.9005028009414673,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R8C7",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.6981878280639648,
+                "entropy": 0.6823815107345581,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R8C8",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.6022437810897827,
+                "entropy": 0.8700799942016602,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 4,
+            "blank_acc": 0.9298245614035088,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 4,
+            "hidden_entropy_mean": 0.3886938691139221,
+            "conflict_unit_count": 4,
+            "conflict_units": [
+              "row 4: 4@R4C6,R4C9",
+              "row 8: 9@R8C7,R8C8",
+              "box 2,3: 4@R4C9,R5C7",
+              "box 3,3: 9@R8C7,R8C8"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C8",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.06816399097442627,
+                "entropy": 0.8900492191314697,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R2C9",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.2782815396785736,
+                "entropy": 0.8339900374412537,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R4C9",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.18143463134765625,
+                "entropy": 1.0459541082382202,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R8C8",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.07272785902023315,
+                "entropy": 1.180335283279419,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "9"
+              }
+            ]
+          }
+        },
+        "kind": "almost_solved",
+        "stem": "official_b56_64_almost_solved_02_b0178",
+        "title": "9x9 official_b56_64 almost_solved #2",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_almost_solved_02_b0178.html"
+      }
+    ],
+    "hard_failure": [
+      {
+        "holes": 57,
+        "group": "official_b56_64",
+        "batch_index": 19,
+        "loops": {
+          "loop1": {
+            "wrong_count": 30,
+            "blank_acc": 0.4736842105263158,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.94419926404953,
+            "conflict_unit_count": 22,
+            "conflict_units": [
+              "row 1: 8@R1C5,R1C9",
+              "row 2: 6@R2C2,R2C9",
+              "row 3: 2@R3C3,R3C6",
+              "row 4: 9@R4C4,R4C6,R4C9",
+              "row 5: 1@R5C6,R5C7; 4@R5C1,R5C9",
+              "row 6: 1@R6C1,R6C6; 2@R6C2,R6C8",
+              "row 7: 6@R7C2,R7C7; 7@R7C4,R7C6",
+              "row 8: 1@R8C2,R8C3; 9@R8C1,R8C8",
+              "col 1: 1@R2C1,R6C1; 9@R7C1,R8C1",
+              "col 2: 2@R4C2,R6C2; 6@R2C2,R7C2",
+              "col 3: 1@R4C3,R8C3; 3@R1C3,R9C3",
+              "col 4: 7@R1C4,R7C4,R8C4",
+              "col 6: 1@R5C6,R6C6; 9@R4C6,R9C6",
+              "col 7: 3@R3C7,R8C7",
+              "col 8: 2@R5C8,R6C8; 9@R3C8,R8C8",
+              "box 1,1: 6@R2C2,R3C1",
+              "box 1,2: 2@R2C4,R3C6",
+              "box 2,1: 1@R4C3,R6C1; 2@R4C2,R6C2",
+              "box 2,2: 1@R5C6,R6C6; 9@R4C4,R4C6",
+              "box 2,3: 2@R5C8,R6C8; 9@R4C9,R6C7",
+              "box 3,1: 1@R8C2,R8C3; 9@R7C1,R8C1",
+              "box 3,2: 7@R7C4,R7C6,R8C4"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C2",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.7865571975708008,
+                "entropy": 0.3576529026031494,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C3",
+                "pred": "3",
+                "truth": "9",
+                "margin": 0.02357572317123413,
+                "entropy": 0.7075730562210083,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C9",
+                "pred": "8",
+                "truth": "4",
+                "margin": 0.21202212572097778,
+                "entropy": 1.0376282930374146,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C2",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.019325554370880127,
+                "entropy": 1.251634955406189,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C4",
+                "pred": "2",
+                "truth": "4",
+                "margin": 0.5277650356292725,
+                "entropy": 0.8748323321342468,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C8",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.7527971863746643,
+                "entropy": 0.5660856366157532,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C1",
+                "pred": "6",
+                "truth": "4",
+                "margin": 0.06668365001678467,
+                "entropy": 1.2925854921340942,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C3",
+                "pred": "2",
+                "truth": "6",
+                "margin": 0.8541951179504395,
+                "entropy": 0.3685954809188843,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C4",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.25576144456863403,
+                "entropy": 1.4284093379974365,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C7",
+                "pred": "3",
+                "truth": "8",
+                "margin": 0.1961667239665985,
+                "entropy": 1.2037510871887207,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C2",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.24078278243541718,
+                "entropy": 1.2898666858673096,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C3",
+                "pred": "1",
+                "truth": "3",
+                "margin": 0.7404670715332031,
+                "entropy": 0.5882623195648193,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C4",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.030161499977111816,
+                "entropy": 1.356272578239441,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C9",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.5749286413192749,
+                "entropy": 0.9347150921821594,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C1",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.25104275345802307,
+                "entropy": 1.0496796369552612,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C3",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.3521892726421356,
+                "entropy": 0.9205267429351807,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C6",
+                "pred": "1",
+                "truth": "8",
+                "margin": 0.03086504340171814,
+                "entropy": 1.3785552978515625,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C8",
+                "pred": "2",
+                "truth": "4",
+                "margin": 0.37877607345581055,
+                "entropy": 0.9129446744918823,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C9",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.030802041292190552,
+                "entropy": 1.1261706352233887,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C1",
+                "pred": "1",
+                "truth": "8",
+                "margin": 0.06957146525382996,
+                "entropy": 1.1130924224853516,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C2",
+                "pred": "2",
+                "truth": "4",
+                "margin": 0.19501835107803345,
+                "entropy": 1.3291497230529785,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C1",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.6032750606536865,
+                "entropy": 1.014847993850708,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C2",
+                "pred": "6",
+                "truth": "5",
+                "margin": 0.22379499673843384,
+                "entropy": 1.192301869392395,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C4",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.018085122108459473,
+                "entropy": 1.3767967224121094,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C2",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.19039255380630493,
+                "entropy": 1.2107365131378174,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C4",
+                "pred": "7",
+                "truth": "8",
+                "margin": 0.6480116248130798,
+                "entropy": 0.820242166519165,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C8",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.04224017262458801,
+                "entropy": 1.4170783758163452,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C3",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.1448371410369873,
+                "entropy": 1.0218983888626099,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C6",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.014762938022613525,
+                "entropy": 1.2366275787353516,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C9",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.3395581543445587,
+                "entropy": 0.9513636231422424,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 6,
+            "blank_acc": 0.8947368421052632,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 30,
+            "hidden_entropy_mean": 0.37040895223617554,
+            "conflict_unit_count": 9,
+            "conflict_units": [
+              "row 3: 4@R3C1,R3C4",
+              "row 5: 8@R5C5,R5C6",
+              "col 1: 8@R6C1,R8C1",
+              "col 4: 4@R2C4,R3C4",
+              "col 5: 8@R1C5,R5C5",
+              "box 1,2: 4@R2C4,R3C4",
+              "box 2,2: 8@R5C5,R5C6",
+              "box 3,1: 8@R8C1,R9C2",
+              "box 3,2: 3@R7C4,R9C6"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R3C4",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.19570216536521912,
+                "entropy": 0.8556305766105652,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R5C5",
+                "pred": "8",
+                "truth": "3",
+                "margin": 0.21747753024101257,
+                "entropy": 0.8044252395629883,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R7C1",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.8904963731765747,
+                "entropy": 0.28791841864585876,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R7C4",
+                "pred": "3",
+                "truth": "9",
+                "margin": 0.7854582071304321,
+                "entropy": 0.5064641833305359,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R8C1",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.20127242803573608,
+                "entropy": 1.0779392719268799,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R8C4",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.9313606023788452,
+                "entropy": 0.18361333012580872,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "7"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 5,
+            "blank_acc": 0.9122807017543859,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 2,
+            "hidden_entropy_mean": 0.40837350487709045,
+            "conflict_unit_count": 5,
+            "conflict_units": [
+              "row 3: 4@R3C1,R3C4",
+              "row 8: 3@R8C1,R8C7",
+              "col 4: 4@R2C4,R3C4",
+              "box 1,2: 4@R2C4,R3C4",
+              "box 3,2: 3@R7C4,R9C6"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R3C4",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.6418523192405701,
+                "entropy": 0.7705620527267456,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R7C1",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.5923887491226196,
+                "entropy": 0.6195339560508728,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R7C4",
+                "pred": "3",
+                "truth": "9",
+                "margin": 0.1510588824748993,
+                "entropy": 1.1689400672912598,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R8C1",
+                "pred": "3",
+                "truth": "9",
+                "margin": 0.12369734048843384,
+                "entropy": 1.0091938972473145,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R8C4",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.45137035846710205,
+                "entropy": 0.6629680395126343,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "9"
+              }
+            ]
+          }
+        },
+        "kind": "hard_failure",
+        "stem": "official_b56_64_hard_failure_01_b0019",
+        "title": "9x9 official_b56_64 hard_failure #1",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0019.html"
+      },
+      {
+        "holes": 57,
+        "group": "official_b56_64",
+        "batch_index": 130,
+        "loops": {
+          "loop1": {
+            "wrong_count": 31,
+            "blank_acc": 0.45614035087719296,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.965011715888977,
+            "conflict_unit_count": 27,
+            "conflict_units": [
+              "row 1: 3@R1C6,R1C8",
+              "row 2: 3@R2C3,R2C4; 9@R2C1,R2C5",
+              "row 3: 1@R3C2,R3C3; 4@R3C5,R3C7",
+              "row 4: 3@R4C1,R4C6",
+              "row 5: 9@R5C5,R5C7",
+              "row 6: 2@R6C2,R6C4",
+              "row 7: 1@R7C1,R7C4; 4@R7C6,R7C9",
+              "row 8: 5@R8C5,R8C6",
+              "row 9: 3@R9C3,R9C9",
+              "col 1: 9@R1C1,R2C1",
+              "col 2: 7@R7C2,R9C2",
+              "col 3: 3@R2C3,R9C3",
+              "col 4: 3@R2C4,R5C4",
+              "col 5: 9@R2C5,R5C5",
+              "col 6: 3@R1C6,R4C6",
+              "col 7: 4@R2C7,R3C7; 9@R5C7,R8C7",
+              "col 8: 3@R1C8,R3C8,R8C8",
+              "col 9: 1@R5C9,R8C9; 5@R1C9,R6C9",
+              "box 1,1: 1@R3C2,R3C3; 9@R1C1,R2C1",
+              "box 1,2: 3@R1C6,R2C4",
+              "box 1,3: 3@R1C8,R3C8; 4@R2C7,R3C7",
+              "box 2,1: 8@R4C3,R6C1",
+              "box 2,2: 3@R4C6,R5C4",
+              "box 2,3: 5@R4C7,R6C9; 9@R5C7,R6C8",
+              "box 3,1: 7@R7C2,R9C2",
+              "box 3,2: 5@R8C5,R8C6",
+              "box 3,3: 1@R8C9,R9C7; 3@R8C8,R9C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C8",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.002677321434020996,
+                "entropy": 1.3340786695480347,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C1",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.1308700442314148,
+                "entropy": 1.1542878150939941,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C3",
+                "pred": "3",
+                "truth": "8",
+                "margin": 0.08489081263542175,
+                "entropy": 1.3701072931289673,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C4",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.24946698546409607,
+                "entropy": 1.0637288093566895,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C7",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.200529545545578,
+                "entropy": 1.0640040636062622,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C9",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.8131347894668579,
+                "entropy": 0.3843836784362793,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.6877261400222778,
+                "entropy": 0.6694588661193848,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C7",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.4479859471321106,
+                "entropy": 0.706145703792572,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C1",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.17430660128593445,
+                "entropy": 1.0434110164642334,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C3",
+                "pred": "8",
+                "truth": "3",
+                "margin": 0.001505434513092041,
+                "entropy": 1.5522997379302979,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C6",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.12428155541419983,
+                "entropy": 1.377226710319519,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C8",
+                "pred": "6",
+                "truth": "8",
+                "margin": 0.7742500305175781,
+                "entropy": 0.5291391611099243,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C2",
+                "pred": "6",
+                "truth": "1",
+                "margin": 0.013123661279678345,
+                "entropy": 1.3960072994232178,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C5",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.26641154289245605,
+                "entropy": 0.9735754728317261,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C9",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.012616187334060669,
+                "entropy": 1.0586286783218384,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C4",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.08345618844032288,
+                "entropy": 1.0836970806121826,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C6",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.306363582611084,
+                "entropy": 0.8442148566246033,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C8",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.5282961130142212,
+                "entropy": 0.6954493522644043,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C9",
+                "pred": "5",
+                "truth": "1",
+                "margin": 0.1059216558933258,
+                "entropy": 1.2339133024215698,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C1",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.19199040532112122,
+                "entropy": 0.7216143608093262,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C8",
+                "pred": "8",
+                "truth": "2",
+                "margin": 0.16435739398002625,
+                "entropy": 1.0267235040664673,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C9",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.7002332210540771,
+                "entropy": 0.6625053882598877,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C1",
+                "pred": "6",
+                "truth": "1",
+                "margin": 0.30688703060150146,
+                "entropy": 1.1403709650039673,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C6",
+                "pred": "5",
+                "truth": "6",
+                "margin": 0.03991928696632385,
+                "entropy": 1.087251901626587,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C7",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.18296077847480774,
+                "entropy": 1.092499852180481,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C8",
+                "pred": "3",
+                "truth": "9",
+                "margin": 0.16934174299240112,
+                "entropy": 1.0821287631988525,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C9",
+                "pred": "1",
+                "truth": "3",
+                "margin": 0.1603938341140747,
+                "entropy": 1.0363011360168457,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "7",
+                "truth": "3",
+                "margin": 0.36241474747657776,
+                "entropy": 1.1100373268127441,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C3",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.336179256439209,
+                "entropy": 1.2133870124816895,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C4",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.8060110211372375,
+                "entropy": 0.4438425898551941,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C9",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.4900978207588196,
+                "entropy": 0.8938760757446289,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 9,
+            "blank_acc": 0.8421052631578947,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 30,
+            "hidden_entropy_mean": 0.5589280128479004,
+            "conflict_unit_count": 9,
+            "conflict_units": [
+              "row 1: 8@R1C1,R1C4",
+              "row 8: 1@R8C1,R8C7",
+              "row 9: 3@R9C2,R9C9",
+              "col 1: 8@R1C1,R6C1",
+              "col 3: 2@R8C3,R9C3",
+              "col 4: 1@R7C4,R9C4",
+              "box 1,1: 8@R1C1,R2C3",
+              "box 3,1: 2@R8C3,R9C3",
+              "box 3,2: 1@R7C4,R9C4"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C1",
+                "pred": "8",
+                "truth": "9",
+                "margin": 0.06272327899932861,
+                "entropy": 0.8323242664337158,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R2C7",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.7244151830673218,
+                "entropy": 0.4624863862991333,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R2C9",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.9281139969825745,
+                "entropy": 0.2576674818992615,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R8C7",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.1614048182964325,
+                "entropy": 1.2335888147354126,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R8C9",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.8094854950904846,
+                "entropy": 0.4182279706001282,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C3",
+                "pred": "2",
+                "truth": "6",
+                "margin": 0.14436855912208557,
+                "entropy": 0.7536351680755615,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R9C4",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.5589698553085327,
+                "entropy": 0.860507607460022,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R9C7",
+                "pred": "7",
+                "truth": "1",
+                "margin": 0.6455983519554138,
+                "entropy": 0.7810429930686951,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C9",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.045763492584228516,
+                "entropy": 0.8405282497406006,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 6,
+            "blank_acc": 0.8947368421052632,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 5,
+            "hidden_entropy_mean": 0.434774786233902,
+            "conflict_unit_count": 6,
+            "conflict_units": [
+              "row 8: 3@R8C1,R8C9",
+              "row 9: 3@R9C2,R9C9",
+              "col 1: 3@R2C1,R8C1",
+              "col 9: 3@R8C9,R9C9",
+              "box 3,1: 3@R8C1,R9C2",
+              "box 3,3: 3@R8C9,R9C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C7",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.7910116314888,
+                "entropy": 0.4388188421726227,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R2C9",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.8772911429405212,
+                "entropy": 0.33960312604904175,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R8C1",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.06793418526649475,
+                "entropy": 1.2742571830749512,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R8C7",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.40119802951812744,
+                "entropy": 1.100581169128418,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C7",
+                "pred": "7",
+                "truth": "1",
+                "margin": 0.8633071780204773,
+                "entropy": 0.32922059297561646,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R9C9",
+                "pred": "3",
+                "truth": "7",
+                "margin": 0.23702695965766907,
+                "entropy": 0.8125782012939453,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "3"
+              }
+            ]
+          }
+        },
+        "kind": "hard_failure",
+        "stem": "official_b56_64_hard_failure_02_b0130",
+        "title": "9x9 official_b56_64 hard_failure #2",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_hard_failure_02_b0130.html"
+      },
+      {
+        "holes": 58,
+        "group": "official_b56_64",
+        "batch_index": 160,
+        "loops": {
+          "loop1": {
+            "wrong_count": 34,
+            "blank_acc": 0.4137931034482759,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 1.128006935119629,
+            "conflict_unit_count": 27,
+            "conflict_units": [
+              "row 1: 9@R1C6,R1C7",
+              "row 2: 9@R2C6,R2C7",
+              "row 3: 3@R3C2,R3C3; 8@R3C8,R3C9",
+              "row 4: 1@R4C4,R4C8,R4C9; 3@R4C1,R4C3",
+              "row 5: 5@R5C1,R5C2; 9@R5C3,R5C6",
+              "row 6: 2@R6C1,R6C2",
+              "row 7: 8@R7C4,R7C5",
+              "row 8: 1@R8C8,R8C9; 2@R8C3,R8C7",
+              "row 9: 3@R9C1,R9C4; 9@R9C8,R9C9",
+              "col 1: 3@R4C1,R9C1; 4@R1C1,R2C1",
+              "col 2: 2@R1C2,R6C2,R9C2; 3@R2C2,R3C2",
+              "col 3: 3@R3C3,R4C3; 9@R5C3,R6C3",
+              "col 4: 1@R1C4,R4C4",
+              "col 5: 7@R2C5,R5C5",
+              "col 6: 5@R7C6,R8C6; 9@R1C6,R2C6,R5C6",
+              "col 7: 2@R7C7,R8C7; 9@R1C7,R2C7",
+              "col 8: 1@R4C8,R8C8; 8@R3C8,R5C8",
+              "col 9: 1@R4C9,R8C9; 8@R2C9,R3C9,R6C9",
+              "box 1,1: 3@R2C2,R3C2,R3C3; 4@R1C1,R2C1",
+              "box 1,2: 7@R2C5,R3C4; 9@R1C6,R2C6",
+              "box 1,3: 8@R2C9,R3C8,R3C9; 9@R1C7,R2C7",
+              "box 2,1: 2@R6C1,R6C2; 3@R4C1,R4C3; 5@R5C1,R5C2; 9@R5C3,R6C3",
+              "box 2,2: 1@R4C4,R6C6",
+              "box 2,3: 1@R4C8,R4C9; 8@R5C8,R6C9",
+              "box 3,1: 2@R8C3,R9C2",
+              "box 3,2: 5@R7C6,R8C6; 8@R7C4,R7C5",
+              "box 3,3: 1@R8C8,R8C9; 2@R7C7,R8C7; 9@R9C8,R9C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C2",
+                "pred": "2",
+                "truth": "7",
+                "margin": 0.14112988114356995,
+                "entropy": 1.2564374208450317,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C6",
+                "pred": "9",
+                "truth": "2",
+                "margin": 0.3252441883087158,
+                "entropy": 1.0278961658477783,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C7",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.18742990493774414,
+                "entropy": 1.0170501470565796,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C8",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.6029750108718872,
+                "entropy": 0.885244607925415,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C1",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.03950747847557068,
+                "entropy": 1.4052836894989014,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R2C7",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.23088955879211426,
+                "entropy": 1.0461839437484741,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "3",
+                "truth": "5",
+                "margin": 0.034586548805236816,
+                "entropy": 1.3994985818862915,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C3",
+                "pred": "3",
+                "truth": "2",
+                "margin": 0.09043081104755402,
+                "entropy": 1.6768999099731445,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C4",
+                "pred": "7",
+                "truth": "8",
+                "margin": 0.3702400326728821,
+                "entropy": 0.9561082124710083,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C8",
+                "pred": "8",
+                "truth": "7",
+                "margin": 0.054333657026290894,
+                "entropy": 0.9862478971481323,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C9",
+                "pred": "8",
+                "truth": "3",
+                "margin": 0.21648958325386047,
+                "entropy": 0.9657620787620544,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C3",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.11997166275978088,
+                "entropy": 1.6438640356063843,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C4",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.007480025291442871,
+                "entropy": 1.1092718839645386,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C5",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.007581174373626709,
+                "entropy": 1.1336374282836914,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C9",
+                "pred": "1",
+                "truth": "5",
+                "margin": 0.015364348888397217,
+                "entropy": 1.007041573524475,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C2",
+                "pred": "5",
+                "truth": "1",
+                "margin": 0.03152948617935181,
+                "entropy": 1.3879973888397217,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C3",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.09415054321289062,
+                "entropy": 1.620546579360962,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C5",
+                "pred": "7",
+                "truth": "4",
+                "margin": 0.008446574211120605,
+                "entropy": 1.1510906219482422,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C6",
+                "pred": "9",
+                "truth": "3",
+                "margin": 0.033829569816589355,
+                "entropy": 1.0969218015670776,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C7",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.32346367835998535,
+                "entropy": 0.9953149557113647,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C1",
+                "pred": "2",
+                "truth": "8",
+                "margin": 0.10439237952232361,
+                "entropy": 1.1323808431625366,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C4",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.04328647255897522,
+                "entropy": 1.2935845851898193,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C9",
+                "pred": "8",
+                "truth": "4",
+                "margin": 0.15516921877861023,
+                "entropy": 1.3683782815933228,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C3",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.2475886046886444,
+                "entropy": 1.262930154800415,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C4",
+                "pred": "8",
+                "truth": "4",
+                "margin": 0.6677345633506775,
+                "entropy": 0.5720980763435364,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C8",
+                "pred": "4",
+                "truth": "6",
+                "margin": 0.6151549816131592,
+                "entropy": 0.6740670204162598,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C3",
+                "pred": "2",
+                "truth": "5",
+                "margin": 0.384796142578125,
+                "entropy": 1.0030624866485596,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C5",
+                "pred": "4",
+                "truth": "2",
+                "margin": 0.5732254385948181,
+                "entropy": 0.9163100719451904,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C6",
+                "pred": "5",
+                "truth": "6",
+                "margin": 0.12681636214256287,
+                "entropy": 1.3201353549957275,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C7",
+                "pred": "2",
+                "truth": "3",
+                "margin": 0.6686621308326721,
+                "entropy": 0.7032701969146729,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C8",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.46916794776916504,
+                "entropy": 1.1014066934585571,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C1",
+                "pred": "3",
+                "truth": "2",
+                "margin": 0.002074301242828369,
+                "entropy": 1.370683193206787,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C2",
+                "pred": "2",
+                "truth": "6",
+                "margin": 0.1764056235551834,
+                "entropy": 1.3407717943191528,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C8",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.8430156707763672,
+                "entropy": 0.4222918450832367,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 19,
+            "blank_acc": 0.6724137931034483,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 28,
+            "hidden_entropy_mean": 0.6313173174858093,
+            "conflict_unit_count": 20,
+            "conflict_units": [
+              "row 1: 9@R1C7,R1C8",
+              "row 2: 8@R2C5,R2C9",
+              "row 3: 7@R3C4,R3C8",
+              "row 5: 4@R5C5,R5C7,R5C8",
+              "row 6: 1@R6C2,R6C6",
+              "row 7: 8@R7C4,R7C5",
+              "row 8: 1@R8C5,R8C9",
+              "row 9: 9@R9C8,R9C9",
+              "col 1: 5@R5C1,R9C1",
+              "col 2: 1@R5C2,R6C2",
+              "col 5: 1@R8C5,R9C5; 8@R2C5,R7C5",
+              "col 7: 4@R2C7,R5C7",
+              "col 8: 9@R1C8,R9C8",
+              "col 9: 8@R2C9,R6C9",
+              "box 1,3: 9@R1C7,R1C8",
+              "box 2,1: 1@R5C2,R6C2",
+              "box 2,2: 4@R5C5,R6C4",
+              "box 2,3: 4@R5C7,R5C8",
+              "box 3,2: 1@R8C5,R9C5; 8@R7C4,R7C5",
+              "box 3,3: 9@R9C8,R9C9"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C7",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.4048353433609009,
+                "entropy": 0.6652870178222656,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R2C5",
+                "pred": "8",
+                "truth": "7",
+                "margin": 0.31824740767478943,
+                "entropy": 0.9968280792236328,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R3C2",
+                "pred": "2",
+                "truth": "5",
+                "margin": 0.8054800033569336,
+                "entropy": 0.5212949514389038,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R3C3",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.21472245454788208,
+                "entropy": 1.3041653633117676,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R3C4",
+                "pred": "7",
+                "truth": "8",
+                "margin": 0.5916744470596313,
+                "entropy": 0.6560778617858887,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "7"
+              },
+              {
+                "coord": "R5C3",
+                "pred": "9",
+                "truth": "7",
+                "margin": 0.816842794418335,
+                "entropy": 0.4698362350463867,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R5C7",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.03549465537071228,
+                "entropy": 1.0070710182189941,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R5C8",
+                "pred": "4",
+                "truth": "8",
+                "margin": 0.12136739492416382,
+                "entropy": 1.2277992963790894,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R6C1",
+                "pred": "2",
+                "truth": "8",
+                "margin": 0.17806914448738098,
+                "entropy": 0.725864589214325,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R6C2",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.07127344608306885,
+                "entropy": 1.2912901639938354,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R6C3",
+                "pred": "7",
+                "truth": "9",
+                "margin": 0.13741803169250488,
+                "entropy": 0.8817456960678101,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              },
+              {
+                "coord": "R6C4",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.5236209630966187,
+                "entropy": 0.6024192571640015,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R6C9",
+                "pred": "8",
+                "truth": "4",
+                "margin": 0.3796466886997223,
+                "entropy": 0.8479424118995667,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R7C4",
+                "pred": "8",
+                "truth": "4",
+                "margin": 0.9095218181610107,
+                "entropy": 0.2504468858242035,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R8C3",
+                "pred": "2",
+                "truth": "5",
+                "margin": 0.23572468757629395,
+                "entropy": 0.8111205101013184,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R8C5",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.2859940230846405,
+                "entropy": 1.2342290878295898,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R8C8",
+                "pred": "5",
+                "truth": "4",
+                "margin": 0.2782830595970154,
+                "entropy": 1.1200714111328125,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C1",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.3868131637573242,
+                "entropy": 0.771622896194458,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R9C8",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.10474720597267151,
+                "entropy": 1.0812745094299316,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "9"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 7,
+            "blank_acc": 0.8793103448275862,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 16,
+            "hidden_entropy_mean": 0.755837619304657,
+            "conflict_unit_count": 15,
+            "conflict_units": [
+              "row 2: 8@R2C5,R2C9",
+              "row 6: 9@R6C3,R6C9",
+              "row 8: 5@R8C3,R8C8",
+              "row 9: 6@R9C2,R9C8",
+              "col 1: 5@R5C1,R9C1",
+              "col 4: 4@R6C4,R7C4",
+              "col 5: 2@R8C5,R9C5; 8@R2C5,R7C5",
+              "col 8: 6@R7C8,R9C8",
+              "col 9: 9@R6C9,R9C9",
+              "box 1,2: 8@R2C5,R3C4",
+              "box 2,2: 4@R5C5,R6C4",
+              "box 2,3: 9@R5C7,R6C9",
+              "box 3,1: 5@R8C3,R9C1",
+              "box 3,2: 2@R8C5,R9C5",
+              "box 3,3: 6@R7C8,R9C8"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R2C5",
+                "pred": "8",
+                "truth": "7",
+                "margin": 0.15207496285438538,
+                "entropy": 1.046288251876831,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R6C4",
+                "pred": "4",
+                "truth": "7",
+                "margin": 0.3851686418056488,
+                "entropy": 0.6649632453918457,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R6C9",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.024237990379333496,
+                "entropy": 1.0865650177001953,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "8"
+              },
+              {
+                "coord": "R8C8",
+                "pred": "5",
+                "truth": "4",
+                "margin": 0.08328339457511902,
+                "entropy": 1.0398606061935425,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R9C1",
+                "pred": "5",
+                "truth": "2",
+                "margin": 0.10318419337272644,
+                "entropy": 0.9340210556983948,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R9C5",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.15538278222084045,
+                "entropy": 0.7772955894470215,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C8",
+                "pred": "6",
+                "truth": "5",
+                "margin": 0.11132854223251343,
+                "entropy": 1.1331264972686768,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "9"
+              }
+            ]
+          }
+        },
+        "kind": "hard_failure",
+        "stem": "official_b56_64_hard_failure_03_b0160",
+        "title": "9x9 official_b56_64 hard_failure #3",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_hard_failure_03_b0160.html"
+      },
+      {
+        "holes": 56,
+        "group": "official_b56_64",
+        "batch_index": 54,
+        "loops": {
+          "loop1": {
+            "wrong_count": 23,
+            "blank_acc": 0.5892857142857143,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.6112169623374939,
+            "conflict_unit_count": 15,
+            "conflict_units": [
+              "row 1: 2@R1C1,R1C7",
+              "row 5: 5@R5C7,R5C8",
+              "row 6: 4@R6C1,R6C9",
+              "row 7: 8@R7C1,R7C3",
+              "row 8: 1@R8C7,R8C8; 6@R8C1,R8C3",
+              "row 9: 4@R9C7,R9C8",
+              "col 1: 6@R4C1,R8C1",
+              "col 2: 2@R3C2,R5C2",
+              "col 7: 5@R2C7,R5C7",
+              "col 8: 1@R3C8,R8C8",
+              "col 9: 4@R3C9,R6C9",
+              "box 1,1: 2@R1C1,R3C2",
+              "box 2,3: 5@R5C7,R5C8",
+              "box 3,1: 6@R8C1,R8C3; 8@R7C1,R7C3",
+              "box 3,3: 1@R8C7,R8C8; 4@R9C7,R9C8"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R1C3",
+                "pred": "9",
+                "truth": "8",
+                "margin": 0.3435167074203491,
+                "entropy": 0.6409001350402832,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C4",
+                "pred": "4",
+                "truth": "9",
+                "margin": 0.9159173965454102,
+                "entropy": 0.1778283715248108,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R1C7",
+                "pred": "2",
+                "truth": "4",
+                "margin": 0.5187990665435791,
+                "entropy": 0.7108225226402283,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C2",
+                "pred": "2",
+                "truth": "9",
+                "margin": 0.3644408583641052,
+                "entropy": 0.7857937216758728,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C4",
+                "pred": "9",
+                "truth": "4",
+                "margin": 0.6938064694404602,
+                "entropy": 0.7420676350593567,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C7",
+                "pred": "3",
+                "truth": "2",
+                "margin": 0.4735575020313263,
+                "entropy": 1.1780904531478882,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R3C9",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.012012600898742676,
+                "entropy": 1.222846508026123,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C2",
+                "pred": "9",
+                "truth": "5",
+                "margin": 0.6165118217468262,
+                "entropy": 0.6493934392929077,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R4C3",
+                "pred": "5",
+                "truth": "9",
+                "margin": 0.6710226535797119,
+                "entropy": 0.7013829946517944,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C3",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.20276451110839844,
+                "entropy": 1.1634225845336914,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C4",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.3780525028705597,
+                "entropy": 0.6618857383728027,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C7",
+                "pred": "5",
+                "truth": "6",
+                "margin": 0.03468489646911621,
+                "entropy": 1.5252354145050049,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R5C9",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.09438943862915039,
+                "entropy": 1.2987802028656006,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C3",
+                "pred": "1",
+                "truth": "3",
+                "margin": 0.6765584945678711,
+                "entropy": 0.667215883731842,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C4",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.5380898714065552,
+                "entropy": 0.5484439134597778,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R6C9",
+                "pred": "4",
+                "truth": "1",
+                "margin": 0.14655059576034546,
+                "entropy": 1.2599326372146606,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C3",
+                "pred": "8",
+                "truth": "6",
+                "margin": 0.35492226481437683,
+                "entropy": 0.9859511256217957,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R7C5",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.35212045907974243,
+                "entropy": 0.6366795897483826,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C1",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.061300307512283325,
+                "entropy": 1.1099965572357178,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C3",
+                "pred": "6",
+                "truth": "5",
+                "margin": 0.10307154059410095,
+                "entropy": 1.0945675373077393,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R8C8",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.5901144742965698,
+                "entropy": 0.7775757312774658,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C5",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.6487706899642944,
+                "entropy": 0.4716775417327881,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              },
+              {
+                "coord": "R9C7",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.3416447639465332,
+                "entropy": 0.9317768812179565,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false
+              }
+            ]
+          },
+          "loop3": {
+            "wrong_count": 17,
+            "blank_acc": 0.6964285714285714,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 18,
+            "hidden_entropy_mean": 0.2073925882577896,
+            "conflict_unit_count": 8,
+            "conflict_units": [
+              "row 5: 2@R5C2,R5C7",
+              "row 6: 4@R6C1,R6C9",
+              "col 1: 4@R6C1,R8C1",
+              "col 2: 5@R4C2,R8C2",
+              "col 3: 6@R7C3,R8C3",
+              "col 5: 3@R7C5,R9C5",
+              "box 3,1: 6@R7C3,R8C3",
+              "box 3,2: 3@R7C5,R9C5"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R3C7",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.7954731583595276,
+                "entropy": 0.35088491439819336,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R3C8",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.9085790514945984,
+                "entropy": 0.20446498692035675,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R5C3",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.9813242554664612,
+                "entropy": 0.055918872356414795,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R5C4",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.9570471048355103,
+                "entropy": 0.10521671175956726,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R5C7",
+                "pred": "2",
+                "truth": "6",
+                "margin": 0.47252315282821655,
+                "entropy": 1.0978903770446777,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "5"
+              },
+              {
+                "coord": "R5C9",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.9363406300544739,
+                "entropy": 0.14852166175842285,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R6C3",
+                "pred": "1",
+                "truth": "3",
+                "margin": 0.998455822467804,
+                "entropy": 0.008771661669015884,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R6C4",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.9758740663528442,
+                "entropy": 0.06542977690696716,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R6C8",
+                "pred": "6",
+                "truth": "2",
+                "margin": 0.42411383986473083,
+                "entropy": 0.6403271555900574,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R6C9",
+                "pred": "4",
+                "truth": "1",
+                "margin": 0.9725766181945801,
+                "entropy": 0.11359067261219025,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R8C1",
+                "pred": "4",
+                "truth": "3",
+                "margin": 0.28651028871536255,
+                "entropy": 0.6542682647705078,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R8C2",
+                "pred": "5",
+                "truth": "4",
+                "margin": 0.4503781795501709,
+                "entropy": 0.5911608934402466,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              },
+              {
+                "coord": "R8C3",
+                "pred": "6",
+                "truth": "5",
+                "margin": 0.10866943001747131,
+                "entropy": 0.818610668182373,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R8C7",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.879303514957428,
+                "entropy": 0.3306228220462799,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R8C8",
+                "pred": "1",
+                "truth": "6",
+                "margin": 0.784221887588501,
+                "entropy": 0.34356367588043213,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R9C5",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.2410808801651001,
+                "entropy": 0.6656138300895691,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 1,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R9C7",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.030775874853134155,
+                "entropy": 0.9525781869888306,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": true,
+                "previous_loop": 1,
+                "previous_pred": "4"
+              }
+            ]
+          },
+          "loop5": {
+            "wrong_count": 8,
+            "blank_acc": 0.8571428571428572,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 9,
+            "hidden_entropy_mean": 0.3425159454345703,
+            "conflict_unit_count": 8,
+            "conflict_units": [
+              "row 5: 6@R5C4,R5C7",
+              "row 6: 1@R6C3,R6C9",
+              "row 8: 3@R8C1,R8C7",
+              "col 7: 3@R8C7,R9C7",
+              "col 8: 2@R3C8,R6C8",
+              "col 9: 1@R5C9,R6C9",
+              "box 2,3: 1@R5C9,R6C9",
+              "box 3,3: 3@R8C7,R9C7"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R3C7",
+                "pred": "1",
+                "truth": "2",
+                "margin": 0.5015171766281128,
+                "entropy": 0.8358098268508911,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R3C8",
+                "pred": "2",
+                "truth": "1",
+                "margin": 0.4649413824081421,
+                "entropy": 0.6820233464241028,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "2"
+              },
+              {
+                "coord": "R5C3",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.9295822978019714,
+                "entropy": 0.17993314564228058,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R5C4",
+                "pred": "6",
+                "truth": "3",
+                "margin": 0.3399072587490082,
+                "entropy": 0.6635674238204956,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "6"
+              },
+              {
+                "coord": "R5C9",
+                "pred": "1",
+                "truth": "4",
+                "margin": 0.36799782514572144,
+                "entropy": 0.6294153332710266,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R6C3",
+                "pred": "1",
+                "truth": "3",
+                "margin": 0.945986270904541,
+                "entropy": 0.18205787241458893,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "1"
+              },
+              {
+                "coord": "R6C4",
+                "pred": "3",
+                "truth": "6",
+                "margin": 0.5270282626152039,
+                "entropy": 0.5538164973258972,
+                "stable_since_loop": 1,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "3"
+              },
+              {
+                "coord": "R8C7",
+                "pred": "3",
+                "truth": "1",
+                "margin": 0.5108796954154968,
+                "entropy": 0.7327120304107666,
+                "stable_since_loop": 3,
+                "changed_from_previous_loop": false,
+                "previous_loop": 3,
+                "previous_pred": "3"
+              }
+            ]
+          }
+        },
+        "kind": "hard_failure",
+        "stem": "official_b56_64_hard_failure_04_b0054",
+        "title": "9x9 official_b56_64 hard_failure #4",
+        "html_path": "/huyang2/double-loop/.worktrees/pdiag027-adaptiverms-e6a3f24-20260711T025509Z/runs/gdn-transition-adaptiverms-d224l12-step12600-20260711T025509Z-e6a3f24/output/case_bank/official_b56_64/official_b56_64_hard_failure_04_b0054.html"
+      }
+    ]
+  }
+}

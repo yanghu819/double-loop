@@ -86,5 +86,24 @@ representation, not Sudoku-specific correction.
 
 ## 6. Results
 
-Training in progress from exact global step6000. Step7000 is the first
-predeclared decision checkpoint.
+The step7000 gate is a clean continuation signal:
+
+| Bucket | step6000 loop5 exact / blank | step7000 loop1 exact | step7000 loop3 exact | step7000 loop5 exact / blank | loop1-to-loop5 gain |
+|---|---:|---:|---:|---:|---:|
+| holes53 | `0.2109 / 0.6344` | `0.0176` | `0.1777` | `0.2480 / 0.6727` | `+0.2305` |
+| holes60 | `0.2402 / 0.6643` | `0.0215` | `0.1895` | `0.2832 / 0.7003` | `+0.2617` |
+| holes64 | `0.2500 / 0.6410` | `0.0254` | `0.2012` | `0.2617 / 0.6698` | `+0.2363` |
+
+All three hard buckets improve in blank accuracy and full-board exact. The
+largest exact gains are holes53 `+0.0371` and holes60 `+0.0430`; holes64 still
+gains `+0.0117`. This passes the continuation rule decisively: holes60 and
+holes64 are both above `0.20`, and blank accuracy rises materially. Loop compute
+also remains the dominant source of board-level correction rather than merely
+copying loop1.
+
+The first leg was proactively stopped after the complete step7000 checkpoint
+and evaluation because the remaining GPU1 lease could not safely fit another
+1000 steps plus final evaluation. Exact PIDs `1455/1454/1453/1398` were stopped,
+GPU1 returned to `0 MiB`, and `lease_rollover_step7000.json` records the
+transition at `2026-07-11T22:59:50Z`. The next leg will resume exact model,
+optimizer, and RNG state from step7000; no experiment setting changes.

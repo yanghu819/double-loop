@@ -3,12 +3,23 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-030`
-- Status: approved
+- Status: in-progress
 - Planned: 2026-07-12 05:46 CST / 2026-07-11T21:46:00Z
+- Launched: 2026-07-12 05:56 CST / 2026-07-11T21:56:15Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
 - Experiment source SHA: `eeb38f5b6f9b6c1b1df0bbd3ca149daec06a171d`
 - Resume checkpoint: P-SCALE-029 exact step6000
+- Run: `gdn-full-diversity-hard-resume6000-s8000-20260711T2150Z-eeb38f5`
+- Launch PID / active Python PID: `1398` / `46147`
+- Launch script SHA256: `8759592f0f71a9fa08498e3354e2ae46d908660f4ca8dcdcf0347152e1a50274`
+- Runtime check: CUDA-only resume confirmed at global step6000; A800 allocation
+  `45116 MiB`, Triton recurrent mode, BF16.
+- Provenance note: the detached worktree is exact source SHA. Its only tracked
+  difference is the generated `runs/visualization_index.html`; the launcher
+  fails if any other tracked path differs. A new worktree/checkout was attempted
+  first but blocked in remote filesystem I/O, so no source-code dirtiness was
+  accepted to recover time on the active GPU lease.
 
 ## 2. Mechanism Hypothesis
 
@@ -75,4 +86,5 @@ representation, not Sudoku-specific correction.
 
 ## 6. Results
 
-Pending.
+Training in progress from exact global step6000. Step7000 is the first
+predeclared decision checkpoint.

@@ -922,6 +922,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_scale: float = 1.0,
         future_seed_decay: float = 0.0,
         future_seed_update: str = "fixed",
+        future_seed_norm_mode: str = "unit",
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
         backbone: str = "rwkv",
@@ -936,12 +937,15 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("FutureSeed needs at least two layers.")
         if future_seed_update not in {"fixed", "learned", "loop_residual"}:
             raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
+        if future_seed_norm_mode not in {"unit", "adaptive_rms"}:
+            raise ValueError("future_seed_norm_mode must be one of: unit, adaptive_rms.")
         if backbone not in {"rwkv", "gdn"}:
             raise ValueError("backbone must be one of: rwkv, gdn.")
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
         self.future_seed_update = future_seed_update
+        self.future_seed_norm_mode = future_seed_norm_mode
         self.activation_checkpoint = bool(activation_checkpoint)
         if future_seed_update in {"learned", "loop_residual"}:
             update_init = min(max(1.0 - self.future_seed_decay, 1e-4), 1.0 - 1e-4)
@@ -951,6 +955,13 @@ class FutureSeedRWKV(nn.Module):
             )
         else:
             self.register_parameter("future_seed_update_logit", None)
+        if future_seed_norm_mode == "adaptive_rms":
+            norm_shape = (layers - 1, 1, heads, 1, 1)
+            self.future_seed_norm_slope = nn.Parameter(torch.zeros(norm_shape))
+            self.future_seed_norm_bias = nn.Parameter(torch.zeros(norm_shape))
+        else:
+            self.register_parameter("future_seed_norm_slope", None)
+            self.register_parameter("future_seed_norm_bias", None)
         blocks: List[nn.Module] = []
         for layer_id in range(layers):
             if backbone == "rwkv":
@@ -995,6 +1006,10 @@ class FutureSeedRWKV(nn.Module):
         gates = []
         update_gates = []
         state_norms = []
+        raw_rms_means = []
+        raw_rms_stds = []
+        norm_gain_means = []
+        norm_gain_stds = []
         memory_norms = []
         memory_delta_norms = []
         for layer_idx, block in enumerate(self.blocks):
@@ -1041,9 +1056,29 @@ class FutureSeedRWKV(nn.Module):
                         keep = self.future_seed_decay
                         seed_state = keep * seed_state + (1.0 - keep) * previous_state
                         update_gates.append(x.new_tensor(1.0 - keep))
-                    denom = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                    normalized_state = seed_state / denom
-                    initial_state = normalized_state * gate
+                    denom_native = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                    denom = seed_state.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                    normalized_state = seed_state / denom_native
+                    raw_rms_means.append(denom.mean().to(dtype=x.dtype))
+                    raw_rms_stds.append(denom.std(unbiased=False).to(dtype=x.dtype))
+                    if self.future_seed_norm_mode == "adaptive_rms":
+                        assert self.future_seed_norm_slope is not None
+                        assert self.future_seed_norm_bias is not None
+                        log_rms = denom.log().clamp(min=-6.0, max=6.0)
+                        slope = self.future_seed_norm_slope[layer_idx - 1].to(
+                            device=seed_state.device,
+                            dtype=log_rms.dtype,
+                        )
+                        bias = self.future_seed_norm_bias[layer_idx - 1].to(
+                            device=seed_state.device,
+                            dtype=log_rms.dtype,
+                        )
+                        norm_gain = torch.exp(0.5 * torch.tanh(slope * log_rms + bias))
+                    else:
+                        norm_gain = torch.ones_like(denom)
+                    norm_gain_means.append(norm_gain.mean().to(dtype=x.dtype))
+                    norm_gain_stds.append(norm_gain.std(unbiased=False).to(dtype=x.dtype))
+                    initial_state = normalized_state * gate * norm_gain.to(dtype=normalized_state.dtype)
                     state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
                 else:
                     update_gates.append(x.new_zeros(()))
@@ -1080,11 +1115,25 @@ class FutureSeedRWKV(nn.Module):
                 out["fs_memory_norm"] = torch.stack(memory_norms).mean()
             if memory_delta_norms:
                 out["fs_memory_delta_norm"] = torch.stack(memory_delta_norms).mean()
+            if raw_rms_means:
+                out["fs_raw_rms_mean"] = torch.stack(raw_rms_means).mean()
+                out["fs_raw_rms_std"] = torch.stack(raw_rms_stds).mean()
+                out["fs_norm_gain_mean"] = torch.stack(norm_gain_means).mean()
+                out["fs_norm_gain_std"] = torch.stack(norm_gain_stds).mean()
             return x, out, next_seed_memory
         zero = x.new_zeros(())
         return (
             x,
-            {"fs_gate_mean": zero, "fs_update_mean": zero, "fs_state_norm": zero, "fs_decay": zero},
+            {
+                "fs_gate_mean": zero,
+                "fs_update_mean": zero,
+                "fs_state_norm": zero,
+                "fs_decay": zero,
+                "fs_raw_rms_mean": zero,
+                "fs_raw_rms_std": zero,
+                "fs_norm_gain_mean": zero,
+                "fs_norm_gain_std": zero,
+            },
             next_seed_memory,
         )
 
@@ -1231,7 +1280,11 @@ def load_training_checkpoint(
 ) -> Dict[str, Any]:
     checkpoint = torch.load(path, map_location=device, weights_only=False)
     missing, unexpected = model.load_state_dict(checkpoint["model"], strict=False)
-    allowed_missing = {"loop_update_logit"}
+    allowed_missing = {
+        "loop_update_logit",
+        "reasoner.future_seed_norm_slope",
+        "reasoner.future_seed_norm_bias",
+    }
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [key for key in missing if key not in allowed_missing]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
@@ -1241,7 +1294,8 @@ def load_training_checkpoint(
             f"missing={bad_missing}, unexpected={bad_unexpected}"
         )
     optimizer_state = checkpoint["optimizer"]
-    if missing == ["loop_update_logit"]:
+    inserted_parameters = set(missing)
+    if inserted_parameters:
         current_state = opt.state_dict()
         saved_groups = optimizer_state.get("param_groups", [])
         current_groups = current_state.get("param_groups", [])
@@ -1249,7 +1303,7 @@ def load_training_checkpoint(
         current_param_count = sum(len(group.get("params", [])) for group in current_groups)
         can_expand = len(saved_groups) == len(current_groups) and len(current_names) == current_param_count
         if not can_expand:
-            raise ValueError("Cannot expand optimizer state for missing loop_update_logit")
+            raise ValueError("Cannot expand optimizer state for missing model parameters")
         expanded_optimizer_state = copy.deepcopy(optimizer_state)
         all_saved_params = [
             param_id
@@ -1265,16 +1319,16 @@ def load_training_checkpoint(
             for _param_id in current.get("params", []):
                 name = current_names[name_cursor]
                 name_cursor += 1
-                if name == "loop_update_logit":
+                if name in inserted_parameters:
                     new_params.append(synthetic_param_id)
                     synthetic_param_id += 1
                 else:
                     if old_cursor >= len(old_params):
-                        raise ValueError("Optimizer state is missing old parameters while inserting loop_update_logit")
+                        raise ValueError("Optimizer state is missing old parameters while inserting new parameters")
                     new_params.append(old_params[old_cursor])
                     old_cursor += 1
             if old_cursor != len(old_params):
-                raise ValueError("Optimizer state has leftover old parameters after inserting loop_update_logit")
+                raise ValueError("Optimizer state has leftover old parameters after inserting new parameters")
             saved["params"] = new_params
         optimizer_state = expanded_optimizer_state
     opt.load_state_dict(optimizer_state)
@@ -1302,6 +1356,7 @@ class FutureSeedLoopSudoku(nn.Module):
         future_seed_scale: float,
         future_seed_decay: float,
         future_seed_update: str,
+        future_seed_norm_mode: str,
         loop_feedback_scale: float,
         loop_feedback_detach: bool,
         loop_feedback_corrupt_prob: float,
@@ -1368,6 +1423,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_scale=future_seed_scale,
             future_seed_decay=future_seed_decay,
             future_seed_update=future_seed_update,
+            future_seed_norm_mode=future_seed_norm_mode,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
             backbone=backbone,
@@ -1933,6 +1989,12 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(f"fs_mem={m['fs_memory_norm']:.3f}")
     if "fs_memory_delta_norm" in m:
         parts.append(f"fs_mem_delta={m['fs_memory_delta_norm']:.3f}")
+    if "fs_raw_rms_mean" in m:
+        parts.append(f"fs_raw_rms={m['fs_raw_rms_mean']:.3f}")
+        parts.append(f"fs_raw_rms_std={m.get('fs_raw_rms_std', 0.0):.3f}")
+    if "fs_norm_gain_mean" in m:
+        parts.append(f"fs_norm_gain={m['fs_norm_gain_mean']:.3f}")
+        parts.append(f"fs_norm_gain_std={m.get('fs_norm_gain_std', 0.0):.3f}")
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -1992,6 +2054,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_scale=args.future_seed_scale,
         future_seed_decay=args.future_seed_decay,
         future_seed_update=args.future_seed_update,
+        future_seed_norm_mode=args.future_seed_norm_mode,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_feedback_detach=bool(args.loop_feedback_detach),
         loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
@@ -2584,6 +2647,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             torch.cuda.max_memory_reserved(device) / (1024**2) if device.type == "cuda" else 0.0
         ),
         "future_seed_update": args.future_seed_update,
+        "future_seed_norm_mode": args.future_seed_norm_mode,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
         "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
@@ -3864,6 +3928,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_scale": args.future_seed_scale,
         "future_seed_decay": args.future_seed_decay,
         "future_seed_update": args.future_seed_update,
+        "future_seed_norm_mode": args.future_seed_norm_mode,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
@@ -4034,6 +4099,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--future_seed_update", choices=("fixed", "learned", "loop_residual"), default="fixed")
+    p.add_argument("--future_seed_norm_mode", choices=("unit", "adaptive_rms"), default="unit")
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
     p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)

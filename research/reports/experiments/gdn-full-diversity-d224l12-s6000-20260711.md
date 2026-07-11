@@ -3,12 +3,13 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-029`
-- Status: preparing data
+- Status: in-progress
 - Planned: 2026-07-11 22:43 CST / 2026-07-11T14:43:00Z
+- Launched: 2026-07-11 23:23 CST / 2026-07-11T15:23:21Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
-- Source SHA: pending clean commit
-- Run: pending
+- Source SHA: `eeb38f5b6f9b6c1b1df0bbd3ca149daec06a171d`
+- Run: `gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5`
 
 ## 2. Hypothesis
 
@@ -18,7 +19,7 @@ problems. The released `sudoku-extreme-1k-aug-1000` train split contains exactly
 sees many masks and legal transformations, but only 1,000 underlying source
 problems.
 
-Sudoku-Extreme provides 3,831,994 independent raw training problems. If hard
+Sudoku-Extreme provides 3,831,994 unaugmented raw source rows. If hard
 full-board exactness is limited by relational data diversity rather than another
 small state or loss mechanism, replacing the augmented 1k split with the full
 raw split should steepen the D224 learning curve without changing the model.
@@ -30,7 +31,7 @@ backbone, recurrent compute, optimizer, curriculum, and evaluation fixed.
 
 - Data variable only:
   - old: 1,000 source boards, 1,001 variants each, 1,001,000 rows;
-  - new: 3,831,994 raw independent train boards, no Sudoku-specific augmentation.
+  - new: 3,831,994 unaugmented raw train rows.
 - Evaluation: unchanged official test split with 422,786 rows.
 - Model: native FutureSeed GDN, D224/L12/H14/head-dim16, expand-v4.
 - Recurrent compute: loop5, every-loop CE, fixed FutureSeed and loop update.
@@ -67,16 +68,57 @@ Kill criteria:
 
 ## 5. Commands
 
-Pending local browser download, upload, deterministic conversion, GPU-only data
-loader/kernel validation, and detached launch.
+The public `train.csv` was downloaded locally through Kimi WebBridge using
+resumable HTTP Range requests, then gzip-compressed locally and uploaded through
+the AIStation helper. It was not downloaded by the GPU container.
+
+The remote data builder ran from detached source SHA `eeb38f5`:
+
+```bash
+/opt/conda/bin/python scripts/build_sudoku_dataset_from_csv.py \
+  --csv /huyang2/double-loop/data/sudoku-extreme-full/raw/train.csv \
+  --output-dir /huyang2/double-loop/data/sudoku-extreme-full \
+  --expected-rows 3831994 --chunk-rows 8192
+```
+
+A CUDA-only one-step smoke used the same D224/L12, FutureSeed, loop5, and GDN
+Triton path. The first attempt was rejected before GPU work because the CLI does
+not accept the string `hidden_agg_noise_mode=none`; the corrected form is
+`gumbel` with noise scale exactly zero. The second smoke completed forward,
+backward, official eval, and artifact recording on GPU1.
+
+Formal launch script:
+
+`/huyang2/double-loop/artifacts/launch/pscale029/pscale029_launch.sh`
+
+The script verifies the exact detached SHA, tracked-clean worktree, smoke score,
+data arrays, GPU1 visibility, and raw CSV provenance before executing
+`./run.sh full` with the configuration in section 3.
 
 ## 6. Artifacts
 
-Pending.
+- Raw CSV:
+  `/huyang2/double-loop/data/sudoku-extreme-full/raw/train.csv`
+- Raw CSV bytes / lines: `718819925 / 3831995` including the header.
+- Raw CSV SHA256:
+  `64b46674db0148e0d73a16346dadeb2b1c00824d3fca3f85b2ae7037f6b4b38e`
+- Gzip SHA256:
+  `fc24e42059142784034d3ba230aa9a7c4f0a616a987d5f76c94369c00ff2eaaa`
+- Built train arrays:
+  `/huyang2/double-loop/data/sudoku-extreme-full/train`
+- Formal detached worktree:
+  `/huyang2/double-loop/.worktrees/pscale029-full-diversity-formal-eeb38f5-20260711T1518Z`
+- Run directory:
+  `/huyang2/double-loop/.worktrees/pscale029-full-diversity-formal-eeb38f5-20260711T1518Z/runs/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5`
+- Checkpoints:
+  `/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints`
+- Outer PID / Python PID at launch: `2459 / 59579`.
 
 ## 7. Results
 
-Pending.
+Data and CUDA gates passed. The formal run started with `git_dirty=0`,
+`device=cuda`, PyTorch `2.7.0+cu126`, GDN `triton_recurrent`, and about `45 GB`
+allocated on the sole visible A800. Metric checkpoints are pending.
 
 ## 8. Conclusions
 

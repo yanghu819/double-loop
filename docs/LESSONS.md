@@ -913,3 +913,17 @@
   local token quality into globally valid boards. Prefer more independent data
   and useful compute on the efficient D224 frontier over blind width, task
   rules, repair, selector, or loss tables.
+- Full-diversity hard-token scaling remains useful from step6000 to8000, but the
+  marginal return is starting to shrink. P-SCALE-030 resumes the exact P-SCALE-029
+  D224/L12 FutureSeed-GDN state and adds only 2,000 steps of independent 51-64
+  blank boards. Official `51-55` exact rises `0.3926 -> 0.4473` and `56-64`
+  rises `0.1270 -> 0.1621`; fixed holes53/60/64 loop5 exact reaches
+  `0.2559/0.3066/0.2852`. The important mechanism signal is that loop1 stays
+  fixed from step7000 to8000 while loop4/5 improve, and a 64-blank board goes
+  `26 wrong -> 4 -> 0` across loops `1/3/5`. Thus extra hard compute improves
+  late recurrent closure, not merely first-pass coverage. The primary gate
+  passes, but the strong `56-64 >=0.20` or mixed `>=0.32` gate does not. Do not
+  run the identical D224 state to 10000/12000 just to chase a threshold. The
+  next scaling point should pair the proven 3.83M-board diversity with one
+  larger generic backbone and enough tokens for delayed crossover; keep matched
+  no-FS/EqR as a separate paper gate rather than mixing it into this result.

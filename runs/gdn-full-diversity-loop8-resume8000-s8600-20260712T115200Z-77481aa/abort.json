@@ -1,0 +1,19 @@
+{
+  "timestamp_utc": "2026-07-12T12:15:29Z",
+  "plan_id": "P-SCALE-031",
+  "run_name": "gdn-full-diversity-loop8-resume8000-s8600-20260712T115200Z-77481aa",
+  "status": "early_stopped_by_predeclared_roi_rule",
+  "source_sha": "77481aa3dca1a654b08b16006943806674fe6394",
+  "resume_checkpoint": "/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step008000.pt",
+  "saved_checkpoint": "/huyang2/double-loop/models/gdn-full-diversity-loop8-s8600-20260712T115200Z-77481aa/checkpoints/train_state_step008200.pt",
+  "saved_at_step": 8200,
+  "reason": "loop6-8 did not add material board-level correction beyond loop5",
+  "decision_metrics": {
+    "holes53": {"loop5_exact": 0.25, "loop8_exact": 0.251953125, "delta": 0.001953125},
+    "holes60": {"loop5_exact": 0.287109375, "loop8_exact": 0.287109375, "delta": 0.0},
+    "holes64": {"loop5_exact": 0.275390625, "loop8_exact": 0.279296875, "delta": 0.00390625}
+  },
+  "kill_rule": "stop at step8200 when holes60 and holes64 loop8-loop5 are both below +0.01 and later-loop blank changes are negligible",
+  "terminated_exact_pids": [1258, 1256, 1257, 1210],
+  "gpu_after_stop": "0 MiB"
+}

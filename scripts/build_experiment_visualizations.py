@@ -84,6 +84,13 @@ def html_link(href: str, label: str) -> str:
     return f'<a href="{html.escape(href)}">{html.escape(label)}</a>'
 
 
+def dashboard_href(run_relative_path: str) -> str:
+    """Resolve a run-root-relative artifact from visualizations/index.html."""
+    if not run_relative_path or run_relative_path.startswith(("/", "#", "../")):
+        return run_relative_path
+    return f"../{run_relative_path}"
+
+
 def find_repo_from_runs_dir(path: Path) -> Path:
     current = path.resolve()
     while current != current.parent:
@@ -476,13 +483,13 @@ def render_run_html(summary: Dict[str, Any]) -> str:
     title = f"Experiment Dashboard - {summary['run_name']}"
     links = []
     if summary.get("readme"):
-        links.append(html_link(summary["readme"], "README"))
+        links.append(html_link(dashboard_href(summary["readme"]), "README"))
     if summary.get("result_json"):
-        links.append(html_link(summary["result_json"], "result JSON"))
+        links.append(html_link(dashboard_href(summary["result_json"]), "result JSON"))
     links.append(html_link("summary.json", "dashboard data"))
     case_links = summary.get("case_links", [])
     case_items = "".join(
-        f"<li>{html.escape(link['kind'])}: {html_link(link['path'], link['path'])}</li>"
+        f"<li>{html.escape(link['kind'])}: {html_link(dashboard_href(link['path']), link['path'])}</li>"
         for link in case_links
     )
     if not case_items:

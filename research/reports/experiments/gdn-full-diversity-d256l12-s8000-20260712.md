@@ -7,8 +7,10 @@
 - Planned: 2026-07-12 CST
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
-- Experiment source SHA: resolved by the planning commit and recorded in `launch.env`
+- Experiment source SHA: `79fcd7d09b038f64ae86045ae180ac7c1999f91c`
 - Training mode: from scratch, resumable exact checkpoints
+- Fit run: `gdn-full-diversity-d256l12-fit-step1-20260712T124933Z-79fcd7d`
+- Formal run: `gdn-full-diversity-d256l12-s8000-20260712T125118Z-79fcd7d`
 
 ## 2. Mechanism Hypothesis
 
@@ -63,7 +65,27 @@ efficient generic recurrent state, not more parameters or task-specific tricks.
 
 ## 6. Results
 
-Pending.
+### GPU Fit And Launch
+
+- The GPU-only fit completed one real BF16 Triton forward/backward, four-way
+  gradient accumulation, optimizer update, checkpoint write, and GPU eval.
+- Fit step1 CE was `2.3988`; the expected random-initialization holes53 exact
+  was `0.0000`. The fit wrote `train_state_step000001.pt` without NaN or OOM.
+- The formal detached worktree was separately created at the exact source SHA
+  and verified with zero tracked changes before launch.
+- Formal training PID: `3544`; CUDA worker PID at launch: `3597`.
+- GPU monitor PID: `3543`; proactive lease watchdog PID: `4257`.
+- Peak observed allocation through step100: `52,006 MiB` on GPU1. GPU2
+  remained halted.
+- Step100 CE was `1.8322` (`loop1=1.8338`, `loop5=1.8322`). The matched D224
+  reference had CE `1.6346` at step100, so D256 begins slower. This is a risk
+  diagnostic, not an early-stop condition; the hypothesis predicts a delayed
+  crossover.
+- `train_state_step000100.pt` was written successfully. Measured startup-to-
+  checkpoint throughput was approximately `3.7 s/step`.
+
+The run is still in progress. Fixed holes53/60/64 quality decisions begin at
+step1000; the predeclared mechanism decision remains at step4500 or later.
 
 ## 7. Conclusions
 
@@ -71,8 +93,17 @@ Pending.
 
 ## 8. Artifacts And Visualization
 
-Pending. Every scored checkpoint must archive fixed-bucket metrics; the final
-decision checkpoint must include loops1/3/5 hard-case visualizations.
+Remote launch artifacts are under
+`/huyang2/double-loop/artifacts/launch/pscale032/`; checkpoints are under
+`/huyang2/double-loop/models/gdn-full-diversity-d256l12-s8000-20260712T125118Z-79fcd7d/checkpoints/`.
+
+The watchdog begins rollover protection at `2026-07-12T15:11:27Z`, waits for
+the next fully written 100-step checkpoint, terminates only this run's exact
+Python PID, writes `lease_rollover_1.json`, and stops the exact GPU monitor PID.
+Its hard deadline is `2026-07-12T15:26:27Z`, before the current lease expires.
+
+Every scored checkpoint will archive fixed-bucket metrics; the final decision
+checkpoint must include loops1/3/5 hard-case visualizations.
 
 ## 9. Submission Record
 

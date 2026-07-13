@@ -112,6 +112,22 @@ step1000; the predeclared mechanism decision remains at step4500 or later.
   standard library; no dependency was installed and training semantics did not
   change.
 
+### Step3000 Fixed Evaluation
+
+The three fixed buckets at step3000 were:
+
+| Holes | Loop1 exact | Loop5 exact | Loop gain | Loop5 blank acc | D224 loop5 exact |
+|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0137 | 0.0176 | +0.0039 | 0.5512 | 0.0273 |
+| 60 | 0.0117 | 0.0293 | +0.0176 | 0.5667 | 0.0332 |
+| 64 | 0.0137 | 0.0371 | +0.0234 | 0.5534 | 0.0430 |
+
+D256 remains below D224 in all three exact buckets, so this is not a positive
+scaling result yet. However, it closed most of the large step1000 deficit by
+step3000, and harder buckets show larger loop1-to-loop5 gains. That is the
+predicted shape of a delayed optimization crossover and justifies continuing
+to the predeclared step4500 gate without changing the configuration.
+
 ## 7. Conclusions
 
 Pending.

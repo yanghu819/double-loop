@@ -87,6 +87,31 @@ efficient generic recurrent state, not more parameters or task-specific tricks.
 The run is still in progress. Fixed holes53/60/64 quality decisions begin at
 step1000; the predeclared mechanism decision remains at step4500 or later.
 
+### First Lease And Exact Resume
+
+- The first lease completed through step2600. The checkpoint-safe watchdog
+  stopped CUDA worker PID `3597` immediately after
+  `train_state_step002600.pt` was fully written, then archived
+  `lease_rollover_1.json` at `2026-07-12T15:12:20Z`.
+- Step1000 had CE `1.1277`, holes53 exact `0.0000`, and blank accuracy
+  `0.4599`. The matched D224 reference was CE `0.9971`, exact `0.0176`, and
+  blank accuracy `0.5145`, so D256 remained behind at the first fixed gate.
+- This did not trigger a stop: the experiment explicitly forbids a quality
+  decision at step1000 because the tested hypothesis is a delayed crossover.
+- Training CE reached `0.8812` at step2600; loop1 CE was `1.0089` while loop5
+  CE was `0.8812`, so recurrent depth was already reducing supervised loss.
+- GPU1 was restarted on `2026-07-13`; it remained queued for approximately 25
+  minutes. Kimi WebBridge and the AIStation API agreed on Pending/Running state,
+  while GPU2 remained halted.
+- The exact step2600 checkpoint, optimizer state, scheduler state, and RNG were
+  restored in run
+  `gdn-full-diversity-d256l12-resume2600-s8000-20260713T053631Z-79fcd7d`.
+  The resumed training PID is `263`; its GPU monitor PID is `262`.
+- A missing container-level `jq` binary caused the first resume preflight to
+  exit before training. The launcher now parses rollover JSON with Python's
+  standard library; no dependency was installed and training semantics did not
+  change.
+
 ## 7. Conclusions
 
 Pending.
@@ -101,6 +126,12 @@ The watchdog begins rollover protection at `2026-07-12T15:11:27Z`, waits for
 the next fully written 100-step checkpoint, terminates only this run's exact
 Python PID, writes `lease_rollover_1.json`, and stops the exact GPU monitor PID.
 Its hard deadline is `2026-07-12T15:26:27Z`, before the current lease expires.
+
+The second-lease watchdog PID is `585`. It begins rollover protection at
+`2026-07-13T08:40:07Z`, after the planned step6000 evaluation window, and has a
+hard deadline of `2026-07-13T09:00:07Z`. It writes
+`lease_rollover_2.json` only after a complete checkpoint and stops the exact
+resume and monitor PIDs.
 
 Every scored checkpoint will archive fixed-bucket metrics; the final decision
 checkpoint must include loops1/3/5 hard-case visualizations.

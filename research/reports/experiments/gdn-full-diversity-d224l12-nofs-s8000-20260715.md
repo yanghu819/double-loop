@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-033`
-- Status: in progress, step3000 scored; predeclared step4500 stop gate next
+- Status: complete; stopped at the predeclared step4500 low-ROI gate
 - Planned: 2026-07-15 CST
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -212,6 +212,71 @@ predeclared delayed-scaling rule. Continue the same clean no-FS arm to step4500.
 If holes53/60/64 exact all remain below `0.02` and blank all remain below `0.55`,
 stop rather than rescue the control with a new loss, schedule, seed, or model.
 
+### Step4500 Final Gate
+
+The matched no-FS continuation completed through an exact step4500 checkpoint.
+GPU1's development lease expired after the exact step4000 checkpoint, so the
+first leg recorded `abort.json` and the second leg restored model, optimizer,
+scheduler, and RNG state from that checkpoint. This was an infrastructure
+rollover, not an experimental reset. GPU2 remained halted throughout.
+
+The no-FS training curve remained flat while the FutureSeed model continued to
+improve:
+
+| Step | no-FS CE | FS CE | no-FS minus FS |
+|---:|---:|---:|---:|
+| 1000 | 1.6580 | 0.9971 | +0.6609 |
+| 3000 | 1.6379 | 0.7939 | +0.8440 |
+| 4500 | 1.6372 | 0.6415 | +0.9957 |
+
+The complete step4500 fixed-bucket comparison is:
+
+| Holes | no-FS exact | FS exact | no-FS blank | FS blank | FS blank gain |
+|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0000 | 0.1055 | 0.2755 | 0.6166 | +0.3412 |
+| 60 | 0.0000 | 0.1172 | 0.2777 | 0.6332 | +0.3555 |
+| 64 | 0.0000 | 0.1230 | 0.2766 | 0.6133 | +0.3367 |
+
+Averaged over holes53/60/64, FutureSeed loop5 exact/blank is
+`0.1152/0.6211`, versus `0.0000/0.2766` without FutureSeed. The no-FS mixed
+evaluation remains exact zero for loops1-5, and blank accuracy only changes
+`0.2745 -> 0.2760`. FutureSeed changes mixed exact
+`0.0234 -> 0.0234 -> 0.0684 -> 0.1055 -> 0.1113` and blank
+`0.5396 -> 0.5929 -> 0.6198 -> 0.6270 -> 0.6283`. Later loops become useful
+only after FutureSeed has opened the underlying representation.
+
+The positional diagnostic still isolates the intended information mechanism.
+At loop5, fixed-bucket early/middle/late blank accuracy is
+`0.2085/0.2696/0.3518` without FutureSeed and
+`0.6216/0.6193/0.6223` with FutureSeed. More no-FS training did not remove the
+large left-to-right bias; terminal-state seeding nearly removes it.
+
+The same checkpoint pair was evaluated with the same official procedure.
+FutureSeed versus no-FS loop5 exact/blank is `1.0000/1.0000 vs
+0.0000/0.4187` for blanks46-50, `0.1875/0.7250 vs 0.0000/0.2862` for
+blanks51-55, and `0.0605/0.5447 vs 0.0000/0.2641` for blanks56-64. Visual
+cases show FutureSeed changing `23 wrong -> 0 -> 0` and
+`24 wrong -> 0 -> 0` across loops1/3/5. Matched no-FS cases only change
+`31 -> 29 -> 29` and `35 -> 33 -> 33`, with duplicate conflicts fixed or
+worse. The effect is therefore not a broad local-accuracy artifact.
+
+The two provenance SHAs differ because later commits added experiment records
+and visualization support. A direct diff verified that
+`study_rwkv_futureseed_loop.py`, `run.sh`, and `scripts/rwkv_maze_probe.py` are
+byte-identical between `eeb38f5` and `503f367`; excluding documentation and run
+records, the only changed source file is the visualization builder. The core
+model and training semantics are therefore matched.
+
+All three no-FS fixed buckets satisfy the predeclared stop condition: exact is
+below `0.02` and blank is below `0.55`. P-SCALE-033 stops at step4500. Do not
+run no-FS to step6000/8000 or rescue it with a seed, LR, loss, schedule, noise,
+or width sweep. The supported claim is that FutureSeed supplies a strong cheap
+future-context initialization and makes subsequent recurrent computation
+useful under this budget. The remaining paper limitation is equally important:
+this does not yet prove a quality-efficiency advantage over an explicit
+bidirectional or noncausal baseline. That matched quality/throughput/VRAM test
+is the next high-information experiment.
+
 ## 7. Artifacts And Visualization
 
 The step1000 archive includes config, score, logs, source SHA, fixed evaluation,
@@ -225,15 +290,21 @@ SHA256 values are:
 - exact step1000 eval and visualization: `4f74ad628dd1d77cda63c48029c3989d4cf369c5704b4897198837eba4049e2c`
 - step1100-to3000 no-FS run: `7be7c9088a11d5d6a52b1d24e744b94abf645f1e8fa050a0a3788748e5acdbc5`
 - zero-training FutureSeed step3000 visualization eval: `35a3360820ef3585834e814298bf75a394dc1f5e06c44ed3842ad74a4e76cc31`
+- step3000-to4500 no-FS continuation, including the step4000 lease rollover:
+  `b7c1f2081e0a3ad7ef06fd58ca51d8c3abcd9a945a690a435d87defd3444db6d`
+- zero-training FutureSeed step4500 visualization eval:
+  `639e69d1a570121399e5e9a6d107ca1422f578e63dbfddb0982b7abfe086e1e2`
 
 The step3000 matched comparison page includes the complete 100-3000 CE curves,
 loop-level blank accuracy, sequence-position bias, fixed and official bucket
 tables, and direct links to FutureSeed solved/almost-solved cases and no-FS
 hard failures.
 
-Later scored checkpoints will use the same artifact contract. Intermediate
-lease rollovers archive an exact checkpoint and `lease_rollover.json` or
-`abort.json`; checkpoints themselves remain outside Git.
+The final step4500 comparison page includes the full decision, training CE,
+loop-level exact, fixed and official buckets, positional bias, and direct links
+to solved, almost-solved, and hard-failure cases. Intermediate lease rollovers
+archive an exact checkpoint and `lease_rollover.json` or `abort.json`;
+checkpoints themselves remain outside Git.
 
 ## 8. Submission Record
 

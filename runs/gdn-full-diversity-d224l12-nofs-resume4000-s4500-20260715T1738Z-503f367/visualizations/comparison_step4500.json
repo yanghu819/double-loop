@@ -1,0 +1,48 @@
+{
+  "plan_id": "P-SCALE-033",
+  "decision": "stop_no_futureseed_at_predeclared_step4500_gate",
+  "mechanism_claim": "FutureSeed materially improves opening, positional balance, and the usefulness of recurrent loops under matched compute.",
+  "limitation": "This comparison is against the same causal GDN without FutureSeed; it does not yet establish a quality-efficiency win over an explicit bidirectional or noncausal baseline.",
+  "matched_setup": {
+    "steps": 4500,
+    "model": "GDN D224/L12/H14/D16 expand-v4",
+    "max_loops": 5,
+    "loop_loss": "all",
+    "effective_batch": 128,
+    "independent_train_boards": 3831994,
+    "kernel": "BF16 Triton recurrent",
+    "core_training_code_byte_identical": true,
+    "futureseed_source_sha": "eeb38f5b6f9b6c1b1df0bbd3ca149daec06a171d",
+    "no_futureseed_source_sha": "503f367b4df84509feabe33e8c40edaeb5c2fb63"
+  },
+  "train_ce": {
+    "steps": [1000, 3000, 4500],
+    "futureseed": [0.9971, 0.7939, 0.6414851],
+    "no_futureseed": [1.6580, 1.6379, 1.63722986],
+    "step4500_no_futureseed_minus_futureseed": 0.99574476
+  },
+  "mixed_loop_exact": {
+    "loops": [1, 2, 3, 4, 5],
+    "futureseed": [0.0234375, 0.0234375, 0.0683594, 0.1054688, 0.1113281],
+    "no_futureseed": [0.0, 0.0, 0.0, 0.0, 0.0]
+  },
+  "fixed_loop5": {
+    "53": {"futureseed_exact": 0.105469, "no_futureseed_exact": 0.0, "futureseed_blank": 0.616649, "no_futureseed_blank": 0.275496},
+    "60": {"futureseed_exact": 0.117188, "no_futureseed_exact": 0.0, "futureseed_blank": 0.633242, "no_futureseed_blank": 0.277731},
+    "64": {"futureseed_exact": 0.123047, "no_futureseed_exact": 0.0, "futureseed_blank": 0.613298, "no_futureseed_blank": 0.276576}
+  },
+  "position_thirds_loop5_mean": {
+    "futureseed": {"early": 0.6215685, "middle": 0.6193001, "late": 0.6223167},
+    "no_futureseed": {"early": 0.2084751, "middle": 0.2695786, "late": 0.3518053}
+  },
+  "official_loop5": {
+    "46-50": {"futureseed_exact": 1.0, "no_futureseed_exact": 0.0, "futureseed_blank": 1.0, "no_futureseed_blank": 0.4187412},
+    "51-55": {"futureseed_exact": 0.1875, "no_futureseed_exact": 0.0, "futureseed_blank": 0.7250206, "no_futureseed_blank": 0.2862206},
+    "56-64": {"futureseed_exact": 0.0605469, "no_futureseed_exact": 0.0, "futureseed_blank": 0.5446673, "no_futureseed_blank": 0.2641361}
+  },
+  "archives": {
+    "no_futureseed_metadata_sha256": "b7c1f2081e0a3ad7ef06fd58ca51d8c3abcd9a945a690a435d87defd3444db6d",
+    "futureseed_eval_metadata_sha256": "639e69d1a570121399e5e9a6d107ca1422f578e63dbfddb0982b7abfe086e1e2"
+  },
+  "next_high_information_gate": "Compare native FutureSeed against an explicit bidirectional/noncausal baseline at matched quality, throughput, memory, and parameter count."
+}

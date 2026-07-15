@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-SCALE-033: FutureSeed vs no-FS at step4500</title>
+  <style>
+    :root{--ink:#17202a;--muted:#5f6b76;--line:#d8dee4;--paper:#fff;--wash:#f4f6f8;--fs:#16794a;--nofs:#b42318;--blue:#2368a2}
+    *{box-sizing:border-box}body{margin:0;background:var(--wash);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,sans-serif;letter-spacing:0}
+    header{background:var(--paper);border-bottom:1px solid var(--line)}.wrap{width:min(1180px,calc(100% - 32px));margin:0 auto}header .wrap{padding:22px 0 18px}
+    h1{margin:0 0 6px;font-size:25px;letter-spacing:0}h2{margin:0 0 10px;font-size:17px;letter-spacing:0}p{margin:0}.sub,footer{color:var(--muted)}main{padding:20px 0 36px}
+    .verdict{background:var(--paper);border-left:4px solid var(--fs);padding:14px 16px;margin-bottom:16px}.verdict strong{display:block;margin-bottom:4px}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}.stat,.panel{background:var(--paper);border:1px solid var(--line);border-radius:6px}
+    .stat{padding:12px;min-width:0}.stat>span{display:block;color:var(--muted);font-size:12px}.stat b{display:block;margin-top:3px;font-size:19px;overflow-wrap:anywhere}.stat b span{display:inline;font-size:inherit}
+    .good{color:var(--fs)}.bad{color:var(--nofs)}.panel{padding:16px;margin-bottom:16px}.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}canvas{display:block;width:100%;height:300px}
+    .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;color:var(--muted)}.key::before{content:"";display:inline-block;width:16px;height:3px;margin:0 7px 3px 0;background:currentColor}.fs{color:var(--fs)}.nofs{color:var(--nofs)}
+    table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-size:12px;font-weight:600}tr:last-child td{border-bottom:0}
+    .cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.case{border:1px solid var(--line);border-radius:6px;padding:12px;color:inherit;text-decoration:none;min-width:0}.case:hover{border-color:var(--blue)}.case b{display:block;margin-bottom:4px}.case span{display:block;color:var(--muted);overflow-wrap:anywhere}.case.fs-case{border-left:4px solid var(--fs)}.case.nofs-case{border-left:4px solid var(--nofs)}
+    .links{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}.links a{color:var(--blue)}footer{margin-top:10px;font-size:12px}
+    @media(max-width:800px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.charts,.cases{grid-template-columns:1fr}.table-scroll{overflow-x:auto}canvas{height:270px}}
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <h1>FutureSeed vs no-FS：同样训练 4500 步</h1>
+    <p class="sub">D224/L12 GDN、383 万独立题、loop5、每轮 CE、batch、curriculum 和 BF16 Triton kernel 全部相同。核心模型与训练代码逐字节一致，唯一机制变量是 FutureSeed scale 1 或 0。</p>
+  </div></header>
+  <main class="wrap">
+    <section class="verdict">
+      <strong>结论：FutureSeed 让这个单向 GDN 打开，no-FS 多训练到 4500 步仍没有追上。</strong>
+      FutureSeed 已经能解完整 hard board，且 loop1 到 loop5 持续修题；no-FS 的 CE 仍卡在 1.64，整盘 exact 全为 0，五轮输出几乎不变。预先写好的停止条件已触发，所以停止 no-FS 长跑，不做救火式调参。
+    </section>
+    <section class="stats">
+      <div class="stat"><span>Step4500 CE，no-FS 减 FS</span><b class="bad">+0.9957</b></div>
+      <div class="stat"><span>固定 h53/60/64 blank 平均，FS / no-FS</span><b><span class="good">0.621</span> / <span class="bad">0.277</span></b></div>
+      <div class="stat"><span>固定 h53/60/64 exact 平均，FS / no-FS</span><b><span class="good">0.115</span> / <span class="bad">0</span></b></div>
+      <div class="stat"><span>Mixed exact，loop1→5 增益</span><b><span class="good">+0.0879</span> / <span class="bad">0</span></b></div>
+    </section>
+    <section class="charts">
+      <div class="panel"><h2>训练 CE：no-FS 平台没有被更多训练打破</h2><canvas id="ce" role="img" aria-label="Training cross entropy at steps 1000, 3000 and 4500"></canvas><div class="legend"><span class="key fs">FutureSeed</span><span class="key nofs">No FutureSeed</span></div></div>
+      <div class="panel"><h2>Mixed boards：后续 loop 是否产生完整解</h2><canvas id="loops" role="img" aria-label="Full exact accuracy by recurrent loop at step4500"></canvas><div class="legend"><span class="key fs">FutureSeed</span><span class="key nofs">No FutureSeed</span></div></div>
+    </section>
+    <section class="panel">
+      <h2>序列位置：FutureSeed 补上前部格子缺失的未来信息</h2>
+      <p class="sub">固定 holes53/60/64 的 loop5 blank accuracy 平均值。no-FS 越靠序列后面越容易，因为单向状态看过更多格子；FutureSeed 把这个位置差距大幅压平。</p>
+      <canvas id="position" role="img" aria-label="Blank accuracy by early middle and late sequence position"></canvas><div class="legend"><span class="key fs">FutureSeed</span><span class="key nofs">No FutureSeed</span></div>
+    </section>
+    <section class="panel"><h2>固定 hard buckets</h2><div class="table-scroll"><table>
+      <thead><tr><th>挖空数</th><th>FS exact</th><th>no-FS exact</th><th>FS blank</th><th>no-FS blank</th><th>blank 差值</th></tr></thead>
+      <tbody>
+        <tr><td>53</td><td class="good">0.1055</td><td class="bad">0.0000</td><td>0.6166</td><td>0.2755</td><td class="good">+0.3412</td></tr>
+        <tr><td>60</td><td class="good">0.1172</td><td class="bad">0.0000</td><td>0.6332</td><td>0.2777</td><td class="good">+0.3555</td></tr>
+        <tr><td>64</td><td class="good">0.1230</td><td class="bad">0.0000</td><td>0.6133</td><td>0.2766</td><td class="good">+0.3367</td></tr>
+      </tbody>
+    </table></div></section>
+    <section class="panel"><h2>Official test blank ranges</h2><div class="table-scroll"><table>
+      <thead><tr><th>挖空区间</th><th>FS exact</th><th>no-FS exact</th><th>FS blank</th><th>no-FS blank</th></tr></thead>
+      <tbody>
+        <tr><td>46-50</td><td class="good">1.0000</td><td class="bad">0.0000</td><td>1.0000</td><td>0.4187</td></tr>
+        <tr><td>51-55</td><td class="good">0.1875</td><td class="bad">0.0000</td><td>0.7250</td><td>0.2862</td></tr>
+        <tr><td>56-64</td><td class="good">0.0605</td><td class="bad">0.0000</td><td>0.5447</td><td>0.2641</td></tr>
+      </tbody>
+    </table></div></section>
+    <section class="panel">
+      <h2>具体题：FS 的 loop 在修，no-FS 的 loop 基本复制</h2>
+      <div class="cases">
+        <a class="case fs-case" href="../../gdn-full-diversity-d224l12-fs-step4500-evalviz-20260715T1811Z-eeb38f5/output/case_bank/official_b51_55/official_b51_55_solved_by_loop_01_b0191.html"><b>FS，51-55 blanks，Case 191</b><span>错格 23→0→0；冲突 20→0→0</span></a>
+        <a class="case fs-case" href="../../gdn-full-diversity-d224l12-fs-step4500-evalviz-20260715T1811Z-eeb38f5/output/case_bank/official_b51_55/official_b51_55_almost_solved_01_b0043.html"><b>FS，51-55 blanks，Case 43</b><span>错格 15→4→1；冲突 23→12→3</span></a>
+        <a class="case fs-case" href="../../gdn-full-diversity-d224l12-fs-step4500-evalviz-20260715T1811Z-eeb38f5/output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0113.html"><b>FS，56-64 blanks，Case 113</b><span>错格 24→0→0；冲突 23→0→0</span></a>
+        <a class="case fs-case" href="../../gdn-full-diversity-d224l12-fs-step4500-evalviz-20260715T1811Z-eeb38f5/output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0087.html"><b>FS，56-64 blanks，Case 87</b><span>错格 20→5→2；冲突 25→9→4</span></a>
+        <a class="case nofs-case" href="../output/case_bank/official_b51_55/official_b51_55_hard_failure_01_b0121.html"><b>no-FS，51-55 blanks，Case 121</b><span>错格 31→29→29；冲突 26→27→27</span></a>
+        <a class="case nofs-case" href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0179.html"><b>no-FS，56-64 blanks，Case 179</b><span>错格 35→33→33；冲突 27→27→27</span></a>
+      </div>
+      <div class="links"><a href="../../gdn-full-diversity-d224l12-fs-step4500-evalviz-20260715T1811Z-eeb38f5/visualizations/index.html">FS 完整 dashboard</a><a href="index.html">no-FS 完整 dashboard</a><a href="comparison_step4500.json">机器可读对比 JSON</a></div>
+      <footer>每条案例均展示 loop1→loop3→loop5。没有 search、repair、selector、noise 或 Sudoku 专用规则。FS checkpoint SHA 为 eeb38f5；no-FS source SHA 为 503f367。核心模型、训练脚本和 runner 在两 SHA 间无差异，SHA 差别只来自实验记录与可视化工具。</footer>
+    </section>
+  </main>
+  <script>
+    const colors={fs:'#16794a',nofs:'#b42318'};
+    const ce={fs:[.9971,.7939,.6415],nofs:[1.6580,1.6379,1.6372]};
+    const loopVals={fs:[.0234375,.0234375,.0683594,.1054688,.1113281],nofs:[0,0,0,0,0]};
+    const positionVals={fs:[.6215685,.6193001,.6223167],nofs:[.2084751,.2695786,.3518053]};
+    function lineChart(canvas,labels,series,ymin,ymax){
+      const dpr=window.devicePixelRatio||1,r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);
+      const c=canvas.getContext('2d');c.scale(dpr,dpr);const w=r.width,h=r.height,p={l:48,r:14,t:12,b:38},iw=w-p.l-p.r,ih=h-p.t-p.b;c.font='11px ui-sans-serif,system-ui,sans-serif';
+      for(let i=0;i<=4;i++){const v=ymin+(ymax-ymin)*i/4,y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;c.strokeStyle='#e3e7eb';c.lineWidth=1;c.beginPath();c.moveTo(p.l,y);c.lineTo(w-p.r,y);c.stroke();c.fillStyle='#5f6b76';c.textAlign='right';c.textBaseline='middle';c.fillText(v.toFixed(2),p.l-7,y)}
+      labels.forEach((v,i)=>{const x=p.l+iw*i/(labels.length-1);c.fillStyle='#5f6b76';c.textAlign='center';c.textBaseline='top';c.fillText(String(v),x,p.t+ih+9)});
+      Object.entries(series).forEach(([name,vals])=>{c.strokeStyle=colors[name];c.fillStyle=colors[name];c.lineWidth=3;c.beginPath();vals.forEach((v,i)=>{const x=p.l+iw*i/(vals.length-1),y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();vals.forEach((v,i)=>{const x=p.l+iw*i/(vals.length-1),y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;c.beginPath();c.arc(x,y,3,0,Math.PI*2);c.fill()})});
+    }
+    function draw(){lineChart(document.getElementById('ce'),[1000,3000,4500],ce,.55,1.75);lineChart(document.getElementById('loops'),[1,2,3,4,5],loopVals,0,.13);lineChart(document.getElementById('position'),['early','middle','late'],positionVals,.15,.67)}
+    draw();window.addEventListener('resize',draw);
+  </script>
+</body>
+</html>

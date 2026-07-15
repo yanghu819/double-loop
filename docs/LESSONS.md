@@ -958,6 +958,20 @@
   an aggregate score alone: without terminal-state seeding, extra training and
   extra loops do not remove the directional information deficit.
 
+  The predeclared long-training gate closes the causal test at step4500. no-FS
+  remains at CE `1.6372`, fixed holes53/60/64 exact all0, and blank
+  `0.2755/0.2777/0.2766`; FutureSeed reaches CE `0.6415`, exact
+  `0.1055/0.1172/0.1230`, and blank `0.6166/0.6332/0.6133`. Mixed FutureSeed
+  exact rises `0.0234 -> 0.1113` across loop1-5, while no-FS stays zero. The
+  positional gap also persists at `0.2085/0.2696/0.3518` without FutureSeed
+  versus a nearly flat `0.6216/0.6193/0.6223` with it. Core model/training
+  files were verified byte-identical across the two provenance SHAs. Stop the
+  no-FS arm at4500 and do not rescue it with hyperparameter sweeps. The honest
+  claim is cheap future-context initialization plus enabled recurrent
+  refinement under matched causal compute; the next required paper gate is an
+  explicit bidirectional/noncausal baseline measured on quality, throughput,
+  VRAM, and parameter count.
+
 - 2026-07-15: In the staged Sudoku runner, the global training endpoint is the
   sum of `HOLE_STAGES`; `FULL_STEPS` does not truncate a staged resume. For an
   exact resume to global step N, stage counts must sum to N. A resume that has

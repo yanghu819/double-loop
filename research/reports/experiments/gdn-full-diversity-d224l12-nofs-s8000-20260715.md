@@ -3,10 +3,11 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-033`
-- Status: approved for launch
+- Status: in progress, exact step500 checkpoint preserved
 - Planned: 2026-07-15 CST
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
+- Experiment source SHA: `503f367b4df84509feabe33e8c40edaeb5c2fb63`
 - Training mode: from scratch with exact resumable checkpoints
 
 ## 2. Mechanism Hypothesis
@@ -61,7 +62,43 @@ loss, width, schedule, or noise sweeps.
 
 ## 6. Results
 
-Pending.
+### GPU Smoke And First Lease
+
+The one-step GPU smoke completed a real BF16 Triton forward/backward pass,
+four-way gradient accumulation, optimizer update, checkpoint write, GPU eval,
+and visualization. It confirmed `git_dirty=0`, `fs_state_norm=0`, and no CPU
+fallback, NaN, or OOM.
+
+The formal run is
+`gdn-full-diversity-d224l12-nofs-s8000-20260715T1235Z-503f367`. It used
+`43,760 MiB` on GPU1. An initial launcher attempt correctly refused to run
+because smoke had refreshed tracked leaderboard/index files; those two
+smoke-generated files were restored to source SHA before the successful launch.
+No model code or configuration changed.
+
+Early matched training CE is:
+
+| Step | no-FS CE | FS CE | no-FS minus FS | no-FS loop5-loop1 | FS loop5-loop1 |
+|---:|---:|---:|---:|---:|---:|
+| 100 | 1.6789 | 1.6346 | +0.0443 | +0.0016 | +0.0012 |
+| 200 | 1.8222 | 1.6090 | +0.2132 | +0.0003 | +0.0005 |
+| 300 | 1.7550 | 1.2472 | +0.5078 | +0.0012 | -0.0083 |
+| 400 | 1.7298 | 1.0966 | +0.6332 | -0.0010 | -0.0169 |
+| 500 | 1.6806 | 1.0725 | +0.6081 | -0.0010 | -0.0256 |
+
+This is already a meaningful opening diagnostic: without FutureSeed, local CE
+learning continues, but it is much slower after the hard stage begins. By
+step300-500 the FS model also gets an increasingly useful reduction from later
+loops, while the no-FS loop reduction remains nearly zero. This supports the
+mechanism prediction that future initialization makes recurrent computation
+usable earlier. It is not yet a final accuracy conclusion; no fixed hard-bucket
+evaluation is scheduled before step1000, and delayed scaling remains possible.
+
+The first lease ran from `2026-07-15T12:55:56Z` to `13:20:34Z`. The watchdog
+waited for a complete post-guard checkpoint, terminated only Python PID `4081`,
+and wrote `lease_rollover.json` for exact step500. GPU1 returned to zero usage;
+GPU2 remained halted. The next leg resumes optimizer, scheduler, and RNG state
+from `train_state_step000500.pt` and targets the predeclared step1000 gate.
 
 ## 7. Artifacts And Visualization
 

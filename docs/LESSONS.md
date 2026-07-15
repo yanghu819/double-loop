@@ -927,3 +927,23 @@
   next scaling point should pair the proven 3.83M-board diversity with one
   larger generic backbone and enough tokens for delayed crossover; keep matched
   no-FS/EqR as a separate paper gate rather than mixing it into this result.
+
+- 2026-07-15: The matched D224 full-diversity no-FutureSeed control gives a
+  strong early causal result. At step1000, no-FS CE is `1.6580` versus `0.9971`
+  with FutureSeed. On holes53/60/64, no-FS exact is zero and blank accuracy is
+  only `0.2657/0.2677/0.2671`; matched FutureSeed reaches exact
+  `0.0176/0.0215/0.0215` and blank accuracy `0.5145/0.5254/0.5250`. The no-FS
+  model's loop1-5 outputs are nearly unchanged, and visual hard cases retain
+  roughly 27 duplicate conflicts. This supports FutureSeed as an optimization
+  and sample-efficiency mechanism, but it is not yet the final long-training
+  claim because full-diversity models can accelerate after step3000. Continue
+  only the predeclared matched arm; do not rescue no-FS with a hyperparameter or
+  objective sweep.
+
+- 2026-07-15: In the staged Sudoku runner, the global training endpoint is the
+  sum of `HOLE_STAGES`; `FULL_STEPS` does not truncate a staged resume. For an
+  exact resume to global step N, stage counts must sum to N. A resume that has
+  already reached N can be evaluated without more optimizer updates by using
+  stage counts that sum to N. Preserve the extra completed checkpoint and write
+  `abort.json` when a legacy launcher overshoots; never silently discard valid
+  training state.

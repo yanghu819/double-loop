@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-SCALE-033: FutureSeed vs no-FS at step1000</title>
+  <style>
+    :root { --ink:#17202a; --muted:#5f6b76; --line:#d8dee4; --paper:#fff; --wash:#f4f6f8; --fs:#16794a; --nofs:#b42318; --blue:#2368a2; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--wash); color:var(--ink); font:14px/1.45 ui-sans-serif,system-ui,sans-serif; letter-spacing:0; }
+    header { background:var(--paper); border-bottom:1px solid var(--line); }
+    .wrap { width:min(1180px,calc(100% - 32px)); margin:0 auto; }
+    header .wrap { padding:22px 0 18px; }
+    h1 { margin:0 0 6px; font-size:25px; letter-spacing:0; }
+    h2 { margin:0 0 12px; font-size:17px; letter-spacing:0; }
+    p { margin:0; }
+    .sub { color:var(--muted); max-width:880px; }
+    main { padding:20px 0 36px; }
+    .verdict { background:var(--paper); border-left:4px solid var(--fs); padding:14px 16px; margin-bottom:16px; }
+    .verdict strong { display:block; margin-bottom:4px; }
+    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+    .stat,.panel { background:var(--paper); border:1px solid var(--line); border-radius:6px; }
+    .stat { padding:12px; min-width:0; }
+    .stat span { display:block; color:var(--muted); font-size:12px; }
+    .stat b { display:block; margin-top:3px; font-size:19px; }
+    .good { color:var(--fs); } .bad { color:var(--nofs); }
+    .panel { padding:16px; margin-bottom:16px; }
+    .charts { display:grid; grid-template-columns:1.45fr 1fr; gap:16px; }
+    canvas { display:block; width:100%; height:300px; }
+    .legend { display:flex; gap:18px; margin-top:8px; color:var(--muted); }
+    .key::before { content:""; display:inline-block; width:16px; height:3px; margin:0 7px 3px 0; background:currentColor; }
+    .fs { color:var(--fs); } .nofs { color:var(--nofs); }
+    table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+    th,td { border-bottom:1px solid var(--line); padding:9px 8px; text-align:right; white-space:nowrap; }
+    th:first-child,td:first-child { text-align:left; }
+    th { color:var(--muted); font-size:12px; font-weight:600; }
+    tr:last-child td { border-bottom:0; }
+    .cases { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .case { border:1px solid var(--line); border-radius:6px; padding:12px; color:inherit; text-decoration:none; }
+    .case:hover { border-color:var(--blue); }
+    .case b { display:block; margin-bottom:4px; }
+    .case span,footer { color:var(--muted); }
+    footer { margin-top:12px; font-size:12px; }
+    @media (max-width:800px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr))}.charts,.cases{grid-template-columns:1fr}.table-scroll{overflow-x:auto}canvas{height:270px} }
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <h1>FutureSeed vs no-FS at step1000</h1>
+    <p class="sub">Matched D224/L12 GDN, 3.83M independent boards, loop5, every-loop CE, curriculum, batch, and kernels. Only FutureSeed scale changes from 1 to 0.</p>
+  </div></header>
+  <main class="wrap">
+    <section class="verdict">
+      <strong>FutureSeed opens the recurrent learning regime much earlier.</strong>
+      No-FS still learns local tokens, but its CE stalls near 1.66, its blank accuracy stays near 0.27, and later loops barely change predictions. This is an opening result, not yet a final long-training verdict.
+    </section>
+    <section class="stats">
+      <div class="stat"><span>Step1000 CE gap, no-FS minus FS</span><b class="bad">+0.6609</b></div>
+      <div class="stat"><span>Holes53 blank gain from FS</span><b class="good">+0.2488</b></div>
+      <div class="stat"><span>Holes60 blank gain from FS</span><b class="good">+0.2577</b></div>
+      <div class="stat"><span>Hard exact, no-FS vs FS</span><b>0 vs 0.018-0.021</b></div>
+    </section>
+    <section class="charts">
+      <div class="panel">
+        <h2>Training CE</h2>
+        <canvas id="ce" role="img" aria-label="Training CE over steps 100 through 1000 for FutureSeed and no-FutureSeed"></canvas>
+        <div class="legend"><span class="key fs">FutureSeed</span><span class="key nofs">No FutureSeed</span></div>
+      </div>
+      <div class="panel">
+        <h2>Holes53 blank accuracy by loop</h2>
+        <canvas id="loops" role="img" aria-label="Blank accuracy by loop for FutureSeed and no-FutureSeed at step1000"></canvas>
+        <div class="legend"><span class="key fs">FutureSeed</span><span class="key nofs">No FutureSeed</span></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Fixed hard-bucket results</h2>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Holes</th><th>FS exact</th><th>no-FS exact</th><th>FS blank</th><th>no-FS blank</th><th>Blank delta</th></tr></thead>
+        <tbody>
+          <tr><td>53</td><td>0.0176</td><td>0.0000</td><td>0.5145</td><td>0.2657</td><td class="good">+0.2488</td></tr>
+          <tr><td>60</td><td>0.0215</td><td>0.0000</td><td>0.5254</td><td>0.2677</td><td class="good">+0.2577</td></tr>
+          <tr><td>64</td><td>0.0215</td><td>0.0000</td><td>0.5250</td><td>0.2671</td><td class="good">+0.2579</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+    <section class="panel">
+      <h2>No-FS hard failures</h2>
+      <div class="cases">
+        <a class="case" href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0076.html"><b>Case 76</b><span>Wrong cells: 34 -> 33 -> 33; conflicts: 27 -> 27 -> 27</span></a>
+        <a class="case" href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_02_b0203.html"><b>Case 203</b><span>Wrong cells: 37 -> 34 -> 34; conflicts: 27 -> 27 -> 27</span></a>
+        <a class="case" href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_03_b0060.html"><b>Case 60</b><span>Wrong cells: 34 -> 35 -> 35; conflicts: 26 -> 26 -> 26</span></a>
+      </div>
+      <footer>Each sequence is loop1 -> loop3 -> loop5. No search, repair, selector, noise, or Sudoku-specific rule.</footer>
+    </section>
+  </main>
+  <script>
+    const colors={fs:'#16794a',nofs:'#b42318'},steps=[100,200,300,400,500,600,700,800,900,1000];
+    const ce={fs:[1.6346,1.6090,1.2472,1.0966,1.0725,1.0061,.9871,.9865,.9688,.9971],nofs:[1.6789,1.8222,1.7550,1.7298,1.6806,1.6754,1.6792,1.6676,1.6653,1.6580]};
+    const loopVals={fs:[.4945,.5148,.5157,.5152,.5145],nofs:[.2653,.2663,.2650,.2644,.2647]};
+    function lineChart(canvas,labels,series,ymin,ymax){
+      const dpr=window.devicePixelRatio||1,r=canvas.getBoundingClientRect(); canvas.width=Math.round(r.width*dpr); canvas.height=Math.round(r.height*dpr);
+      const c=canvas.getContext('2d'); c.scale(dpr,dpr); const w=r.width,h=r.height,p={l:48,r:14,t:12,b:38},iw=w-p.l-p.r,ih=h-p.t-p.b;
+      c.font='11px ui-sans-serif,system-ui,sans-serif';
+      for(let i=0;i<=4;i++){const v=ymin+(ymax-ymin)*i/4,y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;c.strokeStyle='#e3e7eb';c.lineWidth=1;c.beginPath();c.moveTo(p.l,y);c.lineTo(w-p.r,y);c.stroke();c.fillStyle='#5f6b76';c.textAlign='right';c.textBaseline='middle';c.fillText(v.toFixed(2),p.l-7,y)}
+      labels.forEach((v,i)=>{if(labels.length>6&&i%2===1)return;const x=p.l+iw*i/(labels.length-1);c.fillStyle='#5f6b76';c.textAlign='center';c.textBaseline='top';c.fillText(String(v),x,p.t+ih+9)});
+      Object.entries(series).forEach(([name,vals])=>{c.strokeStyle=colors[name];c.fillStyle=colors[name];c.lineWidth=3;c.beginPath();vals.forEach((v,i)=>{const x=p.l+iw*i/(vals.length-1),y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();vals.forEach((v,i)=>{const x=p.l+iw*i/(vals.length-1),y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;c.beginPath();c.arc(x,y,3.5,0,Math.PI*2);c.fill()})});
+    }
+    function draw(){lineChart(document.getElementById('ce'),steps,ce,.9,1.9);lineChart(document.getElementById('loops'),[1,2,3,4,5],loopVals,.2,.56)}
+    draw(); window.addEventListener('resize',draw);
+  </script>
+</body>
+</html>

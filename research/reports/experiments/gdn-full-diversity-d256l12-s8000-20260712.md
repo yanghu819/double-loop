@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-032`
-- Status: in progress
+- Status: discarded after complete step8000 test
 - Planned: 2026-07-12 CST
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -189,9 +189,47 @@ is unchanged: step8000 must beat D224's `0.2559/0.3066/0.2852` in at least two
 fixed buckets and improve an official range before ordinary width scaling can
 be called positive. Merely matching D224 at more compute is not sufficient.
 
+### Step8000 Final Gate
+
+| Holes | D256 loop1 exact | D256 loop5 exact / blank | Loop gain | D224 loop5 exact / blank | Delta vs D224 |
+|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0176 | 0.2461 / 0.6823 | +0.2285 | 0.2559 / 0.6930 | -0.0098 |
+| 60 | 0.0215 | 0.2656 / 0.6921 | +0.2441 | 0.3066 / 0.7147 | -0.0410 |
+| 64 | 0.0234 | 0.2617 / 0.6660 | +0.2383 | 0.2852 / 0.6886 | -0.0235 |
+
+The final mixed evaluation moves from loop1/2/3/4/5 exact
+`0.0234/0.0254/0.1426/0.2441/0.2539`; blank accuracy reaches `0.6821`.
+Official test exact is `1.0000` on 46-50 blanks, `0.4219` on 51-55, and
+`0.1562` on 56-64. The matched D224 official values are `0.4473` and `0.1621`
+for the two hard ranges, so D256 fails every predeclared strong criterion.
+
+Case-bank evaluation confirms that the recurrent computation is real. On
+56-64-blank selected cases, a solved board changes from `33` wrong cells at
+loop1 to `5` at loop3 and `0` at loop5. An almost-solved board changes
+`23 -> 9 -> 1`, while a hard failure changes `30 -> 7 -> 5`. D256 therefore
+uses loops to repair many coupled errors, but its extra width does not reduce
+the final one-to-five-cell tail more reliably than D224.
+
 ## 7. Conclusions
 
-Pending.
+Discard ordinary width scaling for this formulation. D256 shows a genuine
+delayed learning curve and nearly catches D224 by step7000, but it falls behind
+again at the complete step8000 test while using more parameters and compute.
+This is not evidence that scaling in general fails: P-SCALE-029 already showed
+that independent data diversity is highly effective. It is evidence that width
+from D224 to D256 is a poor capacity-per-compute axis for this FutureSeed-GDN
+state representation.
+
+The clean mechanism conclusion is narrower and positive: five recurrent loops
+matter substantially. They raise mixed exact by `+0.2305` and repair tens of
+wrong cells in individual hard boards without search, repair, selectors, noise,
+or Sudoku rules. The remaining frontier is the last globally coupled errors,
+not a lack of any recurrent improvement.
+
+Decision: do not run D288/D320 or width tables. The next paper-critical test is
+a single matched long no-FutureSeed control on the efficient D224 full-diversity
+frontier. It directly measures whether the opening and late correction belong
+to FutureSeed rather than data and loop supervision alone.
 
 ## 8. Artifacts And Visualization
 
@@ -213,12 +251,15 @@ Its fixed step6000 checkpoint evaluation completed. The redundant intermediate
 official/case-bank pass was then stopped by exact Python PID to preserve enough
 lease for the already approved step8000 run; `abort.json` records that the
 checkpoint and fixed gate are complete and that final visualization is deferred
-to step8000. The active hard-tail run is
+to step8000. The completed hard-tail run is
 `gdn-full-diversity-d256l12-resume6000-s8000-20260715T095300Z-79fcd7d`.
 
-Every decision checkpoint archives fixed-bucket metrics; the final scored
-checkpoint must include loops1/3/5 hard-case visualizations.
+It archives config, score, metadata, logs, fixed step7000/8000 evaluations,
+official-range evaluation, 256-board case banks, and loops1/3/5 HTML cases.
+The local comparison visualization is `visualizations/scaling_comparison.html`
+inside the final run directory.
 
 ## 9. Submission Record
 
-No tag unless score reaches `>=0.50` and the scaling claim is clean.
+No tag: the mixed score is `0.2539`, below `0.50`, and the width-scaling claim
+is negative.

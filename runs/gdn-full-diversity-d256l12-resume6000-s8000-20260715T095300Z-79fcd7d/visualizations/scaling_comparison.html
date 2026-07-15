@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-SCALE-032: D224 vs D256</title>
+  <style>
+    :root { color-scheme: light; --ink:#17202a; --muted:#5f6b76; --line:#d8dee4; --paper:#fff; --wash:#f4f6f8; --d224:#16794a; --d256:#2368a2; --bad:#b42318; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--wash); color:var(--ink); font:14px/1.45 ui-sans-serif,system-ui,sans-serif; letter-spacing:0; }
+    header { background:var(--paper); border-bottom:1px solid var(--line); }
+    .wrap { width:min(1180px,calc(100% - 32px)); margin:0 auto; }
+    header .wrap { padding:22px 0 18px; }
+    h1 { margin:0 0 6px; font-size:25px; letter-spacing:0; }
+    h2 { margin:0 0 12px; font-size:17px; letter-spacing:0; }
+    p { margin:0; }
+    .subtitle { color:var(--muted); max-width:850px; }
+    main { padding:20px 0 36px; }
+    .verdict { border-left:4px solid var(--bad); background:var(--paper); padding:14px 16px; margin-bottom:16px; }
+    .verdict strong { display:block; margin-bottom:4px; }
+    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+    .stat,.panel { background:var(--paper); border:1px solid var(--line); border-radius:6px; }
+    .stat { padding:12px; min-width:0; }
+    .stat span { display:block; color:var(--muted); font-size:12px; }
+    .stat b { display:block; margin-top:3px; font-size:19px; }
+    .negative { color:var(--bad); }
+    .positive { color:var(--d224); }
+    .panel { padding:16px; margin-bottom:16px; }
+    canvas { display:block; width:100%; height:330px; }
+    .legend { display:flex; gap:18px; margin-top:8px; color:var(--muted); }
+    .key::before { content:""; display:inline-block; width:16px; height:3px; margin:0 7px 3px 0; background:currentColor; }
+    .d224 { color:var(--d224); } .d256 { color:var(--d256); }
+    table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+    th,td { border-bottom:1px solid var(--line); padding:9px 8px; text-align:right; white-space:nowrap; }
+    th:first-child,td:first-child { text-align:left; }
+    th { color:var(--muted); font-size:12px; font-weight:600; }
+    tr:last-child td { border-bottom:0; }
+    .cases { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .case { border:1px solid var(--line); border-radius:6px; padding:12px; color:inherit; text-decoration:none; }
+    .case:hover { border-color:var(--d256); }
+    .case b { display:block; margin-bottom:4px; }
+    .case span,footer { color:var(--muted); }
+    footer { font-size:12px; margin-top:12px; }
+    @media (max-width:760px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cases{grid-template-columns:1fr}.table-scroll{overflow-x:auto}canvas{height:285px} }
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <h1>D224 vs D256 full-diversity scaling</h1>
+    <p class="subtitle">Same 3.83M independent boards, curriculum, loop5 supervision, and 8,000 optimizer steps. The principal model change is width/state geometry.</p>
+  </div></header>
+  <main class="wrap">
+    <section class="verdict">
+      <strong>Decision: stop ordinary width scaling.</strong>
+      D256 learns late and nearly catches D224 at step7000, but loses all three fixed buckets and both hard official ranges at step8000. More width bought no higher final quality.
+    </section>
+    <section class="stats" aria-label="Final metrics">
+      <div class="stat"><span>Mixed exact, D256</span><b>0.2539</b></div>
+      <div class="stat"><span>Loop1 to loop5 gain</span><b class="positive">+0.2305</b></div>
+      <div class="stat"><span>Official 51-55 delta</span><b class="negative">-0.0254</b></div>
+      <div class="stat"><span>Official 56-64 delta</span><b class="negative">-0.0059</b></div>
+    </section>
+    <section class="panel">
+      <h2>Hard-bucket exact learning curve</h2>
+      <canvas id="curve" role="img" aria-label="Mean exact accuracy over holes 53, 60 and 64 across training steps for D224 and D256"></canvas>
+      <div class="legend"><span class="key d224">D224 mean</span><span class="key d256">D256 mean</span></div>
+    </section>
+    <section class="panel">
+      <h2>Final fixed-bucket comparison</h2>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Holes</th><th>D224 exact</th><th>D256 exact</th><th>D256 delta</th><th>D256 loop gain</th></tr></thead>
+        <tbody>
+          <tr><td>53</td><td>0.2559</td><td>0.2461</td><td class="negative">-0.0098</td><td class="positive">+0.2285</td></tr>
+          <tr><td>60</td><td>0.3066</td><td>0.2656</td><td class="negative">-0.0410</td><td class="positive">+0.2441</td></tr>
+          <tr><td>64</td><td>0.2852</td><td>0.2617</td><td class="negative">-0.0235</td><td class="positive">+0.2383</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+    <section class="panel">
+      <h2>What the loops actually do</h2>
+      <div class="cases">
+        <a class="case" href="../output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0230.html"><b>Solved hard board</b><span>Wrong cells: 33 -> 5 -> 0</span></a>
+        <a class="case" href="../output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0079.html"><b>Almost solved</b><span>Wrong cells: 23 -> 9 -> 1</span></a>
+        <a class="case" href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0029.html"><b>Hard failure</b><span>Wrong cells: 30 -> 7 -> 5</span></a>
+      </div>
+      <footer>Each sequence is loop1 -> loop3 -> loop5. Model rollouts only: no search, repair, selector, or Sudoku-specific rule.</footer>
+    </section>
+  </main>
+  <script>
+    const steps=[3000,4500,6000,7000,8000];
+    const series=[
+      {color:'#16794a',values:[0.0345,0.1152,0.2337,0.2643,0.2826]},
+      {color:'#2368a2',values:[0.0280,0.0625,0.2148,0.2539,0.2578]}
+    ];
+    const canvas=document.getElementById('curve');
+    function draw(){
+      const dpr=window.devicePixelRatio||1,rect=canvas.getBoundingClientRect();
+      canvas.width=Math.round(rect.width*dpr); canvas.height=Math.round(rect.height*dpr);
+      const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+      const w=rect.width,h=rect.height,p={l:50,r:18,t:14,b:42},iw=w-p.l-p.r,ih=h-p.t-p.b,ymax=.32;
+      ctx.font='12px ui-sans-serif,system-ui,sans-serif'; ctx.lineWidth=1;
+      for(let i=0;i<=4;i++){
+        const v=ymax*i/4,y=p.t+ih-v/ymax*ih;
+        ctx.strokeStyle='#e3e7eb';ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();
+        ctx.fillStyle='#5f6b76';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(v.toFixed(2),p.l-8,y);
+      }
+      steps.forEach((step,i)=>{const x=p.l+iw*i/(steps.length-1);ctx.fillStyle='#5f6b76';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(String(step),x,p.t+ih+10)});
+      series.forEach(s=>{
+        ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=3;ctx.beginPath();
+        s.values.forEach((v,i)=>{const x=p.l+iw*i/(steps.length-1),y=p.t+ih-v/ymax*ih;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+        s.values.forEach((v,i)=>{const x=p.l+iw*i/(steps.length-1),y=p.t+ih-v/ymax*ih;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill()});
+      });
+    }
+    draw(); window.addEventListener('resize',draw);
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-033`
-- Status: in progress, step1000 scored and exact step1100 rollover preserved
+- Status: in progress, step3000 scored; predeclared step4500 stop gate next
 - Planned: 2026-07-15 CST
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -124,11 +124,20 @@ The fixed step1000 holes53/60/64 results are:
 | 64 | 0.0000 | 0.0215 | 0.2671 | 0.5250 | +0.2579 |
 
 This is a large causal opening difference from one mechanism switch. The no-FS
-model is not merely missing full-board exact: its per-blank accuracy is about
-chance-like and its five loops are neutral. Mixed blank accuracy is
+model is not merely missing full-board exact: its per-blank accuracy remains
+low and its five loops are neutral. Mixed blank accuracy is
 `0.2653/0.2663/0.2650/0.2644/0.2647` across loops1-5, with exact zero at every
 loop. Official range loop5 exact is also zero for `46-50`, `51-55`, and
 `56-64`, with blank accuracy `0.3896`, `0.2699`, and `0.2542` respectively.
+
+The sequence-position diagnostic is more directly tied to the mechanism. At
+loop5, averaged over holes53/60/64, no-FS blank accuracy rises from `0.2032` in
+the first sequence third to `0.2633` in the middle and `0.3340` in the last
+third. The same FutureSeed model is nearly position-flat at
+`0.5199/0.5223/0.5228`. A left-to-right model without future initialization is
+therefore much weaker on early cells, while terminal-state seeding nearly
+removes the directional bias. This supports the intended cheap-future-context
+mechanism more specifically than aggregate accuracy alone.
 
 The visual case bank confirms the same failure shape rather than hiding a metric
 artifact. In hard `56-64` cases, wrong cells change only `34->33->33`,
@@ -150,15 +159,77 @@ step3000. The current result already supports the narrower claim that FutureSeed
 materially improves optimization and sample efficiency under matched compute;
 whether no-FS eventually catches up remains open.
 
+### Step3000 Matched Gate
+
+The exact step1100 checkpoint was resumed without changing data, optimizer,
+model, loop loss, or curriculum. Training reached an exact step3000 checkpoint
+and completed all fixed-bucket, official-range, and case-bank evaluations. The
+high no-FS CE plateau did not break:
+
+| Step | no-FS CE | FS CE | no-FS minus FS | no-FS loop1 | no-FS loop5 |
+|---:|---:|---:|---:|---:|---:|
+| 1000 | 1.6580 | 0.9971 | +0.6609 | 1.6593 | 1.6580 |
+| 2000 | 1.6455 | 0.8526 | +0.7929 | 1.6469 | 1.6455 |
+| 3000 | 1.6379 | 0.7939 | +0.8440 | 1.6391 | 1.6379 |
+
+The matched fixed hard buckets at step3000 are:
+
+| Holes | no-FS exact | FS exact | no-FS blank | FS blank | FS blank gain |
+|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0000 | 0.0273 | 0.2737 | 0.5788 | +0.3051 |
+| 60 | 0.0000 | 0.0332 | 0.2737 | 0.5885 | +0.3148 |
+| 64 | 0.0000 | 0.0430 | 0.2755 | 0.5844 | +0.3089 |
+
+No-FS has therefore consumed three times the optimizer steps and still has not
+reached the matched FutureSeed step1000 regime. Its final mixed blank accuracy
+is `0.2716/0.2723/0.2719/0.2714/0.2713` across loops1-5 and exact remains zero
+at every loop. In contrast, matched FutureSeed holes53 improves from loop1 to
+loop5 exact `0.0176 -> 0.0273` and blank `0.5174 -> 0.5788`; holes64 improves
+exact `0.0254 -> 0.0430` and blank `0.5211 -> 0.5844`.
+
+The sequence-position diagnostic becomes even stronger. Averaged over
+holes53/60/64 at loop5, no-FS is `0.2057/0.2685/0.3488` for early/middle/late
+sequence thirds. FutureSeed is `0.5840/0.5815/0.5863`. More training raises the
+no-FS mean only slightly and does not remove its left-to-right information
+imbalance; FutureSeed remains nearly position-flat.
+
+A zero-training GPU1 evaluation of the exact FutureSeed step3000 checkpoint
+also put both arms on the same official test procedure. FutureSeed versus no-FS
+loop5 exact/blank is `1.0000/1.0000 vs 0.0000/0.4125` on blanks46-50,
+`0.0117/0.6560 vs 0.0000/0.2812` on blanks51-55, and
+`0.0078/0.5270 vs 0.0000/0.2623` on blanks56-64. This evaluation did not train
+or select a checkpoint; it only exported matched statistics and visual cases.
+
+The visual failure shape agrees with the aggregate result. FutureSeed cases
+include blanks51-55 `14 wrong -> 0 -> 0` and `16 -> 3 -> 1`, and blanks56-64
+`19 -> 4 -> 3` across loops1/3/5. No-FS blanks56-64 cases instead change
+`35 -> 32 -> 32`, `35 -> 35 -> 35`, `36 -> 36 -> 35`, and
+`35 -> 35 -> 35`; duplicate conflicts are almost fixed. No-FS has no solved or
+almost-solved cases in any official blank range.
+
+This is strong mechanism evidence, but the experiment still honors the
+predeclared delayed-scaling rule. Continue the same clean no-FS arm to step4500.
+If holes53/60/64 exact all remain below `0.02` and blank all remain below `0.55`,
+stop rather than rescue the control with a new loss, schedule, seed, or model.
+
 ## 7. Artifacts And Visualization
 
 The step1000 archive includes config, score, logs, source SHA, fixed evaluation,
 loops1/3/5 case-bank HTML, the matched FS-vs-no-FS comparison page, and the
-resume `abort.json`. Metadata-light archive SHA256 values are:
+resume `abort.json`. The comparison page includes CE, loop behavior, fixed hard
+buckets, and early/middle/late sequence-position bias. Metadata-light archive
+SHA256 values are:
 
 - first step0-500 leg: `87b61692abefaddf42d1bc84c13d5385361d06dc227c0fd4850dfea907d1cde7`
 - step500-1100 resume: `53bbdc2547d4b8beed0f47b329117ecfce29a822e8ade74d8f84a78288cf93d4`
 - exact step1000 eval and visualization: `4f74ad628dd1d77cda63c48029c3989d4cf369c5704b4897198837eba4049e2c`
+- step1100-to3000 no-FS run: `7be7c9088a11d5d6a52b1d24e744b94abf645f1e8fa050a0a3788748e5acdbc5`
+- zero-training FutureSeed step3000 visualization eval: `35a3360820ef3585834e814298bf75a394dc1f5e06c44ed3842ad74a4e76cc31`
+
+The step3000 matched comparison page includes the complete 100-3000 CE curves,
+loop-level blank accuracy, sequence-position bias, fixed and official bucket
+tables, and direct links to FutureSeed solved/almost-solved cases and no-FS
+hard failures.
 
 Later scored checkpoints will use the same artifact contract. Intermediate
 lease rollovers archive an exact checkpoint and `lease_rollover.json` or

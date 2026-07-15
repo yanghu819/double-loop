@@ -940,6 +940,24 @@
   only the predeclared matched arm; do not rescue no-FS with a hyperparameter or
   objective sweep.
 
+  The stronger mechanism-specific readout is sequence position. Averaged over
+  holes53/60/64 at step1000 loop5, no-FS blank accuracy is
+  `0.2032/0.2633/0.3340` for early/middle/late sequence thirds, whereas
+  FutureSeed is `0.5199/0.5223/0.5228`. FutureSeed does not merely raise the
+  mean; it nearly removes the left-to-right context imbalance. Prefer this
+  diagnostic when claiming cheap future context.
+
+  The same difference persists after clean scaling to step3000. Matched no-FS
+  remains at CE `1.6379`, fixed holes53/60/64 exact all zero, and loop5 blank
+  `0.2737/0.2737/0.2755`; FutureSeed is CE `0.7939`, exact
+  `0.0273/0.0332/0.0430`, and blank `0.5788/0.5885/0.5844`. No-FS has used
+  three times the optimizer steps and still has not reached the FutureSeed
+  step1000 regime. Its early/middle/late blank accuracy remains
+  `0.2057/0.2685/0.3488`, while FutureSeed is position-flat at
+  `0.5840/0.5815/0.5863`. This is a more direct cheap-future-context result than
+  an aggregate score alone: without terminal-state seeding, extra training and
+  extra loops do not remove the directional information deficit.
+
 - 2026-07-15: In the staged Sudoku runner, the global training endpoint is the
   sum of `HOLE_STAGES`; `FULL_STEPS` does not truncate a staged resume. For an
   exact resume to global step N, stage counts must sum to N. A resume that has

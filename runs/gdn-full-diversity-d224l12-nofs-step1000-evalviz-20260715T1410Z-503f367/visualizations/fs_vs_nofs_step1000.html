@@ -73,6 +73,13 @@
       </div>
     </section>
     <section class="panel">
+      <h2>Accuracy by sequence position</h2>
+      <p class="sub">Mean loop5 blank accuracy across holes53/60/64. The board sequence is split into early, middle, and late thirds.</p>
+      <canvas id="position" role="img" aria-label="Blank accuracy by early, middle, and late sequence position for FutureSeed and no-FutureSeed"></canvas>
+      <div class="legend"><span class="key fs">FutureSeed</span><span class="key nofs">No FutureSeed</span></div>
+      <footer>No-FS rises from 0.203 early to 0.334 late because later cells have more left context. FutureSeed stays approximately flat at 0.52, the direct signature expected from cheap future context.</footer>
+    </section>
+    <section class="panel">
       <h2>Fixed hard-bucket results</h2>
       <div class="table-scroll"><table>
         <thead><tr><th>Holes</th><th>FS exact</th><th>no-FS exact</th><th>FS blank</th><th>no-FS blank</th><th>Blank delta</th></tr></thead>
@@ -97,6 +104,7 @@
     const colors={fs:'#16794a',nofs:'#b42318'},steps=[100,200,300,400,500,600,700,800,900,1000];
     const ce={fs:[1.6346,1.6090,1.2472,1.0966,1.0725,1.0061,.9871,.9865,.9688,.9971],nofs:[1.6789,1.8222,1.7550,1.7298,1.6806,1.6754,1.6792,1.6676,1.6653,1.6580]};
     const loopVals={fs:[.4945,.5148,.5157,.5152,.5145],nofs:[.2653,.2663,.2650,.2644,.2647]};
+    const positionVals={fs:[.5199,.5223,.5228],nofs:[.2032,.2633,.3340]};
     function lineChart(canvas,labels,series,ymin,ymax){
       const dpr=window.devicePixelRatio||1,r=canvas.getBoundingClientRect(); canvas.width=Math.round(r.width*dpr); canvas.height=Math.round(r.height*dpr);
       const c=canvas.getContext('2d'); c.scale(dpr,dpr); const w=r.width,h=r.height,p={l:48,r:14,t:12,b:38},iw=w-p.l-p.r,ih=h-p.t-p.b;
@@ -105,7 +113,7 @@
       labels.forEach((v,i)=>{if(labels.length>6&&i%2===1)return;const x=p.l+iw*i/(labels.length-1);c.fillStyle='#5f6b76';c.textAlign='center';c.textBaseline='top';c.fillText(String(v),x,p.t+ih+9)});
       Object.entries(series).forEach(([name,vals])=>{c.strokeStyle=colors[name];c.fillStyle=colors[name];c.lineWidth=3;c.beginPath();vals.forEach((v,i)=>{const x=p.l+iw*i/(vals.length-1),y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();vals.forEach((v,i)=>{const x=p.l+iw*i/(vals.length-1),y=p.t+ih-(v-ymin)/(ymax-ymin)*ih;c.beginPath();c.arc(x,y,3.5,0,Math.PI*2);c.fill()})});
     }
-    function draw(){lineChart(document.getElementById('ce'),steps,ce,.9,1.9);lineChart(document.getElementById('loops'),[1,2,3,4,5],loopVals,.2,.56)}
+    function draw(){lineChart(document.getElementById('ce'),steps,ce,.9,1.9);lineChart(document.getElementById('loops'),[1,2,3,4,5],loopVals,.2,.56);lineChart(document.getElementById('position'),['early','middle','late'],positionVals,.15,.56)}
     draw(); window.addEventListener('resize',draw);
   </script>
 </body>

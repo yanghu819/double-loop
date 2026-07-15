@@ -169,6 +169,26 @@ changing data, optimizer, loss, noise, or model semantics. It does not yet
 establish that D256 is better per compute; the final test is whether step8000
 beats D224 in at least two fixed buckets or improves the official ranges.
 
+### Step7000 Hard-Stage Gate
+
+| Holes | D256 loop1 exact | D256 loop5 exact / blank | Loop gain | D224 loop5 exact / blank | Delta vs D224 |
+|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0176 | 0.2344 / 0.6538 | +0.2168 | 0.2480 / 0.6727 | -0.0136 |
+| 60 | 0.0215 | 0.2734 / 0.6809 | +0.2520 | 0.2832 / 0.7003 | -0.0098 |
+| 64 | 0.0254 | 0.2539 / 0.6618 | +0.2285 | 0.2617 / 0.6698 | -0.0078 |
+
+D256 has not crossed D224 at step7000, so there is still no width-scaling win.
+It is now within `0.8-1.4` exact percentage points in every fixed bucket. The
+step6000-to-step7000 D256 gains are `+0.0313/+0.0429/+0.0430`; the matched
+D224 gains were `+0.0371/+0.0430/+0.0117`. The key signal is holes64: D256
+continues accelerating on the newly introduced 51-64 distribution while D224
+had nearly flattened over the same interval.
+
+This preserves the information value of the final 1000 steps. The strong rule
+is unchanged: step8000 must beat D224's `0.2559/0.3066/0.2852` in at least two
+fixed buckets and improve an official range before ordinary width scaling can
+be called positive. Merely matching D224 at more compute is not sufficient.
+
 ## 7. Conclusions
 
 Pending.
@@ -189,8 +209,14 @@ The second-lease watchdog PID was `585`. It entered rollover protection at
 `lease_rollover_2.json`, and stopped only the exact resume and monitor PIDs.
 The step5800-to-step6000 resume is
 `gdn-full-diversity-d256l12-resume5800-s6000-20260715T093650Z-79fcd7d`.
+Its fixed step6000 checkpoint evaluation completed. The redundant intermediate
+official/case-bank pass was then stopped by exact Python PID to preserve enough
+lease for the already approved step8000 run; `abort.json` records that the
+checkpoint and fixed gate are complete and that final visualization is deferred
+to step8000. The active hard-tail run is
+`gdn-full-diversity-d256l12-resume6000-s8000-20260715T095300Z-79fcd7d`.
 
-Every scored checkpoint will archive fixed-bucket metrics; the final decision
+Every decision checkpoint archives fixed-bucket metrics; the final scored
 checkpoint must include loops1/3/5 hard-case visualizations.
 
 ## 9. Submission Record

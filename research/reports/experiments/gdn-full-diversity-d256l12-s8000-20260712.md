@@ -84,8 +84,8 @@ efficient generic recurrent state, not more parameters or task-specific tricks.
 - `train_state_step000100.pt` was written successfully. Measured startup-to-
   checkpoint throughput was approximately `3.7 s/step`.
 
-The run is still in progress. Fixed holes53/60/64 quality decisions begin at
-step1000; the predeclared mechanism decision remains at step4500 or later.
+The run remains in progress through the approved step8000 tail. Fixed
+holes53/60/64 decisions have now been completed through step6000.
 
 ### First Lease And Exact Resume
 
@@ -128,6 +128,47 @@ step3000, and harder buckets show larger loop1-to-loop5 gains. That is the
 predicted shape of a delayed optimization crossover and justifies continuing
 to the predeclared step4500 gate without changing the configuration.
 
+### Step4500 Gate And Second Lease Rollover
+
+| Holes | Loop1 exact | Loop5 exact | Loop gain | Loop5 blank acc | D224 loop5 exact |
+|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0156 | 0.0488 | +0.0332 | 0.5940 | 0.1055 |
+| 60 | 0.0137 | 0.0586 | +0.0449 | 0.6157 | 0.1172 |
+| 64 | 0.0234 | 0.0801 | +0.0566 | 0.5968 | 0.1230 |
+
+Step4500 did not trigger the predeclared kill rule: holes64 exact exceeded
+`0.07`, holes60 blank accuracy exceeded `0.60`, and loop gain continued to
+grow with difficulty. D256 was still clearly behind D224, so this was only a
+continue signal, not positive evidence for width scaling.
+
+The second lease watchdog stopped only the exact run after the complete
+`train_state_step005800.pt` write and recorded `lease_rollover_2.json` at
+`2026-07-13T08:41:03Z`. GPU1 was restarted on 2026-07-15 after remaining in
+the AIStation queue; GPU2 stayed halted. The exact optimizer, scheduler, and
+RNG state were then restored from step5800 for the predeclared step6000 gate.
+
+### Step6000 Delayed-Crossover Gate
+
+| Holes | Loop1 exact | Loop5 exact | Loop gain | Loop5 blank acc | D224 loop5 exact | Delta vs D224 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 53 | 0.0176 | 0.2031 | +0.1855 | 0.6332 | 0.2109 | -0.0078 |
+| 60 | 0.0215 | 0.2305 | +0.2090 | 0.6583 | 0.2402 | -0.0097 |
+| 64 | 0.0215 | 0.2109 | +0.1895 | 0.6303 | 0.2500 | -0.0391 |
+
+Step6000 CE is `0.5635`. The strict primary numbers were narrowly missed:
+holes53 did not reach `0.21`, and holes60/64 did not reach `0.25`. However,
+the separately declared continuation rule was to fund step8000 if D256 reached
+or clearly approached the D224 step6000 curve. D256 is now within one exact
+percentage point on holes53 and holes60 after trailing badly at step4500.
+
+More importantly, D256's step4500-to-step6000 exact gains are
+`+0.1543/+0.1719/+0.1308`, versus D224 gains of
+`+0.1054/+0.1230/+0.1270`. This is the first clean evidence of the predicted
+late acceleration. It justifies the original 6000-to-8000 hard tail without
+changing data, optimizer, loss, noise, or model semantics. It does not yet
+establish that D256 is better per compute; the final test is whether step8000
+beats D224 in at least two fixed buckets or improves the official ranges.
+
 ## 7. Conclusions
 
 Pending.
@@ -143,11 +184,11 @@ the next fully written 100-step checkpoint, terminates only this run's exact
 Python PID, writes `lease_rollover_1.json`, and stops the exact GPU monitor PID.
 Its hard deadline is `2026-07-12T15:26:27Z`, before the current lease expires.
 
-The second-lease watchdog PID is `585`. It begins rollover protection at
-`2026-07-13T08:40:07Z`, after the planned step6000 evaluation window, and has a
-hard deadline of `2026-07-13T09:00:07Z`. It writes
-`lease_rollover_2.json` only after a complete checkpoint and stops the exact
-resume and monitor PIDs.
+The second-lease watchdog PID was `585`. It entered rollover protection at
+`2026-07-13T08:40:07Z`, preserved a complete step5800 checkpoint, wrote
+`lease_rollover_2.json`, and stopped only the exact resume and monitor PIDs.
+The step5800-to-step6000 resume is
+`gdn-full-diversity-d256l12-resume5800-s6000-20260715T093650Z-79fcd7d`.
 
 Every scored checkpoint will archive fixed-bucket metrics; the final decision
 checkpoint must include loops1/3/5 hard-case visualizations.

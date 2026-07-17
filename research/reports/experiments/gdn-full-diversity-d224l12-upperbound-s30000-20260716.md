@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-034`
-- Status: in progress; first gate targets exact step10000
+- Status: in progress; step12000 primary gate passed, next conditional gate is step16000
 - Planned: 2026-07-16 11:05 CST / 2026-07-16T03:05:36Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -83,7 +83,41 @@ is useful; no miss will be rescued with a low-information sweep.
 
 ## 6. Results
 
-Pending GPU1 launch from exact step8000.
+The step10000 and step12000 gates both completed from exact train-state
+checkpoints on GPU1. The model, optimizer, scheduler, RNG, data split, loop
+count, loss, and FutureSeed formulation remained unchanged.
+
+| Readout | step8000 | step10000 | step12000 | step12000 vs 10000 |
+|---|---:|---:|---:|---:|
+| mixed loop5 exact | `0.2715` | `0.3066` | `0.3730` | `+0.0664` |
+| holes53 loop5 exact | `0.2559` | `0.3008` | `0.3340` | `+0.0332` |
+| holes60 loop5 exact | `0.3066` | `0.3320` | `0.3789` | `+0.0469` |
+| holes64 loop5 exact | `0.2852` | `0.3027` | `0.3574` | `+0.0547` |
+| official 51-55 exact | `0.4473` | `0.4824` | `0.5352` | `+0.0527` |
+| official 56-64 exact | `0.1621` | `0.1855` | `0.2285` | `+0.0430` |
+
+The primary upper-bound gate passes in both independent ways: mixed exact is
+above `0.35`, and official 56-64 is above `0.22` while 51-55 remains above
+`0.45`. The strong `mixed >=0.40` or `56-64 >=0.30` gate is not yet reached.
+
+The mechanism signal is stronger than the aggregate score. At step12000,
+mixed exact across loops1-5 is
+`0.0234 / 0.0664 / 0.2617 / 0.3496 / 0.3730`. Loop1 remains at the old
+operating point while loop5 improves by `+0.1016` over step8000, so added hard
+compute is primarily teaching later recurrent iterations to close the board.
+On official 56-64, exact moves from `0.0` at loop1 to `0.2285` at loop5.
+
+Selected 56-64 cases show concrete correction rather than mask expansion:
+
+- 57 blanks: `31 -> 4 -> 0` wrong cells across loops1/3/5.
+- 58 blanks: `30 -> 9 -> 0`.
+- Almost solved: `15 -> 7 -> 1`.
+- Hard failure: `29 -> 12 -> 5`.
+
+Decision: continue the same clean scaling ladder to the conditional step16000
+gate. Every tracked hard metric set a new best by more than `+0.01`, so the
+later-gate stop rule has not fired. Do not add noise, a new loss, more loops,
+width, repair, search, or selector.
 
 ## 7. Artifacts And Visualization
 
@@ -92,7 +126,18 @@ eval, official eval, source SHA, abort/rollover metadata, case JSON/HTML, and a
 scaling-curve dashboard. Checkpoints, models, datasets, and source snapshots
 remain outside Git.
 
+Completed step12000 run:
+
+- Remote run:
+  `/huyang2/double-loop/.worktrees/pscale034-upperbound-1c99589-20260716/runs/gdn-full-diversity-d224l12-upperbound-s12000-lease-20260716T131753Z-1c99589`
+- Exact checkpoint:
+  `/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step012000.pt`
+- Remote metadata archive:
+  `/huyang2/double-loop/artifacts/pscale034-step12000-metadata-light.tgz`
+- Local interactive dashboard:
+  `runs/gdn-full-diversity-d224l12-upperbound-s12000-lease-20260716T131753Z-1c99589/index.html`
+
 ## 8. Submission Record
 
-No tag unless the primary score is at least `0.50` and the scaling conclusion
-is clean.
+No tag: the scaling conclusion is clean, but the primary score is `0.3730`,
+below the `0.50` tag threshold.

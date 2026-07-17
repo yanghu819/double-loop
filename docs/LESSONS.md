@@ -979,3 +979,26 @@
   stage counts that sum to N. Preserve the extra completed checkpoint and write
   `abort.json` when a legacy launcher overshoots; never silently discard valid
   training state.
+
+## 2026-07-16 Native FutureSeed data-compute upper bound
+
+- P-SCALE-034 supersedes the earlier recommendation to stop an unchanged
+  D224/L12 run at step10000/12000. That recommendation was based on the old,
+  repeatedly augmented 1,000-board regime and short hard-tail continuations.
+  Under the 3,831,994-board independent-data regime, the same model is still on
+  a strong positive slope: mixed loop5 exact rises `0.2715 -> 0.3066 -> 0.3730`
+  from step8000 to10000 to12000, while official 56-64 exact rises
+  `0.1621 -> 0.1855 -> 0.2285`.
+- This is a data-and-compute result, not an architecture tweak. Width, depth,
+  FutureSeed update, loop count, every-loop CE, optimizer, effective batch,
+  and hard distribution stayed fixed. D256 had already failed to beat D224, so
+  ordinary width is still a rejected scaling axis for this frontier.
+- The extra compute is teaching recurrent closure rather than a stronger first
+  guess. At step12000, mixed exact across loops1-5 is
+  `0.0234 / 0.0664 / 0.2617 / 0.3496 / 0.3730`; loop1 remains fixed while later
+  loops improve. Hard boards change from `31 -> 4 -> 0`, `30 -> 9 -> 0`,
+  `15 -> 7 -> 1`, and `29 -> 12 -> 5` wrong cells across loops1/3/5.
+- Do not turn this into unlimited training by faith. Continue the identical
+  run to step16000 because every tracked hard metric set a new best. After
+  step12000, two successive gates without at least a `+0.01` new best on mixed
+  or official-hard exact terminate pure scaling for this state formulation.

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-SCALE-034 · Native FutureSeed Scaling Upper Bound</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f5f7;
+      --surface: #ffffff;
+      --ink: #16191d;
+      --muted: #646b74;
+      --line: #d9dde2;
+      --green: #19734a;
+      --green-soft: #e8f4ed;
+      --blue: #315e9d;
+      --amber: #9a5b0a;
+      --red: #9f3a37;
+      --track: #e8ebef;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+    button, a { font: inherit; }
+    a { color: var(--blue); }
+    .shell { min-height: 100vh; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 56px;
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.96);
+    }
+    .brand { min-width: 0; }
+    .brand strong { display: block; font-size: 15px; }
+    .brand span { color: var(--muted); font-size: 12px; }
+    .status {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border: 1px solid #add2bd;
+      border-radius: 5px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    main { max-width: 1260px; margin: 0 auto; padding: 24px; }
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.18; }
+    .intro p { max-width: 850px; margin: 0; color: var(--muted); }
+    .run-id { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      margin: 20px 0 28px;
+      border: 1px solid var(--line);
+      background: var(--line);
+    }
+    .metric { min-width: 0; padding: 16px; background: var(--surface); }
+    .metric small { display: block; color: var(--muted); }
+    .metric strong { display: block; margin: 4px 0 2px; font-size: 25px; line-height: 1.1; }
+    .metric .delta { color: var(--green); font-size: 12px; font-weight: 700; }
+    section { margin: 0 0 30px; }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+    h2 { margin: 0; font-size: 18px; }
+    .section-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .panel { border: 1px solid var(--line); background: var(--surface); }
+    .checkpoint-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .bucket { min-width: 0; padding: 16px; border-right: 1px solid var(--line); }
+    .bucket:last-child { border-right: 0; }
+    .bucket h3 { margin: 0 0 12px; font-size: 14px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr) 54px;
+      gap: 9px;
+      align-items: center;
+      min-height: 29px;
+    }
+    .bar-row span:first-child { color: var(--muted); font-size: 12px; }
+    .track { height: 8px; overflow: hidden; background: var(--track); border-radius: 2px; }
+    .fill { width: var(--w); height: 100%; background: var(--blue); }
+    .bar-row:nth-of-type(3) .fill { background: var(--amber); }
+    .bar-row:nth-of-type(4) .fill { background: var(--green); }
+    .bar-row strong { text-align: right; font-size: 12px; }
+    .tables { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 520px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f8f9fa; color: var(--muted); font-size: 12px; font-weight: 650; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .positive { color: var(--green); font-weight: 700; }
+    .flat { color: var(--amber); font-weight: 700; }
+    .insight {
+      display: grid;
+      grid-template-columns: 4px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .insight::before { content: ""; background: var(--green); }
+    .insight-body { padding: 16px 18px; }
+    .insight h3 { margin: 0 0 6px; font-size: 15px; }
+    .insight p { margin: 0; color: #3f464e; }
+    .case-tools {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-bottom: 0;
+      background: var(--surface);
+    }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tab {
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #fff;
+      color: #343a40;
+      cursor: pointer;
+    }
+    .tab[aria-selected="true"] { border-color: #7195c5; background: #eef4fb; color: #244c82; font-weight: 700; }
+    .case-note { color: var(--muted); font-size: 12px; text-align: right; }
+    .frame-wrap { border: 1px solid var(--line); background: #fff; }
+    iframe { display: block; width: 100%; height: 860px; border: 0; }
+    .links { display: flex; flex-wrap: wrap; gap: 14px; padding: 13px 15px; border: 1px solid var(--line); background: var(--surface); }
+    .provenance { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; overflow-wrap: anywhere; }
+
+    @media (max-width: 900px) {
+      main { padding: 16px; }
+      .intro { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .checkpoint-grid, .tables { grid-template-columns: 1fr; }
+      .bucket { border-right: 0; border-bottom: 1px solid var(--line); }
+      .bucket:last-child { border-bottom: 0; }
+      .case-tools { align-items: flex-start; flex-direction: column; }
+      .case-note { text-align: left; }
+      iframe { height: 720px; }
+    }
+    @media (max-width: 520px) {
+      .topbar { padding: 9px 12px; }
+      main { padding: 12px; }
+      h1 { font-size: 23px; }
+      .metrics { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 60px minmax(0, 1fr) 48px; }
+      iframe { height: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar" id="top">
+      <div class="brand">
+        <strong>double-loop · P-SCALE-034</strong>
+        <span>Native FutureSeed data-compute upper bound · GPU1 A800</span>
+      </div>
+      <div class="status">PRIMARY GATE PASSED</div>
+    </header>
+
+    <main>
+      <div class="intro">
+        <div>
+          <h1>不改算法，继续 scale 到 step12000 仍显著变强</h1>
+          <p>同一 D224/L12 native FutureSeed-GDN 连续训练到 step12000，只增加 383 万独立题上的 51–64 blanks compute。模型、state、loop5、每轮 CE、优化器和数据定义都没有改变；没有 noise、repair、search 或 selector。</p>
+        </div>
+        <div class="run-id">source 1c99589 · 3,831,994 independent boards</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <small>Final mixed · loop5 exact</small>
+          <strong>0.3730</strong>
+          <span class="delta">+0.0664 vs step10000</span>
+        </div>
+        <div class="metric">
+          <small>Official 51–55 · exact</small>
+          <strong>0.5352</strong>
+          <span class="delta">+0.0527 vs step10000</span>
+        </div>
+        <div class="metric">
+          <small>Official 56–64 · exact</small>
+          <strong>0.2285</strong>
+          <span class="delta">+0.0430 vs step10000</span>
+        </div>
+        <div class="metric">
+          <small>Holes60 checkpoint · loop5</small>
+          <strong>0.3789</strong>
+          <span class="delta">+0.0469 vs step10000</span>
+        </div>
+      </div>
+
+      <section>
+        <div class="section-head">
+          <h2>Scaling Curve</h2>
+          <p>条长按 0.40 exact 归一化；数字为原始值</p>
+        </div>
+        <div class="panel checkpoint-grid">
+          <div class="bucket">
+            <h3>53 blanks</h3>
+            <div class="bar-row"><span>step6000</span><div class="track"><div class="fill" style="--w:52.7%"></div></div><strong>0.2109</strong></div>
+            <div class="bar-row"><span>step8000</span><div class="track"><div class="fill" style="--w:64.0%"></div></div><strong>0.2559</strong></div>
+            <div class="bar-row"><span>step10000</span><div class="track"><div class="fill" style="--w:75.2%"></div></div><strong>0.3008</strong></div>
+            <div class="bar-row"><span>step12000</span><div class="track"><div class="fill" style="--w:83.5%"></div></div><strong>0.3340</strong></div>
+          </div>
+          <div class="bucket">
+            <h3>60 blanks</h3>
+            <div class="bar-row"><span>step6000</span><div class="track"><div class="fill" style="--w:60.1%"></div></div><strong>0.2402</strong></div>
+            <div class="bar-row"><span>step8000</span><div class="track"><div class="fill" style="--w:76.7%"></div></div><strong>0.3066</strong></div>
+            <div class="bar-row"><span>step10000</span><div class="track"><div class="fill" style="--w:83.0%"></div></div><strong>0.3320</strong></div>
+            <div class="bar-row"><span>step12000</span><div class="track"><div class="fill" style="--w:94.7%"></div></div><strong>0.3789</strong></div>
+          </div>
+          <div class="bucket">
+            <h3>64 blanks</h3>
+            <div class="bar-row"><span>step6000</span><div class="track"><div class="fill" style="--w:62.5%"></div></div><strong>0.2500</strong></div>
+            <div class="bar-row"><span>step8000</span><div class="track"><div class="fill" style="--w:71.3%"></div></div><strong>0.2852</strong></div>
+            <div class="bar-row"><span>step10000</span><div class="track"><div class="fill" style="--w:75.7%"></div></div><strong>0.3027</strong></div>
+            <div class="bar-row"><span>step12000</span><div class="track"><div class="fill" style="--w:89.4%"></div></div><strong>0.3574</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>Loop Computation</h2>
+          <p>step12000 checkpoint，full-board exact</p>
+        </div>
+        <div class="tables">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Bucket</th><th>loop1</th><th>loop2</th><th>loop3</th><th>loop4</th><th>loop5</th></tr></thead>
+              <tbody>
+                <tr><td>mixed</td><td>0.0234</td><td>0.0664</td><td>0.2617</td><td>0.3496</td><td class="positive">0.3730</td></tr>
+                <tr><td>holes53</td><td>0.0176</td><td>0.0527</td><td>0.2344</td><td>0.3164</td><td class="positive">0.3340</td></tr>
+                <tr><td>holes60</td><td>0.0215</td><td>0.0703</td><td>0.2715</td><td>0.3574</td><td class="positive">0.3789</td></tr>
+                <tr><td>holes64</td><td>0.0254</td><td>0.0898</td><td>0.2695</td><td>0.3418</td><td class="positive">0.3574</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Official range</th><th>step6000</th><th>step8000</th><th>step10000</th><th>step12000</th></tr></thead>
+              <tbody>
+                <tr><td>46–50</td><td>1.0000</td><td>1.0000</td><td>0.9980</td><td class="flat">0.9980</td></tr>
+                <tr><td>51–55</td><td>0.3926</td><td>0.4473</td><td>0.4824</td><td class="positive">0.5352</td></tr>
+                <tr><td>56–64</td><td>0.1270</td><td>0.1621</td><td>0.1855</td><td class="positive">0.2285</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="insight">
+        <div class="insight-body">
+          <h3>真正的新发现：更多训练主要教会后期 loop 收敛</h3>
+          <p>mixed loop1 exact 仍是 0.0234，和旧 checkpoint 几乎不变；loop5 却从 step8000 的 0.2715、step10000 的 0.3066 升到 0.3730。hard official 56–64 也从 loop1 的 0 走到 loop5 的 0.2285。新增 compute 没有把一次前向答案简单变强，而是让 recurrent state 在 loop3–5 持续消除全局冲突。</p>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>Hard Cases · 原地切换</h2>
+          <p>红色为错格；查看 loop1 / loop3 / loop5</p>
+        </div>
+        <div class="case-tools">
+          <div class="tabs" role="tablist" aria-label="Hard case selector">
+            <button class="tab" type="button" aria-selected="true" data-src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0129.html" data-note="57 blanks · 31错 → 4错 → 0错">57 blank · 解开</button>
+            <button class="tab" type="button" aria-selected="false" data-src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_02_b0094.html" data-note="58 blanks · 30错 → 9错 → 0错">58 blank · 解开</button>
+            <button class="tab" type="button" aria-selected="false" data-src="output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0039.html" data-note="57 blanks · 15错 → 7错 → 1错">57 blank · 剩1格</button>
+            <button class="tab" type="button" aria-selected="false" data-src="output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0208.html" data-note="58 blanks · 29错 → 12错 → 5错">58 blank · 仍失败</button>
+          </div>
+          <div class="case-note" id="case-note">57 blanks · 31错 → 4错 → 0错</div>
+        </div>
+        <div class="frame-wrap">
+          <iframe id="case-frame" title="Sudoku loop case visualization" src="output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0129.html"></iframe>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><h2>Artifacts</h2></div>
+        <div class="links">
+          <a href="visualizations/index.html">自动实验总览</a>
+          <a href="output/case_bank/official_b56_64/index.html">全部 56–64 cases</a>
+          <a href="output/case_bank/official_b51_55/index.html">全部 51–55 cases</a>
+          <a href="output/checkpoint_eval_step012000.json">step12000 raw JSON</a>
+          <a href="output/futureseed_loop_seed52.json">final raw JSON</a>
+          <a href="logs/run.log">完整日志</a>
+        </div>
+      </section>
+
+      <p class="provenance">Git SHA 1c99589126cc303162d294f7181ef40d1a7b417a · GPU1 NVIDIA A800-SXM4-80GB · Triton recurrent BF16 · D224/L12/H14/D16 · native FutureSeed · loop5/all-loop CE · no noise/repair/search/selector</p>
+    </main>
+  </div>
+
+  <script>
+    const tabs = [...document.querySelectorAll('.tab')];
+    const frame = document.getElementById('case-frame');
+    const note = document.getElementById('case-note');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+        frame.src = tab.dataset.src;
+        note.textContent = tab.dataset.note;
+      });
+    });
+  </script>
+</body>
+</html>

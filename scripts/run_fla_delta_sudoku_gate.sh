@@ -31,6 +31,11 @@ export OFFICIAL_SUDOKU_TRAIN_SPLIT=train
 export OFFICIAL_SUDOKU_EVAL_SPLIT=test
 export SUDOKU_SIZE=9
 export HOLE_PATTERN=random
+# P-GDN-005 predates blank-range filtering and sampled uniformly from the full
+# official train split. Its rows span 46-64 blanks, so this range preserves the
+# same sampling semantics after the loader was made range-aware.
+export HOLES_MIN=46
+export HOLES_MAX=64
 export EVAL_HOLES=16
 export EVAL_HOLES_LIST=16
 export OFFICIAL_EVAL_BLANK_RANGES=46-50,51-55,56-64

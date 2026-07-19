@@ -97,6 +97,16 @@ named missing gradient, reports any other missing gradient separately from
 NaN/Inf, and supports `--check futureseed_stack` so the already-passed kernel
 tests do not need to be rerun.
 
+After both backbones passed, the first GDN2 training launch
+`fla-gdn2-futureseed-sudoku-gate-20260719T041850Z-986e725` stopped before its
+first optimizer step. P-GDN-005 was recorded before official-data blank-range
+filtering existed, so its nominal default `2-4` was ignored and it actually
+sampled uniformly from the full 46-64-blank train split. The current loader
+correctly rejected the impossible range. The matched launcher now sets
+`HOLES_MIN=46` and `HOLES_MAX=64`; because that is the complete train split,
+the seeded index sampling is semantically identical to the historical
+baseline. No curriculum or difficulty reweighting was introduced.
+
 Training command template:
 
 ```bash

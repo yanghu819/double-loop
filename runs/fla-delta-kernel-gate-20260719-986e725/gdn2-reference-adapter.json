@@ -1,0 +1,41 @@
+{
+  "device": "NVIDIA A800-SXM4-80GB",
+  "gdn2_adapter": {
+    "check_wall_sec": 54.761984195094556,
+    "forward_backward_ms": 7.8958285972476006,
+    "initial_state_grad_norm": 0.007347102276980877,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 28820,
+    "peak_memory_mb": 273.84619140625,
+    "split_output_max_abs": 0.0078125,
+    "split_state_max_abs": 0.002790689468383789,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      16,
+      16
+    ]
+  },
+  "gdn2_reference": {
+    "check_wall_sec": 45.883427975932136,
+    "gradient_errors": {
+      "b": 1.2858770787715912e-05,
+      "g": 3.884546458721161e-05,
+      "h0": 9.697675704956055e-05,
+      "k": 4.7538429498672485e-05,
+      "q": 5.0965696573257446e-05,
+      "v": 0.0002336949110031128,
+      "w": 0.0001019015908241272
+    },
+    "gradient_max_abs": 0.0002336949110031128,
+    "output_max_abs": 5.9857964515686035e-05,
+    "state_max_abs": 0.00027595460414886475
+  },
+  "requested_backbone": "gdn2",
+  "torch": "2.7.0+cu126"
+}

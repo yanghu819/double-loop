@@ -1,0 +1,20 @@
+{
+  "timestamp_utc": "2026-07-19T03:35:00Z",
+  "git_sha": "986e72507e42baa3bce1ebedfbe61a08ee8b8dce",
+  "official_fla_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+  "official_fla_version": "0.5.2",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "cuda_visible_devices": "0",
+  "backbones": [
+    "gdn2",
+    "kda"
+  ],
+  "checks": [
+    "torch_reference_forward",
+    "torch_reference_terminal_state",
+    "torch_reference_backward",
+    "initial_state_gradient",
+    "split_sequence_continuity",
+    "three_layer_native_futureseed_stack"
+  ]
+}

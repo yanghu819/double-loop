@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>FutureSeed Linear Attention Comparison</title>
+  <style>
+    :root { color-scheme: light; --ink:#18212b; --muted:#5f6b76; --line:#ccd4dc; --paper:#ffffff; --band:#f4f6f8; --good:#1f6f50; --bad:#a33d2c; --accent:#3567a8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:0; }
+    header, section { width:100%; border-bottom:1px solid var(--line); }
+    .inner { max-width:1180px; margin:0 auto; padding:28px 24px; }
+    h1 { margin:0 0 8px; font-size:30px; line-height:1.2; }
+    h2 { margin:0 0 14px; font-size:21px; }
+    h3 { margin:0 0 8px; font-size:16px; }
+    p { margin:8px 0; line-height:1.58; }
+    .meta { color:var(--muted); font-size:13px; }
+    .decision { background:#edf5ef; border-left:5px solid var(--good); padding:16px 18px; margin-top:18px; }
+    .decision strong { display:block; margin-bottom:5px; }
+    .band { background:var(--band); }
+    .grid-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .metric-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin:18px 0; }
+    .metric { background:var(--paper); padding:16px; min-height:112px; }
+    .metric b { display:block; font-size:24px; margin:6px 0; }
+    .metric small { color:var(--muted); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); }
+    table { border-collapse:collapse; width:100%; font-size:13px; background:var(--paper); }
+    th,td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+    th:first-child,td:first-child { text-align:left; }
+    th { background:#e9edf1; color:#303b46; }
+    tr:last-child td { border-bottom:0; }
+    .swatch { display:inline-block; width:11px; height:11px; margin-right:7px; vertical-align:-1px; }
+    .chart { width:100%; min-height:280px; border:1px solid var(--line); background:var(--paper); }
+    .chart-title { font-size:16px; font-weight:650; fill:var(--ink); }
+    .grid { stroke:#d9e0e6; stroke-width:1; }
+    .tick,.legend { font-size:11px; fill:#596673; }
+    .case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .case-pane { min-width:0; }
+    iframe { width:100%; height:760px; border:1px solid var(--line); background:#fff; }
+    .links { display:flex; flex-wrap:wrap; gap:10px 18px; margin-top:12px; }
+    a { color:#205b97; text-decoration-thickness:1px; text-underline-offset:2px; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+    .bad { color:var(--bad); font-weight:650; }
+    .good { color:var(--good); font-weight:650; }
+    @media (max-width:800px) { .grid-2,.case-grid,.metric-strip { grid-template-columns:1fr; } .inner { padding:22px 15px; } iframe { height:680px; } }
+  </style>
+</head>
+<body>
+  <header><div class="inner">
+    <div class="meta">P-LA-001 · GPU1 A800 · generated 2026-07-19T05:14:58.755747+00:00 · official FLA <code>fe8fce9</code></div>
+    <h1>FutureSeed 换不同 Linear Attention，谁更有效？</h1>
+    <p>固定数据、600 steps、D128/L6、loop4 和每个 loop 的 CE，只替换 recurrent state update。FutureSeed 仍是上一层终态注入下一层初态，不是右到左扫描。</p>
+    <div class="decision"><strong>结论：原 GDN v1 胜出；GDN2 次之；KDA 最弱。</strong>更细粒度的 memory edit 在这份预算下没有提高全局闭合，反而学得更慢。按预设规则，不把 GDN2/KDA 升到大模型；回到已证明仍有斜率的 clean data/compute scaling。</div>
+  </div></header>
+
+  <section class="band"><div class="inner">
+    <h2>最重要的三件事</h2>
+    <div class="metric-strip">
+      <div class="metric"><small>600-step full-board exact</small><b>1.07% / 0.20% / 0.10%</b><span>GDN v1 / GDN2 / KDA</span></div>
+      <div class="metric"><small>loop1 → loop4 exact gain</small><b>+0.98% / +0.20% / 0.00%</b><span>复杂状态没有产生更强的 loop 修正</span></div>
+      <div class="metric"><small>hard 51–64 blanks</small><b>0 exact</b><span>GDN2 和 KDA 都没跨过 hard transition</span></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>backbone</th><th>params</th><th>CE@600</th><th>loop1 exact</th><th>loop4 exact</th><th>loop gain</th><th>loop4 blank</th><th>peak alloc</th><th>observed wall</th></tr></thead><tbody><tr><td><span class="swatch" style="background:#1f6f50"></span>GDN v1</td><td>1.307M</td><td>1.0667</td><td>0.10%</td><td>1.07%</td><td>0.98%</td><td>49.25%</td><td>15.02 GiB</td><td>212.1s</td></tr><tr><td><span class="swatch" style="background:#b44b31"></span>FLA GDN2</td><td>1.444M</td><td>1.0997</td><td>0.00%</td><td>0.20%</td><td>0.20%</td><td>48.13%</td><td>10.45 GiB</td><td>669.5s</td></tr><tr><td><span class="swatch" style="background:#3567a8"></span>FLA KDA</td><td>1.253M</td><td>1.1141</td><td>0.10%</td><td>0.10%</td><td>0.00%</td><td>46.97%</td><td>8.70 GiB</td><td>568.3s</td></tr></tbody></table></div>
+    <p class="meta">Observed wall 包含一次性 Triton 编译/自动调优，不是纯稳态吞吐。质量没有持平，因此显存更低不能算效率胜利。</p>
+  </div></section>
+
+  <section><div class="inner">
+    <h2>学习和 loop 动力学</h2>
+    <div class="grid-2"><svg class="chart" viewBox="0 0 760 310" role="img" aria-label="Training CE: simple GDN learns fastest"><text x="64" y="24" class="chart-title">Training CE: simple GDN learns fastest</text><line x1="64" y1="260.0" x2="738" y2="260.0" class="grid"/><text x="54" y="264.0" text-anchor="end" class="tick">1.00</text><line x1="64" y1="205.5" x2="738" y2="205.5" class="grid"/><text x="54" y="209.5" text-anchor="end" class="tick">1.24</text><line x1="64" y1="151.0" x2="738" y2="151.0" class="grid"/><text x="54" y="155.0" text-anchor="end" class="tick">1.48</text><line x1="64" y1="96.5" x2="738" y2="96.5" class="grid"/><text x="54" y="100.5" text-anchor="end" class="tick">1.71</text><line x1="64" y1="42.0" x2="738" y2="42.0" class="grid"/><text x="54" y="46.0" text-anchor="end" class="tick">1.95</text><text x="64.0" y="290" text-anchor="middle" class="tick">100</text><text x="198.8" y="290" text-anchor="middle" class="tick">200</text><text x="333.6" y="290" text-anchor="middle" class="tick">300</text><text x="468.4" y="290" text-anchor="middle" class="tick">400</text><text x="603.2" y="290" text-anchor="middle" class="tick">500</text><text x="738.0" y="290" text-anchor="middle" class="tick">600</text><polyline points="64.0,78.3 198.8,178.5 333.6,218.4 468.4,228.2 603.2,240.2 738.0,244.7" fill="none" stroke="#1f6f50" stroke-width="3"/><circle cx="64.0" cy="78.3" r="4" fill="#1f6f50"/><circle cx="198.8" cy="178.5" r="4" fill="#1f6f50"/><circle cx="333.6" cy="218.4" r="4" fill="#1f6f50"/><circle cx="468.4" cy="228.2" r="4" fill="#1f6f50"/><circle cx="603.2" cy="240.2" r="4" fill="#1f6f50"/><circle cx="738.0" cy="244.7" r="4" fill="#1f6f50"/><polyline points="64.0,55.4 198.8,107.0 333.6,190.5 468.4,221.1 603.2,230.6 738.0,237.1" fill="none" stroke="#b44b31" stroke-width="3"/><circle cx="64.0" cy="55.4" r="4" fill="#b44b31"/><circle cx="198.8" cy="107.0" r="4" fill="#b44b31"/><circle cx="333.6" cy="190.5" r="4" fill="#b44b31"/><circle cx="468.4" cy="221.1" r="4" fill="#b44b31"/><circle cx="603.2" cy="230.6" r="4" fill="#b44b31"/><circle cx="738.0" cy="237.1" r="4" fill="#b44b31"/><polyline points="64.0,57.0 198.8,102.6 333.6,180.5 468.4,216.1 603.2,225.1 738.0,233.8" fill="none" stroke="#3567a8" stroke-width="3"/><circle cx="64.0" cy="57.0" r="4" fill="#3567a8"/><circle cx="198.8" cy="102.6" r="4" fill="#3567a8"/><circle cx="333.6" cy="180.5" r="4" fill="#3567a8"/><circle cx="468.4" cy="216.1" r="4" fill="#3567a8"/><circle cx="603.2" cy="225.1" r="4" fill="#3567a8"/><circle cx="738.0" cy="233.8" r="4" fill="#3567a8"/><rect x="64" y="302" width="14" height="4" fill="#1f6f50"/><text x="84" y="307" class="legend">GDN v1</text><rect x="214" y="302" width="14" height="4" fill="#b44b31"/><text x="234" y="307" class="legend">FLA GDN2</text><rect x="364" y="302" width="14" height="4" fill="#3567a8"/><text x="384" y="307" class="legend">FLA KDA</text></svg><svg class="chart" viewBox="0 0 760 310" role="img" aria-label="Full-board exact by loop"><text x="64" y="24" class="chart-title">Full-board exact by loop</text><line x1="64" y1="260.0" x2="738" y2="260.0" class="grid"/><text x="54" y="264.0" text-anchor="end" class="tick">0.0%</text><line x1="64" y1="205.5" x2="738" y2="205.5" class="grid"/><text x="54" y="209.5" text-anchor="end" class="tick">0.3%</text><line x1="64" y1="151.0" x2="738" y2="151.0" class="grid"/><text x="54" y="155.0" text-anchor="end" class="tick">0.6%</text><line x1="64" y1="96.5" x2="738" y2="96.5" class="grid"/><text x="54" y="100.5" text-anchor="end" class="tick">0.9%</text><line x1="64" y1="42.0" x2="738" y2="42.0" class="grid"/><text x="54" y="46.0" text-anchor="end" class="tick">1.2%</text><text x="64.0" y="290" text-anchor="middle" class="tick">1</text><text x="288.7" y="290" text-anchor="middle" class="tick">2</text><text x="513.3" y="290" text-anchor="middle" class="tick">3</text><text x="738.0" y="290" text-anchor="middle" class="tick">4</text><polyline points="64.0,242.3 288.7,118.1 513.3,64.9 738.0,64.9" fill="none" stroke="#1f6f50" stroke-width="3"/><circle cx="64.0" cy="242.3" r="4" fill="#1f6f50"/><circle cx="288.7" cy="118.1" r="4" fill="#1f6f50"/><circle cx="513.3" cy="64.9" r="4" fill="#1f6f50"/><circle cx="738.0" cy="64.9" r="4" fill="#1f6f50"/><polyline points="64.0,260.0 288.7,242.3 513.3,224.5 738.0,224.5" fill="none" stroke="#b44b31" stroke-width="3"/><circle cx="64.0" cy="260.0" r="4" fill="#b44b31"/><circle cx="288.7" cy="242.3" r="4" fill="#b44b31"/><circle cx="513.3" cy="224.5" r="4" fill="#b44b31"/><circle cx="738.0" cy="224.5" r="4" fill="#b44b31"/><polyline points="64.0,242.3 288.7,242.3 513.3,242.3 738.0,242.3" fill="none" stroke="#3567a8" stroke-width="3"/><circle cx="64.0" cy="242.3" r="4" fill="#3567a8"/><circle cx="288.7" cy="242.3" r="4" fill="#3567a8"/><circle cx="513.3" cy="242.3" r="4" fill="#3567a8"/><circle cx="738.0" cy="242.3" r="4" fill="#3567a8"/><rect x="64" y="302" width="14" height="4" fill="#1f6f50"/><text x="84" y="307" class="legend">GDN v1</text><rect x="214" y="302" width="14" height="4" fill="#b44b31"/><text x="234" y="307" class="legend">FLA GDN2</text><rect x="364" y="302" width="14" height="4" fill="#3567a8"/><text x="384" y="307" class="legend">FLA KDA</text></svg></div>
+    <div style="margin-top:18px"><svg class="chart" viewBox="0 0 760 310" role="img" aria-label="Blank-cell accuracy by loop"><text x="64" y="24" class="chart-title">Blank-cell accuracy by loop</text><line x1="64" y1="260.0" x2="738" y2="260.0" class="grid"/><text x="54" y="264.0" text-anchor="end" class="tick">43.0%</text><line x1="64" y1="205.5" x2="738" y2="205.5" class="grid"/><text x="54" y="209.5" text-anchor="end" class="tick">45.0%</text><line x1="64" y1="151.0" x2="738" y2="151.0" class="grid"/><text x="54" y="155.0" text-anchor="end" class="tick">47.0%</text><line x1="64" y1="96.5" x2="738" y2="96.5" class="grid"/><text x="54" y="100.5" text-anchor="end" class="tick">49.0%</text><line x1="64" y1="42.0" x2="738" y2="42.0" class="grid"/><text x="54" y="46.0" text-anchor="end" class="tick">51.0%</text><text x="64.0" y="290" text-anchor="middle" class="tick">1</text><text x="288.7" y="290" text-anchor="middle" class="tick">2</text><text x="513.3" y="290" text-anchor="middle" class="tick">3</text><text x="738.0" y="290" text-anchor="middle" class="tick">4</text><polyline points="64.0,220.8 288.7,93.7 513.3,89.2 738.0,89.7" fill="none" stroke="#1f6f50" stroke-width="3"/><circle cx="64.0" cy="220.8" r="4" fill="#1f6f50"/><circle cx="288.7" cy="93.7" r="4" fill="#1f6f50"/><circle cx="513.3" cy="89.2" r="4" fill="#1f6f50"/><circle cx="738.0" cy="89.7" r="4" fill="#1f6f50"/><polyline points="64.0,146.8 288.7,120.0 513.3,119.8 738.0,120.1" fill="none" stroke="#b44b31" stroke-width="3"/><circle cx="64.0" cy="146.8" r="4" fill="#b44b31"/><circle cx="288.7" cy="120.0" r="4" fill="#b44b31"/><circle cx="513.3" cy="119.8" r="4" fill="#b44b31"/><circle cx="738.0" cy="120.1" r="4" fill="#b44b31"/><polyline points="64.0,171.3 288.7,152.8 513.3,152.0 738.0,151.9" fill="none" stroke="#3567a8" stroke-width="3"/><circle cx="64.0" cy="171.3" r="4" fill="#3567a8"/><circle cx="288.7" cy="152.8" r="4" fill="#3567a8"/><circle cx="513.3" cy="152.0" r="4" fill="#3567a8"/><circle cx="738.0" cy="151.9" r="4" fill="#3567a8"/><rect x="64" y="302" width="14" height="4" fill="#1f6f50"/><text x="84" y="307" class="legend">GDN v1</text><rect x="214" y="302" width="14" height="4" fill="#b44b31"/><text x="234" y="307" class="legend">FLA GDN2</text><rect x="364" y="302" width="14" height="4" fill="#3567a8"/><text x="384" y="307" class="legend">FLA KDA</text></svg></div>
+    <p><span class="bad">关键失败：</span>GDN2 的同一 hard case 是 <code>23→20→20→20</code> 个错格；KDA 是 <code>23→22→21→21</code>。两者在 loop2 附近做完少量修改，后续基本冻结。更复杂的 state update 并没有自动变成更强的反复修错。</p>
+  </div></section>
+
+  <section class="band"><div class="inner">
+    <h2>难度分段</h2>
+    <div class="table-wrap"><table><thead><tr><th>blank range</th><th>GDN2 exact</th><th>GDN2 blank</th><th>KDA exact</th><th>KDA blank</th></tr></thead><tbody><tr><td>46-50</td><td>7.32%</td><td>92.71%</td><td>1.27%</td><td>89.70%</td></tr><tr><td>51-55</td><td>0.00%</td><td>50.10%</td><td>0.00%</td><td>49.22%</td></tr><tr><td>56-64</td><td>0.00%</td><td>45.13%</td><td>0.00%</td><td>44.10%</td></tr></tbody></table></div>
+    <p>GDN2 在 46–50 blanks 的较容易区间能解出 <strong>7.32%</strong>，KDA 只有 <strong>1.27%</strong>；但进入 51–55 后两者 exact 都归零。这说明 GDN2 确实比 KDA 更好优化，但仍没有解决真正的全局约束闭合。</p>
+  </div></section>
+
+  <section><div class="inner">
+    <h2>同一个 56-blank case：loop1–4 原地对比</h2>
+    <div class="case-grid">
+      <div class="case-pane"><h3>FLA GDN2 · 23→20→20→20 wrong</h3><iframe loading="lazy" onload="this.style.height='760px';this.style.height=(this.contentDocument.documentElement.scrollHeight+4)+'px'" src="../fla-gdn2-futureseed-sudoku-gate-20260719T042329Z-bf4b338/output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0000.html" title="GDN2 hard case"></iframe></div>
+      <div class="case-pane"><h3>FLA KDA · 23→22→21→21 wrong</h3><iframe loading="lazy" onload="this.style.height='760px';this.style.height=(this.contentDocument.documentElement.scrollHeight+4)+'px'" src="../fla-kda-futureseed-sudoku-gate-20260719T043622Z-bf4b338/output/case_bank/official_b56_64/official_b56_64_hard_failure_03_b0000.html" title="KDA hard case"></iframe></div>
+    </div>
+    <div class="links">
+      <a href="../fla-gdn2-futureseed-sudoku-gate-20260719T042329Z-bf4b338/visualizations/index.html">打开 GDN2 总览</a>
+      <a href="../fla-kda-futureseed-sudoku-gate-20260719T043622Z-bf4b338/visualizations/index.html">打开 KDA 总览</a>
+      <a href="../gdn-realbwd-official-sudoku-scale-fs-clean-20260626T0105-be2815b/visualizations/index.html">打开 GDN v1 历史基线</a>
+    </div>
+  </div></section>
+
+  <section class="band"><div class="inner">
+    <h2>CUDA kernel 是否可信</h2>
+    <div class="table-wrap"><table><thead><tr><th>kernel</th><th>output max abs</th><th>state max abs</th><th>gradient max abs</th><th>h0 grad norm</th><th>hot fwd+bwd</th></tr></thead><tbody><tr><td>GDN2</td><td>0.000060</td><td>0.000276</td><td>0.000234</td><td>0.007347</td><td>7.896ms</td></tr><tr><td>KDA</td><td>0.000066</td><td>0.000118</td><td>0.000258</td><td>0.007834</td><td>12.522ms</td></tr></tbody></table></div>
+    <p>两个 official FLA kernel 都通过了 Torch reference 的 forward、terminal state、backward、初始状态梯度和分段序列连续性测试；三层 FutureSeed stack 也有非零输入梯度。KDA 在测试 shape 下的 hot forward+backward 比 GDN2 慢约 <strong>59%</strong>。</p>
+  </div></section>
+
+  <section><div class="inner">
+    <h2>机制判断和下一步</h2>
+    <p><strong>判负的假设：</strong>hard Sudoku 的主要瓶颈不是“每个 state channel 缺少更细的 erase/write/decay 控制”。如果它是，预期顺序应为 GDN2 &gt; KDA &gt; GDN v1；实际是 GDN v1 &gt; GDN2 &gt; KDA。</p>
+    <p><strong>保留的发现：</strong>原生 FutureSeed 能无损迁移到 GDN2 和 KDA 的矩阵状态，kernel 与梯度都正确；因此 FutureSeed 不是绑定某一个 RWKV/GDN 方程的 hack。但这轮没有 no-FS 新对照，不能把两条新 backbone 的 opening 单独归因给 FutureSeed。</p>
+    <p><strong>决策：</strong>停止 GDN2/KDA 的 seed、LR、loss、width 补表，也不立刻上 D224。恢复 P-SCALE-034 的原 GDN v1 clean full-diversity 长训练到 step20000，因为那条曲线在 step16000 仍有真实 exact 正斜率。</p>
+  </div></section>
+  <script>
+    const fitCaseFrames = () => document.querySelectorAll("iframe").forEach((frame) => {
+      const doc = frame.contentDocument;
+      if (doc) {
+        frame.style.height = "760px";
+        frame.style.height = `${doc.documentElement.scrollHeight + 4}px`;
+      }
+    });
+    window.addEventListener("load", fitCaseFrames);
+    window.addEventListener("resize", () => requestAnimationFrame(fitCaseFrames));
+  </script>
+</body>
+</html>

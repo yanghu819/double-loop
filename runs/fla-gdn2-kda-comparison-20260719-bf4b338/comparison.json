@@ -1,0 +1,437 @@
+{
+  "decision": "Stop GDN2/KDA scaling; neither beat the matched GDN v1 quality gate.",
+  "generated_at_utc": "2026-07-19T05:14:58.755747+00:00",
+  "kernel": {
+    "gdn2": {
+      "check_wall_sec": 54.761984195094556,
+      "forward_backward_ms": 7.8958285972476006,
+      "gradient_errors": {
+        "b": 1.2858770787715912e-05,
+        "g": 3.884546458721161e-05,
+        "h0": 9.697675704956055e-05,
+        "k": 4.7538429498672485e-05,
+        "q": 5.0965696573257446e-05,
+        "v": 0.0002336949110031128,
+        "w": 0.0001019015908241272
+      },
+      "gradient_max_abs": 0.0002336949110031128,
+      "initial_state_grad_norm": 0.007347102276980877,
+      "output_max_abs": 5.9857964515686035e-05,
+      "output_shape": [
+        2,
+        81,
+        64
+      ],
+      "parameters": 28820,
+      "peak_memory_mb": 273.84619140625,
+      "split_output_max_abs": 0.0078125,
+      "split_state_max_abs": 0.002790689468383789,
+      "state_dtype": "torch.float32",
+      "state_max_abs": 0.00027595460414886475,
+      "state_shape": [
+        2,
+        4,
+        16,
+        16
+      ]
+    },
+    "kda": {
+      "check_wall_sec": 708.0152627378702,
+      "forward_backward_ms": 12.522375397384167,
+      "gradient_errors": {
+        "A_log": 9.026564657688141e-05,
+        "beta": 7.396191358566284e-05,
+        "dt_bias": 7.305201143026352e-05,
+        "g": 3.0046328902244568e-05,
+        "h0": 0.00011349469423294067,
+        "k": 5.13661652803421e-05,
+        "q": 3.7496909499168396e-05,
+        "v": 0.0002580583095550537
+      },
+      "gradient_max_abs": 0.0002580583095550537,
+      "initial_state_grad_norm": 0.007833527401089668,
+      "output_max_abs": 6.564334034919739e-05,
+      "output_shape": [
+        2,
+        81,
+        64
+      ],
+      "parameters": 20884,
+      "peak_memory_mb": 273.591796875,
+      "split_output_max_abs": 0.0078125,
+      "split_state_max_abs": 0.003081757575273514,
+      "state_dtype": "torch.float32",
+      "state_max_abs": 0.00011767446994781494,
+      "state_shape": [
+        2,
+        4,
+        16,
+        16
+      ]
+    }
+  },
+  "official_fla_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+  "plan_id": "P-LA-001",
+  "runs": [
+    {
+      "backbone": "gdn",
+      "batch": 128,
+      "blank_gain": 0.048079103231430054,
+      "color": "#1f6f50",
+      "d_model": 128,
+      "exact_gain": 0.009765625,
+      "final_blank": 0.4924827218055725,
+      "final_exact": 0.0107421875,
+      "fs_gate": 0.4760913848876953,
+      "fs_state_norm": 7.617462158203125,
+      "git_sha": "be2815bd27ece12df237ed01456e651d1dac5212",
+      "head_dim": 16,
+      "heads": 8,
+      "key": "gdn",
+      "label": "GDN v1",
+      "layers": 6,
+      "loop1_blank": 0.44440361857414246,
+      "loop1_exact": 0.0009765625,
+      "loop_rows": [
+        {
+          "blank_acc": 0.44440361857414246,
+          "exact": 0.0009765625,
+          "loop": 1
+        },
+        {
+          "blank_acc": 0.4910125136375427,
+          "exact": 0.0078125,
+          "loop": 2
+        },
+        {
+          "blank_acc": 0.492675244808197,
+          "exact": 0.0107421875,
+          "loop": 3
+        },
+        {
+          "blank_acc": 0.4924827218055725,
+          "exact": 0.0107421875,
+          "loop": 4
+        }
+      ],
+      "max_loops": 4,
+      "official_rows": [],
+      "parameters": 1306864,
+      "peak_memory_mb": 15380.4736328125,
+      "run": "runs/gdn-realbwd-official-sudoku-scale-fs-clean-20260626T0105-be2815b",
+      "same_hard_case": null,
+      "steps": 600,
+      "train_ce": 1.0666855573654175,
+      "train_curve": [
+        {
+          "ce": 1.7918,
+          "loop1": 1.7923,
+          "loop_last": 1.7918,
+          "step": 100.0
+        },
+        {
+          "ce": 1.355,
+          "loop1": 1.3611,
+          "loop_last": 1.355,
+          "step": 200.0
+        },
+        {
+          "ce": 1.1813,
+          "loop1": 1.2066,
+          "loop_last": 1.1813,
+          "step": 300.0
+        },
+        {
+          "ce": 1.1387,
+          "loop1": 1.2079,
+          "loop_last": 1.1387,
+          "step": 400.0
+        },
+        {
+          "ce": 1.0861,
+          "loop1": 1.2054,
+          "loop_last": 1.0861,
+          "step": 500.0
+        },
+        {
+          "ce": 1.0667,
+          "loop1": 1.2253,
+          "loop_last": 1.0667,
+          "step": 600.0
+        }
+      ],
+      "train_sec": 212.06204509735107
+    },
+    {
+      "backbone": "gdn2",
+      "batch": 128,
+      "blank_gain": 0.009783834218978882,
+      "color": "#b44b31",
+      "d_model": 128,
+      "exact_gain": 0.001953125,
+      "final_blank": 0.4813336730003357,
+      "final_exact": 0.001953125,
+      "fs_gate": 0.49771976470947266,
+      "fs_state_norm": 7.9635162353515625,
+      "git_sha": "bf4b33820599f2f5782c128ac55b5a867d7e9d3d",
+      "head_dim": 16,
+      "heads": 8,
+      "key": "gdn2",
+      "label": "FLA GDN2",
+      "layers": 6,
+      "loop1_blank": 0.4715498387813568,
+      "loop1_exact": 0.0,
+      "loop_rows": [
+        {
+          "blank_acc": 0.4715498387813568,
+          "exact": 0.0,
+          "loop": 1
+        },
+        {
+          "blank_acc": 0.4813861846923828,
+          "exact": 0.0009765625,
+          "loop": 2
+        },
+        {
+          "blank_acc": 0.4814561903476715,
+          "exact": 0.001953125,
+          "loop": 3
+        },
+        {
+          "blank_acc": 0.4813336730003357,
+          "exact": 0.001953125,
+          "loop": 4
+        }
+      ],
+      "max_loops": 4,
+      "official_rows": [
+        {
+          "blank_acc": 0.9271166920661926,
+          "exact": 0.0732421875,
+          "range": "46-50"
+        },
+        {
+          "blank_acc": 0.5009574294090271,
+          "exact": 0.0,
+          "range": "51-55"
+        },
+        {
+          "blank_acc": 0.45126667618751526,
+          "exact": 0.0,
+          "range": "56-64"
+        }
+      ],
+      "parameters": 1443520,
+      "peak_memory_mb": 10701.1943359375,
+      "run": "runs/fla-gdn2-futureseed-sudoku-gate-20260719T042329Z-bf4b338",
+      "same_hard_case": {
+        "batch_index": 0,
+        "holes": 56,
+        "loops": [
+          {
+            "changed_from_previous": 0,
+            "conflict_unit_count": 25,
+            "loop": 1,
+            "wrong_count": 23
+          },
+          {
+            "changed_from_previous": 7,
+            "conflict_unit_count": 23,
+            "loop": 2,
+            "wrong_count": 20
+          },
+          {
+            "changed_from_previous": 0,
+            "conflict_unit_count": 23,
+            "loop": 3,
+            "wrong_count": 20
+          },
+          {
+            "changed_from_previous": 0,
+            "conflict_unit_count": 23,
+            "loop": 4,
+            "wrong_count": 20
+          }
+        ],
+        "stem": "official_b56_64_hard_failure_01_b0000"
+      },
+      "steps": 600,
+      "train_ce": 1.0996575355529785,
+      "train_curve": [
+        {
+          "ce": 1.8915,
+          "loop1": 1.8917,
+          "loop_last": 1.8915,
+          "step": 100.0
+        },
+        {
+          "ce": 1.6666,
+          "loop1": 1.6665,
+          "loop_last": 1.6666,
+          "step": 200.0
+        },
+        {
+          "ce": 1.3028,
+          "loop1": 1.3125,
+          "loop_last": 1.3028,
+          "step": 300.0
+        },
+        {
+          "ce": 1.1694,
+          "loop1": 1.1787,
+          "loop_last": 1.1694,
+          "step": 400.0
+        },
+        {
+          "ce": 1.1282,
+          "loop1": 1.1431,
+          "loop_last": 1.1282,
+          "step": 500.0
+        },
+        {
+          "ce": 1.0997,
+          "loop1": 1.1194,
+          "loop_last": 1.0997,
+          "step": 600.0
+        }
+      ],
+      "train_sec": 669.452507019043
+    },
+    {
+      "backbone": "kda",
+      "batch": 128,
+      "blank_gain": 0.007105976343154907,
+      "color": "#3567a8",
+      "d_model": 128,
+      "exact_gain": 0.0,
+      "final_blank": 0.46965956687927246,
+      "final_exact": 0.0009765625,
+      "fs_gate": 0.4826176166534424,
+      "fs_state_norm": 7.721881866455078,
+      "git_sha": "bf4b33820599f2f5782c128ac55b5a867d7e9d3d",
+      "head_dim": 16,
+      "heads": 8,
+      "key": "kda",
+      "label": "FLA KDA",
+      "layers": 6,
+      "loop1_blank": 0.46255359053611755,
+      "loop1_exact": 0.0009765625,
+      "loop_rows": [
+        {
+          "blank_acc": 0.46255359053611755,
+          "exact": 0.0009765625,
+          "loop": 1
+        },
+        {
+          "blank_acc": 0.46934452652931213,
+          "exact": 0.0009765625,
+          "loop": 2
+        },
+        {
+          "blank_acc": 0.4696245789527893,
+          "exact": 0.0009765625,
+          "loop": 3
+        },
+        {
+          "blank_acc": 0.46965956687927246,
+          "exact": 0.0009765625,
+          "loop": 4
+        }
+      ],
+      "max_loops": 4,
+      "official_rows": [
+        {
+          "blank_acc": 0.8970122933387756,
+          "exact": 0.0126953125,
+          "range": "46-50"
+        },
+        {
+          "blank_acc": 0.4922063648700714,
+          "exact": 0.0,
+          "range": "51-55"
+        },
+        {
+          "blank_acc": 0.44103047251701355,
+          "exact": 0.0,
+          "range": "56-64"
+        }
+      ],
+      "parameters": 1253056,
+      "peak_memory_mb": 8907.2763671875,
+      "run": "runs/fla-kda-futureseed-sudoku-gate-20260719T043622Z-bf4b338",
+      "same_hard_case": {
+        "batch_index": 0,
+        "holes": 56,
+        "loops": [
+          {
+            "changed_from_previous": 0,
+            "conflict_unit_count": 26,
+            "loop": 1,
+            "wrong_count": 23
+          },
+          {
+            "changed_from_previous": 5,
+            "conflict_unit_count": 25,
+            "loop": 2,
+            "wrong_count": 22
+          },
+          {
+            "changed_from_previous": 1,
+            "conflict_unit_count": 25,
+            "loop": 3,
+            "wrong_count": 21
+          },
+          {
+            "changed_from_previous": 0,
+            "conflict_unit_count": 25,
+            "loop": 4,
+            "wrong_count": 21
+          }
+        ],
+        "stem": "official_b56_64_hard_failure_03_b0000"
+      },
+      "steps": 600,
+      "train_ce": 1.1140762567520142,
+      "train_curve": [
+        {
+          "ce": 1.8847,
+          "loop1": 1.8841,
+          "loop_last": 1.8847,
+          "step": 100.0
+        },
+        {
+          "ce": 1.6858,
+          "loop1": 1.6871,
+          "loop_last": 1.6858,
+          "step": 200.0
+        },
+        {
+          "ce": 1.3464,
+          "loop1": 1.3492,
+          "loop_last": 1.3464,
+          "step": 300.0
+        },
+        {
+          "ce": 1.1911,
+          "loop1": 1.1986,
+          "loop_last": 1.1911,
+          "step": 400.0
+        },
+        {
+          "ce": 1.1519,
+          "loop1": 1.1615,
+          "loop_last": 1.1519,
+          "step": 500.0
+        },
+        {
+          "ce": 1.1141,
+          "loop1": 1.1293,
+          "loop_last": 1.1141,
+          "step": 600.0
+        }
+      ],
+      "train_sec": 568.2683601379395
+    }
+  ],
+  "source_sha": "bf4b33820599f2f5782c128ac55b5a867d7e9d3d"
+}

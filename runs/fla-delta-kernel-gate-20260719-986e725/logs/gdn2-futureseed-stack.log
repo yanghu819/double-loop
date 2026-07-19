@@ -1,0 +1,24 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[cuda-check] start gdn2_futureseed_stack
+[cuda-check] pass gdn2_futureseed_stack in 67.30s
+{
+  "device": "NVIDIA A800-SXM4-80GB",
+  "gdn2_futureseed_stack": {
+    "check_wall_sec": 67.3029621487949,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 8.0,
+    "input_grad_norm": 0.03410271555185318,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 136392
+  },
+  "requested_backbone": "gdn2",
+  "requested_check": "futureseed_stack",
+  "torch": "2.7.0+cu126"
+}

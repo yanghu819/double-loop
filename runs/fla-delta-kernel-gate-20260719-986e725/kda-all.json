@@ -1,0 +1,58 @@
+{
+  "device": "NVIDIA A800-SXM4-80GB",
+  "kda_adapter": {
+    "check_wall_sec": 708.0152627378702,
+    "forward_backward_ms": 12.522375397384167,
+    "initial_state_grad_norm": 0.007833527401089668,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 20884,
+    "peak_memory_mb": 273.591796875,
+    "split_output_max_abs": 0.0078125,
+    "split_state_max_abs": 0.003081757575273514,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      16,
+      16
+    ]
+  },
+  "kda_futureseed_stack": {
+    "check_wall_sec": 102.34852135716937,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 8.0,
+    "input_grad_norm": 0.033127401024103165,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 112584
+  },
+  "kda_reference": {
+    "check_wall_sec": 47.28853695211001,
+    "gradient_errors": {
+      "A_log": 9.026564657688141e-05,
+      "beta": 7.396191358566284e-05,
+      "dt_bias": 7.305201143026352e-05,
+      "g": 3.0046328902244568e-05,
+      "h0": 0.00011349469423294067,
+      "k": 5.13661652803421e-05,
+      "q": 3.7496909499168396e-05,
+      "v": 0.0002580583095550537
+    },
+    "gradient_max_abs": 0.0002580583095550537,
+    "output_max_abs": 6.564334034919739e-05,
+    "state_max_abs": 0.00011767446994781494
+  },
+  "requested_backbone": "kda",
+  "requested_check": "all",
+  "torch": "2.7.0+cu126"
+}

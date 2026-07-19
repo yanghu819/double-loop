@@ -1,0 +1,21 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/runs/fla-gdn2-futureseed-sudoku-gate-20260719T041850Z-986e725
+git_sha=986e72507e42baa3bce1ebedfbe61a08ee8b8dce
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn2 rwkv_kernel=auto gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=300,600 holes=16
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4412, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4009, in run
+    model, train_stats = train_model(args, device=device)
+  File "/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2465, in train_model
+    inputs, labels, clue_mask = make_train_batch(
+  File "/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 361, in make_train_batch
+    return official_train.sample_batch(
+  File "/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 312, in sample_batch
+    candidates = self._indices_for_blank_range(int(holes_min), int(holes_max))
+  File "/huyang2/double-loop/.worktrees/fla-delta-9ef4d5b-20260719/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 271, in _indices_for_blank_range
+    raise ValueError(
+ValueError: Official Sudoku split 'train' has no samples with blank_count in 2-4; available range is 46-64.

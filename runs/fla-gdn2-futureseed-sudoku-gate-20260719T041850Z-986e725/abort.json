@@ -1,0 +1,8 @@
+{
+  "timestamp_utc": "2026-07-19T04:19:00Z",
+  "reason": "official_data_blank_range_preflight",
+  "detail": "Stopped before optimizer step 1 because the historical nominal 2-4 blank defaults are now enforced, while the official train split contains only 46-64 blank boards.",
+  "consumed_optimizer_steps": 0,
+  "source_sha": "986e72507e42baa3bce1ebedfbe61a08ee8b8dce",
+  "decision": "Set HOLES_MIN=46 and HOLES_MAX=64 to preserve the historical full-split sampling semantics, then relaunch from clean detached SHA bf4b33820599f2f5782c128ac55b5a867d7e9d3d."
+}

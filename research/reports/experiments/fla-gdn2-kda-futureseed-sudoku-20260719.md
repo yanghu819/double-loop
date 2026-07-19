@@ -55,7 +55,8 @@ state and this branch should stop.
 
 ## 5. Commands
 
-CUDA integration gate, to run from a clean detached worktree:
+CUDA integration gate, including an actual three-layer FutureSeed stack at the
+training head dimension, to run from a clean detached worktree:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/huyang2/double-loop/.cache/python-extra-pylib \

@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from fla.ops.gdn2 import chunk_gdn2, naive_recurrent_gdn2
 from fla.ops.kda import chunk_kda
 from fla.ops.kda.naive import naive_recurrent_kda
-from study_rwkv_futureseed_loop import FLADeltaTimeMix
+from study_rwkv_futureseed_loop import FLADeltaTimeMix, FutureSeedRWKV
 
 
 def max_abs(a: torch.Tensor, b: torch.Tensor) -> float:
@@ -150,7 +150,7 @@ def check_kda_reference(device: torch.device) -> dict[str, Any]:
 
 def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
     torch.manual_seed(303 if backbone == "gdn2" else 404)
-    batch, length, heads, head_dim = 2, 81, 2, 32
+    batch, length, heads, head_dim = 2, 81, 4, 16
     mixer = FLADeltaTimeMix(
         heads * head_dim,
         heads,
@@ -218,6 +218,51 @@ def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
     }
 
 
+def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any]:
+    torch.manual_seed(505 if backbone == "gdn2" else 606)
+    batch, length, heads, head_dim = 2, 81, 4, 16
+    model = FutureSeedRWKV(
+        d_model=heads * head_dim,
+        layers=3,
+        heads=heads,
+        head_dim=head_dim,
+        channel_mult=2,
+        future_seed_scale=1.0,
+        future_seed_decay=0.0,
+        future_seed_update="fixed",
+        future_seed_norm_mode="unit",
+        activation_checkpoint=False,
+        rwkv_kernel="torch",
+        backbone=backbone,
+        gdn_mode="chunk",
+        gdn_expand_v=1.0,
+        gdn_use_short_conv=False,
+        gdn_conv_size=4,
+        gdn_allow_neg_eigval=False,
+    ).to(device)
+    x = torch.randn(batch, length, heads * head_dim, device=device, requires_grad=True)
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        y, diagnostics, next_memory = model(x)
+        loss = y.float().square().mean()
+    loss.backward()
+    parameter_grads = [p.grad for p in model.parameters() if p.requires_grad]
+    if not all_finite([y, x.grad, *parameter_grads]):
+        raise AssertionError(f"{backbone} FutureSeed stack produced non-finite output or gradient")
+    if next_memory is not None:
+        raise AssertionError("fixed FutureSeed update unexpectedly returned loop memory")
+    fs_gate = float(diagnostics["fs_gate_mean"].item())
+    fs_state_norm = float(diagnostics["fs_state_norm"].item())
+    if not (0.0 < fs_gate < 1.0) or fs_state_norm <= 0.0:
+        raise AssertionError(f"{backbone} FutureSeed path is inactive: {diagnostics}")
+    return {
+        "parameters": sum(p.numel() for p in model.parameters()),
+        "output_shape": list(y.shape),
+        "fs_gate_mean": fs_gate,
+        "fs_state_norm": fs_state_norm,
+        "input_grad_norm": float(x.grad.float().norm().item()),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, default=None)
@@ -236,6 +281,8 @@ def main() -> None:
         "kda_reference": check_kda_reference(device),
         "gdn2_adapter": check_adapter("gdn2", device),
         "kda_adapter": check_adapter("kda", device),
+        "gdn2_futureseed_stack": check_futureseed_stack("gdn2", device),
+        "kda_futureseed_stack": check_futureseed_stack("kda", device),
     }
     text = json.dumps(payload, indent=2, sort_keys=True)
     print(text, flush=True)

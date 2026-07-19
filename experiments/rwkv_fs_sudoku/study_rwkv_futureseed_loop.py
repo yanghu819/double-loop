@@ -41,6 +41,20 @@ else:
     FLA_IMPORT_ERROR = None
 
 try:
+    from fla.layers.gdn2 import GatedDeltaNet2
+    from fla.layers.kda import KimiDeltaAttention
+    from fla.ops.gdn2 import chunk_gdn2
+    from fla.ops.kda import chunk_kda
+except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
+    GatedDeltaNet2 = None
+    KimiDeltaAttention = None
+    chunk_gdn2 = None
+    chunk_kda = None
+    FLA_DELTA_IMPORT_ERROR = exc
+else:
+    FLA_DELTA_IMPORT_ERROR = None
+
+try:
     from gdn_triton import gdn_triton_recurrent
 except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
     gdn_triton_recurrent = None
@@ -58,6 +72,19 @@ def load_fla_short_convolution() -> type:
 def fla_gdn_available() -> Tuple[bool, str]:
     if chunk_gated_delta_rule is None or naive_recurrent_gated_delta_rule is None:
         return False, f"flash-linear-attention import failed: {FLA_IMPORT_ERROR}"
+    return True, "ok"
+
+
+def fla_delta_available(backbone: str) -> Tuple[bool, str]:
+    implementations = {
+        "gdn2": (GatedDeltaNet2, chunk_gdn2),
+        "kda": (KimiDeltaAttention, chunk_kda),
+    }
+    if backbone not in implementations:
+        return False, f"unknown FLA delta backbone: {backbone}"
+    layer, kernel = implementations[backbone]
+    if layer is None or kernel is None:
+        return False, f"flash-linear-attention import failed: {FLA_DELTA_IMPORT_ERROR}"
     return True, "ok"
 
 
@@ -910,6 +937,187 @@ class GDNBlock(nn.Module):
         return x, terminal_state
 
 
+class FLADeltaTimeMix(nn.Module):
+    """Official FLA GDN2/KDA mixer with explicit V-first recurrent state I/O."""
+
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        *,
+        backbone: str,
+        expand_v: float,
+        mode: str,
+        use_short_conv: bool,
+        conv_size: int,
+        allow_neg_eigval: bool,
+    ) -> None:
+        super().__init__()
+        if backbone not in {"gdn2", "kda"}:
+            raise ValueError("FLA delta backbone must be 'gdn2' or 'kda'.")
+        if mode != "chunk":
+            raise ValueError(f"BACKBONE={backbone} supports only GDN_MODE=chunk during training.")
+        ok, reason = fla_delta_available(backbone)
+        if not ok:
+            raise RuntimeError(f"BACKBONE={backbone} requires current flash-linear-attention: {reason}")
+        if d_model != heads * head_dim:
+            raise ValueError(f"{backbone.upper()} keeps d_model == heads * head_dim for matched state size.")
+
+        self.backbone = backbone
+        self.heads = int(heads)
+        self.head_dim = int(head_dim)
+        self.head_v_dim = int(head_dim * float(expand_v))
+        if not math.isclose(float(self.head_v_dim), head_dim * float(expand_v), rel_tol=1e-5):
+            raise ValueError("--gdn_expand_v must produce an integer value head dimension.")
+        self.value_dim = self.heads * self.head_v_dim
+
+        layer_type = GatedDeltaNet2 if backbone == "gdn2" else KimiDeltaAttention
+        assert layer_type is not None
+        self.core = layer_type(
+            hidden_size=d_model,
+            expand_v=expand_v,
+            head_dim=head_dim,
+            num_heads=heads,
+            num_v_heads=heads,
+            mode="chunk",
+            use_short_conv=bool(use_short_conv),
+            allow_neg_eigval=bool(allow_neg_eigval),
+            conv_size=int(conv_size),
+            conv_bias=False,
+        )
+
+    def _project_qkv(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        q = self.core.q_proj(x)
+        k = self.core.k_proj(x)
+        v = self.core.v_proj(x)
+        if self.core.use_short_conv:
+            q, _ = self.core.q_conv1d(x=q, cache=None, output_final_state=False)
+            k, _ = self.core.k_conv1d(x=k, cache=None, output_final_state=False)
+            v, _ = self.core.v_conv1d(x=v, cache=None, output_final_state=False)
+        else:
+            q = F.silu(q)
+            k = F.silu(k)
+            v = F.silu(v)
+        return q, k, v
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if not x.is_cuda:
+            raise RuntimeError(f"BACKBONE={self.backbone} is CUDA-only; CPU fallback is intentionally disabled.")
+        batch_size, seq_len, _channels = x.shape
+        expected = (batch_size, self.heads, self.head_v_dim, self.head_dim)
+        if initial_state is not None:
+            if tuple(initial_state.shape) != expected:
+                raise ValueError(
+                    f"{self.backbone.upper()} initial_state shape {tuple(initial_state.shape)} does not match {expected}"
+                )
+            initial_state = initial_state.float()
+
+        q, k, v = self._project_qkv(x)
+        q = q.reshape(batch_size, seq_len, self.heads, self.head_dim)
+        k = k.reshape(batch_size, seq_len, self.heads, self.head_dim)
+        v = v.reshape(batch_size, seq_len, self.heads, self.head_v_dim)
+
+        if self.backbone == "gdn2":
+            assert chunk_gdn2 is not None
+            g = F.softplus(self.core.f_proj(x).float() + self.core.dt_bias)
+            g = g.reshape(batch_size, seq_len, self.heads, self.head_dim)
+            g = -self.core.A_log.float().exp().view(1, 1, self.heads, 1) * g
+            b = self.core.b_proj(x).sigmoid().reshape(batch_size, seq_len, self.heads, self.head_dim)
+            w = self.core.w_proj(x).sigmoid().reshape(batch_size, seq_len, self.heads, self.head_v_dim)
+            if self.core.allow_neg_eigval:
+                b = b * 2.0
+            o, terminal_state = chunk_gdn2(
+                q=q,
+                k=k,
+                v=v,
+                g=g,
+                b=b,
+                w=w,
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
+                state_v_first=True,
+            )
+        else:
+            assert chunk_kda is not None
+            g = self.core.f_proj(x).reshape(batch_size, seq_len, self.heads, self.head_dim)
+            beta = self.core.b_proj(x)
+            o, terminal_state = chunk_kda(
+                q=q,
+                k=k,
+                v=v,
+                g=g,
+                beta=beta,
+                A_log=self.core.A_log,
+                dt_bias=self.core.dt_bias,
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
+                use_gate_in_kernel=True,
+                use_beta_sigmoid_in_kernel=True,
+                allow_neg_eigval=self.core.allow_neg_eigval,
+                safe_gate=self.core.safe_gate,
+                lower_bound=self.core.lower_bound,
+                state_v_first=True,
+            )
+
+        if terminal_state is None:
+            raise RuntimeError(f"{self.backbone.upper()} kernel did not return a terminal state.")
+        gate = self.core.g_proj(x).reshape(batch_size, seq_len, self.heads, self.head_v_dim)
+        y = self.core.o_norm(o, gate).reshape(batch_size, seq_len, self.value_dim)
+        return self.core.o_proj(y), terminal_state
+
+
+class FLADeltaBlock(nn.Module):
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        channel_mult: int,
+        *,
+        backbone: str,
+        gdn_mode: str,
+        gdn_expand_v: float,
+        gdn_use_short_conv: bool,
+        gdn_conv_size: int,
+        gdn_allow_neg_eigval: bool,
+    ) -> None:
+        super().__init__()
+        self.ln_time = nn.LayerNorm(d_model)
+        self.ln_channel = nn.LayerNorm(d_model)
+        self.time_mix = FLADeltaTimeMix(
+            d_model,
+            heads,
+            head_dim,
+            backbone=backbone,
+            expand_v=gdn_expand_v,
+            mode=gdn_mode,
+            use_short_conv=gdn_use_short_conv,
+            conv_size=gdn_conv_size,
+            allow_neg_eigval=gdn_allow_neg_eigval,
+        )
+        self.channel_mix = ChannelMix(d_model, channel_mult)
+        self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+        x = x + time_out
+        x = x + self.channel_mix(self.ln_channel(x))
+        return x, terminal_state
+
+
 class FutureSeedRWKV(nn.Module):
     def __init__(
         self,
@@ -939,8 +1147,8 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
         if future_seed_norm_mode not in {"unit", "adaptive_rms"}:
             raise ValueError("future_seed_norm_mode must be one of: unit, adaptive_rms.")
-        if backbone not in {"rwkv", "gdn"}:
-            raise ValueError("backbone must be one of: rwkv, gdn.")
+        if backbone not in {"rwkv", "gdn", "gdn2", "kda"}:
+            raise ValueError("backbone must be one of: rwkv, gdn, gdn2, kda.")
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -976,13 +1184,28 @@ class FutureSeedRWKV(nn.Module):
                         rwkv_kernel=rwkv_kernel,
                     )
                 )
-            else:
+            elif backbone == "gdn":
                 blocks.append(
                     GDNBlock(
                         d_model,
                         heads,
                         head_dim,
                         channel_mult,
+                        gdn_mode=gdn_mode,
+                        gdn_expand_v=gdn_expand_v,
+                        gdn_use_short_conv=gdn_use_short_conv,
+                        gdn_conv_size=gdn_conv_size,
+                        gdn_allow_neg_eigval=gdn_allow_neg_eigval,
+                    )
+                )
+            else:
+                blocks.append(
+                    FLADeltaBlock(
+                        d_model,
+                        heads,
+                        head_dim,
+                        channel_mult,
+                        backbone=backbone,
                         gdn_mode=gdn_mode,
                         gdn_expand_v=gdn_expand_v,
                         gdn_use_short_conv=gdn_use_short_conv,
@@ -3741,6 +3964,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
+    if args.backbone in {"gdn2", "kda"}:
+        if args.gdn_mode != "chunk":
+            raise ValueError(f"--backbone {args.backbone} requires --gdn_mode chunk during training.")
+        ok, reason = fla_delta_available(args.backbone)
+        if not ok:
+            raise ValueError(f"--backbone {args.backbone} is unavailable: {reason}")
+        if args.gdn_expand_v <= 0:
+            raise ValueError("--gdn_expand_v must be positive.")
+        if args.gdn_conv_size < 1:
+            raise ValueError("--gdn_conv_size must be positive.")
     if args.backbone == "rwkv" and args.rwkv_kernel in {"cuda", "statepassing"}:
         ok, reason = statepassing_available(args.head_dim)
         if not ok:
@@ -4128,7 +4361,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
-    p.add_argument("--backbone", choices=("rwkv", "gdn"), default="rwkv")
+    p.add_argument("--backbone", choices=("rwkv", "gdn", "gdn2", "kda"), default="rwkv")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent", "triton_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)

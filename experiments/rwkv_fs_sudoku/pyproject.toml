@@ -4,8 +4,14 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
   "colorama>=0.4.6",
+  "einops>=0.8.0",
+  "flash-linear-attention==0.5.2",
   "ninja>=1.11.1",
   "numpy>=2.0",
   "pydantic>=2.0",
   "torch>=2.7.0",
+  "transformers>=4.45.0",
 ]
+
+[tool.uv.sources]
+flash-linear-attention = { path = "../../wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl" }

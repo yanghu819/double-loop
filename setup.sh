@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXP_DIR="$REPO_ROOT/experiments/rwkv_fs_sudoku"
+FLA_COMMIT="fe8fce9fc6984f22905f54cfa885dce1502baf26"
 
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$REPO_ROOT/.cache}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$REPO_ROOT/.cache/uv}"
@@ -81,19 +82,36 @@ PY
     "$py_bin" -m pip install "${pip_args[@]}" $missing
   fi
 
-  if ! PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
-import importlib.util
-raise SystemExit(0 if importlib.util.find_spec("fla") is not None else 1)
+  local fla_needs_install=1
+  if [[ -s "$REPO_ROOT/.cache/fla-source-sha" ]] && [[ "$(<"$REPO_ROOT/.cache/fla-source-sha")" == "$FLA_COMMIT" ]] && \
+    PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
+try:
+    from fla.ops.gdn2 import chunk_gdn2  # noqa: F401
+    from fla.ops.kda import chunk_kda  # noqa: F401
+except Exception:
+    raise SystemExit(1)
 PY
   then
+    fla_needs_install=0
+  fi
+
+  if [[ "$fla_needs_install" == "1" ]]; then
     local fla_args=(--target "$target" --upgrade --no-deps)
     if compgen -G "$REPO_ROOT/wheelhouse/flash_linear_attention*.whl" >/dev/null || compgen -G "$REPO_ROOT/wheelhouse/flash-linear-attention*.whl" >/dev/null; then
       "$py_bin" -m pip install "${fla_args[@]}" --no-index --find-links "$REPO_ROOT/wheelhouse" "flash-linear-attention"
     else
-      "$py_bin" -m pip install "${fla_args[@]}" "flash-linear-attention @ git+https://github.com/fla-org/flash-linear-attention.git@9b20d26dc4922e67c1332ef77e30b71111406d96"
+      "$py_bin" -m pip install "${fla_args[@]}" "flash-linear-attention @ git+https://github.com/fla-org/flash-linear-attention.git@$FLA_COMMIT"
     fi
+    PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
+import fla
+from fla.ops.gdn2 import chunk_gdn2  # noqa: F401
+from fla.ops.kda import chunk_kda  # noqa: F401
+
+print(f"flash-linear-attention={fla.__version__}")
+PY
   fi
 
+  printf '%s\n' "$FLA_COMMIT" > "$REPO_ROOT/.cache/fla-source-sha"
   printf '%s\n' "$target" > "$REPO_ROOT/.cache/python-extra-path"
 }
 

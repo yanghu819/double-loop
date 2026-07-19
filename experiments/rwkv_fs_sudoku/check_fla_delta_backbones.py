@@ -3,9 +3,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any, Iterable
+
+for cache_var in (
+    "XDG_CACHE_HOME",
+    "TRITON_CACHE_DIR",
+    "TORCHINDUCTOR_CACHE_DIR",
+    "TORCH_EXTENSIONS_DIR",
+    "TMPDIR",
+):
+    cache_path = os.environ.get(cache_var, "")
+    if not cache_path.startswith("/huyang2/double-loop/"):
+        raise RuntimeError(f"{cache_var} must point below /huyang2/double-loop before importing CUDA runtimes")
 
 import torch
 import torch.nn.functional as F
@@ -265,8 +277,16 @@ def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--backbone", choices=("all", "gdn2", "kda"), default="all")
     parser.add_argument("--out", type=Path, default=None)
     return parser.parse_args()
+
+
+def write_payload(payload: dict[str, Any], out: Path | None) -> None:
+    text = json.dumps(payload, indent=2, sort_keys=True)
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -274,21 +294,34 @@ def main() -> None:
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required; CPU smoke is intentionally forbidden.")
     device = torch.device("cuda", 0)
-    payload = {
+    payload: dict[str, Any] = {
         "torch": torch.__version__,
         "device": torch.cuda.get_device_name(device),
-        "gdn2_reference": check_gdn2_reference(device),
-        "kda_reference": check_kda_reference(device),
-        "gdn2_adapter": check_adapter("gdn2", device),
-        "kda_adapter": check_adapter("kda", device),
-        "gdn2_futureseed_stack": check_futureseed_stack("gdn2", device),
-        "kda_futureseed_stack": check_futureseed_stack("kda", device),
+        "requested_backbone": args.backbone,
     }
-    text = json.dumps(payload, indent=2, sort_keys=True)
-    print(text, flush=True)
-    if args.out is not None:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(text + "\n", encoding="utf-8")
+    selected = ("gdn2", "kda") if args.backbone == "all" else (args.backbone,)
+    checks = {
+        "gdn2": (
+            ("gdn2_reference", lambda: check_gdn2_reference(device)),
+            ("gdn2_adapter", lambda: check_adapter("gdn2", device)),
+            ("gdn2_futureseed_stack", lambda: check_futureseed_stack("gdn2", device)),
+        ),
+        "kda": (
+            ("kda_reference", lambda: check_kda_reference(device)),
+            ("kda_adapter", lambda: check_adapter("kda", device)),
+            ("kda_futureseed_stack", lambda: check_futureseed_stack("kda", device)),
+        ),
+    }
+    for backbone in selected:
+        for name, check in checks[backbone]:
+            print(f"[cuda-check] start {name}", flush=True)
+            started = time.perf_counter()
+            payload[name] = check()
+            payload[name]["check_wall_sec"] = time.perf_counter() - started
+            write_payload(payload, args.out)
+            print(f"[cuda-check] pass {name} in {payload[name]['check_wall_sec']:.2f}s", flush=True)
+    write_payload(payload, args.out)
+    print(json.dumps(payload, indent=2, sort_keys=True), flush=True)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-034`
-- Status: in progress; step12000 primary gate passed, next conditional gate is step16000
+- Status: in progress; step16000 gate passed, next conditional gate is step20000
 - Planned: 2026-07-16 11:05 CST / 2026-07-16T03:05:36Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -119,6 +119,32 @@ gate. Every tracked hard metric set a new best by more than `+0.01`, so the
 later-gate stop rule has not fired. Do not add noise, a new loss, more loops,
 width, repair, search, or selector.
 
+The step16000 gate completed on 2026-07-19 from the exact step15425 train-state
+checkpoint after an AIStation lease rollover. This leg changed no model,
+optimizer, data, objective, or loop setting.
+
+| Readout | step12000 | step16000 | Delta |
+|---|---:|---:|---:|
+| mixed loop5 exact | `0.3730` | `0.3945` | `+0.0215` |
+| holes53 loop5 exact | `0.3340` | `0.3809` | `+0.0469` |
+| holes60 loop5 exact | `0.3789` | `0.4180` | `+0.0391` |
+| holes64 loop5 exact | `0.3574` | `0.3828` | `+0.0254` |
+| official 51-55 exact | `0.5352` | `0.5605` | `+0.0254` |
+| official 56-64 exact | `0.2285` | `0.2598` | `+0.0312` |
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.0586 / 0.2812 / 0.3828 / 0.3945`. The extra training still acts
+through loops3-5 rather than moving loop1, so this remains direct evidence for
+learned recurrent refinement. The official 56-64 aggregate is `0.2598`; the
+nearby `0.2656` number from the visualization case bank is not used as the
+primary aggregate. The step15425-to16000 segment took `1953.4s` and peaked at
+`44527.1MB` allocated memory.
+
+Decision: the predeclared `+0.01` later-gate rule passes again. Pause this
+ladder while P-LA-001 performs the higher-information GDN2/KDA state-edit
+comparison, then resume unchanged to step20000 if neither alternative produces
+a stronger return per unit compute.
+
 ## 7. Artifacts And Visualization
 
 Each leg will archive config, launch environment, logs, score, fixed checkpoint
@@ -137,7 +163,18 @@ Completed step12000 run:
 - Local interactive dashboard:
   `runs/gdn-full-diversity-d224l12-upperbound-s12000-lease-20260716T131753Z-1c99589/index.html`
 
+Completed step16000 run:
+
+- Remote run:
+  `/huyang2/double-loop/.worktrees/pscale034-upperbound-f8e009b-20260717/runs/gdn-full-diversity-d224l12-upperbound-s16000-lease-20260719T025124Z-f8e009b`
+- Exact checkpoint:
+  `/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step016000.pt`
+- Remote metadata archive:
+  `/huyang2/double-loop/artifacts/gdn-full-diversity-d224l12-upperbound-s16000-lease-20260719T025124Z-f8e009b-metadata-light.tgz`
+- Local interactive dashboard:
+  `runs/gdn-full-diversity-d224l12-upperbound-s16000-lease-20260719T025124Z-f8e009b/visualizations/index.html`
+
 ## 8. Submission Record
 
-No tag: the scaling conclusion is clean, but the primary score is `0.3730`,
+No tag: the scaling conclusion is clean, but the primary score is `0.3945`,
 below the `0.50` tag threshold.

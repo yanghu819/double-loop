@@ -59,11 +59,27 @@ CUDA integration gate, including an actual three-layer FutureSeed stack at the
 training head dimension, to run from a clean detached worktree:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/huyang2/double-loop/.cache/python-extra-pylib \
+CUDA_VISIBLE_DEVICES=0 \
+XDG_CACHE_HOME=/huyang2/double-loop/.cache \
+TRITON_CACHE_DIR=/huyang2/double-loop/.cache/triton \
+TORCHINDUCTOR_CACHE_DIR=/huyang2/double-loop/.cache/torchinductor \
+TORCH_EXTENSIONS_DIR=/huyang2/double-loop/.cache/torch_extensions \
+TMPDIR=/huyang2/double-loop/.cache/tmp \
+PYTHONPATH=/huyang2/double-loop/.cache/python-extra-pylib \
   /opt/conda/bin/python \
   experiments/rwkv_fs_sudoku/check_fla_delta_backbones.py \
+  --backbone gdn2 \
   --out artifacts/fla-delta-kernel-check.json
 ```
+
+The first cold-cache combined invocation was stopped by exact process group
+`4157` at `20m28s`, as required by the integration-gate kill criterion. It had
+not reported a numerical mismatch; it was still generating FLA autotune
+kernels and had produced 3,848 persistent Triton cache files. The checker now
+accepts `--backbone gdn2|kda`, logs each sub-check as it starts and passes, and
+writes partial JSON after every passed sub-check. The split reruns reuse the
+same repository-local cache and make a compile stall distinguishable from a
+forward/backward/state mismatch.
 
 Training command template:
 

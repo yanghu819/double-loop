@@ -257,9 +257,21 @@ def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any
         y, diagnostics, next_memory = model(x)
         loss = y.float().square().mean()
     loss.backward()
-    parameter_grads = [p.grad for p in model.parameters() if p.requires_grad]
-    if not all_finite([y, x.grad, *parameter_grads]):
-        raise AssertionError(f"{backbone} FutureSeed stack produced non-finite output or gradient")
+    missing_parameter_grads = [name for name, p in model.named_parameters() if p.requires_grad and p.grad is None]
+    nonfinite_parameter_grads = [
+        name
+        for name, p in model.named_parameters()
+        if p.requires_grad and p.grad is not None and not bool(torch.isfinite(p.grad).all())
+    ]
+    # Layer zero consumes no FutureSeed because no preceding terminal state exists.
+    expected_missing = {"blocks.0.future_seed_logit"}
+    unexpected_missing = sorted(set(missing_parameter_grads) - expected_missing)
+    if not all_finite([y, x.grad]) or unexpected_missing or nonfinite_parameter_grads:
+        raise AssertionError(
+            f"{backbone} FutureSeed stack failed: "
+            f"unexpected_missing={unexpected_missing}, nonfinite={nonfinite_parameter_grads}, "
+            f"output_finite={bool(torch.isfinite(y).all())}, input_grad_finite={bool(torch.isfinite(x.grad).all())}"
+        )
     if next_memory is not None:
         raise AssertionError("fixed FutureSeed update unexpectedly returned loop memory")
     fs_gate = float(diagnostics["fs_gate_mean"].item())
@@ -272,12 +284,14 @@ def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any
         "fs_gate_mean": fs_gate,
         "fs_state_norm": fs_state_norm,
         "input_grad_norm": float(x.grad.float().norm().item()),
+        "expected_missing_parameter_grads": sorted(set(missing_parameter_grads) & expected_missing),
     }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backbone", choices=("all", "gdn2", "kda"), default="all")
+    parser.add_argument("--check", choices=("all", "reference", "adapter", "futureseed_stack"), default="all")
     parser.add_argument("--out", type=Path, default=None)
     return parser.parse_args()
 
@@ -298,6 +312,7 @@ def main() -> None:
         "torch": torch.__version__,
         "device": torch.cuda.get_device_name(device),
         "requested_backbone": args.backbone,
+        "requested_check": args.check,
     }
     selected = ("gdn2", "kda") if args.backbone == "all" else (args.backbone,)
     checks = {
@@ -314,6 +329,9 @@ def main() -> None:
     }
     for backbone in selected:
         for name, check in checks[backbone]:
+            check_kind = name.removeprefix(f"{backbone}_")
+            if args.check != "all" and args.check != check_kind:
+                continue
             print(f"[cuda-check] start {name}", flush=True)
             started = time.perf_counter()
             payload[name] = check()

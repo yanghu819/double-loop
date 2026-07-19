@@ -81,6 +81,22 @@ writes partial JSON after every passed sub-check. The split reruns reuse the
 same repository-local cache and make a compile stall distinguishable from a
 forward/backward/state mismatch.
 
+The split GDN2 run passed its strict recurrence reference and real adapter
+checks. Kernel versus Torch maximum errors were `5.99e-5` for output,
+`2.76e-4` for terminal state, and `2.34e-4` over all gradients including the
+initial state. The BF16 adapter had a nonzero initial-state gradient norm
+`0.00735`; full versus split-sequence error was `0.00781` for output and
+`0.00279` for terminal state; measured forward plus backward was `7.90ms` at
+the test shape.
+
+The initial three-layer check then exposed a checker bug rather than a kernel
+failure: it treated every `grad=None` as non-finite, even though
+`blocks.0.future_seed_logit` is structurally unused because layer zero has no
+preceding terminal state to seed it. The corrected check permits only that
+named missing gradient, reports any other missing gradient separately from
+NaN/Inf, and supports `--check futureseed_stack` so the already-passed kernel
+tests do not need to be rerun.
+
 Training command template:
 
 ```bash

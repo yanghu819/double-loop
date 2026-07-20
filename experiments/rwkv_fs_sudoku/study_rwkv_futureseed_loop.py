@@ -996,7 +996,7 @@ class GDNBlock(nn.Module):
 
 
 class FLADeltaTimeMix(nn.Module):
-    """Official FLA delta-rule layer with explicit V-first recurrent state I/O."""
+    """Official FLA delta-rule layer using each layer's native cache state layout."""
 
     def __init__(
         self,
@@ -1029,6 +1029,9 @@ class FLADeltaTimeMix(nn.Module):
         if not math.isclose(float(self.head_v_dim), head_dim * float(expand_v), rel_tol=1e-5):
             raise ValueError("--gdn_expand_v must produce an integer value head dimension.")
         self.value_dim = self.heads * self.head_v_dim
+        # Official GDN/KDA layers request V-first states from their kernels;
+        # official GDN2 currently keeps its default K-first cache layout.
+        self.state_v_first = backbone != "gdn2"
 
         layer_types = {
             "fla_gdn": FLAGatedDeltaNet,
@@ -1072,7 +1075,11 @@ class FLADeltaTimeMix(nn.Module):
         if not x.is_cuda:
             raise RuntimeError(f"BACKBONE={self.backbone} is CUDA-only; CPU fallback is intentionally disabled.")
         batch_size, seq_len, _channels = x.shape
-        expected = (batch_size, self.heads, self.head_v_dim, self.head_dim)
+        expected = (
+            (batch_size, self.heads, self.head_v_dim, self.head_dim)
+            if self.state_v_first
+            else (batch_size, self.heads, self.head_dim, self.head_v_dim)
+        )
         if initial_state is not None:
             if tuple(initial_state.shape) != expected:
                 raise ValueError(

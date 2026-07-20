@@ -400,7 +400,15 @@ def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
 
     hook = mixer.core.register_forward_hook(count_forward)
     x = torch.randn(batch, length, heads * head_dim, device=device, requires_grad=True)
-    h0 = torch.randn(batch, heads, head_dim * 2, head_dim, device=device, dtype=torch.float32, requires_grad=True) * 0.05
+    state_tail = (head_dim * 2, head_dim) if mixer.state_v_first else (head_dim, head_dim * 2)
+    h0 = torch.randn(
+        batch,
+        heads,
+        *state_tail,
+        device=device,
+        dtype=torch.float32,
+        requires_grad=True,
+    ) * 0.05
     h0.retain_grad()
     torch.cuda.reset_peak_memory_stats(device)
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
@@ -416,6 +424,11 @@ def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
     hook.remove()
     if official_forward_calls != 1:
         raise AssertionError(f"{backbone} official layer forward count was {official_forward_calls}, expected exactly 1")
+    if tuple(ht.shape) != (batch, heads, *state_tail):
+        raise AssertionError(
+            f"{backbone} official cache state shape {tuple(ht.shape)} does not preserve native layout "
+            f"{(batch, heads, *state_tail)}"
+        )
     parameter_grads = [p.grad for p in mixer.parameters() if p.requires_grad]
     if not all_finite([y, ht, x.grad, h0.grad, *parameter_grads]):
         raise AssertionError(f"{backbone} adapter produced non-finite output or gradient")
@@ -441,6 +454,7 @@ def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
         "parameters": sum(p.numel() for p in mixer.parameters()),
         "output_shape": list(y.shape),
         "state_shape": list(ht.shape),
+        "state_v_first": mixer.state_v_first,
         "state_dtype": str(ht.dtype),
         "initial_state_grad_norm": float(h0.grad.float().norm().item()),
         "official_layer_class": f"{type(mixer.core).__module__}.{type(mixer.core).__qualname__}",

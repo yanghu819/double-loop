@@ -411,6 +411,10 @@ if [[ "${GDN_ALLOW_NEG_EIGVAL:-0}" == "1" ]]; then
   COMMON_ARGS+=(--gdn_allow_neg_eigval)
 fi
 
+if [[ "${FLA_STRICT_OFFICIAL:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--fla_strict_official)
+fi
+
 if [[ -n "${RESUME_TRAIN_CHECKPOINT:-}" ]]; then
   COMMON_ARGS+=(--resume_train_checkpoint "$RESUME_TRAIN_CHECKPOINT")
 fi

@@ -1,5 +1,17 @@
 # FLA GDN2/KDA FutureSeed Sudoku Gate
 
+## 0. Audit Correction (2026-07-20 12:36 CST)
+
+Do not use this run as a strict architecture ranking. The numerical results and
+CUDA checks remain valid, but the historical `GDN v1` reference used the
+project's custom implementation, `LOOP_LOSS=final`, and custom zero/small
+initialization. The GDN2/KDA arms used official FLA modules and
+`LOOP_LOSS=all`. All arms also disabled official short convolution. Therefore
+the conclusion is limited to small-budget opening under those mixed conditions;
+it does not establish that GDN2 or KDA is intrinsically worse than official
+FLA GDN. P-LA-002 supersedes the architecture-ranking decision with a same-SHA,
+same-loss, official-FLA-only comparison and a strict no-fallback provenance gate.
+
 ## 1. Metainfo
 
 - Plan ID: `P-LA-001`

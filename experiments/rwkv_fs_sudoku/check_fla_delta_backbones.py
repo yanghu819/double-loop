@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.metadata
+import inspect
 import json
 import os
 import time
+import zipfile
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -18,14 +22,41 @@ for cache_var in (
     cache_path = os.environ.get(cache_var, "")
     if not cache_path.startswith("/huyang2/double-loop/"):
         raise RuntimeError(f"{cache_var} must point below /huyang2/double-loop before importing CUDA runtimes")
+if os.environ.get("FLA_DISABLE_BACKEND_DISPATCH") != "1":
+    raise RuntimeError("Set FLA_DISABLE_BACKEND_DISPATCH=1 so no alternate FLA backend can be selected silently")
+if os.environ.get("FLA_CONV_BACKEND") != "triton":
+    raise RuntimeError("Set FLA_CONV_BACKEND=triton so ShortConvolution cannot switch backends silently")
 
 import torch
 import torch.nn.functional as F
 
+import fla
+from fla.layers.gated_deltanet import GatedDeltaNet as FLAGatedDeltaNet
+from fla.layers.gdn2 import GatedDeltaNet2
+from fla.layers.kda import KimiDeltaAttention
+from fla.ops.backends import _DISPATCH_DISABLED
+from fla.ops.gated_delta_rule.chunk import chunk_gated_delta_rule
+from fla.ops.gated_delta_rule.naive import naive_recurrent_gated_delta_rule
 from fla.ops.gdn2 import chunk_gdn2, naive_recurrent_gdn2
 from fla.ops.kda import chunk_kda
 from fla.ops.kda.naive import naive_recurrent_kda
 from study_rwkv_futureseed_loop import FLADeltaTimeMix, FutureSeedRWKV
+
+
+EXPECTED_FLA_SHA = "fe8fce9fc6984f22905f54cfa885dce1502baf26"
+EXPECTED_WHEEL_SHA256 = "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+PROVENANCE_FILES = (
+    "fla/layers/gated_deltanet.py",
+    "fla/layers/gdn2.py",
+    "fla/layers/kda.py",
+    "fla/models/utils.py",
+    "fla/ops/backends/__init__.py",
+    "fla/ops/gated_delta_rule/chunk.py",
+    "fla/ops/gdn2/chunk.py",
+    "fla/ops/kda/chunk.py",
+    "fla/modules/conv/short_conv.py",
+    "fla/modules/conv/triton/ops.py",
+)
 
 
 def max_abs(a: torch.Tensor, b: torch.Tensor) -> float:
@@ -38,6 +69,162 @@ def all_finite(tensors: Iterable[torch.Tensor | None]) -> bool:
 
 def clone_leaves(*tensors: torch.Tensor) -> list[torch.Tensor]:
     return [tensor.detach().clone().requires_grad_(True) for tensor in tensors]
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def collect_provenance(wheel_path: Path) -> dict[str, Any]:
+    wheel_path = wheel_path.resolve()
+    if not wheel_path.is_file():
+        raise FileNotFoundError(f"Pinned FLA wheel not found: {wheel_path}")
+    wheel_sha = sha256_file(wheel_path)
+    if wheel_sha != EXPECTED_WHEEL_SHA256:
+        raise AssertionError(f"FLA wheel SHA mismatch: {wheel_sha} != {EXPECTED_WHEEL_SHA256}")
+    if not _DISPATCH_DISABLED:
+        raise AssertionError("FLA backend dispatch is active despite strict no-fallback mode")
+
+    package_root = Path(fla.__file__).resolve().parent
+    if not str(package_root).startswith("/huyang2/double-loop/"):
+        raise AssertionError(f"FLA was imported outside the persistent project root: {package_root}")
+    source_marker = Path("/huyang2/double-loop/.cache/fla-source-sha")
+    marker_sha = source_marker.read_text(encoding="utf-8").strip() if source_marker.is_file() else ""
+    if marker_sha != EXPECTED_FLA_SHA:
+        raise AssertionError(f"FLA source marker mismatch: {marker_sha!r} != {EXPECTED_FLA_SHA}")
+
+    file_hashes: dict[str, dict[str, str]] = {}
+    with zipfile.ZipFile(wheel_path) as archive:
+        for archive_name in PROVENANCE_FILES:
+            installed_path = package_root.parent / archive_name
+            if not installed_path.is_file():
+                raise FileNotFoundError(f"Installed FLA source missing: {installed_path}")
+            wheel_bytes = archive.read(archive_name)
+            installed_bytes = installed_path.read_bytes()
+            wheel_file_sha = sha256_bytes(wheel_bytes)
+            installed_file_sha = sha256_bytes(installed_bytes)
+            if wheel_file_sha != installed_file_sha:
+                raise AssertionError(
+                    f"Installed FLA source differs from pinned wheel for {archive_name}: "
+                    f"{installed_file_sha} != {wheel_file_sha}"
+                )
+            file_hashes[archive_name] = {
+                "wheel_sha256": wheel_file_sha,
+                "installed_sha256": installed_file_sha,
+            }
+
+    symbols = {
+        "fla_gdn_layer": FLAGatedDeltaNet,
+        "gdn2_layer": GatedDeltaNet2,
+        "kda_layer": KimiDeltaAttention,
+        "fla_gdn_op": chunk_gated_delta_rule,
+        "gdn2_op": chunk_gdn2,
+        "kda_op": chunk_kda,
+    }
+    symbol_rows = {}
+    for name, symbol in symbols.items():
+        source_path = Path(inspect.getfile(symbol)).resolve()
+        if package_root not in source_path.parents:
+            raise AssertionError(f"{name} resolved outside installed FLA: {source_path}")
+        symbol_rows[name] = {
+            "module": symbol.__module__,
+            "qualname": symbol.__qualname__,
+            "source_path": str(source_path),
+        }
+    return {
+        "fla_version": importlib.metadata.version("flash-linear-attention"),
+        "fla_package_root": str(package_root),
+        "fla_source_sha": marker_sha,
+        "wheel_path": str(wheel_path),
+        "wheel_sha256": wheel_sha,
+        "backend_dispatch_disabled": bool(_DISPATCH_DISABLED),
+        "conv_backend": os.environ["FLA_CONV_BACKEND"],
+        "symbols": symbol_rows,
+        "source_file_hashes": file_hashes,
+    }
+
+
+def autograd_graph_names(tensor: torch.Tensor) -> list[str]:
+    names: list[str] = []
+    queue = [tensor.grad_fn]
+    seen: set[int] = set()
+    while queue:
+        fn = queue.pop(0)
+        if fn is None or id(fn) in seen:
+            continue
+        seen.add(id(fn))
+        names.append(type(fn).__name__)
+        queue.extend(next_fn for next_fn, _index in fn.next_functions if next_fn is not None)
+    return names
+
+
+def check_gdn_reference(device: torch.device) -> dict[str, Any]:
+    torch.manual_seed(100)
+    batch, length, heads, key_dim, value_dim = 1, 81, 2, 32, 64
+    q = torch.randn(batch, length, heads, key_dim, device=device)
+    k = torch.randn_like(q)
+    v = torch.randn(batch, length, heads, value_dim, device=device) * 0.25
+    g_raw = torch.randn(batch, length, heads, device=device)
+    beta_raw = torch.randn(batch, length, heads, device=device)
+    a_log = torch.log(torch.empty(heads, device=device).uniform_(1.0, 16.0))
+    dt_bias = torch.randn(heads, device=device)
+    h0_vk = torch.randn(batch, heads, value_dim, key_dim, device=device) * 0.1
+    do = torch.randn_like(v)
+    dht_vk = torch.randn_like(h0_vk) * 0.1
+
+    ref_leaves = clone_leaves(q, k, v, g_raw, beta_raw, a_log, dt_bias, h0_vk)
+    rq, rk, rv, rg, rbeta, ra, rdt, rh0_vk = ref_leaves
+    g_ref = -ra.float().exp().view(1, 1, heads) * F.softplus(rg.float() + rdt.float().view(1, 1, heads))
+    ref, ref_ht_kv = naive_recurrent_gated_delta_rule(
+        q=F.normalize(rq.float(), dim=-1),
+        k=F.normalize(rk.float(), dim=-1),
+        v=rv,
+        g=g_ref,
+        beta=torch.sigmoid(rbeta),
+        initial_state=rh0_vk.transpose(-1, -2),
+        output_final_state=True,
+    )
+    ref_loss = (ref * do).sum() + (ref_ht_kv.transpose(-1, -2) * dht_vk).sum()
+    ref_grads = torch.autograd.grad(ref_loss, ref_leaves)
+
+    tri_leaves = clone_leaves(q, k, v, g_raw, beta_raw, a_log, dt_bias, h0_vk)
+    tq, tk, tv, tg, tbeta, ta, tdt, th0_vk = tri_leaves
+    tri, tri_ht_vk = chunk_gated_delta_rule(
+        q=tq,
+        k=tk,
+        v=tv,
+        g=tg,
+        beta=tbeta,
+        A_log=ta,
+        dt_bias=tdt,
+        initial_state=th0_vk,
+        output_final_state=True,
+        use_qk_l2norm_in_kernel=True,
+        use_gate_in_kernel=True,
+        use_beta_sigmoid_in_kernel=True,
+        state_v_first=True,
+    )
+    tri_loss = (tri * do).sum() + (tri_ht_vk * dht_vk).sum()
+    tri_grads = torch.autograd.grad(tri_loss, tri_leaves)
+
+    grad_errors = [max_abs(a, b) for a, b in zip(ref_grads, tri_grads)]
+    result = {
+        "output_max_abs": max_abs(ref, tri),
+        "state_max_abs": max_abs(ref_ht_kv.transpose(-1, -2), tri_ht_vk),
+        "gradient_max_abs": max(grad_errors),
+        "gradient_errors": dict(zip(("q", "k", "v", "g", "beta", "A_log", "dt_bias", "h0"), grad_errors)),
+    }
+    if result["output_max_abs"] > 0.02 or result["state_max_abs"] > 0.02 or result["gradient_max_abs"] > 0.08:
+        raise AssertionError(f"GDN FLA/Torch mismatch: {result}")
+    return result
 
 
 def check_gdn2_reference(device: torch.device) -> dict[str, Any]:
@@ -161,44 +348,65 @@ def check_kda_reference(device: torch.device) -> dict[str, Any]:
 
 
 def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
-    torch.manual_seed(303 if backbone == "gdn2" else 404)
+    seeds = {"fla_gdn": 303, "gdn2": 404, "kda": 505}
+    expected_layers = {
+        "fla_gdn": FLAGatedDeltaNet,
+        "gdn2": GatedDeltaNet2,
+        "kda": KimiDeltaAttention,
+    }
+    expected_autograd = {
+        "fla_gdn": "ChunkGatedDeltaRuleFunctionBackward",
+        "gdn2": "ChunkGDN2FunctionBackward",
+        "kda": "ChunkKDAFunctionBackward",
+    }
+    torch.manual_seed(seeds[backbone])
     batch, length, heads, head_dim = 2, 81, 4, 16
     mixer = FLADeltaTimeMix(
         heads * head_dim,
         heads,
         head_dim,
         backbone=backbone,
-        expand_v=1.0,
+        expand_v=2.0,
         mode="chunk",
-        use_short_conv=False,
+        use_short_conv=True,
         conv_size=4,
         allow_neg_eigval=False,
     ).to(device)
+    if type(mixer.core) is not expected_layers[backbone]:
+        raise AssertionError(f"{backbone} did not instantiate the exact official FLA layer class: {type(mixer.core)}")
+    conv_backends = {
+        name: getattr(mixer.core, name).backend
+        for name in ("q_conv1d", "k_conv1d", "v_conv1d")
+    }
+    if set(conv_backends.values()) != {"triton"}:
+        raise AssertionError(f"{backbone} short convolution silently changed backend: {conv_backends}")
+    official_forward_calls = 0
+
+    def count_forward(_module, _inputs, _output):
+        nonlocal official_forward_calls
+        official_forward_calls += 1
+
+    hook = mixer.core.register_forward_hook(count_forward)
     x = torch.randn(batch, length, heads * head_dim, device=device, requires_grad=True)
-    h0 = torch.randn(batch, heads, head_dim, head_dim, device=device, dtype=torch.float32, requires_grad=True) * 0.05
+    h0 = torch.randn(batch, heads, head_dim * 2, head_dim, device=device, dtype=torch.float32, requires_grad=True) * 0.05
     h0.retain_grad()
     torch.cuda.reset_peak_memory_stats(device)
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         y, ht = mixer(x, initial_state=h0)
         loss = y.float().square().mean() + ht.float().square().mean() * 1e-3
+    graph_names = autograd_graph_names(ht)
+    if expected_autograd[backbone] not in graph_names:
+        raise AssertionError(
+            f"{backbone} terminal state did not traverse the expected official FLA chunk op; "
+            f"expected={expected_autograd[backbone]}, graph={graph_names}"
+        )
     loss.backward()
+    hook.remove()
+    if official_forward_calls != 1:
+        raise AssertionError(f"{backbone} official layer forward count was {official_forward_calls}, expected exactly 1")
     parameter_grads = [p.grad for p in mixer.parameters() if p.requires_grad]
     if not all_finite([y, ht, x.grad, h0.grad, *parameter_grads]):
         raise AssertionError(f"{backbone} adapter produced non-finite output or gradient")
-
-    mixer.eval()
-    split = 37
-    with torch.inference_mode(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        full_y, full_ht = mixer(x.detach(), initial_state=h0.detach())
-        left_y, left_ht = mixer(x.detach()[:, :split], initial_state=h0.detach())
-        right_y, right_ht = mixer(x.detach()[:, split:], initial_state=left_ht)
-        split_y = torch.cat((left_y, right_y), dim=1)
-    split_output_error = max_abs(full_y, split_y)
-    split_state_error = max_abs(full_ht, right_ht)
-    if split_output_error > 0.05 or split_state_error > 0.05:
-        raise AssertionError(
-            f"{backbone} recurrent split mismatch: output={split_output_error}, state={split_state_error}"
-        )
 
     for _ in range(2):
         mixer.zero_grad(set_to_none=True)
@@ -223,15 +431,18 @@ def check_adapter(backbone: str, device: torch.device) -> dict[str, Any]:
         "state_shape": list(ht.shape),
         "state_dtype": str(ht.dtype),
         "initial_state_grad_norm": float(h0.grad.float().norm().item()),
-        "split_output_max_abs": split_output_error,
-        "split_state_max_abs": split_state_error,
+        "official_layer_class": f"{type(mixer.core).__module__}.{type(mixer.core).__qualname__}",
+        "official_layer_forward_calls": official_forward_calls,
+        "official_chunk_autograd_node": expected_autograd[backbone],
+        "conv_backends": conv_backends,
         "forward_backward_ms": elapsed_ms,
         "peak_memory_mb": torch.cuda.max_memory_allocated(device) / (1024**2),
     }
 
 
 def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any]:
-    torch.manual_seed(505 if backbone == "gdn2" else 606)
+    seeds = {"fla_gdn": 606, "gdn2": 707, "kda": 808}
+    torch.manual_seed(seeds[backbone])
     batch, length, heads, head_dim = 2, 81, 4, 16
     model = FutureSeedRWKV(
         d_model=heads * head_dim,
@@ -247,8 +458,8 @@ def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any
         rwkv_kernel="torch",
         backbone=backbone,
         gdn_mode="chunk",
-        gdn_expand_v=1.0,
-        gdn_use_short_conv=False,
+        gdn_expand_v=2.0,
+        gdn_use_short_conv=True,
         gdn_conv_size=4,
         gdn_allow_neg_eigval=False,
     ).to(device)
@@ -290,8 +501,13 @@ def check_futureseed_stack(backbone: str, device: torch.device) -> dict[str, Any
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--backbone", choices=("all", "gdn2", "kda"), default="all")
+    parser.add_argument("--backbone", choices=("all", "fla_gdn", "gdn2", "kda"), default="all")
     parser.add_argument("--check", choices=("all", "reference", "adapter", "futureseed_stack"), default="all")
+    parser.add_argument(
+        "--wheel",
+        type=Path,
+        default=Path("/huyang2/double-loop/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"),
+    )
     parser.add_argument("--out", type=Path, default=None)
     return parser.parse_args()
 
@@ -313,9 +529,15 @@ def main() -> None:
         "device": torch.cuda.get_device_name(device),
         "requested_backbone": args.backbone,
         "requested_check": args.check,
+        "provenance": collect_provenance(args.wheel),
     }
-    selected = ("gdn2", "kda") if args.backbone == "all" else (args.backbone,)
+    selected = ("fla_gdn", "kda", "gdn2") if args.backbone == "all" else (args.backbone,)
     checks = {
+        "fla_gdn": (
+            ("fla_gdn_reference", lambda: check_gdn_reference(device)),
+            ("fla_gdn_adapter", lambda: check_adapter("fla_gdn", device)),
+            ("fla_gdn_futureseed_stack", lambda: check_futureseed_stack("fla_gdn", device)),
+        ),
         "gdn2": (
             ("gdn2_reference", lambda: check_gdn2_reference(device)),
             ("gdn2_adapter", lambda: check_adapter("gdn2", device)),

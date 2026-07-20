@@ -6,6 +6,7 @@ import copy
 import html
 import json
 import math
+import os
 import random
 import time
 from contextlib import nullcontext
@@ -41,13 +42,17 @@ else:
     FLA_IMPORT_ERROR = None
 
 try:
+    from fla.layers.gated_deltanet import GatedDeltaNet as FLAGatedDeltaNet
     from fla.layers.gdn2 import GatedDeltaNet2
     from fla.layers.kda import KimiDeltaAttention
+    from fla.models.utils import Cache as FLACache
     from fla.ops.gdn2 import chunk_gdn2
     from fla.ops.kda import chunk_kda
 except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
+    FLAGatedDeltaNet = None
     GatedDeltaNet2 = None
     KimiDeltaAttention = None
+    FLACache = None
     chunk_gdn2 = None
     chunk_kda = None
     FLA_DELTA_IMPORT_ERROR = exc
@@ -77,6 +82,7 @@ def fla_gdn_available() -> Tuple[bool, str]:
 
 def fla_delta_available(backbone: str) -> Tuple[bool, str]:
     implementations = {
+        "fla_gdn": (FLAGatedDeltaNet, chunk_gated_delta_rule),
         "gdn2": (GatedDeltaNet2, chunk_gdn2),
         "kda": (KimiDeltaAttention, chunk_kda),
     }
@@ -133,6 +139,58 @@ def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
 
 
 configure_sudoku(N, BOX_ROWS, BOX_COLS)
+
+
+def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any]:
+    if os.environ.get("FLA_DISABLE_BACKEND_DISPATCH") != "1":
+        raise RuntimeError("Strict FLA mode requires FLA_DISABLE_BACKEND_DISPATCH=1 before Python starts")
+    if os.environ.get("FLA_CONV_BACKEND") != "triton":
+        raise RuntimeError("Strict FLA mode requires FLA_CONV_BACKEND=triton")
+    from fla.ops.backends import _DISPATCH_DISABLED
+
+    if not _DISPATCH_DISABLED:
+        raise RuntimeError("FLA backend dispatch is active; refusing a run with possible silent backend substitution")
+    marker = Path("/huyang2/double-loop/.cache/fla-source-sha")
+    source_sha = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+    expected_sha = "fe8fce9fc6984f22905f54cfa885dce1502baf26"
+    if source_sha != expected_sha:
+        raise RuntimeError(f"Pinned FLA source marker mismatch: {source_sha!r} != {expected_sha}")
+    expected_layers = {
+        "fla_gdn": FLAGatedDeltaNet,
+        "gdn2": GatedDeltaNet2,
+        "kda": KimiDeltaAttention,
+    }
+    expected = expected_layers[backbone]
+    rows = []
+    reasoner = getattr(model, "reasoner", None)
+    if reasoner is None:
+        raise RuntimeError("Strict FLA mode could not find model.reasoner")
+    for layer_idx, block in enumerate(reasoner.blocks):
+        core = getattr(getattr(block, "time_mix", None), "core", None)
+        if type(core) is not expected:
+            raise RuntimeError(
+                f"Layer {layer_idx} is {type(core)}, expected exact official class {expected}"
+            )
+        conv_backends = {
+            name: getattr(core, name).backend
+            for name in ("q_conv1d", "k_conv1d", "v_conv1d")
+        }
+        if set(conv_backends.values()) != {"triton"}:
+            raise RuntimeError(f"Layer {layer_idx} changed short-conv backend: {conv_backends}")
+        rows.append(
+            {
+                "layer": layer_idx,
+                "class": f"{type(core).__module__}.{type(core).__qualname__}",
+                "conv_backends": conv_backends,
+            }
+        )
+    return {
+        "strict": True,
+        "fla_source_sha": source_sha,
+        "backend_dispatch_disabled": bool(_DISPATCH_DISABLED),
+        "conv_backend": "triton",
+        "layers": rows,
+    }
 
 
 @dataclass
@@ -938,7 +996,7 @@ class GDNBlock(nn.Module):
 
 
 class FLADeltaTimeMix(nn.Module):
-    """Official FLA GDN2/KDA mixer with explicit V-first recurrent state I/O."""
+    """Official FLA delta-rule layer with explicit V-first recurrent state I/O."""
 
     def __init__(
         self,
@@ -954,8 +1012,8 @@ class FLADeltaTimeMix(nn.Module):
         allow_neg_eigval: bool,
     ) -> None:
         super().__init__()
-        if backbone not in {"gdn2", "kda"}:
-            raise ValueError("FLA delta backbone must be 'gdn2' or 'kda'.")
+        if backbone not in {"fla_gdn", "gdn2", "kda"}:
+            raise ValueError("FLA delta backbone must be 'fla_gdn', 'gdn2', or 'kda'.")
         if mode != "chunk":
             raise ValueError(f"BACKBONE={backbone} supports only GDN_MODE=chunk during training.")
         ok, reason = fla_delta_available(backbone)
@@ -972,9 +1030,14 @@ class FLADeltaTimeMix(nn.Module):
             raise ValueError("--gdn_expand_v must produce an integer value head dimension.")
         self.value_dim = self.heads * self.head_v_dim
 
-        layer_type = GatedDeltaNet2 if backbone == "gdn2" else KimiDeltaAttention
+        layer_types = {
+            "fla_gdn": FLAGatedDeltaNet,
+            "gdn2": GatedDeltaNet2,
+            "kda": KimiDeltaAttention,
+        }
+        layer_type = layer_types[backbone]
         assert layer_type is not None
-        self.core = layer_type(
+        layer_kwargs = dict(
             hidden_size=d_model,
             expand_v=expand_v,
             head_dim=head_dim,
@@ -985,21 +1048,20 @@ class FLADeltaTimeMix(nn.Module):
             allow_neg_eigval=bool(allow_neg_eigval),
             conv_size=int(conv_size),
             conv_bias=False,
+            layer_idx=0,
         )
+        if backbone == "fla_gdn":
+            layer_kwargs["use_gate"] = True
+        self.core = layer_type(**layer_kwargs)
 
-    def _project_qkv(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        q = self.core.q_proj(x)
-        k = self.core.k_proj(x)
-        v = self.core.v_proj(x)
-        if self.core.use_short_conv:
-            q, _ = self.core.q_conv1d(x=q, cache=None, output_final_state=False)
-            k, _ = self.core.k_conv1d(x=k, cache=None, output_final_state=False)
-            v, _ = self.core.v_conv1d(x=v, cache=None, output_final_state=False)
-        else:
-            q = F.silu(q)
-            k = F.silu(k)
-            v = F.silu(v)
-        return q, k, v
+    def _zero_conv_state(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        batch_size = x.shape[0]
+        width = int(self.core.conv_size)
+        return (
+            x.new_zeros(batch_size, int(self.core.key_dim), width),
+            x.new_zeros(batch_size, int(self.core.key_dim), width),
+            x.new_zeros(batch_size, int(self.core.value_dim), width),
+        )
 
     def forward(
         self,
@@ -1018,60 +1080,26 @@ class FLADeltaTimeMix(nn.Module):
                 )
             initial_state = initial_state.float()
 
-        q, k, v = self._project_qkv(x)
-        q = q.reshape(batch_size, seq_len, self.heads, self.head_dim)
-        k = k.reshape(batch_size, seq_len, self.heads, self.head_dim)
-        v = v.reshape(batch_size, seq_len, self.heads, self.head_v_dim)
-
-        if self.backbone == "gdn2":
-            assert chunk_gdn2 is not None
-            g = F.softplus(self.core.f_proj(x).float() + self.core.dt_bias)
-            g = g.reshape(batch_size, seq_len, self.heads, self.head_dim)
-            g = -self.core.A_log.float().exp().view(1, 1, self.heads, 1) * g
-            b = self.core.b_proj(x).sigmoid().reshape(batch_size, seq_len, self.heads, self.head_dim)
-            w = self.core.w_proj(x).sigmoid().reshape(batch_size, seq_len, self.heads, self.head_v_dim)
-            if self.core.allow_neg_eigval:
-                b = b * 2.0
-            o, terminal_state = chunk_gdn2(
-                q=q,
-                k=k,
-                v=v,
-                g=g,
-                b=b,
-                w=w,
-                initial_state=initial_state,
-                output_final_state=True,
-                use_qk_l2norm_in_kernel=True,
-                state_v_first=True,
+        assert FLACache is not None
+        cache = FLACache()
+        if initial_state is not None:
+            cache.update(
+                recurrent_state=initial_state,
+                conv_state=self._zero_conv_state(x) if self.core.use_short_conv else None,
+                layer_idx=0,
+                offset=0,
             )
-        else:
-            assert chunk_kda is not None
-            g = self.core.f_proj(x).reshape(batch_size, seq_len, self.heads, self.head_dim)
-            beta = self.core.b_proj(x)
-            o, terminal_state = chunk_kda(
-                q=q,
-                k=k,
-                v=v,
-                g=g,
-                beta=beta,
-                A_log=self.core.A_log,
-                dt_bias=self.core.dt_bias,
-                initial_state=initial_state,
-                output_final_state=True,
-                use_qk_l2norm_in_kernel=True,
-                use_gate_in_kernel=True,
-                use_beta_sigmoid_in_kernel=True,
-                allow_neg_eigval=self.core.allow_neg_eigval,
-                safe_gate=self.core.safe_gate,
-                lower_bound=self.core.lower_bound,
-                state_v_first=True,
-            )
-
+        y, _attentions, returned_cache = self.core(
+            x,
+            past_key_values=cache,
+            use_cache=True,
+        )
+        if returned_cache is None or len(returned_cache) == 0:
+            raise RuntimeError(f"{self.backbone.upper()} official layer did not return its FLA cache.")
+        terminal_state = returned_cache[0]["recurrent_state"]
         if terminal_state is None:
             raise RuntimeError(f"{self.backbone.upper()} kernel did not return a terminal state.")
-        gate = self.core.g_proj(x).reshape(batch_size, seq_len, self.heads, self.head_v_dim)
-        y = self.core.o_norm(o, gate).reshape(batch_size, seq_len, self.value_dim)
-        return self.core.o_proj(y), terminal_state
+        return y, terminal_state
 
 
 class FLADeltaBlock(nn.Module):
@@ -1147,8 +1175,8 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
         if future_seed_norm_mode not in {"unit", "adaptive_rms"}:
             raise ValueError("future_seed_norm_mode must be one of: unit, adaptive_rms.")
-        if backbone not in {"rwkv", "gdn", "gdn2", "kda"}:
-            raise ValueError("backbone must be one of: rwkv, gdn, gdn2, kda.")
+        if backbone not in {"rwkv", "gdn", "fla_gdn", "gdn2", "kda"}:
+            raise ValueError("backbone must be one of: rwkv, gdn, fla_gdn, gdn2, kda.")
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -2305,6 +2333,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn_conv_size=args.gdn_conv_size,
         gdn_allow_neg_eigval=args.gdn_allow_neg_eigval,
     ).to(device)
+    fla_runtime = (
+        strict_fla_runtime_summary(model, args.backbone)
+        if args.fla_strict_official
+        else {"strict": False}
+    )
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
         feature_dim=args.d_model,
@@ -2788,6 +2821,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         completed_before_stage = stage_end
 
     train_stats = {
+        "fla_runtime": fla_runtime,
         "train_ce_loss": last_ce_loss,
         "train_total_loss": last_total_loss,
         "train_loop1_loss": last_loop1_loss,
@@ -3964,7 +3998,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
-    if args.backbone in {"gdn2", "kda"}:
+    if args.backbone in {"fla_gdn", "gdn2", "kda"}:
         if args.gdn_mode != "chunk":
             raise ValueError(f"--backbone {args.backbone} requires --gdn_mode chunk during training.")
         ok, reason = fla_delta_available(args.backbone)
@@ -3974,6 +4008,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
+    if args.fla_strict_official and args.backbone not in {"fla_gdn", "gdn2", "kda"}:
+        raise ValueError("--fla_strict_official is valid only for fla_gdn, gdn2, or kda")
     if args.backbone == "rwkv" and args.rwkv_kernel in {"cuda", "statepassing"}:
         ok, reason = statepassing_available(args.head_dim)
         if not ok:
@@ -4190,6 +4226,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn_use_short_conv": bool(args.gdn_use_short_conv),
         "gdn_conv_size": args.gdn_conv_size,
         "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
+        "fla_strict_official": bool(args.fla_strict_official),
+        "fla_runtime": train_stats.get("fla_runtime", {"strict": False}),
         "forward_dtype": args.forward_dtype,
         "rollout_ks": rollout_ks,
         "rollout_loop_values": parse_rollout_loop_values(args),
@@ -4361,13 +4399,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
-    p.add_argument("--backbone", choices=("rwkv", "gdn", "gdn2", "kda"), default="rwkv")
+    p.add_argument("--backbone", choices=("rwkv", "gdn", "fla_gdn", "gdn2", "kda"), default="rwkv")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent", "triton_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)
     p.add_argument("--gdn_use_short_conv", type=int, choices=(0, 1), default=1)
     p.add_argument("--gdn_conv_size", type=int, default=4)
     p.add_argument("--gdn_allow_neg_eigval", action="store_true")
+    p.add_argument("--fla_strict_official", action="store_true")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
     p.add_argument("--loop_loss_start", type=int, default=1)
     p.add_argument("--loop_loss_power", type=float, default=2.0)

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Official FLA FutureSeed Comparison</title>
+  <style>
+    :root { color-scheme:light; --ink:#17212b; --muted:#5f6c78; --line:#cbd3da; --band:#f3f5f7; --paper:#fff; --ok:#167052; --warn:#9b3d2f; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:0; }
+    header,section { width:100%; border-bottom:1px solid var(--line); }
+    .inner { width:min(1220px,100%); margin:0 auto; padding:26px 22px; }
+    h1 { margin:0 0 8px; font-size:28px; line-height:1.25; }
+    h2 { margin:0 0 13px; font-size:20px; }
+    p { margin:7px 0; line-height:1.6; }
+    .meta { color:var(--muted); font-size:13px; }
+    .band { background:var(--band); }
+    .verdict { margin-top:16px; padding:14px 16px; border-left:5px solid var(--ok); background:#edf5f1; }
+    .verdict strong { display:block; margin-bottom:4px; }
+    .metric-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--line); background:var(--line); gap:1px; margin:17px 0; }
+    .metric { background:#fff; min-height:105px; padding:15px; }
+    .metric b { display:block; margin:5px 0; font-size:23px; }
+    .metric small { color:var(--muted); }
+    .table-wrap { max-width:100%; overflow-x:auto; border:1px solid var(--line); background:#fff; -webkit-overflow-scrolling:touch; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+    th:first-child,td:first-child { text-align:left; }
+    th { background:#e8edf1; color:#34414c; }
+    tr:last-child td { border-bottom:0; }
+    .swatch { display:inline-block; width:11px; height:11px; margin-right:7px; vertical-align:-1px; }
+    .charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .chart { width:100%; min-height:270px; border:1px solid var(--line); background:#fff; }
+    .chart-title { font-size:16px; font-weight:650; fill:var(--ink); }
+    .grid-line { stroke:#dbe1e6; stroke-width:1; }
+    .tick,.legend { font-size:11px; fill:#596774; }
+    .case-tabs { display:flex; gap:4px; margin:14px 0 10px; }
+    .case-tab { border:1px solid #aeb9c3; background:#fff; color:#34414c; padding:8px 13px; font:inherit; font-size:13px; cursor:pointer; }
+    .case-tab.active { color:#fff; background:#253746; border-color:#253746; }
+    .case-frame { display:none; width:100%; min-height:760px; border:1px solid var(--line); background:#fff; }
+    .case-frame.active { display:block; }
+    .proof { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 24px; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+    a { color:#245f98; text-underline-offset:2px; }
+    .links { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:12px; }
+    @media (max-width:820px) {
+      .metric-strip,.charts,.proof { grid-template-columns:1fr; }
+      .inner { padding:21px 14px; }
+      .table-wrap { border:0; background:transparent; overflow:visible; }
+      table,tbody,tr,td { display:block; width:100%; }
+      thead { display:none; }
+      tr { margin-bottom:10px; border:1px solid var(--line); background:#fff; }
+      tr:last-child { margin-bottom:0; }
+      td,td:first-child { display:grid; grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr); gap:10px; padding:7px 9px; text-align:right; white-space:normal; overflow-wrap:anywhere; }
+      td::before { content:attr(data-label); color:#4b5965; font-weight:650; text-align:left; }
+      .case-frame { min-height:680px; }
+    }
+  </style>
+</head>
+<body>
+  <header><div class="inner">
+    <div class="meta">P-LA-002 · GPU1 A800 only · generated 2026-07-20T18:19:29.937025+00:00 · source <code>c3342b8</code></div>
+    <h1>官方 FLA 上，FutureSeed 配哪种 Linear Attention？</h1>
+    <p>固定 D192/L10/H6、loop5、effective batch128、500 optimizer steps、同一 official Sudoku 数据和同一 seed。只替换 FLA recurrent layer：GDN、KDA、GDN2。</p>
+    <div class="verdict"><strong>结论：hard 53-blank 没有可靠赢家；GDN 的有限预算 opening 最好。</strong>三者在预先固定的 checkpoint batch 上 exact 都是 1.76%。另一批 512 cases 的差距只有 3 个 board 以内，不能硬吹架构胜负；但 GDN 的 CE 更低、46-50 blanks exact 更高，KDA 更慢，GDN2 多 16% 参数仍没打开 51-55 blanks。</div>
+  </div></header>
+
+  <section class="band"><div class="inner">
+    <h2>公平结果</h2>
+    <div class="metric-strip">
+      <div class="metric"><small>预固定 holes53 checkpoint exact</small><b>1.76% / 1.76% / 1.76%</b><span>GDN / KDA / GDN2，hard 区间打平</span></div>
+      <div class="metric"><small>46-50 blanks loop5 exact</small><b>85.94% / 65.04% / 75.39%</b><span>GDN opening 明显更快</span></div>
+      <div class="metric"><small>51-64 blanks exact</small><b>全是 0</b><span>更复杂 state update 没跨过全局闭合断崖</span></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>backbone</th><th>params</th><th>CE@500</th><th>fixed h53 exact</th><th>final exact</th><th>final blank</th><th>loop exact gain</th><th>train wall</th><th>peak allocated</th></tr></thead><tbody><tr><td data-label="backbone"><span class="swatch" style="background:#167052"></span>GDN</td><td data-label="params">5.980M</td><td data-label="CE@500">0.9981</td><td data-label="fixed h53 exact">1.76%</td><td data-label="final exact">2.15%</td><td data-label="final blank">50.49%</td><td data-label="loop exact gain">0.98%</td><td data-label="train wall">48.9 min</td><td data-label="peak allocated">7.11 GiB</td></tr><tr><td data-label="backbone"><span class="swatch" style="background:#2f65a7"></span>KDA</td><td data-label="params">5.852M</td><td data-label="CE@500">1.0252</td><td data-label="fixed h53 exact">1.76%</td><td data-label="final exact">1.56%</td><td data-label="final blank">49.71%</td><td data-label="loop exact gain">0.78%</td><td data-label="train wall">53.6 min</td><td data-label="peak allocated">7.55 GiB</td></tr><tr><td data-label="backbone"><span class="swatch" style="background:#b34934"></span>GDN2</td><td data-label="params">6.946M</td><td data-label="CE@500">1.0101</td><td data-label="fixed h53 exact">1.76%</td><td data-label="final exact">1.95%</td><td data-label="final blank">50.12%</td><td data-label="loop exact gain">1.17%</td><td data-label="train wall">47.9 min</td><td data-label="peak allocated">9.08 GiB</td></tr></tbody></table></div>
+    <p class="meta">Train wall 取写 checkpoint 前的同一路径时间。Peak allocated 来自相同 full-model all-loop backward；不混用 nvidia-smi 驱动占用。单 seed 只用于机制门，不用于论文显著性结论。</p>
+  </div></section>
+
+  <section><div class="inner">
+    <h2>优化与 loop</h2>
+    <div class="charts"><svg class="chart" viewBox="0 0 760 310" role="img" aria-label="Train CE by optimizer step"><text x="66" y="24" class="chart-title">Train CE by optimizer step</text><line x1="66" y1="258.0" x2="736" y2="258.0" class="grid-line"/><text x="56" y="262.0" text-anchor="end" class="tick">0.95</text><line x1="66" y1="204.0" x2="736" y2="204.0" class="grid-line"/><text x="56" y="208.0" text-anchor="end" class="tick">1.14</text><line x1="66" y1="150.0" x2="736" y2="150.0" class="grid-line"/><text x="56" y="154.0" text-anchor="end" class="tick">1.33</text><line x1="66" y1="96.0" x2="736" y2="96.0" class="grid-line"/><text x="56" y="100.0" text-anchor="end" class="tick">1.53</text><line x1="66" y1="42.0" x2="736" y2="42.0" class="grid-line"/><text x="56" y="46.0" text-anchor="end" class="tick">1.72</text><text x="66.0" y="287" text-anchor="middle" class="tick">100</text><text x="233.5" y="287" text-anchor="middle" class="tick">200</text><text x="401.0" y="287" text-anchor="middle" class="tick">300</text><text x="568.5" y="287" text-anchor="middle" class="tick">400</text><text x="736.0" y="287" text-anchor="middle" class="tick">500</text><polyline points="66.0,78.0 233.5,185.8 401.0,230.2 568.5,241.9 736.0,244.5" fill="none" stroke="#167052" stroke-width="3"/><circle cx="66.0" cy="78.0" r="4" fill="#167052"/><circle cx="233.5" cy="185.8" r="4" fill="#167052"/><circle cx="401.0" cy="230.2" r="4" fill="#167052"/><circle cx="568.5" cy="241.9" r="4" fill="#167052"/><circle cx="736.0" cy="244.5" r="4" fill="#167052"/><polyline points="66.0,57.3 233.5,145.6 401.0,213.2 568.5,231.7 736.0,236.9" fill="none" stroke="#2f65a7" stroke-width="3"/><circle cx="66.0" cy="57.3" r="4" fill="#2f65a7"/><circle cx="233.5" cy="145.6" r="4" fill="#2f65a7"/><circle cx="401.0" cy="213.2" r="4" fill="#2f65a7"/><circle cx="568.5" cy="231.7" r="4" fill="#2f65a7"/><circle cx="736.0" cy="236.9" r="4" fill="#2f65a7"/><polyline points="66.0,74.1 233.5,167.0 401.0,221.4 568.5,236.1 736.0,241.1" fill="none" stroke="#b34934" stroke-width="3"/><circle cx="66.0" cy="74.1" r="4" fill="#b34934"/><circle cx="233.5" cy="167.0" r="4" fill="#b34934"/><circle cx="401.0" cy="221.4" r="4" fill="#b34934"/><circle cx="568.5" cy="236.1" r="4" fill="#b34934"/><circle cx="736.0" cy="241.1" r="4" fill="#b34934"/><rect x="66" y="300" width="14" height="4" fill="#167052"/><text x="86" y="305" class="legend">GDN</text><rect x="206" y="300" width="14" height="4" fill="#2f65a7"/><text x="226" y="305" class="legend">KDA</text><rect x="346" y="300" width="14" height="4" fill="#b34934"/><text x="366" y="305" class="legend">GDN2</text></svg><svg class="chart" viewBox="0 0 760 310" role="img" aria-label="53-blank full-board exact by loop"><text x="66" y="24" class="chart-title">53-blank full-board exact by loop</text><line x1="66" y1="258.0" x2="736" y2="258.0" class="grid-line"/><text x="56" y="262.0" text-anchor="end" class="tick">0.0%</text><line x1="66" y1="204.0" x2="736" y2="204.0" class="grid-line"/><text x="56" y="208.0" text-anchor="end" class="tick">0.6%</text><line x1="66" y1="150.0" x2="736" y2="150.0" class="grid-line"/><text x="56" y="154.0" text-anchor="end" class="tick">1.2%</text><line x1="66" y1="96.0" x2="736" y2="96.0" class="grid-line"/><text x="56" y="100.0" text-anchor="end" class="tick">1.8%</text><line x1="66" y1="42.0" x2="736" y2="42.0" class="grid-line"/><text x="56" y="46.0" text-anchor="end" class="tick">2.4%</text><text x="66.0" y="287" text-anchor="middle" class="tick">1</text><text x="233.5" y="287" text-anchor="middle" class="tick">2</text><text x="401.0" y="287" text-anchor="middle" class="tick">3</text><text x="568.5" y="287" text-anchor="middle" class="tick">4</text><text x="736.0" y="287" text-anchor="middle" class="tick">5</text><polyline points="66.0,152.5 233.5,64.6 401.0,64.6 568.5,64.6 736.0,64.6" fill="none" stroke="#167052" stroke-width="3"/><circle cx="66.0" cy="152.5" r="4" fill="#167052"/><circle cx="233.5" cy="64.6" r="4" fill="#167052"/><circle cx="401.0" cy="64.6" r="4" fill="#167052"/><circle cx="568.5" cy="64.6" r="4" fill="#167052"/><circle cx="736.0" cy="64.6" r="4" fill="#167052"/><polyline points="66.0,187.7 233.5,152.5 401.0,135.0 568.5,117.4 736.0,117.4" fill="none" stroke="#2f65a7" stroke-width="3"/><circle cx="66.0" cy="187.7" r="4" fill="#2f65a7"/><circle cx="233.5" cy="152.5" r="4" fill="#2f65a7"/><circle cx="401.0" cy="135.0" r="4" fill="#2f65a7"/><circle cx="568.5" cy="117.4" r="4" fill="#2f65a7"/><circle cx="736.0" cy="117.4" r="4" fill="#2f65a7"/><polyline points="66.0,187.7 233.5,82.2 401.0,82.2 568.5,82.2 736.0,82.2" fill="none" stroke="#b34934" stroke-width="3"/><circle cx="66.0" cy="187.7" r="4" fill="#b34934"/><circle cx="233.5" cy="82.2" r="4" fill="#b34934"/><circle cx="401.0" cy="82.2" r="4" fill="#b34934"/><circle cx="568.5" cy="82.2" r="4" fill="#b34934"/><circle cx="736.0" cy="82.2" r="4" fill="#b34934"/><rect x="66" y="300" width="14" height="4" fill="#167052"/><text x="86" y="305" class="legend">GDN</text><rect x="206" y="300" width="14" height="4" fill="#2f65a7"/><text x="226" y="305" class="legend">KDA</text><rect x="346" y="300" width="14" height="4" fill="#b34934"/><text x="366" y="305" class="legend">GDN2</text></svg></div>
+    <div style="margin-top:16px"><svg class="chart" viewBox="0 0 760 310" role="img" aria-label="53-blank blank-cell accuracy by loop"><text x="66" y="24" class="chart-title">53-blank blank-cell accuracy by loop</text><line x1="66" y1="258.0" x2="736" y2="258.0" class="grid-line"/><text x="56" y="262.0" text-anchor="end" class="tick">48.0%</text><line x1="66" y1="204.0" x2="736" y2="204.0" class="grid-line"/><text x="56" y="208.0" text-anchor="end" class="tick">48.8%</text><line x1="66" y1="150.0" x2="736" y2="150.0" class="grid-line"/><text x="56" y="154.0" text-anchor="end" class="tick">49.5%</text><line x1="66" y1="96.0" x2="736" y2="96.0" class="grid-line"/><text x="56" y="100.0" text-anchor="end" class="tick">50.2%</text><line x1="66" y1="42.0" x2="736" y2="42.0" class="grid-line"/><text x="56" y="46.0" text-anchor="end" class="tick">51.0%</text><text x="66.0" y="287" text-anchor="middle" class="tick">1</text><text x="233.5" y="287" text-anchor="middle" class="tick">2</text><text x="401.0" y="287" text-anchor="middle" class="tick">3</text><text x="568.5" y="287" text-anchor="middle" class="tick">4</text><text x="736.0" y="287" text-anchor="middle" class="tick">5</text><polyline points="66.0,216.3 233.5,94.0 401.0,75.6 568.5,78.9 736.0,78.9" fill="none" stroke="#167052" stroke-width="3"/><circle cx="66.0" cy="216.3" r="4" fill="#167052"/><circle cx="233.5" cy="94.0" r="4" fill="#167052"/><circle cx="401.0" cy="75.6" r="4" fill="#167052"/><circle cx="568.5" cy="78.9" r="4" fill="#167052"/><circle cx="736.0" cy="78.9" r="4" fill="#167052"/><polyline points="66.0,219.1 233.5,141.1 401.0,139.3 568.5,136.3 736.0,135.0" fill="none" stroke="#2f65a7" stroke-width="3"/><circle cx="66.0" cy="219.1" r="4" fill="#2f65a7"/><circle cx="233.5" cy="141.1" r="4" fill="#2f65a7"/><circle cx="401.0" cy="139.3" r="4" fill="#2f65a7"/><circle cx="568.5" cy="136.3" r="4" fill="#2f65a7"/><circle cx="736.0" cy="135.0" r="4" fill="#2f65a7"/><polyline points="66.0,192.4 233.5,111.1 401.0,108.3 568.5,103.3 736.0,105.1" fill="none" stroke="#b34934" stroke-width="3"/><circle cx="66.0" cy="192.4" r="4" fill="#b34934"/><circle cx="233.5" cy="111.1" r="4" fill="#b34934"/><circle cx="401.0" cy="108.3" r="4" fill="#b34934"/><circle cx="568.5" cy="103.3" r="4" fill="#b34934"/><circle cx="736.0" cy="105.1" r="4" fill="#b34934"/><rect x="66" y="300" width="14" height="4" fill="#167052"/><text x="86" y="305" class="legend">GDN</text><rect x="206" y="300" width="14" height="4" fill="#2f65a7"/><text x="226" y="305" class="legend">KDA</text><rect x="346" y="300" width="14" height="4" fill="#b34934"/><text x="366" y="305" class="legend">GDN2</text></svg></div>
+    <p>共同形态很清楚：loop1 到 loop2 有主要收益，loop3 以后基本饱和。FutureSeed 状态能在三种 recurrence 中传播，但更强的 KDA/GDN2 state update 没自动变成更持续的全局修错。</p>
+  </div></section>
+
+  <section class="band"><div class="inner">
+    <h2>难度断崖</h2>
+    <div class="table-wrap"><table><thead><tr><th>blank range</th><th>GDN exact</th><th>GDN blank</th><th>KDA exact</th><th>KDA blank</th><th>GDN2 exact</th><th>GDN2 blank</th></tr></thead><tbody><tr><td data-label="blank range">46-50</td><td data-label="GDN exact">85.94%</td><td data-label="GDN blank">99.47%</td><td data-label="KDA exact">65.04%</td><td data-label="KDA blank">98.55%</td><td data-label="GDN2 exact">75.39%</td><td data-label="GDN2 blank">99.03%</td></tr><tr><td data-label="blank range">51-55</td><td data-label="GDN exact">0.00%</td><td data-label="GDN blank">53.03%</td><td data-label="KDA exact">0.00%</td><td data-label="KDA blank">52.20%</td><td data-label="GDN2 exact">0.00%</td><td data-label="GDN2 blank">52.18%</td></tr><tr><td data-label="blank range">56-64</td><td data-label="GDN exact">0.00%</td><td data-label="GDN blank">47.33%</td><td data-label="KDA exact">0.00%</td><td data-label="KDA blank">45.87%</td><td data-label="GDN2 exact">0.00%</td><td data-label="GDN2 blank">46.85%</td></tr></tbody></table></div>
+    <p>46-50 blanks 能被 loop 大幅改善；51-55 一到，三种 backbone 的 exact 同时归零。当前瓶颈不是换一个更“高级”的 Linear Attention 方程就能解决，而是同等 500-step 计算还不足以形成 hard global closure。</p>
+  </div></section>
+
+  <section><div class="inner">
+    <h2>同一个 53-blank case</h2>
+    <p class="meta">三个页面的 puzzle 区块 SHA256 完全相同：<code>b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5</code>。红格是错，绿格是对，灰格是 clue。</p>
+    <div class="table-wrap"><table><thead><tr><th>backbone</th><th>loop1 wrong</th><th>loop2 wrong</th><th>loop3 wrong</th><th>loop4 wrong</th><th>loop5 wrong</th></tr></thead><tbody><tr><td data-label="backbone">GDN</td><td data-label="loop1 wrong">20</td><td data-label="loop2 wrong">22</td><td data-label="loop3 wrong">22</td><td data-label="loop4 wrong">22</td><td data-label="loop5 wrong">22</td></tr><tr><td data-label="backbone">KDA</td><td data-label="loop1 wrong">23</td><td data-label="loop2 wrong">21</td><td data-label="loop3 wrong">20</td><td data-label="loop4 wrong">20</td><td data-label="loop5 wrong">20</td></tr><tr><td data-label="backbone">GDN2</td><td data-label="loop1 wrong">25</td><td data-label="loop2 wrong">24</td><td data-label="loop3 wrong">23</td><td data-label="loop4 wrong">23</td><td data-label="loop5 wrong">23</td></tr></tbody></table></div>
+    <div class="case-tabs"><button class="case-tab active" data-target="case-gdn" aria-pressed="true">GDN</button><button class="case-tab" data-target="case-kda" aria-pressed="false">KDA</button><button class="case-tab" data-target="case-gdn2" aria-pressed="false">GDN2</button></div>
+    <iframe id="case-gdn" class="case-frame active" src="../fla-official-gdn-fs-d192l10-step500-unifiedeval-20260720T1435Z-c3342b8/output/futureseed_loop_case_seed52.html" title="GDN same Sudoku case" loading="lazy"></iframe><iframe id="case-kda" class="case-frame" src="../fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/futureseed_loop_case_seed52.html" title="KDA same Sudoku case" loading="lazy"></iframe><iframe id="case-gdn2" class="case-frame" src="../fla-official-gdn2-fs-d192l10-s500-clean-20260720T1034Z-c3342b8/output/futureseed_loop_case_seed52.html" title="GDN2 same Sudoku case" loading="lazy"></iframe>
+  </div></section>
+
+  <section class="band"><div class="inner">
+    <h2>确实是官方 FLA，没有 fallback</h2>
+    <div class="proof">
+      <p><strong>安装来源</strong><br><code>flash-linear-attention 0.5.2</code><br>wheel SHA256 <code>65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb</code></p>
+      <p><strong>源码身份</strong><br>FLA marker <code>fe8fce9fc6984f22905f54cfa885dce1502baf26</code><br>10 个关键 installed files 与 pinned wheel 逐字节一致</p>
+      <p><strong>后端锁定</strong><br><code>FLA_DISABLE_BACKEND_DISPATCH=1</code><br><code>FLA_CONV_BACKEND=triton</code>，CUDA GPU1 only</p>
+      <p><strong>FutureSeed 接口</strong><br>只把上一层终态放进官方 <code>Cache</code> 作为下一层初态；完整调用官方 layer <code>forward</code>，没有左右双扫或本地 Torch fallback。</p>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>backbone</th><th>official class</th><th>actual backward node</th><th>output err</th><th>state err</th><th>max grad err</th><th>h0 grad norm</th><th>state layout</th></tr></thead><tbody><tr><td data-label="backbone">GDN</td><td data-label="official class">fla.layers.gated_deltanet.GatedDeltaNet</td><td data-label="actual backward node">ChunkGatedDeltaRuleFunctionBackward</td><td data-label="output err">0.000045</td><td data-label="state err">0.000160</td><td data-label="max grad err">0.023377</td><td data-label="h0 grad norm">0.006503</td><td data-label="state layout">V,K</td></tr><tr><td data-label="backbone">KDA</td><td data-label="official class">fla.layers.kda.KimiDeltaAttention</td><td data-label="actual backward node">ChunkKDAFunctionBackward</td><td data-label="output err">0.000066</td><td data-label="state err">0.000118</td><td data-label="max grad err">0.000258</td><td data-label="h0 grad norm">0.012747</td><td data-label="state layout">V,K</td></tr><tr><td data-label="backbone">GDN2</td><td data-label="official class">fla.layers.gdn2.GatedDeltaNet2</td><td data-label="actual backward node">ChunkGDN2FunctionBackward</td><td data-label="output err">0.000060</td><td data-label="state err">0.000276</td><td data-label="max grad err">0.000234</td><td data-label="h0 grad norm">0.011757</td><td data-label="state layout">K,V</td></tr></tbody></table></div>
+  </div></section>
+
+  <section><div class="inner">
+    <h2>应该怎么决策</h2>
+    <p><strong>保留 GDN 作为主 scaling backbone。</strong>它参数不大、CE 最低、easy-to-medium closure 最强；GDN2 可表达性更高，但此预算没有换来 hard exact；KDA 在这条任务上更慢且 opening 更差。</p>
+    <p><strong>停止继续枚举 Linear Attention 变体。</strong>这轮已经回答“更细 memory gate 是否直接修好 hard Sudoku”：没有。下一条高信息实验应扩大 clean data/steps/model state，并只在曲线仍有斜率时延长，而不是继续换方程补表。</p>
+    <p><strong>边界：</strong>这次比较的是三个 <em>FS-enabled</em> backbone 的排序，不是每个 backbone 上 FutureSeed 的因果增益。要写论文中的 FutureSeed gain，仍应在最终选定的 GDN scaling 点做一个 matched no-FS 对照，而不是三套 no-FS 表。</p>
+    <div class="links">
+      <a href="../fla-official-gdn-fs-d192l10-step500-unifiedeval-20260720T1435Z-c3342b8/visualizations/index.html">GDN run</a><a href="../fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/visualizations/index.html">KDA run</a><a href="../fla-official-gdn2-fs-d192l10-s500-clean-20260720T1034Z-c3342b8/visualizations/index.html">GDN2 run</a>
+      <a href="../../artifacts/fla-official-futureseed-strict-gate-c3342b8/gate.json">strict gate JSON</a>
+    </div>
+  </div></section>
+  <script>
+    const tabs = [...document.querySelectorAll('.case-tab')];
+    const frames = [...document.querySelectorAll('.case-frame')];
+    function resizeFrame(frame) {
+      try {
+        const root = frame.contentDocument.documentElement;
+        frame.style.height = `${Math.max(680, root.scrollHeight + 4)}px`;
+      } catch (error) {
+        console.warn('Could not resize case frame', error);
+      }
+    }
+    frames.forEach((frame) => frame.addEventListener('load', () => resizeFrame(frame)));
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      tabs.forEach((item) => {
+        const active = item === tab;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+      frames.forEach((frame) => frame.classList.toggle('active', frame.id === tab.dataset.target));
+      requestAnimationFrame(() => resizeFrame(document.getElementById(tab.dataset.target)));
+    }));
+    window.addEventListener('resize', () => {
+      const activeFrame = document.querySelector('.case-frame.active');
+      if (activeFrame) requestAnimationFrame(() => resizeFrame(activeFrame));
+    });
+  </script>
+</body>
+</html>

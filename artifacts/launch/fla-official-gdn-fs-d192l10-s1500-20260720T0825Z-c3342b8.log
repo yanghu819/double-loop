@@ -1,0 +1,16 @@
+nohup: ignoring input
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-gdn-fs-d192l10-s1500-20260720T0825Z-c3342b8
+git_sha=c3342b8326a6e00e012cd6972d8c0e295d82c0b3
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=fla_gdn rwkv_kernel=auto gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=500,1000,1500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.5918 total=1.5906 loop1=1.5880 loop_last=1.5918 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.2075 total=1.2082 loop1=1.2115 loop_last=1.2075 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.0492 total=1.0548 loop1=1.0749 loop_last=1.0492 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0075 total=1.0145 loop1=1.0389 loop_last=1.0075 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=0.9981 total=1.0058 loop1=1.0339 loop_last=0.9981 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0176 blank=0.4942
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/fla-official-gdn-fs-d192l10-s1500-20260720T0825Z-c3342b8/checkpoints/train_state_step000500.pt
+Terminated

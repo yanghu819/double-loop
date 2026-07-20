@@ -1,0 +1,17 @@
+{
+  "status": "provenance_abort",
+  "timestamp_utc": "2026-07-20T10:33:27Z",
+  "timestamp_cst": "2026-07-20 18:33:27 CST",
+  "run_name": "fla-official-gdn2-fs-d192l10-s500-20260720T1008Z-c3342b8",
+  "git_sha": "c3342b8326a6e00e012cd6972d8c0e295d82c0b3",
+  "git_dirty": true,
+  "completed_logged_steps": 100,
+  "signal": "SIGTERM",
+  "python_pid": 13180,
+  "reason": "The preceding completed KDA run automatically modified tracked leaderboard.csv and runs/visualization_index.html in the shared detached worktree. Model source was unchanged, but the strict clean-source contract requires a clean relaunch.",
+  "dirty_files": [
+    "leaderboard.csv",
+    "runs/visualization_index.html"
+  ],
+  "remediation": "Archived the generated tracking files, restored both tracked files from detached HEAD, verified no tracked changes, and relaunched GDN2 from the same exact SHA with warm kernel cache."
+}

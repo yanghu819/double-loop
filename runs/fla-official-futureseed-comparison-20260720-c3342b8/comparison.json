@@ -1,0 +1,696 @@
+{
+  "decision": "Keep official GDN as the scaling backbone; stop architecture enumeration at this budget.",
+  "generated_at_utc": "2026-07-20T18:19:29.937025+00:00",
+  "official_fla_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+  "plan_id": "P-LA-002",
+  "provenance": {
+    "all_source_hashes_match": true,
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "gate": {
+      "device": "NVIDIA A800-SXM4-80GB",
+      "fla_gdn_adapter": {
+        "check_wall_sec": 84.7329486249946,
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "forward_backward_ms": 13.700141198933125,
+        "initial_state_grad_norm": 0.006503338925540447,
+        "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+        "official_layer_class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "official_layer_forward_calls": 1,
+        "output_shape": [
+          2,
+          81,
+          64
+        ],
+        "parameters": 34344,
+        "peak_memory_mb": 273.2548828125,
+        "state_dtype": "torch.float32",
+        "state_shape": [
+          2,
+          4,
+          32,
+          16
+        ],
+        "state_v_first": true
+      },
+      "fla_gdn_futureseed_stack": {
+        "check_wall_sec": 36.21917603118345,
+        "expected_missing_parameter_grads": [
+          "blocks.0.future_seed_logit"
+        ],
+        "fs_gate_mean": 0.5,
+        "fs_state_norm": 11.313708305358887,
+        "input_grad_norm": 0.0250784270465374,
+        "output_shape": [
+          2,
+          81,
+          64
+        ],
+        "parameters": 152964
+      },
+      "fla_gdn_reference": {
+        "check_wall_sec": 54.257484319852665,
+        "gradient_errors": {
+          "A_log": 0.023377152159810066,
+          "beta": 9.512156248092651e-05,
+          "dt_bias": 0.012223025783896446,
+          "g": 0.0006059851148165762,
+          "h0": 1.168984454125166e-06,
+          "k": 8.428096771240234e-05,
+          "q": 9.189173579216003e-05,
+          "v": 0.0003630518913269043
+        },
+        "gradient_max_abs": 0.023377152159810066,
+        "output_max_abs": 4.5433640480041504e-05,
+        "state_max_abs": 0.00016039609909057617
+      },
+      "gdn2_adapter": {
+        "check_wall_sec": 62.540033135097474,
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "forward_backward_ms": 13.957378780469298,
+        "initial_state_grad_norm": 0.011756871826946735,
+        "official_chunk_autograd_node": "ChunkGDN2FunctionBackward",
+        "official_layer_class": "fla.layers.gdn2.GatedDeltaNet2",
+        "official_layer_forward_calls": 1,
+        "output_shape": [
+          2,
+          81,
+          64
+        ],
+        "parameters": 48356,
+        "peak_memory_mb": 274.21484375,
+        "state_dtype": "torch.float32",
+        "state_shape": [
+          2,
+          4,
+          16,
+          32
+        ],
+        "state_v_first": false
+      },
+      "gdn2_futureseed_stack": {
+        "check_wall_sec": 31.520347512792796,
+        "expected_missing_parameter_grads": [
+          "blocks.0.future_seed_logit"
+        ],
+        "fs_gate_mean": 0.5,
+        "fs_state_norm": 11.313708305358887,
+        "input_grad_norm": 0.03309241309762001,
+        "output_shape": [
+          2,
+          81,
+          64
+        ],
+        "parameters": 195000
+      },
+      "gdn2_reference": {
+        "check_wall_sec": 35.15949686989188,
+        "gradient_errors": {
+          "b": 1.2858770787715912e-05,
+          "g": 3.884173929691315e-05,
+          "h0": 9.697675704956055e-05,
+          "k": 4.7538429498672485e-05,
+          "q": 5.0961971282958984e-05,
+          "v": 0.0002336949110031128,
+          "w": 0.0001019015908241272
+        },
+        "gradient_max_abs": 0.0002336949110031128,
+        "output_max_abs": 5.9857964515686035e-05,
+        "state_max_abs": 0.00027595460414886475
+      },
+      "kda_adapter": {
+        "check_wall_sec": 74.31277941702865,
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "forward_backward_ms": 12.822795007377863,
+        "initial_state_grad_norm": 0.012747186236083508,
+        "official_chunk_autograd_node": "ChunkKDAFunctionBackward",
+        "official_layer_class": "fla.layers.kda.KimiDeltaAttention",
+        "official_layer_forward_calls": 1,
+        "output_shape": [
+          2,
+          81,
+          64
+        ],
+        "parameters": 36324,
+        "peak_memory_mb": 273.8779296875,
+        "state_dtype": "torch.float32",
+        "state_shape": [
+          2,
+          4,
+          32,
+          16
+        ],
+        "state_v_first": true
+      },
+      "kda_futureseed_stack": {
+        "check_wall_sec": 6.59524615900591,
+        "expected_missing_parameter_grads": [
+          "blocks.0.future_seed_logit"
+        ],
+        "fs_gate_mean": 0.5,
+        "fs_state_norm": 11.313709259033203,
+        "input_grad_norm": 0.03305192291736603,
+        "output_shape": [
+          2,
+          81,
+          64
+        ],
+        "parameters": 158904
+      },
+      "kda_reference": {
+        "check_wall_sec": 66.39878611802123,
+        "gradient_errors": {
+          "A_log": 8.104555308818817e-05,
+          "beta": 7.396191358566284e-05,
+          "dt_bias": 7.275678217411041e-05,
+          "g": 3.0044466257095337e-05,
+          "h0": 0.00011349469423294067,
+          "k": 5.13661652803421e-05,
+          "q": 3.7496909499168396e-05,
+          "v": 0.0002580583095550537
+        },
+        "gradient_max_abs": 0.0002580583095550537,
+        "output_max_abs": 6.564334034919739e-05,
+        "state_max_abs": 0.00011767446994781494
+      },
+      "provenance": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_package_root": "/huyang2/double-loop/.cache/python-extra-pylib/fla",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "fla_version": "0.5.2",
+        "source_file_hashes": {
+          "fla/layers/gated_deltanet.py": {
+            "installed_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b",
+            "wheel_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b"
+          },
+          "fla/layers/gdn2.py": {
+            "installed_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+            "wheel_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910"
+          },
+          "fla/layers/kda.py": {
+            "installed_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a",
+            "wheel_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a"
+          },
+          "fla/models/utils.py": {
+            "installed_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635",
+            "wheel_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635"
+          },
+          "fla/modules/conv/short_conv.py": {
+            "installed_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e",
+            "wheel_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e"
+          },
+          "fla/modules/conv/triton/ops.py": {
+            "installed_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0",
+            "wheel_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0"
+          },
+          "fla/ops/backends/__init__.py": {
+            "installed_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635",
+            "wheel_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635"
+          },
+          "fla/ops/gated_delta_rule/chunk.py": {
+            "installed_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e",
+            "wheel_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e"
+          },
+          "fla/ops/gdn2/chunk.py": {
+            "installed_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0",
+            "wheel_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0"
+          },
+          "fla/ops/kda/chunk.py": {
+            "installed_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8",
+            "wheel_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8"
+          }
+        },
+        "symbols": {
+          "fla_gdn_layer": {
+            "module": "fla.layers.gated_deltanet",
+            "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+            "qualname": "GatedDeltaNet",
+            "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+            "wrapped": false,
+            "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py"
+          },
+          "fla_gdn_op": {
+            "module": "fla.ops.gated_delta_rule.chunk",
+            "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+            "qualname": "chunk_gated_delta_rule",
+            "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+            "wrapped": true,
+            "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+          },
+          "gdn2_layer": {
+            "module": "fla.layers.gdn2",
+            "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+            "qualname": "GatedDeltaNet2",
+            "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+            "wrapped": false,
+            "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py"
+          },
+          "gdn2_op": {
+            "module": "fla.ops.gdn2.chunk",
+            "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+            "qualname": "chunk_gdn2",
+            "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+            "wrapped": true,
+            "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+          },
+          "kda_layer": {
+            "module": "fla.layers.kda",
+            "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+            "qualname": "KimiDeltaAttention",
+            "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+            "wrapped": false,
+            "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py"
+          },
+          "kda_op": {
+            "module": "fla.ops.kda.chunk",
+            "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+            "qualname": "chunk_kda",
+            "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+            "wrapped": true,
+            "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+          }
+        },
+        "wheel_path": "/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl",
+        "wheel_sha256": "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+      },
+      "requested_backbone": "all",
+      "requested_check": "all",
+      "torch": "2.7.0+cu126"
+    },
+    "source_file_hashes": {
+      "fla/layers/gated_deltanet.py": {
+        "installed_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b",
+        "wheel_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b"
+      },
+      "fla/layers/gdn2.py": {
+        "installed_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+        "wheel_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910"
+      },
+      "fla/layers/kda.py": {
+        "installed_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a",
+        "wheel_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a"
+      },
+      "fla/models/utils.py": {
+        "installed_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635",
+        "wheel_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635"
+      },
+      "fla/modules/conv/short_conv.py": {
+        "installed_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e",
+        "wheel_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e"
+      },
+      "fla/modules/conv/triton/ops.py": {
+        "installed_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0",
+        "wheel_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0"
+      },
+      "fla/ops/backends/__init__.py": {
+        "installed_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635",
+        "wheel_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635"
+      },
+      "fla/ops/gated_delta_rule/chunk.py": {
+        "installed_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e",
+        "wheel_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e"
+      },
+      "fla/ops/gdn2/chunk.py": {
+        "installed_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0",
+        "wheel_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0"
+      },
+      "fla/ops/kda/chunk.py": {
+        "installed_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8",
+        "wheel_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8"
+      }
+    }
+  },
+  "runs": [
+    {
+      "backbone": "fla_gdn",
+      "case": {
+        "html": "runs/fla-official-gdn-fs-d192l10-step500-unifiedeval-20260720T1435Z-c3342b8/output/futureseed_loop_case_seed52.html",
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+        "wrong_by_loop": {
+          "loop1": 20,
+          "loop2": 22,
+          "loop3": 22,
+          "loop4": 22,
+          "loop5": 22
+        }
+      },
+      "checkpoint53_blank_acc": 0.4941789209842682,
+      "checkpoint53_exact": 0.017578125,
+      "color": "#167052",
+      "d_model": 192,
+      "effective_batch": 128,
+      "git_sha": "c3342b8326a6e00e012cd6972d8c0e295d82c0b3",
+      "head_dim": 32,
+      "heads": 6,
+      "key": "gdn",
+      "label": "GDN",
+      "layers": 10,
+      "loop_gain_blank": 0.019090235233306885,
+      "loop_gain_exact": 0.009765625,
+      "loop_rows": [
+        {
+          "blank_acc": 0.48578721284866333,
+          "exact": 0.01171875,
+          "loop": 1
+        },
+        {
+          "blank_acc": 0.5027796030044556,
+          "exact": 0.021484375,
+          "loop": 2
+        },
+        {
+          "blank_acc": 0.5053319931030273,
+          "exact": 0.021484375,
+          "loop": 3
+        },
+        {
+          "blank_acc": 0.5048774480819702,
+          "exact": 0.021484375,
+          "loop": 4
+        },
+        {
+          "blank_acc": 0.5048774480819702,
+          "exact": 0.021484375,
+          "loop": 5
+        }
+      ],
+      "max_loops": 5,
+      "memory_run": "runs/fla-official-gdn-trainmem-step501-20260720T1455Z-c3342b8",
+      "official_class": "fla.layers.gated_deltanet.GatedDeltaNet",
+      "parameters": 5980468,
+      "peak_allocated_mb": 7281.0908203125,
+      "peak_reserved_mb": 7896.0,
+      "ranges": {
+        "b46_50": {
+          "final_blank_acc": 0.9947068095207214,
+          "final_exact": 0.859375,
+          "loop1_blank_acc": 0.9751054644584656,
+          "loop1_exact": 0.44140625
+        },
+        "b51_55": {
+          "final_blank_acc": 0.5302688479423523,
+          "final_exact": 0.0,
+          "loop1_blank_acc": 0.5127626657485962,
+          "loop1_exact": 0.0
+        },
+        "b56_64": {
+          "final_blank_acc": 0.473268061876297,
+          "final_exact": 0.0,
+          "loop1_blank_acc": 0.4580024778842926,
+          "loop1_exact": 0.0
+        }
+      },
+      "run": "runs/fla-official-gdn-fs-d192l10-step500-unifiedeval-20260720T1435Z-c3342b8",
+      "steps": 500,
+      "train_ce": 0.998108834028244,
+      "train_curve": [
+        {
+          "ce": 1.5918,
+          "loop1": 1.588,
+          "loop_last": 1.5918,
+          "step": 100.0
+        },
+        {
+          "ce": 1.2075,
+          "loop1": 1.2115,
+          "loop_last": 1.2075,
+          "step": 200.0
+        },
+        {
+          "ce": 1.0492,
+          "loop1": 1.0749,
+          "loop_last": 1.0492,
+          "step": 300.0
+        },
+        {
+          "ce": 1.0075,
+          "loop1": 1.0389,
+          "loop_last": 1.0075,
+          "step": 400.0
+        },
+        {
+          "ce": 0.9981,
+          "loop1": 1.0339,
+          "loop_last": 0.9981,
+          "step": 500.0
+        }
+      ],
+      "train_loop1_ce": 1.0339491367340088,
+      "train_loop5_ce": 0.998108834028244,
+      "train_run": "runs/fla-official-gdn-fs-d192l10-s1500-20260720T0825Z-c3342b8",
+      "train_wall_sec": 2933.3506445884705
+    },
+    {
+      "backbone": "kda",
+      "case": {
+        "html": "runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/futureseed_loop_case_seed52.html",
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+        "wrong_by_loop": {
+          "loop1": 23,
+          "loop2": 21,
+          "loop3": 20,
+          "loop4": 20,
+          "loop5": 20
+        }
+      },
+      "checkpoint53_blank_acc": 0.49400413036346436,
+      "checkpoint53_exact": 0.017578125,
+      "color": "#2f65a7",
+      "d_model": 192,
+      "effective_batch": 128,
+      "git_sha": "c3342b8326a6e00e012cd6972d8c0e295d82c0b3",
+      "head_dim": 32,
+      "heads": 6,
+      "key": "kda",
+      "label": "KDA",
+      "layers": 10,
+      "loop_gain_blank": 0.011677920818328857,
+      "loop_gain_exact": 0.0078125,
+      "loop_rows": [
+        {
+          "blank_acc": 0.4854026138782501,
+          "exact": 0.0078125,
+          "loop": 1
+        },
+        {
+          "blank_acc": 0.49624139070510864,
+          "exact": 0.01171875,
+          "loop": 2
+        },
+        {
+          "blank_acc": 0.4964861273765564,
+          "exact": 0.013671875,
+          "loop": 3
+        },
+        {
+          "blank_acc": 0.49690571427345276,
+          "exact": 0.015625,
+          "loop": 4
+        },
+        {
+          "blank_acc": 0.497080534696579,
+          "exact": 0.015625,
+          "loop": 5
+        }
+      ],
+      "max_loops": 5,
+      "official_class": "fla.layers.kda.KimiDeltaAttention",
+      "parameters": 5851768,
+      "peak_allocated_mb": 7735.486328125,
+      "peak_reserved_mb": 8440.0,
+      "ranges": {
+        "b46_50": {
+          "final_blank_acc": 0.985526442527771,
+          "final_exact": 0.650390625,
+          "loop1_blank_acc": 0.966876208782196,
+          "loop1_exact": 0.33203125
+        },
+        "b51_55": {
+          "final_blank_acc": 0.5219990611076355,
+          "final_exact": 0.0,
+          "loop1_blank_acc": 0.5116170644760132,
+          "loop1_exact": 0.0
+        },
+        "b56_64": {
+          "final_blank_acc": 0.45872125029563904,
+          "final_exact": 0.0,
+          "loop1_blank_acc": 0.44807639718055725,
+          "loop1_exact": 0.0
+        }
+      },
+      "run": "runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8",
+      "steps": 500,
+      "train_ce": 1.0252310931682587,
+      "train_curve": [
+        {
+          "ce": 1.6655,
+          "loop1": 1.6625,
+          "loop_last": 1.6655,
+          "step": 100.0
+        },
+        {
+          "ce": 1.3506,
+          "loop1": 1.3555,
+          "loop_last": 1.3506,
+          "step": 200.0
+        },
+        {
+          "ce": 1.1097,
+          "loop1": 1.1236,
+          "loop_last": 1.1097,
+          "step": 300.0
+        },
+        {
+          "ce": 1.0437,
+          "loop1": 1.0618,
+          "loop_last": 1.0437,
+          "step": 400.0
+        },
+        {
+          "ce": 1.0252,
+          "loop1": 1.0483,
+          "loop_last": 1.0252,
+          "step": 500.0
+        }
+      ],
+      "train_loop1_ce": 1.0482671856880188,
+      "train_loop5_ce": 1.0252310931682587,
+      "train_run": "runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8",
+      "train_wall_sec": 3214.22483253479
+    },
+    {
+      "backbone": "gdn2",
+      "case": {
+        "html": "runs/fla-official-gdn2-fs-d192l10-s500-clean-20260720T1034Z-c3342b8/output/futureseed_loop_case_seed52.html",
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+        "wrong_by_loop": {
+          "loop1": 25,
+          "loop2": 24,
+          "loop3": 23,
+          "loop4": 23,
+          "loop5": 23
+        }
+      },
+      "checkpoint53_blank_acc": 0.4941439628601074,
+      "checkpoint53_exact": 0.017578125,
+      "color": "#b34934",
+      "d_model": 192,
+      "effective_batch": 128,
+      "git_sha": "c3342b8326a6e00e012cd6972d8c0e295d82c0b3",
+      "head_dim": 32,
+      "heads": 6,
+      "key": "gdn2",
+      "label": "GDN2",
+      "layers": 10,
+      "loop_gain_blank": 0.012132436037063599,
+      "loop_gain_exact": 0.01171875,
+      "loop_rows": [
+        {
+          "blank_acc": 0.48910877108573914,
+          "exact": 0.0078125,
+          "loop": 1
+        },
+        {
+          "blank_acc": 0.5004020929336548,
+          "exact": 0.01953125,
+          "loop": 2
+        },
+        {
+          "blank_acc": 0.5007866621017456,
+          "exact": 0.01953125,
+          "loop": 3
+        },
+        {
+          "blank_acc": 0.5014859437942505,
+          "exact": 0.01953125,
+          "loop": 4
+        },
+        {
+          "blank_acc": 0.5012412071228027,
+          "exact": 0.01953125,
+          "loop": 5
+        }
+      ],
+      "max_loops": 5,
+      "official_class": "fla.layers.gdn2.GatedDeltaNet2",
+      "parameters": 6946168,
+      "peak_allocated_mb": 9294.9638671875,
+      "peak_reserved_mb": 10202.0,
+      "ranges": {
+        "b46_50": {
+          "final_blank_acc": 0.9902819991111755,
+          "final_exact": 0.75390625,
+          "loop1_blank_acc": 0.9686130285263062,
+          "loop1_exact": 0.33984375
+        },
+        "b51_55": {
+          "final_blank_acc": 0.521784245967865,
+          "final_exact": 0.0,
+          "loop1_blank_acc": 0.5079655051231384,
+          "loop1_exact": 0.0
+        },
+        "b56_64": {
+          "final_blank_acc": 0.4685104191303253,
+          "final_exact": 0.0,
+          "loop1_blank_acc": 0.45742058753967285,
+          "loop1_exact": 0.0
+        }
+      },
+      "run": "runs/fla-official-gdn2-fs-d192l10-s500-clean-20260720T1034Z-c3342b8",
+      "steps": 500,
+      "train_ce": 1.0101190954446793,
+      "train_curve": [
+        {
+          "ce": 1.6054,
+          "loop1": 1.6061,
+          "loop_last": 1.6054,
+          "step": 100.0
+        },
+        {
+          "ce": 1.2744,
+          "loop1": 1.281,
+          "loop_last": 1.2744,
+          "step": 200.0
+        },
+        {
+          "ce": 1.0803,
+          "loop1": 1.0976,
+          "loop_last": 1.0803,
+          "step": 300.0
+        },
+        {
+          "ce": 1.0282,
+          "loop1": 1.055,
+          "loop_last": 1.0282,
+          "step": 400.0
+        },
+        {
+          "ce": 1.0101,
+          "loop1": 1.0402,
+          "loop_last": 1.0101,
+          "step": 500.0
+        }
+      ],
+      "train_loop1_ce": 1.040230929851532,
+      "train_loop5_ce": 1.0101190954446793,
+      "train_run": "runs/fla-official-gdn2-fs-d192l10-s500-clean-20260720T1034Z-c3342b8",
+      "train_wall_sec": 2871.725792646408
+    }
+  ],
+  "same_case_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+  "source_sha": "c3342b8326a6e00e012cd6972d8c0e295d82c0b3",
+  "wheel_sha256": "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+}

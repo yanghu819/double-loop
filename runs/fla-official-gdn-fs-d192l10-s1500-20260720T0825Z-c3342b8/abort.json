@@ -1,0 +1,21 @@
+{
+  "status": "budget_truncated",
+  "timestamp_utc": "2026-07-20T09:07:25Z",
+  "timestamp_cst": "2026-07-20 17:07:25 CST",
+  "run_name": "fla-official-gdn-fs-d192l10-s1500-20260720T0825Z-c3342b8",
+  "git_sha": "c3342b8326a6e00e012cd6972d8c0e295d82c0b3",
+  "requested_steps": 1500,
+  "completed_steps": 500,
+  "signal": "SIGTERM",
+  "python_pid": 6443,
+  "reason": "The measured runtime made three 1500-step arms infeasible in the current GPU1 lease. Stop all arms at a matched 500-step opening gate before allocating longer compute to a winner.",
+  "checkpoint": "/huyang2/double-loop/models/fla-official-gdn-fs-d192l10-s1500-20260720T0825Z-c3342b8/checkpoints/train_state_step000500.pt",
+  "checkpoint_eval": {
+    "holes": 53,
+    "loop": 5,
+    "exact": 0.0176,
+    "blank_accuracy": 0.4942,
+    "train_ce": 0.9981
+  },
+  "next_decision": "Run official KDA and GDN2 with the identical 500-step token, curriculum, optimizer, and evaluation budget."
+}

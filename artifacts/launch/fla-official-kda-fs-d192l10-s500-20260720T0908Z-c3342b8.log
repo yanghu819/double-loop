@@ -1,0 +1,51 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8
+git_sha=c3342b8326a6e00e012cd6972d8c0e295d82c0b3
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=kda rwkv_kernel=auto gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6655 total=1.6645 loop1=1.6625 loop_last=1.6655 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.3506 total=1.3514 loop1=1.3555 loop_last=1.3506 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.1097 total=1.1129 loop1=1.1236 loop_last=1.1097 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0437 total=1.0475 loop1=1.0618 loop_last=1.0437 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=1.0252 total=1.0301 loop1=1.0483 loop_last=1.0252 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0176 blank=0.4940
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4854, early=0.4801, late=0.4836, early_late_gap=-0.0035
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.564, fs_decay=0.00, fs_raw_rms=0.239, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4962, early=0.4905, late=0.4967, early_late_gap=-0.0062
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.564, fs_decay=0.00, fs_raw_rms=0.234, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0137, valid=0.0137, solved=0.0137, blank_acc=0.4965, early=0.4912, late=0.5004, early_late_gap=-0.0092
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.564, fs_decay=0.00, fs_raw_rms=0.231, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0156, valid=0.0156, solved=0.0156, blank_acc=0.4969, early=0.4911, late=0.5010, early_late_gap=-0.0099
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.564, fs_decay=0.00, fs_raw_rms=0.231, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0156, valid=0.0156, solved=0.0156, blank_acc=0.4971, early=0.4910, late=0.5018, early_late_gap=-0.0108
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.564, fs_decay=0.00, fs_raw_rms=0.231, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.6504, valid=0.6504, solved=0.6504, blank_acc=0.9855, early=0.9844, late=0.9865, early_late_gap=-0.0021
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5220, early=0.5235, late=0.5202, early_late_gap=+0.0033
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4587, early=0.4556, late=0.4592, early_late_gap=-0.0036
+
+case-bank artifacts
+official_b46_50 exact=0.6523 blank_acc=0.9866 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 3}
+  index=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5176 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4595 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8 score=0.015625 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/fla-official-7891539-20260720/runs/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8

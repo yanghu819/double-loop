@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import importlib.metadata
 import inspect
 import json
@@ -131,13 +132,24 @@ def collect_provenance(wheel_path: Path) -> dict[str, Any]:
     }
     symbol_rows = {}
     for name, symbol in symbols.items():
-        source_path = Path(inspect.getfile(symbol)).resolve()
-        if package_root not in source_path.parents:
-            raise AssertionError(f"{name} resolved outside installed FLA: {source_path}")
+        module = importlib.import_module(symbol.__module__)
+        module_path = Path(inspect.getfile(module)).resolve()
+        if package_root not in module_path.parents:
+            raise AssertionError(f"{name} module resolved outside installed FLA: {module_path}")
+        exported_symbol = getattr(module, symbol.__name__, None)
+        if exported_symbol is not symbol:
+            raise AssertionError(f"{name} is not the callable exported by {symbol.__module__}.{symbol.__name__}")
+
+        wrapper_path = Path(inspect.getfile(symbol)).resolve()
+        unwrapped_symbol = inspect.unwrap(symbol)
+        unwrapped_path = Path(inspect.getfile(unwrapped_symbol)).resolve()
         symbol_rows[name] = {
             "module": symbol.__module__,
             "qualname": symbol.__qualname__,
-            "source_path": str(source_path),
+            "module_path": str(module_path),
+            "wrapper_path": str(wrapper_path),
+            "unwrapped_path": str(unwrapped_path),
+            "wrapped": unwrapped_symbol is not symbol,
         }
     return {
         "fla_version": importlib.metadata.version("flash-linear-attention"),

@@ -1005,6 +1005,16 @@
 
 ## 2026-07-21 Official FLA backbone double-check
 
+- Exact KDA continuation closes the remaining early-ranking ambiguity. At
+  step1000, GDN/KDA/GDN2 CE is `0.9413/0.9491/0.9539`; mixed loop5 exact is
+  tied at `0.02344`, fixed holes53 exact is tied at `0.01758`, and official
+  46-50 exact is `0.99805/0.99609/0.99219`. All three remain zero exact at
+  51-64 blanks. The step500 ranking was mostly a finite-budget artifact.
+- More expressive state updates are not free. Under the same D32/expand-v2
+  recipe, continuation cost is `5.15/5.65/5.70` seconds per step and peak
+  allocation is `7281/7809/9382` MiB for GDN/KDA/GDN2. GDN is the pragmatic
+  efficiency choice here, while KDA/GDN2 provide no hard-closure gain. Do not
+  convert this into native-geometry, seed, LR, or loss tables.
 - Do not infer an architecture ceiling from a short shared-recipe gate. At
   step500, official FLA GDN/GDN2 46-50-blank exact was `0.8594/0.7539`; after
   exact matched continuation to step1000 it was `0.99805/0.99219`. The large

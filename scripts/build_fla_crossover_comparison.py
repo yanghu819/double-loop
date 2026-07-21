@@ -34,8 +34,8 @@ CRITICAL_ARGS = (
     "seed",
     "forward_dtype",
 )
-COLORS = {"fla_gdn": "#1769aa", "gdn2": "#2e7d50"}
-LABELS = {"fla_gdn": "GDN", "gdn2": "GDN2"}
+COLORS = {"fla_gdn": "#1769aa", "kda": "#a45116", "gdn2": "#2e7d50"}
+LABELS = {"fla_gdn": "GDN", "kda": "KDA", "gdn2": "GDN2"}
 EXPECTED_AUTOGRAD_NODES = {
     "fla_gdn_adapter": "ChunkGatedDeltaRuleFunctionBackward",
     "kda_adapter": "ChunkKDAFunctionBackward",

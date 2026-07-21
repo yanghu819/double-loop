@@ -165,3 +165,17 @@ supports a cleaner mechanism statement: FutureSeed influence survives more
 strongly in GDN2, but persistence alone does not produce better global closure.
 Optimization, state geometry, and the downstream task still determine whether
 that future context is useful.
+
+## 10. KDA Follow-up
+
+`P-LA-005` resumed the exact KDA step500 optimizer/RNG checkpoint under the
+same recipe and closed the last fairness gap. At step1000, GDN/KDA/GDN2 CE is
+`0.9413/0.9491/0.9539`; mixed loop5 exact is tied at `0.02344`, fixed holes53
+exact is tied at `0.01758`, and official 46-50 exact is
+`0.99805/0.99609/0.99219`. All three remain zero exact at 51-64 blanks.
+
+KDA therefore confirms that the step500 ranking was mostly an early-budget
+artifact. GDN remains the cheapest carrier under this shared recipe, but the
+claim that GDN is intrinsically stronger than KDA/GDN2 is withdrawn. The full
+three-way report and visualization are in
+`runs/fla-official-threeway-crossover-20260721-87e66cf/`.

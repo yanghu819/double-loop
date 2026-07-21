@@ -1,0 +1,49 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=kda rwkv_kernel=auto gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=1000 holes=53
+resumed_train_checkpoint path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-s500-20260720T0908Z-c3342b8/checkpoints/train_state_step000500.pt step=500 reason=eval_checkpoint
+[future_seed_loop stage=2:51-55] step=0600 ce=0.9676 total=0.9737 loop1=0.9959 loop_last=0.9676 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0600] path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/checkpoints/train_state_step000600.pt
+[future_seed_loop stage=2:51-55] step=0700 ce=0.9493 total=0.9563 loop1=0.9810 loop_last=0.9493 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0700] path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/checkpoints/train_state_step000700.pt
+[future_seed_loop stage=2:51-55] step=0800 ce=0.9545 total=0.9628 loop1=0.9919 loop_last=0.9545 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0800] path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/checkpoints/train_state_step000800.pt
+[future_seed_loop stage=2:51-55] step=0900 ce=0.9502 total=0.9569 loop1=0.9804 loop_last=0.9502 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0900] path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/checkpoints/train_state_step000900.pt
+[future_seed_loop stage=2:51-55] step=1000 ce=0.9491 total=0.9564 loop1=0.9836 loop_last=0.9491 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=1000 holes53] loop5 exact=0.0176 blank=0.5142
+[train_checkpoint step=1000] path=/huyang2/double-loop/models/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/checkpoints/train_state_step001000.pt
+
+full-board metrics
+loop=1 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5096, early=0.5059, late=0.5134, early_late_gap=-0.0075
+        fs_gate=0.506, fs_update=1.000, fs_state_norm=22.882, fs_decay=0.00, fs_raw_rms=0.273, fs_raw_rms_std=0.013, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5227, early=0.5145, late=0.5261, early_late_gap=-0.0115
+        fs_gate=0.506, fs_update=1.000, fs_state_norm=22.882, fs_decay=0.00, fs_raw_rms=0.265, fs_raw_rms_std=0.015, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5234, early=0.5151, late=0.5275, early_late_gap=-0.0125
+        fs_gate=0.506, fs_update=1.000, fs_state_norm=22.882, fs_decay=0.00, fs_raw_rms=0.262, fs_raw_rms_std=0.015, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5239, early=0.5167, late=0.5278, early_late_gap=-0.0110
+        fs_gate=0.506, fs_update=1.000, fs_state_norm=22.882, fs_decay=0.00, fs_raw_rms=0.262, fs_raw_rms_std=0.015, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5238, early=0.5161, late=0.5272, early_late_gap=-0.0111
+        fs_gate=0.506, fs_update=1.000, fs_state_norm=22.882, fs_decay=0.00, fs_raw_rms=0.261, fs_raw_rms_std=0.016, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9998, early=0.9993, late=1.0000, early_late_gap=-0.0007
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5504, early=0.5516, late=0.5479, early_late_gap=+0.0037
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4889, early=0.4831, late=0.4877, early_late_gap=-0.0046
+
+case-bank artifacts
+official_b46_50 exact=0.9961 blank_acc=0.9999 selected={'solved_by_loop': 4, 'almost_solved': 1, 'hard_failure': 0}
+  index=/huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5449 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4903 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/case_bank/official_b56_64/cases.json
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/fla-official-kda-fs-d192l10-resume500-s1000-20260721T061500Z-87e66cf/output/futureseed_loop_case_seed52.html

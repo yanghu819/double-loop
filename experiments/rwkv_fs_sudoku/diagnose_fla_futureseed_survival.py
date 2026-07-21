@@ -66,7 +66,6 @@ CRITICAL_CONFIG_FIELDS = (
     "noise_scale",
     "official_sudoku_train_split",
     "official_sudoku_eval_split",
-    "hole_stages",
     "seed",
     "forward_dtype",
 )
@@ -96,6 +95,24 @@ def tensor_quantiles(value: torch.Tensor) -> dict[str, float]:
         "p50": float(torch.quantile(flat, 0.50).item()),
         "p90": float(torch.quantile(flat, 0.90).item()),
     }
+
+
+def effective_hole_stages(raw: str, completed_steps: int) -> list[dict[str, int]]:
+    remaining = int(completed_steps)
+    effective: list[dict[str, int]] = []
+    for item in str(raw).split(","):
+        span, count_text = item.strip().split(":", 1)
+        lo_text, hi_text = span.split("-", 1)
+        planned = int(count_text)
+        executed = min(max(remaining, 0), planned)
+        if executed > 0:
+            effective.append({"holes_min": int(lo_text), "holes_max": int(hi_text), "steps": executed})
+        remaining -= executed
+        if remaining <= 0:
+            break
+    if remaining != 0:
+        raise AssertionError(f"hole schedule {raw!r} does not cover checkpoint step {completed_steps}")
+    return effective
 
 
 def cosine_mean(a: torch.Tensor, b: torch.Tensor) -> float:
@@ -170,6 +187,11 @@ def load_checkpoint(
         "checkpoint_sha256": sha256_file(checkpoint_path),
         "saved_at_step": int(payload["saved_at_step"]),
         "config": {field: config.get(field) for field in ("backbone", *CRITICAL_CONFIG_FIELDS)},
+        "planned_hole_stages": str(config.get("hole_stages", "")),
+        "planned_steps": int(config.get("steps", payload["saved_at_step"])),
+        "effective_hole_stages": effective_hole_stages(
+            str(config.get("hole_stages", "")), int(payload["saved_at_step"])
+        ),
     }
     del payload
     return reasoner, embedding_state, metadata
@@ -352,7 +374,22 @@ def check_matched_configs(metadata: dict[str, dict[str, Any]]) -> dict[str, Any]
             mismatches[field] = values
     if mismatches:
         raise AssertionError(f"critical checkpoint configs differ: {json.dumps(mismatches, indent=2)}")
-    return {field: baseline.get(field) for field in CRITICAL_CONFIG_FIELDS}
+    effective_schedules = {
+        backbone: metadata[backbone]["effective_hole_stages"] for backbone in BACKBONES
+    }
+    if len({json.dumps(value, sort_keys=True) for value in effective_schedules.values()}) != 1:
+        raise AssertionError(
+            "effective checkpoint curricula differ: " + json.dumps(effective_schedules, indent=2)
+        )
+    output = {field: baseline.get(field) for field in CRITICAL_CONFIG_FIELDS}
+    output["effective_hole_stages_through_step500"] = effective_schedules["fla_gdn"]
+    output["planned_hole_stages_by_backbone"] = {
+        backbone: metadata[backbone]["planned_hole_stages"] for backbone in BACKBONES
+    }
+    output["planned_steps_by_backbone"] = {
+        backbone: metadata[backbone]["planned_steps"] for backbone in BACKBONES
+    }
+    return output
 
 
 def svg_chart(result: dict[str, Any], metric: str, title: str) -> str:

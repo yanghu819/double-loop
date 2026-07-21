@@ -43,6 +43,15 @@ the remaining explanation is finite-budget optimization/sample efficiency.
 - No training, task loss, score selection, repair, search, selector, noise,
   seed sweep, LR sweep, or architecture-specific tuning.
 
+Prelaunch audit found one raw-metadata difference that the original comparison
+summary described too loosely. The GDN checkpoint retained its original planned
+schedule `46-50:100,51-55:1400`, while the KDA/GDN2 relaunches planned
+`46-50:100,51-55:400`. All checkpoints are exact step500 states. Source audit
+shows there is no LR scheduler and the planned total is used only as the loop
+endpoint/evaluation range. Therefore the executed curriculum through step500 is
+identical for all arms: `46-50:100,51-55:400`. The diagnostic gate compares this
+executed prefix and preserves the different unused tails in its metadata.
+
 ## 4. Environment
 
 - GPU row: `GPU1` only, exactly one visible CUDA device.
@@ -62,7 +71,11 @@ recorded verbatim after the prelaunch commit is detached on GPU1.
 
 ## 6. Artifacts
 
-Pending. The run will archive `diagnostic.json`, self-contained `index.html`,
+The first launch correctly stopped before accepting results because it compared
+the raw planned schedule rather than the executed step500 prefix. Its failure
+record remains at
+`/huyang2/double-loop/runs/fla-futureseed-state-survival-20260720T234811Z-3059fca/`.
+The corrected run will archive `diagnostic.json`, self-contained `index.html`,
 strict-gate JSON/log, launch environment, exact PID, source SHA, and completion
 metadata below `/huyang2/double-loop` before pulling a lean copy locally.
 

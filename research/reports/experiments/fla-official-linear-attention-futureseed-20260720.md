@@ -51,7 +51,9 @@ Shared configuration:
 - native FutureSeed scale 1, unit-normalized fixed state transfer
 - official full-diversity Sudoku arrays under
   `/huyang2/double-loop/data/sudoku-extreme-full`
-- curriculum `46-50:100,51-55:400`
+- effective curriculum through the compared step500 checkpoint
+  `46-50:100,51-55:400`; the GDN launch retained an unused planned hard tail to
+  step1500, whereas the later KDA/GDN2 launches ended their plan at step500
 - evaluation on holes 53 and official blank ranges `46-50`, `51-55`, `56-64`
 - no feature noise, task rules, repair, search, selector, best-of-K, CPU smoke,
   GPU2, or architecture-specific hyperparameter changes

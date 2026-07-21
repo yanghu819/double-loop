@@ -1,0 +1,902 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[cuda-check] start fla_gdn_reference
+[cuda-check] pass fla_gdn_reference in 29.07s
+[cuda-check] start fla_gdn_adapter
+[cuda-check] pass fla_gdn_adapter in 48.49s
+[cuda-check] start fla_gdn_futureseed_stack
+[cuda-check] pass fla_gdn_futureseed_stack in 19.77s
+[cuda-check] start kda_reference
+[cuda-check] pass kda_reference in 38.10s
+[cuda-check] start kda_adapter
+[cuda-check] pass kda_adapter in 41.67s
+[cuda-check] start kda_futureseed_stack
+[cuda-check] pass kda_futureseed_stack in 4.35s
+[cuda-check] start gdn2_reference
+[cuda-check] pass gdn2_reference in 20.46s
+[cuda-check] start gdn2_adapter
+[cuda-check] pass gdn2_adapter in 36.44s
+[cuda-check] start gdn2_futureseed_stack
+[cuda-check] pass gdn2_futureseed_stack in 6.44s
+{
+  "device": "NVIDIA A800-SXM4-80GB",
+  "fla_gdn_adapter": {
+    "check_wall_sec": 48.4908893450629,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 14.226036798208952,
+    "initial_state_grad_norm": 0.006503338925540447,
+    "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+    "official_layer_class": "fla.layers.gated_deltanet.GatedDeltaNet",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 34344,
+    "peak_memory_mb": 273.2548828125,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      32,
+      16
+    ],
+    "state_v_first": true
+  },
+  "fla_gdn_futureseed_stack": {
+    "check_wall_sec": 19.769786229124293,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.313708305358887,
+    "input_grad_norm": 0.02508009783923626,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 152964
+  },
+  "fla_gdn_reference": {
+    "check_wall_sec": 29.069367266027257,
+    "gradient_errors": {
+      "A_log": 0.02337842993438244,
+      "beta": 9.512156248092651e-05,
+      "dt_bias": 0.01222364604473114,
+      "g": 0.0006060950108803809,
+      "h0": 1.168984454125166e-06,
+      "k": 8.428096771240234e-05,
+      "q": 9.18954610824585e-05,
+      "v": 0.0003630518913269043
+    },
+    "gradient_max_abs": 0.02337842993438244,
+    "output_max_abs": 4.5433640480041504e-05,
+    "state_max_abs": 0.00016039609909057617
+  },
+  "gdn2_adapter": {
+    "check_wall_sec": 36.44404824404046,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 12.071730569005013,
+    "initial_state_grad_norm": 0.011756825260818005,
+    "official_chunk_autograd_node": "ChunkGDN2FunctionBackward",
+    "official_layer_class": "fla.layers.gdn2.GatedDeltaNet2",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 48356,
+    "peak_memory_mb": 274.21484375,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      16,
+      32
+    ],
+    "state_v_first": false
+  },
+  "gdn2_futureseed_stack": {
+    "check_wall_sec": 6.441972648026422,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.31370735168457,
+    "input_grad_norm": 0.033095162361860275,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 195000
+  },
+  "gdn2_reference": {
+    "check_wall_sec": 20.45620193495415,
+    "gradient_errors": {
+      "b": 1.2858770787715912e-05,
+      "g": 3.884546458721161e-05,
+      "h0": 9.697675704956055e-05,
+      "k": 4.7538429498672485e-05,
+      "q": 5.0965696573257446e-05,
+      "v": 0.0002336949110031128,
+      "w": 0.0001019015908241272
+    },
+    "gradient_max_abs": 0.0002336949110031128,
+    "output_max_abs": 5.9857964515686035e-05,
+    "state_max_abs": 0.00027595460414886475
+  },
+  "kda_adapter": {
+    "check_wall_sec": 41.665313269943,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 15.486436616629362,
+    "initial_state_grad_norm": 0.012747189030051231,
+    "official_chunk_autograd_node": "ChunkKDAFunctionBackward",
+    "official_layer_class": "fla.layers.kda.KimiDeltaAttention",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 36324,
+    "peak_memory_mb": 273.8779296875,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      32,
+      16
+    ],
+    "state_v_first": true
+  },
+  "kda_futureseed_stack": {
+    "check_wall_sec": 4.3483432189095765,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.313709259033203,
+    "input_grad_norm": 0.033048100769519806,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 158904
+  },
+  "kda_reference": {
+    "check_wall_sec": 38.10030571487732,
+    "gradient_errors": {
+      "A_log": 9.026564657688141e-05,
+      "beta": 7.396191358566284e-05,
+      "dt_bias": 7.305201143026352e-05,
+      "g": 3.0046328902244568e-05,
+      "h0": 0.00011349469423294067,
+      "k": 5.13661652803421e-05,
+      "q": 3.7496909499168396e-05,
+      "v": 0.0002580583095550537
+    },
+    "gradient_max_abs": 0.0002580583095550537,
+    "output_max_abs": 6.564334034919739e-05,
+    "state_max_abs": 0.00011767446994781494
+  },
+  "provenance": {
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "fla_package_root": "/huyang2/double-loop/.cache/python-extra-pylib/fla",
+    "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+    "fla_version": "0.5.2",
+    "source_file_hashes": {
+      "fla/layers/gated_deltanet.py": {
+        "installed_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b",
+        "wheel_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b"
+      },
+      "fla/layers/gdn2.py": {
+        "installed_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+        "wheel_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910"
+      },
+      "fla/layers/kda.py": {
+        "installed_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a",
+        "wheel_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a"
+      },
+      "fla/models/utils.py": {
+        "installed_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635",
+        "wheel_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635"
+      },
+      "fla/modules/conv/short_conv.py": {
+        "installed_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e",
+        "wheel_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e"
+      },
+      "fla/modules/conv/triton/ops.py": {
+        "installed_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0",
+        "wheel_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0"
+      },
+      "fla/ops/backends/__init__.py": {
+        "installed_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635",
+        "wheel_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635"
+      },
+      "fla/ops/gated_delta_rule/chunk.py": {
+        "installed_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e",
+        "wheel_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e"
+      },
+      "fla/ops/gdn2/chunk.py": {
+        "installed_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0",
+        "wheel_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0"
+      },
+      "fla/ops/kda/chunk.py": {
+        "installed_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8",
+        "wheel_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8"
+      }
+    },
+    "symbols": {
+      "fla_gdn_layer": {
+        "module": "fla.layers.gated_deltanet",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+        "qualname": "GatedDeltaNet",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py"
+      },
+      "fla_gdn_op": {
+        "module": "fla.ops.gated_delta_rule.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+        "qualname": "chunk_gated_delta_rule",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      },
+      "gdn2_layer": {
+        "module": "fla.layers.gdn2",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+        "qualname": "GatedDeltaNet2",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py"
+      },
+      "gdn2_op": {
+        "module": "fla.ops.gdn2.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+        "qualname": "chunk_gdn2",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      },
+      "kda_layer": {
+        "module": "fla.layers.kda",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+        "qualname": "KimiDeltaAttention",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py"
+      },
+      "kda_op": {
+        "module": "fla.ops.kda.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+        "qualname": "chunk_kda",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      }
+    },
+    "wheel_path": "/huyang2/double-loop/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl",
+    "wheel_sha256": "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+  },
+  "requested_backbone": "all",
+  "requested_check": "all",
+  "torch": "2.7.0+cu126"
+}
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+{
+  "out_dir": "/huyang2/double-loop/runs/fla-futureseed-state-survival-20260721T001116Z-d9b4963",
+  "elapsed_sec": 86.39758062362671,
+  "summary": {
+    "fla_gdn": [
+      {
+        "prefix": 1,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.6679977609051598,
+          "median": 0.7107769846916199,
+          "min": 0.4039093554019928,
+          "max": 0.8672043085098267
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.782098670800527,
+          "median": 0.8049151301383972,
+          "min": 0.5691778063774109,
+          "max": 0.9412844181060791
+        },
+        "output_delta_rms": {
+          "mean": 0.5663160383701324,
+          "median": 0.28991028666496277,
+          "min": 0.22083526849746704,
+          "max": 2.889618158340454
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 2.8540028863483005,
+          "median": 1.8458558320999146,
+          "min": 1.2741236686706543,
+          "max": 9.582447052001953
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.5663160383701324,
+          "median": 0.28991028666496277,
+          "min": 0.22083526849746704,
+          "max": 2.889618158340454
+        },
+        "injected_seed_rms": {
+          "mean": 0.4886531001991696,
+          "median": 0.4863449037075043,
+          "min": 0.4804130792617798,
+          "max": 0.4985317885875702
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.48836515016025966,
+          "median": 0.48604536056518555,
+          "min": 0.4795016646385193,
+          "max": 0.49838918447494507
+        }
+      },
+      {
+        "prefix": 8,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.49040237483051086,
+          "median": 0.5284138917922974,
+          "min": 0.12410662323236465,
+          "max": 0.7155157923698425
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.6573214199807909,
+          "median": 0.6345393657684326,
+          "min": 0.5020607709884644,
+          "max": 0.8740030527114868
+        },
+        "output_delta_rms": {
+          "mean": 0.5465205113093058,
+          "median": 0.2519526779651642,
+          "min": 0.18896332383155823,
+          "max": 2.0404796600341797
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 1.3390340937508478,
+          "median": 0.9023794531822205,
+          "min": 0.586431086063385,
+          "max": 3.2860493659973145
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.4895193485750092,
+          "median": 0.18384003639221191,
+          "min": 0.05315808206796646,
+          "max": 1.6685450077056885
+        },
+        "injected_seed_rms": {
+          "mean": 0.4886531001991696,
+          "median": 0.4863449037075043,
+          "min": 0.4804130792617798,
+          "max": 0.4985317885875702
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.48836515016025966,
+          "median": 0.48604536056518555,
+          "min": 0.4795016646385193,
+          "max": 0.49838918447494507
+        }
+      },
+      {
+        "prefix": 32,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.3782794442183028,
+          "median": 0.41623058915138245,
+          "min": 0.003299265867099166,
+          "max": 0.5647510290145874
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.5177767972151438,
+          "median": 0.5230839252471924,
+          "min": 0.4026322364807129,
+          "max": 0.7009768486022949
+        },
+        "output_delta_rms": {
+          "mean": 0.49918395694759155,
+          "median": 0.19407647848129272,
+          "min": 0.10874650627374649,
+          "max": 2.002332925796509
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 0.9660348660416074,
+          "median": 0.5654035210609436,
+          "min": 0.42687398195266724,
+          "max": 2.558987617492676
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.4132694261562493,
+          "median": 0.13573212921619415,
+          "min": 0.0023865466937422752,
+          "max": 1.744371771812439
+        },
+        "injected_seed_rms": {
+          "mean": 0.4886531001991696,
+          "median": 0.4863449037075043,
+          "min": 0.4804130792617798,
+          "max": 0.4985317885875702
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.48836515016025966,
+          "median": 0.48604536056518555,
+          "min": 0.4795016646385193,
+          "max": 0.49838918447494507
+        }
+      },
+      {
+        "prefix": 81,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.2944532140176711,
+          "median": 0.3088610768318176,
+          "min": 8.720828191144392e-06,
+          "max": 0.4506753087043762
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.42876957688066697,
+          "median": 0.41624975204467773,
+          "min": 0.1492309421300888,
+          "max": 0.6356149911880493
+        },
+        "output_delta_rms": {
+          "mean": 0.4813173645072513,
+          "median": 0.1805158406496048,
+          "min": 0.06835223734378815,
+          "max": 1.8083267211914062
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 0.857535516222318,
+          "median": 0.42168596386909485,
+          "min": 0.2353343516588211,
+          "max": 3.411104440689087
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.3562170726218028,
+          "median": 0.12657903134822845,
+          "min": 3.685399133246392e-05,
+          "max": 2.1381051540374756
+        },
+        "injected_seed_rms": {
+          "mean": 0.4886531001991696,
+          "median": 0.4863449037075043,
+          "min": 0.4804130792617798,
+          "max": 0.4985317885875702
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.48836515016025966,
+          "median": 0.48604536056518555,
+          "min": 0.4795016646385193,
+          "max": 0.49838918447494507
+        }
+      }
+    ],
+    "kda": [
+      {
+        "prefix": 1,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.79107356733746,
+          "median": 0.7916685938835144,
+          "min": 0.5718827843666077,
+          "max": 0.9114742875099182
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.8602629171477424,
+          "median": 0.879165768623352,
+          "min": 0.7271703481674194,
+          "max": 0.9590564370155334
+        },
+        "output_delta_rms": {
+          "mean": 0.5466381808122,
+          "median": 0.5123176574707031,
+          "min": 0.34989088773727417,
+          "max": 0.9322709441184998
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 4.3601942592197,
+          "median": 3.7216782569885254,
+          "min": 2.405838966369629,
+          "max": 8.289368629455566
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.5466381808122,
+          "median": 0.5123176574707031,
+          "min": 0.34989088773727417,
+          "max": 0.9322709441184998
+        },
+        "injected_seed_rms": {
+          "mean": 0.4991829428407881,
+          "median": 0.49745437502861023,
+          "min": 0.48306602239608765,
+          "max": 0.522282600402832
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.4985923767089844,
+          "median": 0.4964676797389984,
+          "min": 0.4823671579360962,
+          "max": 0.5207388997077942
+        }
+      },
+      {
+        "prefix": 8,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.6263077987564935,
+          "median": 0.626477062702179,
+          "min": 0.3466050922870636,
+          "max": 0.8452886939048767
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.7192739844322205,
+          "median": 0.706818163394928,
+          "min": 0.5004137754440308,
+          "max": 0.8931622505187988
+        },
+        "output_delta_rms": {
+          "mean": 0.5453678468863169,
+          "median": 0.5509775876998901,
+          "min": 0.31255263090133667,
+          "max": 0.8285949230194092
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 2.200035903188917,
+          "median": 2.2332980632781982,
+          "min": 1.2306253910064697,
+          "max": 3.116346836090088
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.4870622191164229,
+          "median": 0.5053836703300476,
+          "min": 0.1727299988269806,
+          "max": 0.7024518251419067
+        },
+        "injected_seed_rms": {
+          "mean": 0.4991829428407881,
+          "median": 0.49745437502861023,
+          "min": 0.48306602239608765,
+          "max": 0.522282600402832
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.4985923767089844,
+          "median": 0.4964676797389984,
+          "min": 0.4823671579360962,
+          "max": 0.5207388997077942
+        }
+      },
+      {
+        "prefix": 32,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.501354972521464,
+          "median": 0.5069918036460876,
+          "min": 0.1683628261089325,
+          "max": 0.7296599745750427
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.6027887066205343,
+          "median": 0.6426175236701965,
+          "min": 0.26962000131607056,
+          "max": 0.8468848466873169
+        },
+        "output_delta_rms": {
+          "mean": 0.526669012175666,
+          "median": 0.5355073809623718,
+          "min": 0.3038235008716583,
+          "max": 0.7296302318572998
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 1.7899215353859796,
+          "median": 1.6429258584976196,
+          "min": 0.9551376104354858,
+          "max": 3.090364694595337
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.5250859525468614,
+          "median": 0.4898039996623993,
+          "min": 0.30908212065696716,
+          "max": 0.8380115628242493
+        },
+        "injected_seed_rms": {
+          "mean": 0.4991829428407881,
+          "median": 0.49745437502861023,
+          "min": 0.48306602239608765,
+          "max": 0.522282600402832
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.4985923767089844,
+          "median": 0.4964676797389984,
+          "min": 0.4823671579360962,
+          "max": 0.5207388997077942
+        }
+      },
+      {
+        "prefix": 81,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.39248612026373547,
+          "median": 0.40434372425079346,
+          "min": 0.12751728296279907,
+          "max": 0.5745075345039368
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.528252586722374,
+          "median": 0.568938136100769,
+          "min": 0.21369408071041107,
+          "max": 0.7523180842399597
+        },
+        "output_delta_rms": {
+          "mean": 0.4956898358133104,
+          "median": 0.5256638526916504,
+          "min": 0.29669609665870667,
+          "max": 0.6645349264144897
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 1.6283488737212286,
+          "median": 1.4980287551879883,
+          "min": 0.8543387055397034,
+          "max": 2.66814923286438
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.4027661449379391,
+          "median": 0.35955139994621277,
+          "min": 0.23181164264678955,
+          "max": 0.6794667840003967
+        },
+        "injected_seed_rms": {
+          "mean": 0.4991829428407881,
+          "median": 0.49745437502861023,
+          "min": 0.48306602239608765,
+          "max": 0.522282600402832
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.4985923767089844,
+          "median": 0.4964676797389984,
+          "min": 0.4823671579360962,
+          "max": 0.5207388997077942
+        }
+      }
+    ],
+    "gdn2": [
+      {
+        "prefix": 1,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.848781963189443,
+          "median": 0.853502094745636,
+          "min": 0.7416247725486755,
+          "max": 0.9180309176445007
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.9200755556424459,
+          "median": 0.9305788278579712,
+          "min": 0.8764793276786804,
+          "max": 0.9548473358154297
+        },
+        "output_delta_rms": {
+          "mean": 0.4746691849496629,
+          "median": 0.40988802909851074,
+          "min": 0.19759860634803772,
+          "max": 1.3725045919418335
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 3.3885750108295016,
+          "median": 2.961587429046631,
+          "min": 1.0351026058197021,
+          "max": 9.369976997375488
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.4746691849496629,
+          "median": 0.40988802909851074,
+          "min": 0.19759860634803772,
+          "max": 1.3725045919418335
+        },
+        "injected_seed_rms": {
+          "mean": 0.5036156740453508,
+          "median": 0.5012511014938354,
+          "min": 0.4889388680458069,
+          "max": 0.5245946645736694
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.503337002462811,
+          "median": 0.5009729862213135,
+          "min": 0.4887849688529968,
+          "max": 0.5242432951927185
+        }
+      },
+      {
+        "prefix": 8,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.7248397469520569,
+          "median": 0.7294396162033081,
+          "min": 0.5459766387939453,
+          "max": 0.8352848291397095
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.7948705951372782,
+          "median": 0.7998642921447754,
+          "min": 0.6509600281715393,
+          "max": 0.8646997213363647
+        },
+        "output_delta_rms": {
+          "mean": 0.39923787944846684,
+          "median": 0.3638066351413727,
+          "min": 0.13012976944446564,
+          "max": 0.9894616603851318
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 1.7236236731211345,
+          "median": 1.5205700397491455,
+          "min": 0.7020395994186401,
+          "max": 2.990018129348755
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.34712428434027565,
+          "median": 0.31343892216682434,
+          "min": 0.0846555158495903,
+          "max": 0.8708525896072388
+        },
+        "injected_seed_rms": {
+          "mean": 0.5036156740453508,
+          "median": 0.5012511014938354,
+          "min": 0.4889388680458069,
+          "max": 0.5245946645736694
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.503337002462811,
+          "median": 0.5009729862213135,
+          "min": 0.4887849688529968,
+          "max": 0.5242432951927185
+        }
+      },
+      {
+        "prefix": 32,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.6144081486596001,
+          "median": 0.6159096956253052,
+          "min": 0.47978276014328003,
+          "max": 0.7595770955085754
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.6960123909844292,
+          "median": 0.7261239290237427,
+          "min": 0.5408711433410645,
+          "max": 0.8344072699546814
+        },
+        "output_delta_rms": {
+          "mean": 0.37309423006243175,
+          "median": 0.3343459665775299,
+          "min": 0.0935686007142067,
+          "max": 0.9490824937820435
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 1.483062830236223,
+          "median": 1.4543111324310303,
+          "min": 0.5605934262275696,
+          "max": 2.487065076828003
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.3675239690475994,
+          "median": 0.34971097111701965,
+          "min": 0.09722059220075607,
+          "max": 0.7442629933357239
+        },
+        "injected_seed_rms": {
+          "mean": 0.5036156740453508,
+          "median": 0.5012511014938354,
+          "min": 0.4889388680458069,
+          "max": 0.5245946645736694
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.503337002462811,
+          "median": 0.5009729862213135,
+          "min": 0.4887849688529968,
+          "max": 0.5242432951927185
+        }
+      },
+      {
+        "prefix": 81,
+        "layers": 9,
+        "state_retention_ratio": {
+          "mean": 0.5297514133983188,
+          "median": 0.5291176438331604,
+          "min": 0.41545331478118896,
+          "max": 0.6868335008621216
+        },
+        "state_delta_seed_cosine": {
+          "mean": 0.6279747287432352,
+          "median": 0.6485985517501831,
+          "min": 0.37899401783943176,
+          "max": 0.8107929229736328
+        },
+        "output_delta_rms": {
+          "mean": 0.3589598106013404,
+          "median": 0.329841285943985,
+          "min": 0.08181120455265045,
+          "max": 0.933308482170105
+        },
+        "output_delta_relative_to_zero": {
+          "mean": 1.4007625248697069,
+          "median": 1.4376790523529053,
+          "min": 0.504543662071228,
+          "max": 2.119328498840332
+        },
+        "last_token_output_delta_rms": {
+          "mean": 0.2617742932505078,
+          "median": 0.22098110616207123,
+          "min": 0.06277506053447723,
+          "max": 0.5854012370109558
+        },
+        "injected_seed_rms": {
+          "mean": 0.5036156740453508,
+          "median": 0.5012511014938354,
+          "min": 0.4889388680458069,
+          "max": 0.5245946645736694
+        },
+        "future_seed_gate_mean": {
+          "mean": 0.503337002462811,
+          "median": 0.5009729862213135,
+          "min": 0.4887849688529968,
+          "max": 0.5242432951927185
+        }
+      }
+    ]
+  },
+  "gate_summary": {
+    "fla_gdn": {
+      "per_token_retention_mean": 0.7745901081297133,
+      "per_token_retention_p10_mean": 0.331527642491791,
+      "per_token_retention_p90_mean": 0.9909573263592191,
+      "erase_gate_mean": 0.21405100325743356,
+      "erase_gate_p10_mean": 0.030591228149003453,
+      "erase_gate_p90_mean": 0.5144218107064565,
+      "write_gate_mean": 0.21405100325743356,
+      "write_gate_p10_mean": 0.030591228149003453,
+      "write_gate_p90_mean": 0.5144218107064565
+    },
+    "kda": {
+      "per_token_retention_mean": 0.7710529632038541,
+      "per_token_retention_p10_mean": 0.2334904647949669,
+      "per_token_retention_p90_mean": 0.9980123970243666,
+      "erase_gate_mean": 0.29716216690010494,
+      "erase_gate_p10_mean": 0.05660679636316167,
+      "erase_gate_p90_mean": 0.6197647419240739,
+      "write_gate_mean": 0.29716216690010494,
+      "write_gate_p10_mean": 0.05660679636316167,
+      "write_gate_p90_mean": 0.6197647419240739
+    },
+    "gdn2": {
+      "per_token_retention_mean": 0.763552208741506,
+      "per_token_retention_p10_mean": 0.20949614461925295,
+      "per_token_retention_p90_mean": 0.9975110159979926,
+      "erase_gate_mean": 0.4572779701815711,
+      "erase_gate_p10_mean": 0.10701083433296946,
+      "erase_gate_p90_mean": 0.8088168104489645,
+      "write_gate_mean": 0.41607681579060024,
+      "write_gate_p10_mean": 0.1156785889632172,
+      "write_gate_p90_mean": 0.7673648993174235
+    }
+  }
+}

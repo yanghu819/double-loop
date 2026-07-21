@@ -3,11 +3,12 @@
 ## 1. Metainfo
 
 - Plan ID: `P-LA-003`
-- Status: in progress
+- Status: completed; seed-erasure hypothesis rejected
 - Started: 2026-07-21 07:36 CST / 2026-07-20T23:36:10Z
 - Machine: AIStation `GPU1`, NVIDIA A800-SXM4-80GB; GPU2 forbidden
 - Source branch: `codex/fla-gdn2-kda`
-- Diagnostic source SHA: pending prelaunch commit
+- Completed: 2026-07-21 08:25 CST / 2026-07-21T00:25:00Z
+- Diagnostic source SHA: `d9b496378ff2748d86a59e5c7c2930b836d33cd4`
 - Checkpoint-training source SHA: `c3342b8326a6e00e012cd6972d8c0e295d82c0b3`
 
 ## 2. Hypothesis
@@ -66,8 +67,13 @@ executed prefix and preserves the different unused tails in its metadata.
 
 ## 5. Commands
 
-Strict provenance/reference/backward gate and state-survival command will be
-recorded verbatim after the prelaunch commit is detached on GPU1.
+The detached launch script was
+`/huyang2/double-loop/artifacts/launch/fla_futureseed_state_survival_d9b4963.sh`.
+It first reran `check_fla_delta_backbones.py --backbone all` against the pinned
+wheel, then ran `diagnose_fla_futureseed_survival.py` over prefixes
+`1,8,32,81` and the three exact step500 checkpoints. The run used
+`CUDA_VISIBLE_DEVICES=0`; all cache and temporary paths were below
+`/huyang2/double-loop`.
 
 ## 6. Artifacts
 
@@ -75,22 +81,56 @@ The first launch correctly stopped before accepting results because it compared
 the raw planned schedule rather than the executed step500 prefix. Its failure
 record remains at
 `/huyang2/double-loop/runs/fla-futureseed-state-survival-20260720T234811Z-3059fca/`.
-The corrected run will archive `diagnostic.json`, self-contained `index.html`,
-strict-gate JSON/log, launch environment, exact PID, source SHA, and completion
-metadata below `/huyang2/double-loop` before pulling a lean copy locally.
+The accepted run is
+`runs/fla-futureseed-state-survival-20260721T001116Z-d9b4963/`; it contains
+`diagnostic.json`, self-contained `index.html`, `strict_gate.json`, launch/GPU
+metadata, source SHA, and completion metadata. No checkpoint is copied into Git.
 
 ## 7. Results
 
-Pending.
+The strict gate passed again. Installed FLA source hashes match the pinned wheel,
+the three observed backward nodes are the official chunk CUDA functions, and all
+short convolutions use Triton. The label-free diagnostic itself took `86.4s`
+and allocated `299.4 MiB` at peak.
+
+| Mean over nine FutureSeed transitions | GDN | KDA | GDN2 |
+|---|---:|---:|---:|
+| injected seed RMS | 0.4887 | 0.4992 | 0.5036 |
+| token1 state retention | 0.6680 | 0.7911 | 0.8488 |
+| token32 state retention | 0.3783 | 0.5014 | 0.6144 |
+| token81 state retention | 0.2945 | 0.3925 | 0.5298 |
+| token81 state/seed cosine | 0.4288 | 0.5283 | 0.6280 |
+| token81 output delta / zero-state output RMS | 0.8575 | 1.6283 | 1.4008 |
+| token81 absolute output delta RMS | 0.4813 | 0.4957 | 0.3590 |
+| learned FutureSeed gate | 0.4884 | 0.4986 | 0.5033 |
+
+Relative to GDN at token81, KDA retains `1.33x` as much recurrent-state
+influence and GDN2 retains `1.80x`. Their relative output effects are `1.90x`
+and `1.63x`. GDN2's absolute output delta is `25.4%` lower than GDN, below the
+predeclared `30%` erasure threshold, while its state and scale-normalized output
+effects point strongly in the opposite direction.
+
+The checkpoint gate also verifies identical executed curricula through step500:
+`46-50:100,51-55:400`. It separately records the unused planned tails
+(`1400` hard steps for GDN versus `400` for KDA/GDN2) instead of pretending the
+raw metadata strings were identical.
 
 ## 8. Conclusions
 
-Pending. The diagnostic determines one next decision only:
+The seed-erasure explanation is rejected. KDA and especially GDN2 preserve the
+injected state direction longer than GDN; equal unit-RMS transfer did not
+silently disadvantage them by making FutureSeed disappear. More persistence is
+also not sufficient for better task quality: GDN's simpler recurrence learns the
+shared 500-step recipe faster even though it forgets more of the injected state.
 
-- unequal seed survival: calibrate a generic matched-influence FutureSeed
-  interface, without using Sudoku scores;
-- comparable seed survival: reject the erasure explanation and run at most one
-  matched longer GDN2 crossover gate.
+This narrows the plausible explanation to finite-budget optimization and recipe
+compatibility. The official classes default to different state geometries:
+KDA/GDN2 default to `expand_v=1, head_dim=128`, whereas this matched-interface
+test forces all arms to `expand_v=2, head_dim=32`. Therefore P-LA-002 supports
+only "GDN opens faster under this common small-state recipe", not "GDN has a
+higher architecture ceiling". The next and only justified architecture check is
+a matched GDN versus GDN2 continuation from step500 to step1000; no seed, LR,
+loss, gate, or temperature sweep is warranted.
 
 ## 9. Submission Record
 

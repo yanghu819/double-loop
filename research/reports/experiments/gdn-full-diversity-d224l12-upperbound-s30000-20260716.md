@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-034`
-- Status: in progress; step16000 gate passed, next conditional gate is step20000
+- Status: in progress; step20000 gate passed, next conditional gate is step24000
 - Planned: 2026-07-16 11:05 CST / 2026-07-16T03:05:36Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -145,12 +145,45 @@ ladder while P-LA-001 performs the higher-information GDN2/KDA state-edit
 comparison, then resume unchanged to step20000 if neither alternative produces
 a stronger return per unit compute.
 
+The step20000 gate completed on 2026-07-21 from the exact step16000 train-state
+checkpoint. The full model, optimizer, scheduler, RNG state, data split,
+objective, and five-loop computation were preserved.
+
+| Readout | step16000 | step20000 | Delta |
+|---|---:|---:|---:|
+| mixed loop5 exact | `0.3945` | `0.4375` | `+0.0430` |
+| holes53 loop5 exact | `0.3809` | `0.4238` | `+0.0430` |
+| holes60 loop5 exact | `0.4180` | `0.4395` | `+0.0215` |
+| holes64 loop5 exact | `0.3828` | `0.3945` | `+0.0117` |
+| official 51-55 exact | `0.5605` | `0.5840` | `+0.0234` |
+| official 56-64 exact | `0.2598` | `0.3125` | `+0.0527` |
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.0840 / 0.3242 / 0.4160 / 0.4375`. Loop1 again stays fixed while
+loops3-5 improve, so the additional training is teaching recurrent closure
+rather than a stronger first pass. On selected official 56-64 boards, wrong
+cells change `33 -> 5 -> 0`, `30 -> 12 -> 0`, `24 -> 11 -> 1`, and
+`27 -> 8 -> 5` across loops1/3/5. This is direct cell-level correction, not
+an aggregate-only effect.
+
+The formal official loop5 exact/blank results are `1.0000/1.0000` for 46-50,
+`0.5840/0.8351` for 51-55, and `0.3125/0.6942` for 56-64. Nearby case-bank
+estimates are visualization samples and are not used as primary metrics. The
+step16000-to20000 segment took `13759.8s` and peaked at `44527.1MB` allocated
+and `44600MB` reserved GPU memory.
+
+Decision: every tracked hard metric again sets a new best and the strong
+upper-bound gate is now reached in both forms (`mixed >=0.40` and official
+56-64 `>=0.30`). Continue the unchanged clean ladder to step24000. Do not add
+width, loops, noise, a new loss, task rules, repair, search, or selector.
+
 ## 7. Artifacts And Visualization
 
-Each leg will archive config, launch environment, logs, score, fixed checkpoint
+Each leg archives config, launch environment, logs, score, fixed checkpoint
 eval, official eval, source SHA, abort/rollover metadata, case JSON/HTML, and a
-scaling-curve dashboard. Checkpoints, models, datasets, and source snapshots
-remain outside Git.
+scaling-curve dashboard. Checkpoints, models, and datasets remain outside Git.
+The step20000 run additionally commits a compact relevant-source snapshot for
+the exact detached SHA; it contains no checkpoint, model, dataset, or cache.
 
 Completed step12000 run:
 
@@ -174,7 +207,19 @@ Completed step16000 run:
 - Local interactive dashboard:
   `runs/gdn-full-diversity-d224l12-upperbound-s16000-lease-20260719T025124Z-f8e009b/visualizations/index.html`
 
+Completed step20000 run:
+
+- Remote run:
+  `/huyang2/double-loop/.worktrees/pscale034-step20000-f8e009b-20260721/runs/gdn-full-diversity-d224l12-upperbound-s20000-lease-20260721T110943Z-f8e009b`
+- Exact checkpoint:
+  `/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step020000.pt`
+- Exact relevant-source archive:
+  `runs/gdn-full-diversity-d224l12-upperbound-s20000-lease-20260721T110943Z-f8e009b/source_snapshot.tar.gz`
+  (SHA256 `0c1914100670e2b9b18ffc0a28a4384ab208a031f107755bd6bbd1e6c293f332`)
+- Local interactive dashboard:
+  `runs/gdn-full-diversity-d224l12-upperbound-s20000-lease-20260721T110943Z-f8e009b/visualizations/index.html`
+
 ## 8. Submission Record
 
-No tag: the scaling conclusion is clean, but the primary score is `0.3945`,
+No tag: the scaling conclusion is clean, but the primary score is `0.4375`,
 below the `0.50` tag threshold.

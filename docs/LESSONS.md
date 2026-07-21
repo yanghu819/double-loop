@@ -1002,6 +1002,18 @@
   run to step16000 because every tracked hard metric set a new best. After
   step12000, two successive gates without at least a `+0.01` new best on mixed
   or official-hard exact terminate pure scaling for this state formulation.
+- The identical step16000-to20000 continuation remains decisively positive:
+  mixed loop5 exact rises `0.3945 -> 0.4375`, official 51-55 rises
+  `0.5605 -> 0.5840`, and official 56-64 rises `0.2598 -> 0.3125`. Fixed
+  holes53/60/64 also rise to `0.4238/0.4395/0.3945`. This passes the later
+  `+0.01` gate and reaches the strong upper-bound criterion without changing
+  model, data, objective, FutureSeed, or loop count.
+- More compute still helps the recurrent passes rather than the first guess.
+  At step20000, mixed loop1-5 exact is
+  `0.0234/0.0840/0.3242/0.4160/0.4375`, and selected 56-64-blank boards change
+  `33->5->0`, `30->12->0`, `24->11->1`, or `27->8->5` wrong cells across
+  loops1/3/5. Continue unchanged to step24000; do not dilute this result with
+  simultaneous width, loss, noise, or state-update changes.
 
 ## 2026-07-21 Official FLA backbone double-check
 

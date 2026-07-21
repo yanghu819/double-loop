@@ -1,0 +1,6 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn2 rwkv_kernel=auto gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=1000 holes=53
+resumed_train_checkpoint path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-s500-clean-20260720T1034Z-c3342b8/checkpoints/train_state_step000500.pt step=500 reason=eval_checkpoint
+[future_seed_loop stage=2:51-55] step=0600 ce=0.9607 total=0.9688 loop1=0.9977 loop_last=0.9607 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0600] path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-resume500-s1000-direct-20260721T023725Z-87e66cf/checkpoints/train_state_step000600.pt

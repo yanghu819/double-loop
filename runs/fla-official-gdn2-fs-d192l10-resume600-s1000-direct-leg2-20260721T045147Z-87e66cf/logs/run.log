@@ -1,0 +1,47 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn2 rwkv_kernel=auto gdn_mode=chunk forward_dtype=bfloat16
+checkpoint_eval steps=1000 holes=53
+resumed_train_checkpoint path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-resume500-s1000-direct-20260721T023725Z-87e66cf/checkpoints/train_state_step000600.pt step=600 reason=periodic
+[future_seed_loop stage=2:51-55] step=0700 ce=0.9293 total=0.9392 loop1=0.9742 loop_last=0.9293 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0700] path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/checkpoints/train_state_step000700.pt
+[future_seed_loop stage=2:51-55] step=0800 ce=0.9451 total=0.9541 loop1=0.9852 loop_last=0.9451 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0800] path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/checkpoints/train_state_step000800.pt
+[future_seed_loop stage=2:51-55] step=0900 ce=0.9420 total=0.9508 loop1=0.9807 loop_last=0.9420 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=0900] path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/checkpoints/train_state_step000900.pt
+[future_seed_loop stage=2:51-55] step=1000 ce=0.9539 total=0.9606 loop1=0.9837 loop_last=0.9539 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=1000 holes53] loop5 exact=0.0176 blank=0.5164
+[train_checkpoint step=1000] path=/huyang2/double-loop/models/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/checkpoints/train_state_step001000.pt
+
+full-board metrics
+loop=1 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5096, early=0.5048, late=0.5121, early_late_gap=-0.0073
+        fs_gate=0.508, fs_update=1.000, fs_state_norm=22.977, fs_decay=0.00, fs_raw_rms=0.656, fs_raw_rms_std=0.054, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5262, early=0.5234, late=0.5312, early_late_gap=-0.0078
+        fs_gate=0.508, fs_update=1.000, fs_state_norm=22.977, fs_decay=0.00, fs_raw_rms=0.574, fs_raw_rms_std=0.055, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5266, early=0.5221, late=0.5325, early_late_gap=-0.0104
+        fs_gate=0.508, fs_update=1.000, fs_state_norm=22.977, fs_decay=0.00, fs_raw_rms=0.546, fs_raw_rms_std=0.054, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5269, early=0.5215, late=0.5343, early_late_gap=-0.0127
+        fs_gate=0.508, fs_update=1.000, fs_state_norm=22.977, fs_decay=0.00, fs_raw_rms=0.539, fs_raw_rms_std=0.054, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5280, early=0.5223, late=0.5349, early_late_gap=-0.0126
+        fs_gate=0.508, fs_update=1.000, fs_state_norm=22.977, fs_decay=0.00, fs_raw_rms=0.537, fs_raw_rms_std=0.054, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.9922, valid=0.9922, solved=0.9922, blank_acc=0.9997, early=0.9993, late=0.9999, early_late_gap=-0.0006
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5506, early=0.5487, late=0.5489, early_late_gap=-0.0001
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4858, early=0.4864, late=0.4816, early_late_gap=+0.0048
+
+case-bank artifacts
+official_b46_50 exact=0.9883 blank_acc=0.9995 selected={'solved_by_loop': 4, 'almost_solved': 3, 'hard_failure': 0}
+  index=/huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5409 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4907 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/fla-official-gdn2-fs-d192l10-resume600-s1000-direct-leg2-20260721T045147Z-87e66cf/output/futureseed_loop_case_seed52.html

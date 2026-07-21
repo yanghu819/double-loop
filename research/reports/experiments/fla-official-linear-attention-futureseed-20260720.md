@@ -221,6 +221,15 @@ the causal gain of FutureSeed itself. The paper-quality causal comparison should
 remain one matched no-FutureSeed control at the selected GDN scaling point,
 instead of tripling this into a low-information no-FS table.
 
+Follow-up `P-LA-003` and `P-LA-004` narrow this conclusion. KDA/GDN2 retain
+more FutureSeed state influence than GDN, so seed erasure is not the cause of
+their step500 result. After exact GDN/GDN2 continuation to step1000, mixed
+loop5 and fixed holes53 exact tie, while the 46-50 exact gap shrinks from
+`0.1055` to `0.00586`. GDN remains slightly better in final CE/blank accuracy
+and cheaper in measured step time/VRAM, but the broad architecture-superiority
+interpretation is withdrawn. Read this report as a short-budget sample-
+efficiency result under the common D32/expand-v2 recipe.
+
 Decision: stop Linear Attention architecture enumeration, keep official GDN,
 and spend the next compute on the already positive clean data/longer-training
 scaling path. No score tag is created because the primary score is below 0.50.

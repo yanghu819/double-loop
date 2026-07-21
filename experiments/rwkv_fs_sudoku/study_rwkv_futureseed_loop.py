@@ -110,6 +110,13 @@ ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
 UNITS: List[List[int]] = []
+BACKBONE_DISPLAY_NAMES = {
+    "rwkv": "RWKV",
+    "gdn": "GDN",
+    "fla_gdn": "FLA GDN",
+    "gdn2": "FLA GDN2",
+    "kda": "FLA KDA",
+}
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
@@ -3170,6 +3177,7 @@ def write_case_html(
     path: Path,
     *,
     title: str,
+    model_label: str,
     inputs: torch.Tensor,
     labels: torch.Tensor,
     clue_mask: torch.Tensor,
@@ -3205,7 +3213,7 @@ h3 {{ margin: 0 0 8px; font-size: 13px; }}
 </head>
 <body>
 <h1>{html.escape(title)}</h1>
-<p class="meta">FutureSeed RWKV with depth-loop refinement. Green matches sampled solution, red differs, gray is clue.</p>
+<p class="meta">{html.escape(model_label)} with FutureSeed and depth-loop refinement. Green matches sampled solution, red differs, gray is clue.</p>
 <div class="row">
   <div class="panel"><h3>puzzle</h3>{grid_html(puzzle, solution, clue)}</div>
   <div class="panel"><h3>solution</h3>{grid_html(solution, solution, [False] * CELLS)}</div>
@@ -3815,10 +3823,12 @@ def parse_eval_checkpoint_steps(args: argparse.Namespace, stages: List[Tuple[int
 
 def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str]) -> None:
     task = metrics.get("task", {})
+    backbone = str(task.get("backbone", "rwkv"))
+    model_label = BACKBONE_DISPLAY_NAMES.get(backbone, backbone.upper())
     lines = [
-        f"# {N}x{N} RWKV FutureSeed Loop Study",
+        f"# {N}x{N} {model_label} FutureSeed Loop Study",
         "",
-        "Mainline mechanism: RWKV recurrent backbone, FutureSeed cross-layer terminal-state initialization, depth-loop iterative refinement, and latent noise.",
+        f"Mainline mechanism: {model_label} recurrent backbone, FutureSeed cross-layer terminal-state initialization, and depth-loop iterative refinement.",
         "",
         f"Board: {N}x{N}, box: {BOX_ROWS}x{BOX_COLS}, hole pattern: `{task.get('hole_pattern', 'random')}`.",
         "",
@@ -4250,9 +4260,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
 
     case_index = min(max(int(args.case_index), 0), inputs.shape[0] - 1)
     html_path = out_dir / f"futureseed_loop_case_seed{args.seed}.html"
+    model_label = BACKBONE_DISPLAY_NAMES[args.backbone]
     write_case_html(
         html_path,
-        title=f"{N}x{N} FutureSeed loop case",
+        title=f"{N}x{N} {model_label} FutureSeed loop case",
+        model_label=model_label,
         inputs=inputs[case_index],
         labels=labels[case_index],
         clue_mask=clue_mask[case_index],

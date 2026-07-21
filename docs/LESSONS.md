@@ -1002,3 +1002,30 @@
   run to step16000 because every tracked hard metric set a new best. After
   step12000, two successive gates without at least a `+0.01` new best on mixed
   or official-hard exact terminate pure scaling for this state formulation.
+
+## 2026-07-21 Official FLA backbone double-check
+
+- Do not infer an architecture ceiling from a short shared-recipe gate. At
+  step500, official FLA GDN/GDN2 46-50-blank exact was `0.8594/0.7539`; after
+  exact matched continuation to step1000 it was `0.99805/0.99219`. The large
+  opening gap mostly disappeared, while mixed loop5 and fixed holes53 exact
+  tied at `0.02344` and `0.01758`. The honest conclusion is that GDN is more
+  efficient under this D32/expand-v2 recipe, not universally better.
+- A more expressive recurrent update is not automatically a better FutureSeed
+  carrier. Label-free state diagnostics show token81 seed retention of
+  `0.2945/0.3925/0.5298` for GDN/KDA/GDN2, so KDA/GDN2 do not lose because they
+  erase FutureSeed. More persistent future context can still be less useful to
+  the task. Measure downstream closure, not only state survival.
+- Interface matching and native-recipe matching are different experiments.
+  KDA/GDN2 official defaults use a different head/state geometry from the
+  shared D32/expand-v2 comparison. Keep the current result scoped to the shared
+  recipe; do not launch a native-geometry table without a new mechanism-level
+  prediction.
+- A comparison where every arm has FutureSeed ranks FutureSeed-enabled
+  backbones; it does not estimate FutureSeed's causal gain. Preserve the
+  separate matched no-FutureSeed control for that paper claim.
+- AIStation `remainTime` is seconds. Save optimizer and all RNG state every 100
+  steps, and treat lease expiry as infrastructure interruption rather than
+  model failure. Avoid whole-monorepo `git status` and snapshots on remote NFS
+  after a detached worktree has already been verified; use a relevant-source
+  snapshot and preserve `abort.json` plus exact checkpoint provenance.

@@ -387,6 +387,7 @@ COMMON_ARGS=(
   --rwkv_kernel "${RWKV_KERNEL:-auto}"
   --gdn_mode "${GDN_MODE:-chunk}"
   --gdn_expand_v "${GDN_EXPAND_V:-1.0}"
+  --gdn_progressive_base_expand_v "${GDN_PROGRESSIVE_BASE_EXPAND_V:-0.0}"
   --gdn_use_short_conv "${GDN_USE_SHORT_CONV:-1}"
   --gdn_conv_size "${GDN_CONV_SIZE:-4}"
   --lambda_ "${LAMBDA:-0.95}"

@@ -29,23 +29,25 @@ Sudoku rule, repair pass, selector, search procedure, or hand-written loss.
 
 ## 3. Function-Preserving Transform
 
-The checkpoint transform changes `GDN_EXPAND_V=4` to `8`, so each head's value
-and recurrent-state dimension changes from64 to128.
+The progressive model changes `GDN_EXPAND_V=4` to `8`, so each head's value and
+recurrent-state dimension changes from one64-channel bank to two64-channel
+banks.
 
-- `v_proj` and `g_proj`: duplicate the learned 64-channel block inside every
-  head.
-- `o_norm_weight`: duplicate the learned 64 weights.
-- `o_proj`: retain the original 64 columns for every head and initialize the
-  additional 64 columns to exactly zero.
-- AdamW first and second moments: duplicate moments for copied value/gate/norm
-  channels and zero the new output-column moments.
-- Preserve all other weights, optimizer state, Python/Torch RNG, and global
+- Old bank: preserve the exact learned `v_proj/g_proj/o_norm/o_proj` tensors,
+  GEMM shapes, and AdamW moments.
+- New bank: copy the learned `v_proj/g_proj/o_norm` values, initialize its
+  separate `o_proj` to exactly zero, and start only these new parameters with
+  fresh AdamW moments.
+- Keep the q/k delta recurrence shared and generic, while normalizing each
+  value/state bank independently so BF16 does not change the old path.
+- Preserve every other weight, optimizer state, Python/Torch RNG, and global
   step exactly.
 
-At initialization, the expanded recurrent state contains two identical copies.
-Its RMS normalization is therefore unchanged, while the zero new readout means
-the logits should match the old network. The new readout columns see nonzero
-features, so they must receive gradient and can break symmetry after training.
+At initialization, the expanded recurrent state contains two identical banks.
+The old bank executes the original matrix shapes exactly, while the zero new
+readout means the logits should match the old network. The new readout sees
+nonzero features, so it must receive gradient and can break symmetry after
+training.
 
 ## 4. Gates, Budget, And Prediction
 
@@ -86,4 +88,15 @@ different generic state formulation or higher independent-data coverage.
 
 ## 6. Results
 
-Pending CUDA equivalence and training gates.
+The first preflight used one widened value projection and a widened output
+projection. It was rejected before training. FP32 established that the tensor
+layout was mathematically correct: all five loops had zero prediction changes,
+maximum logit delta was `2.29e-5`, and RMS delta was `3.02e-6`. The new output
+half also had nonzero gradient (`0.1717`). Under the actual BF16 training path,
+however, changing GEMM shapes amplified rounding through 12 layers and five
+loops: 16 token predictions changed, maximum logit delta reached `0.50`, and RMS
+delta reached `0.0569`. This failed the predeclared equivalence gate, so no
+training used that checkpoint.
+
+The corrected implementation uses two numerically isolated state banks. CUDA
+equivalence, optimizer insertion, one-step fit, and formal training are pending.

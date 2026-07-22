@@ -794,6 +794,7 @@ class GDNTimeMix(nn.Module):
         head_dim: int,
         *,
         expand_v: float,
+        progressive_base_expand_v: float,
         mode: str,
         use_short_conv: bool,
         conv_size: int,
@@ -824,6 +825,18 @@ class GDNTimeMix(nn.Module):
         if not math.isclose(float(self.head_v_dim), head_dim * float(expand_v), rel_tol=1e-5):
             raise ValueError("--gdn_expand_v must produce an integer value head dimension.")
         self.value_dim = heads * self.head_v_dim
+        self.progressive_base_head_v_dim = int(head_dim * float(progressive_base_expand_v))
+        if progressive_base_expand_v > 0:
+            if not math.isclose(
+                float(self.progressive_base_head_v_dim),
+                head_dim * float(progressive_base_expand_v),
+                rel_tol=1e-5,
+            ):
+                raise ValueError("--gdn_progressive_base_expand_v must produce an integer value head dimension.")
+            if self.progressive_base_head_v_dim * 2 != self.head_v_dim:
+                raise ValueError("Progressive GDN state expansion currently requires total expand_v == 2 * base expand_v.")
+        self.progressive_value_dim = heads * self.progressive_base_head_v_dim
+        self.progressive_expansion = self.progressive_base_head_v_dim > 0
         self.mode = mode
         self.use_short_conv = bool(use_short_conv)
         self.allow_neg_eigval = bool(allow_neg_eigval)
@@ -831,12 +844,23 @@ class GDNTimeMix(nn.Module):
 
         self.q_proj = nn.Linear(d_model, heads * head_dim, bias=False)
         self.k_proj = nn.Linear(d_model, heads * head_dim, bias=False)
-        self.v_proj = nn.Linear(d_model, self.value_dim, bias=False)
+        projection_value_dim = self.progressive_value_dim if self.progressive_expansion else self.value_dim
+        self.v_proj = nn.Linear(d_model, projection_value_dim, bias=False)
         self.a_proj = nn.Linear(d_model, heads, bias=False)
         self.b_proj = nn.Linear(d_model, heads, bias=False)
-        self.g_proj = nn.Linear(d_model, self.value_dim, bias=False)
-        self.o_proj = nn.Linear(self.value_dim, d_model, bias=False)
-        self.o_norm_weight = nn.Parameter(torch.ones(self.head_v_dim))
+        self.g_proj = nn.Linear(d_model, projection_value_dim, bias=False)
+        self.o_proj = nn.Linear(projection_value_dim, d_model, bias=False)
+        self.o_norm_weight = nn.Parameter(torch.ones(self.progressive_base_head_v_dim or self.head_v_dim))
+        if self.progressive_expansion:
+            self.v_proj_extra = nn.Linear(d_model, self.progressive_value_dim, bias=False)
+            self.g_proj_extra = nn.Linear(d_model, self.progressive_value_dim, bias=False)
+            self.o_proj_extra = nn.Linear(self.progressive_value_dim, d_model, bias=False)
+            self.o_norm_weight_extra = nn.Parameter(torch.ones(self.progressive_base_head_v_dim))
+        else:
+            self.v_proj_extra = None
+            self.g_proj_extra = None
+            self.o_proj_extra = None
+            self.register_parameter("o_norm_weight_extra", None)
 
         a = torch.empty(heads, dtype=torch.float32).uniform_(1.0, 16.0)
         self.A_log = nn.Parameter(torch.log(a))
@@ -864,11 +888,43 @@ class GDNTimeMix(nn.Module):
         self.b_proj.weight.data.zero_()
         self.g_proj.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
         nn.init.zeros_(self.o_proj.weight)
+        if self.progressive_expansion:
+            self.initialize_progressive_from_base()
+
+    def initialize_progressive_from_base(self) -> None:
+        if not self.progressive_expansion:
+            return
+        assert self.v_proj_extra is not None
+        assert self.g_proj_extra is not None
+        assert self.o_proj_extra is not None
+        assert self.o_norm_weight_extra is not None
+        with torch.no_grad():
+            self.v_proj_extra.weight.copy_(self.v_proj.weight)
+            self.g_proj_extra.weight.copy_(self.g_proj.weight)
+            self.o_proj_extra.weight.zero_()
+            self.o_norm_weight_extra.copy_(self.o_norm_weight)
+
+    def _join_progressive_values(self, base: torch.Tensor, extra: torch.Tensor) -> torch.Tensor:
+        batch, seq_len, _channels = base.shape
+        base = base.view(batch, seq_len, self.heads, self.progressive_base_head_v_dim)
+        extra = extra.view(batch, seq_len, self.heads, self.progressive_base_head_v_dim)
+        return torch.cat((base, extra), dim=-1).reshape(batch, seq_len, self.value_dim)
+
+    def _split_progressive_values(self, values: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        batch, seq_len, _heads, _channels = values.shape
+        base, extra = values.split(self.progressive_base_head_v_dim, dim=-1)
+        return (
+            base.reshape(batch, seq_len, self.progressive_value_dim),
+            extra.reshape(batch, seq_len, self.progressive_value_dim),
+        )
 
     def _project_qkv(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         q = self.q_proj(x)
         k = self.k_proj(x)
         v = self.v_proj(x)
+        if self.progressive_expansion:
+            assert self.v_proj_extra is not None
+            v = self._join_progressive_values(v, self.v_proj_extra(x))
         if self.use_short_conv:
             assert self.q_conv1d is not None and self.k_conv1d is not None and self.v_conv1d is not None
             q, _ = self.q_conv1d(q, output_final_state=False)
@@ -881,7 +937,30 @@ class GDNTimeMix(nn.Module):
         return q, k, v
 
     def _norm_gate(self, o: torch.Tensor, gate_source: torch.Tensor) -> torch.Tensor:
-        gate = self.g_proj(gate_source).view(gate_source.shape[0], gate_source.shape[1], self.heads, self.head_v_dim)
+        gate = self.g_proj(gate_source)
+        if self.progressive_expansion:
+            assert self.g_proj_extra is not None
+            gate = self._join_progressive_values(gate, self.g_proj_extra(gate_source))
+        gate = gate.view(gate_source.shape[0], gate_source.shape[1], self.heads, self.head_v_dim)
+        if self.progressive_expansion:
+            assert self.o_norm_weight_extra is not None
+            base_o, extra_o = o.split(self.progressive_base_head_v_dim, dim=-1)
+            base_gate, extra_gate = gate.split(self.progressive_base_head_v_dim, dim=-1)
+            base_rms = base_o.float().square().mean(dim=-1, keepdim=True).add(self.norm_eps).rsqrt().to(o.dtype)
+            extra_rms = extra_o.float().square().mean(dim=-1, keepdim=True).add(self.norm_eps).rsqrt().to(o.dtype)
+            base_weight = self.o_norm_weight.to(device=o.device, dtype=o.dtype).view(
+                1, 1, 1, self.progressive_base_head_v_dim
+            )
+            extra_weight = self.o_norm_weight_extra.to(device=o.device, dtype=o.dtype).view(
+                1, 1, 1, self.progressive_base_head_v_dim
+            )
+            return torch.cat(
+                (
+                    base_o * base_rms * base_weight * F.silu(base_gate),
+                    extra_o * extra_rms * extra_weight * F.silu(extra_gate),
+                ),
+                dim=-1,
+            )
         rms = o.float().square().mean(dim=-1, keepdim=True).add(self.norm_eps).rsqrt().to(o.dtype)
         weight = self.o_norm_weight.to(device=o.device, dtype=o.dtype).view(1, 1, 1, self.head_v_dim)
         return o * rms * weight * F.silu(gate)
@@ -957,7 +1036,15 @@ class GDNTimeMix(nn.Module):
                 initial_state=initial_state,
             )
         y = self._norm_gate(o, x).reshape(batch_size, seq_len, self.value_dim)
-        return self.o_proj(y), terminal_state.to(x.dtype)
+        if self.progressive_expansion:
+            assert self.o_proj_extra is not None
+            base_y, extra_y = self._split_progressive_values(
+                y.view(batch_size, seq_len, self.heads, self.head_v_dim)
+            )
+            mixed = self.o_proj(base_y) + self.o_proj_extra(extra_y)
+        else:
+            mixed = self.o_proj(y)
+        return mixed, terminal_state.to(x.dtype)
 
 
 class GDNBlock(nn.Module):
@@ -970,6 +1057,7 @@ class GDNBlock(nn.Module):
         *,
         gdn_mode: str,
         gdn_expand_v: float,
+        gdn_progressive_base_expand_v: float = 0.0,
         gdn_use_short_conv: bool,
         gdn_conv_size: int,
         gdn_allow_neg_eigval: bool,
@@ -982,6 +1070,7 @@ class GDNBlock(nn.Module):
             heads,
             head_dim,
             expand_v=gdn_expand_v,
+            progressive_base_expand_v=gdn_progressive_base_expand_v,
             mode=gdn_mode,
             use_short_conv=gdn_use_short_conv,
             conv_size=gdn_conv_size,
@@ -1178,6 +1267,7 @@ class FutureSeedRWKV(nn.Module):
         backbone: str = "rwkv",
         gdn_mode: str = "chunk",
         gdn_expand_v: float = 1.0,
+        gdn_progressive_base_expand_v: float = 0.0,
         gdn_use_short_conv: bool = True,
         gdn_conv_size: int = 4,
         gdn_allow_neg_eigval: bool = False,
@@ -1197,6 +1287,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_update = future_seed_update
         self.future_seed_norm_mode = future_seed_norm_mode
         self.activation_checkpoint = bool(activation_checkpoint)
+        self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
             update_init = min(max(1.0 - self.future_seed_decay, 1e-4), 1.0 - 1e-4)
             update_logit = math.log(update_init / (1.0 - update_init))
@@ -1235,6 +1326,7 @@ class FutureSeedRWKV(nn.Module):
                         channel_mult,
                         gdn_mode=gdn_mode,
                         gdn_expand_v=gdn_expand_v,
+                        gdn_progressive_base_expand_v=gdn_progressive_base_expand_v,
                         gdn_use_short_conv=gdn_use_short_conv,
                         gdn_conv_size=gdn_conv_size,
                         gdn_allow_neg_eigval=gdn_allow_neg_eigval,
@@ -1321,9 +1413,29 @@ class FutureSeedRWKV(nn.Module):
                         keep = self.future_seed_decay
                         seed_state = keep * seed_state + (1.0 - keep) * previous_state
                         update_gates.append(x.new_tensor(1.0 - keep))
-                    denom_native = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                    denom = seed_state.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                    normalized_state = seed_state / denom_native
+                    if self.gdn_progressive_base_head_v_dim > 0:
+                        base_state, extra_state = seed_state.split(
+                            self.gdn_progressive_base_head_v_dim,
+                            dim=-2,
+                        )
+                        bank_states = (base_state, extra_state)
+                        bank_denoms_native = [
+                            bank.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                            for bank in bank_states
+                        ]
+                        bank_denoms = [
+                            bank.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                            for bank in bank_states
+                        ]
+                        normalized_state = torch.cat(
+                            [bank / bank_denom for bank, bank_denom in zip(bank_states, bank_denoms_native)],
+                            dim=-2,
+                        )
+                        denom = torch.cat(bank_denoms, dim=-2)
+                    else:
+                        denom_native = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                        denom = seed_state.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                        normalized_state = seed_state / denom_native
                     raw_rms_means.append(denom.mean().to(dtype=x.dtype))
                     raw_rms_stds.append(denom.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
                     if self.future_seed_norm_mode == "adaptive_rms":
@@ -1343,7 +1455,15 @@ class FutureSeedRWKV(nn.Module):
                         norm_gain = torch.ones_like(denom)
                     norm_gain_means.append(norm_gain.mean().to(dtype=x.dtype))
                     norm_gain_stds.append(norm_gain.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
-                    initial_state = normalized_state * gate * norm_gain.to(dtype=normalized_state.dtype)
+                    if self.gdn_progressive_base_head_v_dim > 0:
+                        norm_gain_state = torch.repeat_interleave(
+                            norm_gain,
+                            self.gdn_progressive_base_head_v_dim,
+                            dim=-2,
+                        )
+                    else:
+                        norm_gain_state = norm_gain
+                    initial_state = normalized_state * gate * norm_gain_state.to(dtype=normalized_state.dtype)
                     state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
                 else:
                     update_gates.append(x.new_zeros(()))
@@ -1550,14 +1670,28 @@ def load_training_checkpoint(
         "reasoner.future_seed_norm_slope",
         "reasoner.future_seed_norm_bias",
     }
+    progressive_suffixes = (
+        ".time_mix.o_norm_weight_extra",
+        ".time_mix.v_proj_extra.weight",
+        ".time_mix.g_proj_extra.weight",
+        ".time_mix.o_proj_extra.weight",
+    )
     allowed_unexpected = {"loop_update_logit"}
-    bad_missing = [key for key in missing if key not in allowed_missing]
+    bad_missing = [
+        key for key in missing if key not in allowed_missing and not key.endswith(progressive_suffixes)
+    ]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
     if bad_missing or bad_unexpected:
         raise RuntimeError(
             "Checkpoint model state mismatch: "
             f"missing={bad_missing}, unexpected={bad_unexpected}"
         )
+    progressive_missing = [key for key in missing if key.endswith(progressive_suffixes)]
+    if progressive_missing:
+        for block in model.reasoner.blocks:
+            time_mix = getattr(block, "time_mix", None)
+            if isinstance(time_mix, GDNTimeMix) and time_mix.progressive_expansion:
+                time_mix.initialize_progressive_from_base()
     optimizer_state = checkpoint["optimizer"]
     inserted_parameters = set(missing)
     if inserted_parameters:
@@ -1645,6 +1779,7 @@ class FutureSeedLoopSudoku(nn.Module):
         backbone: str,
         gdn_mode: str,
         gdn_expand_v: float,
+        gdn_progressive_base_expand_v: float = 0.0,
         gdn_use_short_conv: bool,
         gdn_conv_size: int,
         gdn_allow_neg_eigval: bool,
@@ -1694,6 +1829,7 @@ class FutureSeedLoopSudoku(nn.Module):
             backbone=backbone,
             gdn_mode=gdn_mode,
             gdn_expand_v=gdn_expand_v,
+            gdn_progressive_base_expand_v=gdn_progressive_base_expand_v,
             gdn_use_short_conv=gdn_use_short_conv,
             gdn_conv_size=gdn_conv_size,
             gdn_allow_neg_eigval=gdn_allow_neg_eigval,
@@ -2343,6 +2479,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         backbone=args.backbone,
         gdn_mode=args.gdn_mode,
         gdn_expand_v=args.gdn_expand_v,
+        gdn_progressive_base_expand_v=args.gdn_progressive_base_expand_v,
         gdn_use_short_conv=args.gdn_use_short_conv,
         gdn_conv_size=args.gdn_conv_size,
         gdn_allow_neg_eigval=args.gdn_allow_neg_eigval,
@@ -2903,6 +3040,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "backbone": args.backbone,
         "gdn_mode": args.gdn_mode,
         "gdn_expand_v": args.gdn_expand_v,
+        "gdn_progressive_base_expand_v": args.gdn_progressive_base_expand_v,
         "gdn_use_short_conv": bool(args.gdn_use_short_conv),
         "gdn_conv_size": args.gdn_conv_size,
         "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
@@ -3996,6 +4134,20 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
+    if args.gdn_progressive_base_expand_v < 0:
+        raise ValueError("--gdn_progressive_base_expand_v must be non-negative.")
+    if args.gdn_progressive_base_expand_v > 0:
+        if args.backbone != "gdn":
+            raise ValueError("Progressive GDN state expansion requires --backbone gdn.")
+        if args.gdn_use_short_conv:
+            raise ValueError("Progressive GDN state expansion requires --gdn_use_short_conv 0.")
+        if not math.isclose(
+            args.gdn_expand_v,
+            2.0 * args.gdn_progressive_base_expand_v,
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        ):
+            raise ValueError("Progressive GDN state expansion requires expand_v == 2 * base expand_v.")
     if args.backbone == "gdn":
         if args.gdn_mode in {"chunk", "naive_recurrent"}:
             ok, reason = fla_gdn_available()
@@ -4046,7 +4198,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     print(
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
         f"mainline=future_seed_loop backbone={args.backbone} rwkv_kernel={args.rwkv_kernel} "
-        f"gdn_mode={args.gdn_mode} forward_dtype={args.forward_dtype}",
+        f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
+        f"forward_dtype={args.forward_dtype}",
         flush=True,
     )
 
@@ -4240,6 +4393,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "backbone": args.backbone,
         "gdn_mode": args.gdn_mode,
         "gdn_expand_v": args.gdn_expand_v,
+        "gdn_progressive_base_expand_v": args.gdn_progressive_base_expand_v,
         "gdn_use_short_conv": bool(args.gdn_use_short_conv),
         "gdn_conv_size": args.gdn_conv_size,
         "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
@@ -4422,6 +4576,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent", "triton_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)
+    p.add_argument("--gdn_progressive_base_expand_v", type=float, default=0.0)
     p.add_argument("--gdn_use_short_conv", type=int, choices=(0, 1), default=1)
     p.add_argument("--gdn_conv_size", type=int, default=4)
     p.add_argument("--gdn_allow_neg_eigval", action="store_true")

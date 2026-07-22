@@ -68,10 +68,31 @@ def build_model(saved_args: Dict[str, Any]) -> FutureSeedLoopSudoku:
         backbone=str(saved_args["backbone"]),
         gdn_mode=str(saved_args["gdn_mode"]),
         gdn_expand_v=float(saved_args["gdn_expand_v"]),
+        gdn_progressive_base_expand_v=float(_value(saved_args, "gdn_progressive_base_expand_v", 0.0)),
         gdn_use_short_conv=bool(saved_args["gdn_use_short_conv"]),
         gdn_conv_size=int(_value(saved_args, "gdn_conv_size", 4)),
         gdn_allow_neg_eigval=bool(_value(saved_args, "gdn_allow_neg_eigval", False)),
     )
+
+
+def load_model_state(model: FutureSeedLoopSudoku, model_state: Dict[str, torch.Tensor]) -> list[str]:
+    missing, unexpected = model.load_state_dict(model_state, strict=False)
+    progressive_suffixes = (
+        ".time_mix.o_norm_weight_extra",
+        ".time_mix.v_proj_extra.weight",
+        ".time_mix.g_proj_extra.weight",
+        ".time_mix.o_proj_extra.weight",
+    )
+    if unexpected:
+        raise RuntimeError(f"Unexpected checkpoint tensors: {unexpected}")
+    if any(not name.endswith(progressive_suffixes) for name in missing):
+        raise RuntimeError(f"Unexpected missing checkpoint tensors: {missing}")
+    if missing:
+        for block in model.reasoner.blocks:
+            time_mix = block.time_mix
+            if getattr(time_mix, "progressive_expansion", False):
+                time_mix.initialize_progressive_from_base()
+    return list(missing)
 
 
 def _run_logits(
@@ -83,7 +104,7 @@ def _run_logits(
     device: torch.device,
 ) -> tuple[list[torch.Tensor], float]:
     model = build_model(checkpoint["args"]).to(device)
-    model.load_state_dict(checkpoint["model"], strict=True)
+    load_model_state(model, checkpoint["model"])
     model.eval()
     torch.cuda.reset_peak_memory_stats(device)
     with torch.no_grad(), forward_autocast(forward_dtype, device):
@@ -110,8 +131,9 @@ def _new_branch_grad_norm(model: FutureSeedLoopSudoku, old_expand_v: float) -> f
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CUDA equivalence and backward gate for expanded GDN checkpoints")
-    parser.add_argument("--original", type=Path, required=True)
-    parser.add_argument("--expanded", type=Path, required=True)
+    parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument("--new-expand-v", type=float, default=8.0)
+    parser.add_argument("--progressive-base-expand-v", type=float, default=4.0)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--loops", type=int, default=5)
@@ -133,15 +155,15 @@ def main() -> None:
     if torch.cuda.device_count() != 1:
         raise RuntimeError(f"Expected exactly one visible GPU, got {torch.cuda.device_count()}")
 
-    original = torch.load(args.original, map_location="cpu", weights_only=False, mmap=True)
-    expanded = torch.load(args.expanded, map_location="cpu", weights_only=False, mmap=True)
+    original = torch.load(args.checkpoint, map_location="cpu", weights_only=False, mmap=True)
     old_expand_v = float(original["args"]["gdn_expand_v"])
-    new_expand_v = float(expanded["args"]["gdn_expand_v"])
-    transform = expanded.get("checkpoint_transform", {})
-    if transform.get("type") != "function_preserving_gdn_value_state_expansion":
-        raise RuntimeError("Expanded checkpoint lacks the expected transform provenance")
-    if int(original.get("saved_at_step", -1)) != int(expanded.get("saved_at_step", -2)):
-        raise RuntimeError("Expansion changed the global training step")
+    if not math.isclose(old_expand_v, args.progressive_base_expand_v, rel_tol=0.0, abs_tol=1e-9):
+        raise RuntimeError("Checkpoint expand_v does not match --progressive-base-expand-v")
+    expanded_args = dict(original["args"])
+    expanded_args["gdn_expand_v"] = float(args.new_expand_v)
+    expanded_args["gdn_progressive_base_expand_v"] = float(args.progressive_base_expand_v)
+    expanded = {"args": expanded_args, "model": original["model"]}
+    new_expand_v = float(args.new_expand_v)
 
     configure_sudoku(9, 3, 3)
     dataset = OfficialSudokuDataset(args.data_dir, "test")
@@ -189,7 +211,10 @@ def main() -> None:
         )
 
     model = build_model(expanded["args"]).to(device)
-    model.load_state_dict(expanded["model"], strict=True)
+    missing = load_model_state(model, expanded["model"])
+    expected_missing = int(expanded_args["layers"]) * 4
+    if len(missing) != expected_missing:
+        raise RuntimeError(f"Expected {expected_missing} progressive parameters, found {len(missing)}")
     model.train()
     with forward_autocast(args.forward_dtype, device):
         logits, _trace = model.forward_trace(inputs, loops=args.loops, noise_scale=0.0)
@@ -216,6 +241,8 @@ def main() -> None:
         "saved_at_step": int(original["saved_at_step"]),
         "old_expand_v": old_expand_v,
         "new_expand_v": new_expand_v,
+        "progressive_base_expand_v": float(args.progressive_base_expand_v),
+        "progressive_parameter_count": len(missing),
         "forward_dtype": args.forward_dtype,
         "batch_size": args.batch_size,
         "loops": args.loops,

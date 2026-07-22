@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-034`
-- Status: in progress; step20000 gate passed, next conditional gate is step24000
+- Status: in progress; step24000 gate passed, final conditional gate is step30000
 - Planned: 2026-07-16 11:05 CST / 2026-07-16T03:05:36Z
 - Machine: AIStation `GPU1` A800 only
 - Branch: `codex/gpu1-experiment-tracking`
@@ -177,6 +177,38 @@ upper-bound gate is now reached in both forms (`mixed >=0.40` and official
 56-64 `>=0.30`). Continue the unchanged clean ladder to step24000. Do not add
 width, loops, noise, a new loss, task rules, repair, search, or selector.
 
+The step24000 gate completed on 2026-07-22 before the GPU1 lease expired. It
+resumed the exact step20000 train state and completed training, fixed-checkpoint
+evaluation, official evaluation, case banks, visualization, and run recording.
+
+| Readout | step20000 | step24000 | Delta |
+|---|---:|---:|---:|
+| mixed loop5 exact | `0.4375` | `0.4648` | `+0.0273` |
+| holes53 loop5 exact | `0.4238` | `0.4258` | `+0.0020` |
+| holes60 loop5 exact | `0.4395` | `0.4629` | `+0.0234` |
+| holes64 loop5 exact | `0.3945` | `0.4414` | `+0.0469` |
+| official 51-55 exact | `0.5840` | `0.6387` | `+0.0547` |
+| official 56-64 exact | `0.3125` | `0.2949` | `-0.0176` |
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.1055 / 0.3477 / 0.4414 / 0.4648`. Loop1 remains unchanged, while
+the loop5 gain over loop1 increases to `+0.4414`. Selected official 56-64
+boards change `32 -> 7 -> 0`, `32 -> 11 -> 0`, `31 -> 3 -> 0`, and
+`29 -> 7 -> 5` wrong cells across loops1/3/5. This remains real recurrent
+correction even though the hardest aggregate fluctuates downward.
+
+The formal official loop5 exact/blank results are `1.0000/1.0000` for 46-50,
+`0.6387/0.8513` for 51-55, and `0.2949/0.6826` for 56-64. The 56-64 case-bank
+estimate is `0.3008`; it is not the primary aggregate. Training took
+`13791.6s` and peaked at `44527.1MB` allocated and `44600MB` reserved.
+
+Decision: this gate passes the predeclared rule through new mixed, holes60,
+holes64, and official51-55 bests, but it also supplies the first warning that
+the hardest official distribution may be near a noisy plateau. Run only the
+predeclared final step30000 endpoint with the identical formulation. Continue
+pure scaling only if step30000 sets a new mixed best and recovers or improves
+official56-64; otherwise stop this state formulation without a rescue sweep.
+
 ## 7. Artifacts And Visualization
 
 Each leg archives config, launch environment, logs, score, fixed checkpoint
@@ -219,7 +251,19 @@ Completed step20000 run:
 - Local interactive dashboard:
   `runs/gdn-full-diversity-d224l12-upperbound-s20000-lease-20260721T110943Z-f8e009b/visualizations/index.html`
 
+Completed step24000 run:
+
+- Remote run:
+  `/huyang2/double-loop/.worktrees/pscale034-step24000-f8e009b-20260721/runs/gdn-full-diversity-d224l12-upperbound-s24000-lease-20260721T152314Z-f8e009b`
+- Exact checkpoint:
+  `/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step024000.pt`
+- Exact relevant-source archive:
+  `runs/gdn-full-diversity-d224l12-upperbound-s24000-lease-20260721T152314Z-f8e009b/source_snapshot.tar.gz`
+  (SHA256 `0c1914100670e2b9b18ffc0a28a4384ab208a031f107755bd6bbd1e6c293f332`)
+- Local interactive dashboard:
+  `runs/gdn-full-diversity-d224l12-upperbound-s24000-lease-20260721T152314Z-f8e009b/visualizations/index.html`
+
 ## 8. Submission Record
 
-No tag: the scaling conclusion is clean, but the primary score is `0.4375`,
+No tag: the scaling conclusion is clean, but the primary score is `0.4648`,
 below the `0.50` tag threshold.

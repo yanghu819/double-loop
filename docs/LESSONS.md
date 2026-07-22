@@ -1014,6 +1014,17 @@
   `33->5->0`, `30->12->0`, `24->11->1`, or `27->8->5` wrong cells across
   loops1/3/5. Continue unchanged to step24000; do not dilute this result with
   simultaneous width, loss, noise, or state-update changes.
+- Step24000 is positive but no longer uniformly positive. Mixed loop5 exact
+  rises `0.4375 -> 0.4648`, holes60/64 rise `0.4395/0.3945 ->
+  0.4629/0.4414`, and official 51-55 rises `0.5840 -> 0.6387`; however,
+  formal official 56-64 falls `0.3125 -> 0.2949`. The nearby case-bank value
+  `0.3008` is not a substitute for the formal aggregate.
+- Recurrent correction remains strong at step24000: mixed loop1-5 exact is
+  `0.0234/0.1055/0.3477/0.4414/0.4648`, and selected hard boards change
+  `32->7->0`, `32->11->0`, `31->3->0`, or `29->7->5` wrong cells. The final
+  step30000 gate should distinguish continued broad scaling from a hardest-tail
+  plateau. Do not rescue a flat endpoint with loss, noise, width, or seed
+  sweeps.
 
 ## 2026-07-21 Official FLA backbone double-check
 

@@ -1,0 +1,40 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent gdn_progressive_base_expand_v=4.0 forward_dtype=bfloat16
+checkpoint_eval steps=30001 holes=60
+resumed_train_checkpoint path=/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step030000.pt step=30000 reason=eval_checkpoint
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4625, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4215, in run
+    model, train_stats = train_model(args, device=device)
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2659, in train_model
+    loop_logits, _fs_trace = model.forward_trace(
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2158, in forward_trace
+    z_h, fs_diag, h_seed_memory = self.depth_update(
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2070, in depth_update
+    updated, diag, next_seed_memory = self.reasoner(hidden + injection, seed_memory=seed_memory)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1490, in forward
+    x, previous_state = block(x, initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1088, in forward
+    time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1030, in forward
+    o, terminal_state = gdn_triton_recurrent(
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/gdn_triton.py", line 369, in gdn_triton_recurrent
+    return _GDNRecurrentTritonFn.apply(q, k, v, g, beta, initial_state, float(scale))
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/function.py", line 575, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/huyang2/double-loop/.worktrees/pscale035-state-expandv8-96a362c-20260722/experiments/rwkv_fs_sudoku/gdn_triton.py", line 255, in forward
+    torch.empty((batch, seq_len, heads, value_dim, key_dim), device=q.device, dtype=torch.float32)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 284.00 MiB. GPU 0 has a total capacity of 79.32 GiB of which 13.00 MiB is free. Process 9532 has 79.30 GiB memory in use. Of the allocated memory 78.76 GiB is allocated by PyTorch, and 39.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

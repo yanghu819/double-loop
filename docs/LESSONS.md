@@ -1083,3 +1083,21 @@
   The next run should change one generic axis such as independent hard-data
   coverage or learnable state capacity. Appending step36000 to the unchanged
   recipe would answer little and violate the decision-driven experiment rule.
+
+## 2026-07-22 Progressive recurrent-state scaling
+
+- Algebraic function preservation is not enough under BF16. Concatenating the
+  old and new value channels into one wider GEMM was exact in FP32 but changed
+  16 token predictions in the real BF16 graph. Keeping the learned 64-channel
+  bank in its original GEMMs and adding a separate zero-readout bank preserves
+  loops1-5 bit-for-bit while leaving the new branch trainable.
+- State capacity can be added without forgetting, but 500 steps do not yet
+  show a distribution-level gain. At step30500, fixed holes53/64 improve by
+  `+0.0234/+0.0215`, while mixed and formal official56-64 fall by
+  `-0.0254/-0.0312`; official51-55 is flat. Treat this as a noisy diagnostic,
+  not a positive result or a reason to sweep state widths.
+- Preserve the binding decision gate. The expanded model is numerically stable,
+  reaches train CE `0.4485`, and still performs real loop correction such as
+  `33->14->0` wrong cells. Continue only to step31500, then reject ordinary
+  state-width scaling unless a preregistered hard metric beats step30000 by at
+  least `+0.02`.

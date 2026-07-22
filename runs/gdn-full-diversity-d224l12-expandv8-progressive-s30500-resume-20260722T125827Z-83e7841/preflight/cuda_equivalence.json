@@ -1,0 +1,55 @@
+{
+  "batch_size": 4,
+  "device": "NVIDIA A800-SXM4-80GB",
+  "expanded_backward_peak_mb": 10192.6259765625,
+  "expanded_eval_peak_mb": 140.4912109375,
+  "finite_grads": true,
+  "forward_dtype": "bfloat16",
+  "loop_diagnostics": [
+    {
+      "loop": 1,
+      "max_abs_logit_delta": 0.109375,
+      "prediction_mismatches": 2,
+      "rms_logit_delta": 0.01102373655885458
+    },
+    {
+      "loop": 2,
+      "max_abs_logit_delta": 0.1875,
+      "prediction_mismatches": 3,
+      "rms_logit_delta": 0.01686067320406437
+    },
+    {
+      "loop": 3,
+      "max_abs_logit_delta": 0.15625,
+      "prediction_mismatches": 5,
+      "rms_logit_delta": 0.024334680289030075
+    },
+    {
+      "loop": 4,
+      "max_abs_logit_delta": 0.5,
+      "prediction_mismatches": 3,
+      "rms_logit_delta": 0.056942615658044815
+    },
+    {
+      "loop": 5,
+      "max_abs_logit_delta": 0.375,
+      "prediction_mismatches": 3,
+      "rms_logit_delta": 0.04921509325504303
+    }
+  ],
+  "loops": 5,
+  "max_abs_logit_delta": 0.5,
+  "max_rms_logit_delta": 0.056942615658044815,
+  "new_branch_o_proj_grad_norm": 0.17276447130677788,
+  "new_expand_v": 8.0,
+  "old_expand_v": 4.0,
+  "original_eval_peak_mb": 93.052734375,
+  "passed": false,
+  "prediction_mismatches": 16,
+  "saved_at_step": 30000,
+  "tolerances": {
+    "max_abs": 0.04,
+    "rms": 0.004
+  },
+  "visible_gpu_count": 1
+}

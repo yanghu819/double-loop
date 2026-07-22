@@ -126,3 +126,37 @@ Decision: all numerical, gradient, optimizer-resume, and memory gates now pass.
 Start the formal step30000-to30500 diagnostic from the original parent
 checkpoint, not from the one-step fit artifact. Formal training uses the tested
 microbatch16/accum8 execution shape and changes no scientific axis.
+
+### Step30500 Diagnostic
+
+The formal run reached exact step30300 before the first AIStation lease
+expired. GPU1 was restarted and the run resumed the complete periodic
+step30300 model, AdamW, scheduler, and RNG state. GPU2 was not used. The resumed
+segment completed step30500 and all 512-board evaluations.
+
+| Readout | step30000 | step30500 | Delta |
+|---|---:|---:|---:|
+| mixed loop5 exact | `0.4805` | `0.4551` | `-0.0254` |
+| holes53 loop5 exact | `0.4609` | `0.4844` | `+0.0234` |
+| holes60 loop5 exact | `0.4844` | `0.4746` | `-0.0098` |
+| holes64 loop5 exact | `0.4219` | `0.4434` | `+0.0215` |
+| official51-55 loop5 exact | `0.6152` | `0.6172` | `+0.0020` |
+| official56-64 loop5 exact | `0.3848` | `0.3535` | `-0.0312` |
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.1133 / 0.3359 / 0.4336 / 0.4551`. Loop computation remains real:
+selected official56-64 boards reduce wrong cells `33 -> 14 -> 0`,
+`32 -> 16 -> 0`, and `31 -> 0 -> 0` across loops1/3/5. Hard failures still
+plateau at `25 -> 11 -> 10` and `27 -> 13 -> 10`.
+
+The resumed 200-step segment took `1916.2 s` and peaked at `40669.3 MB`
+allocated / `41034 MB` reserved. Final train loop5 CE is `0.4485`, so the
+expanded model is optimizing normally. The score pattern is mixed rather than
+positive: fixed holes53/64 improve past `+0.02`, while mixed and the independent
+official hard bucket regress. Neither hard decline crosses the predeclared
+`-0.05` catastrophic gate.
+
+Decision: continue the unchanged expanded state to the predeclared step31500
+decision gate. At step31500, stop this scaling axis unless mixed, holes60/64,
+or official56-64 improves by at least `+0.02` over step30000. Do not rescue the
+result with an expand-v, LR, seed, loss, noise, or loop table.

@@ -1,0 +1,44 @@
+{
+  "plan_id": "P-SCALE-035",
+  "gate": "step30500 diagnostic",
+  "source_sha": "83e7841f408c642b31a981bde43b710e98e3b22d",
+  "baseline_step30000": {
+    "mixed_loop5_exact": 0.48046875,
+    "holes53_loop5_exact": 0.4609375,
+    "holes60_loop5_exact": 0.484375,
+    "holes64_loop5_exact": 0.421875,
+    "official_51_55_loop5_exact": 0.615234375,
+    "official_56_64_loop5_exact": 0.384765625
+  },
+  "step30500": {
+    "train_loop5_ce": 0.4485395513474941,
+    "mixed_loop5_exact": 0.455078125,
+    "holes53_loop5_exact": 0.484375,
+    "holes60_loop5_exact": 0.474609375,
+    "holes64_loop5_exact": 0.443359375,
+    "official_51_55_loop5_exact": 0.6171875,
+    "official_56_64_loop5_exact": 0.353515625
+  },
+  "delta_vs_step30000": {
+    "mixed_loop5_exact": -0.025390625,
+    "holes53_loop5_exact": 0.0234375,
+    "holes60_loop5_exact": -0.009765625,
+    "holes64_loop5_exact": 0.021484375,
+    "official_51_55_loop5_exact": 0.001953125,
+    "official_56_64_loop5_exact": -0.03125
+  },
+  "catastrophic_kill_triggered": false,
+  "decision": "continue unchanged to the predeclared step31500 decision gate",
+  "reason": "mixed and official-hard declined but by less than the 0.05 diagnostic kill threshold; fixed holes53 and holes64 each improved by more than 0.02, so the 500-step readout is noisy rather than a decisive rejection",
+  "forbidden_next_actions": [
+    "expand-v sweep",
+    "learning-rate sweep",
+    "seed sweep",
+    "loss change",
+    "noise change",
+    "task rule",
+    "repair",
+    "search",
+    "selector"
+  ]
+}

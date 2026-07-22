@@ -118,14 +118,20 @@ def _run_logits(
 
 def _new_branch_grad_norm(model: FutureSeedLoopSudoku, old_expand_v: float) -> float:
     total = 0.0
-    heads = model.reasoner.blocks[0].time_mix.heads
-    old_head_v = int(model.reasoner.blocks[0].time_mix.head_dim * old_expand_v)
     for block in model.reasoner.blocks:
-        grad = block.time_mix.o_proj.weight.grad
+        time_mix = block.time_mix
+        if getattr(time_mix, "o_proj_extra", None) is not None:
+            grad = time_mix.o_proj_extra.weight.grad
+        else:
+            heads = time_mix.heads
+            old_head_v = int(time_mix.head_dim * old_expand_v)
+            full_grad = time_mix.o_proj.weight.grad
+            if full_grad is None:
+                raise RuntimeError("Expanded o_proj did not receive a gradient")
+            grad = full_grad.reshape(full_grad.shape[0], heads, -1)[:, :, old_head_v:]
         if grad is None:
-            raise RuntimeError("Expanded o_proj did not receive a gradient")
-        shaped = grad.reshape(grad.shape[0], heads, -1)
-        total += float(shaped[:, :, old_head_v:].float().square().sum().cpu())
+            raise RuntimeError("Progressive o_proj_extra did not receive a gradient")
+        total += float(grad.float().square().sum().cpu())
     return math.sqrt(total)
 
 

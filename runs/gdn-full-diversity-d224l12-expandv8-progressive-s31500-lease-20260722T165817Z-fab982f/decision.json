@@ -1,0 +1,46 @@
+{
+  "plan_id": "P-SCALE-035",
+  "gate": "step31500 binding decision",
+  "source_sha": "fab982fcc0f0a4caf45b78de5efdc52175d52721",
+  "baseline_step30000": {
+    "mixed_loop5_exact": 0.48046875,
+    "holes53_loop5_exact": 0.4609375,
+    "holes60_loop5_exact": 0.484375,
+    "holes64_loop5_exact": 0.421875,
+    "official_51_55_loop5_exact": 0.615234375,
+    "official_56_64_loop5_exact": 0.384765625
+  },
+  "step31500": {
+    "train_loop5_ce": 0.4730185605585575,
+    "mixed_loop5_exact": 0.515625,
+    "holes53_loop5_exact": 0.501953125,
+    "holes60_loop5_exact": 0.51171875,
+    "holes64_loop5_exact": 0.466796875,
+    "official_51_55_loop5_exact": 0.6171875,
+    "official_56_64_loop5_exact": 0.390625
+  },
+  "delta_vs_step30000": {
+    "mixed_loop5_exact": 0.03515625,
+    "holes53_loop5_exact": 0.041015625,
+    "holes60_loop5_exact": 0.02734375,
+    "holes64_loop5_exact": 0.044921875,
+    "official_51_55_loop5_exact": 0.001953125,
+    "official_56_64_loop5_exact": 0.005859375
+  },
+  "continuation_gate_passed": true,
+  "success_gate_passed": true,
+  "decision": "continue unchanged to the predeclared step33000 strong gate",
+  "reason": "mixed and all three fixed-hole readouts improve by more than 0.02 while official51-55 is preserved; the independent official56-64 gain is positive but small, so only the predeclared strong endpoint is justified",
+  "strong_step33000_gate": "official56-64 >= 0.45 or mixed >= 0.52",
+  "forbidden_next_actions": [
+    "expand-v sweep",
+    "learning-rate sweep",
+    "seed sweep",
+    "loss change",
+    "noise change",
+    "task rule",
+    "repair",
+    "search",
+    "selector"
+  ]
+}

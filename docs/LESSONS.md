@@ -1101,3 +1101,16 @@
   `33->14->0` wrong cells. Continue only to step31500, then reject ordinary
   state-width scaling unless a preregistered hard metric beats step30000 by at
   least `+0.02`.
+- The step31500 binding gate is a real but nonuniform positive. Relative to the
+  exact step30000 parent, mixed exact rises `+0.0352` and fixed holes53/60/64
+  rise `+0.0410/+0.0273/+0.0449`, while formal official56-64 rises only
+  `+0.0059`. This supports one final unchanged strong endpoint, not an expand-v
+  table or a broad state-capacity claim.
+- Expanded state capacity primarily changes recurrent refinement, not opening.
+  Mixed loop1 remains `0.0234`, while loop3/4/5 reach
+  `0.3730/0.4941/0.5156`. That is the desired qualitative signature for added
+  learned memory, but the formal hardest bucket must still validate it.
+- Treat AIStation lease expiry as execution metadata, not a scientific event.
+  The step31500 run preserved a complete step31475 model/optimizer/scheduler/RNG
+  checkpoint, reopened GPU1, and finished from that exact state. Never shorten
+  the 512-board evaluation or switch to GPU2 to fit a lease.

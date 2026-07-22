@@ -6,15 +6,16 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-22 19:14 CST): `P-SCALE-034` is complete at its
-predeclared step30000 endpoint. `P-SCALE-035` now tests exactly one new generic
-scaling axis: function-preserving GDN state capacity. Each per-head value/state
-block expands from64 to two numerically isolated 64-channel banks. The old bank
-keeps its exact GEMM and AdamW path; the new bank copies the learned state
-features but starts with a zero readout and fresh moments. CUDA equivalence,
-prediction identity, new-bank gradient, and memory-fit gates must pass before training. The first decision is
-step31500; only a real hard-exact gain continues to33000. No expand size, loss,
-LR, seed, noise, or loop table is allowed.
+Current update (2026-07-23 01:20 CST): `P-SCALE-035` passed its binding
+step31500 gate after a function-preserving expansion from one 64-channel GDN
+state bank to two isolated 64-channel banks. Relative to the original
+step30000 solver, mixed exact improves `+0.0352`, fixed holes53/60/64 improve
+`+0.0410/+0.0273/+0.0449`, and official51-55 is preserved. Formal
+official56-64 improves only `+0.0059`, so this is a conditional positive, not
+uniform proof. The single preregistered strong endpoint at step33000 is now
+running unchanged. It succeeds only if mixed exact reaches `0.52` or formal
+official56-64 reaches `0.45`; otherwise ordinary state-width scaling stops.
+No expand size, loss, LR, seed, noise, or loop table is allowed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|

@@ -160,3 +160,39 @@ Decision: continue the unchanged expanded state to the predeclared step31500
 decision gate. At step31500, stop this scaling axis unless mixed, holes60/64,
 or official56-64 improves by at least `+0.02` over step30000. Do not rescue the
 result with an expand-v, LR, seed, loss, noise, or loop table.
+
+### Step31500 Binding Gate
+
+The first GPU1 lease trained from step30500 through the complete step31475
+checkpoint and then expired. Its model, AdamW, scheduler, and RNG state were
+preserved. GPU1 was reopened, and a second clean segment resumed step31475,
+trained the final 25 steps, and completed every 512-board evaluation. GPU2 was
+not used, and no scientific setting changed across the lease boundary.
+
+| Readout | step30000 | step31500 | Delta |
+|---|---:|---:|---:|
+| mixed loop5 exact | `0.4805` | `0.5156` | `+0.0352` |
+| holes53 loop5 exact | `0.4609` | `0.5020` | `+0.0410` |
+| holes60 loop5 exact | `0.4844` | `0.5117` | `+0.0273` |
+| holes64 loop5 exact | `0.4219` | `0.4668` | `+0.0449` |
+| official51-55 loop5 exact | `0.6152` | `0.6172` | `+0.0020` |
+| official56-64 loop5 exact | `0.3848` | `0.3906` | `+0.0059` |
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.1211 / 0.3730 / 0.4941 / 0.5156`. The expansion therefore leaves
+loop1 essentially unchanged while raising the useful loop3-5 operating point.
+This is consistent with additional recurrent memory helping refinement rather
+than changing the initial guess. Train loop5 CE is `0.4730`; the resumed
+25-step segment took `261.6 s` and peaked at `40669 MB` allocated / `41034 MB`
+reserved.
+
+The result passes both preregistered step31500 rules: mixed and all three fixed
+holes readouts beat step30000 by more than `+0.02`, mixed exceeds the `0.50`
+success threshold, and official51-55 remains above `0.60`. The independent
+official56-64 gain is real but small, so the result is not yet a uniform
+hard-tail win.
+
+Decision: run only the preregistered unchanged step33000 strong endpoint.
+Strong evidence requires formal official56-64 `>=0.45` or mixed exact
+`>=0.52`. If neither threshold is met, stop ordinary state-width scaling and
+do not run expand-v, LR, seed, loss, or noise rescue tables.

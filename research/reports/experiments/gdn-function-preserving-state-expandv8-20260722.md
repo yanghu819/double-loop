@@ -98,5 +98,31 @@ loops: 16 token predictions changed, maximum logit delta reached `0.50`, and RMS
 delta reached `0.0569`. This failed the predeclared equivalence gate, so no
 training used that checkpoint.
 
-The corrected implementation uses two numerically isolated state banks. CUDA
-equivalence, optimizer insertion, one-step fit, and formal training are pending.
+The corrected implementation uses two numerically isolated state banks. Its
+GPU1 BF16 equivalence gate passed exactly on the official 56-64 batch across
+loops1-5: maximum logit delta, RMS delta, and token prediction mismatches were
+all zero. The new `o_proj_extra` branches had aggregate gradient norm
+`0.1751`, all checked gradients were finite, and the batch4/loop5 backward
+probe peaked at `10248 MB`.
+
+The first real fit at microbatch32/accum4 was rejected as an execution-only OOM
+before an optimizer step: it reached the real resumed forward but consumed
+`79.30 GiB`. The predeclared microbatch fallback then passed at
+microbatch16/accum8 without changing effective batch128. It resumed the exact
+step30000 model, optimizer, scheduler, and RNG state; completed step30001 in
+`17.04 s`; saved a `244 MB` train-state checkpoint; and peaked at
+`40686.6 MB` allocated / `41050 MB` reserved. Train loop-last CE was `0.5184`.
+The tiny four-board holes60 readout was `0.75` exact and is only a fit check,
+not an efficacy result.
+
+Artifacts:
+
+- BF16 equivalence: `/huyang2/double-loop/artifacts/launch/pscale035-state-expandv8-20260722/cuda_equivalence_banked_v2.json`
+- failed batch32 fit log: `/huyang2/double-loop/artifacts/launch/pscale035-state-expandv8-20260722/fit_step30001.log`
+- passing batch16 fit log: `/huyang2/double-loop/artifacts/launch/pscale035-state-expandv8-20260722/fit_step30001_b16.log`
+- passing fit checkpoint: `/huyang2/double-loop/models/gdn-full-diversity-d224l12-expandv8-progressive-20260722/fit_b16/checkpoints/train_state_step030001.pt`
+
+Decision: all numerical, gradient, optimizer-resume, and memory gates now pass.
+Start the formal step30000-to30500 diagnostic from the original parent
+checkpoint, not from the one-step fit artifact. Formal training uses the tested
+microbatch16/accum8 execution shape and changes no scientific axis.

@@ -1114,3 +1114,16 @@
   The step31500 run preserved a complete step31475 model/optimizer/scheduler/RNG
   checkpoint, reopened GPU1, and finished from that exact state. Never shorten
   the 512-board evaluation or switch to GPU2 to fit a lease.
+- A checkpoint peak is not a scaling law. The expanded state reached mixed
+  exact `0.5156` at step31500 but fell to `0.4668` at the unchanged step33000
+  endpoint; formal official56-64 similarly fell `0.3906 -> 0.3633`. Training
+  CE stayed finite and official51-55 remained `0.6270`, so this is distribution
+  instability rather than a crash. Do not select step31500 after the fact and
+  claim monotonic state scaling.
+- Separate loop value from state-width value. At step33000, mixed loop1-to5
+  exact still rises `0.0234 -> 0.4668`, and individual hardest boards change
+  `32 -> 3 -> 0` wrong cells. Loops are doing useful work. What failed is the
+  claim that a wider instance of the same GDN state update makes that work
+  uniformly reliable. Close expand-v/LR/seed/loss/noise rescue tables and move
+  only to a genuinely different generic data-coverage or state-formulation
+  question.

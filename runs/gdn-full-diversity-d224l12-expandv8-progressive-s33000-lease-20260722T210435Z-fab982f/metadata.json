@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "fab982fcc0f0a4caf45b78de5efdc52175d52721",
+  "mode": "full",
+  "notes": "P-SCALE-035 preregistered strong endpoint on GPU1 only. Function-preserving expansion keeps the learned 64-channel GDN state bank and adds one independent 64-channel bank with zero-initialized readout; native FutureSeed scale1, D224/L12/H14/D16, loop5 with equal CE at every loop, official 3.832M-board full-diversity data, optimizer/RNG, and effective batch128 remain unchanged. Step33000 mixed loop5 exact is 0.4668 and formal official56-64 is 0.3633, below strong gates 0.52/0.45 and below step31500 0.5156/0.3906. Official51-55 is preserved at 0.6270; fixed h53/h60/h64 are 0.4688/0.5117/0.4395. Individual boards still show real loop correction, e.g. 32->3->0 wrong cells, but aggregate hard closure regresses. One GPU1 lease expired at complete step32900 and exact model/AdamW/scheduler/RNG state resumed; GPU2 and CPU smoke were unused. Stop ordinary state-width scaling; no expand-v/LR/seed/loss/noise rescue tables and no task rules, repair, search, or selector.",
+  "recorded_at_utc": "2026-07-22T21:31:59.190061+00:00",
+  "run_name": "gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f",
+  "score": 0.466796875,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "timestamp_utc": "2026-07-22T21:21:11.863831+00:00"
+}

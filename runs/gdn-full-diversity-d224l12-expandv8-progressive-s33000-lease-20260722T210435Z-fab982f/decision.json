@@ -1,0 +1,67 @@
+{
+  "plan_id": "P-SCALE-035",
+  "gate": "step33000 preregistered strong endpoint",
+  "recorded_at_utc": "2026-07-22T21:28:31Z",
+  "source_sha": "fab982fcc0f0a4caf45b78de5efdc52175d52721",
+  "baseline_step30000": {
+    "mixed_loop5_exact": 0.48046875,
+    "holes53_loop5_exact": 0.4609375,
+    "holes60_loop5_exact": 0.484375,
+    "holes64_loop5_exact": 0.421875,
+    "official_51_55_loop5_exact": 0.615234375,
+    "official_56_64_loop5_exact": 0.384765625
+  },
+  "binding_step31500": {
+    "mixed_loop5_exact": 0.515625,
+    "holes53_loop5_exact": 0.501953125,
+    "holes60_loop5_exact": 0.51171875,
+    "holes64_loop5_exact": 0.466796875,
+    "official_51_55_loop5_exact": 0.6171875,
+    "official_56_64_loop5_exact": 0.390625
+  },
+  "step33000": {
+    "train_loop5_ce": 0.4787498153746128,
+    "mixed_loop1_to_loop5_exact": [0.0234375, 0.107421875, 0.359375, 0.4375, 0.466796875],
+    "mixed_loop5_exact": 0.466796875,
+    "holes53_loop5_exact": 0.46875,
+    "holes60_loop5_exact": 0.51171875,
+    "holes64_loop5_exact": 0.439453125,
+    "official_46_50_loop5_exact": 0.99609375,
+    "official_51_55_loop5_exact": 0.626953125,
+    "official_56_64_loop5_exact": 0.36328125
+  },
+  "delta_vs_step30000": {
+    "mixed_loop5_exact": -0.013671875,
+    "holes53_loop5_exact": 0.0078125,
+    "holes60_loop5_exact": 0.02734375,
+    "holes64_loop5_exact": 0.017578125,
+    "official_51_55_loop5_exact": 0.01171875,
+    "official_56_64_loop5_exact": -0.021484375
+  },
+  "delta_vs_step31500": {
+    "mixed_loop5_exact": -0.048828125,
+    "holes53_loop5_exact": -0.033203125,
+    "holes60_loop5_exact": 0.0,
+    "holes64_loop5_exact": -0.02734375,
+    "official_51_55_loop5_exact": 0.009765625,
+    "official_56_64_loop5_exact": -0.02734375
+  },
+  "strong_gate": {
+    "condition": "official56-64 >= 0.45 or mixed >= 0.52",
+    "passed": false
+  },
+  "decision": "stop ordinary GDN state-width scaling at this endpoint",
+  "reason": "the expanded state produced a real but nonuniform step31500 gain, then regressed on mixed and formal hardest-tail evaluation by step33000; more state width or nearby rescue sweeps would have low information gain",
+  "still_supported": "FutureSeed plus loop performs real recurrent refinement on individual hard boards, including 32->3->0 wrong cells, but ordinary state width does not make that refinement uniformly reliable",
+  "forbidden_next_actions": [
+    "expand-v sweep",
+    "learning-rate sweep",
+    "seed sweep",
+    "loss-weight sweep",
+    "noise sweep",
+    "task rule",
+    "repair",
+    "search",
+    "selector"
+  ]
+}

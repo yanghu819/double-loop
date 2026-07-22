@@ -1,0 +1,58 @@
+run_name=gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f
+source_sha=fab982fcc0f0a4caf45b78de5efdc52175d52721
+resume_step=32900
+target_step=33000
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f
+git_sha=fab982fcc0f0a4caf45b78de5efdc52175d52721
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent gdn_progressive_base_expand_v=4.0 forward_dtype=bfloat16
+checkpoint_eval steps=33000 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/models/gdn-full-diversity-d224l12-expandv8-progressive-20260722/checkpoints/train_state_step032900.pt step=32900 reason=periodic
+[future_seed_loop stage=3:51-64] step=32925 ce=0.4584 total=0.6051 loop1=0.8832 loop_last=0.4584 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=32925] path=/huyang2/double-loop/models/gdn-full-diversity-d224l12-expandv8-progressive-20260722/checkpoints/train_state_step032925.pt
+[future_seed_loop stage=3:51-64] step=32950 ce=0.5426 total=0.6555 loop1=0.8789 loop_last=0.5426 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=32950] path=/huyang2/double-loop/models/gdn-full-diversity-d224l12-expandv8-progressive-20260722/checkpoints/train_state_step032950.pt
+[future_seed_loop stage=3:51-64] step=32975 ce=0.5353 total=0.6465 loop1=0.8795 loop_last=0.5353 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=32975] path=/huyang2/double-loop/models/gdn-full-diversity-d224l12-expandv8-progressive-20260722/checkpoints/train_state_step032975.pt
+[future_seed_loop stage=3:51-64] step=33000 ce=0.4787 total=0.6097 loop1=0.8626 loop_last=0.4787 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=33000 holes60] loop5 exact=0.5117 blank=0.7796
+[train_checkpoint step=33000] path=/huyang2/double-loop/models/gdn-full-diversity-d224l12-expandv8-progressive-20260722/checkpoints/train_state_step033000.pt
+
+full-board metrics
+loop=1 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5998, early=0.6040, late=0.5951, early_late_gap=+0.0088
+        fs_gate=0.404, fs_update=1.000, fs_state_norm=18.289, fs_decay=0.00, fs_raw_rms=0.393, fs_raw_rms_std=0.042, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.1074, valid=0.1074, solved=0.1074, blank_acc=0.7019, early=0.6994, late=0.7025, early_late_gap=-0.0031
+        fs_gate=0.404, fs_update=1.000, fs_state_norm=18.289, fs_decay=0.00, fs_raw_rms=0.337, fs_raw_rms_std=0.037, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.3594, valid=0.3594, solved=0.3594, blank_acc=0.7440, early=0.7461, late=0.7416, early_late_gap=+0.0045
+        fs_gate=0.404, fs_update=1.000, fs_state_norm=18.289, fs_decay=0.00, fs_raw_rms=0.361, fs_raw_rms_std=0.061, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.4375, valid=0.4375, solved=0.4375, blank_acc=0.7609, early=0.7583, late=0.7596, early_late_gap=-0.0013
+        fs_gate=0.404, fs_update=1.000, fs_state_norm=18.283, fs_decay=0.00, fs_raw_rms=0.435, fs_raw_rms_std=0.104, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.4668, valid=0.4668, solved=0.4668, blank_acc=0.7664, early=0.7625, late=0.7666, early_late_gap=-0.0041
+        fs_gate=0.404, fs_update=1.000, fs_state_norm=18.267, fs_decay=0.00, fs_raw_rms=0.457, fs_raw_rms_std=0.130, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.9961, valid=0.9961, solved=0.9961, blank_acc=0.9999, early=0.9999, late=1.0000, early_late_gap=-0.0001
+b51_55 blanks=51-55 n=512 exact=0.6270, valid=0.6270, solved=0.6270, blank_acc=0.8444, early=0.8413, late=0.8469, early_late_gap=-0.0056
+b56_64 blanks=56-64 n=512 exact=0.3633, valid=0.3633, solved=0.3633, blank_acc=0.7045, early=0.7004, late=0.7032, early_late_gap=-0.0028
+
+case-bank artifacts
+official_b46_50 exact=0.9961 blank_acc=0.9999 selected={'solved_by_loop': 0, 'almost_solved': 1, 'hard_failure': 0}
+  index=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.6094 blank_acc=0.8521 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.3438 blank_acc=0.7054 selected={'solved_by_loop': 4, 'almost_solved': 1, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f score=0.466796875 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f

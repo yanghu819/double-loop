@@ -1,0 +1,18 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T171234Z-fab982f
+git_sha=fab982fcc0f0a4caf45b78de5efdc52175d52721
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn rwkv_kernel=auto gdn_mode=triton_recurrent gdn_progressive_base_expand_v=4.0 forward_dtype=bfloat16
+Traceback (most recent call last):
+  File "/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4625, in <module>
+    run(parse_args())
+  File "/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4215, in run
+    model, train_stats = train_model(args, device=device)
+  File "/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2530, in train_model
+    checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
+  File "/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 3946, in parse_eval_checkpoint_steps
+    for value in parse_int_csv(args.eval_checkpoint_steps, name="--eval_checkpoint_steps", low=1, high=total_steps):
+  File "/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 3376, in parse_int_csv
+    raise ValueError(f"{name} entries must be in [{low}, {high}]")
+ValueError: --eval_checkpoint_steps entries must be in [1, 31500]

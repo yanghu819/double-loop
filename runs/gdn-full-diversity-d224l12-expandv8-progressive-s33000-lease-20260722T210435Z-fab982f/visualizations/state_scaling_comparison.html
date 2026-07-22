@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P-SCALE-035 State Scaling Verdict</title>
+<style>
+:root{color-scheme:light;--ink:#172026;--muted:#5b6670;--line:#d7d9d5;--paper:#fbfbf8;--white:#fff;--green:#147d64;--red:#bd3b33;--blue:#2368a2;--gold:#a56b12}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}main{max-width:1120px;margin:0 auto;padding:28px 22px 56px}h1{font-size:28px;margin:0 0 6px}h2{font-size:19px;margin:30px 0 10px}p{max-width:900px}.muted{color:var(--muted)}.verdict{border-left:5px solid var(--red);background:var(--white);padding:14px 18px;margin:20px 0}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}.metric{background:var(--white);padding:14px;min-height:112px}.metric strong{display:block;font-size:28px}.metric small{color:var(--muted)}table{border-collapse:collapse;width:100%;background:var(--white);font-size:14px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{background:#eef0ec}.bad{color:var(--red);font-weight:700}.good{color:var(--green);font-weight:700}.chart{width:100%;height:auto;background:var(--white);border:1px solid var(--line)}.axis{stroke:#929993;stroke-width:1}.grid{stroke:#e7e9e5;stroke-width:1}.label{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#4f5962}.legend{display:flex;gap:20px;flex-wrap:wrap;margin:8px 0 14px}.swatch{display:inline-block;width:13px;height:3px;vertical-align:middle;margin-right:6px}.cases{display:grid;grid-template-columns:1fr 1fr;gap:18px}.case-group{border-top:3px solid var(--blue);padding-top:10px}.case-group.fail{border-color:var(--red)}a{color:#155f9a}.links{display:flex;gap:14px;flex-wrap:wrap}.plain{font-size:17px}.note{background:#f2f5f0;padding:12px 14px;border:1px solid var(--line)}@media(max-width:760px){main{padding:20px 12px 40px}.metrics,.cases{grid-template-columns:1fr}table{font-size:12px}th,td{padding:7px 5px}.scroll{overflow-x:auto}.plain{font-size:15px}}
+</style>
+</head>
+<body><main>
+<h1>加大 GDN state：短期有效，长期不稳定</h1>
+<p class="muted">P-SCALE-035 · GPU1 A800 · native FutureSeed + 5 loops · official Sudoku · source <code>fab982f</code></p>
+<p class="links"><a href="index.html">完整训练 dashboard</a><a href="../output/case_bank/official_b51_55/index.html">51-55 空格 cases</a><a href="../output/case_bank/official_b56_64/index.html">56-64 空格 cases</a><a href="../decision.json">预注册判定 JSON</a></p>
+
+<section class="verdict">
+  <strong>结论：停止普通 state-width scaling。</strong>
+  <div>新增的第二个 64-channel state bank 在 step31500 一度把 mixed exact 推到 0.5156，但 step33000 回落到 0.4668；最难 official 56-64 也从 0.3906 回落到 0.3633。它没有达到预先写死的 0.52 / 0.45 强门槛。</div>
+</section>
+
+<section class="metrics" aria-label="key metrics">
+  <div class="metric"><small>mixed loop5 exact</small><strong>0.4668</strong><span class="bad">比 step31500 低 0.0488</span></div>
+  <div class="metric"><small>official 56-64 exact</small><strong>0.3633</strong><span class="bad">比 step31500 低 0.0273</span></div>
+  <div class="metric"><small>official 51-55 exact</small><strong>0.6270</strong><span class="good">基础难度仍保住</span></div>
+</section>
+
+<h2>同一模型沿训练步数的变化</h2>
+<div class="scroll"><table>
+<thead><tr><th>global step</th><th>mixed</th><th>holes53</th><th>holes60</th><th>holes64</th><th>official 51-55</th><th>official 56-64</th></tr></thead>
+<tbody>
+<tr><td>30000，扩容前</td><td>0.4805</td><td>0.4609</td><td>0.4844</td><td>0.4219</td><td>0.6152</td><td>0.3848</td></tr>
+<tr><td>30500</td><td>0.4551</td><td>0.4844</td><td>0.4746</td><td>0.4434</td><td>0.6172</td><td>0.3535</td></tr>
+<tr><td>31500，短期峰值</td><td class="good">0.5156</td><td class="good">0.5020</td><td>0.5117</td><td class="good">0.4668</td><td>0.6172</td><td class="good">0.3906</td></tr>
+<tr><td>33000，强终点</td><td class="bad">0.4668</td><td>0.4688</td><td>0.5117</td><td>0.4395</td><td class="good">0.6270</td><td class="bad">0.3633</td></tr>
+</tbody></table></div>
+
+<h2>Loop 确实在算，但 state 加宽没有让它更可靠</h2>
+<div class="legend"><span><i class="swatch" style="background:#2368a2"></i>step30000</span><span><i class="swatch" style="background:#a56b12"></i>step30500</span><span><i class="swatch" style="background:#147d64"></i>step31500</span><span><i class="swatch" style="background:#bd3b33"></i>step33000</span></div>
+<svg class="chart" viewBox="0 0 900 360" role="img" aria-label="Mixed exact by loop and training step">
+  <line x1="70" y1="30" x2="70" y2="310" class="axis"/><line x1="70" y1="310" x2="865" y2="310" class="axis"/>
+  <line x1="70" y1="254" x2="865" y2="254" class="grid"/><line x1="70" y1="198" x2="865" y2="198" class="grid"/><line x1="70" y1="142" x2="865" y2="142" class="grid"/><line x1="70" y1="86" x2="865" y2="86" class="grid"/><line x1="70" y1="30" x2="865" y2="30" class="grid"/>
+  <text x="28" y="314" class="label">0.0</text><text x="28" y="258" class="label">0.1</text><text x="28" y="202" class="label">0.2</text><text x="28" y="146" class="label">0.3</text><text x="28" y="90" class="label">0.4</text><text x="28" y="34" class="label">0.5</text>
+  <text x="96" y="334" class="label">loop1</text><text x="290" y="334" class="label">loop2</text><text x="486" y="334" class="label">loop3</text><text x="682" y="334" class="label">loop4</text><text x="826" y="334" class="label">loop5</text>
+  <polyline fill="none" stroke="#2368a2" stroke-width="3" points="110,297 305,260 500,121 695,54 840,41"/>
+  <polyline fill="none" stroke="#a56b12" stroke-width="3" points="110,297 305,247 500,122 695,67 840,55"/>
+  <polyline fill="none" stroke="#147d64" stroke-width="4" points="110,297 305,242 500,101 695,33 840,21"/>
+  <polyline fill="none" stroke="#bd3b33" stroke-width="4" points="110,297 305,250 500,109 695,65 840,49"/>
+  <circle cx="840" cy="21" r="5" fill="#147d64"/><circle cx="840" cy="49" r="5" fill="#bd3b33"/>
+</svg>
+<p class="plain">通俗地说：loop1 只解出约 2.3%，loop5 能到 46.7%，所以 loop 不是摆设。但把 state 翻倍后，step31500 的提升没有稳定保留到 step33000。问题不是“模型完全不会反复修改”，而是“这些修改在最难题上不够稳定”。</p>
+
+<h2>同一批 hardest cases</h2>
+<div class="cases">
+  <section class="case-group"><strong>能被后续 loop 修好的题</strong><p>wrong cells：<code>32 → 3 → 0</code>、<code>32 → 9 → 0</code>、<code>32 → 18 → 0</code>、<code>32 → 5 → 0</code>（loop1 → loop3 → loop5）。</p><p><a href="../output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0177.html">打开 32 → 3 → 0 case</a></p></section>
+  <section class="case-group fail"><strong>到 loop5 仍卡住的题</strong><p>wrong cells：<code>30 → 18 → 5</code>、<code>20 → 14 → 5</code>、<code>19 → 12 → 5</code>、<code>23 → 13 → 6</code>。后续 loop 能继续减错，但无法稳定闭合到整盘正确。</p><p><a href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0239.html">打开 30 → 18 → 5 case</a></p></section>
+</div>
+
+<h2>这次实验真正回答了什么</h2>
+<p class="note"><strong>支持：</strong>FutureSeed + loop 有真实的逐轮修正能力；新增通用 recurrent memory 也能在不破坏原函数的情况下学习。<br><strong>不支持：</strong>继续把同一种 GDN state 做宽就能稳定解决更多 blank。普通 state width 不是当前可靠 scaling law。<br><strong>下一决策：</strong>保留 GDN/FutureSeed/loop 主干；不扫 state 宽度、LR、seed、loss 或 noise。下一条高信息量轴必须改变数据覆盖方式或通用 state formulation，而不是在附近拧旋钮。</p>
+</main></body></html>

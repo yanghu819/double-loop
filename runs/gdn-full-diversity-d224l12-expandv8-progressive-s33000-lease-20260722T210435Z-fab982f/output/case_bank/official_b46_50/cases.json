@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "holes": 50,
+    "group": "official_b46_50",
+    "eval_n": 256,
+    "blank_count_min": 46,
+    "blank_count_max": 50,
+    "blank_count_mean": 47.30859375,
+    "loop_values": [
+      1,
+      3,
+      5
+    ],
+    "final_loop": 5,
+    "final_exact": 0.99609375,
+    "final_blank_acc": 0.9999174475669861,
+    "selected_counts": {
+      "solved_by_loop": 0,
+      "almost_solved": 1,
+      "hard_failure": 0
+    }
+  },
+  "selected": {
+    "solved_by_loop": [],
+    "almost_solved": [
+      {
+        "holes": 47,
+        "group": "official_b46_50",
+        "batch_index": 103,
+        "loops": {
+          "loop1": {
+            "wrong_count": 0,
+            "blank_acc": 1.0,
+            "exact": true,
+            "valid_board": true,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.021116234362125397,
+            "conflict_unit_count": 0,
+            "conflict_units": [],
+            "wrong_blanks": []
+          },
+          "loop3": {
+            "wrong_count": 0,
+            "blank_acc": 1.0,
+            "exact": true,
+            "valid_board": true,
+            "changed_from_previous": 0,
+            "hidden_entropy_mean": 0.03053041733801365,
+            "conflict_unit_count": 0,
+            "conflict_units": [],
+            "wrong_blanks": []
+          },
+          "loop5": {
+            "wrong_count": 1,
+            "blank_acc": 0.9787234042553191,
+            "exact": false,
+            "valid_board": false,
+            "changed_from_previous": 1,
+            "hidden_entropy_mean": 0.032123442739248276,
+            "conflict_unit_count": 3,
+            "conflict_units": [
+              "row 4: 6@R4C3,R4C6",
+              "col 6: 6@R4C6,R8C6",
+              "box 2,2: 6@R4C6,R5C5"
+            ],
+            "wrong_blanks": [
+              {
+                "coord": "R4C6",
+                "pred": "6",
+                "truth": "8",
+                "margin": 0.05416896939277649,
+                "entropy": 1.4502534866333008,
+                "stable_since_loop": 5,
+                "changed_from_previous_loop": true,
+                "previous_loop": 3,
+                "previous_pred": "8"
+              }
+            ]
+          }
+        },
+        "kind": "almost_solved",
+        "stem": "official_b46_50_almost_solved_01_b0103",
+        "title": "9x9 official_b46_50 almost_solved #1",
+        "html_path": "/huyang2/double-loop/.worktrees/pscale035-s33000-fab982f-full-20260722/runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/output/case_bank/official_b46_50/official_b46_50_almost_solved_01_b0103.html"
+      }
+    ],
+    "hard_failure": []
+  }
+}

@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-035`
-- Status: in progress
+- Status: done; strong endpoint failed, ordinary state-width scaling closed
 - Planned: 2026-07-22 19:14 CST / 2026-07-22T11:14:33Z
 - Machine: AIStation `GPU1` A800 only; GPU2 forbidden
 - Parent: exact P-SCALE-034 step30000 train-state checkpoint
@@ -196,3 +196,46 @@ Decision: run only the preregistered unchanged step33000 strong endpoint.
 Strong evidence requires formal official56-64 `>=0.45` or mixed exact
 `>=0.52`. If neither threshold is met, stop ordinary state-width scaling and
 do not run expand-v, LR, seed, loss, or noise rescue tables.
+
+### Step33000 Strong Endpoint
+
+The first unchanged step31500-to33000 segment reached a complete step32900
+model/AdamW/scheduler/RNG checkpoint before its GPU1 lease expired. GPU1 was
+reopened and the final segment resumed that exact checkpoint, trained the
+remaining 100 steps, and completed every evaluation. A preceding launch with a
+stage schedule totaling31500 was rejected before an optimizer step and is
+archived separately. GPU2 and CPU model smoke were not used.
+
+| Readout | step30000 | step31500 | step33000 | 33000 vs 31500 |
+|---|---:|---:|---:|---:|
+| mixed loop5 exact | `0.4805` | `0.5156` | `0.4668` | `-0.0488` |
+| holes53 loop5 exact | `0.4609` | `0.5020` | `0.4688` | `-0.0332` |
+| holes60 loop5 exact | `0.4844` | `0.5117` | `0.5117` | `+0.0000` |
+| holes64 loop5 exact | `0.4219` | `0.4668` | `0.4395` | `-0.0273` |
+| official51-55 loop5 exact | `0.6152` | `0.6172` | `0.6270` | `+0.0098` |
+| official56-64 loop5 exact | `0.3848` | `0.3906` | `0.3633` | `-0.0273` |
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.1074 / 0.3594 / 0.4375 / 0.4668`. Loop computation remains real:
+selected official56-64 boards reduce wrong cells `32 -> 3 -> 0`,
+`32 -> 9 -> 0`, `32 -> 18 -> 0`, and `32 -> 5 -> 0` across loops1/3/5.
+Failures also continue improving but do not close: `30 -> 18 -> 5`,
+`20 -> 14 -> 5`, `19 -> 12 -> 5`, and `23 -> 13 -> 6`.
+
+The final 100-step resumed segment took `946.2 s` and peaked at
+`40669 MB` allocated / `41034 MB` reserved. Train loop5 CE is `0.4787`, so the
+endpoint is numerically healthy. The negative result is not an execution or
+optimization crash: the short-term step31500 gain simply does not persist
+uniformly across independent evaluation distributions.
+
+Decision: the preregistered strong gate fails because mixed exact is below
+`0.52` and official56-64 is below `0.45`. Close ordinary GDN state-width
+scaling. Do not run expand-v, LR, seed, loss, noise, or checkpoint-selection
+rescue tables. The supported claim is narrower: FutureSeed plus loops performs
+substantial recurrent correction, and memory can be expanded without
+forgetting, but raw state width is not a reliable scaling law for hard global
+closure.
+
+Visualization:
+
+- `runs/gdn-full-diversity-d224l12-expandv8-progressive-s33000-lease-20260722T210435Z-fab982f/visualizations/state_scaling_comparison.html`

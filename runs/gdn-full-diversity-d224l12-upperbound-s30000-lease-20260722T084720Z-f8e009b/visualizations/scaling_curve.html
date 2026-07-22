@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P-SCALE-034 scaling ceiling</title>
+<style>
+:root{color-scheme:light;--ink:#202124;--muted:#667085;--line:#d5d9df;--paper:#fff;--bg:#f5f6f7;--blue:#2563eb;--green:#14804a;--red:#c2413b;--amber:#a15c00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:0}main{max-width:1120px;margin:auto;padding:24px 20px 48px}header{border-bottom:2px solid var(--ink);padding-bottom:16px}h1{font-size:28px;margin:0 0 8px}h2{font-size:19px;margin:0 0 14px}p{line-height:1.55;margin:8px 0}.muted{color:var(--muted)}nav{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}a{color:#174ea6}.band{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:20px -20px 0;padding:20px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.metric strong{display:block;font:700 24px ui-monospace,SFMono-Regular,Menlo,monospace}.metric span{font-size:13px;color:var(--muted)}.chart-wrap{width:100%;aspect-ratio:2.25/1;min-height:320px}svg{display:block;width:100%;height:100%}.axis{stroke:#7b818b;stroke-width:1}.grid{stroke:#e2e5e9;stroke-width:1}.label{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#515760}.legend{display:flex;gap:20px;flex-wrap:wrap;margin:10px 0}.swatch{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px 10px;border-bottom:1px solid #e4e7eb;text-align:right}th:first-child,td:first-child{text-align:left}th{background:#f0f2f4}.positive{color:var(--green);font-weight:650}.negative{color:var(--red);font-weight:650}.bars{display:grid;gap:10px}.bar-row{display:grid;grid-template-columns:72px 1fr 72px;align-items:center;gap:10px}.bar-track{height:18px;background:#e8ebef}.bar{height:100%;background:var(--blue)}.cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.case-group{border-left:4px solid var(--line);padding-left:12px}.case-group h3{font-size:15px;margin:0 0 8px}.case-group a{display:block;margin:7px 0;font-size:14px}.decision{border-left:5px solid var(--green);padding-left:14px}.foot{font-size:12px;color:var(--muted)}
+@media(max-width:760px){main{padding:18px 14px 36px}.band{margin-left:-14px;margin-right:-14px;padding:16px 14px}.metrics,.cases{grid-template-columns:1fr 1fr}.chart-wrap{min-height:270px}.bar-row{grid-template-columns:58px 1fr 60px}}
+@media(max-width:480px){.metrics,.cases{grid-template-columns:1fr}.chart-wrap{min-height:240px}h1{font-size:24px}}
+</style>
+</head>
+<body><main>
+<header>
+<h1>P-SCALE-034: clean FutureSeed GDN scaling</h1>
+<p>Same D224/L12 model, native FutureSeed, five recurrent loops, all-loop CE, and official full-diversity data. Only hard-distribution training compute increases.</p>
+<nav><a href="index.html">Final run dashboard</a><a href="../decision.json">Decision JSON</a><a href="../output/futureseed_loop_seed52.json">Raw result JSON</a></nav>
+</header>
+
+<section class="band metrics" aria-label="Final metrics">
+<div class="metric"><strong>0.4805</strong><span>mixed loop5 exact</span></div>
+<div class="metric"><strong>0.3848</strong><span>official 56-64 exact</span></div>
+<div class="metric"><strong>+0.2090</strong><span>mixed gain from step8000</span></div>
+<div class="metric"><strong>44.5 GB</strong><span>peak GPU allocation</span></div>
+</section>
+
+<section class="band">
+<h2>Exact-board scaling curve</h2>
+<div class="legend"><span><i class="swatch" style="background:var(--blue)"></i>mixed</span><span><i class="swatch" style="background:var(--green)"></i>official 51-55</span><span><i class="swatch" style="background:var(--red)"></i>official 56-64</span></div>
+<div class="chart-wrap"><svg id="curve" viewBox="0 0 1000 440" role="img" aria-label="Exact-board accuracy from step8000 to step30000"></svg></div>
+<table>
+<thead><tr><th>global step</th><th>nominal board draws</th><th>mixed</th><th>official 51-55</th><th>official 56-64</th></tr></thead>
+<tbody id="curve-table"></tbody>
+</table>
+</section>
+
+<section class="band">
+<h2>Step30000 recurrent closure</h2>
+<p class="muted">Full-board exact after each recurrent loop on the same mixed evaluation batch.</p>
+<div class="bars" id="loop-bars"></div>
+</section>
+
+<section class="band">
+<h2>Hardest 56-64 blank cases</h2>
+<div class="cases">
+<div class="case-group"><h3>Solved by loop5</h3>
+<a href="../output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0177.html">57 blanks: 37 -> 8 -> 0</a>
+<a href="../output/case_bank/official_b56_64/official_b56_64_solved_by_loop_02_b0051.html">57 blanks: 32 -> 0 -> 0</a>
+<a href="../output/case_bank/official_b56_64/official_b56_64_solved_by_loop_04_b0010.html">59 blanks: 31 -> 14 -> 0</a>
+</div>
+<div class="case-group"><h3>Almost solved</h3>
+<a href="../output/case_bank/official_b56_64/official_b56_64_almost_solved_01_b0205.html">57 blanks: 32 -> 13 -> 2</a>
+<a href="../output/case_bank/official_b56_64/official_b56_64_almost_solved_02_b0217.html">58 blanks: 19 -> 8 -> 3</a>
+</div>
+<div class="case-group"><h3>Hard failures</h3>
+<a href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_01_b0221.html">58 blanks: 21 -> 11 -> 5</a>
+<a href="../output/case_bank/official_b56_64/official_b56_64_hard_failure_04_b0116.html">57 blanks: 29 -> 14 -> 8</a>
+</div>
+</div>
+</section>
+
+<section class="band decision">
+<h2>Decision</h2>
+<p>Both preregistered step30000 gates pass: mixed exact sets a new best and official 56-64 recovers above the step20000 reference. Clean data/compute scaling remains effective, and later loops perform real whole-board correction.</p>
+<p>Stop this pure-time ladder at step30000. Bucket-wise variation and diminishing mixed gains make an unchanged step36000 low-information. The next experiment must change one generic scaling axis: independent hard-data coverage or learnable recurrent-state capacity.</p>
+</section>
+<p class="foot">Source SHA f8e009bedcb0a6db88a49a79fc77b260cb3f3f30. GPU1 only. No noise, repair, search, selector, task rules, GPU2, or CPU smoke.</p>
+</main>
+<script>
+const points=[
+{step:8000,mixed:.2715,b51:.4473,b56:.1621},{step:10000,mixed:.3066,b51:.4824,b56:.1855},
+{step:12000,mixed:.3730,b51:.5352,b56:.2285},{step:16000,mixed:.3945,b51:.5605,b56:.2598},
+{step:20000,mixed:.4375,b51:.5840,b56:.3125},{step:24000,mixed:.46484375,b51:.638671875,b56:.294921875},
+{step:30000,mixed:.48046875,b51:.615234375,b56:.384765625}
+];
+const colors={mixed:'#2563eb',b51:'#14804a',b56:'#c2413b'},svg=document.getElementById('curve'),NS='http://www.w3.org/2000/svg';
+const x=s=>70+(s-8000)/22000*890,y=v=>380-v/.70*330;
+const add=(tag,attrs,text)=>{const el=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);if(text!==undefined)el.textContent=text;svg.appendChild(el);return el};
+for(let v=0;v<=.7;v+=.1){add('line',{x1:70,y1:y(v),x2:960,y2:y(v),class:'grid'});add('text',{x:18,y:y(v)+4,class:'label'},v.toFixed(1))}
+add('line',{x1:70,y1:50,x2:70,y2:380,class:'axis'});add('line',{x1:70,y1:380,x2:960,y2:380,class:'axis'});
+for(const p of points){add('text',{x:x(p.step),y:410,class:'label','text-anchor':'middle'},`${p.step/1000}k`)}
+for(const key of ['mixed','b51','b56']){add('polyline',{points:points.map(p=>`${x(p.step)},${y(p[key])}`).join(' '),fill:'none',stroke:colors[key],'stroke-width':3});for(const p of points){const c=add('circle',{cx:x(p.step),cy:y(p[key]),r:5,fill:colors[key]});const t=document.createElementNS(NS,'title');t.textContent=`${key} step ${p.step}: ${p[key].toFixed(4)}`;c.appendChild(t)}}
+document.getElementById('curve-table').innerHTML=points.map(p=>`<tr><td>${p.step.toLocaleString()}</td><td>${(p.step*128).toLocaleString()}</td><td>${p.mixed.toFixed(4)}</td><td>${p.b51.toFixed(4)}</td><td>${p.b56.toFixed(4)}</td></tr>`).join('');
+const loops=[.0234375,.08984375,.337890625,.45703125,.48046875];
+document.getElementById('loop-bars').innerHTML=loops.map((v,i)=>`<div class="bar-row"><span>loop ${i+1}</span><div class="bar-track"><div class="bar" style="width:${v/0.5*100}%"></div></div><strong>${v.toFixed(4)}</strong></div>`).join('');
+</script>
+</body></html>

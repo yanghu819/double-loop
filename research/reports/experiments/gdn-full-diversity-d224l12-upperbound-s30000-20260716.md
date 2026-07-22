@@ -209,6 +209,53 @@ predeclared final step30000 endpoint with the identical formulation. Continue
 pure scaling only if step30000 sets a new mixed best and recovers or improves
 official56-64; otherwise stop this state formulation without a rescue sweep.
 
+The final step30000 endpoint completed on 2026-07-22 across two exact GPU1
+leases. The first segment resumed step24000 and reached the complete step28000
+checkpoint before the AIStation lease expired. The second segment resumed that
+exact optimizer/RNG/model state and completed training and all evaluations.
+GPU2 was not used, and no model, data, objective, noise, loss, width, depth, or
+loop setting changed.
+
+| Readout | step24000 | step30000 | Delta |
+|---|---:|---:|---:|
+| mixed loop5 exact | `0.4648` | `0.4805` | `+0.0156` |
+| holes53 loop5 exact | `0.4258` | `0.4609` | `+0.0352` |
+| holes60 loop5 exact | `0.4629` | `0.4844` | `+0.0215` |
+| holes64 loop5 exact | `0.4414` | `0.4219` | `-0.0195` |
+| official 51-55 exact | `0.6387` | `0.6152` | `-0.0234` |
+| official 56-64 exact | `0.2949` | `0.3848` | `+0.0898` |
+
+Both predeclared final gates pass: mixed exact sets a new best, and formal
+official56-64 not only recovers the step20000 `0.3125` reference but reaches
+`0.3848`. The non-monotone holes64 and official51-55 results show that this is
+not uniform improvement across every finite evaluation subset. The formal
+512-board blank-range aggregate is therefore the primary hardest-tail result;
+the 256-board case-bank `0.3516` is visualization-only.
+
+Mixed exact across loops1-5 is
+`0.0234 / 0.0898 / 0.3379 / 0.4570 / 0.4805`. Official56-64 moves
+`0.0000 / 0.0391 / 0.2129 / 0.3496 / 0.3848`. Selected 56-64 boards change
+`37 -> 8 -> 0`, `32 -> 0 -> 0`, `31 -> 13 -> 0`, and `31 -> 14 -> 0`
+wrong cells across loops1/3/5. Hard failures remain, including `21 -> 11 -> 5`
+and `29 -> 14 -> 8`. This is direct evidence that recurrent computation repairs
+whole-board errors, but five loops do not solve the complete hardest tail.
+
+The last two 1000-step loss windows were also informative: loop5 CE changed
+from `0.5437` at steps27025-28000 to `0.5153` at steps28025-29000. More clean
+compute was still improving optimization, and that improvement crossed the
+discrete exact threshold on the formal hardest bucket. Peak allocation remained
+`44527.1MB` (`44600MB` reserved). The second segment took `6946.0s`; the first
+segment is retained separately with `abort.json` and its last complete
+step28000 checkpoint.
+
+Decision: mark P-SCALE-034 done. The result validates clean data/compute scaling
+and learned late-loop correction up to roughly one dataset-equivalent nominal
+draw budget. It does not justify blindly extending the unchanged recipe to
+step36000: mixed gains are diminishing and bucket-wise variation is real. The
+next experiment must change exactly one generic scaling axis, preferably
+independent hard-data coverage or learnable state capacity, with a new
+mechanism-level prediction. No rescue sweep is allowed.
+
 ## 7. Artifacts And Visualization
 
 Each leg archives config, launch environment, logs, score, fixed checkpoint
@@ -263,7 +310,26 @@ Completed step24000 run:
 - Local interactive dashboard:
   `runs/gdn-full-diversity-d224l12-upperbound-s24000-lease-20260721T152314Z-f8e009b/visualizations/index.html`
 
+Completed step30000 runs:
+
+- Lease-interrupted segment:
+  `runs/gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T044815Z-f8e009b`
+  (step24000 to exact step28000; see `abort.json`).
+- Final remote run:
+  `/huyang2/double-loop/.worktrees/pscale034-step30000-f8e009b-20260722/runs/gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T084720Z-f8e009b`
+- Exact checkpoint:
+  `/huyang2/double-loop/models/gdn-full-diversity-d224l12-s6000-20260711T1510Z-eeb38f5/checkpoints/train_state_step030000.pt`
+- Exact relevant-source archive:
+  `runs/gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T084720Z-f8e009b/source_snapshot.tar.gz`
+  (SHA256 `0c1914100670e2b9b18ffc0a28a4384ab208a031f107755bd6bbd1e6c293f332`)
+- Local interactive dashboard:
+  `runs/gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T084720Z-f8e009b/visualizations/index.html`
+- Cross-gate scaling analysis:
+  `runs/gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T084720Z-f8e009b/visualizations/scaling_curve.html`
+- Hardest solved-by-loop case:
+  `runs/gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T084720Z-f8e009b/output/case_bank/official_b56_64/official_b56_64_solved_by_loop_01_b0177.html`
+
 ## 8. Submission Record
 
-No tag: the scaling conclusion is clean, but the primary score is `0.4648`,
-below the `0.50` tag threshold.
+No tag: the final scaling conclusion is clean, but the primary score is
+`0.4805`, below the `0.50` tag threshold.

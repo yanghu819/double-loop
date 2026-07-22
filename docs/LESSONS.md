@@ -1062,3 +1062,24 @@
   model failure. Avoid whole-monorepo `git status` and snapshots on remote NFS
   after a detached worktree has already been verified; use a relevant-source
   snapshot and preserve `abort.json` plus exact checkpoint provenance.
+- One dataset-equivalent nominal draw budget was still useful for the clean
+  native FutureSeed GDN. From step8000 to step30000, mixed loop5 exact rose
+  `0.2715 -> 0.4805`, while formal official56-64 rose `0.1621 -> 0.3848`.
+  The step24000 dip to `0.2949` was evaluation variation, not a durable ceiling.
+  Do not infer saturation from one finite hard-bucket checkpoint.
+- Recurrent correction is now direct rather than inferred from blank accuracy.
+  At step30000, mixed exact is `0.0234/0.0898/0.3379/0.4570/0.4805` across
+  loops1-5, and official56-64 is `0/0.0391/0.2129/0.3496/0.3848`. Concrete
+  boards change `37->8->0` or `31->14->0` wrong cells across loops1/3/5.
+  Failures such as `29->14->8` remain; five loops help substantially but are
+  not an unlimited solver.
+- Prefer formal bucket aggregates over fixed-hole or visualization subsets.
+  At step30000, formal official56-64 improves `+0.0898` from step24000 while
+  fixed holes64 falls `-0.0195`; official51-55 also falls `-0.0234`. The honest
+  result is strong hardest-tail progress with bucket-wise variance, not uniform
+  monotonic improvement.
+- Stop a successful scaling ladder at its preregistered endpoint. P-SCALE-034
+  validates clean data/compute scaling but mixed gains are diminishing by 30k.
+  The next run should change one generic axis such as independent hard-data
+  coverage or learnable state capacity. Appending step36000 to the unchanged
+  recipe would answer little and violate the decision-driven experiment rule.

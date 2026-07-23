@@ -5,6 +5,21 @@ MODE="${1:-smoke}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXP_DIR="$REPO_ROOT/experiments/rwkv_fs_sudoku"
 
+case "$MODE" in
+  baseline)
+    exec "$REPO_ROOT/scripts/run_canonical_gdn_scale.sh"
+    ;;
+  benchmark)
+    exec "$REPO_ROOT/scripts/run_sudoku_backbone_benchmark.sh" "${2:?Usage: ./run.sh benchmark <rwkv|gdn|gdn2|kda>}"
+    ;;
+  benchmark_suite)
+    exec "$REPO_ROOT/scripts/run_sudoku_backbone_suite.sh"
+    ;;
+  baseline_preflight)
+    exec "$REPO_ROOT/scripts/run_sudoku_baseline_preflight.sh" "${2:-}"
+    ;;
+esac
+
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$REPO_ROOT/.cache}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$REPO_ROOT/.cache/uv}"
 export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$REPO_ROOT/.cache/uv/python}"
@@ -20,7 +35,7 @@ mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$RE
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe) ;;
   *)
-    printf 'Usage: %s [smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe]\n' "$0" >&2
+    printf 'Usage: %s [baseline|benchmark|benchmark_suite|baseline_preflight|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe]\n' "$0" >&2
     exit 2
     ;;
 esac

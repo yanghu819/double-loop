@@ -4,6 +4,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXP_DIR="$REPO_ROOT/experiments/rwkv_fs_sudoku"
 FLA_COMMIT="fe8fce9fc6984f22905f54cfa885dce1502baf26"
+FLA_WHEEL="$REPO_ROOT/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"
+FLA_WHEEL_SHA256="65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
 
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$REPO_ROOT/.cache}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$REPO_ROOT/.cache/uv}"
@@ -58,6 +60,22 @@ ensure_runtime_deps() {
   local target="$REPO_ROOT/.cache/python-extra-pylib"
   mkdir -p "$target"
 
+  if [[ ! -f "$FLA_WHEEL" ]]; then
+    printf 'Pinned FLA wheel is missing: %s\n' "$FLA_WHEEL" >&2
+    return 1
+  fi
+  "$py_bin" - "$FLA_WHEEL" "$FLA_WHEEL_SHA256" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+expected = sys.argv[2]
+actual = hashlib.sha256(path.read_bytes()).hexdigest()
+if actual != expected:
+    raise SystemExit(f"Pinned FLA wheel SHA256 mismatch: {actual} != {expected}")
+PY
+
   local missing
   missing="$(
     PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
@@ -97,11 +115,7 @@ PY
 
   if [[ "$fla_needs_install" == "1" ]]; then
     local fla_args=(--target "$target" --upgrade --no-deps)
-    if compgen -G "$REPO_ROOT/wheelhouse/flash_linear_attention*.whl" >/dev/null || compgen -G "$REPO_ROOT/wheelhouse/flash-linear-attention*.whl" >/dev/null; then
-      "$py_bin" -m pip install "${fla_args[@]}" --no-index --find-links "$REPO_ROOT/wheelhouse" "flash-linear-attention"
-    else
-      "$py_bin" -m pip install "${fla_args[@]}" "flash-linear-attention @ git+https://github.com/fla-org/flash-linear-attention.git@$FLA_COMMIT"
-    fi
+    "$py_bin" -m pip install "${fla_args[@]}" --no-index "$FLA_WHEEL"
     PYTHONPATH="$target${PYTHONPATH:+:$PYTHONPATH}" "$py_bin" - <<'PY'
 import fla
 from fla.ops.gdn2 import chunk_gdn2  # noqa: F401

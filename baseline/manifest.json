@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "status": "canonical",
+  "updated_at": "2026-07-23T12:30:00+08:00",
+  "claim": "FutureSeed transfers terminal recurrent state across layers; depth loops add recurrent compute.",
+  "canonical": {
+    "runner": "experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py",
+    "rwkv_cuda": "experiments/rwkv_fs_sudoku/rwkv7_cuda/",
+    "gdn_triton": "experiments/rwkv_fs_sudoku/gdn_triton.py",
+    "fla_gate": "experiments/rwkv_fs_sudoku/check_fla_delta_backbones.py",
+    "benchmark_config": "configs/sudoku/backbone_benchmark.env",
+    "scale_config": "configs/sudoku/gdn_scale.env",
+    "benchmark_launcher": "scripts/run_sudoku_backbone_benchmark.sh",
+    "suite_launcher": "scripts/run_sudoku_backbone_suite.sh",
+    "preflight": "scripts/run_sudoku_baseline_preflight.sh",
+    "summarizer": "scripts/summarize_sudoku_backbone_benchmark.py",
+    "environment_lock": "experiments/rwkv_fs_sudoku/uv.lock",
+    "fla_wheel": "wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"
+  },
+  "supported_benchmark_backbones": {
+    "rwkv": "local RWKV7 state-passing CUDA",
+    "gdn": "official FLA GatedDeltaNet",
+    "gdn2": "official FLA GatedDeltaNet2",
+    "kda": "official FLA KimiDeltaAttention"
+  },
+  "archive_only": [
+    "runs/",
+    "research/reports/experiments/",
+    "plans.md",
+    "leaderboard.csv"
+  ],
+  "deprecated": [
+    {
+      "path": "scripts/official_eqr_compare/",
+      "reason": "EqR transplant and reverse-scan side paths are not the standalone FutureSeed baseline."
+    },
+    {
+      "path": "docs/eqr_patches/",
+      "reason": "Historical EqR patches are retained only for provenance."
+    },
+    {
+      "path": "scripts/*maze*",
+      "reason": "Maze objective work is archived and is not part of the final Sudoku baseline."
+    },
+    {
+      "path": "scripts/run_fla_official_futureseed_compare.sh",
+      "reason": "Superseded by the strict four-backbone launcher."
+    },
+    {
+      "path": "scripts/run_fla_delta_sudoku_gate.sh",
+      "reason": "Superseded by the strict four-backbone launcher."
+    },
+    {
+      "path": "feature noise, scratch, feedback, exact-margin, selector and rollout flags",
+      "reason": "Negative or diagnostic mechanisms; disabled in canonical configs."
+    },
+    {
+      "path": "progressive GDN split-bank state expansion",
+      "reason": "Passed equivalence but failed the preregistered strong endpoint."
+    }
+  ]
+}
+

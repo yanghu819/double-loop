@@ -112,10 +112,10 @@ BOXES: List[List[int]] = []
 UNITS: List[List[int]] = []
 BACKBONE_DISPLAY_NAMES = {
     "rwkv": "RWKV",
-    "gdn": "GDN",
-    "fla_gdn": "FLA GDN",
-    "gdn2": "FLA GDN2",
-    "kda": "FLA KDA",
+    "gdn": "GDN-Triton",
+    "fla_gdn": "GDN (official FLA)",
+    "gdn2": "GDN2 (official FLA)",
+    "kda": "KDA (official FLA)",
 }
 
 
@@ -2484,11 +2484,36 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn_conv_size=args.gdn_conv_size,
         gdn_allow_neg_eigval=args.gdn_allow_neg_eigval,
     ).to(device)
+    parameter_count = sum(parameter.numel() for parameter in model.parameters())
+    trainable_parameter_count = sum(
+        parameter.numel() for parameter in model.parameters() if parameter.requires_grad
+    )
     fla_runtime = (
         strict_fla_runtime_summary(model, args.backbone)
         if args.fla_strict_official
         else {"strict": False}
     )
+    if args.backbone == "rwkv":
+        statepassing_ok, statepassing_reason = statepassing_available(args.head_dim)
+        backbone_runtime = {
+            "implementation": "local_rwkv7_statepassing",
+            "requested_kernel": args.rwkv_kernel,
+            "statepassing_available": statepassing_ok,
+            "statepassing_reason": statepassing_reason,
+            "silent_fallback_allowed": args.rwkv_kernel == "auto",
+        }
+    elif args.backbone == "gdn":
+        backbone_runtime = {
+            "implementation": "local_gdn_triton",
+            "requested_kernel": args.gdn_mode,
+            "silent_fallback_allowed": False,
+        }
+    else:
+        backbone_runtime = {
+            "implementation": f"official_fla_{args.backbone}",
+            "requested_kernel": args.gdn_mode,
+            "silent_fallback_allowed": not bool(args.fla_strict_official),
+        }
     feature_buffer = FeatureNoiseBuffer(
         capacity=args.feature_buffer_size,
         feature_dim=args.d_model,
@@ -3033,6 +3058,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
+        "optimizer_steps": total_steps,
+        "parameter_count": parameter_count,
+        "trainable_parameter_count": trainable_parameter_count,
+        "backbone_runtime": backbone_runtime,
         "microbatch": args.batch,
         "grad_accum_steps": args.grad_accum_steps,
         "effective_batch": args.batch * max(1, int(args.grad_accum_steps)),

@@ -1,5 +1,10 @@
 # Experiment Plans
 
+> Historical ledger. The canonical baseline, benchmark contract, and
+> deprecation boundary are now defined by `README.md`,
+> `baseline/manifest.json`, and `docs/DEPRECATIONS.md`. Entries below remain
+> append-only evidence and are not active launch instructions.
+
 Primary evidence target: show whether FutureSeed supplies cheap future context
 for recurrent reasoners under matched compute, without solver-specific repair or
 selector tricks.

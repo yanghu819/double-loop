@@ -1,0 +1,412 @@
+{
+  "backbones": {
+    "gdn": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 22.627418518066406,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 1.96632623193934,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "fla_gdn",
+      "loss": 2.315126419067383,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5980468,
+      "peak_allocated_mib": 479.0224609375,
+      "public_name": "gdn",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 197.4197552059777,
+      "trainable_parameter_count": 5980468
+    },
+    "gdn2": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 22.627418518066406,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 2.7380674592708782,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "gdn2",
+      "loss": 2.2915995121002197,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 6946168,
+      "peak_allocated_mib": 537.35546875,
+      "public_name": "gdn2",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 51.496045528911054,
+      "trainable_parameter_count": 6946168
+    },
+    "kda": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 22.627418518066406,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 2.8566995782822246,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "kda",
+      "loss": 2.4083640575408936,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5851768,
+      "peak_allocated_mib": 491.98876953125,
+      "public_name": "kda",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 43.517685069935396,
+      "trainable_parameter_count": 5851768
+    },
+    "rwkv": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 16.0,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 1.6412975448363012,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "rwkv",
+      "loss": 2.2696337699890137,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5580348,
+      "peak_allocated_mib": 272.34228515625,
+      "public_name": "rwkv",
+      "runtime": {
+        "available": true,
+        "implementation": "local_rwkv7_statepassing",
+        "kernel": "statepassing",
+        "reason": "ok"
+      },
+      "smoke_wall_sec": 1.4265768101904541,
+      "trainable_parameter_count": 5580348
+    }
+  },
+  "contract": {
+    "d_model": 192,
+    "future_seed_scale": 1.0,
+    "gdn_expand_v": 2.0,
+    "head_dim": 32,
+    "heads": 6,
+    "layers": 10,
+    "loops_smoke": 2
+  },
+  "cuda_visible_devices": "0",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "torch": "2.7.0+cu126"
+}

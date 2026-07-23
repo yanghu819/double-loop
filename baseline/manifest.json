@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "canonical",
-  "updated_at": "2026-07-23T12:30:00+08:00",
+  "updated_at": "2026-07-23T17:35:00+08:00",
   "claim": "FutureSeed transfers terminal recurrent state across layers; depth loops add recurrent compute.",
   "canonical": {
     "runner": "experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py",
@@ -16,6 +16,13 @@
     "summarizer": "scripts/summarize_sudoku_backbone_benchmark.py",
     "environment_lock": "experiments/rwkv_fs_sudoku/uv.lock",
     "fla_wheel": "wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"
+  },
+  "evidence": {
+    "training_source_sha": "8c7c7596987b365877603419ad4a7e0b91486119",
+    "benchmark": "runs/sudoku-backbone-benchmark-20260723T061503Z-manual-8c7c759",
+    "preflight": "runs/sudoku-backbone-preflight-20260723T053346Z-0ce0d93",
+    "report": "research/reports/experiments/futureseed-sudoku-four-backbone-baseline-20260723.md",
+    "shared_source_snapshot_sha256": "2e4defe0907602894f138f24ad1002402691b63263651c963e16eb5bf7794598"
   },
   "supported_benchmark_backbones": {
     "rwkv": "local RWKV7 state-passing CUDA",
@@ -60,4 +67,3 @@
     }
   ]
 }
-

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "event": "gpu1_lease_expired_after_kda_step500_checkpoint",
+  "source_sha": "8c7c7596987b365877603419ad4a7e0b91486119",
+  "original_suite_pid": 5750,
+  "checkpoint": "/huyang2/double-loop/models/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/checkpoints/train_state_step000500.pt",
+  "checkpoint_step": 500,
+  "final_eval_recovery": {
+    "pid": 117,
+    "optimizer_steps_executed": 0,
+    "quality_source": "exact step500 checkpoint",
+    "deterministic": true
+  },
+  "memory_recovery": {
+    "run_name": "sudoku-backbone-kda-memory-probe-s501-20260723T0920Z-8c7c759",
+    "pid": 818,
+    "probe_optimizer_steps": 1,
+    "microbatch": 32,
+    "grad_accum_steps": 4,
+    "peak_allocated_mib": 7807.97412109375,
+    "peak_reserved_mib": 8082.0,
+    "used_for_quality": false,
+    "used_for_speed": false
+  },
+  "raw_evidence": [
+    "suite.log",
+    "kda_final_eval_resume.log",
+    "kda_memory_probe.log",
+    "kda_memory_probe.env",
+    "kda_lease_resume_before_memory_recovery.json",
+    "resummarize.log"
+  ]
+}

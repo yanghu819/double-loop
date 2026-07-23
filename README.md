@@ -55,6 +55,22 @@ time, and peak memory are reported rather than hidden.
 wheel. `rwkv` uses the local RWKV7 state-passing CUDA kernel. The launcher
 refuses automatic kernel fallback.
 
+The canonical GPU1 step-500 result is:
+
+| Backbone | Params | Train CE | Mixed loop5 exact | 46-50 exact | 51-64 exact | Sec/step | Peak |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| RWKV | 5.580M | 1.0432 | 0.0078 | 0.3359 | 0 | **3.87** | 9.04 GiB |
+| GDN | 5.980M | **1.0001** | **0.0215** | **0.8770** | 0 | 4.93 | **7.04 GiB** |
+| GDN2 | 6.946M | 1.0114 | 0.0195 | 0.7754 | 0 | 5.45 | 9.08 GiB |
+| KDA | 5.852M | 1.0065 | 0.0176 | 0.7441 | 0 | 5.55 | 7.62 GiB |
+
+GDN is the retained scale carrier: it gives the strongest finite-budget
+opening and has the demonstrated 30k-step clean scaling result above. This
+table does not claim a universal architecture winner; all four remain at zero
+full-board exact beyond 50 blanks at this short budget. Full provenance,
+loop curves, same-puzzle cases, and the lease-recovery note are in
+[`research/reports/experiments/futureseed-sudoku-four-backbone-baseline-20260723.md`](research/reports/experiments/futureseed-sudoku-four-backbone-baseline-20260723.md).
+
 ```bash
 CUDA_VISIBLE_DEVICES=0 ./run.sh baseline_preflight
 CUDA_VISIBLE_DEVICES=0 ./run.sh benchmark rwkv

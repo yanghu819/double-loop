@@ -1,0 +1,28 @@
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-memory-probe-s501-20260723T0920Z-8c7c759
+git_sha=8c7c7596987b365877603419ad4a7e0b91486119
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=kda rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=501 holes=53
+resumed_train_checkpoint path=/huyang2/double-loop/models/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/checkpoints/train_state_step000500.pt step=500 reason=eval_checkpoint
+[checkpoint_eval step=0501 holes53] loop5 exact=0.0625 blank=0.5318
+[train_checkpoint step=0501] path=/huyang2/double-loop/models/sudoku-backbone-kda-memory-probe-s501-20260723T0920Z-8c7c759/checkpoints/train_state_step000501.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5034, early=0.5093, late=0.5033, early_late_gap=+0.0059
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.532, fs_decay=0.00, fs_raw_rms=0.248, fs_raw_rms_std=0.010, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5179, early=0.5346, late=0.4917, early_late_gap=+0.0429
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.532, fs_decay=0.00, fs_raw_rms=0.241, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5224, early=0.5312, late=0.5167, early_late_gap=+0.0145
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.532, fs_decay=0.00, fs_raw_rms=0.239, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5202, early=0.5312, late=0.5117, early_late_gap=+0.0195
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.532, fs_decay=0.00, fs_raw_rms=0.238, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5218, early=0.5329, late=0.5100, early_late_gap=+0.0229
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.532, fs_decay=0.00, fs_raw_rms=0.238, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=32 seed=1051
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-memory-probe-s501-20260723T0920Z-8c7c759/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-memory-probe-s501-20260723T0920Z-8c7c759/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-memory-probe-s501-20260723T0920Z-8c7c759/output/futureseed_loop_case_seed52.html

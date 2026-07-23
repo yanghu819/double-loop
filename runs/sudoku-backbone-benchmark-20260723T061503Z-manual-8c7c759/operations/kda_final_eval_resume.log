@@ -1,0 +1,49 @@
+benchmark_backbone=kda
+internal_backbone=kda
+steps=500
+run_name=sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759
+mode=full
+run_dir=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759
+git_sha=8c7c7596987b365877603419ad4a7e0b91486119
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=kda rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+resumed_train_checkpoint path=/huyang2/double-loop/models/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/checkpoints/train_state_step000500.pt step=500 reason=eval_checkpoint
+
+full-board metrics
+loop=1 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4881, early=0.4846, late=0.4922, early_late_gap=-0.0076
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.531, fs_decay=0.00, fs_raw_rms=0.249, fs_raw_rms_std=0.010, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0176, valid=0.0176, solved=0.0176, blank_acc=0.4999, early=0.4973, late=0.4983, early_late_gap=-0.0010
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.531, fs_decay=0.00, fs_raw_rms=0.242, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0176, valid=0.0176, solved=0.0176, blank_acc=0.5013, early=0.4976, late=0.5013, early_late_gap=-0.0037
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.531, fs_decay=0.00, fs_raw_rms=0.240, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0176, valid=0.0176, solved=0.0176, blank_acc=0.5018, early=0.4983, late=0.5017, early_late_gap=-0.0034
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.531, fs_decay=0.00, fs_raw_rms=0.239, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0176, valid=0.0176, solved=0.0176, blank_acc=0.5018, early=0.4985, late=0.5017, early_late_gap=-0.0032
+        fs_gate=0.498, fs_update=1.000, fs_state_norm=22.531, fs_decay=0.00, fs_raw_rms=0.239, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.7441, valid=0.7441, solved=0.7441, blank_acc=0.9905, early=0.9895, late=0.9904, early_late_gap=-0.0010
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5234, early=0.5217, late=0.5208, early_late_gap=+0.0009
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4687, early=0.4643, late=0.4659, early_late_gap=-0.0016
+
+case-bank artifacts
+official_b46_50 exact=0.7539 blank_acc=0.9903 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 0}
+  index=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5180 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4668 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759 score=0.017578125 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/.worktrees/final-baseline-sparse-16f56e8/runs/sudoku-backbone-kda-s500-20260723T061503Z-manual-8c7c759

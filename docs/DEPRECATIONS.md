@@ -29,6 +29,13 @@ These paths receive fixes and define reproducible claims:
 - Official FLA GDN is the public `gdn` benchmark arm. It is not silently mixed
   with the local `BACKBONE=gdn` scale implementation.
 
+The final matched benchmark is archived at
+`runs/sudoku-backbone-benchmark-20260723T061503Z-manual-8c7c759/`.
+At 500 steps, official GDN has the best train CE, mixed exact, easy-range
+closure, and official-FLA memory cost. RWKV is faster per step but opens less;
+GDN2 and KDA do not justify separate scale branches. All four remain supported
+for fair comparison.
+
 ## Deprecated Mechanisms
 
 Do not launch new experiments from these paths without a new mechanism-level
@@ -67,4 +74,3 @@ Use `./run.sh baseline`, `./run.sh baseline_preflight`, or
 `runs/`, `research/reports/experiments/`, `plans.md`, and `leaderboard.csv` are
 append-only evidence stores. A row marked `discarded`, `failed`, or `aborted`
 must not be promoted back to the main line just because one metric looked good.
-

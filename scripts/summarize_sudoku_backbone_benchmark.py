@@ -30,6 +30,10 @@ COLORS = {
     "gdn2": "#b04a3a",
     "kda": "#2869a6",
 }
+TRACKING_ONLY_PATCHES = {
+    "leaderboard.csv",
+    "runs/visualization_index.html",
+}
 EXPECTED = {
     "size": 9,
     "batch": 32,
@@ -145,6 +149,12 @@ def primary_case(run_dir: Path) -> dict[str, Any]:
     }
 
 
+def source_patch_files(run_dir: Path) -> list[str]:
+    patch_path = run_dir / "source.patch"
+    text = patch_path.read_text(encoding="utf-8", errors="replace")
+    return sorted(set(re.findall(r"^diff --git a/(.+?) b/", text, flags=re.MULTILINE)))
+
+
 def parameter_count(
     public_name: str,
     train: dict[str, Any],
@@ -190,6 +200,14 @@ def extract_run(
 
     checkpoint_path = run_dir / "output" / f"checkpoint_eval_step{steps:06d}.json"
     checkpoint = read_json(checkpoint_path)
+    config = read_json(run_dir / "config.json")
+    patch_files = source_patch_files(run_dir)
+    unexpected_patch_files = sorted(set(patch_files) - TRACKING_ONLY_PATCHES)
+    if unexpected_patch_files:
+        raise AssertionError(
+            f"{public_name} has model/source changes outside tracking files: "
+            f"{unexpected_patch_files}"
+        )
     loops = []
     for loop in range(1, int(args["max_loops"]) + 1):
         row = metrics["eval_clean"][f"loop{loop}"]
@@ -217,7 +235,9 @@ def extract_run(
         "color": COLORS[public_name],
         "run_name": run_name,
         "run_dir": run_dir,
-        "git_sha": read_json(run_dir / "config.json")["git_sha"],
+        "git_sha": config["git_sha"],
+        "git_dirty": bool(config.get("git_dirty")),
+        "source_patch_files": patch_files,
         "parameter_count": parameter_count(public_name, train, preflight),
         "train_ce": float(checkpoint["train"]["ce_loss"]),
         "train_loop1_ce": float(checkpoint["train"]["loop1_loss"]),
@@ -225,6 +245,7 @@ def extract_run(
         "train_wall_sec": elapsed,
         "train_sec_per_step": elapsed / steps,
         "peak_allocated_mib": float(train["cuda_max_memory_allocated_mb"]),
+        "memory_measurement": train.get("cuda_memory_measurement"),
         "fixed_holes53": checkpoint["eval_by_holes"]["holes53"]["eval_clean"]["loop5"],
         "loops": loops,
         "loop_gain_exact": loops[-1]["exact"] - loops[0]["exact"],
@@ -355,9 +376,23 @@ def render_html(payload: dict[str, Any]) -> str:
         f"<td>{arm['label']}</td>"
         f"<td>{html.escape(str(arm['runtime'].get('implementation', 'official FLA strict runtime')))}</td>"
         f"<td>{arm['git_sha'][:12]}</td>"
+        f"<td>{'clean' if not arm['source_patch_files'] else 'tracking only'}</td>"
         f"<td>{html.escape(str(payload['preflight']['backbones'][arm['key']]['runtime'].get('kernel', 'chunk + Triton conv')))}</td>"
         "</tr>"
         for arm in arms
+    )
+    memory_notes = "".join(
+        f"<li>{arm['label']}: peak allocation recovered from "
+        f"<code>{html.escape(str(arm['memory_measurement']['source_run']))}</code> using "
+        f"{int(arm['memory_measurement']['probe_optimizer_steps'])} matched optimizer step; "
+        "quality and speed remain from the original step-500 run.</li>"
+        for arm in arms
+        if arm["memory_measurement"]
+    )
+    memory_note_html = (
+        f"<p class=\"muted\">Lease-recovery instrumentation:</p><ul>{memory_notes}</ul>"
+        if memory_notes
+        else ""
     )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -383,7 +418,7 @@ code{{background:#edf1f3;padding:2px 5px;border-radius:3px}}@media(max-width:110
 <h2>Learning and loops</h2><div class="charts">{line_chart(arms, "curve", "step", "ce", "Training CE")}{line_chart(arms, "loops", "loop", "exact", "Full-board exact by loop")}{line_chart(arms, "loops", "loop", "blank_acc", "Blank accuracy by loop")}</div>
 <h2>Official blank ranges</h2><div class="band"><table><thead><tr><th rowspan="2">blanks</th>{range_headers}</tr><tr>{range_subheaders}</tr></thead><tbody>{''.join(range_rows)}</tbody></table></div>
 <h2>Same puzzle, every loop</h2><div class="cases">{cases}</div>
-<h2>Implementation provenance</h2><div class="band"><table><thead><tr><th>backbone</th><th>implementation</th><th>source SHA</th><th>kernel</th></tr></thead><tbody>{provenance_rows}</tbody></table><p>Official FLA wheel SHA256: <code>{html.escape(payload["fla_gate"]["provenance"]["wheel_sha256"])}</code>. Audited FLA source and CUDA reference/backward checks passed before training.</p></div>
+<h2>Implementation provenance</h2><div class="band"><table><thead><tr><th>backbone</th><th>implementation</th><th>source SHA</th><th>source patch</th><th>kernel</th></tr></thead><tbody>{provenance_rows}</tbody></table><p>Official FLA wheel SHA256: <code>{html.escape(payload["fla_gate"]["provenance"]["wheel_sha256"])}</code>. Audited FLA source and CUDA reference/backward checks passed before training. Any dirty patch is restricted to generated leaderboard/visualization tracking files; model and benchmark source are unchanged.</p>{memory_note_html}</div>
 <h2>Interpretation boundary</h2><div class="band"><p>This benchmark compares FutureSeed-enabled recurrent carriers at one finite budget. It is not a with/without-FutureSeed ablation and it is not evidence about each architecture's asymptotic ceiling. The separate matched no-FutureSeed result supports the causal FutureSeed claim.</p></div>
 </main></body></html>"""
 
@@ -426,12 +461,13 @@ def write_csv(path: Path, arms: list[dict[str, Any]]) -> None:
         "loop1_to_loop5_exact_gain",
         "sec_per_step",
         "peak_allocated_mib",
+        "peak_memory_source",
         "official_46_50_exact",
         "official_51_55_exact",
         "official_56_64_exact",
     ]
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for arm in arms:
             writer.writerow(
@@ -446,6 +482,11 @@ def write_csv(path: Path, arms: list[dict[str, Any]]) -> None:
                     "loop1_to_loop5_exact_gain": arm["loop_gain_exact"],
                     "sec_per_step": arm["train_sec_per_step"],
                     "peak_allocated_mib": arm["peak_allocated_mib"],
+                    "peak_memory_source": (
+                        arm["memory_measurement"]["source_run"]
+                        if arm["memory_measurement"]
+                        else "uninterrupted_run"
+                    ),
                     "official_46_50_exact": arm["ranges"]["b46_50"]["loop5"]["label_exact"],
                     "official_51_55_exact": arm["ranges"]["b51_55"]["loop5"]["label_exact"],
                     "official_56_64_exact": arm["ranges"]["b56_64"]["loop5"]["label_exact"],
@@ -523,12 +564,23 @@ def main() -> None:
         f"{arm['train_sec_per_step']:.2f}s | {arm['peak_allocated_mib'] / 1024:.2f}GiB |"
         for arm in arms
     )
+    recovered_memory = [
+        f"{arm['label']} peak memory was recovered from "
+        f"`{arm['memory_measurement']['source_run']}` with one matched optimizer step; "
+        "its quality and speed remain from the original step-500 run."
+        for arm in arms
+        if arm["memory_measurement"]
+    ]
+    recovered_memory_note = (
+        "\n" + "\n".join(recovered_memory) + "\n" if recovered_memory else ""
+    )
     (out_dir / "README.md").write_text(
         "# FutureSeed Sudoku Backbone Benchmark\n\n"
         f"Decision: {payload['decision']}\n\n"
         "| Backbone | Params | Train CE | Mixed exact | Mixed blank | Sec/step | Peak |\n"
         "|---|---:|---:|---:|---:|---:|---:|\n"
         f"{summary_rows}\n\n"
+        f"{recovered_memory_note}"
         "Open `index.html` for official blank ranges, loop curves, kernel provenance, and same-puzzle visualizations.\n",
         encoding="utf-8",
     )
@@ -537,4 +589,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

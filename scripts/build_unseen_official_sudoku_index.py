@@ -55,6 +55,80 @@ def simulate_stage(
     return int(seen.sum()) - unique_before
 
 
+def blank_histogram(
+    blank_counts: np.ndarray, rows: np.ndarray, lo: int, hi: int
+) -> dict[str, int]:
+    selected_counts = blank_counts[rows]
+    return {
+        str(blank_count): int((selected_counts == blank_count).sum())
+        for blank_count in range(lo, hi + 1)
+    }
+
+
+def select_histogram_matched_rows(
+    *,
+    unseen: np.ndarray,
+    target_candidates: np.ndarray,
+    blank_counts: np.ndarray,
+    target_min: int,
+    target_max: int,
+    output_size: int,
+    selection_seed: int,
+) -> np.ndarray:
+    if output_size <= 0 or output_size > len(unseen):
+        raise ValueError(
+            f"Histogram-matched output size must be in [1, {len(unseen)}], "
+            f"got {output_size}."
+        )
+    values = np.arange(target_min, target_max + 1, dtype=np.int16)
+    target_counts = np.array(
+        [(blank_counts[target_candidates] == value).sum() for value in values],
+        dtype=np.int64,
+    )
+    unseen_counts = np.array(
+        [(blank_counts[unseen] == value).sum() for value in values],
+        dtype=np.int64,
+    )
+    exact_quotas = target_counts.astype(np.float64) * (
+        float(output_size) / float(target_counts.sum())
+    )
+    quotas = np.floor(exact_quotas).astype(np.int64)
+    remainder = output_size - int(quotas.sum())
+    fractional_order = np.argsort(
+        -(exact_quotas - quotas), kind="stable"
+    )
+    quotas[fractional_order[:remainder]] += 1
+    unavailable = values[quotas > unseen_counts]
+    if unavailable.size:
+        details = {
+            int(value): {
+                "quota": int(quotas[index]),
+                "available": int(unseen_counts[index]),
+            }
+            for index, value in enumerate(values)
+            if quotas[index] > unseen_counts[index]
+        }
+        raise ValueError(
+            "Histogram-matched output exceeds unseen availability for blank "
+            f"counts {unavailable.tolist()}: {details}"
+        )
+
+    rng = np.random.default_rng(selection_seed)
+    pieces: list[np.ndarray] = []
+    unseen_blank_counts = blank_counts[unseen]
+    for value, quota in zip(values.tolist(), quotas.tolist()):
+        rows = unseen[unseen_blank_counts == value]
+        if quota == len(rows):
+            chosen = rows
+        else:
+            chosen = rng.choice(rows, size=quota, replace=False)
+        pieces.append(np.asarray(chosen, dtype=np.int64))
+    selected = np.sort(np.concatenate(pieces))
+    if len(selected) != output_size or len(np.unique(selected)) != output_size:
+        raise RuntimeError("Histogram-matched unseen selection is not unique.")
+    return selected
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, required=True)
@@ -64,6 +138,16 @@ def main() -> None:
     parser.add_argument("--target-min", type=int, default=51)
     parser.add_argument("--target-max", type=int, default=64)
     parser.add_argument("--chunk-size", type=int, default=500_000)
+    parser.add_argument(
+        "--match-full-blank-histogram-size",
+        type=int,
+        default=0,
+        help=(
+            "If positive, select this many strict-unseen rows while matching "
+            "the full target pool's per-blank-count histogram."
+        ),
+    )
+    parser.add_argument("--selection-seed", type=int)
     args = parser.parse_args()
 
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
@@ -124,13 +208,32 @@ def main() -> None:
     unseen = target_candidates[~seen[target_candidates]]
     if unseen.size == 0:
         raise RuntimeError("No unseen target rows remain.")
-    if bool((np.diff(unseen) <= 0).any()):
+    selection_seed = (
+        int(args.selection_seed)
+        if args.selection_seed is not None
+        else seed + 2000
+    )
+    if args.match_full_blank_histogram_size > 0:
+        output_rows = select_histogram_matched_rows(
+            unseen=unseen,
+            target_candidates=target_candidates,
+            blank_counts=blank_counts,
+            target_min=args.target_min,
+            target_max=args.target_max,
+            output_size=args.match_full_blank_histogram_size,
+            selection_seed=selection_seed,
+        )
+        sampling_mode = "strict_unseen_histogram_matched"
+    else:
+        output_rows = unseen
+        sampling_mode = "all_strict_unseen"
+    if bool((np.diff(output_rows) <= 0).any()):
         raise RuntimeError("Generated unseen indices are not strictly increasing.")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    np.save(args.output, unseen)
+    np.save(args.output, output_rows)
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "checkpoint": str(args.checkpoint),
         "checkpoint_sha256": sha256_file(args.checkpoint),
         "saved_step": saved_step,
@@ -147,6 +250,28 @@ def main() -> None:
         "target_unique_rows_seen": int(seen[target_candidates].sum()),
         "target_unseen_rows": int(len(unseen)),
         "target_seen_fraction": float(seen[target_candidates].mean()),
+        "target_blank_histogram": blank_histogram(
+            blank_counts,
+            target_candidates,
+            args.target_min,
+            args.target_max,
+        ),
+        "target_blank_mean": float(blank_counts[target_candidates].mean()),
+        "strict_unseen_blank_histogram": blank_histogram(
+            blank_counts, unseen, args.target_min, args.target_max
+        ),
+        "strict_unseen_blank_mean": float(blank_counts[unseen].mean()),
+        "sampling_mode": sampling_mode,
+        "selection_seed": (
+            selection_seed
+            if args.match_full_blank_histogram_size > 0
+            else None
+        ),
+        "output_rows": int(len(output_rows)),
+        "output_blank_histogram": blank_histogram(
+            blank_counts, output_rows, args.target_min, args.target_max
+        ),
+        "output_blank_mean": float(blank_counts[output_rows].mean()),
         "output_indices": str(args.output),
         "output_indices_sha256": sha256_file(args.output),
     }

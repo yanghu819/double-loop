@@ -13,7 +13,9 @@ export FLA_DISABLE_BACKEND_DISPATCH=1
 export FLA_CONV_BACKEND=triton
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$REPO_ROOT/.cache}"
 export TRITON_CACHE_DIR="${TRITON_CACHE_DIR:-$REPO_ROOT/.cache/triton}"
+export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-$REPO_ROOT/.cache/torchinductor}"
 export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$REPO_ROOT/.cache/torch_extensions}"
+export TMPDIR="${TMPDIR:-$REPO_ROOT/.cache/tmp}"
 PYTHON_EXTRA_PATH="${PYTHON_EXTRA_PATH:-$REPO_ROOT/.cache/python-extra-pylib}"
 export PYTHONPATH="$PYTHON_EXTRA_PATH${PYTHONPATH:+:$PYTHONPATH}"
 PYTHON_BIN="${PYTHON_BIN:-/opt/conda/bin/python}"
@@ -23,7 +25,13 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
   exit 4
 fi
 
-mkdir -p "$OUT_DIR"
+mkdir -p \
+  "$OUT_DIR" \
+  "$XDG_CACHE_HOME" \
+  "$TRITON_CACHE_DIR" \
+  "$TORCHINDUCTOR_CACHE_DIR" \
+  "$TORCH_EXTENSIONS_DIR" \
+  "$TMPDIR"
 "$PYTHON_BIN" "$REPO_ROOT/experiments/rwkv_fs_sudoku/check_fla_delta_backbones.py" \
   --backbone all \
   --check all \

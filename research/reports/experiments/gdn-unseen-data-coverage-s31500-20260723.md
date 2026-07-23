@@ -3,14 +3,18 @@
 ## 1. Metainfo
 
 - Plan ID: `P-SCALE-036`
-- Status: in progress
+- Status: done
 - Date: 2026-07-23
 - Machine: AIStation GPU1 A800 only
 - Parent: clean FutureSeed-GDN exact step30000 train-state checkpoint
 - Branch: `codex/gpu1-data-coverage`
-- Training source SHA: `4ef23df55f3db517a7da5041f3385b9a959ba031`
+- Control source SHA: `4ef23df55f3db517a7da5041f3385b9a959ba031`
+- Matched-unseen source SHA:
+  `648ee75f94c794e11174008e6913c4f807866c60`
 - Formal worktree:
   `/huyang2/double-loop/.worktrees/pscale036-formal-4ef23df-20260723`
+- Final matched-unseen worktree:
+  `/huyang2/double-loop/.worktrees/pscale036-matched-resume-648ee75-20260723`
 
 ## 2. Hypothesis
 
@@ -126,12 +130,48 @@ First formal unseen attempt:
 Corrected formal unseen pool:
 
 - strict unseen rows remain the source set;
-- deterministically select `1,000,000` rows with selection seed `2052`;
+- deterministically select `990,000` rows with selection seed `2052`;
 - match the full control pool's exact per-blank-count proportions across
   blank counts 51 through 64 using largest-remainder integer allocation;
 - record the input/output histograms and output index SHA256 in a schema-v2
   manifest;
 - rerun from the original step30000 checkpoint, not from the invalid attempt.
+
+The initial requested size of `1,000,000` was rejected before writing an
+index: matching the control histogram would require 2,229 blank52 rows, while
+only 2,219 strict-unseen blank52 rows exist. The feasible `990,000`-row build
+passes every quota and has:
+
+- output mean blanks `55.991736`, versus control `55.991735`;
+- output index SHA256
+  `75bd706d38de29cb23b04e8033066af3e29b31fad6d8f287049e64efb6997f3c`;
+- exact RNG/checkpoint reconstruction match;
+- source SHA `648ee75f94c794e11174008e6913c4f807866c60`.
+
+Matched step30500 leg:
+
+- run:
+  `gdn-data-coverage-unseen-histmatched990k-s30500-20260723T1220Z-648ee75`;
+- launch PID: `6351`;
+- launch log:
+  `/huyang2/double-loop/artifacts/launch/p036-unseen-matched-s30500-20260723T1220Z/train.log`;
+- parent: original clean step30000 checkpoint;
+- state at launch: clean detached source, `git_dirty=0`, GPU1 only.
+
+Matched step30500 to step31500 leg:
+
+- run:
+  `gdn-data-coverage-unseen-histmatched990k-resume30500-s31500-20260723T133526Z-648ee75`;
+- launcher PID: `428`;
+- launch log:
+  `/huyang2/double-loop/artifacts/launch/p036-unseen-matched-resume-20260723T133526Z/train.log`;
+- parent: exact matched-unseen step30500 train-state checkpoint;
+- step31000 and step31500 fixed evaluations were predeclared before launch;
+- completed with exit code `0` on GPU1;
+- metadata archive:
+  `/huyang2/double-loop/artifacts/p036-unseen-matched-s31500-metadata-20260723T133526Z.tgz`;
+- archive SHA256:
+  `ef78c422bb0677fe1e65a2dc65e2d95a923acc6641bf5c20ff8add2d3fef19ad`.
 
 ## 7. Results
 
@@ -156,18 +196,74 @@ Relative to the clean step30000 parent, control changes mixed exact
 `0.3848 -> 0.3086`. Blind continuation from the original replacement pool
 therefore does not extend the clean scaling curve at this endpoint.
 
-The distribution-matched strict unseen arm is pending; no mechanism decision
-is valid until its endpoint and official evaluation complete.
+The distribution-matched strict unseen arm also completed:
+
+| Readout | Parent step30000 | Control step31500 | Unseen step31500 | Unseen-control |
+|---|---:|---:|---:|---:|
+| mixed loop5 exact | `0.4805` | `0.4590` | `0.4551` | `-0.0039` |
+| official 46-50 loop5 exact | `1.0000` | `1.0000` | `1.0000` | `+0.0000` |
+| official 51-55 loop5 exact | `0.6152` | `0.6094` | `0.6367` | `+0.0273` |
+| official 56-64 loop5 exact | `0.3848` | `0.3086` | `0.3711` | `+0.0625` |
+
+The separate 256-board case-bank batch repeats the direction:
+
+| Case-bank readout | Parent | Control | Unseen | Unseen-control |
+|---|---:|---:|---:|---:|
+| 51-55 loop5 exact | `0.6289` | `0.5898` | `0.6406` | `+0.0508` |
+| 56-64 loop5 exact | `0.3516` | `0.3086` | `0.3789` | `+0.0703` |
+
+Across the two different hard held-out batches, control solves `237/768`
+boards and unseen solves `287/768`: `+50` boards, or `+0.0651` absolute.
+An unpaired binomial normal approximation gives a 95% interval of
+`[+0.0178,+0.1124]`. This approximation does not use the favorable
+same-board pairing because per-board formal-eval flags were not persisted.
+
+Fixed-hole exact at the final unseen endpoint is:
+
+- holes53: `0.4824`;
+- holes60: `0.4824`;
+- holes64: `0.4590`.
+
+The unseen mixed loop1 through loop5 exact curve is
+`0.0234/0.1289/0.3496/0.4355/0.4551`. The two matched-unseen legs take
+`1898.3 + 3495.6 = 5393.9s`, versus `5224.2s` for control, only `3.2%`
+more wall time. Both allocate `44527MB` CUDA memory.
+
+Visual inspection shows both the value and the remaining limit of loops:
+
+- official 56-64 case `b0048`, with 60 hidden cells, changes
+  `36 -> 28 -> 10 -> 0 -> 0` wrong cells and
+  `26 -> 23 -> 19 -> 0 -> 0` conflicts. This is real iterative correction,
+  not merely higher local accuracy.
+- official 56-64 hard case `b0041`, with 56 hidden cells, changes
+  `27 -> 9 -> 3 -> 4 -> 6` wrong cells. Later loops undo part of the useful
+  loop3 state, so recurrent stability is still unsolved.
 
 ## 8. Decision
 
-Success requires unseen-data to beat control by at least `+0.03` on mixed or
-official 56-64 loop5 exact while preserving official 51-55 within `0.03`.
-If all deltas are below `0.01`, stop this sampling direction rather than sweep
-samplers, seeds, or curriculum weights.
+The arm passes the predeclared mechanism gate: official 56-64 exact improves
+`+0.0625` over matched control, official 51-55 is preserved, and the second
+held-out batch repeats both positive directions.
+
+The claim must remain narrow. Fresh independent rows prevent most of the
+hard-tail degradation caused by blind replacement-sampled continuation, but
+they do not push the scalar frontier beyond the step30000 parent: unseen is
+still `-0.0039` behind control on mixed exact and `-0.0137` behind the parent
+on official 56-64 exact. Therefore:
+
+- effective independent coverage is a real scaling variable;
+- nominal optimizer steps over repeated rows overstate useful data scale;
+- late continuation on fresh rows is not by itself the final scaling recipe;
+- do not sweep sampler seeds, subset sizes, or blank weights.
+
+The next high-information data experiment should change the training regime
+from the start: deterministic epoch-style fresh coverage on the same clean
+backbone, with the existing replacement sampler as the single matched control.
+That asks whether better data scaling extends the frontier rather than merely
+reducing late-stage forgetting.
 
 ## 9. Publication Record
 
-Not a submission artifact. A positive result would support a clean
-data-efficiency claim: effective independent coverage matters beyond nominal
-token count for recurrent reasoning scale.
+Not a submission artifact and no tag: the primary scalar score is below
+`0.50`. The result supports a clean data-efficiency mechanism claim, but not
+an overall new best checkpoint.

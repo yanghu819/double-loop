@@ -63,6 +63,22 @@ def summarize(label: str, result_path: Path, out_dir: Path) -> dict[str, Any]:
         }
         for bucket in BUCKETS
     }
+    case_bank = {}
+    for bucket in BUCKETS:
+        case_path = (
+            run_dir
+            / "output"
+            / "case_bank"
+            / f"official_{bucket}"
+            / "cases.json"
+        )
+        if case_path.exists():
+            summary = read_json(case_path)["summary"]
+            case_bank[bucket] = {
+                "exact": float(summary["final_exact"]),
+                "blank_acc": float(summary["final_blank_acc"]),
+                "eval_n": int(summary["eval_n"]),
+            }
     train = metrics.get("train", {})
     return {
         "label": label,
@@ -73,6 +89,7 @@ def summarize(label: str, result_path: Path, out_dir: Path) -> dict[str, Any]:
         ),
         "loops": loops,
         "official": official,
+        "case_bank": case_bank,
         "train_sec": train.get("train_sec"),
         "cuda_max_memory_allocated_mb": train.get(
             "cuda_max_memory_allocated_mb"
@@ -173,6 +190,22 @@ def render(payload: dict[str, Any]) -> str:
             "</tr>"
         )
 
+    case_rows = []
+    for bucket in ("b51_55", "b56_64"):
+        parent = arms[0]["case_bank"][bucket]
+        ctl = control["case_bank"][bucket]
+        uns = unseen["case_bank"][bucket]
+        case_rows.append(
+            "<tr>"
+            f"<td>{BUCKET_LABELS[bucket]}</td>"
+            f"<td>{parent['exact']:.4f}</td>"
+            f"<td>{ctl['exact']:.4f}</td>"
+            f"<td>{uns['exact']:.4f}</td>"
+            f"<td>{signed(uns['exact'] - ctl['exact'])}</td>"
+            f"<td>{uns['eval_n']}</td>"
+            "</tr>"
+        )
+
     run_rows = []
     for arm in arms:
         train_sec = arm["train_sec"]
@@ -232,7 +265,7 @@ Only the training row pool differs.</p>
 <section class="band kpis">
 <div class="kpi"><b>{manifest["target_rows"]:,}</b><span>51-64 blank rows</span></div>
 <div class="kpi"><b>{manifest["target_seen_fraction"]:.1%}</b><span>actually seen by step30000</span></div>
-<div class="kpi"><b>{manifest["target_unseen_rows"]:,}</b><span>strict unseen rows</span></div>
+<div class="kpi"><b>{manifest["output_rows"]:,}</b><span>matched unseen rows used</span></div>
 <div class="kpi"><b>{signed(decision["hard_delta"])}</b><span>unseen-control hard exact</span></div>
 </section>
 <section class="band decision">
@@ -246,6 +279,13 @@ Only the training row pool differs.</p>
 <th>range</th><th>parent exact</th><th>control exact</th><th>unseen exact</th>
 <th>unseen-control</th><th>control blank acc</th><th>unseen blank acc</th>
 </tr></thead><tbody>{"".join(official_rows)}</tbody></table></section>
+<h2>Second fixed evaluation batch</h2>
+<section class="band"><p>This separate 256-board batch checks whether the
+hard-tail direction repeats on different held-out examples.</p>
+<table><thead><tr>
+<th>range</th><th>parent exact</th><th>control exact</th><th>unseen exact</th>
+<th>unseen-control</th><th>boards</th>
+</tr></thead><tbody>{"".join(case_rows)}</tbody></table></section>
 <h2>Run provenance</h2>
 <section class="band"><table><thead><tr>
 <th>arm</th><th>mixed exact</th><th>mixed blank acc</th><th>train sec</th>
@@ -287,6 +327,14 @@ def main() -> None:
         unseen["official"]["b51_55"]["exact"]
         - control["official"]["b51_55"]["exact"]
     )
+    case_hard_delta = (
+        unseen["case_bank"]["b56_64"]["exact"]
+        - control["case_bank"]["b56_64"]["exact"]
+    )
+    case_mid_delta = (
+        unseen["case_bank"]["b51_55"]["exact"]
+        - control["case_bank"]["b51_55"]["exact"]
+    )
     success = (mixed_delta >= 0.03 or hard_delta >= 0.03) and mid_delta >= -0.03
     low_signal = max(abs(mixed_delta), abs(hard_delta), abs(mid_delta)) < 0.01
     if success:
@@ -311,6 +359,8 @@ def main() -> None:
             "mixed_delta": mixed_delta,
             "hard_delta": hard_delta,
             "mid_delta": mid_delta,
+            "case_hard_delta": case_hard_delta,
+            "case_mid_delta": case_mid_delta,
         },
     }
     with (args.out_dir / "comparison.json").open("w", encoding="utf-8") as handle:
@@ -323,6 +373,8 @@ def main() -> None:
         f"- mixed loop5 unseen-control: `{mixed_delta:+.4f}`\n"
         f"- official 56-64 unseen-control: `{hard_delta:+.4f}`\n"
         f"- official 51-55 unseen-control: `{mid_delta:+.4f}`\n\n"
+        f"- second-batch 56-64 unseen-control: `{case_hard_delta:+.4f}`\n"
+        f"- second-batch 51-55 unseen-control: `{case_mid_delta:+.4f}`\n\n"
         "Open `index.html` for loop curves, official blank-range results, "
         "provenance, and hard-case links.\n",
         encoding="utf-8",

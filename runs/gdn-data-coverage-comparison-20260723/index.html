@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GDN Data-Coverage Continuation</title>
+<style>
+:root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+body { margin: 0; background: #f3f4f6; color: #111827; }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 20px 60px; }
+h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }
+h2 { margin-top: 30px; font-size: 20px; letter-spacing: 0; }
+p { line-height: 1.6; }
+.band { background: white; border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 18px; margin-top: 16px; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.kpi { border-left: 4px solid #2563eb; padding: 8px 12px; background: #f9fafb; }
+.kpi b { display: block; font-size: 24px; }
+.kpi span { color: #4b5563; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; border-bottom: 1px solid #e5e7eb; padding: 10px 8px; }
+th:first-child, td:first-child { text-align: left; }
+th { color: #374151; font-size: 13px; }
+.legend { display: flex; gap: 18px; margin-bottom: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 18px; height: 4px; }
+svg { width: 100%; height: auto; }
+.decision { border-left-color: #15803d; }
+code { background: #e5e7eb; padding: 2px 5px; border-radius: 3px; }
+a { color: #1d4ed8; }
+@media (max-width: 760px) { .kpis { grid-template-columns: 1fr 1fr; }
+  table { font-size: 12px; } th, td { padding: 8px 4px; } }
+</style>
+</head>
+<body><main>
+<h1>Exact unseen-data coverage continuation</h1>
+<p>Same step30000 FutureSeed-GDN checkpoint, optimizer, RNG state, model,
+five-loop all-loop CE, batch, learning rate, CUDA kernel, and evaluation.
+Only the training row pool differs.</p>
+<section class="band kpis">
+<div class="kpi"><b>3,741,961</b><span>51-64 blank rows</span></div>
+<div class="kpi"><b>63.1%</b><span>actually seen by step30000</span></div>
+<div class="kpi"><b>990,000</b><span>matched unseen rows used</span></div>
+<div class="kpi"><b>+0.0625</b><span>unseen-control hard exact</span></div>
+</section>
+<section class="band decision">
+<h2>Predeclared decision</h2>
+<p><b>continue independent-data coverage</b>. The unseen arm passes the effect-size and preservation gates.</p>
+</section>
+<h2>Loop scaling</h2>
+<section class="band"><div class="legend"><span><i style="background:#6b7280"></i>parent</span><span><i style="background:#2563eb"></i>control</span><span><i style="background:#dc2626"></i>unseen</span></div><svg viewBox="0 0 760 300" role="img" aria-label="Full-board exact accuracy by loop"><line x1="58" y1="252.0" x2="736" y2="252.0" stroke="#d1d5db" stroke-width="1"/><text x="48" y="256.0" text-anchor="end" font-size="12" fill="#4b5563">0.0</text><line x1="58" y1="210.5" x2="736" y2="210.5" stroke="#d1d5db" stroke-width="1"/><text x="48" y="214.5" text-anchor="end" font-size="12" fill="#4b5563">0.1</text><line x1="58" y1="169.1" x2="736" y2="169.1" stroke="#d1d5db" stroke-width="1"/><text x="48" y="173.1" text-anchor="end" font-size="12" fill="#4b5563">0.2</text><line x1="58" y1="127.6" x2="736" y2="127.6" stroke="#d1d5db" stroke-width="1"/><text x="48" y="131.6" text-anchor="end" font-size="12" fill="#4b5563">0.3</text><line x1="58" y1="86.2" x2="736" y2="86.2" stroke="#d1d5db" stroke-width="1"/><text x="48" y="90.2" text-anchor="end" font-size="12" fill="#4b5563">0.4</text><line x1="58" y1="44.7" x2="736" y2="44.7" stroke="#d1d5db" stroke-width="1"/><text x="48" y="48.7" text-anchor="end" font-size="12" fill="#4b5563">0.5</text><polyline points="58.0,242.3 227.5,214.8 397.0,111.9 566.5,62.5 736.0,52.8" fill="none" stroke="#6b7280" stroke-width="3"/><circle cx="58.0" cy="242.3" r="4" fill="#6b7280"/><title>parent loop1: 0.0234</title><circle cx="227.5" cy="214.8" r="4" fill="#6b7280"/><title>parent loop2: 0.0898</title><circle cx="397.0" cy="111.9" r="4" fill="#6b7280"/><title>parent loop3: 0.3379</title><circle cx="566.5" cy="62.5" r="4" fill="#6b7280"/><title>parent loop4: 0.4570</title><circle cx="736.0" cy="52.8" r="4" fill="#6b7280"/><title>parent loop5: 0.4805</title><polyline points="58.0,242.3 227.5,229.3 397.0,128.1 566.5,73.9 736.0,61.7" fill="none" stroke="#2563eb" stroke-width="3"/><circle cx="58.0" cy="242.3" r="4" fill="#2563eb"/><title>control loop1: 0.0234</title><circle cx="227.5" cy="229.3" r="4" fill="#2563eb"/><title>control loop2: 0.0547</title><circle cx="397.0" cy="128.1" r="4" fill="#2563eb"/><title>control loop3: 0.2988</title><circle cx="566.5" cy="73.9" r="4" fill="#2563eb"/><title>control loop4: 0.4297</title><circle cx="736.0" cy="61.7" r="4" fill="#2563eb"/><title>control loop5: 0.4590</title><polyline points="58.0,242.3 227.5,198.6 397.0,107.1 566.5,71.4 736.0,63.3" fill="none" stroke="#dc2626" stroke-width="3"/><circle cx="58.0" cy="242.3" r="4" fill="#dc2626"/><title>unseen loop1: 0.0234</title><circle cx="227.5" cy="198.6" r="4" fill="#dc2626"/><title>unseen loop2: 0.1289</title><circle cx="397.0" cy="107.1" r="4" fill="#dc2626"/><title>unseen loop3: 0.3496</title><circle cx="566.5" cy="71.4" r="4" fill="#dc2626"/><title>unseen loop4: 0.4355</title><circle cx="736.0" cy="63.3" r="4" fill="#dc2626"/><title>unseen loop5: 0.4551</title><text x="58.0" y="282" text-anchor="middle" font-size="13" fill="#374151">loop 1</text><text x="227.5" y="282" text-anchor="middle" font-size="13" fill="#374151">loop 2</text><text x="397.0" y="282" text-anchor="middle" font-size="13" fill="#374151">loop 3</text><text x="566.5" y="282" text-anchor="middle" font-size="13" fill="#374151">loop 4</text><text x="736.0" y="282" text-anchor="middle" font-size="13" fill="#374151">loop 5</text></svg></section>
+<h2>Official test distribution</h2>
+<section class="band"><table><thead><tr>
+<th>range</th><th>parent exact</th><th>control exact</th><th>unseen exact</th>
+<th>unseen-control</th><th>control blank acc</th><th>unseen blank acc</th>
+</tr></thead><tbody><tr><td>46-50 blanks</td><td>1.0000</td><td>1.0000</td><td>1.0000</td><td>+0.0000</td><td>1.0000</td><td>1.0000</td></tr><tr><td>51-55 blanks</td><td>0.6152</td><td>0.6094</td><td>0.6367</td><td>+0.0273</td><td>0.8371</td><td>0.8500</td></tr><tr><td>56-64 blanks</td><td>0.3848</td><td>0.3086</td><td>0.3711</td><td>+0.0625</td><td>0.6858</td><td>0.7038</td></tr></tbody></table></section>
+<h2>Second fixed evaluation batch</h2>
+<section class="band"><p>This separate 256-board batch checks whether the
+hard-tail direction repeats on different held-out examples.</p>
+<table><thead><tr>
+<th>range</th><th>parent exact</th><th>control exact</th><th>unseen exact</th>
+<th>unseen-control</th><th>boards</th>
+</tr></thead><tbody><tr><td>51-55 blanks</td><td>0.6289</td><td>0.5898</td><td>0.6406</td><td>+0.0508</td><td>256</td></tr><tr><td>56-64 blanks</td><td>0.3516</td><td>0.3086</td><td>0.3789</td><td>+0.0703</td><td>256</td></tr></tbody></table></section>
+<h2>Run provenance</h2>
+<section class="band"><table><thead><tr>
+<th>arm</th><th>mixed exact</th><th>mixed blank acc</th><th>train sec</th>
+<th>peak MB</th><th>cases</th>
+</tr></thead><tbody><tr><td>parent</td><td>0.4805</td><td>0.7655</td><td>6946.0</td><td>44527</td><td><a href="../gdn-full-diversity-d224l12-upperbound-s30000-lease-20260722T084720Z-f8e009b/visualizations/index.html">hard-case visualizations</a></td></tr><tr><td>control</td><td>0.4590</td><td>0.7634</td><td>5224.2</td><td>44527</td><td><a href="../gdn-data-coverage-control-s31500-20260723T1030Z-4ef23df/visualizations/index.html">hard-case visualizations</a></td></tr><tr><td>unseen</td><td>0.4551</td><td>0.7528</td><td>3495.6</td><td>44527</td><td><a href="../gdn-data-coverage-unseen-histmatched990k-resume30500-s31500-20260723T133526Z-648ee75/visualizations/index.html">hard-case visualizations</a></td></tr></tbody></table>
+<p>Index SHA256: <code>75bd706d38de29cb23b04e8033066af3e29b31fad6d8f287049e64efb6997f3c</code><br>
+Checkpoint SHA256: <code>b3811baf739de916b5c5724a1bf1e6926fb9959093a2c793b5dadd1e4fac0f23</code><br>
+RNG reconstruction matched checkpoint: <b>true</b>.</p>
+</section>
+</main></body></html>

@@ -1,0 +1,11 @@
+{
+  "git_dirty": false,
+  "git_sha": "648ee75f94c794e11174008e6913c4f807866c60",
+  "mode": "full",
+  "notes": "P-SCALE-036 final histogram-matched strict-unseen continuation on GPU1. Same clean D224/L12/H14/D16 FutureSeed-GDN, loop5 all-loop CE, optimizer/RNG/effective batch128 and Triton recurrent CUDA path as matched control. Unseen-control mixed=-0.0039, official51-55=+0.0273, official56-64=+0.0625; separate 256-board case bank repeats +0.0508/+0.0703. Combined hard held-out solves 237/768->287/768 with 3.2% wall-time overhead and identical VRAM. This supports effective independent coverage as a scaling variable, but not a new scalar best: unseen remains below the step30000 parent. Visuals show both 36->28->10->0->0 correction and 27->9->3->4->6 late-loop regression. No GPU2, CPU smoke, noise, task rule, repair, search, selector, or tag.",
+  "recorded_at_utc": "2026-07-23T14:58:38.430574+00:00",
+  "run_name": "gdn-data-coverage-unseen-histmatched990k-resume30500-s31500-20260723T133526Z-648ee75",
+  "score": 0.455078125,
+  "score_key": "metrics.eval_clean.loop5.label_exact",
+  "timestamp_utc": "2026-07-23T14:35:21.790866+00:00"
+}

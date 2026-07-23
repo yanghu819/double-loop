@@ -290,7 +290,13 @@ def make_batch(
 class OfficialSudokuDataset:
     """Read official EqR Sudoku npy arrays and map tokens to this runner's ids."""
 
-    def __init__(self, data_dir: Path, split: str) -> None:
+    def __init__(
+        self,
+        data_dir: Path,
+        split: str,
+        *,
+        row_indices_path: Optional[Path] = None,
+    ) -> None:
         try:
             import numpy as np
         except Exception as exc:  # pragma: no cover - dependency is required only for official data.
@@ -304,7 +310,31 @@ class OfficialSudokuDataset:
             raise ValueError(f"Official Sudoku inputs/labels shape mismatch: {self.inputs.shape} vs {self.labels.shape}")
         if len(self.inputs.shape) != 2 or int(self.inputs.shape[1]) != CELLS:
             raise ValueError(f"Official Sudoku expects shape [N, {CELLS}], got {self.inputs.shape}")
-        self.blank_counts = (self.inputs == 1).sum(axis=1).astype("int16", copy=False)
+        self.base_count = int(self.inputs.shape[0])
+        self.row_indices = None
+        if row_indices_path is not None:
+            row_indices = np.load(Path(row_indices_path), mmap_mode="r")
+            if row_indices.ndim != 1 or row_indices.dtype.kind not in ("i", "u"):
+                raise ValueError(
+                    "Official Sudoku row indices must be a one-dimensional integer npy array."
+                )
+            if int(row_indices.size) == 0:
+                raise ValueError("Official Sudoku row indices must not be empty.")
+            if int(row_indices[0]) < 0 or int(row_indices[-1]) >= self.base_count:
+                raise ValueError(
+                    f"Official Sudoku row indices must be within [0, {self.base_count})."
+                )
+            if bool((np.diff(row_indices) <= 0).any()):
+                raise ValueError(
+                    "Official Sudoku row indices must be unique and strictly increasing."
+                )
+            self.row_indices = row_indices
+        base_blank_counts = (self.inputs == 1).sum(axis=1).astype("int16", copy=False)
+        self.blank_counts = (
+            base_blank_counts
+            if self.row_indices is None
+            else base_blank_counts[self.row_indices]
+        )
         self._range_cache: Dict[Tuple[int, int], Any] = {}
 
     def blank_summary(self) -> Dict[str, Any]:
@@ -342,7 +372,12 @@ class OfficialSudokuDataset:
         return indices
 
     def __len__(self) -> int:
-        return int(self.inputs.shape[0])
+        return int(self.blank_counts.shape[0])
+
+    def _base_indices(self, indices):
+        if self.row_indices is None:
+            return indices
+        return self.row_indices[indices]
 
     def _map_arrays(
         self,
@@ -376,7 +411,12 @@ class OfficialSudokuDataset:
         else:
             candidates = self._indices_for_blank_range(int(holes_min), int(holes_max))
             indices = candidates[[rng.randrange(len(candidates)) for _ in range(batch_size)]]
-        return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
+        base_indices = self._base_indices(indices)
+        return self._map_arrays(
+            self.inputs[base_indices],
+            self.labels[base_indices],
+            device=device,
+        )
 
     def fixed_batch(
         self,
@@ -389,7 +429,12 @@ class OfficialSudokuDataset:
             raise ValueError(f"Requested eval_n={batch_size}, but official split {self.split!r} has only {len(self)} rows.")
         rng = random.Random(seed)
         indices = rng.sample(range(len(self)), batch_size)
-        return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
+        base_indices = self._base_indices(indices)
+        return self._map_arrays(
+            self.inputs[base_indices],
+            self.labels[base_indices],
+            device=device,
+        )
 
     def fixed_batch_by_blank_range(
         self,
@@ -405,7 +450,12 @@ class OfficialSudokuDataset:
         count = min(int(batch_size), int(len(candidates)))
         positions = rng.sample(range(len(candidates)), count)
         indices = candidates[positions]
-        return self._map_arrays(self.inputs[indices], self.labels[indices], device=device)
+        base_indices = self._base_indices(indices)
+        return self._map_arrays(
+            self.inputs[base_indices],
+            self.labels[base_indices],
+            device=device,
+        )
 
 
 def official_sudoku_enabled(args: argparse.Namespace) -> bool:
@@ -2432,7 +2482,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         torch.cuda.reset_peak_memory_stats(device)
     rng = random.Random(args.seed + 1000)
     official_train = (
-        OfficialSudokuDataset(Path(args.official_sudoku_data_dir), args.official_sudoku_train_split)
+        OfficialSudokuDataset(
+            Path(args.official_sudoku_data_dir),
+            args.official_sudoku_train_split,
+            row_indices_path=(
+                Path(args.official_sudoku_train_indices)
+                if str(args.official_sudoku_train_indices).strip()
+                else None
+            ),
+        )
         if official_sudoku_enabled(args)
         else None
     )
@@ -3095,6 +3153,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "data_source": "official_sudoku" if official_train is not None else "generated_random_holes",
         "official_sudoku_data_dir": str(args.official_sudoku_data_dir) if official_train is not None else "",
         "official_sudoku_train_split": str(args.official_sudoku_train_split) if official_train is not None else "",
+        "official_sudoku_train_indices": (
+            str(args.official_sudoku_train_indices) if official_train is not None else ""
+        ),
         "official_sudoku_eval_split": str(args.official_sudoku_eval_split) if official_train is not None else "",
         "official_train_size": len(official_train) if official_train is not None else 0,
         "official_eval_size": len(official_eval) if official_eval is not None else 0,
@@ -4631,6 +4692,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval_n", type=int, default=128)
     p.add_argument("--official_sudoku_data_dir", default="")
     p.add_argument("--official_sudoku_train_split", default="train")
+    p.add_argument("--official_sudoku_train_indices", default="")
     p.add_argument("--official_sudoku_eval_split", default="test")
     p.add_argument("--official_eval_seed_offset", type=int, default=999)
     p.add_argument("--official_eval_blank_ranges", default="")

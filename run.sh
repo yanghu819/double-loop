@@ -360,6 +360,7 @@ COMMON_ARGS=(
   --hole_pattern "${HOLE_PATTERN:-random}"
   --official_sudoku_data_dir "${OFFICIAL_SUDOKU_DATA_DIR:-}"
   --official_sudoku_train_split "${OFFICIAL_SUDOKU_TRAIN_SPLIT:-train}"
+  --official_sudoku_train_indices "${OFFICIAL_SUDOKU_TRAIN_INDICES:-}"
   --official_sudoku_eval_split "${OFFICIAL_SUDOKU_EVAL_SPLIT:-test}"
   --official_eval_seed_offset "${OFFICIAL_EVAL_SEED_OFFSET:-999}"
   --blank_loss_weight "${BLANK_LOSS_WEIGHT:-20}"

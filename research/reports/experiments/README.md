@@ -8,3 +8,7 @@ maintenance status lives in `docs/DEPRECATIONS.md`.
 
 The retained architecture decision and strict four-backbone evidence are in
 `futureseed-sudoku-four-backbone-baseline-20260723.md`.
+
+The next clean scaling test, separating nominal steps from previously unseen
+independent-board coverage, is tracked in
+`gdn-unseen-data-coverage-s31500-20260723.md`.

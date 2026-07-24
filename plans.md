@@ -11,11 +11,15 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-24 17:27 CST): `P-BASELINE-003` corrects a provenance
+Current update (2026-07-24 18:40 CST): `P-BASELINE-003` corrects a provenance
 error in the prior four-carrier benchmark: its public `RWKV` arm used a local
 RWKV-style frontend, not the complete official RWKV7 TimeMix equations. The
 new run is blocked on exact official-model/formula/CUDA/backward/state and
-no-fallback gates, then reruns one matched seed from zero. Until it passes,
+no-fallback gates, then reruns one matched seed from zero. The first formal
+launch was rejected before step 1 because untracked `ninja` core dumps made the
+detached tree dirty; those files and `abort.json` are archived. The launcher
+now fails closed on source dirtiness and writes runs outside the worktree.
+Until the clean rerun passes,
 `P-BASELINE-002` remains valid only for GDN/GDN2/KDA and the deprecated local
 RWKV-style implementation; it is not evidence about official RWKV7.
 

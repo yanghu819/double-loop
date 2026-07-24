@@ -4,6 +4,7 @@ set -euo pipefail
 MODE="${1:-smoke}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXP_DIR="$REPO_ROOT/experiments/rwkv_fs_sudoku"
+RUNS_ROOT="${RUNS_ROOT:-$REPO_ROOT/runs}"
 
 case "$MODE" in
   baseline)
@@ -30,7 +31,7 @@ export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$REPO_ROOT/.cache/torch_ext
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 export PATH="$REPO_ROOT/.cache/bin:$PATH"
 
-mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$REPO_ROOT/runs"
+mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$RUNS_ROOT"
 
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe) ;;
@@ -90,10 +91,14 @@ SOURCE_STATUS="$(git -C "$REPO_ROOT" status --short -- . \
 if [[ -n "$SOURCE_STATUS" ]]; then
   GIT_DIRTY=1
 fi
+if [[ "$GIT_DIRTY" == "1" && "${REQUIRE_CLEAN_SOURCE:-0}" == "1" ]]; then
+  printf 'Refusing to run with a dirty source tree:\n%s\n' "$SOURCE_STATUS" >&2
+  exit 5
+fi
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 RUN_NAME="${RUN_NAME:-$MODE-$TS-${GIT_SHA:0:7}}"
-RUN_DIR="$REPO_ROOT/runs/$RUN_NAME"
+RUN_DIR="$RUNS_ROOT/$RUN_NAME"
 OUT_DIR="$RUN_DIR/output"
 LOG_DIR="$RUN_DIR/logs"
 mkdir -p "$OUT_DIR" "$LOG_DIR"

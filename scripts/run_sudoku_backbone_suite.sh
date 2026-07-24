@@ -2,12 +2,14 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PERSIST_ROOT="${PERSIST_ROOT:-$REPO_ROOT}"
+RUNS_ROOT="${RUNS_ROOT:-$PERSIST_ROOT/runs}"
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 STEPS="${BENCHMARK_STEPS:-500}"
 SUITE_ID="${SUITE_ID:-${TIMESTAMP}-${GIT_SHA:0:7}}"
-PREFLIGHT_DIR="$REPO_ROOT/runs/sudoku-backbone-preflight-${SUITE_ID}"
-SUMMARY_DIR="$REPO_ROOT/runs/sudoku-backbone-benchmark-${SUITE_ID}"
+PREFLIGHT_DIR="$RUNS_ROOT/sudoku-backbone-preflight-${SUITE_ID}"
+SUMMARY_DIR="$RUNS_ROOT/sudoku-backbone-benchmark-${SUITE_ID}"
 
 if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
   printf 'This suite is GPU1-only and requires CUDA_VISIBLE_DEVICES=0.\n' >&2
@@ -15,6 +17,9 @@ if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
 fi
 export CUDA_VISIBLE_DEVICES=0
 export BENCHMARK_STEPS="$STEPS"
+export PERSIST_ROOT
+export RUNS_ROOT
+mkdir -p "$RUNS_ROOT"
 
 "$REPO_ROOT/scripts/run_sudoku_baseline_preflight.sh" "$PREFLIGHT_DIR"
 
@@ -32,6 +37,7 @@ done
 PYTHON_BIN="${PYTHON_BIN:-/opt/conda/bin/python}"
 "$PYTHON_BIN" "$REPO_ROOT/scripts/summarize_sudoku_backbone_benchmark.py" \
   --repo "$REPO_ROOT" \
+  --runs-root "$RUNS_ROOT" \
   --rwkv-run "$RWKV_RUN" \
   --gdn-run "$GDN_RUN" \
   --gdn2-run "$GDN2_RUN" \

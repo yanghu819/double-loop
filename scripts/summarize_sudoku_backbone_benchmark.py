@@ -171,13 +171,13 @@ def parameter_count(
 
 
 def extract_run(
-    repo: Path,
+    runs_root: Path,
     public_name: str,
     run_name: str,
     steps: int,
     preflight: dict[str, Any],
 ) -> dict[str, Any]:
-    run_dir = repo / "runs" / run_name
+    run_dir = runs_root / run_name
     payload = read_json(result_path(run_dir))
     args = payload["args"]
     metrics = payload["metrics"]
@@ -521,6 +521,12 @@ def write_csv(path: Path, arms: list[dict[str, Any]]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, default=Path.cwd())
+    parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=None,
+        help="Run artifact root; defaults to <repo>/runs.",
+    )
     parser.add_argument("--rwkv-run", required=True)
     parser.add_argument("--gdn-run", required=True)
     parser.add_argument("--gdn2-run", required=True)
@@ -537,6 +543,10 @@ def main() -> None:
         raise ValueError("--steps must be greater than the fixed 100-step opening stage")
 
     repo = args.repo.resolve()
+    runs_root = args.runs_root or repo / "runs"
+    if not runs_root.is_absolute():
+        runs_root = repo / runs_root
+    runs_root = runs_root.resolve()
     preflight_path = args.preflight if args.preflight.is_absolute() else repo / args.preflight
     fla_gate_path = args.fla_gate if args.fla_gate.is_absolute() else repo / args.fla_gate
     rwkv7_gate_path = args.rwkv7_gate if args.rwkv7_gate.is_absolute() else repo / args.rwkv7_gate
@@ -566,7 +576,7 @@ def main() -> None:
         "kda": args.kda_run,
     }
     arms = [
-        extract_run(repo, public_name, run_names[public_name], args.steps, preflight)
+        extract_run(runs_root, public_name, run_names[public_name], args.steps, preflight)
         for public_name in ("rwkv", "gdn", "gdn2", "kda")
     ]
     validate_cross_arm(arms, args.allow_mixed_source)

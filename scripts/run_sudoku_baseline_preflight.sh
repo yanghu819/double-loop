@@ -4,12 +4,25 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="${1:-$REPO_ROOT/runs/sudoku-baseline-preflight-$(date -u +%Y%m%dT%H%M%SZ)}"
 PERSIST_ROOT="${PERSIST_ROOT:-$REPO_ROOT}"
+ulimit -c 0
 
 if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
   printf 'This preflight is GPU1-only and requires CUDA_VISIBLE_DEVICES=0.\n' >&2
   exit 3
 fi
 export CUDA_VISIBLE_DEVICES=0
+
+SOURCE_STATUS="$(git -C "$REPO_ROOT" status --short -- . \
+  ':(exclude).cache' \
+  ':(exclude).venv' \
+  ':(exclude)artifacts' \
+  ':(exclude)models' \
+  ':(exclude)runs')"
+if [[ -n "$SOURCE_STATUS" ]]; then
+  printf 'Refusing preflight with a dirty source tree:\n%s\n' "$SOURCE_STATUS" >&2
+  exit 5
+fi
+
 export FLA_DISABLE_BACKEND_DISPATCH=1
 export FLA_CONV_BACKEND=triton
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PERSIST_ROOT/.cache}"

@@ -504,6 +504,7 @@ def main() -> None:
     parser.add_argument("--preflight", type=Path, required=True)
     parser.add_argument("--fla-gate", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=500)
+    parser.add_argument("--plan-id", default="P-BASELINE-001")
     parser.add_argument("--allow-mixed-source", action="store_true")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -536,7 +537,7 @@ def main() -> None:
     validate_cross_arm(arms, args.allow_mixed_source)
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "plan_id": "P-BASELINE-001",
+        "plan_id": args.plan_id,
         "contract": {
             **EXPECTED,
             "steps": args.steps,

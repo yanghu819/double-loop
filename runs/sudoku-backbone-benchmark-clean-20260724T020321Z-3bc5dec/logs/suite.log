@@ -1,0 +1,955 @@
+suite_id=clean-20260724T020321Z-3bc5dec
+source_sha=3bc5dec7677606cc3f12def6538891c199798ca5
+worktree=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[cuda-check] start fla_gdn_reference
+[cuda-check] pass fla_gdn_reference in 26.59s
+[cuda-check] start fla_gdn_adapter
+[cuda-check] pass fla_gdn_adapter in 47.14s
+[cuda-check] start fla_gdn_futureseed_stack
+[cuda-check] pass fla_gdn_futureseed_stack in 17.67s
+[cuda-check] start kda_reference
+[cuda-check] pass kda_reference in 34.47s
+[cuda-check] start kda_adapter
+[cuda-check] pass kda_adapter in 37.41s
+[cuda-check] start kda_futureseed_stack
+[cuda-check] pass kda_futureseed_stack in 3.91s
+[cuda-check] start gdn2_reference
+[cuda-check] pass gdn2_reference in 19.24s
+[cuda-check] start gdn2_adapter
+[cuda-check] pass gdn2_adapter in 32.83s
+[cuda-check] start gdn2_futureseed_stack
+[cuda-check] pass gdn2_futureseed_stack in 6.10s
+{
+  "device": "NVIDIA A800-SXM4-80GB",
+  "fla_gdn_adapter": {
+    "check_wall_sec": 47.13548390404321,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 11.654881201684475,
+    "initial_state_grad_norm": 0.006503339856863022,
+    "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+    "official_layer_class": "fla.layers.gated_deltanet.GatedDeltaNet",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 34344,
+    "peak_memory_mb": 273.2548828125,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      32,
+      16
+    ],
+    "state_v_first": true
+  },
+  "fla_gdn_futureseed_stack": {
+    "check_wall_sec": 17.666839743964374,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.313708305358887,
+    "input_grad_norm": 0.02507960982620716,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 152964
+  },
+  "fla_gdn_reference": {
+    "check_wall_sec": 26.586183698149398,
+    "gradient_errors": {
+      "A_log": 0.023378761485219002,
+      "beta": 9.512156248092651e-05,
+      "dt_bias": 0.012223813682794571,
+      "g": 0.0006060656742192805,
+      "h0": 1.168984454125166e-06,
+      "k": 8.428096771240234e-05,
+      "q": 9.18954610824585e-05,
+      "v": 0.0003630518913269043
+    },
+    "gradient_max_abs": 0.023378761485219002,
+    "output_max_abs": 4.5433640480041504e-05,
+    "state_max_abs": 0.00016039609909057617
+  },
+  "gdn2_adapter": {
+    "check_wall_sec": 32.832288092933595,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 18.061918206512928,
+    "initial_state_grad_norm": 0.011756825260818005,
+    "official_chunk_autograd_node": "ChunkGDN2FunctionBackward",
+    "official_layer_class": "fla.layers.gdn2.GatedDeltaNet2",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 48356,
+    "peak_memory_mb": 274.21484375,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      16,
+      32
+    ],
+    "state_v_first": false
+  },
+  "gdn2_futureseed_stack": {
+    "check_wall_sec": 6.096104690106586,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.31370735168457,
+    "input_grad_norm": 0.033095162361860275,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 195000
+  },
+  "gdn2_reference": {
+    "check_wall_sec": 19.243560070870444,
+    "gradient_errors": {
+      "b": 1.2858770787715912e-05,
+      "g": 3.884546458721161e-05,
+      "h0": 9.697675704956055e-05,
+      "k": 4.7538429498672485e-05,
+      "q": 5.0965696573257446e-05,
+      "v": 0.0002336949110031128,
+      "w": 0.0001019015908241272
+    },
+    "gradient_max_abs": 0.0002336949110031128,
+    "output_max_abs": 5.9857964515686035e-05,
+    "state_max_abs": 0.00027595460414886475
+  },
+  "kda_adapter": {
+    "check_wall_sec": 37.405507016927004,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 12.503631599247456,
+    "initial_state_grad_norm": 0.01274719089269638,
+    "official_chunk_autograd_node": "ChunkKDAFunctionBackward",
+    "official_layer_class": "fla.layers.kda.KimiDeltaAttention",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 36324,
+    "peak_memory_mb": 273.8779296875,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      32,
+      16
+    ],
+    "state_v_first": true
+  },
+  "kda_futureseed_stack": {
+    "check_wall_sec": 3.9123041490092874,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.313709259033203,
+    "input_grad_norm": 0.033048100769519806,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 158904
+  },
+  "kda_reference": {
+    "check_wall_sec": 34.47449651104398,
+    "gradient_errors": {
+      "A_log": 9.025819599628448e-05,
+      "beta": 7.396191358566284e-05,
+      "dt_bias": 7.305201143026352e-05,
+      "g": 3.0046328902244568e-05,
+      "h0": 0.00011349469423294067,
+      "k": 5.13661652803421e-05,
+      "q": 3.7496909499168396e-05,
+      "v": 0.0002580583095550537
+    },
+    "gradient_max_abs": 0.0002580583095550537,
+    "output_max_abs": 6.564334034919739e-05,
+    "state_max_abs": 0.00011767446994781494
+  },
+  "provenance": {
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "fla_package_root": "/huyang2/double-loop/.cache/python-extra-pylib/fla",
+    "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+    "fla_version": "0.5.2",
+    "source_file_hashes": {
+      "fla/layers/gated_deltanet.py": {
+        "installed_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b",
+        "wheel_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b"
+      },
+      "fla/layers/gdn2.py": {
+        "installed_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+        "wheel_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910"
+      },
+      "fla/layers/kda.py": {
+        "installed_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a",
+        "wheel_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a"
+      },
+      "fla/models/utils.py": {
+        "installed_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635",
+        "wheel_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635"
+      },
+      "fla/modules/conv/short_conv.py": {
+        "installed_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e",
+        "wheel_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e"
+      },
+      "fla/modules/conv/triton/ops.py": {
+        "installed_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0",
+        "wheel_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0"
+      },
+      "fla/ops/backends/__init__.py": {
+        "installed_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635",
+        "wheel_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635"
+      },
+      "fla/ops/gated_delta_rule/chunk.py": {
+        "installed_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e",
+        "wheel_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e"
+      },
+      "fla/ops/gdn2/chunk.py": {
+        "installed_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0",
+        "wheel_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0"
+      },
+      "fla/ops/kda/chunk.py": {
+        "installed_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8",
+        "wheel_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8"
+      }
+    },
+    "symbols": {
+      "fla_gdn_layer": {
+        "module": "fla.layers.gated_deltanet",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+        "qualname": "GatedDeltaNet",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py"
+      },
+      "fla_gdn_op": {
+        "module": "fla.ops.gated_delta_rule.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+        "qualname": "chunk_gated_delta_rule",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      },
+      "gdn2_layer": {
+        "module": "fla.layers.gdn2",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+        "qualname": "GatedDeltaNet2",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py"
+      },
+      "gdn2_op": {
+        "module": "fla.ops.gdn2.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+        "qualname": "chunk_gdn2",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      },
+      "kda_layer": {
+        "module": "fla.layers.kda",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+        "qualname": "KimiDeltaAttention",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py"
+      },
+      "kda_op": {
+        "module": "fla.ops.kda.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+        "qualname": "chunk_kda",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      }
+    },
+    "wheel_path": "/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl",
+    "wheel_sha256": "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+  },
+  "requested_backbone": "all",
+  "requested_check": "all",
+  "torch": "2.7.0+cu126"
+}
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[gpu1-contract] start rwkv
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[gpu1-contract] pass rwkv
+[gpu1-contract] start gdn
+[gpu1-contract] pass gdn
+[gpu1-contract] start gdn2
+[gpu1-contract] pass gdn2
+[gpu1-contract] start kda
+[gpu1-contract] pass kda
+{
+  "backbones": {
+    "gdn": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 22.627418518066406,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 1.9663889593697894,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "fla_gdn",
+      "loss": 2.3151040077209473,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5980468,
+      "peak_allocated_mib": 479.0224609375,
+      "public_name": "gdn",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 68.84852983802557,
+      "trainable_parameter_count": 5980468
+    },
+    "gdn2": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 22.627418518066406,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 2.738047501797934,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "gdn2",
+      "loss": 2.2919044494628906,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 6946168,
+      "peak_allocated_mib": 537.35546875,
+      "public_name": "gdn2",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 43.35264099994674,
+      "trainable_parameter_count": 6946168
+    },
+    "kda": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 22.627418518066406,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 2.855874249276198,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "kda",
+      "loss": 2.4083499908447266,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5851768,
+      "peak_allocated_mib": 491.98876953125,
+      "public_name": "kda",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 38.3626906699501,
+      "trainable_parameter_count": 5851768
+    },
+    "rwkv": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 16.0,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 1.6412975448363012,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "rwkv",
+      "loss": 2.2696337699890137,
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5580348,
+      "peak_allocated_mib": 272.34228515625,
+      "public_name": "rwkv",
+      "runtime": {
+        "available": true,
+        "implementation": "local_rwkv7_statepassing",
+        "kernel": "statepassing",
+        "reason": "ok"
+      },
+      "smoke_wall_sec": 1.3135070609860122,
+      "trainable_parameter_count": 5580348
+    }
+  },
+  "contract": {
+    "d_model": 192,
+    "future_seed_scale": 1.0,
+    "gdn_expand_v": 2.0,
+    "head_dim": 32,
+    "heads": 6,
+    "layers": 10,
+    "loops_smoke": 2
+  },
+  "cuda_visible_devices": "0",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "torch": "2.7.0+cu126"
+}
+preflight_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-preflight-clean-20260724T020321Z-3bc5dec
+benchmark_backbone=rwkv
+internal_backbone=rwkv
+steps=500
+run_name=sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec
+mode=full
+run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec
+git_sha=3bc5dec7677606cc3f12def6538891c199798ca5
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=rwkv rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6506 total=1.6499 loop1=1.6487 loop_last=1.6506 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.4239 total=1.4242 loop1=1.4278 loop_last=1.4239 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.1487 total=1.1518 loop1=1.1632 loop_last=1.1487 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0823 total=1.0893 loop1=1.1143 loop_last=1.0823 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=1.0432 total=1.0508 loop1=1.0786 loop_last=1.0432 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0059 blank=0.4795
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4681, early=0.4661, late=0.4709, early_late_gap=-0.0048
+        fs_gate=0.527, fs_update=1.000, fs_state_norm=16.878, fs_decay=0.00, fs_raw_rms=0.861, fs_raw_rms_std=0.073, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0059, valid=0.0059, solved=0.0059, blank_acc=0.4842, early=0.4816, late=0.4839, early_late_gap=-0.0023
+        fs_gate=0.527, fs_update=1.000, fs_state_norm=16.878, fs_decay=0.00, fs_raw_rms=0.837, fs_raw_rms_std=0.078, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4859, early=0.4819, late=0.4862, early_late_gap=-0.0043
+        fs_gate=0.527, fs_update=1.000, fs_state_norm=16.878, fs_decay=0.00, fs_raw_rms=0.831, fs_raw_rms_std=0.079, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4866, early=0.4821, late=0.4868, early_late_gap=-0.0047
+        fs_gate=0.527, fs_update=1.000, fs_state_norm=16.878, fs_decay=0.00, fs_raw_rms=0.830, fs_raw_rms_std=0.079, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4867, early=0.4827, late=0.4864, early_late_gap=-0.0037
+        fs_gate=0.527, fs_update=1.000, fs_state_norm=16.878, fs_decay=0.00, fs_raw_rms=0.829, fs_raw_rms_std=0.079, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.3359, valid=0.3359, solved=0.3359, blank_acc=0.9659, early=0.9620, late=0.9715, early_late_gap=-0.0094
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5097, early=0.5061, late=0.5110, early_late_gap=-0.0049
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4553, early=0.4490, late=0.4560, early_late_gap=-0.0071
+
+case-bank artifacts
+official_b46_50 exact=0.3398 blank_acc=0.9658 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5000 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4555 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec score=0.0078125 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-rwkv-s500-clean-20260724T020321Z-3bc5dec
+benchmark_backbone=gdn
+internal_backbone=fla_gdn
+steps=500
+run_name=sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec
+mode=full
+run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec
+git_sha=3bc5dec7677606cc3f12def6538891c199798ca5
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=fla_gdn rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.5920 total=1.5909 loop1=1.5884 loop_last=1.5920 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.2084 total=1.2090 loop1=1.2122 loop_last=1.2084 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.0564 total=1.0613 loop1=1.0790 loop_last=1.0564 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0114 total=1.0180 loop1=1.0406 loop_last=1.0114 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=0.9964 total=1.0037 loop1=1.0303 loop_last=0.9964 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0176 blank=0.4958
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4923, early=0.4882, late=0.4956, early_late_gap=-0.0075
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.135, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5063, early=0.5015, late=0.5096, early_late_gap=-0.0081
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.134, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5066, early=0.5008, late=0.5124, early_late_gap=-0.0116
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.133, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5061, early=0.4999, late=0.5121, early_late_gap=-0.0122
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.133, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5059, early=0.4998, late=0.5118, early_late_gap=-0.0120
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.133, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.8652, valid=0.8652, solved=0.8652, blank_acc=0.9955, early=0.9940, late=0.9952, early_late_gap=-0.0011
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5279, early=0.5254, late=0.5256, early_late_gap=-0.0002
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4727, early=0.4686, late=0.4742, early_late_gap=-0.0056
+
+case-bank artifacts
+official_b46_50 exact=0.8750 blank_acc=0.9954 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 1}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5313 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4717 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec score=0.021484375 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec
+benchmark_backbone=gdn2
+internal_backbone=gdn2
+steps=500
+run_name=sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec
+mode=full
+run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec
+git_sha=3bc5dec7677606cc3f12def6538891c199798ca5
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn2 rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6043 total=1.6043 loop1=1.6049 loop_last=1.6043 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.2831 total=1.2840 loop1=1.2884 loop_last=1.2831 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.0789 total=1.0829 loop1=1.0971 loop_last=1.0789 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0286 total=1.0350 loop1=1.0577 loop_last=1.0286 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=1.0078 total=1.0145 loop1=1.0371 loop_last=1.0078 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0156 blank=0.4941
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4873, early=0.4836, late=0.4892, early_late_gap=-0.0057
+        fs_gate=0.503, fs_update=1.000, fs_state_norm=22.781, fs_decay=0.00, fs_raw_rms=0.495, fs_raw_rms_std=0.035, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0195, valid=0.0195, solved=0.0195, blank_acc=0.5024, early=0.4987, late=0.5070, early_late_gap=-0.0082
+        fs_gate=0.503, fs_update=1.000, fs_state_norm=22.781, fs_decay=0.00, fs_raw_rms=0.476, fs_raw_rms_std=0.038, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0195, valid=0.0195, solved=0.0195, blank_acc=0.5017, early=0.4967, late=0.5065, early_late_gap=-0.0098
+        fs_gate=0.503, fs_update=1.000, fs_state_norm=22.781, fs_decay=0.00, fs_raw_rms=0.468, fs_raw_rms_std=0.038, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0195, valid=0.0195, solved=0.0195, blank_acc=0.5019, early=0.4957, late=0.5069, early_late_gap=-0.0112
+        fs_gate=0.503, fs_update=1.000, fs_state_norm=22.781, fs_decay=0.00, fs_raw_rms=0.466, fs_raw_rms_std=0.038, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0195, valid=0.0195, solved=0.0195, blank_acc=0.5016, early=0.4954, late=0.5069, early_late_gap=-0.0115
+        fs_gate=0.503, fs_update=1.000, fs_state_norm=22.781, fs_decay=0.00, fs_raw_rms=0.465, fs_raw_rms_std=0.038, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.7676, valid=0.7676, solved=0.7676, blank_acc=0.9905, early=0.9875, late=0.9916, early_late_gap=-0.0041
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5205, early=0.5166, late=0.5217, early_late_gap=-0.0050
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4689, early=0.4649, late=0.4706, early_late_gap=-0.0057
+
+case-bank artifacts
+official_b46_50 exact=0.7383 blank_acc=0.9892 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 2}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5234 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4665 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec score=0.01953125 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn2-s500-clean-20260724T020321Z-3bc5dec
+benchmark_backbone=kda
+internal_backbone=kda
+steps=500
+run_name=sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec
+mode=full
+run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec
+git_sha=3bc5dec7677606cc3f12def6538891c199798ca5
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=kda rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6672 total=1.6662 loop1=1.6640 loop_last=1.6672 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.3500 total=1.3501 loop1=1.3523 loop_last=1.3500 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.1109 total=1.1140 loop1=1.1251 loop_last=1.1109 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0379 total=1.0421 loop1=1.0574 loop_last=1.0379 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=1.0051 total=1.0107 loop1=1.0307 loop_last=1.0051 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0156 blank=0.4986
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4915, early=0.4940, late=0.4903, early_late_gap=+0.0037
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.598, fs_decay=0.00, fs_raw_rms=0.238, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5035, early=0.5062, late=0.5023, early_late_gap=+0.0039
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.598, fs_decay=0.00, fs_raw_rms=0.230, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5030, early=0.5040, late=0.5033, early_late_gap=+0.0007
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.598, fs_decay=0.00, fs_raw_rms=0.228, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5033, early=0.5038, late=0.5040, early_late_gap=-0.0003
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.598, fs_decay=0.00, fs_raw_rms=0.227, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5035, early=0.5044, late=0.5036, early_late_gap=+0.0008
+        fs_gate=0.499, fs_update=1.000, fs_state_norm=22.598, fs_decay=0.00, fs_raw_rms=0.227, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.7285, valid=0.7285, solved=0.7285, blank_acc=0.9899, early=0.9882, late=0.9909, early_late_gap=-0.0027
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5257, early=0.5258, late=0.5215, early_late_gap=+0.0043
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4674, early=0.4662, late=0.4623, early_late_gap=+0.0038
+
+case-bank artifacts
+official_b46_50 exact=0.7461 blank_acc=0.9907 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 2}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5172 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4720 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_case_seed52.html
+built visualizations for 1 run(s)
+recorded run=sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec score=0.0234375 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-kda-s500-clean-20260724T020321Z-3bc5dec
+/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-benchmark-clean-20260724T020321Z-3bc5dec
+suite_summary=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-benchmark-clean-20260724T020321Z-3bc5dec

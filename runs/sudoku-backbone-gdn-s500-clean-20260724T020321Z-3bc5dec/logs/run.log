@@ -1,0 +1,48 @@
+mode=full
+run_dir=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec
+git_sha=3bc5dec7677606cc3f12def6538891c199798ca5
+git_dirty=1
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=fla_gdn rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.5920 total=1.5909 loop1=1.5884 loop_last=1.5920 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.2084 total=1.2090 loop1=1.2122 loop_last=1.2084 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.0564 total=1.0613 loop1=1.0790 loop_last=1.0564 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0114 total=1.0180 loop1=1.0406 loop_last=1.0114 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=0.9964 total=1.0037 loop1=1.0303 loop_last=0.9964 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0176 blank=0.4958
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4923, early=0.4882, late=0.4956, early_late_gap=-0.0075
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.135, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5063, early=0.5015, late=0.5096, early_late_gap=-0.0081
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.134, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5066, early=0.5008, late=0.5124, early_late_gap=-0.0116
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.133, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5061, early=0.4999, late=0.5121, early_late_gap=-0.0122
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.133, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0215, valid=0.0215, solved=0.0215, blank_acc=0.5059, early=0.4998, late=0.5118, early_late_gap=-0.0120
+        fs_gate=0.488, fs_update=1.000, fs_state_norm=22.096, fs_decay=0.00, fs_raw_rms=0.133, fs_raw_rms_std=0.008, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.8652, valid=0.8652, solved=0.8652, blank_acc=0.9955, early=0.9940, late=0.9952, early_late_gap=-0.0011
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5279, early=0.5254, late=0.5256, early_late_gap=-0.0002
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4727, early=0.4686, late=0.4742, early_late_gap=-0.0056
+
+case-bank artifacts
+official_b46_50 exact=0.8750 blank_acc=0.9954 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 1}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5313 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4717 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/artifacts/worktrees/baseline-clean-20260724-3bc5dec/runs/sudoku-backbone-gdn-s500-clean-20260724T020321Z-3bc5dec/output/futureseed_loop_case_seed52.html

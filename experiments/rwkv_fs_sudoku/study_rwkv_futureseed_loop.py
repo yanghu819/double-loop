@@ -111,12 +111,19 @@ COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
 UNITS: List[List[int]] = []
 BACKBONE_DISPLAY_NAMES = {
-    "rwkv": "RWKV",
+    "rwkv": "RWKV-style (deprecated)",
+    "rwkv7": "RWKV7 TimeMix (official contract)",
     "gdn": "GDN-Triton",
     "fla_gdn": "GDN (official FLA)",
     "gdn2": "GDN2 (official FLA)",
     "kda": "KDA (official FLA)",
 }
+RWKV7_OFFICIAL_SOURCE_COMMIT = "952102498e9ed367ea0a59ee64106916d474d30f"
+RWKV7_OFFICIAL_SOURCE_BLOB = "b4d167fedead2655d253c55eb47b65f00e7193d2"
+RWKV7_OFFICIAL_SOURCE_PATH = "RWKV-v7/train_temp/src/model.py"
+RWKV7_OFFICIAL_KERNEL_BLOB = "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905"
+RWKV7_OFFICIAL_KERNEL_PATH = "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu"
+RWKV7_STATEPASSING_CUDA_SHA256 = "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
@@ -791,6 +798,231 @@ class RWKVTimeMix(nn.Module):
         return self.out(y * gate), memory
 
 
+def rwkv7_lora_width(multiplier: float, d_model: int) -> int:
+    return max(32, int(round((multiplier * (d_model**0.5)) / 32.0) * 32))
+
+
+def rwkv7_ortho_init(tensor: torch.Tensor, scale: float) -> torch.Tensor:
+    with torch.no_grad():
+        rows, cols = tensor.shape
+        gain = math.sqrt(rows / cols) if rows > cols else 1.0
+        nn.init.orthogonal_(tensor, gain=gain * scale)
+    return tensor
+
+
+class RWKV7TimeMixOfficial(nn.Module):
+    """Official RWKV7 TimeMix equations with explicit recurrent-state I/O."""
+
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        *,
+        layer_id: int,
+        layers: int,
+        rwkv_kernel: str,
+    ) -> None:
+        super().__init__()
+        if d_model != heads * head_dim:
+            raise ValueError("d_model must equal heads * head_dim")
+        if layers < 2:
+            raise ValueError("official RWKV7 TimeMix requires at least two layers")
+        if rwkv_kernel not in {"statepassing", "torch"}:
+            raise ValueError("official RWKV7 TimeMix allows only explicit statepassing or torch kernels")
+        self.d_model = int(d_model)
+        self.heads = int(heads)
+        self.head_dim = int(head_dim)
+        self.layer_id = int(layer_id)
+        self.rwkv_kernel = rwkv_kernel
+
+        ratio_0_to_1 = layer_id / (layers - 1)
+        ratio_1_to_almost0 = 1.0 - (layer_id / layers)
+        ddd = torch.arange(d_model, dtype=torch.float32).view(1, 1, d_model) / d_model
+        self.x_r = nn.Parameter(1.0 - torch.pow(ddd, 0.2 * ratio_1_to_almost0))
+        self.x_w = nn.Parameter(1.0 - torch.pow(ddd, 0.9 * ratio_1_to_almost0))
+        self.x_k = nn.Parameter(1.0 - torch.pow(ddd, 0.7 * ratio_1_to_almost0))
+        self.x_v = nn.Parameter(1.0 - torch.pow(ddd, 0.7 * ratio_1_to_almost0))
+        self.x_a = nn.Parameter(1.0 - torch.pow(ddd, 0.9 * ratio_1_to_almost0))
+        self.x_g = nn.Parameter(1.0 - torch.pow(ddd, 0.2 * ratio_1_to_almost0))
+
+        decay = torch.zeros(d_model)
+        zigzag = torch.zeros(d_model)
+        linear = torch.zeros(d_model)
+        for index in range(d_model):
+            linear[index] = index / max(d_model - 1, 1) - 0.5
+            local = ((index % head_dim) - ((head_dim - 1) / 2.0)) / max((head_dim - 1) / 2.0, 1.0)
+            zigzag[index] = local * abs(local)
+            decay[index] = -6.0 + 6.0 * (index / max(d_model - 1, 1)) ** (1.0 + ratio_0_to_1**0.3)
+
+        decay_width = rwkv7_lora_width(2.5, d_model)
+        update_width = rwkv7_lora_width(2.5, d_model)
+        value_width = rwkv7_lora_width(1.7, d_model)
+        gate_width = rwkv7_lora_width(5.0, d_model)
+        self.w1 = nn.Parameter(torch.zeros(d_model, decay_width))
+        self.w2 = nn.Parameter(rwkv7_ortho_init(torch.zeros(decay_width, d_model), 0.1))
+        self.w0 = nn.Parameter((decay + 0.5 + zigzag * 2.5).view(1, 1, d_model))
+        self.a1 = nn.Parameter(torch.zeros(d_model, update_width))
+        self.a2 = nn.Parameter(rwkv7_ortho_init(torch.zeros(update_width, d_model), 0.1))
+        self.a0 = nn.Parameter((-0.19 + zigzag * 0.3 + linear * 0.4).view(1, 1, d_model))
+        self.v1 = nn.Parameter(torch.zeros(d_model, value_width))
+        self.v2 = nn.Parameter(rwkv7_ortho_init(torch.zeros(value_width, d_model), 0.1))
+        self.v0 = nn.Parameter((0.73 - linear * 0.4).view(1, 1, d_model))
+        self.g1 = nn.Parameter(torch.zeros(d_model, gate_width))
+        self.g2 = nn.Parameter(rwkv7_ortho_init(torch.zeros(gate_width, d_model), 0.1))
+        self.k_k = nn.Parameter((0.71 - linear * 0.1).view(1, 1, d_model))
+        self.k_a = nn.Parameter(torch.full((1, 1, d_model), 1.02))
+        self.r_k = nn.Parameter(torch.full((heads, head_dim), -0.04))
+
+        self.receptance = nn.Linear(d_model, d_model, bias=False)
+        self.key = nn.Linear(d_model, d_model, bias=False)
+        self.value = nn.Linear(d_model, d_model, bias=False)
+        self.output = nn.Linear(d_model, d_model, bias=False)
+        self.ln_x = nn.GroupNorm(heads, d_model, eps=64e-5)
+        scale = d_model**0.5
+        self.receptance.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
+        self.key.weight.data.uniform_(-0.05 / scale, 0.05 / scale)
+        self.value.weight.data.uniform_(-0.5 / scale, 0.5 / scale)
+        nn.init.zeros_(self.output.weight)
+
+    @staticmethod
+    def _pad_time(tensor: torch.Tensor, pad_len: int, value: float = 0.0) -> torch.Tensor:
+        if pad_len <= 0:
+            return tensor
+        pad_shape = (tensor.shape[0], pad_len, *tensor.shape[2:])
+        return torch.cat((tensor, tensor.new_full(pad_shape, value)), dim=1)
+
+    def _statepassing(
+        self,
+        *,
+        r: torch.Tensor,
+        w_raw: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        kk: torch.Tensor,
+        a: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if StatePassingRWKV7 is None or not r.is_cuda:
+            raise RuntimeError("official RWKV7 requested statepassing CUDA, but CUDA inputs or extension are unavailable")
+        available, reason = statepassing_available(self.head_dim)
+        if not available:
+            raise RuntimeError(f"official RWKV7 statepassing CUDA unavailable: {reason}")
+        batch_size, seq_len, heads, head_dim = r.shape
+        pad_len = (-seq_len) % 16
+        recurrent = [
+            self._pad_time(r, pad_len),
+            self._pad_time(w_raw, pad_len, value=-60.0),
+            self._pad_time(k, pad_len),
+            self._pad_time(v, pad_len),
+            self._pad_time(-kk, pad_len),
+            self._pad_time(kk * a, pad_len),
+        ]
+        recurrent_bf16 = [tensor.to(torch.bfloat16) for tensor in recurrent]
+        if initial_state is None:
+            state = torch.zeros(batch_size, heads, head_dim, head_dim, device=r.device, dtype=torch.float32)
+        else:
+            expected = (batch_size, heads, head_dim, head_dim)
+            if tuple(initial_state.shape) != expected:
+                raise ValueError(f"initial_state shape {tuple(initial_state.shape)} does not match {expected}")
+            state = initial_state.to(device=r.device, dtype=torch.float32)
+        output, terminal_state = StatePassingRWKV7.apply(state, *recurrent_bf16)
+        return output[:, :seq_len].to(r.dtype), terminal_state
+
+    @staticmethod
+    def _torch_recurrence(
+        *,
+        r: torch.Tensor,
+        w_raw: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        kk: torch.Tensor,
+        a: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        batch_size, seq_len, heads, head_dim = r.shape
+        if initial_state is None:
+            state = torch.zeros(batch_size, heads, head_dim, head_dim, device=r.device, dtype=torch.float32)
+        else:
+            state = initial_state.float()
+        outputs: List[torch.Tensor] = []
+        for step in range(seq_len):
+            decay = torch.exp(-math.exp(-0.5) * torch.sigmoid(w_raw[:, step].float()))
+            erase = torch.einsum("bhij,bhj->bhi", state, -kk[:, step].float())
+            state = (
+                state * decay.unsqueeze(-2)
+                + erase.unsqueeze(-1) * (kk[:, step].float() * a[:, step].float()).unsqueeze(-2)
+                + v[:, step].float().unsqueeze(-1) * k[:, step].float().unsqueeze(-2)
+            )
+            outputs.append(torch.einsum("bhij,bhj->bhi", state, r[:, step].float()))
+        return torch.stack(outputs, dim=1).to(r.dtype), state
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+        v_first: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        batch_size, seq_len, channels = x.shape
+        shifted = torch.zeros_like(x)
+        shifted[:, 1:] = x[:, :-1]
+        delta = shifted - x
+        xr = x + delta * self.x_r
+        xw = x + delta * self.x_w
+        xk = x + delta * self.x_k
+        xv = x + delta * self.x_v
+        xa = x + delta * self.x_a
+        xg = x + delta * self.x_g
+
+        r_flat = self.receptance(xr)
+        w_raw_flat = self.w0 + torch.tanh(xw @ self.w1) @ self.w2
+        k_flat = self.key(xk)
+        v_flat = self.value(xv)
+        if self.layer_id == 0:
+            v_first = v_flat
+        else:
+            if v_first is None or tuple(v_first.shape) != tuple(v_flat.shape):
+                raise ValueError("official RWKV7 layer > 0 requires the first layer's value tensor")
+            v_flat = v_flat + (v_first - v_flat) * torch.sigmoid(self.v0 + (xv @ self.v1) @ self.v2)
+        a_flat = torch.sigmoid(self.a0 + (xa @ self.a1) @ self.a2)
+        gate = torch.sigmoid(xg @ self.g1) @ self.g2
+        kk_flat = F.normalize(
+            (k_flat * self.k_k).view(batch_size, seq_len, self.heads, self.head_dim),
+            dim=-1,
+            p=2.0,
+        ).view(batch_size, seq_len, channels)
+        k_flat = k_flat * (1.0 + (a_flat - 1.0) * self.k_a)
+
+        recurrent = {
+            "r": r_flat.view(batch_size, seq_len, self.heads, self.head_dim),
+            "w_raw": w_raw_flat.view(batch_size, seq_len, self.heads, self.head_dim),
+            "k": k_flat.view(batch_size, seq_len, self.heads, self.head_dim),
+            "v": v_flat.view(batch_size, seq_len, self.heads, self.head_dim),
+            "kk": kk_flat.view(batch_size, seq_len, self.heads, self.head_dim),
+            "a": a_flat.view(batch_size, seq_len, self.heads, self.head_dim),
+            "initial_state": initial_state,
+        }
+        if self.rwkv_kernel == "statepassing":
+            recurrent_out, terminal_state = self._statepassing(**recurrent)
+        else:
+            recurrent_out, terminal_state = self._torch_recurrence(**recurrent)
+
+        mixed = self.ln_x(recurrent_out.reshape(batch_size * seq_len, channels)).reshape(
+            batch_size, seq_len, channels
+        )
+        local = (
+            (
+                r_flat.view(batch_size, seq_len, self.heads, self.head_dim)
+                * k_flat.view(batch_size, seq_len, self.heads, self.head_dim)
+                * self.r_k
+            ).sum(dim=-1, keepdim=True)
+            * v_flat.view(batch_size, seq_len, self.heads, self.head_dim)
+        ).view(batch_size, seq_len, channels)
+        assert v_first is not None
+        return self.output((mixed + local) * gate), terminal_state, v_first
+
+
 class ChannelMix(nn.Module):
     def __init__(self, d_model: int, mult: int) -> None:
         super().__init__()
@@ -801,6 +1033,49 @@ class ChannelMix(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.value(F.relu(self.key(x)).square())
+
+
+class RWKV7OfficialBlock(nn.Module):
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        channel_mult: int,
+        *,
+        layer_id: int,
+        layers: int,
+        rwkv_kernel: str,
+    ) -> None:
+        super().__init__()
+        self.ln_time = nn.LayerNorm(d_model)
+        self.ln_channel = nn.LayerNorm(d_model)
+        self.time_mix = RWKV7TimeMixOfficial(
+            d_model,
+            heads,
+            head_dim,
+            layer_id=layer_id,
+            layers=layers,
+            rwkv_kernel=rwkv_kernel,
+        )
+        self.channel_mix = ChannelMix(d_model, channel_mult)
+        self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+        v_first: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        time_out, terminal_state, v_first = self.time_mix(
+            self.ln_time(x),
+            initial_state=initial_state,
+            v_first=v_first,
+        )
+        x = x + time_out
+        x = x + self.channel_mix(self.ln_channel(x))
+        return x, terminal_state, v_first
 
 
 class RWKVBlock(nn.Module):
@@ -1329,8 +1604,8 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
         if future_seed_norm_mode not in {"unit", "adaptive_rms"}:
             raise ValueError("future_seed_norm_mode must be one of: unit, adaptive_rms.")
-        if backbone not in {"rwkv", "gdn", "fla_gdn", "gdn2", "kda"}:
-            raise ValueError("backbone must be one of: rwkv, gdn, fla_gdn, gdn2, kda.")
+        if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"}:
+            raise ValueError("backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda.")
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -1358,6 +1633,18 @@ class FutureSeedRWKV(nn.Module):
             if backbone == "rwkv":
                 blocks.append(
                     RWKVBlock(
+                        d_model,
+                        heads,
+                        head_dim,
+                        channel_mult,
+                        layer_id=layer_id,
+                        layers=layers,
+                        rwkv_kernel=rwkv_kernel,
+                    )
+                )
+            elif backbone == "rwkv7":
+                blocks.append(
+                    RWKV7OfficialBlock(
                         d_model,
                         heads,
                         head_dim,
@@ -1409,6 +1696,7 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError(f"seed_memory has {len(seed_memory)} entries, expected {len(self.blocks) - 1}")
         previous_state: Optional[torch.Tensor] = None
         seed_state: Optional[torch.Tensor] = None
+        v_first: Optional[torch.Tensor] = None
         next_seed_memory: Optional[List[torch.Tensor]] = [] if self.future_seed_update == "loop_residual" else None
         gates = []
         update_gates = []
@@ -1520,7 +1808,50 @@ class FutureSeedRWKV(nn.Module):
                     state_norms.append(x.new_zeros(()))
                     if next_seed_memory is not None:
                         next_seed_memory.append(previous_state)
-            if self.activation_checkpoint and self.training and torch.is_grad_enabled():
+            if self.backbone == "rwkv7":
+                assert isinstance(block, RWKV7OfficialBlock)
+                if self.activation_checkpoint and self.training and torch.is_grad_enabled():
+                    if initial_state is None and v_first is None:
+                        x, previous_state, v_first = torch_checkpoint(
+                            lambda block_input: block(block_input, initial_state=None, v_first=None),
+                            x,
+                            use_reentrant=False,
+                            preserve_rng_state=False,
+                        )
+                    elif initial_state is None:
+                        assert v_first is not None
+                        x, previous_state, v_first = torch_checkpoint(
+                            lambda block_input, first_value: block(
+                                block_input,
+                                initial_state=None,
+                                v_first=first_value,
+                            ),
+                            x,
+                            v_first,
+                            use_reentrant=False,
+                            preserve_rng_state=False,
+                        )
+                    else:
+                        assert v_first is not None
+                        x, previous_state, v_first = torch_checkpoint(
+                            lambda block_input, block_state, first_value: block(
+                                block_input,
+                                initial_state=block_state,
+                                v_first=first_value,
+                            ),
+                            x,
+                            initial_state,
+                            v_first,
+                            use_reentrant=False,
+                            preserve_rng_state=False,
+                        )
+                else:
+                    x, previous_state, v_first = block(
+                        x,
+                        initial_state=initial_state,
+                        v_first=v_first,
+                    )
+            elif self.activation_checkpoint and self.training and torch.is_grad_enabled():
                 if initial_state is None:
                     x, previous_state = torch_checkpoint(
                         lambda block_input: block(block_input, initial_state=None),
@@ -2476,6 +2807,70 @@ def fs_line(m: Dict[str, float]) -> str:
     return ", ".join(parts)
 
 
+def build_adamw(
+    model: nn.Module,
+    *,
+    lr: float,
+    weight_decay: float,
+    contract: str,
+) -> Tuple[torch.optim.AdamW, Dict[str, Any]]:
+    if contract == "uniform":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+        return optimizer, {
+            "contract": contract,
+            "decay_parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+            "no_decay_parameter_count": 0,
+            "decay_names": ["*"],
+            "no_decay_names": [],
+        }
+    if contract != "rwkv7_decay_groups":
+        raise ValueError(f"unknown optimizer contract: {contract}")
+
+    norm_parameter_ids = {
+        id(parameter)
+        for module in model.modules()
+        if isinstance(module, (nn.LayerNorm, nn.GroupNorm))
+        for parameter in module.parameters(recurse=False)
+    }
+    decay_parameters: List[nn.Parameter] = []
+    no_decay_parameters: List[nn.Parameter] = []
+    decay_names: List[str] = []
+    no_decay_names: List[str] = []
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        explicit_no_decay = bool(getattr(parameter, "_no_weight_decay", False))
+        is_matrix_weight = name.endswith(".weight")
+        use_decay = is_matrix_weight and id(parameter) not in norm_parameter_ids and not explicit_no_decay
+        if use_decay:
+            decay_parameters.append(parameter)
+            decay_names.append(name)
+        else:
+            no_decay_parameters.append(parameter)
+            no_decay_names.append(name)
+    if not decay_parameters or not no_decay_parameters:
+        raise AssertionError("rwkv7_decay_groups requires both decay and no-decay parameters")
+    assigned_ids = {id(parameter) for parameter in decay_parameters + no_decay_parameters}
+    expected_ids = {id(parameter) for parameter in model.parameters() if parameter.requires_grad}
+    if assigned_ids != expected_ids or len(assigned_ids) != len(decay_parameters) + len(no_decay_parameters):
+        raise AssertionError("optimizer parameter grouping is incomplete or contains duplicates")
+
+    optimizer = torch.optim.AdamW(
+        [
+            {"params": decay_parameters, "weight_decay": weight_decay},
+            {"params": no_decay_parameters, "weight_decay": 0.0},
+        ],
+        lr=lr,
+    )
+    return optimizer, {
+        "contract": contract,
+        "decay_parameter_count": sum(parameter.numel() for parameter in decay_parameters),
+        "no_decay_parameter_count": sum(parameter.numel() for parameter in no_decay_parameters),
+        "decay_names": decay_names,
+        "no_decay_names": no_decay_names,
+    }
+
+
 def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[FutureSeedLoopSudoku, Dict[str, Any]]:
     torch.manual_seed(args.seed)
     if device.type == "cuda":
@@ -2551,15 +2946,31 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         if args.fla_strict_official
         else {"strict": False}
     )
-    if args.backbone == "rwkv":
+    if args.backbone in {"rwkv", "rwkv7"}:
         statepassing_ok, statepassing_reason = statepassing_available(args.head_dim)
         backbone_runtime = {
-            "implementation": "local_rwkv7_statepassing",
+            "implementation": (
+                "official_rwkv7_timemix_with_explicit_state_io"
+                if args.backbone == "rwkv7"
+                else "deprecated_local_rwkv_style_statepassing"
+            ),
             "requested_kernel": args.rwkv_kernel,
             "statepassing_available": statepassing_ok,
             "statepassing_reason": statepassing_reason,
             "silent_fallback_allowed": args.rwkv_kernel == "auto",
         }
+        if args.backbone == "rwkv7":
+            backbone_runtime.update(
+                {
+                    "official_source_commit": RWKV7_OFFICIAL_SOURCE_COMMIT,
+                    "official_source_blob": RWKV7_OFFICIAL_SOURCE_BLOB,
+                    "official_source_path": RWKV7_OFFICIAL_SOURCE_PATH,
+                    "official_kernel_blob": RWKV7_OFFICIAL_KERNEL_BLOB,
+                    "official_kernel_path": RWKV7_OFFICIAL_KERNEL_PATH,
+                    "statepassing_cuda_sha256": RWKV7_STATEPASSING_CUDA_SHA256,
+                    "shared_shell_channel_mix": True,
+                }
+            )
     elif args.backbone == "gdn":
         backbone_runtime = {
             "implementation": "local_gdn_triton",
@@ -2579,7 +2990,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         dtype=torch.float32,
     )
     model.feature_noise_buffer = feature_buffer
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    opt, optimizer_runtime = build_adamw(
+        model,
+        lr=args.lr,
+        weight_decay=args.weight_decay,
+        contract=args.optimizer_contract,
+    )
     t0 = time.time()
     resume_info: Dict[str, Any] = {}
     saved_train_checkpoints: List[str] = []
@@ -3120,6 +3536,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "parameter_count": parameter_count,
         "trainable_parameter_count": trainable_parameter_count,
         "backbone_runtime": backbone_runtime,
+        "optimizer_runtime": optimizer_runtime,
         "microbatch": args.batch,
         "grad_accum_steps": args.grad_accum_steps,
         "effective_batch": args.batch * max(1, int(args.grad_accum_steps)),
@@ -4269,6 +4686,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_conv_size must be positive.")
     if args.fla_strict_official and args.backbone not in {"fla_gdn", "gdn2", "kda"}:
         raise ValueError("--fla_strict_official is valid only for fla_gdn, gdn2, or kda")
+    if args.backbone == "rwkv7":
+        if args.rwkv_kernel not in {"statepassing", "torch"}:
+            raise ValueError("--backbone rwkv7 requires an explicit statepassing or torch kernel; fallback is forbidden")
+        if args.rwkv_kernel == "statepassing":
+            ok, reason = statepassing_available(args.head_dim)
+            if not ok:
+                raise ValueError(f"--backbone rwkv7 statepassing kernel is unavailable: {reason}")
     if args.backbone == "rwkv" and args.rwkv_kernel in {"cuda", "statepassing"}:
         ok, reason = statepassing_available(args.head_dim)
         if not ok:
@@ -4662,7 +5086,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
-    p.add_argument("--backbone", choices=("rwkv", "gdn", "fla_gdn", "gdn2", "kda"), default="rwkv")
+    p.add_argument("--backbone", choices=("rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"), default="rwkv")
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent", "triton_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)
@@ -4683,6 +5107,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--rollout_noise_scale", type=float, default=-1.0)
     p.add_argument("--lr", type=float, default=2e-3)
     p.add_argument("--weight_decay", type=float, default=1e-3)
+    p.add_argument("--optimizer_contract", choices=("uniform", "rwkv7_decay_groups"), default="uniform")
     p.add_argument("--holes_min", type=int, default=4)
     p.add_argument("--holes_max", type=int, default=12)
     p.add_argument("--hole_stages", default="")

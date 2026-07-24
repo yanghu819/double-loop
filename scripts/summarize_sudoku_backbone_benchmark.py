@@ -13,13 +13,13 @@ from typing import Any
 
 
 PUBLIC_TO_INTERNAL = {
-    "rwkv": "rwkv",
+    "rwkv": "rwkv7",
     "gdn": "fla_gdn",
     "gdn2": "gdn2",
     "kda": "kda",
 }
 LABELS = {
-    "rwkv": "RWKV",
+    "rwkv": "RWKV7 TimeMix",
     "gdn": "GDN",
     "gdn2": "GDN2",
     "kda": "KDA",
@@ -48,6 +48,7 @@ EXPECTED = {
     "loop_loss": "all",
     "lr": 0.0015,
     "weight_decay": 0.001,
+    "optimizer_contract": "rwkv7_decay_groups",
     "blank_loss_weight": 8.0,
     "future_seed_scale": 1.0,
     "future_seed_decay": 0.0,
@@ -61,7 +62,7 @@ EXPECTED = {
     "hidden_agg_noise_scale": 0.0,
     "exact_margin_weight": 0.0,
     "gdn_mode": "chunk",
-    "gdn_expand_v": 2.0,
+    "gdn_expand_v": 1.0,
     "gdn_use_short_conv": 1,
     "gdn_conv_size": 4,
     "forward_dtype": "bfloat16",
@@ -190,6 +191,20 @@ def extract_run(
     runtime = train.get("backbone_runtime", {})
     if runtime and bool(runtime.get("silent_fallback_allowed")):
         raise AssertionError(f"{public_name} allowed a silent fallback")
+    optimizer_runtime = train.get("optimizer_runtime", {})
+    if optimizer_runtime.get("contract") != "rwkv7_decay_groups":
+        raise AssertionError(f"{public_name} optimizer contract differs: {optimizer_runtime}")
+    if public_name == "rwkv":
+        if runtime.get("implementation") != "official_rwkv7_timemix_with_explicit_state_io":
+            raise AssertionError(f"RWKV implementation provenance differs: {runtime}")
+        if runtime.get("official_source_commit") != "952102498e9ed367ea0a59ee64106916d474d30f":
+            raise AssertionError(f"RWKV official source commit differs: {runtime}")
+        if runtime.get("official_source_blob") != "b4d167fedead2655d253c55eb47b65f00e7193d2":
+            raise AssertionError(f"RWKV official source blob differs: {runtime}")
+        if runtime.get("official_kernel_blob") != "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905":
+            raise AssertionError(f"RWKV official kernel blob differs: {runtime}")
+        if runtime.get("statepassing_cuda_sha256") != "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892":
+            raise AssertionError(f"RWKV state-passing CUDA source differs: {runtime}")
     if public_name != "rwkv":
         fla_runtime = train.get("fla_runtime", {})
         if not bool(fla_runtime.get("strict")):
@@ -410,15 +425,15 @@ svg{{width:100%;background:#fff;border:1px solid var(--line);border-radius:6px}}
 .cases{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}}iframe{{width:100%;height:720px;border:1px solid var(--line);border-radius:6px;background:#fff}}
 code{{background:#edf1f3;padding:2px 5px;border-radius:3px}}@media(max-width:1100px){{.charts,.cases{{grid-template-columns:1fr}}}}
 </style></head><body><main>
-<h1>FutureSeed: RWKV vs GDN vs GDN2 vs KDA</h1>
+<h1>FutureSeed: RWKV7 vs GDN vs GDN2 vs KDA</h1>
 <p class="muted">One seed, one data order, one training budget, one evaluator. GPU1 only; no CPU model smoke and no silent fallback.</p>
 <div class="band"><strong>Decision:</strong> {html.escape(payload["decision"])}</div>
-<h2>Fairness contract</h2><div class="band"><p>D192/L10/H6/D32, five loops, CE on every loop, effective batch 128, BF16, seed 52, native FutureSeed scale 1, official full-diversity Sudoku, and curriculum <code>{html.escape(payload["contract"]["hole_stages"])}</code>. Architecture-specific equations and their parameter/compute costs are intentionally not forced to be equal.</p></div>
+<h2>Fairness contract</h2><div class="band"><p>D192/L10/H6/D32, matched 6x32x32 recurrent state, five loops, CE on every loop, effective batch 128, BF16, seed 52, native FutureSeed scale 1, official full-diversity Sudoku, and curriculum <code>{html.escape(payload["contract"]["hole_stages"])}</code>. Parameters and runtime are measured rather than padded.</p></div>
 <h2>Matched result</h2><div class="band"><table><thead><tr><th>backbone</th><th>params</th><th>train CE</th><th>fixed h53 exact</th><th>mixed exact</th><th>mixed blank</th><th>loop exact gain</th><th>sec/step</th><th>peak GiB</th></tr></thead><tbody>{quality_rows}</tbody></table></div>
 <h2>Learning and loops</h2><div class="charts">{line_chart(arms, "curve", "step", "ce", "Training CE")}{line_chart(arms, "loops", "loop", "exact", "Full-board exact by loop")}{line_chart(arms, "loops", "loop", "blank_acc", "Blank accuracy by loop")}</div>
 <h2>Official blank ranges</h2><div class="band"><table><thead><tr><th rowspan="2">blanks</th>{range_headers}</tr><tr>{range_subheaders}</tr></thead><tbody>{''.join(range_rows)}</tbody></table></div>
 <h2>Same puzzle, every loop</h2><div class="cases">{cases}</div>
-<h2>Implementation provenance</h2><div class="band"><table><thead><tr><th>backbone</th><th>implementation</th><th>source SHA</th><th>source patch</th><th>kernel</th></tr></thead><tbody>{provenance_rows}</tbody></table><p>Official FLA wheel SHA256: <code>{html.escape(payload["fla_gate"]["provenance"]["wheel_sha256"])}</code>. Audited FLA source and CUDA reference/backward checks passed before training. Any dirty patch is restricted to generated leaderboard/visualization tracking files; model and benchmark source are unchanged.</p>{memory_note_html}</div>
+<h2>Implementation provenance</h2><div class="band"><table><thead><tr><th>backbone</th><th>implementation</th><th>source SHA</th><th>source patch</th><th>kernel</th></tr></thead><tbody>{provenance_rows}</tbody></table><p>Official RWKV7 model commit: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["source_commit"])}</code>; model blob: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["source_blob"])}</code>; kernel blob: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["kernel_blob"])}</code>. Official FLA wheel SHA256: <code>{html.escape(payload["fla_gate"]["provenance"]["wheel_sha256"])}</code>. Formula, CUDA reference/backward, state continuity, source, and no-fallback gates passed before training.</p>{memory_note_html}</div>
 <h2>Interpretation boundary</h2><div class="band"><p>This benchmark compares FutureSeed-enabled recurrent carriers at one finite budget. It is not a with/without-FutureSeed ablation and it is not evidence about each architecture's asymptotic ceiling. The separate matched no-FutureSeed result supports the causal FutureSeed claim.</p></div>
 </main></body></html>"""
 
@@ -503,8 +518,9 @@ def main() -> None:
     parser.add_argument("--kda-run", required=True)
     parser.add_argument("--preflight", type=Path, required=True)
     parser.add_argument("--fla-gate", type=Path, required=True)
+    parser.add_argument("--rwkv7-gate", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=500)
-    parser.add_argument("--plan-id", default="P-BASELINE-001")
+    parser.add_argument("--plan-id", default="P-BASELINE-003")
     parser.add_argument("--allow-mixed-source", action="store_true")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -514,8 +530,10 @@ def main() -> None:
     repo = args.repo.resolve()
     preflight_path = args.preflight if args.preflight.is_absolute() else repo / args.preflight
     fla_gate_path = args.fla_gate if args.fla_gate.is_absolute() else repo / args.fla_gate
+    rwkv7_gate_path = args.rwkv7_gate if args.rwkv7_gate.is_absolute() else repo / args.rwkv7_gate
     preflight = read_json(preflight_path)
     fla_gate = read_json(fla_gate_path)
+    rwkv7_gate = read_json(rwkv7_gate_path)
     if preflight.get("cuda_visible_devices") != "0":
         raise AssertionError("Preflight was not bound to GPU1")
     if not all(
@@ -523,6 +541,14 @@ def main() -> None:
         for row in fla_gate["provenance"]["source_file_hashes"].values()
     ):
         raise AssertionError("Installed FLA source differs from the pinned wheel")
+    if rwkv7_gate.get("source_and_initialization", {}).get("source_commit") != "952102498e9ed367ea0a59ee64106916d474d30f":
+        raise AssertionError("RWKV7 official source commit differs from the pinned contract")
+    if rwkv7_gate.get("source_and_initialization", {}).get("source_blob") != "b4d167fedead2655d253c55eb47b65f00e7193d2":
+        raise AssertionError("RWKV7 official source blob differs from the pinned contract")
+    if rwkv7_gate.get("source_and_initialization", {}).get("kernel_blob") != "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905":
+        raise AssertionError("RWKV7 official kernel blob differs from the pinned contract")
+    if rwkv7_gate.get("source_and_initialization", {}).get("statepassing_cuda_sha256") != "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892":
+        raise AssertionError("RWKV7 vendored state-passing CUDA source differs from the pinned contract")
 
     run_names = {
         "rwkv": args.rwkv_run,
@@ -549,6 +575,7 @@ def main() -> None:
         "arms": arms,
         "preflight": preflight,
         "fla_gate": fla_gate,
+        "rwkv7_gate": rwkv7_gate,
     }
     out_dir = args.out_dir if args.out_dir.is_absolute() else repo / args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)

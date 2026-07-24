@@ -59,7 +59,7 @@ export SAVE_TRAIN_CHECKPOINT_EVERY="$FULL_STEPS"
 
 case "$BACKBONE_NAME" in
   rwkv)
-    export BACKBONE=rwkv
+    export BACKBONE=rwkv7
     export RWKV_KERNEL=statepassing
     export FLA_STRICT_OFFICIAL=0
     ;;

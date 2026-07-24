@@ -368,6 +368,7 @@ COMMON_ARGS=(
   --rollout_noise_scale "${ROLLOUT_NOISE_SCALE:-0.0}"
   --lr "${LR:-2e-3}"
   --weight_decay "${WEIGHT_DECAY:-1e-3}"
+  --optimizer_contract "${OPTIMIZER_CONTRACT:-uniform}"
   --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
   --feature_buffer_add "${FEATURE_BUFFER_ADD:-2048}"
   --grad_accum_steps "${GRAD_ACCUM_STEPS:-1}"

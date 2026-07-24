@@ -41,6 +41,10 @@ mkdir -p \
   --out "$OUT_DIR/fla_kernel_gate.json" \
   2>&1 | tee "$OUT_DIR/fla_kernel_gate.log"
 
+"$PYTHON_BIN" "$REPO_ROOT/experiments/rwkv_fs_sudoku/check_rwkv7_official_frontend.py" \
+  --out "$OUT_DIR/rwkv7_official_frontend_gate.json" \
+  2>&1 | tee "$OUT_DIR/rwkv7_official_frontend_gate.log"
+
 "$PYTHON_BIN" "$REPO_ROOT/scripts/check_sudoku_backbone_contract.py" \
   --repo "$REPO_ROOT" \
   --out "$OUT_DIR/backbone_contract.json" \

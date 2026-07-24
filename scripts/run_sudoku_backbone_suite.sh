@@ -29,7 +29,8 @@ for backbone in rwkv gdn gdn2 kda; do
   "$REPO_ROOT/scripts/run_sudoku_backbone_benchmark.sh" "$backbone" "$run_name"
 done
 
-python3 "$REPO_ROOT/scripts/summarize_sudoku_backbone_benchmark.py" \
+PYTHON_BIN="${PYTHON_BIN:-/opt/conda/bin/python}"
+"$PYTHON_BIN" "$REPO_ROOT/scripts/summarize_sudoku_backbone_benchmark.py" \
   --repo "$REPO_ROOT" \
   --rwkv-run "$RWKV_RUN" \
   --gdn-run "$GDN_RUN" \
@@ -37,6 +38,7 @@ python3 "$REPO_ROOT/scripts/summarize_sudoku_backbone_benchmark.py" \
   --kda-run "$KDA_RUN" \
   --preflight "$PREFLIGHT_DIR/backbone_contract.json" \
   --fla-gate "$PREFLIGHT_DIR/fla_kernel_gate.json" \
+  --rwkv7-gate "$PREFLIGHT_DIR/rwkv7_official_frontend_gate.json" \
   --steps "$STEPS" \
   --out-dir "$SUMMARY_DIR"
 

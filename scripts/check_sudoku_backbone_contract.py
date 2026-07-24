@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 
 BACKBONES = {
-    "rwkv": "rwkv",
+    "rwkv": "rwkv7",
     "gdn": "fla_gdn",
     "gdn2": "gdn2",
     "kda": "kda",
@@ -67,7 +67,7 @@ def build_model(runner, backbone: str):
         rwkv_kernel="statepassing",
         backbone=BACKBONES[backbone],
         gdn_mode="chunk",
-        gdn_expand_v=2.0,
+        gdn_expand_v=1.0,
         gdn_progressive_base_expand_v=0.0,
         gdn_use_short_conv=True,
         gdn_conv_size=4,
@@ -114,10 +114,14 @@ def check_backbone(runner, public_name: str, device: torch.device) -> dict[str, 
         if not available:
             raise RuntimeError(f"RWKV state-passing CUDA kernel is unavailable: {reason}")
         runtime = {
-            "implementation": "local_rwkv7_statepassing",
+            "implementation": "official_rwkv7_timemix_with_explicit_state_io",
             "kernel": "statepassing",
             "available": available,
             "reason": reason,
+            "official_source_commit": runner.RWKV7_OFFICIAL_SOURCE_COMMIT,
+            "official_source_blob": runner.RWKV7_OFFICIAL_SOURCE_BLOB,
+            "official_kernel_blob": runner.RWKV7_OFFICIAL_KERNEL_BLOB,
+            "statepassing_cuda_sha256": runner.RWKV7_STATEPASSING_CUDA_SHA256,
         }
     else:
         runtime = runner.strict_fla_runtime_summary(model, internal_name)
@@ -138,6 +142,13 @@ def check_backbone(runner, public_name: str, device: torch.device) -> dict[str, 
     if gradients["unexpected_missing"] or gradients["nonfinite"]:
         raise AssertionError(f"{public_name} gradient gate failed: {gradients}")
 
+    optimizer, optimizer_runtime = runner.build_adamw(
+        model,
+        lr=0.0015,
+        weight_decay=0.001,
+        contract="rwkv7_decay_groups",
+    )
+    optimizer.zero_grad(set_to_none=True)
     row = {
         "public_name": public_name,
         "internal_backbone": internal_name,
@@ -151,6 +162,7 @@ def check_backbone(runner, public_name: str, device: torch.device) -> dict[str, 
         "smoke_wall_sec": elapsed,
         "peak_allocated_mib": torch.cuda.max_memory_allocated(device) / (1024**2),
         "runtime": runtime,
+        "optimizer_runtime": optimizer_runtime,
     }
     del model, loop_logits, trace, loss
     torch.cuda.empty_cache()
@@ -181,7 +193,7 @@ def main() -> None:
             "layers": 10,
             "heads": 6,
             "head_dim": 32,
-            "gdn_expand_v": 2.0,
+            "gdn_expand_v": 1.0,
             "loops_smoke": 2,
             "future_seed_scale": 1.0,
         },
@@ -198,4 +210,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

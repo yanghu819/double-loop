@@ -18,6 +18,20 @@ PUBLIC_TO_INTERNAL = {
     "gdn2": "gdn2",
     "kda": "kda",
 }
+EXPECTED_FLA_RUNTIME = {
+    "gdn": {
+        "implementation": "official_fla_fla_gdn",
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+    },
+    "gdn2": {
+        "implementation": "official_fla_gdn2",
+        "class": "fla.layers.gdn2.GatedDeltaNet2",
+    },
+    "kda": {
+        "implementation": "official_fla_kda",
+        "class": "fla.layers.kda.KimiDeltaAttention",
+    },
+}
 LABELS = {
     "rwkv": "RWKV7 TimeMix",
     "gdn": "GDN",
@@ -29,10 +43,6 @@ COLORS = {
     "gdn": "#176b55",
     "gdn2": "#b04a3a",
     "kda": "#2869a6",
-}
-TRACKING_ONLY_PATCHES = {
-    "leaderboard.csv",
-    "runs/visualization_index.html",
 }
 EXPECTED = {
     "size": 9,
@@ -89,6 +99,11 @@ def close_enough(left: Any, right: Any) -> bool:
     if isinstance(right, float):
         return abs(float(left) - right) <= 1e-9
     return left == right
+
+
+def assert_close(label: str, left: Any, right: Any, tolerance: float = 1e-8) -> None:
+    if abs(float(left) - float(right)) > tolerance:
+        raise AssertionError(f"{label} differs: {left!r} != {right!r}")
 
 
 def validate_args(public_name: str, args: dict[str, Any], steps: int) -> None:
@@ -210,9 +225,26 @@ def extract_run(
         fla_runtime = train.get("fla_runtime", {})
         if not bool(fla_runtime.get("strict")):
             raise AssertionError(f"{public_name} runtime is not strict official FLA")
+        if fla_runtime.get("fla_source_sha") != "fe8fce9fc6984f22905f54cfa885dce1502baf26":
+            raise AssertionError(f"{public_name} FLA source marker differs: {fla_runtime}")
+        if not bool(fla_runtime.get("backend_dispatch_disabled")):
+            raise AssertionError(f"{public_name} allowed FLA backend dispatch")
+        if fla_runtime.get("conv_backend") != "triton":
+            raise AssertionError(f"{public_name} convolution backend is not Triton")
         classes = {row["class"] for row in fla_runtime.get("layers", [])}
-        if len(classes) != 1:
-            raise AssertionError(f"{public_name} used inconsistent FLA classes: {classes}")
+        expected_runtime = EXPECTED_FLA_RUNTIME[public_name]
+        if classes != {expected_runtime["class"]}:
+            raise AssertionError(
+                f"{public_name} official FLA class differs: {classes} != "
+                f"{{{expected_runtime['class']!r}}}"
+            )
+        if len(fla_runtime.get("layers", [])) != int(args["layers"]):
+            raise AssertionError(f"{public_name} did not report every official FLA layer")
+        for row in fla_runtime["layers"]:
+            if set(row.get("conv_backends", {}).values()) != {"triton"}:
+                raise AssertionError(f"{public_name} layer changed convolution backend: {row}")
+        if runtime.get("implementation") != expected_runtime["implementation"]:
+            raise AssertionError(f"{public_name} implementation marker differs: {runtime}")
 
     checkpoint_path = run_dir / "output" / f"checkpoint_eval_step{steps:06d}.json"
     checkpoint = read_json(checkpoint_path)
@@ -226,13 +258,11 @@ def extract_run(
             f"{public_name} checkpoint holes53 eval_n differs: {fixed_holes53.get('eval_n')}"
         )
     config = read_json(run_dir / "config.json")
+    if bool(config.get("git_dirty")):
+        raise AssertionError(f"{public_name} formal run reports a dirty source tree")
     patch_files = source_patch_files(run_dir)
-    unexpected_patch_files = sorted(set(patch_files) - TRACKING_ONLY_PATCHES)
-    if unexpected_patch_files:
-        raise AssertionError(
-            f"{public_name} has model/source changes outside tracking files: "
-            f"{unexpected_patch_files}"
-        )
+    if patch_files:
+        raise AssertionError(f"{public_name} formal run has a non-empty source patch: {patch_files}")
     loops = []
     for loop in range(1, int(args["max_loops"]) + 1):
         row = metrics["eval_clean"][f"loop{loop}"]
@@ -254,12 +284,12 @@ def extract_run(
         }
     case = primary_case(run_dir)
     elapsed = float(checkpoint["elapsed_sec"])
-    return {
+    arm = {
         "key": public_name,
         "label": LABELS[public_name],
         "color": COLORS[public_name],
         "run_name": run_name,
-        "run_dir": run_dir,
+        "run_dir": f"runs/{run_name}",
         "git_sha": config["git_sha"],
         "git_dirty": bool(config.get("git_dirty")),
         "source_patch_files": patch_files,
@@ -289,7 +319,42 @@ def extract_run(
             "eval_size": int(train["official_eval_size"]),
         },
         "runtime": runtime,
+        "fla_runtime": train.get("fla_runtime"),
     }
+    strict_path = run_dir / "strict_run_validation.json"
+    if not strict_path.is_file():
+        raise FileNotFoundError(f"{public_name} is missing strict post-run validation: {strict_path}")
+    strict = read_json(strict_path)
+    expected_strict = {
+        "status": "PASS",
+        "backbone": public_name,
+        "run_name": run_name,
+        "git_sha": arm["git_sha"],
+        "puzzle_sha256": arm["case"]["puzzle_sha256"],
+        "parameter_count": arm["parameter_count"],
+    }
+    for key, expected in expected_strict.items():
+        if strict.get(key) != expected:
+            raise AssertionError(
+                f"{public_name} strict validation mismatch for {key}: "
+                f"{strict.get(key)!r} != {expected!r}"
+            )
+    strict_metrics = {
+        "train_ce": arm["train_ce"],
+        "train_sec_per_step": arm["train_sec_per_step"],
+        "peak_allocated_mib": arm["peak_allocated_mib"],
+        "fixed_holes53_exact": arm["fixed_holes53"]["label_exact"],
+        "mixed_loop1_exact": arm["loops"][0]["exact"],
+        "mixed_loop5_exact": arm["loops"][-1]["exact"],
+        "mixed_loop5_blank_acc": arm["loops"][-1]["blank_acc"],
+        "official_46_50_exact": arm["ranges"]["b46_50"]["loop5"]["label_exact"],
+        "official_51_55_exact": arm["ranges"]["b51_55"]["loop5"]["label_exact"],
+        "official_56_64_exact": arm["ranges"]["b56_64"]["loop5"]["label_exact"],
+    }
+    for key, expected in strict_metrics.items():
+        assert_close(f"{public_name} strict validation {key}", strict.get(key), expected)
+    arm["strict_validation"] = strict
+    return arm
 
 
 def validate_cross_arm(arms: list[dict[str, Any]], allow_mixed_source: bool) -> None:
@@ -402,6 +467,7 @@ def render_html(payload: dict[str, Any]) -> str:
         f"<td>{html.escape(str(arm['runtime'].get('implementation', 'official FLA strict runtime')))}</td>"
         f"<td>{arm['git_sha'][:12]}</td>"
         f"<td>{'clean' if not arm['source_patch_files'] else 'tracking only'}</td>"
+        f"<td>{arm['strict_validation']['status']}</td>"
         f"<td>{html.escape(str(payload['preflight']['backbones'][arm['key']]['runtime'].get('kernel', 'chunk + Triton conv')))}</td>"
         "</tr>"
         for arm in arms
@@ -443,8 +509,8 @@ code{{background:#edf1f3;padding:2px 5px;border-radius:3px}}@media(max-width:110
 <h2>Learning and loops</h2><div class="charts">{line_chart(arms, "curve", "step", "ce", "Training CE")}{line_chart(arms, "loops", "loop", "exact", "Full-board exact by loop")}{line_chart(arms, "loops", "loop", "blank_acc", "Blank accuracy by loop")}</div>
 <h2>Official blank ranges</h2><div class="band"><table><thead><tr><th rowspan="2">blanks</th>{range_headers}</tr><tr>{range_subheaders}</tr></thead><tbody>{''.join(range_rows)}</tbody></table></div>
 <h2>Same puzzle, every loop</h2><div class="cases">{cases}</div>
-<h2>Implementation provenance</h2><div class="band"><table><thead><tr><th>backbone</th><th>implementation</th><th>source SHA</th><th>source patch</th><th>kernel</th></tr></thead><tbody>{provenance_rows}</tbody></table><p>Official RWKV7 model commit: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["source_commit"])}</code>; model blob: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["source_blob"])}</code>; kernel blob: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["kernel_blob"])}</code>. Official FLA wheel SHA256: <code>{html.escape(payload["fla_gate"]["provenance"]["wheel_sha256"])}</code>. Formula, CUDA reference/backward, state continuity, source, and no-fallback gates passed before training.</p>{memory_note_html}</div>
-<h2>Interpretation boundary</h2><div class="band"><p>This benchmark compares FutureSeed-enabled recurrent carriers at one finite budget. It is not a with/without-FutureSeed ablation and it is not evidence about each architecture's asymptotic ceiling. The separate matched no-FutureSeed result supports the causal FutureSeed claim.</p></div>
+<h2>Implementation provenance</h2><div class="band"><table><thead><tr><th>backbone</th><th>implementation</th><th>source SHA</th><th>source patch</th><th>strict post-run</th><th>kernel</th></tr></thead><tbody>{provenance_rows}</tbody></table><p>Official RWKV7 model commit: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["source_commit"])}</code>; model blob: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["source_blob"])}</code>; kernel blob: <code>{html.escape(payload["rwkv7_gate"]["source_and_initialization"]["kernel_blob"])}</code>. Official FLA wheel SHA256: <code>{html.escape(payload["fla_gate"]["provenance"]["wheel_sha256"])}</code>. Formula, CUDA reference/backward, source, native cache layout, exact official class, and no-fallback gates passed before training. Every displayed metric also matches a separate fail-closed post-run validator.</p>{memory_note_html}</div>
+<h2>Interpretation boundary</h2><div class="band"><p>This is a one-seed, finite-budget, matched-state and matched-recipe comparison of FutureSeed-enabled recurrent carriers. It is not a with/without-FutureSeed ablation, an architecture-specific hyperparameter study, or evidence about asymptotic ceilings. In particular, state matching uses <code>H6 x K32 x V32</code> for every carrier; official GDN commonly recommends <code>H x K = 0.75D</code> with <code>expand_v=2</code>, so this run deliberately does not use GDN's native recommended geometry. The separate matched no-FutureSeed result is needed for a causal FutureSeed claim.</p></div>
 </main></body></html>"""
 
 
@@ -464,13 +530,17 @@ def decision_from(arms: list[dict[str, Any]]) -> str:
             f"{LABELS[best_key]} has a real hard-exact advantage at this budget. "
             "Retain it as the scale carrier and verify the advantage at one longer gate."
         )
-    gdn = next(arm for arm in arms if arm["key"] == "gdn")
+    best_opening = max(
+        arms,
+        key=lambda arm: arm["ranges"]["b46_50"]["loop5"]["label_exact"],
+    )
     cheapest = min(arms, key=lambda arm: arm["train_sec_per_step"])
     return (
         "No backbone separates on hard full-board closure at this finite budget. "
-        f"GDN opening exact is {gdn['ranges']['b46_50']['loop5']['label_exact']:.4f}; "
-        f"{cheapest['label']} is cheapest per optimizer step. Keep the existing clean GDN scaling line, "
-        "but do not claim a universal architecture winner."
+        f"{best_opening['label']} has the best 46-50 blank opening exact "
+        f"({best_opening['ranges']['b46_50']['loop5']['label_exact']:.4f}); "
+        f"{cheapest['label']} is cheapest per optimizer step. "
+        "Do not select or claim a universal architecture winner from this gate."
     )
 
 

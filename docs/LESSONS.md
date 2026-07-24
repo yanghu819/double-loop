@@ -1127,3 +1127,29 @@
   uniformly reliable. Close expand-v/LR/seed/loss/noise rescue tables and move
   only to a genuinely different generic data-coverage or state-formulation
   question.
+
+## 2026-07-24 Strict official-carrier rerun
+
+- Same seed is not enough for a one-seed architecture comparison. Different
+  constructors consumed different random streams and changed 11 of 77 shared
+  tensors. Reset the backbone-independent shell from a separate fixed stream
+  and require all shared tensor hashes to match before training.
+- Do not diagnose an implementation bug from an unexpected ranking alone.
+  Official FLA source hashes, exact layer classes, Triton convolution,
+  recurrent-state layout, naive-reference output/state/backward, initial-state
+  gradients, and post-run metrics all passed for GDN/GDN2/KDA. The clean result
+  can still differ because the prior experiment was confounded.
+- The corrected state-matched step500 ordering is GDN2 opening first, RWKV7
+  second, KDA third, and GDN last: official 46-50 exact is
+  `0.7969/0.7285/0.6465/0.3633`. This withdraws the old “GDN beats RWKV”
+  statement, but all four are still zero exact at 51-64 blanks, so it does not
+  establish a hard-task or asymptotic winner.
+- State matching and native-architecture matching answer different questions.
+  The strict table uses `H6 x K32 x V32` for every carrier, while official GDN
+  recommends `H x K = 0.75D` and `expand_v=2`. One preregistered
+  `D192/H6/K24/V48` GDN run is a valid configuration diagnosis because it stays
+  close in parameters and state size. A geometry/seed/LR table is not.
+- At this short gate, recurrent improvement mostly happens by loop2 and then
+  stalls. Same-puzzle wrong cells are RWKV7 `24->23`, GDN `23->17`, GDN2
+  `21->20`, and KDA `28->24` across loops1-5. Easy-bucket opening must not be
+  presented as evidence that later loops perform sustained global correction.

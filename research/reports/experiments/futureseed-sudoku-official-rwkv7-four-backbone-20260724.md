@@ -4,12 +4,12 @@
 
 - Experiment: `E-BASELINE-003`
 - Plan: `P-BASELINE-003`
-- Status: restarted after fairness audit
+- Status: complete
 - Scheduled: 2026-07-24
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
 - CPU model smoke: forbidden
-- Source: the final detached SHA will be recorded by each run's `config.json`
+- Source: `6e51f067a18d936bda7f3d588b7b3f32625b2b18`
 
 ## 2. Hypothesis
 
@@ -116,7 +116,7 @@ The relaunch contract now fails closed on any source dirtiness, disables core
 dumps for preflight/formal compilation, and keeps all run artifacts outside
 the detached source worktree.
 
-Every accepted arm will archive `config.json`, `score.json`, logs, source SHA,
+Every accepted arm archives `config.json`, `score.json`, logs, source SHA,
 source snapshot, checkpoint metadata, official blank-range metrics, and
 loop-by-loop same-puzzle visualizations. Model checkpoints remain outside Git.
 
@@ -158,11 +158,75 @@ Review note: equal seed alone is not equal shared initialization when
 architectures consume different random-number streams. Future one-seed carrier
 comparisons must pass the shared-shell hash gate before training.
 
+### Strict implementation audit
+
+The accepted rerun passed all of the following before optimizer step 1:
+
+- the 77 same-shaped shared-shell tensors were bit-identical across all four
+  models;
+- the official FLA wheel at commit
+  `fe8fce9fc6984f22905f54cfa885dce1502baf26` matched the installed source
+  files byte for byte;
+- the instantiated classes were exactly FLA `GatedDeltaNet`,
+  `GatedDeltaNet2`, and `KimiDeltaAttention`;
+- the autograd graphs contained `ChunkGatedDeltaRuleFunctionBackward`,
+  `ChunkGDN2FunctionBackward`, and `ChunkKDAFunctionBackward`;
+- FLA output/reference errors were at most `6.6e-5`, terminal-state errors at
+  most `2.8e-4`, and every initial recurrent state received a finite nonzero
+  gradient;
+- GDN and KDA used their official V-by-K cache layout; GDN2 used its official
+  K-by-V layout;
+- RWKV7 equations, initialization, `v_first`, CUDA state passing, and grouped
+  AdamW matched the pinned official source;
+- all arms consumed the same strict official-data stream and the same
+  512-board evaluation sets.
+
+After training, every arm separately passed
+`strict_run_validation.json`. The final aggregator refuses dirty source,
+nonempty patches, wrong classes/backends, missing validation, differing puzzle
+hashes, or any metric that disagrees with the raw result.
+
+### Accepted result
+
+| Carrier | Params | CE@500 | Mixed exact L1->L5 | 46-50 exact L5 | 51-55 | 56-64 | Sec/step | Peak GiB |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| RWKV7 TimeMix | 5.093M | 1.0190 | 0.00% -> 1.95% | 72.85% | 0.00% | 0.00% | 4.04 | 10.78 |
+| GDN, state-matched | 4.867M | 1.0509 | 0.20% -> 0.59% | 36.33% | 0.00% | 0.00% | 4.89 | 5.99 |
+| GDN2 | 5.462M | 1.0062 | 1.37% -> 2.34% | 79.69% | 0.00% | 0.00% | 5.85 | 7.84 |
+| KDA | 4.736M | 1.0179 | 0.20% -> 1.76% | 64.65% | 0.00% | 0.00% | 5.58 | 6.45 |
+
+All four strict 53-blank evaluations are `0%` exact. On the same visualized
+puzzle, wrong-cell counts across loops 1-5 are:
+
+- RWKV7: `24,24,24,23,23`;
+- GDN: `23,21,17,17,17`;
+- GDN2: `21,19,20,20,20`;
+- KDA: `28,23,24,24,24`.
+
+The aggregate and all same-puzzle visualizations are archived under
+`runs/sudoku-backbone-benchmark-sharedinit-20260724T154020Z-6e51f06/`.
+
 ## 8. Conclusions
 
-Pending. A carrier decision requires either at least `+0.03` hard exact or
-equal quality with at least 20% lower measured compute. Otherwise the result is
-reported only as a one-seed, finite-budget observation.
+1. There is no remaining evidence that GDN2 or KDA silently fell back or used
+   the wrong recurrent-state orientation. Their official CUDA/Triton
+   implementations pass reference, backward, cache-layout, source, and
+   post-run gates.
+2. The old claim that GDN clearly beats RWKV is withdrawn. Under the corrected
+   shared initialization, official RWKV7 and GDN2 both open much better than
+   the state-matched GDN arm.
+3. GDN2 is the best finite-budget opener, not a hard-task winner. Every carrier
+   is still `0%` exact at 51-64 blanks, so this experiment selects no universal
+   architecture.
+4. Most loop gain arrives by loop 2. Later loops mostly copy the same operating
+   point, so this gate does not establish sustained recurrent correction.
+5. This table deliberately matches recurrent-state size. It is not a
+   native-optimal architecture comparison: official GDN recommends
+   `num_heads * head_dim = 0.75 * hidden_size` with `expand_v=2`, while this
+   state-matched arm uses K=V=32. One preregistered native-geometry GDN probe is
+   justified to test whether configuration compression, rather than an
+   implementation bug, caused the drop. It must remain separate from this
+   table and must not become a geometry sweep.
 
 ## 9. Submission Record
 

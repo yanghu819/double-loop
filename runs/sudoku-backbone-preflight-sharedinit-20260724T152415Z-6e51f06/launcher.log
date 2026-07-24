@@ -1,0 +1,2190 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[cuda-check] start fla_gdn_reference
+[cuda-check] pass fla_gdn_reference in 26.68s
+[cuda-check] start fla_gdn_adapter
+[cuda-check] pass fla_gdn_adapter in 42.25s
+[cuda-check] start fla_gdn_futureseed_stack
+[cuda-check] pass fla_gdn_futureseed_stack in 16.87s
+[cuda-check] start kda_reference
+[cuda-check] pass kda_reference in 34.78s
+[cuda-check] start kda_adapter
+[cuda-check] pass kda_adapter in 38.09s
+[cuda-check] start kda_futureseed_stack
+[cuda-check] pass kda_futureseed_stack in 3.04s
+[cuda-check] start gdn2_reference
+[cuda-check] pass gdn2_reference in 19.66s
+[cuda-check] start gdn2_adapter
+[cuda-check] pass gdn2_adapter in 33.13s
+[cuda-check] start gdn2_futureseed_stack
+[cuda-check] pass gdn2_futureseed_stack in 5.34s
+{
+  "device": "NVIDIA A800-SXM4-80GB",
+  "fla_gdn_adapter": {
+    "check_wall_sec": 42.251288829836994,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 10.413734801113605,
+    "initial_state_grad_norm": 0.006503338925540447,
+    "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+    "official_layer_class": "fla.layers.gated_deltanet.GatedDeltaNet",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 34344,
+    "peak_memory_mb": 273.2548828125,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      32,
+      16
+    ],
+    "state_v_first": true
+  },
+  "fla_gdn_futureseed_stack": {
+    "check_wall_sec": 16.874430062947795,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.313708305358887,
+    "input_grad_norm": 0.025078939273953438,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 152964
+  },
+  "fla_gdn_reference": {
+    "check_wall_sec": 26.67641630815342,
+    "gradient_errors": {
+      "A_log": 0.023378761485219002,
+      "beta": 9.512156248092651e-05,
+      "dt_bias": 0.012223813682794571,
+      "g": 0.0006060656742192805,
+      "h0": 1.168984454125166e-06,
+      "k": 8.428096771240234e-05,
+      "q": 9.18954610824585e-05,
+      "v": 0.0003630518913269043
+    },
+    "gradient_max_abs": 0.023378761485219002,
+    "output_max_abs": 4.5433640480041504e-05,
+    "state_max_abs": 0.00016039609909057617
+  },
+  "gdn2_adapter": {
+    "check_wall_sec": 33.12641080911271,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 12.444869987666607,
+    "initial_state_grad_norm": 0.011756825260818005,
+    "official_chunk_autograd_node": "ChunkGDN2FunctionBackward",
+    "official_layer_class": "fla.layers.gdn2.GatedDeltaNet2",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 48356,
+    "peak_memory_mb": 274.21484375,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      16,
+      32
+    ],
+    "state_v_first": false
+  },
+  "gdn2_futureseed_stack": {
+    "check_wall_sec": 5.335681268014014,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.31370735168457,
+    "input_grad_norm": 0.033095162361860275,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 195000
+  },
+  "gdn2_reference": {
+    "check_wall_sec": 19.655625361017883,
+    "gradient_errors": {
+      "b": 1.2858770787715912e-05,
+      "g": 3.884546458721161e-05,
+      "h0": 9.697675704956055e-05,
+      "k": 4.7538429498672485e-05,
+      "q": 5.0965696573257446e-05,
+      "v": 0.0002336949110031128,
+      "w": 0.0001019015908241272
+    },
+    "gradient_max_abs": 0.0002336949110031128,
+    "output_max_abs": 5.9857964515686035e-05,
+    "state_max_abs": 0.00027595460414886475
+  },
+  "kda_adapter": {
+    "check_wall_sec": 38.09104265086353,
+    "conv_backends": {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    "forward_backward_ms": 9.69080999493599,
+    "initial_state_grad_norm": 0.012747186236083508,
+    "official_chunk_autograd_node": "ChunkKDAFunctionBackward",
+    "official_layer_class": "fla.layers.kda.KimiDeltaAttention",
+    "official_layer_forward_calls": 1,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 36324,
+    "peak_memory_mb": 273.8779296875,
+    "state_dtype": "torch.float32",
+    "state_shape": [
+      2,
+      4,
+      32,
+      16
+    ],
+    "state_v_first": true
+  },
+  "kda_futureseed_stack": {
+    "check_wall_sec": 3.0380550061818212,
+    "expected_missing_parameter_grads": [
+      "blocks.0.future_seed_logit"
+    ],
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 11.313709259033203,
+    "input_grad_norm": 0.033052243292331696,
+    "output_shape": [
+      2,
+      81,
+      64
+    ],
+    "parameters": 158904
+  },
+  "kda_reference": {
+    "check_wall_sec": 34.78172160102986,
+    "gradient_errors": {
+      "A_log": 9.026564657688141e-05,
+      "beta": 7.396191358566284e-05,
+      "dt_bias": 7.305201143026352e-05,
+      "g": 3.0046328902244568e-05,
+      "h0": 0.00011349469423294067,
+      "k": 5.13661652803421e-05,
+      "q": 3.7496909499168396e-05,
+      "v": 0.0002580583095550537
+    },
+    "gradient_max_abs": 0.0002580583095550537,
+    "output_max_abs": 6.564334034919739e-05,
+    "state_max_abs": 0.00011767446994781494
+  },
+  "provenance": {
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "fla_package_root": "/huyang2/double-loop/.cache/python-extra-pylib/fla",
+    "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+    "fla_version": "0.5.2",
+    "source_file_hashes": {
+      "fla/layers/gated_deltanet.py": {
+        "installed_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b",
+        "wheel_sha256": "d9c8dbfbcded554a1a1bfe58efe7c8181f32957d7565beea5625836f6371e00b"
+      },
+      "fla/layers/gdn2.py": {
+        "installed_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+        "wheel_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910"
+      },
+      "fla/layers/kda.py": {
+        "installed_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a",
+        "wheel_sha256": "ab31cbdc41cfa74481fc19e0fa32ef59c6f6a4ee779d5f10824509e8af4bc24a"
+      },
+      "fla/models/utils.py": {
+        "installed_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635",
+        "wheel_sha256": "884a0287b48447889e5b7ccd027083a99d5acec5b5b9b02df2453cb8eccc3635"
+      },
+      "fla/modules/conv/short_conv.py": {
+        "installed_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e",
+        "wheel_sha256": "c4712f1086df222a54fa65a9a69a798a8c6fbaf782f8ec4dd67800573497179e"
+      },
+      "fla/modules/conv/triton/ops.py": {
+        "installed_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0",
+        "wheel_sha256": "dda5c62164e46757d3dc8fb183bed40a3702d57f1b60d6be9849ef6b9b0d2eb0"
+      },
+      "fla/ops/backends/__init__.py": {
+        "installed_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635",
+        "wheel_sha256": "a6934ff1ae38c412bf7cbc7cc5009522c103931c55ea06db51088c50a6e6e635"
+      },
+      "fla/ops/gated_delta_rule/chunk.py": {
+        "installed_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e",
+        "wheel_sha256": "fd4e01dc22a8c139c2a6eb61e47ae472a50322e4b4fff006cc5039a4602b310e"
+      },
+      "fla/ops/gdn2/chunk.py": {
+        "installed_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0",
+        "wheel_sha256": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0"
+      },
+      "fla/ops/kda/chunk.py": {
+        "installed_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8",
+        "wheel_sha256": "a15aa6ac257af5c8f7a1d6afc21a417391568e90a8898d4e228ddeb48cb0e9b8"
+      }
+    },
+    "symbols": {
+      "fla_gdn_layer": {
+        "module": "fla.layers.gated_deltanet",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+        "qualname": "GatedDeltaNet",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gated_deltanet.py"
+      },
+      "fla_gdn_op": {
+        "module": "fla.ops.gated_delta_rule.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+        "qualname": "chunk_gated_delta_rule",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gated_delta_rule/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      },
+      "gdn2_layer": {
+        "module": "fla.layers.gdn2",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+        "qualname": "GatedDeltaNet2",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/gdn2.py"
+      },
+      "gdn2_op": {
+        "module": "fla.ops.gdn2.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+        "qualname": "chunk_gdn2",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/gdn2/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      },
+      "kda_layer": {
+        "module": "fla.layers.kda",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+        "qualname": "KimiDeltaAttention",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py",
+        "wrapped": false,
+        "wrapper_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/layers/kda.py"
+      },
+      "kda_op": {
+        "module": "fla.ops.kda.chunk",
+        "module_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+        "qualname": "chunk_kda",
+        "unwrapped_path": "/huyang2/double-loop/.cache/python-extra-pylib/fla/ops/kda/chunk.py",
+        "wrapped": true,
+        "wrapper_path": "/opt/conda/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py"
+      }
+    },
+    "wheel_path": "/huyang2/double-loop/artifacts/worktrees/official-rwkv7-90ed0d2/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl",
+    "wheel_sha256": "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+  },
+  "requested_backbone": "all",
+  "requested_check": "all",
+  "torch": "2.7.0+cu126"
+}
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+{
+  "cuda_against_torch": {
+    "all_gradients_finite": true,
+    "gradients": {
+      "a0": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 5.028879968449473e-06,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.003470552091685626,
+        "rms": 1.6305731378452037e-06
+      },
+      "a1": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 5.960464477539062e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.005229820463827732,
+        "rms": 1.7609337987778417e-07
+      },
+      "a2": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 4.76837158203125e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004791511294055137,
+        "rms": 1.2525663350970717e-07
+      },
+      "g1": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 2.288818359375e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004554370716032461,
+        "rms": 4.928105227008928e-06
+      },
+      "g2": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.00048828125,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004127838106271241,
+        "rms": 0.00010089056740980595
+      },
+      "initial_state": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.0001678522676229477,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0019901230839794405,
+        "rms": 1.6882167983567342e-05
+      },
+      "k_a": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 8.463393896818161e-06,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0030350689132437447,
+        "rms": 2.0486872926994693e-06
+      },
+      "k_k": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 1.4186836779117584e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0021989233767228185,
+        "rms": 4.660392733057961e-06
+      },
+      "key.weight": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.0009765625,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.005095408190166196,
+        "rms": 0.0001823458296712488
+      },
+      "ln_x.bias": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.0,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0,
+        "rms": 0.0
+      },
+      "ln_x.weight": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 1.3168435543775558e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.002782618756432698,
+        "rms": 4.022680514026433e-06
+      },
+      "output.weight": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.0009765625,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004151959568915574,
+        "rms": 7.790435483912006e-05
+      },
+      "r_k": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.0,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0,
+        "rms": 0.0
+      },
+      "receptance.weight": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 0.000244140625,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004183721169381554,
+        "rms": 2.2921147319721058e-05
+      },
+      "v0": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 2.0525185391306877e-06,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.002888448941628778,
+        "rms": 6.149162459223589e-07
+      },
+      "v1": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 4.76837158203125e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004963351415434939,
+        "rms": 9.13368793931113e-08
+      },
+      "v2": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 4.76837158203125e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004538476121505926,
+        "rms": 6.651657713518944e-08
+      },
+      "v_first": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 8.557399269193411e-06,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0029713329020203674,
+        "rms": 9.575092008162756e-07
+      },
+      "value.weight": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 6.103515625e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.007457256329799814,
+        "rms": 8.435408744844608e-06
+      },
+      "w0": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 4.052883014082909e-06,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.002286267694507105,
+        "rms": 1.3404702485786402e-06
+      },
+      "w1": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 2.384185791015625e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.005132650623457204,
+        "rms": 6.208087910408722e-08
+      },
+      "w2": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 2.682209014892578e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0049466295043334,
+        "rms": 4.9685112912811746e-08
+      },
+      "x": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 5.821522790938616e-06,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.0045291076472404445,
+        "rms": 1.0547076954026124e-06
+      },
+      "x_a": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 4.945559339830652e-08,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.005333336028585709,
+        "rms": 1.64503664024096e-08
+      },
+      "x_g": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 9.161703928839415e-07,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.004048393599130306,
+        "rms": 4.029772924241115e-07
+      },
+      "x_k": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 2.451636828482151e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.005275515289458043,
+        "rms": 9.070232408703305e-06
+      },
+      "x_r": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 2.681789919734001e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.005053044013979216,
+        "rms": 1.076064563676482e-05
+      },
+      "x_v": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 1.000809425022453e-05,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.008590346955310623,
+        "rms": 3.996326086053159e-06
+      },
+      "x_w": {
+        "actual_dtype": "torch.float32",
+        "max_abs": 1.401218696628348e-08,
+        "reference_dtype": "torch.float32",
+        "relative_rms": 0.01538578047705641,
+        "rms": 5.078547804515665e-09
+      }
+    },
+    "output": {
+      "actual_dtype": "torch.bfloat16",
+      "max_abs": 3.814697265625e-05,
+      "reference_dtype": "torch.bfloat16",
+      "relative_rms": 0.003847551260640881,
+      "rms": 7.501568688894622e-06
+    },
+    "terminal_state": {
+      "actual_dtype": "torch.float32",
+      "max_abs": 0.00011602416634559631,
+      "reference_dtype": "torch.float32",
+      "relative_rms": 0.0013060809448397683,
+      "rms": 1.9485834855004214e-05
+    },
+    "v_first": {
+      "actual_dtype": "torch.float32",
+      "max_abs": 0.0,
+      "reference_dtype": "torch.float32",
+      "relative_rms": 0.0,
+      "rms": 0.0
+    }
+  },
+  "cuda_visible_devices": "0",
+  "decay_parameterization": {
+    "actual_dtype": "torch.float64",
+    "max_abs": 0.0,
+    "reference_dtype": "torch.float64",
+    "relative_rms": 0.0,
+    "rms": 0.0
+  },
+  "device": "NVIDIA A800-SXM4-80GB",
+  "independent_formula": {
+    "output": {
+      "actual_dtype": "torch.float32",
+      "max_abs": 0.0,
+      "reference_dtype": "torch.float32",
+      "relative_rms": 0.0,
+      "rms": 0.0
+    },
+    "terminal_state": {
+      "actual_dtype": "torch.float32",
+      "max_abs": 0.0,
+      "reference_dtype": "torch.float32",
+      "relative_rms": 0.0,
+      "rms": 0.0
+    },
+    "v_first": {
+      "actual_dtype": "torch.float32",
+      "max_abs": 0.0,
+      "reference_dtype": "torch.float32",
+      "relative_rms": 0.0,
+      "rms": 0.0
+    }
+  },
+  "layer_zero_value": {
+    "output_finite": true,
+    "terminal_state_finite": true,
+    "v_first": {
+      "actual_dtype": "torch.float32",
+      "max_abs": 0.0,
+      "reference_dtype": "torch.float32",
+      "relative_rms": 0.0,
+      "rms": 0.0
+    }
+  },
+  "source_and_initialization": {
+    "kernel_blob": "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905",
+    "kernel_path": "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu",
+    "parameter_shapes": {
+      "a1": [
+        192,
+        32
+      ],
+      "a2": [
+        32,
+        192
+      ],
+      "g1": [
+        192,
+        64
+      ],
+      "g2": [
+        64,
+        192
+      ],
+      "r_k": [
+        6,
+        32
+      ],
+      "v1": [
+        192,
+        32
+      ],
+      "v2": [
+        32,
+        192
+      ],
+      "w1": [
+        192,
+        32
+      ],
+      "w2": [
+        32,
+        192
+      ]
+    },
+    "source_blob": "b4d167fedead2655d253c55eb47b65f00e7193d2",
+    "source_commit": "952102498e9ed367ea0a59ee64106916d474d30f",
+    "source_path": "RWKV-v7/train_temp/src/model.py",
+    "statepassing_cuda_sha256": "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892",
+    "zero_initialization": {
+      "a1": 0.0,
+      "g1": 0.0,
+      "output.weight": 0.0,
+      "v1": 0.0,
+      "w1": 0.0
+    }
+  },
+  "torch": "2.7.0+cu126",
+  "value_residual_and_optimizer": {
+    "optimizer": {
+      "contract": "rwkv7_decay_groups",
+      "decay_names": [
+        "receptance.weight",
+        "key.weight",
+        "value.weight",
+        "output.weight"
+      ],
+      "decay_parameter_count": 16384,
+      "no_decay_names": [
+        "x_r",
+        "x_w",
+        "x_k",
+        "x_v",
+        "x_a",
+        "x_g",
+        "w1",
+        "w2",
+        "w0",
+        "a1",
+        "a2",
+        "a0",
+        "v1",
+        "v2",
+        "v0",
+        "g1",
+        "g2",
+        "k_k",
+        "k_a",
+        "r_k",
+        "ln_x.weight",
+        "ln_x.bias"
+      ],
+      "no_decay_parameter_count": 17280
+    },
+    "v_first_gradient_norm": 0.04588097706437111,
+    "v_first_output_rms_delta": 0.0015432204818353057
+  }
+}
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[gpu1-contract] start rwkv
+/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation.
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+[gpu1-contract] pass rwkv
+[gpu1-contract] start gdn
+[gpu1-contract] pass gdn
+[gpu1-contract] start gdn2
+[gpu1-contract] pass gdn2
+[gpu1-contract] start kda
+[gpu1-contract] pass kda
+{
+  "backbones": {
+    "gdn": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 16.0,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 1.869242861879903,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "fla_gdn",
+      "loss": 2.3049023151397705,
+      "optimizer_runtime": {
+        "contract": "rwkv7_decay_groups",
+        "decay_names": [
+          "embed.weight",
+          "position.weight",
+          "reasoner.blocks.0.time_mix.core.q_proj.weight",
+          "reasoner.blocks.0.time_mix.core.k_proj.weight",
+          "reasoner.blocks.0.time_mix.core.v_proj.weight",
+          "reasoner.blocks.0.time_mix.core.a_proj.weight",
+          "reasoner.blocks.0.time_mix.core.b_proj.weight",
+          "reasoner.blocks.0.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.g_proj.weight",
+          "reasoner.blocks.0.time_mix.core.o_norm.weight",
+          "reasoner.blocks.0.time_mix.core.o_proj.weight",
+          "reasoner.blocks.0.channel_mix.key.weight",
+          "reasoner.blocks.0.channel_mix.value.weight",
+          "reasoner.blocks.1.time_mix.core.q_proj.weight",
+          "reasoner.blocks.1.time_mix.core.k_proj.weight",
+          "reasoner.blocks.1.time_mix.core.v_proj.weight",
+          "reasoner.blocks.1.time_mix.core.a_proj.weight",
+          "reasoner.blocks.1.time_mix.core.b_proj.weight",
+          "reasoner.blocks.1.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.g_proj.weight",
+          "reasoner.blocks.1.time_mix.core.o_norm.weight",
+          "reasoner.blocks.1.time_mix.core.o_proj.weight",
+          "reasoner.blocks.1.channel_mix.key.weight",
+          "reasoner.blocks.1.channel_mix.value.weight",
+          "reasoner.blocks.2.time_mix.core.q_proj.weight",
+          "reasoner.blocks.2.time_mix.core.k_proj.weight",
+          "reasoner.blocks.2.time_mix.core.v_proj.weight",
+          "reasoner.blocks.2.time_mix.core.a_proj.weight",
+          "reasoner.blocks.2.time_mix.core.b_proj.weight",
+          "reasoner.blocks.2.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.g_proj.weight",
+          "reasoner.blocks.2.time_mix.core.o_norm.weight",
+          "reasoner.blocks.2.time_mix.core.o_proj.weight",
+          "reasoner.blocks.2.channel_mix.key.weight",
+          "reasoner.blocks.2.channel_mix.value.weight",
+          "reasoner.blocks.3.time_mix.core.q_proj.weight",
+          "reasoner.blocks.3.time_mix.core.k_proj.weight",
+          "reasoner.blocks.3.time_mix.core.v_proj.weight",
+          "reasoner.blocks.3.time_mix.core.a_proj.weight",
+          "reasoner.blocks.3.time_mix.core.b_proj.weight",
+          "reasoner.blocks.3.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.g_proj.weight",
+          "reasoner.blocks.3.time_mix.core.o_norm.weight",
+          "reasoner.blocks.3.time_mix.core.o_proj.weight",
+          "reasoner.blocks.3.channel_mix.key.weight",
+          "reasoner.blocks.3.channel_mix.value.weight",
+          "reasoner.blocks.4.time_mix.core.q_proj.weight",
+          "reasoner.blocks.4.time_mix.core.k_proj.weight",
+          "reasoner.blocks.4.time_mix.core.v_proj.weight",
+          "reasoner.blocks.4.time_mix.core.a_proj.weight",
+          "reasoner.blocks.4.time_mix.core.b_proj.weight",
+          "reasoner.blocks.4.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.g_proj.weight",
+          "reasoner.blocks.4.time_mix.core.o_norm.weight",
+          "reasoner.blocks.4.time_mix.core.o_proj.weight",
+          "reasoner.blocks.4.channel_mix.key.weight",
+          "reasoner.blocks.4.channel_mix.value.weight",
+          "reasoner.blocks.5.time_mix.core.q_proj.weight",
+          "reasoner.blocks.5.time_mix.core.k_proj.weight",
+          "reasoner.blocks.5.time_mix.core.v_proj.weight",
+          "reasoner.blocks.5.time_mix.core.a_proj.weight",
+          "reasoner.blocks.5.time_mix.core.b_proj.weight",
+          "reasoner.blocks.5.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.g_proj.weight",
+          "reasoner.blocks.5.time_mix.core.o_norm.weight",
+          "reasoner.blocks.5.time_mix.core.o_proj.weight",
+          "reasoner.blocks.5.channel_mix.key.weight",
+          "reasoner.blocks.5.channel_mix.value.weight",
+          "reasoner.blocks.6.time_mix.core.q_proj.weight",
+          "reasoner.blocks.6.time_mix.core.k_proj.weight",
+          "reasoner.blocks.6.time_mix.core.v_proj.weight",
+          "reasoner.blocks.6.time_mix.core.a_proj.weight",
+          "reasoner.blocks.6.time_mix.core.b_proj.weight",
+          "reasoner.blocks.6.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.g_proj.weight",
+          "reasoner.blocks.6.time_mix.core.o_norm.weight",
+          "reasoner.blocks.6.time_mix.core.o_proj.weight",
+          "reasoner.blocks.6.channel_mix.key.weight",
+          "reasoner.blocks.6.channel_mix.value.weight",
+          "reasoner.blocks.7.time_mix.core.q_proj.weight",
+          "reasoner.blocks.7.time_mix.core.k_proj.weight",
+          "reasoner.blocks.7.time_mix.core.v_proj.weight",
+          "reasoner.blocks.7.time_mix.core.a_proj.weight",
+          "reasoner.blocks.7.time_mix.core.b_proj.weight",
+          "reasoner.blocks.7.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.g_proj.weight",
+          "reasoner.blocks.7.time_mix.core.o_norm.weight",
+          "reasoner.blocks.7.time_mix.core.o_proj.weight",
+          "reasoner.blocks.7.channel_mix.key.weight",
+          "reasoner.blocks.7.channel_mix.value.weight",
+          "reasoner.blocks.8.time_mix.core.q_proj.weight",
+          "reasoner.blocks.8.time_mix.core.k_proj.weight",
+          "reasoner.blocks.8.time_mix.core.v_proj.weight",
+          "reasoner.blocks.8.time_mix.core.a_proj.weight",
+          "reasoner.blocks.8.time_mix.core.b_proj.weight",
+          "reasoner.blocks.8.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.g_proj.weight",
+          "reasoner.blocks.8.time_mix.core.o_norm.weight",
+          "reasoner.blocks.8.time_mix.core.o_proj.weight",
+          "reasoner.blocks.8.channel_mix.key.weight",
+          "reasoner.blocks.8.channel_mix.value.weight",
+          "reasoner.blocks.9.time_mix.core.q_proj.weight",
+          "reasoner.blocks.9.time_mix.core.k_proj.weight",
+          "reasoner.blocks.9.time_mix.core.v_proj.weight",
+          "reasoner.blocks.9.time_mix.core.a_proj.weight",
+          "reasoner.blocks.9.time_mix.core.b_proj.weight",
+          "reasoner.blocks.9.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.g_proj.weight",
+          "reasoner.blocks.9.time_mix.core.o_norm.weight",
+          "reasoner.blocks.9.time_mix.core.o_proj.weight",
+          "reasoner.blocks.9.channel_mix.key.weight",
+          "reasoner.blocks.9.channel_mix.value.weight",
+          "head.weight"
+        ],
+        "decay_parameter_count": 4857920,
+        "no_decay_names": [
+          "h_init",
+          "l_init",
+          "reasoner.blocks.0.future_seed_logit",
+          "reasoner.blocks.0.ln_time.weight",
+          "reasoner.blocks.0.ln_time.bias",
+          "reasoner.blocks.0.ln_channel.weight",
+          "reasoner.blocks.0.ln_channel.bias",
+          "reasoner.blocks.0.time_mix.core.A_log",
+          "reasoner.blocks.0.time_mix.core.dt_bias",
+          "reasoner.blocks.1.future_seed_logit",
+          "reasoner.blocks.1.ln_time.weight",
+          "reasoner.blocks.1.ln_time.bias",
+          "reasoner.blocks.1.ln_channel.weight",
+          "reasoner.blocks.1.ln_channel.bias",
+          "reasoner.blocks.1.time_mix.core.A_log",
+          "reasoner.blocks.1.time_mix.core.dt_bias",
+          "reasoner.blocks.2.future_seed_logit",
+          "reasoner.blocks.2.ln_time.weight",
+          "reasoner.blocks.2.ln_time.bias",
+          "reasoner.blocks.2.ln_channel.weight",
+          "reasoner.blocks.2.ln_channel.bias",
+          "reasoner.blocks.2.time_mix.core.A_log",
+          "reasoner.blocks.2.time_mix.core.dt_bias",
+          "reasoner.blocks.3.future_seed_logit",
+          "reasoner.blocks.3.ln_time.weight",
+          "reasoner.blocks.3.ln_time.bias",
+          "reasoner.blocks.3.ln_channel.weight",
+          "reasoner.blocks.3.ln_channel.bias",
+          "reasoner.blocks.3.time_mix.core.A_log",
+          "reasoner.blocks.3.time_mix.core.dt_bias",
+          "reasoner.blocks.4.future_seed_logit",
+          "reasoner.blocks.4.ln_time.weight",
+          "reasoner.blocks.4.ln_time.bias",
+          "reasoner.blocks.4.ln_channel.weight",
+          "reasoner.blocks.4.ln_channel.bias",
+          "reasoner.blocks.4.time_mix.core.A_log",
+          "reasoner.blocks.4.time_mix.core.dt_bias",
+          "reasoner.blocks.5.future_seed_logit",
+          "reasoner.blocks.5.ln_time.weight",
+          "reasoner.blocks.5.ln_time.bias",
+          "reasoner.blocks.5.ln_channel.weight",
+          "reasoner.blocks.5.ln_channel.bias",
+          "reasoner.blocks.5.time_mix.core.A_log",
+          "reasoner.blocks.5.time_mix.core.dt_bias",
+          "reasoner.blocks.6.future_seed_logit",
+          "reasoner.blocks.6.ln_time.weight",
+          "reasoner.blocks.6.ln_time.bias",
+          "reasoner.blocks.6.ln_channel.weight",
+          "reasoner.blocks.6.ln_channel.bias",
+          "reasoner.blocks.6.time_mix.core.A_log",
+          "reasoner.blocks.6.time_mix.core.dt_bias",
+          "reasoner.blocks.7.future_seed_logit",
+          "reasoner.blocks.7.ln_time.weight",
+          "reasoner.blocks.7.ln_time.bias",
+          "reasoner.blocks.7.ln_channel.weight",
+          "reasoner.blocks.7.ln_channel.bias",
+          "reasoner.blocks.7.time_mix.core.A_log",
+          "reasoner.blocks.7.time_mix.core.dt_bias",
+          "reasoner.blocks.8.future_seed_logit",
+          "reasoner.blocks.8.ln_time.weight",
+          "reasoner.blocks.8.ln_time.bias",
+          "reasoner.blocks.8.ln_channel.weight",
+          "reasoner.blocks.8.ln_channel.bias",
+          "reasoner.blocks.8.time_mix.core.A_log",
+          "reasoner.blocks.8.time_mix.core.dt_bias",
+          "reasoner.blocks.9.future_seed_logit",
+          "reasoner.blocks.9.ln_time.weight",
+          "reasoner.blocks.9.ln_time.bias",
+          "reasoner.blocks.9.ln_channel.weight",
+          "reasoner.blocks.9.ln_channel.bias",
+          "reasoner.blocks.9.time_mix.core.A_log",
+          "reasoner.blocks.9.time_mix.core.dt_bias",
+          "out_norm.weight",
+          "out_norm.bias"
+        ],
+        "no_decay_parameter_count": 8628
+      },
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 4866548,
+      "peak_allocated_mib": 446.583984375,
+      "public_name": "gdn",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 49.6539399290923,
+      "trainable_parameter_count": 4866548
+    },
+    "gdn2": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 16.0,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 2.6266347378891144,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "gdn2",
+      "loss": 2.3181521892547607,
+      "optimizer_runtime": {
+        "contract": "rwkv7_decay_groups",
+        "decay_names": [
+          "embed.weight",
+          "position.weight",
+          "reasoner.blocks.0.time_mix.core.q_proj.weight",
+          "reasoner.blocks.0.time_mix.core.k_proj.weight",
+          "reasoner.blocks.0.time_mix.core.v_proj.weight",
+          "reasoner.blocks.0.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.0.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.0.time_mix.core.b_proj.weight",
+          "reasoner.blocks.0.time_mix.core.w_proj.weight",
+          "reasoner.blocks.0.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.0.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.0.time_mix.core.o_norm.weight",
+          "reasoner.blocks.0.time_mix.core.o_proj.weight",
+          "reasoner.blocks.0.channel_mix.key.weight",
+          "reasoner.blocks.0.channel_mix.value.weight",
+          "reasoner.blocks.1.time_mix.core.q_proj.weight",
+          "reasoner.blocks.1.time_mix.core.k_proj.weight",
+          "reasoner.blocks.1.time_mix.core.v_proj.weight",
+          "reasoner.blocks.1.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.1.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.1.time_mix.core.b_proj.weight",
+          "reasoner.blocks.1.time_mix.core.w_proj.weight",
+          "reasoner.blocks.1.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.1.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.1.time_mix.core.o_norm.weight",
+          "reasoner.blocks.1.time_mix.core.o_proj.weight",
+          "reasoner.blocks.1.channel_mix.key.weight",
+          "reasoner.blocks.1.channel_mix.value.weight",
+          "reasoner.blocks.2.time_mix.core.q_proj.weight",
+          "reasoner.blocks.2.time_mix.core.k_proj.weight",
+          "reasoner.blocks.2.time_mix.core.v_proj.weight",
+          "reasoner.blocks.2.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.2.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.2.time_mix.core.b_proj.weight",
+          "reasoner.blocks.2.time_mix.core.w_proj.weight",
+          "reasoner.blocks.2.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.2.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.2.time_mix.core.o_norm.weight",
+          "reasoner.blocks.2.time_mix.core.o_proj.weight",
+          "reasoner.blocks.2.channel_mix.key.weight",
+          "reasoner.blocks.2.channel_mix.value.weight",
+          "reasoner.blocks.3.time_mix.core.q_proj.weight",
+          "reasoner.blocks.3.time_mix.core.k_proj.weight",
+          "reasoner.blocks.3.time_mix.core.v_proj.weight",
+          "reasoner.blocks.3.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.3.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.3.time_mix.core.b_proj.weight",
+          "reasoner.blocks.3.time_mix.core.w_proj.weight",
+          "reasoner.blocks.3.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.3.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.3.time_mix.core.o_norm.weight",
+          "reasoner.blocks.3.time_mix.core.o_proj.weight",
+          "reasoner.blocks.3.channel_mix.key.weight",
+          "reasoner.blocks.3.channel_mix.value.weight",
+          "reasoner.blocks.4.time_mix.core.q_proj.weight",
+          "reasoner.blocks.4.time_mix.core.k_proj.weight",
+          "reasoner.blocks.4.time_mix.core.v_proj.weight",
+          "reasoner.blocks.4.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.4.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.4.time_mix.core.b_proj.weight",
+          "reasoner.blocks.4.time_mix.core.w_proj.weight",
+          "reasoner.blocks.4.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.4.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.4.time_mix.core.o_norm.weight",
+          "reasoner.blocks.4.time_mix.core.o_proj.weight",
+          "reasoner.blocks.4.channel_mix.key.weight",
+          "reasoner.blocks.4.channel_mix.value.weight",
+          "reasoner.blocks.5.time_mix.core.q_proj.weight",
+          "reasoner.blocks.5.time_mix.core.k_proj.weight",
+          "reasoner.blocks.5.time_mix.core.v_proj.weight",
+          "reasoner.blocks.5.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.5.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.5.time_mix.core.b_proj.weight",
+          "reasoner.blocks.5.time_mix.core.w_proj.weight",
+          "reasoner.blocks.5.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.5.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.5.time_mix.core.o_norm.weight",
+          "reasoner.blocks.5.time_mix.core.o_proj.weight",
+          "reasoner.blocks.5.channel_mix.key.weight",
+          "reasoner.blocks.5.channel_mix.value.weight",
+          "reasoner.blocks.6.time_mix.core.q_proj.weight",
+          "reasoner.blocks.6.time_mix.core.k_proj.weight",
+          "reasoner.blocks.6.time_mix.core.v_proj.weight",
+          "reasoner.blocks.6.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.6.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.6.time_mix.core.b_proj.weight",
+          "reasoner.blocks.6.time_mix.core.w_proj.weight",
+          "reasoner.blocks.6.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.6.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.6.time_mix.core.o_norm.weight",
+          "reasoner.blocks.6.time_mix.core.o_proj.weight",
+          "reasoner.blocks.6.channel_mix.key.weight",
+          "reasoner.blocks.6.channel_mix.value.weight",
+          "reasoner.blocks.7.time_mix.core.q_proj.weight",
+          "reasoner.blocks.7.time_mix.core.k_proj.weight",
+          "reasoner.blocks.7.time_mix.core.v_proj.weight",
+          "reasoner.blocks.7.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.7.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.7.time_mix.core.b_proj.weight",
+          "reasoner.blocks.7.time_mix.core.w_proj.weight",
+          "reasoner.blocks.7.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.7.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.7.time_mix.core.o_norm.weight",
+          "reasoner.blocks.7.time_mix.core.o_proj.weight",
+          "reasoner.blocks.7.channel_mix.key.weight",
+          "reasoner.blocks.7.channel_mix.value.weight",
+          "reasoner.blocks.8.time_mix.core.q_proj.weight",
+          "reasoner.blocks.8.time_mix.core.k_proj.weight",
+          "reasoner.blocks.8.time_mix.core.v_proj.weight",
+          "reasoner.blocks.8.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.8.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.8.time_mix.core.b_proj.weight",
+          "reasoner.blocks.8.time_mix.core.w_proj.weight",
+          "reasoner.blocks.8.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.8.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.8.time_mix.core.o_norm.weight",
+          "reasoner.blocks.8.time_mix.core.o_proj.weight",
+          "reasoner.blocks.8.channel_mix.key.weight",
+          "reasoner.blocks.8.channel_mix.value.weight",
+          "reasoner.blocks.9.time_mix.core.q_proj.weight",
+          "reasoner.blocks.9.time_mix.core.k_proj.weight",
+          "reasoner.blocks.9.time_mix.core.v_proj.weight",
+          "reasoner.blocks.9.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.9.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.9.time_mix.core.b_proj.weight",
+          "reasoner.blocks.9.time_mix.core.w_proj.weight",
+          "reasoner.blocks.9.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.9.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.9.time_mix.core.o_norm.weight",
+          "reasoner.blocks.9.time_mix.core.o_proj.weight",
+          "reasoner.blocks.9.channel_mix.key.weight",
+          "reasoner.blocks.9.channel_mix.value.weight",
+          "head.weight"
+        ],
+        "decay_parameter_count": 5449280,
+        "no_decay_names": [
+          "h_init",
+          "l_init",
+          "reasoner.blocks.0.future_seed_logit",
+          "reasoner.blocks.0.ln_time.weight",
+          "reasoner.blocks.0.ln_time.bias",
+          "reasoner.blocks.0.ln_channel.weight",
+          "reasoner.blocks.0.ln_channel.bias",
+          "reasoner.blocks.0.time_mix.core.A_log",
+          "reasoner.blocks.0.time_mix.core.dt_bias",
+          "reasoner.blocks.0.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.1.future_seed_logit",
+          "reasoner.blocks.1.ln_time.weight",
+          "reasoner.blocks.1.ln_time.bias",
+          "reasoner.blocks.1.ln_channel.weight",
+          "reasoner.blocks.1.ln_channel.bias",
+          "reasoner.blocks.1.time_mix.core.A_log",
+          "reasoner.blocks.1.time_mix.core.dt_bias",
+          "reasoner.blocks.1.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.2.future_seed_logit",
+          "reasoner.blocks.2.ln_time.weight",
+          "reasoner.blocks.2.ln_time.bias",
+          "reasoner.blocks.2.ln_channel.weight",
+          "reasoner.blocks.2.ln_channel.bias",
+          "reasoner.blocks.2.time_mix.core.A_log",
+          "reasoner.blocks.2.time_mix.core.dt_bias",
+          "reasoner.blocks.2.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.3.future_seed_logit",
+          "reasoner.blocks.3.ln_time.weight",
+          "reasoner.blocks.3.ln_time.bias",
+          "reasoner.blocks.3.ln_channel.weight",
+          "reasoner.blocks.3.ln_channel.bias",
+          "reasoner.blocks.3.time_mix.core.A_log",
+          "reasoner.blocks.3.time_mix.core.dt_bias",
+          "reasoner.blocks.3.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.4.future_seed_logit",
+          "reasoner.blocks.4.ln_time.weight",
+          "reasoner.blocks.4.ln_time.bias",
+          "reasoner.blocks.4.ln_channel.weight",
+          "reasoner.blocks.4.ln_channel.bias",
+          "reasoner.blocks.4.time_mix.core.A_log",
+          "reasoner.blocks.4.time_mix.core.dt_bias",
+          "reasoner.blocks.4.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.5.future_seed_logit",
+          "reasoner.blocks.5.ln_time.weight",
+          "reasoner.blocks.5.ln_time.bias",
+          "reasoner.blocks.5.ln_channel.weight",
+          "reasoner.blocks.5.ln_channel.bias",
+          "reasoner.blocks.5.time_mix.core.A_log",
+          "reasoner.blocks.5.time_mix.core.dt_bias",
+          "reasoner.blocks.5.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.6.future_seed_logit",
+          "reasoner.blocks.6.ln_time.weight",
+          "reasoner.blocks.6.ln_time.bias",
+          "reasoner.blocks.6.ln_channel.weight",
+          "reasoner.blocks.6.ln_channel.bias",
+          "reasoner.blocks.6.time_mix.core.A_log",
+          "reasoner.blocks.6.time_mix.core.dt_bias",
+          "reasoner.blocks.6.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.7.future_seed_logit",
+          "reasoner.blocks.7.ln_time.weight",
+          "reasoner.blocks.7.ln_time.bias",
+          "reasoner.blocks.7.ln_channel.weight",
+          "reasoner.blocks.7.ln_channel.bias",
+          "reasoner.blocks.7.time_mix.core.A_log",
+          "reasoner.blocks.7.time_mix.core.dt_bias",
+          "reasoner.blocks.7.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.8.future_seed_logit",
+          "reasoner.blocks.8.ln_time.weight",
+          "reasoner.blocks.8.ln_time.bias",
+          "reasoner.blocks.8.ln_channel.weight",
+          "reasoner.blocks.8.ln_channel.bias",
+          "reasoner.blocks.8.time_mix.core.A_log",
+          "reasoner.blocks.8.time_mix.core.dt_bias",
+          "reasoner.blocks.8.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.9.future_seed_logit",
+          "reasoner.blocks.9.ln_time.weight",
+          "reasoner.blocks.9.ln_time.bias",
+          "reasoner.blocks.9.ln_channel.weight",
+          "reasoner.blocks.9.ln_channel.bias",
+          "reasoner.blocks.9.time_mix.core.A_log",
+          "reasoner.blocks.9.time_mix.core.dt_bias",
+          "reasoner.blocks.9.time_mix.core.g_proj.1.bias",
+          "out_norm.weight",
+          "out_norm.bias"
+        ],
+        "no_decay_parameter_count": 12408
+      },
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5461688,
+      "peak_allocated_mib": 498.05908203125,
+      "public_name": "gdn2",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 44.38230456621386,
+      "trainable_parameter_count": 5461688
+    },
+    "kda": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 16.0,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit"
+        ],
+        "global_norm": 2.665849398710584,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "kda",
+      "loss": 2.3566341400146484,
+      "optimizer_runtime": {
+        "contract": "rwkv7_decay_groups",
+        "decay_names": [
+          "embed.weight",
+          "position.weight",
+          "reasoner.blocks.0.time_mix.core.q_proj.weight",
+          "reasoner.blocks.0.time_mix.core.k_proj.weight",
+          "reasoner.blocks.0.time_mix.core.v_proj.weight",
+          "reasoner.blocks.0.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.0.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.0.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.0.time_mix.core.b_proj.weight",
+          "reasoner.blocks.0.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.0.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.0.time_mix.core.o_norm.weight",
+          "reasoner.blocks.0.time_mix.core.o_proj.weight",
+          "reasoner.blocks.0.channel_mix.key.weight",
+          "reasoner.blocks.0.channel_mix.value.weight",
+          "reasoner.blocks.1.time_mix.core.q_proj.weight",
+          "reasoner.blocks.1.time_mix.core.k_proj.weight",
+          "reasoner.blocks.1.time_mix.core.v_proj.weight",
+          "reasoner.blocks.1.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.1.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.1.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.1.time_mix.core.b_proj.weight",
+          "reasoner.blocks.1.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.1.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.1.time_mix.core.o_norm.weight",
+          "reasoner.blocks.1.time_mix.core.o_proj.weight",
+          "reasoner.blocks.1.channel_mix.key.weight",
+          "reasoner.blocks.1.channel_mix.value.weight",
+          "reasoner.blocks.2.time_mix.core.q_proj.weight",
+          "reasoner.blocks.2.time_mix.core.k_proj.weight",
+          "reasoner.blocks.2.time_mix.core.v_proj.weight",
+          "reasoner.blocks.2.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.2.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.2.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.2.time_mix.core.b_proj.weight",
+          "reasoner.blocks.2.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.2.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.2.time_mix.core.o_norm.weight",
+          "reasoner.blocks.2.time_mix.core.o_proj.weight",
+          "reasoner.blocks.2.channel_mix.key.weight",
+          "reasoner.blocks.2.channel_mix.value.weight",
+          "reasoner.blocks.3.time_mix.core.q_proj.weight",
+          "reasoner.blocks.3.time_mix.core.k_proj.weight",
+          "reasoner.blocks.3.time_mix.core.v_proj.weight",
+          "reasoner.blocks.3.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.3.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.3.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.3.time_mix.core.b_proj.weight",
+          "reasoner.blocks.3.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.3.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.3.time_mix.core.o_norm.weight",
+          "reasoner.blocks.3.time_mix.core.o_proj.weight",
+          "reasoner.blocks.3.channel_mix.key.weight",
+          "reasoner.blocks.3.channel_mix.value.weight",
+          "reasoner.blocks.4.time_mix.core.q_proj.weight",
+          "reasoner.blocks.4.time_mix.core.k_proj.weight",
+          "reasoner.blocks.4.time_mix.core.v_proj.weight",
+          "reasoner.blocks.4.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.4.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.4.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.4.time_mix.core.b_proj.weight",
+          "reasoner.blocks.4.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.4.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.4.time_mix.core.o_norm.weight",
+          "reasoner.blocks.4.time_mix.core.o_proj.weight",
+          "reasoner.blocks.4.channel_mix.key.weight",
+          "reasoner.blocks.4.channel_mix.value.weight",
+          "reasoner.blocks.5.time_mix.core.q_proj.weight",
+          "reasoner.blocks.5.time_mix.core.k_proj.weight",
+          "reasoner.blocks.5.time_mix.core.v_proj.weight",
+          "reasoner.blocks.5.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.5.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.5.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.5.time_mix.core.b_proj.weight",
+          "reasoner.blocks.5.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.5.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.5.time_mix.core.o_norm.weight",
+          "reasoner.blocks.5.time_mix.core.o_proj.weight",
+          "reasoner.blocks.5.channel_mix.key.weight",
+          "reasoner.blocks.5.channel_mix.value.weight",
+          "reasoner.blocks.6.time_mix.core.q_proj.weight",
+          "reasoner.blocks.6.time_mix.core.k_proj.weight",
+          "reasoner.blocks.6.time_mix.core.v_proj.weight",
+          "reasoner.blocks.6.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.6.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.6.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.6.time_mix.core.b_proj.weight",
+          "reasoner.blocks.6.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.6.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.6.time_mix.core.o_norm.weight",
+          "reasoner.blocks.6.time_mix.core.o_proj.weight",
+          "reasoner.blocks.6.channel_mix.key.weight",
+          "reasoner.blocks.6.channel_mix.value.weight",
+          "reasoner.blocks.7.time_mix.core.q_proj.weight",
+          "reasoner.blocks.7.time_mix.core.k_proj.weight",
+          "reasoner.blocks.7.time_mix.core.v_proj.weight",
+          "reasoner.blocks.7.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.7.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.7.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.7.time_mix.core.b_proj.weight",
+          "reasoner.blocks.7.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.7.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.7.time_mix.core.o_norm.weight",
+          "reasoner.blocks.7.time_mix.core.o_proj.weight",
+          "reasoner.blocks.7.channel_mix.key.weight",
+          "reasoner.blocks.7.channel_mix.value.weight",
+          "reasoner.blocks.8.time_mix.core.q_proj.weight",
+          "reasoner.blocks.8.time_mix.core.k_proj.weight",
+          "reasoner.blocks.8.time_mix.core.v_proj.weight",
+          "reasoner.blocks.8.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.8.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.8.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.8.time_mix.core.b_proj.weight",
+          "reasoner.blocks.8.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.8.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.8.time_mix.core.o_norm.weight",
+          "reasoner.blocks.8.time_mix.core.o_proj.weight",
+          "reasoner.blocks.8.channel_mix.key.weight",
+          "reasoner.blocks.8.channel_mix.value.weight",
+          "reasoner.blocks.9.time_mix.core.q_proj.weight",
+          "reasoner.blocks.9.time_mix.core.k_proj.weight",
+          "reasoner.blocks.9.time_mix.core.v_proj.weight",
+          "reasoner.blocks.9.time_mix.core.q_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.k_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.v_conv1d.weight",
+          "reasoner.blocks.9.time_mix.core.f_proj.0.weight",
+          "reasoner.blocks.9.time_mix.core.f_proj.1.weight",
+          "reasoner.blocks.9.time_mix.core.b_proj.weight",
+          "reasoner.blocks.9.time_mix.core.g_proj.0.weight",
+          "reasoner.blocks.9.time_mix.core.g_proj.1.weight",
+          "reasoner.blocks.9.time_mix.core.o_norm.weight",
+          "reasoner.blocks.9.time_mix.core.o_proj.weight",
+          "reasoner.blocks.9.channel_mix.key.weight",
+          "reasoner.blocks.9.channel_mix.value.weight",
+          "head.weight"
+        ],
+        "decay_parameter_count": 4723520,
+        "no_decay_names": [
+          "h_init",
+          "l_init",
+          "reasoner.blocks.0.future_seed_logit",
+          "reasoner.blocks.0.ln_time.weight",
+          "reasoner.blocks.0.ln_time.bias",
+          "reasoner.blocks.0.ln_channel.weight",
+          "reasoner.blocks.0.ln_channel.bias",
+          "reasoner.blocks.0.time_mix.core.A_log",
+          "reasoner.blocks.0.time_mix.core.dt_bias",
+          "reasoner.blocks.0.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.1.future_seed_logit",
+          "reasoner.blocks.1.ln_time.weight",
+          "reasoner.blocks.1.ln_time.bias",
+          "reasoner.blocks.1.ln_channel.weight",
+          "reasoner.blocks.1.ln_channel.bias",
+          "reasoner.blocks.1.time_mix.core.A_log",
+          "reasoner.blocks.1.time_mix.core.dt_bias",
+          "reasoner.blocks.1.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.2.future_seed_logit",
+          "reasoner.blocks.2.ln_time.weight",
+          "reasoner.blocks.2.ln_time.bias",
+          "reasoner.blocks.2.ln_channel.weight",
+          "reasoner.blocks.2.ln_channel.bias",
+          "reasoner.blocks.2.time_mix.core.A_log",
+          "reasoner.blocks.2.time_mix.core.dt_bias",
+          "reasoner.blocks.2.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.3.future_seed_logit",
+          "reasoner.blocks.3.ln_time.weight",
+          "reasoner.blocks.3.ln_time.bias",
+          "reasoner.blocks.3.ln_channel.weight",
+          "reasoner.blocks.3.ln_channel.bias",
+          "reasoner.blocks.3.time_mix.core.A_log",
+          "reasoner.blocks.3.time_mix.core.dt_bias",
+          "reasoner.blocks.3.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.4.future_seed_logit",
+          "reasoner.blocks.4.ln_time.weight",
+          "reasoner.blocks.4.ln_time.bias",
+          "reasoner.blocks.4.ln_channel.weight",
+          "reasoner.blocks.4.ln_channel.bias",
+          "reasoner.blocks.4.time_mix.core.A_log",
+          "reasoner.blocks.4.time_mix.core.dt_bias",
+          "reasoner.blocks.4.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.5.future_seed_logit",
+          "reasoner.blocks.5.ln_time.weight",
+          "reasoner.blocks.5.ln_time.bias",
+          "reasoner.blocks.5.ln_channel.weight",
+          "reasoner.blocks.5.ln_channel.bias",
+          "reasoner.blocks.5.time_mix.core.A_log",
+          "reasoner.blocks.5.time_mix.core.dt_bias",
+          "reasoner.blocks.5.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.6.future_seed_logit",
+          "reasoner.blocks.6.ln_time.weight",
+          "reasoner.blocks.6.ln_time.bias",
+          "reasoner.blocks.6.ln_channel.weight",
+          "reasoner.blocks.6.ln_channel.bias",
+          "reasoner.blocks.6.time_mix.core.A_log",
+          "reasoner.blocks.6.time_mix.core.dt_bias",
+          "reasoner.blocks.6.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.7.future_seed_logit",
+          "reasoner.blocks.7.ln_time.weight",
+          "reasoner.blocks.7.ln_time.bias",
+          "reasoner.blocks.7.ln_channel.weight",
+          "reasoner.blocks.7.ln_channel.bias",
+          "reasoner.blocks.7.time_mix.core.A_log",
+          "reasoner.blocks.7.time_mix.core.dt_bias",
+          "reasoner.blocks.7.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.8.future_seed_logit",
+          "reasoner.blocks.8.ln_time.weight",
+          "reasoner.blocks.8.ln_time.bias",
+          "reasoner.blocks.8.ln_channel.weight",
+          "reasoner.blocks.8.ln_channel.bias",
+          "reasoner.blocks.8.time_mix.core.A_log",
+          "reasoner.blocks.8.time_mix.core.dt_bias",
+          "reasoner.blocks.8.time_mix.core.g_proj.1.bias",
+          "reasoner.blocks.9.future_seed_logit",
+          "reasoner.blocks.9.ln_time.weight",
+          "reasoner.blocks.9.ln_time.bias",
+          "reasoner.blocks.9.ln_channel.weight",
+          "reasoner.blocks.9.ln_channel.bias",
+          "reasoner.blocks.9.time_mix.core.A_log",
+          "reasoner.blocks.9.time_mix.core.dt_bias",
+          "reasoner.blocks.9.time_mix.core.g_proj.1.bias",
+          "out_norm.weight",
+          "out_norm.bias"
+        ],
+        "no_decay_parameter_count": 12408
+      },
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 4735928,
+      "peak_allocated_mib": 458.46533203125,
+      "public_name": "kda",
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+        "layers": [
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 0
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 1
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 2
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 3
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 4
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 5
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 6
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 7
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 8
+          },
+          {
+            "class": "fla.layers.kda.KimiDeltaAttention",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "layer": 9
+          }
+        ],
+        "strict": true
+      },
+      "smoke_wall_sec": 40.53674807189964,
+      "trainable_parameter_count": 4735928
+    },
+    "rwkv": {
+      "fs_gate_mean": 0.5,
+      "fs_state_norm": 16.0,
+      "gradient": {
+        "expected_missing": [
+          "reasoner.blocks.0.future_seed_logit",
+          "reasoner.blocks.0.time_mix.v0",
+          "reasoner.blocks.0.time_mix.v1",
+          "reasoner.blocks.0.time_mix.v2"
+        ],
+        "global_norm": 1.2188916621480559,
+        "nonfinite": [],
+        "unexpected_missing": []
+      },
+      "internal_backbone": "rwkv7",
+      "loss": 2.299102306365967,
+      "optimizer_runtime": {
+        "contract": "rwkv7_decay_groups",
+        "decay_names": [
+          "embed.weight",
+          "position.weight",
+          "reasoner.blocks.0.time_mix.receptance.weight",
+          "reasoner.blocks.0.time_mix.key.weight",
+          "reasoner.blocks.0.time_mix.value.weight",
+          "reasoner.blocks.0.time_mix.output.weight",
+          "reasoner.blocks.0.channel_mix.key.weight",
+          "reasoner.blocks.0.channel_mix.value.weight",
+          "reasoner.blocks.1.time_mix.receptance.weight",
+          "reasoner.blocks.1.time_mix.key.weight",
+          "reasoner.blocks.1.time_mix.value.weight",
+          "reasoner.blocks.1.time_mix.output.weight",
+          "reasoner.blocks.1.channel_mix.key.weight",
+          "reasoner.blocks.1.channel_mix.value.weight",
+          "reasoner.blocks.2.time_mix.receptance.weight",
+          "reasoner.blocks.2.time_mix.key.weight",
+          "reasoner.blocks.2.time_mix.value.weight",
+          "reasoner.blocks.2.time_mix.output.weight",
+          "reasoner.blocks.2.channel_mix.key.weight",
+          "reasoner.blocks.2.channel_mix.value.weight",
+          "reasoner.blocks.3.time_mix.receptance.weight",
+          "reasoner.blocks.3.time_mix.key.weight",
+          "reasoner.blocks.3.time_mix.value.weight",
+          "reasoner.blocks.3.time_mix.output.weight",
+          "reasoner.blocks.3.channel_mix.key.weight",
+          "reasoner.blocks.3.channel_mix.value.weight",
+          "reasoner.blocks.4.time_mix.receptance.weight",
+          "reasoner.blocks.4.time_mix.key.weight",
+          "reasoner.blocks.4.time_mix.value.weight",
+          "reasoner.blocks.4.time_mix.output.weight",
+          "reasoner.blocks.4.channel_mix.key.weight",
+          "reasoner.blocks.4.channel_mix.value.weight",
+          "reasoner.blocks.5.time_mix.receptance.weight",
+          "reasoner.blocks.5.time_mix.key.weight",
+          "reasoner.blocks.5.time_mix.value.weight",
+          "reasoner.blocks.5.time_mix.output.weight",
+          "reasoner.blocks.5.channel_mix.key.weight",
+          "reasoner.blocks.5.channel_mix.value.weight",
+          "reasoner.blocks.6.time_mix.receptance.weight",
+          "reasoner.blocks.6.time_mix.key.weight",
+          "reasoner.blocks.6.time_mix.value.weight",
+          "reasoner.blocks.6.time_mix.output.weight",
+          "reasoner.blocks.6.channel_mix.key.weight",
+          "reasoner.blocks.6.channel_mix.value.weight",
+          "reasoner.blocks.7.time_mix.receptance.weight",
+          "reasoner.blocks.7.time_mix.key.weight",
+          "reasoner.blocks.7.time_mix.value.weight",
+          "reasoner.blocks.7.time_mix.output.weight",
+          "reasoner.blocks.7.channel_mix.key.weight",
+          "reasoner.blocks.7.channel_mix.value.weight",
+          "reasoner.blocks.8.time_mix.receptance.weight",
+          "reasoner.blocks.8.time_mix.key.weight",
+          "reasoner.blocks.8.time_mix.value.weight",
+          "reasoner.blocks.8.time_mix.output.weight",
+          "reasoner.blocks.8.channel_mix.key.weight",
+          "reasoner.blocks.8.channel_mix.value.weight",
+          "reasoner.blocks.9.time_mix.receptance.weight",
+          "reasoner.blocks.9.time_mix.key.weight",
+          "reasoner.blocks.9.time_mix.value.weight",
+          "reasoner.blocks.9.time_mix.output.weight",
+          "reasoner.blocks.9.channel_mix.key.weight",
+          "reasoner.blocks.9.channel_mix.value.weight",
+          "head.weight"
+        ],
+        "decay_parameter_count": 4442880,
+        "no_decay_names": [
+          "h_init",
+          "l_init",
+          "reasoner.blocks.0.future_seed_logit",
+          "reasoner.blocks.0.ln_time.weight",
+          "reasoner.blocks.0.ln_time.bias",
+          "reasoner.blocks.0.ln_channel.weight",
+          "reasoner.blocks.0.ln_channel.bias",
+          "reasoner.blocks.0.time_mix.x_r",
+          "reasoner.blocks.0.time_mix.x_w",
+          "reasoner.blocks.0.time_mix.x_k",
+          "reasoner.blocks.0.time_mix.x_v",
+          "reasoner.blocks.0.time_mix.x_a",
+          "reasoner.blocks.0.time_mix.x_g",
+          "reasoner.blocks.0.time_mix.w1",
+          "reasoner.blocks.0.time_mix.w2",
+          "reasoner.blocks.0.time_mix.w0",
+          "reasoner.blocks.0.time_mix.a1",
+          "reasoner.blocks.0.time_mix.a2",
+          "reasoner.blocks.0.time_mix.a0",
+          "reasoner.blocks.0.time_mix.v1",
+          "reasoner.blocks.0.time_mix.v2",
+          "reasoner.blocks.0.time_mix.v0",
+          "reasoner.blocks.0.time_mix.g1",
+          "reasoner.blocks.0.time_mix.g2",
+          "reasoner.blocks.0.time_mix.k_k",
+          "reasoner.blocks.0.time_mix.k_a",
+          "reasoner.blocks.0.time_mix.r_k",
+          "reasoner.blocks.0.time_mix.ln_x.weight",
+          "reasoner.blocks.0.time_mix.ln_x.bias",
+          "reasoner.blocks.1.future_seed_logit",
+          "reasoner.blocks.1.ln_time.weight",
+          "reasoner.blocks.1.ln_time.bias",
+          "reasoner.blocks.1.ln_channel.weight",
+          "reasoner.blocks.1.ln_channel.bias",
+          "reasoner.blocks.1.time_mix.x_r",
+          "reasoner.blocks.1.time_mix.x_w",
+          "reasoner.blocks.1.time_mix.x_k",
+          "reasoner.blocks.1.time_mix.x_v",
+          "reasoner.blocks.1.time_mix.x_a",
+          "reasoner.blocks.1.time_mix.x_g",
+          "reasoner.blocks.1.time_mix.w1",
+          "reasoner.blocks.1.time_mix.w2",
+          "reasoner.blocks.1.time_mix.w0",
+          "reasoner.blocks.1.time_mix.a1",
+          "reasoner.blocks.1.time_mix.a2",
+          "reasoner.blocks.1.time_mix.a0",
+          "reasoner.blocks.1.time_mix.v1",
+          "reasoner.blocks.1.time_mix.v2",
+          "reasoner.blocks.1.time_mix.v0",
+          "reasoner.blocks.1.time_mix.g1",
+          "reasoner.blocks.1.time_mix.g2",
+          "reasoner.blocks.1.time_mix.k_k",
+          "reasoner.blocks.1.time_mix.k_a",
+          "reasoner.blocks.1.time_mix.r_k",
+          "reasoner.blocks.1.time_mix.ln_x.weight",
+          "reasoner.blocks.1.time_mix.ln_x.bias",
+          "reasoner.blocks.2.future_seed_logit",
+          "reasoner.blocks.2.ln_time.weight",
+          "reasoner.blocks.2.ln_time.bias",
+          "reasoner.blocks.2.ln_channel.weight",
+          "reasoner.blocks.2.ln_channel.bias",
+          "reasoner.blocks.2.time_mix.x_r",
+          "reasoner.blocks.2.time_mix.x_w",
+          "reasoner.blocks.2.time_mix.x_k",
+          "reasoner.blocks.2.time_mix.x_v",
+          "reasoner.blocks.2.time_mix.x_a",
+          "reasoner.blocks.2.time_mix.x_g",
+          "reasoner.blocks.2.time_mix.w1",
+          "reasoner.blocks.2.time_mix.w2",
+          "reasoner.blocks.2.time_mix.w0",
+          "reasoner.blocks.2.time_mix.a1",
+          "reasoner.blocks.2.time_mix.a2",
+          "reasoner.blocks.2.time_mix.a0",
+          "reasoner.blocks.2.time_mix.v1",
+          "reasoner.blocks.2.time_mix.v2",
+          "reasoner.blocks.2.time_mix.v0",
+          "reasoner.blocks.2.time_mix.g1",
+          "reasoner.blocks.2.time_mix.g2",
+          "reasoner.blocks.2.time_mix.k_k",
+          "reasoner.blocks.2.time_mix.k_a",
+          "reasoner.blocks.2.time_mix.r_k",
+          "reasoner.blocks.2.time_mix.ln_x.weight",
+          "reasoner.blocks.2.time_mix.ln_x.bias",
+          "reasoner.blocks.3.future_seed_logit",
+          "reasoner.blocks.3.ln_time.weight",
+          "reasoner.blocks.3.ln_time.bias",
+          "reasoner.blocks.3.ln_channel.weight",
+          "reasoner.blocks.3.ln_channel.bias",
+          "reasoner.blocks.3.time_mix.x_r",
+          "reasoner.blocks.3.time_mix.x_w",
+          "reasoner.blocks.3.time_mix.x_k",
+          "reasoner.blocks.3.time_mix.x_v",
+          "reasoner.blocks.3.time_mix.x_a",
+          "reasoner.blocks.3.time_mix.x_g",
+          "reasoner.blocks.3.time_mix.w1",
+          "reasoner.blocks.3.time_mix.w2",
+          "reasoner.blocks.3.time_mix.w0",
+          "reasoner.blocks.3.time_mix.a1",
+          "reasoner.blocks.3.time_mix.a2",
+          "reasoner.blocks.3.time_mix.a0",
+          "reasoner.blocks.3.time_mix.v1",
+          "reasoner.blocks.3.time_mix.v2",
+          "reasoner.blocks.3.time_mix.v0",
+          "reasoner.blocks.3.time_mix.g1",
+          "reasoner.blocks.3.time_mix.g2",
+          "reasoner.blocks.3.time_mix.k_k",
+          "reasoner.blocks.3.time_mix.k_a",
+          "reasoner.blocks.3.time_mix.r_k",
+          "reasoner.blocks.3.time_mix.ln_x.weight",
+          "reasoner.blocks.3.time_mix.ln_x.bias",
+          "reasoner.blocks.4.future_seed_logit",
+          "reasoner.blocks.4.ln_time.weight",
+          "reasoner.blocks.4.ln_time.bias",
+          "reasoner.blocks.4.ln_channel.weight",
+          "reasoner.blocks.4.ln_channel.bias",
+          "reasoner.blocks.4.time_mix.x_r",
+          "reasoner.blocks.4.time_mix.x_w",
+          "reasoner.blocks.4.time_mix.x_k",
+          "reasoner.blocks.4.time_mix.x_v",
+          "reasoner.blocks.4.time_mix.x_a",
+          "reasoner.blocks.4.time_mix.x_g",
+          "reasoner.blocks.4.time_mix.w1",
+          "reasoner.blocks.4.time_mix.w2",
+          "reasoner.blocks.4.time_mix.w0",
+          "reasoner.blocks.4.time_mix.a1",
+          "reasoner.blocks.4.time_mix.a2",
+          "reasoner.blocks.4.time_mix.a0",
+          "reasoner.blocks.4.time_mix.v1",
+          "reasoner.blocks.4.time_mix.v2",
+          "reasoner.blocks.4.time_mix.v0",
+          "reasoner.blocks.4.time_mix.g1",
+          "reasoner.blocks.4.time_mix.g2",
+          "reasoner.blocks.4.time_mix.k_k",
+          "reasoner.blocks.4.time_mix.k_a",
+          "reasoner.blocks.4.time_mix.r_k",
+          "reasoner.blocks.4.time_mix.ln_x.weight",
+          "reasoner.blocks.4.time_mix.ln_x.bias",
+          "reasoner.blocks.5.future_seed_logit",
+          "reasoner.blocks.5.ln_time.weight",
+          "reasoner.blocks.5.ln_time.bias",
+          "reasoner.blocks.5.ln_channel.weight",
+          "reasoner.blocks.5.ln_channel.bias",
+          "reasoner.blocks.5.time_mix.x_r",
+          "reasoner.blocks.5.time_mix.x_w",
+          "reasoner.blocks.5.time_mix.x_k",
+          "reasoner.blocks.5.time_mix.x_v",
+          "reasoner.blocks.5.time_mix.x_a",
+          "reasoner.blocks.5.time_mix.x_g",
+          "reasoner.blocks.5.time_mix.w1",
+          "reasoner.blocks.5.time_mix.w2",
+          "reasoner.blocks.5.time_mix.w0",
+          "reasoner.blocks.5.time_mix.a1",
+          "reasoner.blocks.5.time_mix.a2",
+          "reasoner.blocks.5.time_mix.a0",
+          "reasoner.blocks.5.time_mix.v1",
+          "reasoner.blocks.5.time_mix.v2",
+          "reasoner.blocks.5.time_mix.v0",
+          "reasoner.blocks.5.time_mix.g1",
+          "reasoner.blocks.5.time_mix.g2",
+          "reasoner.blocks.5.time_mix.k_k",
+          "reasoner.blocks.5.time_mix.k_a",
+          "reasoner.blocks.5.time_mix.r_k",
+          "reasoner.blocks.5.time_mix.ln_x.weight",
+          "reasoner.blocks.5.time_mix.ln_x.bias",
+          "reasoner.blocks.6.future_seed_logit",
+          "reasoner.blocks.6.ln_time.weight",
+          "reasoner.blocks.6.ln_time.bias",
+          "reasoner.blocks.6.ln_channel.weight",
+          "reasoner.blocks.6.ln_channel.bias",
+          "reasoner.blocks.6.time_mix.x_r",
+          "reasoner.blocks.6.time_mix.x_w",
+          "reasoner.blocks.6.time_mix.x_k",
+          "reasoner.blocks.6.time_mix.x_v",
+          "reasoner.blocks.6.time_mix.x_a",
+          "reasoner.blocks.6.time_mix.x_g",
+          "reasoner.blocks.6.time_mix.w1",
+          "reasoner.blocks.6.time_mix.w2",
+          "reasoner.blocks.6.time_mix.w0",
+          "reasoner.blocks.6.time_mix.a1",
+          "reasoner.blocks.6.time_mix.a2",
+          "reasoner.blocks.6.time_mix.a0",
+          "reasoner.blocks.6.time_mix.v1",
+          "reasoner.blocks.6.time_mix.v2",
+          "reasoner.blocks.6.time_mix.v0",
+          "reasoner.blocks.6.time_mix.g1",
+          "reasoner.blocks.6.time_mix.g2",
+          "reasoner.blocks.6.time_mix.k_k",
+          "reasoner.blocks.6.time_mix.k_a",
+          "reasoner.blocks.6.time_mix.r_k",
+          "reasoner.blocks.6.time_mix.ln_x.weight",
+          "reasoner.blocks.6.time_mix.ln_x.bias",
+          "reasoner.blocks.7.future_seed_logit",
+          "reasoner.blocks.7.ln_time.weight",
+          "reasoner.blocks.7.ln_time.bias",
+          "reasoner.blocks.7.ln_channel.weight",
+          "reasoner.blocks.7.ln_channel.bias",
+          "reasoner.blocks.7.time_mix.x_r",
+          "reasoner.blocks.7.time_mix.x_w",
+          "reasoner.blocks.7.time_mix.x_k",
+          "reasoner.blocks.7.time_mix.x_v",
+          "reasoner.blocks.7.time_mix.x_a",
+          "reasoner.blocks.7.time_mix.x_g",
+          "reasoner.blocks.7.time_mix.w1",
+          "reasoner.blocks.7.time_mix.w2",
+          "reasoner.blocks.7.time_mix.w0",
+          "reasoner.blocks.7.time_mix.a1",
+          "reasoner.blocks.7.time_mix.a2",
+          "reasoner.blocks.7.time_mix.a0",
+          "reasoner.blocks.7.time_mix.v1",
+          "reasoner.blocks.7.time_mix.v2",
+          "reasoner.blocks.7.time_mix.v0",
+          "reasoner.blocks.7.time_mix.g1",
+          "reasoner.blocks.7.time_mix.g2",
+          "reasoner.blocks.7.time_mix.k_k",
+          "reasoner.blocks.7.time_mix.k_a",
+          "reasoner.blocks.7.time_mix.r_k",
+          "reasoner.blocks.7.time_mix.ln_x.weight",
+          "reasoner.blocks.7.time_mix.ln_x.bias",
+          "reasoner.blocks.8.future_seed_logit",
+          "reasoner.blocks.8.ln_time.weight",
+          "reasoner.blocks.8.ln_time.bias",
+          "reasoner.blocks.8.ln_channel.weight",
+          "reasoner.blocks.8.ln_channel.bias",
+          "reasoner.blocks.8.time_mix.x_r",
+          "reasoner.blocks.8.time_mix.x_w",
+          "reasoner.blocks.8.time_mix.x_k",
+          "reasoner.blocks.8.time_mix.x_v",
+          "reasoner.blocks.8.time_mix.x_a",
+          "reasoner.blocks.8.time_mix.x_g",
+          "reasoner.blocks.8.time_mix.w1",
+          "reasoner.blocks.8.time_mix.w2",
+          "reasoner.blocks.8.time_mix.w0",
+          "reasoner.blocks.8.time_mix.a1",
+          "reasoner.blocks.8.time_mix.a2",
+          "reasoner.blocks.8.time_mix.a0",
+          "reasoner.blocks.8.time_mix.v1",
+          "reasoner.blocks.8.time_mix.v2",
+          "reasoner.blocks.8.time_mix.v0",
+          "reasoner.blocks.8.time_mix.g1",
+          "reasoner.blocks.8.time_mix.g2",
+          "reasoner.blocks.8.time_mix.k_k",
+          "reasoner.blocks.8.time_mix.k_a",
+          "reasoner.blocks.8.time_mix.r_k",
+          "reasoner.blocks.8.time_mix.ln_x.weight",
+          "reasoner.blocks.8.time_mix.ln_x.bias",
+          "reasoner.blocks.9.future_seed_logit",
+          "reasoner.blocks.9.ln_time.weight",
+          "reasoner.blocks.9.ln_time.bias",
+          "reasoner.blocks.9.ln_channel.weight",
+          "reasoner.blocks.9.ln_channel.bias",
+          "reasoner.blocks.9.time_mix.x_r",
+          "reasoner.blocks.9.time_mix.x_w",
+          "reasoner.blocks.9.time_mix.x_k",
+          "reasoner.blocks.9.time_mix.x_v",
+          "reasoner.blocks.9.time_mix.x_a",
+          "reasoner.blocks.9.time_mix.x_g",
+          "reasoner.blocks.9.time_mix.w1",
+          "reasoner.blocks.9.time_mix.w2",
+          "reasoner.blocks.9.time_mix.w0",
+          "reasoner.blocks.9.time_mix.a1",
+          "reasoner.blocks.9.time_mix.a2",
+          "reasoner.blocks.9.time_mix.a0",
+          "reasoner.blocks.9.time_mix.v1",
+          "reasoner.blocks.9.time_mix.v2",
+          "reasoner.blocks.9.time_mix.v0",
+          "reasoner.blocks.9.time_mix.g1",
+          "reasoner.blocks.9.time_mix.g2",
+          "reasoner.blocks.9.time_mix.k_k",
+          "reasoner.blocks.9.time_mix.k_a",
+          "reasoner.blocks.9.time_mix.r_k",
+          "reasoner.blocks.9.time_mix.ln_x.weight",
+          "reasoner.blocks.9.time_mix.ln_x.bias",
+          "out_norm.weight",
+          "out_norm.bias"
+        ],
+        "no_decay_parameter_count": 649788
+      },
+      "output_shape": [
+        2,
+        81,
+        9
+      ],
+      "parameter_count": 5092668,
+      "peak_allocated_mib": 310.10498046875,
+      "public_name": "rwkv",
+      "runtime": {
+        "available": true,
+        "implementation": "official_rwkv7_timemix_with_explicit_state_io",
+        "kernel": "statepassing",
+        "official_kernel_blob": "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905",
+        "official_source_blob": "b4d167fedead2655d253c55eb47b65f00e7193d2",
+        "official_source_commit": "952102498e9ed367ea0a59ee64106916d474d30f",
+        "reason": "ok",
+        "statepassing_cuda_sha256": "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
+      },
+      "smoke_wall_sec": 0.9897835850715637,
+      "trainable_parameter_count": 5092668
+    }
+  },
+  "contract": {
+    "d_model": 192,
+    "future_seed_scale": 1.0,
+    "gdn_expand_v": 1.0,
+    "head_dim": 32,
+    "heads": 6,
+    "layers": 10,
+    "loops_smoke": 2,
+    "shared_shell_init_seed": 52
+  },
+  "cuda_visible_devices": "0",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "torch": "2.7.0+cu126"
+}
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+{
+  "status": "PASS",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "cuda_visible_devices": "0",
+  "seed_reset_per_backbone": 52,
+  "shared_shell_init_seed": 52,
+  "backbones": {
+    "rwkv": "rwkv7",
+    "gdn": "fla_gdn",
+    "gdn2": "gdn2",
+    "kda": "kda"
+  },
+  "definition": "All parameters outside each block's time_mix are the shared shell.",
+  "common_parameter_tensors": 77,
+  "same_shape_parameter_tensors": 77,
+  "identical_parameter_tensors": 77,
+  "differing_parameter_tensors": 0,
+  "differing_names": []
+}
+preflight_dir=/huyang2/double-loop/runs/sudoku-backbone-preflight-sharedinit-20260724T152415Z-6e51f06

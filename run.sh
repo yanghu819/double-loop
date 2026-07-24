@@ -374,6 +374,7 @@ COMMON_ARGS=(
   --lr "${LR:-2e-3}"
   --weight_decay "${WEIGHT_DECAY:-1e-3}"
   --optimizer_contract "${OPTIMIZER_CONTRACT:-uniform}"
+  --shared_shell_init_seed "${SHARED_SHELL_INIT_SEED:--1}"
   --feature_buffer_size "${FEATURE_BUFFER_SIZE:-8192}"
   --feature_buffer_add "${FEATURE_BUFFER_ADD:-2048}"
   --grad_accum_steps "${GRAD_ACCUM_STEPS:-1}"

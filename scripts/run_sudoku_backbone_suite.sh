@@ -43,6 +43,7 @@ PYTHON_BIN="${PYTHON_BIN:-/opt/conda/bin/python}"
   --gdn2-run "$GDN2_RUN" \
   --kda-run "$KDA_RUN" \
   --preflight "$PREFLIGHT_DIR/backbone_contract.json" \
+  --shared-shell-gate "$PREFLIGHT_DIR/shared_shell_initialization_gate.json" \
   --fla-gate "$PREFLIGHT_DIR/fla_kernel_gate.json" \
   --rwkv7-gate "$PREFLIGHT_DIR/rwkv7_official_frontend_gate.json" \
   --steps "$STEPS" \

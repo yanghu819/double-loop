@@ -30,7 +30,7 @@ def load_runner(repo: Path):
 
 
 def build_model(runner, backbone: str):
-    return runner.FutureSeedLoopSudoku(
+    model = runner.FutureSeedLoopSudoku(
         d_model=192,
         layers=10,
         heads=6,
@@ -73,6 +73,8 @@ def build_model(runner, backbone: str):
         gdn_conv_size=4,
         gdn_allow_neg_eigval=False,
     )
+    model.reset_shared_shell_parameters(52)
+    return model
 
 
 def finite_gradient_summary(
@@ -214,6 +216,7 @@ def main() -> None:
             "gdn_expand_v": 1.0,
             "loops_smoke": 2,
             "future_seed_scale": 1.0,
+            "shared_shell_init_seed": 52,
         },
         "backbones": {},
     }

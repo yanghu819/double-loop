@@ -2262,6 +2262,47 @@ class FutureSeedLoopSudoku(nn.Module):
         else:
             self.register_parameter("loop_update_logit", None)
 
+    def reset_shared_shell_parameters(self, seed: int) -> None:
+        """Initialize backbone-independent random parameters from one fixed stream."""
+        cuda_devices = sorted(
+            {
+                int(parameter.device.index)
+                for parameter in self.parameters()
+                if parameter.is_cuda and parameter.device.index is not None
+            }
+        )
+        with torch.random.fork_rng(devices=cuda_devices):
+            torch.manual_seed(int(seed))
+            if cuda_devices:
+                torch.cuda.manual_seed_all(int(seed))
+
+            self.embed.reset_parameters()
+            self.position.reset_parameters()
+            for block in self.reasoner.blocks:
+                channel_mix = block.channel_mix
+                d_model = int(channel_mix.key.in_features)
+                channel_mix.key.weight.data.uniform_(
+                    -0.5 / (d_model**0.5),
+                    0.5 / (d_model**0.5),
+                )
+                nn.init.zeros_(channel_mix.value.weight)
+            self.head.reset_parameters()
+
+            if self.loop_time is not None:
+                nn.init.normal_(self.loop_time.weight, mean=0.0, std=0.02)
+            if self.loop_feedback is not None:
+                nn.init.zeros_(self.loop_feedback.weight)
+            if self.scratch_residual is not None:
+                nn.init.normal_(self.scratch_residual.weight, mean=0.0, std=0.02)
+            if self.scratch_gate is not None:
+                nn.init.zeros_(self.scratch_gate.weight)
+            if self.scratch_decay is not None:
+                nn.init.zeros_(self.scratch_decay.weight)
+            if self.scratch_projection.numel() > 0:
+                projection = torch.randn_like(self.scratch_projection)
+                projection = projection / projection.norm(dim=-1, keepdim=True).clamp(min=1e-6)
+                self.scratch_projection.copy_(projection)
+
     def input_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
         positions = torch.arange(CELLS, dtype=torch.long, device=inputs.device)
         return self.embed(inputs) + self.position(positions).unsqueeze(0)
@@ -2936,7 +2977,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn_use_short_conv=args.gdn_use_short_conv,
         gdn_conv_size=args.gdn_conv_size,
         gdn_allow_neg_eigval=args.gdn_allow_neg_eigval,
-    ).to(device)
+    )
+    if args.shared_shell_init_seed >= 0:
+        model.reset_shared_shell_parameters(args.shared_shell_init_seed)
+    model = model.to(device)
+    post_init_torch_seed = args.seed + 2000
+    torch.manual_seed(post_init_torch_seed)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(post_init_torch_seed)
     parameter_count = sum(parameter.numel() for parameter in model.parameters())
     trainable_parameter_count = sum(
         parameter.numel() for parameter in model.parameters() if parameter.requires_grad
@@ -3485,6 +3533,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
 
     train_stats = {
         "fla_runtime": fla_runtime,
+        "shared_shell_init_seed": args.shared_shell_init_seed,
+        "post_init_torch_seed": post_init_torch_seed,
         "train_ce_loss": last_ce_loss,
         "train_total_loss": last_total_loss,
         "train_loop1_loss": last_loop1_loss,
@@ -5121,6 +5171,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--lr", type=float, default=2e-3)
     p.add_argument("--weight_decay", type=float, default=1e-3)
     p.add_argument("--optimizer_contract", choices=("uniform", "rwkv7_decay_groups"), default="uniform")
+    p.add_argument("--shared_shell_init_seed", type=int, default=-1)
     p.add_argument("--holes_min", type=int, default=4)
     p.add_argument("--holes_max", type=int, default=12)
     p.add_argument("--hole_stages", default="")

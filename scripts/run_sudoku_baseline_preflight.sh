@@ -63,4 +63,9 @@ mkdir -p \
   --out "$OUT_DIR/backbone_contract.json" \
   2>&1 | tee "$OUT_DIR/backbone_contract.log"
 
+"$PYTHON_BIN" "$REPO_ROOT/scripts/check_shared_shell_initialization.py" \
+  --repo "$REPO_ROOT" \
+  --out "$OUT_DIR/shared_shell_initialization_gate.json" \
+  2>&1 | tee "$OUT_DIR/shared_shell_initialization_gate.log"
+
 printf 'preflight_dir=%s\n' "$OUT_DIR"

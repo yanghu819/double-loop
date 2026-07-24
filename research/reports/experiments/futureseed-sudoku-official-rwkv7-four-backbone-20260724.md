@@ -4,7 +4,7 @@
 
 - Experiment: `E-BASELINE-003`
 - Plan: `P-BASELINE-003`
-- Status: in progress
+- Status: restarted after fairness audit
 - Scheduled: 2026-07-24
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -39,6 +39,9 @@ All four arms use:
 - BF16, AdamW, LR 0.0015, weight decay 0.001, seed 52;
 - shared grouped weight decay: matrix `.weight` parameters decay, normalization
   and explicit no-weight-decay parameters do not;
+- backbone-independent shared-shell initialization: embedding, positional
+  embedding, every shared ChannelMix, and the output head are reset from one
+  fixed seed after backbone construction;
 - official full-diversity Sudoku, curriculum `46-50:100,51-55:400`;
 - 512-board mixed and official blank-range evaluation;
 - a strict 512-board 53-blank checkpoint evaluation, rather than a mislabeled
@@ -119,7 +122,27 @@ loop-by-loop same-puzzle visualizations. Model checkpoints remain outside Git.
 
 ## 7. Results
 
-Pending strict GPU1 preflight and formal suite.
+The first exact-SHA diagnostic pair at `6ea7f8e` completed before the
+shared-initialization audit:
+
+- official RWKV7: step-500 CE `1.0248`, mixed loop-5 exact `0.01367`,
+  `46-50` exact `0.60742`, and exact `0` on `51-55` / `56-64`;
+- official FLA GDN with matched `expand_v=1`: step-500 CE `1.0419`, mixed
+  loop-5 exact `0.00977`, `46-50` exact `0.34766`, and exact `0` on
+  `51-55` / `56-64`.
+
+These two runs passed source, CUDA/Triton, data-order, gradient, runtime, and
+artifact checks, but they are not accepted as the clean four-way baseline.
+The independent initialization audit found that 11 of 77 same-shaped shared
+parameter tensors differed by backbone: all ten ChannelMix input matrices and
+the output head. Different backbone constructors consumed different numbers
+of random draws before those shared modules were initialized. With one seed
+and 500 steps, this is an avoidable nuisance variable.
+
+At `2026-07-24T15:02:54Z`, the suite was restarted with an explicit
+backbone-independent shared-shell initializer and a fail-closed GPU gate that
+requires all shared parameter hashes to match. The `6ea7f8e` pair is retained
+as diagnostic history and must not be used for the final carrier ranking.
 
 Review note: before formal training, the checkpoint evaluator was corrected so
 that `holes53` really selects exactly 53 blanks on official data. The previous
@@ -130,6 +153,10 @@ mislabelled checkpoint path is used.
 Review note: the aborted dirty-tree launch completed zero optimizer steps and
 is not a benchmark arm. Its only admissible output is the infrastructure
 failure record.
+
+Review note: equal seed alone is not equal shared initialization when
+architectures consume different random-number streams. Future one-seed carrier
+comparisons must pass the shared-shell hash gate before training.
 
 ## 8. Conclusions
 

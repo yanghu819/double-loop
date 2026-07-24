@@ -49,6 +49,7 @@ EXPECTED = {
     "lr": 0.0015,
     "weight_decay": 0.001,
     "optimizer_contract": "rwkv7_decay_groups",
+    "shared_shell_init_seed": 52,
     "blank_loss_weight": 8.0,
     "future_seed_scale": 1.0,
     "future_seed_decay": 0.0,
@@ -437,7 +438,7 @@ code{{background:#edf1f3;padding:2px 5px;border-radius:3px}}@media(max-width:110
 <h1>FutureSeed: RWKV7 vs GDN vs GDN2 vs KDA</h1>
 <p class="muted">One seed, one data order, one training budget, one evaluator. GPU1 only; no CPU model smoke and no silent fallback.</p>
 <div class="band"><strong>Decision:</strong> {html.escape(payload["decision"])}</div>
-<h2>Fairness contract</h2><div class="band"><p>D192/L10/H6/D32, matched 6x32x32 recurrent state, five loops, CE on every loop, effective batch 128, BF16, seed 52, native FutureSeed scale 1, official full-diversity Sudoku, and curriculum <code>{html.escape(payload["contract"]["hole_stages"])}</code>. Parameters and runtime are measured rather than padded.</p></div>
+<h2>Fairness contract</h2><div class="band"><p>D192/L10/H6/D32, matched 6x32x32 recurrent state, five loops, CE on every loop, effective batch 128, BF16, seed 52, backbone-independent shared-shell initialization, native FutureSeed scale 1, official full-diversity Sudoku, and curriculum <code>{html.escape(payload["contract"]["hole_stages"])}</code>. Parameters and runtime are measured rather than padded.</p></div>
 <h2>Matched result</h2><div class="band"><table><thead><tr><th>backbone</th><th>params</th><th>train CE</th><th>fixed h53 exact</th><th>mixed exact</th><th>mixed blank</th><th>loop exact gain</th><th>sec/step</th><th>peak GiB</th></tr></thead><tbody>{quality_rows}</tbody></table></div>
 <h2>Learning and loops</h2><div class="charts">{line_chart(arms, "curve", "step", "ce", "Training CE")}{line_chart(arms, "loops", "loop", "exact", "Full-board exact by loop")}{line_chart(arms, "loops", "loop", "blank_acc", "Blank accuracy by loop")}</div>
 <h2>Official blank ranges</h2><div class="band"><table><thead><tr><th rowspan="2">blanks</th>{range_headers}</tr><tr>{range_subheaders}</tr></thead><tbody>{''.join(range_rows)}</tbody></table></div>
@@ -532,6 +533,7 @@ def main() -> None:
     parser.add_argument("--gdn2-run", required=True)
     parser.add_argument("--kda-run", required=True)
     parser.add_argument("--preflight", type=Path, required=True)
+    parser.add_argument("--shared-shell-gate", type=Path, required=True)
     parser.add_argument("--fla-gate", type=Path, required=True)
     parser.add_argument("--rwkv7-gate", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=500)
@@ -548,13 +550,21 @@ def main() -> None:
         runs_root = repo / runs_root
     runs_root = runs_root.resolve()
     preflight_path = args.preflight if args.preflight.is_absolute() else repo / args.preflight
+    shared_shell_gate_path = (
+        args.shared_shell_gate if args.shared_shell_gate.is_absolute() else repo / args.shared_shell_gate
+    )
     fla_gate_path = args.fla_gate if args.fla_gate.is_absolute() else repo / args.fla_gate
     rwkv7_gate_path = args.rwkv7_gate if args.rwkv7_gate.is_absolute() else repo / args.rwkv7_gate
     preflight = read_json(preflight_path)
+    shared_shell_gate = read_json(shared_shell_gate_path)
     fla_gate = read_json(fla_gate_path)
     rwkv7_gate = read_json(rwkv7_gate_path)
     if preflight.get("cuda_visible_devices") != "0":
         raise AssertionError("Preflight was not bound to GPU1")
+    if shared_shell_gate.get("status") != "PASS":
+        raise AssertionError("Shared-shell initialization gate did not pass")
+    if int(shared_shell_gate.get("differing_parameter_tensors", -1)) != 0:
+        raise AssertionError("Shared-shell initialization still differs across backbones")
     if not all(
         row["installed_sha256"] == row["wheel_sha256"]
         for row in fla_gate["provenance"]["source_file_hashes"].values()
@@ -593,6 +603,7 @@ def main() -> None:
         "decision": decision_from(arms),
         "arms": arms,
         "preflight": preflight,
+        "shared_shell_gate": shared_shell_gate,
         "fla_gate": fla_gate,
         "rwkv7_gate": rwkv7_gate,
     }

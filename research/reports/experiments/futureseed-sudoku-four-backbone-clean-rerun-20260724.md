@@ -47,6 +47,55 @@ Every arm used:
 Only the recurrent carrier changed. Architecture-specific parameter count,
 runtime, and memory were measured rather than padded to equality.
 
+## Post-Run Fairness Audit
+
+This is a valid shared-recipe engineering comparison, but it is not a
+publication-grade matched-capacity or matched-compute comparison.
+
+What is genuinely matched:
+
+- the official data paths, deterministic Python sampling stream, curriculum,
+  number of sampled boards, and evaluation seeds;
+- the outer D192/L10/H6/D32 shell, channel MLP, five loops, per-loop loss,
+  optimizer hyperparameters, BF16 setting, and model initialization seed;
+- the FutureSeed rule, gate initialization, normalization rule, and scale;
+- the source SHA and strict CUDA/no-fallback implementation gates.
+
+What is not matched:
+
+- **Recurrent state capacity.** RWKV carries a `6 x 32 x 32` state, or 6,144
+  scalars per sample. All three FLA arms were launched with `expand_v=2`, so
+  they carry `6 x 64 x 32` states, or 12,288 scalars. With unit-RMS
+  FutureSeed and a 0.5 initial gate, the corresponding preflight state norms
+  are 16.0 for RWKV and 22.627 for the FLA arms. The FLA carriers therefore
+  receive twice the state capacity and `sqrt(2)` times the total normalized
+  seed energy.
+- **Native defaults.** `expand_v=2` is the pinned FLA GDN default, but the
+  pinned GDN2 and KDA defaults are `expand_v=1`. The run deliberately gave all
+  FLA arms the same state size, so GDN2 and KDA are not native-default runs.
+- **Parameters and compute.** Parameters range from 5.580M to 6.946M. Relative
+  to RWKV, GDN/GDN2/KDA use 7.2%/24.5%/4.9% more parameters and take
+  47.3%/58.3%/55.4% more wall time per optimizer step. The comparison cannot
+  support a compute-efficiency claim.
+- **Native optimizer conventions.** The shared AdamW applies weight decay to
+  every parameter. The official FLA layers mark `A_log` and `dt_bias` as
+  no-weight-decay parameters, but this runner does not honor those markers.
+  This is a symmetric optimizer recipe, not each architecture's native recipe.
+- **Cryptographic data provenance.** The code and arguments imply the same
+  deterministic train/eval rows, but the artifact records dataset sizes,
+  seeds, and one primary puzzle hash rather than hashes of every data file and
+  sampled row stream.
+
+State precision is not listed as a confirmed mismatch. The FLA preflight
+records FP32 recurrent states. RWKV state-passing also computes its recurrent
+state in FP32 and casts it to the block input dtype, but the benchmark did not
+archive the resulting RWKV state dtype. A publication run must record state
+shape, dtype, and normalized seed energy for every arm.
+
+Fairness grade: **B- for selecting a provisional engineering carrier under one
+shared recipe; insufficient for claiming that one recurrent equation is
+intrinsically better.**
+
 ## Hard Gates
 
 Before training, the suite required:
@@ -115,7 +164,7 @@ for finite recurrent refinement, not sustained hard-board closure.
 
 ## Decision
 
-Retain GDN as the scaling carrier.
+Retain GDN as the provisional scaling carrier under this shared recipe.
 
 - It has the best CE and official opening.
 - It has the lowest memory among the official FLA arms.
@@ -126,8 +175,9 @@ Retain GDN as the scaling carrier.
 - RWKV remains the fastest CUDA mechanism reference.
 
 The correct claim is narrow: GDN is the best engineering default under this
-shared finite-budget recipe. The run does not show a universal architecture
-winner, and it does not remove the 51-blank closure cliff.
+shared finite-budget recipe. Because state capacity and compute are not
+matched, the run does not show that GDN's recurrent equation is intrinsically
+better. It also does not remove the 51-blank closure cliff.
 
 ## Reproducibility Notes
 

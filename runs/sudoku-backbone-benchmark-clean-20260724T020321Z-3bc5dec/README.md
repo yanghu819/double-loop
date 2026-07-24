@@ -10,3 +10,12 @@ Decision: No backbone separates on hard full-board closure at this finite budget
 | KDA | 5.852M | 1.0051 | 0.02344 | 0.50351 | 5.34s | 7.55GiB |
 
 Open `index.html` for official blank ranges, loop curves, kernel provenance, and same-puzzle visualizations.
+
+## Fairness Boundary
+
+This is a shared-recipe comparison, not a state-, parameter-, or compute-matched
+comparison. RWKV uses a `6 x 32 x 32` recurrent state; the three FLA arms use
+`6 x 64 x 32` states because the suite fixes `expand_v=2`. Parameter counts and
+seconds per step also differ materially. Use this result to choose a
+provisional engineering carrier, not to claim that GDN is intrinsically better
+than RWKV, GDN2, or KDA.

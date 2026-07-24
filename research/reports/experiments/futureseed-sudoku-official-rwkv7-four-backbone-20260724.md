@@ -42,6 +42,8 @@ All four arms use:
   and explicit no-weight-decay parameters do not;
 - official full-diversity Sudoku, curriculum `46-50:100,51-55:400`;
 - 512-board mixed and official blank-range evaluation;
+- a strict 512-board 53-blank checkpoint evaluation, rather than a mislabeled
+  sample from the full test distribution;
 - no noise, feedback, scratch state, selector, repair, search, or task rule.
 
 Parameter count, wall time, and VRAM are measured rather than padded.
@@ -105,6 +107,12 @@ loop-by-loop same-puzzle visualizations. Model checkpoints remain outside Git.
 ## 7. Results
 
 Pending strict GPU1 preflight and formal suite.
+
+Review note: before formal training, the checkpoint evaluator was corrected so
+that `holes53` really selects exactly 53 blanks on official data. The previous
+behavior ignored the requested count only for checkpoint evaluation; final
+official blank-range evaluation was already correct. No result from the
+mislabelled checkpoint path is used.
 
 ## 8. Conclusions
 

@@ -3034,17 +3034,26 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         out_dir = Path(args.out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_holes = parse_eval_checkpoint_holes(args)
-        checkpoint_batches = {
-            holes: make_eval_batch(
-                args,
-                official_eval,
-                args.eval_n,
-                holes,
-                args.seed + 13000 + holes * 17,
-                device=device,
-            )
-            for holes in checkpoint_holes
-        }
+        checkpoint_batches = {}
+        for holes in checkpoint_holes:
+            checkpoint_seed = args.seed + 13000 + holes * 17
+            if official_eval is not None:
+                checkpoint_batches[holes] = official_eval.fixed_batch_by_blank_range(
+                    args.eval_n,
+                    checkpoint_seed,
+                    holes_min=holes,
+                    holes_max=holes,
+                    device=device,
+                )
+            else:
+                checkpoint_batches[holes] = make_eval_batch(
+                    args,
+                    None,
+                    args.eval_n,
+                    holes,
+                    checkpoint_seed,
+                    device=device,
+                )
         print(
             "checkpoint_eval "
             f"steps={','.join(str(step) for step in checkpoint_steps)} "
@@ -3353,7 +3362,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         seed=args.seed + 14000 + global_step + holes,
                         forward_dtype=args.forward_dtype,
                     )
-                    checkpoint["eval_by_holes"][f"holes{holes}"] = {"eval_clean": clean}
+                    checkpoint["eval_by_holes"][f"holes{holes}"] = {
+                        "blank_range": [holes, holes],
+                        "eval_n": int(eval_batch[0].shape[0]),
+                        "eval_clean": clean,
+                    }
                 checkpoint_key = f"step{global_step}"
                 checkpoint_evals[checkpoint_key] = checkpoint
                 checkpoint_path = Path(args.out_dir) / f"checkpoint_eval_step{global_step:06d}.json"

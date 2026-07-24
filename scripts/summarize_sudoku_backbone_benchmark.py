@@ -215,6 +215,15 @@ def extract_run(
 
     checkpoint_path = run_dir / "output" / f"checkpoint_eval_step{steps:06d}.json"
     checkpoint = read_json(checkpoint_path)
+    fixed_holes53 = checkpoint["eval_by_holes"]["holes53"]
+    if fixed_holes53.get("blank_range") != [53, 53]:
+        raise AssertionError(
+            f"{public_name} checkpoint holes53 is not a strict 53-blank evaluation: {fixed_holes53}"
+        )
+    if int(fixed_holes53.get("eval_n", -1)) != 512:
+        raise AssertionError(
+            f"{public_name} checkpoint holes53 eval_n differs: {fixed_holes53.get('eval_n')}"
+        )
     config = read_json(run_dir / "config.json")
     patch_files = source_patch_files(run_dir)
     unexpected_patch_files = sorted(set(patch_files) - TRACKING_ONLY_PATCHES)
@@ -261,7 +270,7 @@ def extract_run(
         "train_sec_per_step": elapsed / steps,
         "peak_allocated_mib": float(train["cuda_max_memory_allocated_mb"]),
         "memory_measurement": train.get("cuda_memory_measurement"),
-        "fixed_holes53": checkpoint["eval_by_holes"]["holes53"]["eval_clean"]["loop5"],
+        "fixed_holes53": fixed_holes53["eval_clean"]["loop5"],
         "loops": loops,
         "loop_gain_exact": loops[-1]["exact"] - loops[0]["exact"],
         "loop_gain_blank": loops[-1]["blank_acc"] - loops[0]["blank_acc"],

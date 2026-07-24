@@ -75,7 +75,11 @@ def build_model(runner, backbone: str):
     )
 
 
-def finite_gradient_summary(model: torch.nn.Module) -> dict[str, Any]:
+def finite_gradient_summary(
+    model: torch.nn.Module,
+    *,
+    additional_expected_missing: set[str] | None = None,
+) -> dict[str, Any]:
     missing: list[str] = []
     nonfinite: list[str] = []
     squared_norm = 0.0
@@ -90,6 +94,8 @@ def finite_gradient_summary(model: torch.nn.Module) -> dict[str, Any]:
             nonfinite.append(name)
         squared_norm += float(gradient.square().sum().item())
     expected_missing = {"reasoner.blocks.0.future_seed_logit"}
+    if additional_expected_missing:
+        expected_missing.update(additional_expected_missing)
     unexpected_missing = sorted(set(missing) - expected_missing)
     return {
         "global_norm": squared_norm**0.5,
@@ -138,7 +144,19 @@ def check_backbone(runner, public_name: str, device: torch.device) -> dict[str, 
     loss.backward()
     torch.cuda.synchronize(device)
     elapsed = time.perf_counter() - started
-    gradients = finite_gradient_summary(model)
+    additional_expected_missing = (
+        {
+            "reasoner.blocks.0.time_mix.v0",
+            "reasoner.blocks.0.time_mix.v1",
+            "reasoner.blocks.0.time_mix.v2",
+        }
+        if public_name == "rwkv"
+        else set()
+    )
+    gradients = finite_gradient_summary(
+        model,
+        additional_expected_missing=additional_expected_missing,
+    )
     if gradients["unexpected_missing"] or gradients["nonfinite"]:
         raise AssertionError(f"{public_name} gradient gate failed: {gradients}")
 

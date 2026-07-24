@@ -22,13 +22,17 @@ evaluator, which recurrent carrier is the best finite-budget default?
 
 This run compares:
 
-- RWKV7 with the local state-passing CUDA kernel;
+- a local RWKV-style block with the official-derived state-passing CUDA
+  recurrence kernel;
 - official FLA GatedDeltaNet;
 - official FLA GatedDeltaNet2;
 - official FLA KimiDeltaAttention.
 
 It does not compare FutureSeed against no-FutureSeed and does not estimate an
 architecture's asymptotic ceiling.
+
+The RWKV arm is not a faithful implementation of the complete official RWKV7
+time-mix frontend. It must not be cited as an official RWKV7 baseline.
 
 ## Locked Contract
 
@@ -63,6 +67,14 @@ What is genuinely matched:
 
 What is not matched:
 
+- **RWKV model semantics.** The local arm retains the RWKV7 state recurrence,
+  but its surrounding parameterization is a simplified RWKV-style block. In
+  particular, it applies `sigmoid` to receptance, uses full linear
+  decay/update projections and a simple sigmoid gate, and omits official
+  RWKV7's cross-layer `v_first` residual, low-rank decay/update/gate paths,
+  `r_k` local term, initialization, and optimizer grouping. The official
+  simplified reference uses an unbounded receptance and includes all of those
+  paths. Therefore this run cannot compare GDN against official RWKV7.
 - **Recurrent state capacity.** RWKV carries a `6 x 32 x 32` state, or 6,144
   scalars per sample. All three FLA arms were launched with `expand_v=2`, so
   they carry `6 x 64 x 32` states, or 12,288 scalars. With unit-RMS
@@ -86,15 +98,15 @@ What is not matched:
   seeds, and one primary puzzle hash rather than hashes of every data file and
   sampled row stream.
 
-State precision is not listed as a confirmed mismatch. The FLA preflight
-records FP32 recurrent states. RWKV state-passing also computes its recurrent
-state in FP32 and casts it to the block input dtype, but the benchmark did not
-archive the resulting RWKV state dtype. A publication run must record state
-shape, dtype, and normalized seed energy for every arm.
+State precision is not a confirmed mismatch. The FLA preflight records FP32
+recurrent states. A post-run GPU1 parity probe also records FP32 RWKV terminal
+state and confirms that split-sequence state passing is bit-exact. A future
+publication run must still record state shape, dtype, and normalized seed
+energy directly from every training arm.
 
-Fairness grade: **B- for selecting a provisional engineering carrier under one
-shared recipe; insufficient for claiming that one recurrent equation is
-intrinsically better.**
+Fairness grade: **B- for comparing the three official FLA carriers under one
+shared engineering recipe; C for the four-way architecture claim because the
+RWKV arm is not full official RWKV7.**
 
 ## Hard Gates
 
@@ -112,15 +124,53 @@ Pinned FLA wheel SHA256:
 
 `65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb`
 
-All gates passed. Every arm records the same source SHA, data identity, eval
-seed, and primary puzzle hash. RWKV has an empty source patch. The other arms'
-patches contain only generated `leaderboard.csv` and
+All launch-time gates passed. Every arm records the same source SHA, data
+identity, eval seed, and primary puzzle hash. RWKV has an empty source patch.
+The other arms' patches contain only generated `leaderboard.csv` and
 `runs/visualization_index.html`; the strict summarizer rejects model or config
 source changes.
 
+## Post-Run Implementation Audit
+
+The surprising ordering was audited before accepting it as an architecture
+result.
+
+The official FLA integrations passed:
+
+- exact installed source hashes match the pinned FLA wheel;
+- the three arms call distinct official classes and distinct Triton autograd
+  nodes;
+- GDN and KDA use V-first cache states, while GDN2 uses its official K-first
+  state layout;
+- all three initial states receive nonzero gradients;
+- kernel output and terminal-state errors against the official naive Torch
+  references are at most `2.76e-4`.
+
+The RWKV state recurrence also passed a new strict GPU1 check against an
+independent FP32 Torch recurrence:
+
+- output max absolute error: `3.0518e-5`;
+- terminal-state max absolute error: `2.9802e-8`;
+- largest gradient relative RMS error: `1.8236e-4`;
+- 32-token execution versus 16+16 state continuation: exactly zero output and
+  terminal-state difference;
+- CUDA terminal state: FP32.
+
+This rules out the vendored CUDA state recurrence as the explanation for
+RWKV's weak score. The concrete implementation problem is the incomplete
+RWKV7 frontend and its mislabeled baseline, not a recurrence-kernel arithmetic
+failure.
+
+Evidence:
+
+- `runs/sudoku-backbone-benchmark-clean-20260724T020321Z-3bc5dec/provenance/fla_kernel_gate.json`
+- `runs/sudoku-backbone-benchmark-clean-20260724T020321Z-3bc5dec/provenance/rwkv_statepassing_parity.json`
+- official RWKV7 reference:
+  `https://github.com/BlinkDL/RWKV-LM/blob/main/RWKV-v7/train_temp/rwkv7_train_simplified.py`
+
 ## Result
 
-| Metric | RWKV | GDN | GDN2 | KDA |
+| Metric | RWKV-style | GDN | GDN2 | KDA |
 |---|---:|---:|---:|---:|
 | Parameters | 5.580M | 5.980M | 6.946M | 5.852M |
 | Train CE | 1.0432 | **0.9964** | 1.0078 | 1.0051 |
@@ -137,7 +187,7 @@ one-board edge is too small to select a carrier.
 
 ### Official Blank Ranges
 
-| Blanks | RWKV exact / blank | GDN exact / blank | GDN2 exact / blank | KDA exact / blank |
+| Blanks | RWKV-style exact / blank | GDN exact / blank | GDN2 exact / blank | KDA exact / blank |
 |---|---:|---:|---:|---:|
 | 46-50 | 0.3359 / 0.9659 | **0.8652 / 0.9955** | 0.7676 / 0.9905 | 0.7285 / 0.9899 |
 | 51-55 | 0 / 0.5097 | 0 / **0.5279** | 0 / 0.5205 | 0 / 0.5257 |
@@ -153,7 +203,7 @@ The aggregate evaluates the same puzzle for every carrier. Wrong cells change:
 
 | Backbone | Loop1 | Loop2 | Loop3 | Loop4 | Loop5 |
 |---|---:|---:|---:|---:|---:|
-| RWKV | 24 | 24 | 23 | 23 | 22 |
+| RWKV-style | 24 | 24 | 23 | 23 | 22 |
 | GDN | 24 | 22 | 22 | 22 | 22 |
 | GDN2 | 27 | 25 | 24 | 23 | 23 |
 | KDA | 22 | 21 | 21 | 21 | 20 |
@@ -172,18 +222,21 @@ Retain GDN as the provisional scaling carrier under this shared recipe.
 - KDA's mixed edge is one board and does not survive the stronger official
   opening comparison.
 - GDN2 uses 16% more parameters and more memory without a quality win.
-- RWKV remains the fastest CUDA mechanism reference.
+- The RWKV-style arm remains the fastest CUDA mechanism reference, but it is
+  not an official RWKV7 quality baseline.
 
 The correct claim is narrow: GDN is the best engineering default under this
 shared finite-budget recipe. Because state capacity and compute are not
 matched, the run does not show that GDN's recurrent equation is intrinsically
-better. It also does not remove the 51-blank closure cliff.
+better. Because the RWKV frontend is incomplete, it says nothing reliable
+about GDN versus full official RWKV7. It also does not remove the 51-blank
+closure cliff.
 
 ## Reproducibility Notes
 
 Relative to `P-BASELINE-001`, the broad result reproduced:
 
-- RWKV metrics are effectively unchanged.
+- RWKV-style metrics are effectively unchanged.
 - GDN remains the best official opening carrier.
 - GDN2 remains close but more expensive.
 - KDA moved by three mixed-eval boards and now leads GDN by one board.

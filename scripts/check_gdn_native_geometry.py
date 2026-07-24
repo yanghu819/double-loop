@@ -135,6 +135,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--phase",
+        choices=("reference", "full_stack", "all"),
+        default="all",
+    )
     args = parser.parse_args()
 
     if os.environ.get("CUDA_VISIBLE_DEVICES") != "0":
@@ -151,13 +156,48 @@ def main() -> None:
     runner.configure_sudoku(9, 0, 0)
     device = torch.device("cuda", 0)
 
+    reference = None
+    if args.phase in {"reference", "all"}:
+        print("[native-gdn-gate] start K24/V48 numerical reference", flush=True)
+        import check_fla_delta_backbones as kernel_checks
+
+        reference = kernel_checks.check_gdn_reference(
+            device,
+            key_dim=24,
+            value_dim=48,
+            seed=109,
+        )
+        print("[native-gdn-gate] pass K24/V48 numerical reference", flush=True)
+        if args.phase == "reference":
+            payload = {
+                "status": "PASS",
+                "phase": "reference",
+                "device": torch.cuda.get_device_name(device),
+                "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
+                "contract": {
+                    "heads": 2,
+                    "head_dim_k": 24,
+                    "head_dim_v": 48,
+                    "state_layout": "VxK",
+                    "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+                },
+                "native_shape_reference": reference,
+            }
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return
+
+    print("[native-gdn-gate] start full-stack model construction", flush=True)
     torch.manual_seed(52)
     torch.cuda.manual_seed_all(52)
     matched = build_model(runner, head_dim=32, expand_v=1.0).to(device)
     torch.manual_seed(52)
     torch.cuda.manual_seed_all(52)
     native = build_model(runner, head_dim=24, expand_v=2.0).to(device).train()
+    print("[native-gdn-gate] pass full-stack model construction", flush=True)
 
+    print("[native-gdn-gate] start shared-shell hash comparison", flush=True)
     matched_shell = shared_shell_hashes(matched)
     native_shell = shared_shell_hashes(native)
     common_shell = sorted(set(matched_shell) & set(native_shell))
@@ -168,7 +208,9 @@ def main() -> None:
         raise AssertionError(
             f"Native GDN changed the shared shell: common={len(common_shell)}, differing={differing_shell}"
         )
+    print("[native-gdn-gate] pass shared-shell hash comparison", flush=True)
 
+    print("[native-gdn-gate] start official runtime and geometry checks", flush=True)
     runtime = runner.strict_fla_runtime_summary(native, "fla_gdn")
     expected_class = "fla.layers.gated_deltanet.GatedDeltaNet"
     if {row["class"] for row in runtime["layers"]} != {expected_class}:
@@ -198,16 +240,9 @@ def main() -> None:
     }
     if geometry != expected_geometry:
         raise AssertionError(f"Native GDN geometry mismatch: {geometry} != {expected_geometry}")
+    print("[native-gdn-gate] pass official runtime and geometry checks", flush=True)
 
-    import check_fla_delta_backbones as kernel_checks
-
-    reference = kernel_checks.check_gdn_reference(
-        device,
-        key_dim=24,
-        value_dim=48,
-        seed=109,
-    )
-
+    print("[native-gdn-gate] start adapter initial-state backward", flush=True)
     h0 = torch.randn(
         2,
         6,
@@ -236,7 +271,9 @@ def main() -> None:
     if h0.grad is None or not bool(torch.isfinite(h0.grad).all()) or h0.grad.norm() <= 0:
         raise AssertionError("Native GDN initial recurrent state did not receive a finite nonzero gradient")
     native.zero_grad(set_to_none=True)
+    print("[native-gdn-gate] pass adapter initial-state backward", flush=True)
 
+    print("[native-gdn-gate] start 10-layer two-loop full-stack backward", flush=True)
     inputs = torch.randint(0, 10, (2, 81), device=device)
     labels = torch.randint(0, 9, (2, 81), device=device)
     torch.cuda.reset_peak_memory_stats(device)
@@ -261,9 +298,11 @@ def main() -> None:
         or future_seed_grad.float().norm() <= 0
     ):
         raise AssertionError("Native GDN FutureSeed gate did not receive a finite nonzero gradient")
+    print("[native-gdn-gate] pass 10-layer two-loop full-stack backward", flush=True)
 
     payload = {
         "status": "PASS",
+        "phase": args.phase,
         "device": torch.cuda.get_device_name(device),
         "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
         "hypothesis": (

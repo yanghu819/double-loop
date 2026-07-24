@@ -1,0 +1,27 @@
+Source worktree:
+  /huyang2/double-loop/artifacts/worktrees/native-gdn-8662e3a
+
+Detached source:
+  8662e3ade15f27cba53171fb9c18129f1df08c39
+
+Formal command contract:
+  set -a
+  source /huyang2/double-loop/artifacts/launch/gdn-native-k24v48-8662e3a.env
+  set +a
+  CUDA_VISIBLE_DEVICES=0 SMOKE_DONE=1 SKIP_SETUP=1 BACKBONE=fla_gdn FLA_STRICT_OFFICIAL=1 RUN_NAME=sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a ./run.sh full
+
+Python and cache contract:
+  PYTHON_BIN=/opt/conda/bin/python
+  PYTHONPATH=/huyang2/double-loop/.cache/python-extra-pylib
+  XDG_CACHE_HOME=/huyang2/double-loop/.cache
+  TRITON_CACHE_DIR=/huyang2/double-loop/.cache/triton
+  TORCHINDUCTOR_CACHE_DIR=/huyang2/double-loop/.cache/torchinductor
+  TORCH_EXTENSIONS_DIR=/huyang2/double-loop/.cache/torch_extensions
+  TMPDIR=/huyang2/double-loop/.cache/tmp
+  FLA_DISABLE_BACKEND_DISPATCH=1
+  FLA_CONV_BACKEND=triton
+
+Notes:
+  launch.env is preserved byte-for-byte from the remote launch artifact.
+  The comment inherited from the parent state-matched suite is descriptive
+  history; BACKBONE=fla_gdn and the K24/V48 fields above are binding.

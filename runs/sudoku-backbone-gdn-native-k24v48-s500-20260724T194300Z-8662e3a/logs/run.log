@@ -1,0 +1,48 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a
+git_sha=8662e3ade15f27cba53171fb9c18129f1df08c39
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=fla_gdn rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6042 total=1.6035 loop1=1.6020 loop_last=1.6042 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.4965 total=1.4957 loop1=1.4950 loop_last=1.4965 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.1604 total=1.1621 loop1=1.1697 loop_last=1.1604 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.0718 total=1.0760 loop1=1.0909 loop_last=1.0718 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=1.0598 total=1.0643 loop1=1.0812 loop_last=1.0598 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0000 blank=0.5298
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4740, early=0.4657, late=0.4793, early_late_gap=-0.0136
+        fs_gate=0.492, fs_update=1.000, fs_state_norm=16.703, fs_decay=0.00, fs_raw_rms=0.183, fs_raw_rms_std=0.010, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0078, valid=0.0078, solved=0.0078, blank_acc=0.4870, early=0.4814, late=0.4921, early_late_gap=-0.0107
+        fs_gate=0.492, fs_update=1.000, fs_state_norm=16.703, fs_decay=0.00, fs_raw_rms=0.179, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0098, valid=0.0098, solved=0.0098, blank_acc=0.4874, early=0.4823, late=0.4916, early_late_gap=-0.0092
+        fs_gate=0.492, fs_update=1.000, fs_state_norm=16.703, fs_decay=0.00, fs_raw_rms=0.178, fs_raw_rms_std=0.011, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4877, early=0.4816, late=0.4929, early_late_gap=-0.0113
+        fs_gate=0.492, fs_update=1.000, fs_state_norm=16.703, fs_decay=0.00, fs_raw_rms=0.177, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0117, valid=0.0117, solved=0.0117, blank_acc=0.4876, early=0.4811, late=0.4929, early_late_gap=-0.0118
+        fs_gate=0.492, fs_update=1.000, fs_state_norm=16.703, fs_decay=0.00, fs_raw_rms=0.177, fs_raw_rms_std=0.012, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.3887, valid=0.3887, solved=0.3887, blank_acc=0.9699, early=0.9682, late=0.9700, early_late_gap=-0.0017
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5085, early=0.5077, late=0.5034, early_late_gap=+0.0044
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.4513, early=0.4536, late=0.4462, early_late_gap=+0.0074
+
+case-bank artifacts
+official_b46_50 exact=0.4023 blank_acc=0.9708 selected={'solved_by_loop': 4, 'almost_solved': 4, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.5072 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.4515 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/case_bank/official_b56_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/futureseed_loop_case_seed52.html

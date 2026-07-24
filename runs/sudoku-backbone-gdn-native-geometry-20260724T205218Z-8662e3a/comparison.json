@@ -1,0 +1,259 @@
+{
+  "argument_differences": [
+    {
+      "baseline": 1.0,
+      "key": "gdn_expand_v",
+      "native": 2.0
+    },
+    {
+      "baseline": 32,
+      "key": "head_dim",
+      "native": 24
+    },
+    {
+      "baseline": "/huyang2/double-loop/runs/sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/output",
+      "key": "out_dir",
+      "native": "/huyang2/double-loop/runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output"
+    },
+    {
+      "baseline": "/huyang2/double-loop/models/sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/checkpoints",
+      "key": "train_checkpoint_dir",
+      "native": "/huyang2/double-loop/models/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/checkpoints"
+    }
+  ],
+  "baseline": {
+    "case": {
+      "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+      "relative_html": "../sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/output/futureseed_loop_case_seed52.html",
+      "wrong_by_loop": {
+        "loop1": 23,
+        "loop2": 21,
+        "loop3": 17,
+        "loop4": 17,
+        "loop5": 17
+      }
+    },
+    "curve": [
+      {
+        "ce": 1.6202,
+        "step": 100
+      },
+      {
+        "ce": 1.4803,
+        "step": 200
+      },
+      {
+        "ce": 1.1469,
+        "step": 300
+      },
+      {
+        "ce": 1.0694,
+        "step": 400
+      },
+      {
+        "ce": 1.0509,
+        "step": 500
+      }
+    ],
+    "loops": [
+      {
+        "blank_acc": 0.47508829832077026,
+        "exact": 0.001953125,
+        "loop": 1
+      },
+      {
+        "blank_acc": 0.48732560873031616,
+        "exact": 0.005859375,
+        "loop": 2
+      },
+      {
+        "blank_acc": 0.4879899322986603,
+        "exact": 0.005859375,
+        "loop": 3
+      },
+      {
+        "blank_acc": 0.4888290762901306,
+        "exact": 0.005859375,
+        "loop": 4
+      },
+      {
+        "blank_acc": 0.48868921399116516,
+        "exact": 0.005859375,
+        "loop": 5
+      }
+    ],
+    "mixed_loop5_exact": 0.005859375,
+    "parameter_count": 4866548,
+    "peak_mib": 6129.7451171875,
+    "ranges": {
+      "b46_50": {
+        "loop1_exact": 0.1171875,
+        "loop5_blank_acc": 0.9701430797576904,
+        "loop5_exact": 0.36328125
+      },
+      "b51_55": {
+        "loop1_exact": 0.0,
+        "loop5_blank_acc": 0.514982283115387,
+        "loop5_exact": 0.0
+      },
+      "b56_64": {
+        "loop1_exact": 0.0,
+        "loop5_blank_acc": 0.45410048961639404,
+        "loop5_exact": 0.0
+      }
+    },
+    "run_name": "sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06",
+    "sec_per_step": 4.885758666992188,
+    "train_ce": 1.0508939027786255
+  },
+  "generated_at_utc": "2026-07-24T20:54:41.899743+00:00",
+  "hypothesis": {
+    "ce_improvement": -0.008870601654052734,
+    "ce_improvement_gate": 0.03,
+    "decision": "NOT SUPPORTED: native K24/V48 adds state and parameters but misses both gates; CE improvement is -0.0089 (need +0.03) and 46-50 exact delta is +0.0254 (need +0.15). Hard 51-64 exact remains zero.",
+    "official_46_50_delta_gate": 0.15,
+    "official_46_50_exact_delta": 0.025390625,
+    "statement": "The state-matched GDN arm may be compressed by K32/V32; official native K24/V48 geometry should improve finite-budget opening if geometry is the cause.",
+    "supported": false
+  },
+  "integrity": "PASS",
+  "native": {
+    "case": {
+      "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+      "relative_html": "../sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/output/futureseed_loop_case_seed52.html",
+      "wrong_by_loop": {
+        "loop1": 23,
+        "loop2": 21,
+        "loop3": 21,
+        "loop4": 22,
+        "loop5": 22
+      }
+    },
+    "curve": [
+      {
+        "ce": 1.6042,
+        "loop1_ce": 1.602,
+        "loop5_ce": 1.6042,
+        "step": 100
+      },
+      {
+        "ce": 1.4965,
+        "loop1_ce": 1.495,
+        "loop5_ce": 1.4965,
+        "step": 200
+      },
+      {
+        "ce": 1.1604,
+        "loop1_ce": 1.1697,
+        "loop5_ce": 1.1604,
+        "step": 300
+      },
+      {
+        "ce": 1.0718,
+        "loop1_ce": 1.0909,
+        "loop5_ce": 1.0718,
+        "step": 400
+      },
+      {
+        "ce": 1.0598,
+        "loop1_ce": 1.0812,
+        "loop5_ce": 1.0598,
+        "step": 500
+      }
+    ],
+    "loops": [
+      {
+        "blank_acc": 0.47403937578201294,
+        "exact": 0.0,
+        "loop": 1
+      },
+      {
+        "blank_acc": 0.4870109558105469,
+        "exact": 0.0078125,
+        "loop": 2
+      },
+      {
+        "blank_acc": 0.4873605966567993,
+        "exact": 0.009765625,
+        "loop": 3
+      },
+      {
+        "blank_acc": 0.4876752495765686,
+        "exact": 0.01171875,
+        "loop": 4
+      },
+      {
+        "blank_acc": 0.48760533332824707,
+        "exact": 0.01171875,
+        "loop": 5
+      }
+    ],
+    "mixed_loop5_exact": 0.01171875,
+    "parameter_count": 5235348,
+    "peak_mib": 6405.1826171875,
+    "ranges": {
+      "b46_50": {
+        "loop1_exact": 0.150390625,
+        "loop5_blank_acc": 0.9698536396026611,
+        "loop5_exact": 0.388671875
+      },
+      "b51_55": {
+        "loop1_exact": 0.0,
+        "loop5_blank_acc": 0.5084666609764099,
+        "loop5_exact": 0.0
+      },
+      "b56_64": {
+        "loop1_exact": 0.0,
+        "loop5_blank_acc": 0.4513280391693115,
+        "loop5_exact": 0.0
+      }
+    },
+    "run_name": "sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a",
+    "runtime": {
+      "backend_dispatch_disabled": true,
+      "conv_backend": "triton",
+      "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+      "implementation": "official_fla_fla_gdn",
+      "kernel": "chunk",
+      "official_class": "fla.layers.gated_deltanet.GatedDeltaNet",
+      "official_layer_count": 10,
+      "silent_fallback_allowed": false
+    },
+    "sec_per_step": 6.058973969459534,
+    "source_sha": "8662e3ade15f27cba53171fb9c18129f1df08c39",
+    "train_ce": 1.0597645044326782
+  },
+  "preflight": {
+    "full_stack": "PASS",
+    "geometry": {
+      "d_model": 192,
+      "head_dim_k": 24,
+      "head_dim_v": 48,
+      "heads": 6,
+      "key_dim": 144,
+      "state_elements_per_sample_layer": 6912,
+      "state_layout": "VxK",
+      "value_dim": 288
+    },
+    "gradient_errors": {
+      "A_log": 0.013104181736707687,
+      "beta": 0.0001398324966430664,
+      "dt_bias": 0.006952065974473953,
+      "g": 0.0005311084096319973,
+      "h0": 4.158541560173035e-05,
+      "k": 0.00011902302503585815,
+      "q": 0.00010698661208152771,
+      "v": 0.0003200620412826538
+    },
+    "gradient_max_abs": 0.013104181736707687,
+    "output_max_abs": 5.848333239555359e-05,
+    "reference": "PASS",
+    "shared_shell": {
+      "common_parameter_tensors": 77,
+      "differing_parameter_tensors": 0,
+      "identical_parameter_tensors": 77
+    },
+    "state_max_abs": 0.00021639466285705566
+  },
+  "status": "PASS"
+}

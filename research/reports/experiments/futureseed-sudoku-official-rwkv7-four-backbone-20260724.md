@@ -228,7 +228,71 @@ The aggregate and all same-puzzle visualizations are archived under
    implementation bug, caused the drop. It must remain separate from this
    table and must not become a geometry sweep.
 
-## 9. Submission Record
+## 9. Native GDN Geometry Diagnostic
+
+The single preregistered follow-up was run at clean detached SHA
+`8662e3ade15f27cba53171fb9c18129f1df08c39`. It changed only:
+
+- per-head key dimension: `32 -> 24`;
+- GDN value expansion: `1 -> 2`, hence per-head value dimension `32 -> 48`.
+
+The output and checkpoint paths necessarily changed. An automated
+argument-by-argument comparison rejected every other change. The model
+therefore moved from a `6 x 32 x 32` V-by-K state to `6 x 48 x 24`, or from
+6,144 to 6,912 state elements per layer and sample.
+
+Before training, the native shape passed:
+
+- official chunk CUDA versus a parameterized Torch V-by-K reference:
+  output max error `5.85e-5`, terminal-state max error `2.16e-4`, and maximum
+  parameter/input gradient error `0.0131` under a preregistered `0.08` bound;
+- exact `ChunkGatedDeltaRuleFunctionBackward`;
+- all 10 exact official FLA `GatedDeltaNet` classes and Triton short
+  convolutions, with backend dispatch disabled;
+- finite nonzero FutureSeed gate and initial-state gradients;
+- no unexpected missing or nonfinite full-stack gradients;
+- `77/77` backbone-independent shared-shell tensors bit-identical to the
+  accepted state-matched arm.
+
+The first environment attempt failed before model execution because the local
+`.venv` did not contain PyTorch. It is archived as an infrastructure failure.
+One monolithic preflight was killed by its exact PID after ten minutes because
+it emitted no phase result; `abort.json` records that stop. The same checks
+were then split into observable reference and full-stack phases and both
+passed. Neither failed attempt contributed a metric.
+
+| GDN geometry | Params | State elems/layer/sample | CE@500 | Mixed exact L5 | 46-50 exact L5 | 51-55 | 56-64 | Sec/step | Peak GiB |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| state-matched K32/V32 | 4.867M | 6,144 | 1.0509 | 0.59% | 36.33% | 0.00% | 0.00% | 4.89 | 5.99 |
+| native K24/V48 | 5.235M | 6,912 | 1.0598 | 1.17% | 38.87% | 0.00% | 0.00% | 6.06 | 6.25 |
+
+The preregistered success gate was either CE improvement `>=0.03` or
+46-50 blank exact improvement `>=0.15`. Native geometry instead changes CE by
+`+0.0089` in the wrong direction and 46-50 exact by only `+0.0254`. It is
+`24.0%` slower per optimizer step, with `7.6%` more parameters and `12.5%`
+more recurrent-state elements.
+
+The same-puzzle visualization is also negative for sustained recurrent
+correction: state-matched GDN reduces wrong cells `23,21,17,17,17`, while
+native GDN produces `23,21,21,22,22`. The larger value state helps neither
+hard full-board closure nor later-loop correction.
+
+The implementation audit passes, while the scientific hypothesis fails. GDN's
+strict finite-budget weakness is not mainly an artifact of K/V compression.
+This closes GDN geometry, seed, LR, and loss sweeps. It does not prove an
+asymptotic architecture ranking and it does not estimate FutureSeed's causal
+gain, because both arms use FutureSeed.
+
+Artifacts:
+
+- formal run:
+  `runs/sudoku-backbone-gdn-native-k24v48-s500-20260724T194300Z-8662e3a/`;
+- accepted phased preflight:
+  `runs/gdn-native-geometry-preflight-phased-20260724T194112Z-8662e3a/`;
+- independent validation and visualization:
+  `runs/sudoku-backbone-gdn-native-geometry-20260724T205218Z-8662e3a/`.
+
+## 10. Submission Record
 
 No tag or submission is allowed unless the primary score is at least 0.50 and
 the mechanism conclusion is clean.

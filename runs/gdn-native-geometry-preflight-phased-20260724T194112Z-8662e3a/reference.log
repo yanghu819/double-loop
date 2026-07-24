@@ -1,0 +1,31 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[native-gdn-gate] start K24/V48 numerical reference
+[native-gdn-gate] pass K24/V48 numerical reference
+{
+  "contract": {
+    "head_dim_k": 24,
+    "head_dim_v": 48,
+    "heads": 2,
+    "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+    "state_layout": "VxK"
+  },
+  "cuda_visible_devices": "0",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "native_shape_reference": {
+    "gradient_errors": {
+      "A_log": 0.013104181736707687,
+      "beta": 0.0001398324966430664,
+      "dt_bias": 0.006952065974473953,
+      "g": 0.0005311084096319973,
+      "h0": 4.158541560173035e-05,
+      "k": 0.00011902302503585815,
+      "q": 0.00010698661208152771,
+      "v": 0.0003200620412826538
+    },
+    "gradient_max_abs": 0.013104181736707687,
+    "output_max_abs": 5.848333239555359e-05,
+    "state_max_abs": 0.00021639466285705566
+  },
+  "phase": "reference",
+  "status": "PASS"
+}

@@ -1,0 +1,186 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+{
+  "adapter": {
+    "initial_state_grad_norm": 0.005381144117563963,
+    "official_chunk_autograd_node": "ChunkGatedDeltaRuleFunctionBackward",
+    "output_shape": [
+      2,
+      81,
+      192
+    ],
+    "state_shape": [
+      2,
+      6,
+      48,
+      24
+    ]
+  },
+  "contract": {
+    "d_model": 192,
+    "expected_ce_delta": -0.03,
+    "expected_official_46_50_delta": 0.15,
+    "future_seed_scale": 1.0,
+    "gdn_expand_v": 2.0,
+    "head_dim": 24,
+    "heads": 6,
+    "layers": 10,
+    "loops_smoke": 2,
+    "seed": 52,
+    "shared_shell_init_seed": 52
+  },
+  "cuda_visible_devices": "0",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "full_stack": {
+    "forward_backward_sec": 99.13932340801693,
+    "fs_gate_mean": 0.5,
+    "fs_state_norm": 16.970561981201172,
+    "future_seed_gate_grad_norm": 0.001342755276709795,
+    "gradients": {
+      "expected_missing": [
+        "reasoner.blocks.0.future_seed_logit"
+      ],
+      "global_norm": 2.0067801757603525,
+      "nonfinite": [],
+      "unexpected_missing": []
+    },
+    "loss": 2.3682923316955566,
+    "output_shape": [
+      2,
+      81,
+      9
+    ],
+    "peak_allocated_mib": 461.05859375
+  },
+  "geometry": {
+    "d_model": 192,
+    "head_dim_k": 24,
+    "head_dim_v": 48,
+    "heads": 6,
+    "key_dim": 144,
+    "state_elements_per_sample_layer": 6912,
+    "state_layout": "VxK",
+    "value_dim": 288
+  },
+  "hypothesis": "The state-matched GDN arm may be compressed by K32/V32; official native K24/V48 geometry should improve finite-budget opening if geometry is the cause.",
+  "matched_parameter_count": 4866548,
+  "native_shape_reference": {
+    "gradient_errors": {
+      "A_log": 0.013103948906064034,
+      "beta": 0.0001398324966430664,
+      "dt_bias": 0.006951924413442612,
+      "g": 0.0005311057902872562,
+      "h0": 4.158541560173035e-05,
+      "k": 0.00011902302503585815,
+      "q": 0.00010698661208152771,
+      "v": 0.0003200620412826538
+    },
+    "gradient_max_abs": 0.013103948906064034,
+    "output_max_abs": 5.848333239555359e-05,
+    "state_max_abs": 0.00021639466285705566
+  },
+  "parameter_count": 5235348,
+  "runtime": {
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+    "layers": [
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 0
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 1
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 2
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 3
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 4
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 5
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 6
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 7
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 8
+      },
+      {
+        "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+        "conv_backends": {
+          "k_conv1d": "triton",
+          "q_conv1d": "triton",
+          "v_conv1d": "triton"
+        },
+        "layer": 9
+      }
+    ],
+    "strict": true
+  },
+  "shared_shell": {
+    "common_parameter_tensors": 77,
+    "differing_parameter_tensors": 0,
+    "identical_parameter_tensors": 77
+  },
+  "status": "PASS"
+}

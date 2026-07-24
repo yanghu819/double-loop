@@ -1153,3 +1153,28 @@
   stalls. Same-puzzle wrong cells are RWKV7 `24->23`, GDN `23->17`, GDN2
   `21->20`, and KDA `28->24` across loops1-5. Easy-bucket opening must not be
   presented as evidence that later loops perform sustained global correction.
+
+## 2026-07-25 Native GDN geometry diagnostic
+
+- Resolve a plausible implementation/configuration objection once, with a
+  preregistered intervention, instead of defending a surprising ranking by
+  argument. The state-matched GDN used K32/V32; the one allowed native probe
+  used the official-style K24/V48 geometry and changed no other substantive
+  training argument.
+- Separate implementation validity from hypothesis success. Native GDN passed
+  official source/class, Triton, chunk backward, Torch output/state/gradient,
+  full-stack gradient, shared initialization, data, metric, and no-fallback
+  checks. That makes the negative scientific result stronger; it does not turn
+  the result positive.
+- More recurrent state is not automatically more useful state. K24/V48 adds
+  `12.5%` state elements and `7.6%` parameters, yet CE changes
+  `1.0509 -> 1.0598`, official 46-50 exact only `0.3633 -> 0.3887`, and
+  51-64 exact remains zero.
+- Check the behavior loops are supposed to provide. On the identical puzzle,
+  state-matched GDN changes wrong cells `23->21->17->17->17`; native GDN
+  changes `23->21->21->22->22`. The larger state does not sustain
+  self-correction and is `24%` slower per optimizer step.
+- Close the question after a decisive negative gate. Do not convert K/V ratio,
+  expand-v, seed, LR, or loss into a table. The remaining paper question is
+  FutureSeed's causal value under a chosen carrier and enough clean compute,
+  not whether one more GDN geometry rescues a 500-step ranking.

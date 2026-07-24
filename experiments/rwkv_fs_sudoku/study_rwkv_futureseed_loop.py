@@ -1440,7 +1440,7 @@ class FLADeltaTimeMix(nn.Module):
         ok, reason = fla_delta_available(backbone)
         if not ok:
             raise RuntimeError(f"BACKBONE={backbone} requires current flash-linear-attention: {reason}")
-        if d_model != heads * head_dim:
+        if backbone != "fla_gdn" and d_model != heads * head_dim:
             raise ValueError(f"{backbone.upper()} keeps d_model == heads * head_dim for matched state size.")
 
         self.backbone = backbone
@@ -4651,8 +4651,8 @@ def write_report(path: Path, metrics: Dict[str, Any], artifacts: Dict[str, str])
 
 
 def run(args: argparse.Namespace) -> Dict[str, Any]:
-    if args.d_model != args.heads * args.head_dim:
-        raise ValueError("--d_model must equal --heads * --head_dim")
+    if args.backbone != "fla_gdn" and args.d_model != args.heads * args.head_dim:
+        raise ValueError("--d_model must equal --heads * --head_dim except for official FLA GDN geometry")
     if args.future_seed_scale < 0:
         raise ValueError("--future_seed_scale must be non-negative")
     if not (0.0 < args.loop_update_gate_init < 1.0):

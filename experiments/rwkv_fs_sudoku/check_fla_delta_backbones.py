@@ -178,9 +178,15 @@ def autograd_graph_names(tensor: torch.Tensor) -> list[str]:
     return names
 
 
-def check_gdn_reference(device: torch.device) -> dict[str, Any]:
-    torch.manual_seed(100)
-    batch, length, heads, key_dim, value_dim = 1, 81, 2, 32, 64
+def check_gdn_reference(
+    device: torch.device,
+    *,
+    key_dim: int = 32,
+    value_dim: int = 64,
+    seed: int = 100,
+) -> dict[str, Any]:
+    torch.manual_seed(seed)
+    batch, length, heads = 1, 81, 2
     q = torch.randn(batch, length, heads, key_dim, device=device)
     k = torch.randn_like(q)
     v = torch.randn(batch, length, heads, value_dim, device=device) * 0.25

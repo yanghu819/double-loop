@@ -356,7 +356,8 @@ def check_value_residual_and_optimizer(device: torch.device) -> dict[str, Any]:
     output, _state, _returned_first = layer(x, initial_state=initial_state, v_first=v_first)
     zero_output, _zero_state, _zero_first = layer(x, initial_state=initial_state, v_first=torch.zeros_like(v_first))
     sensitivity = float((output - zero_output).float().square().mean().sqrt().item())
-    value_gradient = torch.autograd.grad(output.float().square().mean(), v_first)[0]
+    cotangent = torch.randn_like(output)
+    value_gradient = torch.autograd.grad((output.float() * cotangent.float()).sum(), v_first)[0]
     value_gradient_norm = float(value_gradient.float().norm().item())
     if sensitivity <= 1e-6 or value_gradient_norm <= 1e-6:
         raise AssertionError("RWKV7 v_first residual is inactive")

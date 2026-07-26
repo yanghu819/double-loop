@@ -489,6 +489,7 @@ def build_run_summary(run_dir: Path) -> Dict[str, Any]:
 def render_run_html(summary: Dict[str, Any]) -> str:
     history = summary["history"]
     loop_rows = summary["loop_rows"]
+    hole_rows = summary["hole_rows"]
     final_by_hole = summary["final_by_hole"]
     history_metrics = choose_history_metrics(history)
     loop_metrics = choose_loop_metrics(loop_rows)
@@ -545,6 +546,7 @@ def render_run_html(summary: Dict[str, Any]) -> str:
         "table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left}th{background:#f3f4f6}",
         "dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}dt{font-weight:600}.chart{width:100%;height:auto;background:#fbfbf8;border:1px solid #e5e0d8;border-radius:6px}.axis{stroke:#777;stroke-width:1}.tick,.legend-text{font-size:11px;font-family:ui-monospace,Menlo,monospace}",
         ".pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin-right:6px;font-size:12px}",
+        ".loop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.loop-panel{min-width:0}.loop-panel h3{font-size:15px;margin:0 0 8px}@media(max-width:760px){.loop-grid{grid-template-columns:1fr}}",
         "</style>",
         "</head>",
         "<body><main>",
@@ -590,6 +592,29 @@ def render_run_html(summary: Dict[str, Any]) -> str:
                 svg_line_chart(final_by_hole, "holes", hole_metrics),
                 table_html(final_by_hole, ["holes", "loop", "label_exact", "blank_acc", "valid_sudoku", "solved_valid_clue"], max_rows=32),
                 "</section>",
+            ]
+        )
+    if hole_rows:
+        by_hole: Dict[int, List[Dict[str, Any]]] = {}
+        for row in hole_rows:
+            by_hole.setdefault(int(row.get("holes", 0)), []).append(row)
+        loop_panels = []
+        for holes, rows in sorted(by_hole.items()):
+            ordered = sorted(rows, key=lambda item: int(item.get("loop", 0)))
+            loop_panels.extend(
+                [
+                    '<div class="loop-panel">',
+                    f"<h3>{holes} blanks</h3>",
+                    svg_line_chart(ordered, "loop", choose_hole_metrics(ordered), width=560, height=230),
+                    table_html(ordered, ["loop", "label_exact", "blank_acc", "path_f1", "path_precision", "path_recall"], max_rows=20),
+                    "</div>",
+                ]
+            )
+        html_parts.extend(
+            [
+                '<section class="card"><h2>Loop by Difficulty</h2><div class="loop-grid">',
+                "".join(loop_panels),
+                "</div></section>",
             ]
         )
     html_parts.extend(

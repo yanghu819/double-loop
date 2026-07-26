@@ -1,15 +1,18 @@
 {
   "schema_version": 1,
   "status": "canonical",
-  "updated_at": "2026-07-26T13:50:00+08:00",
+  "updated_at": "2026-07-26T19:43:00+08:00",
   "claim": "FutureSeed transfers terminal recurrent state across layers; depth loops add recurrent compute.",
   "canonical": {
     "runner": "experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py",
     "rwkv_cuda": "experiments/rwkv_fs_sudoku/rwkv7_cuda/",
-    "gdn_triton": "experiments/rwkv_fs_sudoku/gdn_triton.py",
+    "gdn_triton_legacy": "experiments/rwkv_fs_sudoku/gdn_triton.py",
     "fla_gate": "experiments/rwkv_fs_sudoku/check_fla_delta_backbones.py",
     "benchmark_config": "configs/sudoku/backbone_benchmark.env",
-    "scale_config": "configs/sudoku/gdn_scale.env",
+    "scale_config": "configs/sudoku/gdn2_scale.env",
+    "scale_launcher": "scripts/run_canonical_gdn2_scale.sh",
+    "previous_scale_config": "configs/sudoku/gdn_scale.env",
+    "previous_scale_launcher": "scripts/run_canonical_gdn_scale.sh",
     "benchmark_launcher": "scripts/run_sudoku_backbone_benchmark.sh",
     "suite_launcher": "scripts/run_sudoku_backbone_suite.sh",
     "preflight": "scripts/run_sudoku_baseline_preflight.sh",
@@ -25,6 +28,7 @@
     "causal_comparison": "runs/futureseed-causal-four-carrier-20260726T022718Z-6e51f06",
     "preflight": "runs/sudoku-backbone-preflight-nofs-causal-20260726T022718Z-6e51f06",
     "report": "research/reports/experiments/futureseed-causal-four-backbone-20260726.md",
+    "scale_candidate_plan": "research/reports/experiments/futureseed-gdn2-compound-scale-20260726.md",
     "shared_source_snapshot_sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
   },
   "supported_benchmark_backbones": {

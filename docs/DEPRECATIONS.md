@@ -12,9 +12,9 @@ These paths receive fixes and define reproducible claims:
 |---|---|---|
 | `experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py` | maintained | Shared FutureSeed + loop runner |
 | `experiments/rwkv_fs_sudoku/rwkv7_cuda/` | maintained | RWKV state-passing CUDA |
-| `experiments/rwkv_fs_sudoku/gdn_triton.py` | maintained | Local GDN-Triton scale carrier |
+| `configs/sudoku/gdn2_scale.env` | candidate | Active official GDN2 quality-scaling recipe |
+| `scripts/run_canonical_gdn2_scale.sh` | candidate | Strict GPU1 GDN2 scale launcher |
 | `experiments/rwkv_fs_sudoku/check_fla_delta_backbones.py` | maintained | Official FLA kernel/provenance gate |
-| `configs/sudoku/gdn_scale.env` | canonical | Strong clean scaling recipe |
 | `configs/sudoku/backbone_benchmark.env` | canonical | Fair four-backbone contract |
 | `scripts/run_sudoku_backbone_*.sh` | canonical | Strict GPU1 benchmark launch |
 | `scripts/summarize_sudoku_backbone_benchmark.py` | canonical | Fairness validation and report |
@@ -23,11 +23,14 @@ These paths receive fixes and define reproducible claims:
 
 ## Supported but Not the Scale Default
 
-- RWKV is supported in the benchmark and remains important mechanism evidence.
-  GDN-Triton is the current scale default because the long independent-data run
-  is strongest and cheaper to continue.
-- Official FLA GDN2 and KDA remain supported benchmark backbones. Their finite
-  budget results do not justify separate scaling lines.
+- Official FLA GDN2 is the active first quality candidate. Its D256/L12
+  compound-scale gate must open hard exact before replacing the completed GDN
+  result as evidence.
+- RWKV is supported in the benchmark and remains the speed/mechanism reference.
+- Local GDN-Triton, `configs/sudoku/gdn_scale.env`, and
+  `scripts/run_canonical_gdn_scale.sh` remain supported as the strongest
+  completed long-run reference, available through `./run.sh gdn_legacy`.
+- Official FLA KDA remains a supported benchmark backbone, not a scale line.
 - Official FLA GDN is the public `gdn` benchmark arm. It is not silently mixed
   with the local `BACKBONE=gdn` scale implementation.
 
@@ -39,8 +42,9 @@ At 500 steps, GDN2 is the strongest 46-50-blank opener and RWKV7 is the fastest
 FS carrier, but all four are zero exact at 51-64 blanks. More importantly,
 FutureSeed raises 46-50 exact from zero without FS to
 `0.7285/0.3633/0.7969/0.6465` for RWKV7/GDN/GDN2/KDA. Use the causal report
-for the mechanism claim and the older long GDN scaling line for the current
-hard-data engineering default; do not mix those decisions.
+for the mechanism claim. `P-SCALE-037` now tests whether GDN2 can replace the
+older long GDN line on hard-data quality; do not claim that replacement before
+the gate completes.
 
 ## Deprecated Mechanisms
 

@@ -8,6 +8,9 @@ RUNS_ROOT="${RUNS_ROOT:-$REPO_ROOT/runs}"
 
 case "$MODE" in
   baseline)
+    exec "$REPO_ROOT/scripts/run_canonical_gdn2_scale.sh"
+    ;;
+  gdn_legacy)
     exec "$REPO_ROOT/scripts/run_canonical_gdn_scale.sh"
     ;;
   benchmark)
@@ -36,7 +39,7 @@ mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$RE
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe) ;;
   *)
-    printf 'Usage: %s [baseline|benchmark|benchmark_suite|baseline_preflight|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe]\n' "$0" >&2
+    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe]\n' "$0" >&2
     exit 2
     ;;
 esac

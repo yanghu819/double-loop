@@ -15,20 +15,25 @@ The depth loop then spends more recurrent compute on the same problem.
 Sudoku is a proxy for global constraint reasoning, not the product target. The
 canonical task is official 9x9 Sudoku with 46-64 blanks.
 
-## Canonical Baseline
+## Active Scale Candidate
 
-The retained scale baseline is:
+The first quality candidate is now:
 
-- local GDN Triton recurrent kernel;
-- D224, 12 layers, 14 heads, head dimension 16, value expansion 4;
+- official FLA GDN2 with strict chunk backward and Triton convolution;
+- D256, 12 layers, 8 heads, head dimension 32;
 - native FutureSeed scale 1;
 - five depth loops with CE on every loop;
 - 3.83M independent official training boards;
 - clean training only: no noise, search, selector, repair, or Sudoku rule.
 
 The fixed recipe is
-[`configs/sudoku/gdn_scale.env`](configs/sudoku/gdn_scale.env). Its archived
-step30000 result reaches:
+[`configs/sudoku/gdn2_scale.env`](configs/sudoku/gdn2_scale.env). It trains for
+12k steps while moving from 46-50 to 51-64 blanks, with formal checkpoints at
+500/1000/3000/6000/9000/12000. This promotion is provisional until the hard
+scale gate completes.
+
+The strongest completed long-run reference remains the previous local GDN
+D224/L12 step30000 result:
 
 | Readout | Exact |
 |---|---:|
@@ -42,6 +47,12 @@ Run it on GPU1:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 ./run.sh baseline
+```
+
+The previous reproducible GDN line remains available as:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 ./run.sh gdn_legacy
 ```
 
 ## Fair Backbone Benchmark
@@ -65,11 +76,11 @@ The accepted shared-initialization GPU1 step-500 rerun is:
 | GDN2 | 5.462M | **1.0062** | **0.0234** | **0.7969** | 0 | 5.85 | 7.84 GiB |
 | KDA | 4.736M | 1.0179 | 0.0176 | 0.6465 | 0 | 5.58 | 6.45 GiB |
 
-GDN2 is the strongest finite-budget opener in this state-matched table; RWKV7
-is the fastest. The separate local GDN-Triton recipe remains the retained scale
-carrier because it owns the demonstrated 30k-step clean result above. This
-table does not claim a universal architecture winner; all four remain at zero
-full-board exact beyond 50 blanks at this short budget.
+GDN2 is the strongest finite-budget opener in this state-matched table and is
+therefore the active quality scale candidate; RWKV7 is the fastest. The
+separate local GDN-Triton recipe remains the strongest completed long-run
+reference. This table does not claim a universal architecture winner; all four
+remain at zero full-board exact beyond 50 blanks at this short budget.
 Full provenance, loop curves, and same-puzzle cases are in
 [`research/reports/experiments/futureseed-sudoku-official-rwkv7-four-backbone-20260724.md`](research/reports/experiments/futureseed-sudoku-official-rwkv7-four-backbone-20260724.md).
 

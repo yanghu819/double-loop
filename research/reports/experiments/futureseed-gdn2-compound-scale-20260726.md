@@ -194,3 +194,24 @@ The formal run resumed from the exact step-200 model, optimizer, scheduler,
 data RNG, and training RNG checkpoint with microbatch `32 x accumulation 4`.
 This pause changes execution time only; it does not create a second quality
 arm.
+
+### Step-500 gate
+
+Step 500 completes the `46-50` warm-up stage with train CE `0.00927`. The
+fixed-count 512-board checkpoint evaluator reports:
+
+| Exact blanks | loop1 exact / blank | loop2 exact / blank | loop3 exact / blank | loop5 exact / blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.3535 / 0.9610` | `0.7172 / 0.9834` | `0.7374 / 0.9861` | `0.7374 / 0.9861` |
+| 53 | `0.0000 / 0.4986` | `0.0000 / 0.5150` | `0.0000 / 0.5136` | `0.0000 / 0.5133` |
+| 58 | `0.0000 / 0.3807` | `0.0000 / 0.3870` | `0.0000 / 0.3839` | `0.0000 / 0.3830` |
+| 64 | `0.0000 / 0.4146` | `0.0000 / 0.4348` | `0.0000 / 0.4358` | `0.0000 / 0.4356` |
+
+This is a clean easy-range opening, not a hard-range success. Loop 2 provides
+large real compute gain at 50 blanks, while loops 3-5 saturate. Exact remains
+zero at 53/58/64 blanks, as expected before the model has received any
+`51-55` curriculum updates.
+
+The run continues into `51-55`. Step 1000, after 500 hard-stage updates
+(`64,000` sampled hard boards), is the first decision-relevant comparison with
+the short-budget carrier baseline.

@@ -117,6 +117,8 @@ def unwrap_metrics(result: Any) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         config = result.get("config") or result.get("args") or {}
         if isinstance(metrics, dict):
             return metrics, config if isinstance(config, dict) else {}
+        if isinstance(result.get("eval_by_holes"), dict) and isinstance(result.get("train"), dict):
+            return result, config if isinstance(config, dict) else {}
     return {}, {}
 
 
@@ -313,6 +315,20 @@ def choose_loop_metrics(rows: Sequence[Dict[str, Any]]) -> List[str]:
     return [key for key in preferred if key in available][:8]
 
 
+def choose_hole_metrics(rows: Sequence[Dict[str, Any]]) -> List[str]:
+    preferred = [
+        "path_f1",
+        "path_precision",
+        "path_recall",
+        "path_pred_frac",
+        "label_exact",
+        "blank_acc",
+        "token_acc",
+    ]
+    available = {key for row in rows for key, value in row.items() if is_number(value) and key not in {"holes", "loop"}}
+    return [key for key in preferred if key in available][:4]
+
+
 def svg_line_chart(
     rows: Sequence[Dict[str, Any]],
     x_key: str,
@@ -476,7 +492,7 @@ def render_run_html(summary: Dict[str, Any]) -> str:
     final_by_hole = summary["final_by_hole"]
     history_metrics = choose_history_metrics(history)
     loop_metrics = choose_loop_metrics(loop_rows)
-    hole_metrics = choose_loop_metrics(final_by_hole)
+    hole_metrics = choose_hole_metrics(final_by_hole)
 
     score = summary.get("score")
     score_text = "" if score in (None, "") else f"{float(score):.6g}" if is_number(score) else str(score)

@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-SCALE-037`
-- Status: formal D192/L10 training in progress
+- Status: step-3000 gate passed; exact checkpoint resumed toward step 6000
 - Preregistered: 2026-07-26 19:43 CST / 2026-07-26 11:43 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -276,3 +276,66 @@ The archived browser-ready case bank is
 The step-3000 stop rule is not triggered early: hard blank accuracy and train
 CE have clear positive slopes. Training therefore resumes from the exact
 step-1000 model/optimizer/RNG checkpoint after a recorded GPU1 lease rollover.
+
+### Step-3000 gate
+
+The 51-55 stage remains noisy, but train CE reaches `0.8270` at step 3000,
+down `0.0875` from step 1000. The fixed-count checkpoint profile is:
+
+| Exact blanks | loop1 exact / blank | loop2 exact / blank | loop3 exact / blank | loop5 exact / blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.8384 / 0.9960` | `1.0000 / 1.0000` | `1.0000 / 1.0000` | `1.0000 / 1.0000` |
+| 53 | `0.0000 / 0.5627` | `0.0039 / 0.6102` | `0.0176 / 0.6256` | `0.0215 / 0.6271` |
+| 58 | `0.0000 / 0.4475` | `0.0000 / 0.4592` | `0.0000 / 0.4598` | `0.0000 / 0.4598` |
+| 64 | `0.0000 / 0.5177` | `0.0000 / 0.5772` | `0.0000 / 0.5880` | `0.0000 / 0.5916` |
+
+The read-only 512-board official evaluation reports:
+
+| Evaluation | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|
+| mixed official test | `0.0352` | `0.5639` |
+| official 46-50 | `1.0000` | `1.0000` |
+| official 51-55 | `0.0098` | `0.6072` |
+| official 56-60 | `0.0098` | `0.5132` |
+| official 61-64 | `0.0000` | `0.5898` |
+
+The case-bank log also prints exact rates from its separate 256-board sample:
+`0.0117/0.0195/0.0000` on 51-55/56-60/61-64. Those are visualization-sample
+rates, not the primary 512-board scores above.
+
+Mixed exact across loops 1-5 is
+`0.0234 / 0.0234 / 0.0313 / 0.0352 / 0.0352`; mixed blank accuracy is
+`0.5202 / 0.5548 / 0.5622 / 0.5638 / 0.5639`. The model now uses loops 3-4
+for additional full-board correction, although loop 5 is nearly saturated.
+
+Selected-case trajectories make the delayed change easier to see:
+
+| Official range | selected cases | wrong cells loop1/2/3/5 | conflict units loop1/2/3/5 |
+|---|---:|---|---|
+| 46-50 | 4 | `2.50 / 0.00 / 0.00 / 0.00` | `5.50 / 0.00 / 0.00 / 0.00` |
+| 51-55 | 10 | `16.20 / 6.10 / 3.70 / 3.20` | `20.60 / 11.00 / 5.70 / 5.00` |
+| 56-60 | 12 | `16.08 / 7.00 / 3.25 / 2.58` | `21.42 / 11.83 / 5.92 / 4.50` |
+| 61-64 | 4 | `27.25 / 15.75 / 10.75 / 10.00` | `26.25 / 21.50 / 17.00 / 16.00` |
+
+This is genuine recurrent correction, not a broad-mask artifact: later loops
+remove wrong digits and duplicate row/column/box values. It remains incomplete
+at 61-64 blanks.
+
+The historical D224/L12 GDN step-3000 reference is not a matched architecture
+comparison, but it is a useful frontier check. Its mixed loop-5 exact is
+`0.0313` versus GDN2 `0.0352`; its official 51-55 exact/blank is
+`0.0117/0.6560` versus GDN2 `0.0098/0.6072`. GDN2 therefore has not yet
+separated from the long-run GDN frontier despite winning the strict 500-step
+carrier gate.
+
+The preregistered step-3000 stop conjunction is false: 53-blank loop-5 exact
+is above `0.02`, blank accuracy is above `0.58`, CE improved by more than
+`0.03`, and official 56-60 exact is nonzero. Continue to step 6000. The exact
+checkpoint is
+`train_state_step003000.pt`, SHA256
+`1c715ad3cdd5e17f4ce6e3fc3be93cdbd2434636242acd7c8bb464afb8d5653f`.
+The GPU1 lease rollover and read-only evaluation are recorded separately.
+After restart, strict launch attempt 1 failed before model load because
+`PERSIST_ROOT` was omitted and project-local FLA was intentionally unavailable;
+attempt 2 restored `/huyang2/double-loop`, loaded the exact checkpoint, and
+resumed on clean SHA `42102bd65a28d60bde6b09ef93343692740582a1`.

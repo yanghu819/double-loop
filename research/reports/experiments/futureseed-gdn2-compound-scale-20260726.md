@@ -3,7 +3,8 @@
 ## Metainfo
 
 - Plan: `P-SCALE-037`
-- Status: approved, preflight pending
+- Status: resource gate active; microbatch geometry amended after measured
+  performance cliff
 - Preregistered: 2026-07-26 19:43 CST / 2026-07-26 11:43 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -42,7 +43,7 @@ This is one compound scaling experiment, not a width/depth/LR/seed table.
 - native terminal-state FutureSeed, scale 1, unit normalization;
 - five recurrent loops with equal CE supervision on every loop;
 - BF16, AdamW grouped contract, LR `0.0015`, weight decay `0.001`;
-- microbatch 64, accumulation 2, effective batch 128;
+- microbatch 32, accumulation 4, effective batch 128;
 - official 3.832M-board full-diversity training split;
 - 12,000 optimizer steps, up to 1.536M sampled boards;
 - curriculum `46-50:500,51-55:3500,51-60:4000,51-64:4000`;
@@ -79,7 +80,8 @@ Preflight rejects the run if any of these fail:
 - Triton convolution or no-fallback contract;
 - clean detached source, official data identity, or finite-value checks.
 
-The two-step GPU capacity probe uses the full D256/L12 model and microbatch 64.
+The two-step GPU capacity probe uses the full D256/L12 model and the canonical
+microbatch geometry.
 OOM, nonfinite values, wrong GPU, or low utilization with excessive memory
 stops the launch. There is no automatic batch/kernel/model fallback; a resource
 change requires an explicit recorded config commit.
@@ -108,4 +110,40 @@ conditional matched GDN2 no-FutureSeed control.
 
 ## Results
 
-Pending.
+### Strict preflight and rejected execution geometry
+
+At 2026-07-26 19:49-20:00 CST, exact SHA
+`973a082212f5bfbac1e07c09ba944a5cf39eae6e` passed the GPU1-only strict
+preflight. The pinned FLA wheel and installed files match, backend dispatch is
+disabled, all 12 GDN2 layers use `fla.layers.gdn2.GatedDeltaNet2`, short
+convolution is Triton, and the official chunk recurrence has maximum
+output/state/gradient reference errors `5.99e-5/2.76e-4/2.34e-4`. The shared
+shell is identical across all four carriers for all `77/77` common tensors.
+
+The first full-size D256/L12 microbatch-64 probe used the real official GDN2
+forward and backward on GPU1, allocated about `30 GiB`, and completed two
+optimizer steps without OOM or nonfinite values. Its checkpoint reports
+`530.06s` elapsed, which includes the first large-shape kernel compilation.
+
+A second identical warm-cache probe rejected the explanation that compilation
+alone caused the slowdown. It reports `99.34s` train time for two optimizer
+steps, or `49.67s/step`, while repeated GPU samples showed long idle intervals.
+The model has `11.486M` trainable parameters. For comparison, the accepted
+D192/L10 GDN2 continuation uses about `5.70s/step`; the modest compute increase
+does not explain a nearly nine-fold runtime increase.
+
+This triggers the preregistered low-utilization/high-memory stop. A 12k-step
+launch at this geometry would be a compute mistake, not useful scaling.
+
+### Explicit amendment
+
+At 2026-07-26 20:23 CST, the execution geometry changes from microbatch
+`64 x accumulation 2` to `32 x accumulation 4`. Effective batch `128`, sampled
+boards per optimizer step, model, data, loop count, loss, optimizer, seed, and
+all scientific decision rules remain unchanged. This is not an automatic
+fallback: the failed geometry and both probe runs remain archived, and the
+change is committed before a new detached probe.
+
+The next gate is one warm full-size GPU1 probe at the amended geometry. Launch
+the formal 12k-step experiment only if measured steady-state throughput returns
+to a useful range and no implementation or memory gate regresses.

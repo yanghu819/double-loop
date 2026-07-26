@@ -339,3 +339,61 @@ After restart, strict launch attempt 1 failed before model load because
 `PERSIST_ROOT` was omitted and project-local FLA was intentionally unavailable;
 attempt 2 restored `/huyang2/double-loop`, loaded the exact checkpoint, and
 resumed on clean SHA `42102bd65a28d60bde6b09ef93343692740582a1`.
+
+### Step-6000 gate
+
+Train CE reaches `0.7974`. The fixed-count 512-board checkpoint profile is:
+
+| Exact blanks | loop1 exact / blank | loop2 exact / blank | loop3 exact / blank | loop4 exact / blank | loop5 exact / blank |
+|---:|---:|---:|---:|---:|---:|
+| 50 | `0.9192 / 0.9972` | `1.0000 / 1.0000` | `1.0000 / 1.0000` | `1.0000 / 1.0000` | `1.0000 / 1.0000` |
+| 53 | `0.0000 / 0.6090` | `0.0059 / 0.7245` | `0.1055 / 0.7748` | `0.1641 / 0.7855` | `0.1777 / 0.7871` |
+| 58 | `0.0000 / 0.4596` | `0.0000 / 0.4808` | `0.0059 / 0.4858` | `0.0117 / 0.4858` | `0.0117 / 0.4853` |
+| 64 | `0.0000 / 0.5272` | `0.0000 / 0.6163` | `0.0020 / 0.6528` | `0.0020 / 0.6612` | `0.0059 / 0.6628` |
+
+A zero-training-step read-only evaluation of the exact checkpoint reports:
+
+| Evaluation | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|
+| mixed official test | `0.1426` | `0.6390` |
+| official 46-50 | `1.0000` | `1.0000` |
+| official 51-55 | `0.1914` | `0.7212` |
+| official 56-60 | `0.0605` | `0.5505` |
+| official 61-64 | `0.0078` | `0.6503` |
+
+Mixed exact across loops 1-5 is
+`0.0234 / 0.0254 / 0.0996 / 0.1387 / 0.1426`; mixed blank accuracy is
+`0.5439 / 0.6045 / 0.6323 / 0.6375 / 0.6390`. This is not a wider-mask
+artifact: Sudoku emits one digit per blank, and later loops remove wrong cells
+and duplicate constraint violations.
+
+The separately sampled 256-board case bank gives the following diagnostic
+trajectories; its exact rates are not substituted for the primary scores:
+
+| Official range | selected cases | wrong cells loop1/2/3/5 | conflict units loop1/2/3/5 |
+|---|---:|---|---|
+| 46-50 | 4 | `2.00 / 0.00 / 0.00 / 0.00` | `3.50 / 0.00 / 0.00 / 0.00` |
+| 51-55 | 12 | `21.00 / 11.75 / 3.00 / 2.00` | `23.75 / 16.42 / 5.83 / 2.58` |
+| 56-60 | 12 | `19.08 / 10.67 / 4.33 / 2.83` | `20.42 / 13.08 / 5.58 / 2.92` |
+| 61-64 | 7 | `26.43 / 14.29 / 6.57 / 4.14` | `26.00 / 18.86 / 7.86 / 5.57` |
+
+One 64-blank board moves from `26` wrong cells and `26` conflict units at
+loop 1 to `15/21`, `1/3`, and finally `0/0` at loops 2, 3, and 5. A hard
+failure still moves in the correct direction, from `30/25` to `16/19`,
+`9/14`, and `5/12`, but does not close. These two visualizations establish
+both the mechanism's current capability and its remaining boundary.
+
+The delayed scaling slope is now unambiguous: from step 3000 to 6000,
+official 51-55 exact rises `0.0098 -> 0.1914`, 56-60 rises
+`0.0098 -> 0.0605`, 61-64 rises `0.0000 -> 0.0078`, and mixed rises
+`0.0352 -> 0.1426`. However, the historical D224/L12 GDN step-6000 reference
+is still ahead at official 51-55 exact `0.3926` and combined 56-64 exact
+`0.1270`. This is not a matched asymptotic architecture comparison, but it
+prevents a premature claim that GDN2 is already the best carrier.
+
+The preregistered step-6000 stop rule does not fire: official 51-55 is above
+`0.10`, 56-60 is nonzero, and every hard exact curve has positive slope. The
+run therefore continues unchanged to step 9000; no width, depth, learning-rate,
+loss, or seed branch is opened. The exact checkpoint is
+`train_state_step006000.pt`, SHA256
+`23eaa434720f931965b3057a725b4f1f5a3aa8030da76be2c18c214d6ed9fc11`.

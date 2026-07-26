@@ -215,3 +215,45 @@ zero at 53/58/64 blanks, as expected before the model has received any
 The run continues into `51-55`. Step 1000, after 500 hard-stage updates
 (`64,000` sampled hard boards), is the first decision-relevant comparison with
 the short-budget carrier baseline.
+
+### Step-1000 gate
+
+Hard-stage train CE moves monotonically from `0.9832` at step 600 to `0.9675`,
+`0.9493`, `0.9355`, and `0.9145` at steps 700-1000. The fixed checkpoint
+profile is:
+
+| Exact blanks | loop1 exact / blank | loop2 exact / blank | loop3 exact / blank | loop5 exact / blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.7273 / 0.9889` | `0.9495 / 0.9990` | `0.9596 / 0.9992` | `0.9798 / 0.9996` |
+| 53 | `0.0000 / 0.5398` | `0.0000 / 0.5603` | `0.0000 / 0.5605` | `0.0000 / 0.5599` |
+| 58 | `0.0000 / 0.4335` | `0.0000 / 0.4479` | `0.0000 / 0.4458` | `0.0000 / 0.4448` |
+| 64 | `0.0000 / 0.5036` | `0.0000 / 0.5278` | `0.0000 / 0.5305` | `0.0000 / 0.5315` |
+
+Relative to step 500, loop-5 blank accuracy improves by `+0.0466`, `+0.0618`,
+and `+0.0959` at 53, 58, and 64 blanks, respectively. This is real transfer
+from the 51-55 training stage, but it has not crossed the full-board closure
+threshold.
+
+A zero-training-step read-only evaluation from the exact step-1000 checkpoint
+reports:
+
+| Evaluation | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|
+| mixed official test | `0.0234` | `0.5262` |
+| official 46-50 | `0.9961` | `0.9998` |
+| official 51-55 | `0.0000` | `0.5541` |
+| official 56-60 | `0.0000` | `0.4787` |
+| official 61-64 | `0.0000` | `0.5290` |
+
+Mixed exact rises only from `0.0195` at loop 1 to `0.0234` at loop 2 and then
+stays flat. Most aggregate recurrent gain still arrives in the second loop.
+
+The case bank nevertheless shows genuine incomplete self-correction. A
+54-hidden-cell 51-55 failure reduces wrong hidden cells
+`15 -> 12 -> 10 -> 9` and duplicate conflicts `20 -> 17 -> 17 -> 16` across
+loops `1/2/3/5`. Loop computation is doing useful work, but it does not yet
+finish the board.
+
+The step-3000 stop rule is not triggered early: hard blank accuracy and train
+CE have clear positive slopes. Training therefore resumes from the exact
+step-1000 model/optimizer/RNG checkpoint after a recorded GPU1 lease rollover.

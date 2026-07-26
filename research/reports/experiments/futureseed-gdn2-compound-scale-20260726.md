@@ -159,3 +159,15 @@ boards and optimizer steps rather than an inefficient parameter increase.
 The next gate is one exact-SHA D192/L10 GPU1 probe. Launch the formal 12k-step
 experiment only if measured steady-state throughput is near the accepted GDN2
 range and no implementation or memory gate regresses.
+
+The exact-SHA 10-step training-only probe reports `137.24s` total and
+`8.02GiB` peak allocation. The average `13.72s/step` includes the process's
+first large-shape compile; it passes the `15s/step` launch boundary and is
+consistent with approaching the historical hot rate after amortization.
+
+The first formal launch then failed closed before step 1 because the diagnostic
+checkpoint list requested exact blank count `62`, while the official test split
+contains no 62-blank rows. Its observed hard-tail counts are `61:25`, `62:0`,
+`63:20`, and `64:4865`. At 2026-07-26 21:14 CST, only the diagnostic point
+changes from `62` to `64`. The primary official interval remains `61-64`; no
+training, model, loss, data, seed, or decision rule changes.

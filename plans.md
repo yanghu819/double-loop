@@ -11,13 +11,14 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-26 20:41 CST): `P-SCALE-037` passed strict official-FLA
-correctness but rejected D256/L12 as a compute-inefficient scaling axis.
-Microbatch64/accum2 and microbatch32/accum4 warm probes need `49.67` and
-`55.22s/step`, versus about `5.70s/step` for accepted D192/L10 GDN2. The plan
-now scales the compute-efficient D192/L10 carrier over 12k steps and up to
-1.536M full-diversity samples. The completed D224 local-GDN 30k result remains
-the historical long-scale reference until this gate succeeds.
+Current update (2026-07-26 21:14 CST): `P-SCALE-037` passed its corrected
+10-step no-mid-eval timing gate at `13.72s/step` including first compile and
+`8.02GiB` peak allocation. The first formal launch failed before step1 because
+the checkpoint diagnostic requested an absent exact-62-blank slice. Official
+test counts are `61:25,62:0,63:20,64:4865`; the diagnostic changes to 64 while
+the primary 61-64 range stays unchanged. Relaunch from a new exact SHA is
+pending. The D224 local-GDN 30k result remains the historical long-scale
+reference until this gate succeeds.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|

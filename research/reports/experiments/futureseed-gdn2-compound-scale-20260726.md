@@ -17,9 +17,9 @@ The strict step-500 carrier gate makes official FLA GDN2 the strongest
 finite-step FutureSeed carrier: 46-50-blank loop-5 exact is `0.7969`, ahead of
 RWKV7 `0.7285`, KDA `0.6465`, and GDN `0.3633`.
 
-Does that advantage survive useful scaling, and can a larger GDN2 trained on
-substantially more independent official boards turn the 51-64-blank
-per-cell improvement into nonzero full-board exactness?
+Does that advantage survive useful scaling, and can a compute-efficient GDN2
+trained on substantially more independent official boards turn the
+51-64-blank per-cell improvement into nonzero full-board exactness?
 
 ## Mechanism Hypothesis
 
@@ -27,11 +27,11 @@ GDN2's stronger finite-budget result is not enough to establish a higher
 frontier. At 51-64 blanks it is still zero full-board exact, and its per-blank
 accuracy is only slightly above RWKV7.
 
-If the remaining failure is ordinary capacity and data under-training, then a
-larger official GDN2 with native FutureSeed should show a delayed but clear
-hard-range exact-learning curve as training coverage increases. If loss and
-blank accuracy improve while hard full-board exact stays flat, the bottleneck
-is global closure rather than insufficient ordinary scaling.
+If the remaining failure is data and compute under-training, then an official
+GDN2 with native FutureSeed should show a delayed but clear hard-range
+exact-learning curve as training coverage increases. If loss and blank
+accuracy improve while hard full-board exact stays flat, the bottleneck is
+global closure rather than insufficient ordinary scaling.
 
 This is one compound scaling experiment, not a width/depth/LR/seed table.
 
@@ -39,7 +39,7 @@ This is one compound scaling experiment, not a width/depth/LR/seed table.
 
 - official FLA `GatedDeltaNet2`, pinned wheel and exact source;
 - backend dispatch disabled, official chunk backward, Triton short conv;
-- D256, 12 layers, 8 heads, head dimension 32, expand-v 1;
+- D192, 10 layers, 6 heads, head dimension 32, expand-v 1;
 - native terminal-state FutureSeed, scale 1, unit normalization;
 - five recurrent loops with equal CE supervision on every loop;
 - BF16, AdamW grouped contract, LR `0.0015`, weight decay `0.001`;
@@ -61,8 +61,8 @@ Canonical files:
 
 ## Predictions
 
-1. The larger model may trail initially, but by step 3000 it should show either
-   nonzero 51-55 exact or a strong CE/blank-accuracy slope.
+1. The long-data run may trail initially, but by step 3000 it should show
+   either nonzero 51-55 exact or a strong CE/blank-accuracy slope.
 2. By step 6000 it should approach or exceed the completed D224 GDN reference:
    51-55 exact `0.3926` and 56-64 exact `0.1270`.
 3. More loops must increase full-board exact, not only blank accuracy.
@@ -80,7 +80,7 @@ Preflight rejects the run if any of these fail:
 - Triton convolution or no-fallback contract;
 - clean detached source, official data identity, or finite-value checks.
 
-The two-step GPU capacity probe uses the full D256/L12 model and the canonical
+The two-step GPU capacity probe uses the canonical model and
 microbatch geometry.
 OOM, nonfinite values, wrong GPU, or low utilization with excessive memory
 stops the launch. There is no automatic batch/kernel/model fallback; a resource
@@ -144,6 +144,18 @@ all scientific decision rules remain unchanged. This is not an automatic
 fallback: the failed geometry and both probe runs remain archived, and the
 change is committed before a new detached probe.
 
-The next gate is one warm full-size GPU1 probe at the amended geometry. Launch
-the formal 12k-step experiment only if measured steady-state throughput returns
-to a useful range and no implementation or memory gate regresses.
+The amended D256/L12 microbatch-32 probe also fails the throughput gate. Its
+cold and warm runs report `206.94s` and `110.45s` train time for two steps;
+the warm rate is `55.22s/step`, slightly worse than microbatch 64. Batch
+geometry therefore does not explain or repair the D256/L12 performance cliff.
+
+At 2026-07-26 20:41 CST, D256/L12 is rejected before formal training. The
+scientific experiment is re-scoped to the already validated compute-efficient
+D192/L10/H6 geometry while retaining official GDN2, native FutureSeed,
+effective batch 128, the full-diversity corpus, the 12k-step curriculum, and
+every quality decision rule. This puts the scaling budget into independent
+boards and optimizer steps rather than an inefficient parameter increase.
+
+The next gate is one exact-SHA D192/L10 GPU1 probe. Launch the formal 12k-step
+experiment only if measured steady-state throughput is near the accepted GDN2
+range and no implementation or memory gate regresses.

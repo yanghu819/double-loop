@@ -3,8 +3,7 @@
 ## Metainfo
 
 - Plan: `P-SCALE-037`
-- Status: resource gate active; microbatch geometry amended after measured
-  performance cliff
+- Status: formal D192/L10 training in progress
 - Preregistered: 2026-07-26 19:43 CST / 2026-07-26 11:43 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -123,17 +122,14 @@ shell is identical across all four carriers for all `77/77` common tensors.
 The first full-size D256/L12 microbatch-64 probe used the real official GDN2
 forward and backward on GPU1, allocated about `30 GiB`, and completed two
 optimizer steps without OOM or nonfinite values. Its checkpoint reports
-`530.06s` elapsed, which includes the first large-shape kernel compilation.
+`530.06s` elapsed. A warm-cache repeat reports `99.34s`.
 
-A second identical warm-cache probe rejected the explanation that compilation
-alone caused the slowdown. It reports `99.34s` train time for two optimizer
-steps, or `49.67s/step`, while repeated GPU samples showed long idle intervals.
-The model has `11.486M` trainable parameters. For comparison, the accepted
-D192/L10 GDN2 continuation uses about `5.70s/step`; the modest compute increase
-does not explain a nearly nine-fold runtime increase.
-
-This triggers the preregistered low-utilization/high-memory stop. A 12k-step
-launch at this geometry would be a compute mistake, not useful scaling.
+These two numbers were initially interpreted as pure training throughput. That
+interpretation was wrong: the two-step probe also requested checkpoint
+evaluation at step 2, and `train_sec` includes that evaluation and artifact
+work. They establish functional capacity but do not establish `49.67s/step`
+steady-state training. The record is retained with this correction instead of
+silently rewriting the failed reasoning.
 
 ### Explicit amendment
 
@@ -144,17 +140,17 @@ all scientific decision rules remain unchanged. This is not an automatic
 fallback: the failed geometry and both probe runs remain archived, and the
 change is committed before a new detached probe.
 
-The amended D256/L12 microbatch-32 probe also fails the throughput gate. Its
-cold and warm runs report `206.94s` and `110.45s` train time for two steps;
-the warm rate is `55.22s/step`, slightly worse than microbatch 64. Batch
-geometry therefore does not explain or repair the D256/L12 performance cliff.
+The amended D256/L12 microbatch-32 probes also included step-2 checkpoint
+evaluation, so their `206.94s` and `110.45s` totals cannot be used to rank
+microbatch throughput either.
 
-At 2026-07-26 20:41 CST, D256/L12 is rejected before formal training. The
-scientific experiment is re-scoped to the already validated compute-efficient
-D192/L10/H6 geometry while retaining official GDN2, native FutureSeed,
-effective batch 128, the full-diversity corpus, the 12k-step curriculum, and
-every quality decision rule. This puts the scaling budget into independent
-boards and optimizer steps rather than an inefficient parameter increase.
+At 2026-07-26 20:41 CST, the formal run was conservatively re-scoped to the
+already validated compute-efficient D192/L10/H6 geometry while retaining
+official GDN2, native FutureSeed, effective batch 128, the full-diversity
+corpus, the 12k-step curriculum, and every quality decision rule. The decision
+uses the project's prior evidence that data and optimizer-step scaling moved
+the hard boundary while modest width scaling did not, not the invalid
+two-step timing comparison above.
 
 The next gate is one exact-SHA D192/L10 GPU1 probe. Launch the formal 12k-step
 experiment only if measured steady-state throughput is near the accepted GDN2
@@ -171,3 +167,30 @@ contains no 62-blank rows. Its observed hard-tail counts are `61:25`, `62:0`,
 `63:20`, and `64:4865`. At 2026-07-26 21:14 CST, only the diagnostic point
 changes from `62` to `64`. The primary official interval remains `61-64`; no
 training, model, loss, data, seed, or decision rule changes.
+
+### Formal launch and execution-shape check
+
+The accepted formal run is bound to clean detached SHA
+`42102bd65a28d60bde6b09ef93343692740582a1`:
+
+- run: `gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd`;
+- GPU: GPU1 only;
+- step 100 CE: `1.6522`;
+- step 200 CE: `0.2834`;
+- checkpoint cadence: every 100 optimizer steps.
+
+Repeated GPU sampling showed that microbatch `32 x accumulation 4` uses only
+about `11.8 GiB` and does not saturate the A800. Because a 12k-step run makes
+throughput consequential, the process was stopped by its exact PID immediately
+after the complete step-200 checkpoint for one execution-only gate.
+
+With model, data, loss, seed, and effective batch unchanged, microbatch
+`128 x accumulation 1` took `187.59s` for a checkpoint-eval-free 10-step run,
+versus `137.24s` for `32 x accumulation 4`: `36.7%` slower despite using about
+`36.6 GiB` resident memory. The larger microbatch is rejected. No intermediate
+batch sweep follows.
+
+The formal run resumed from the exact step-200 model, optimizer, scheduler,
+data RNG, and training RNG checkpoint with microbatch `32 x accumulation 4`.
+This pause changes execution time only; it does not create a second quality
+arm.

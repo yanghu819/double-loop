@@ -254,6 +254,25 @@ The case bank nevertheless shows genuine incomplete self-correction. A
 loops `1/2/3/5`. Loop computation is doing useful work, but it does not yet
 finish the board.
 
+Across all selected cases, the mean trajectories are:
+
+| Official range | selected cases | wrong cells loop1/2/3/5 | conflict units loop1/2/3/5 |
+|---|---:|---|---|
+| 46-50 | 5 | `2.80 / 0.40 / 0.20 / 0.20` | `4.80 / 1.00 / 0.60 / 0.60` |
+| 51-55 | 4 | `16.00 / 13.00 / 11.25 / 10.50` | `21.00 / 19.50 / 18.25 / 17.50` |
+| 56-60 | 4 | `16.25 / 12.75 / 11.25 / 11.25` | `22.50 / 18.75 / 19.25 / 18.75` |
+| 61-64 | 4 | `24.50 / 21.00 / 19.00 / 19.25` | `24.75 / 24.00 / 23.25 / 23.25` |
+
+This locates the mechanism boundary more precisely than aggregate exact alone.
+The loop strongly cleans easy boards and provides diminishing local correction
+on hard boards. At 61-64 blanks, later loops barely reduce conflict units and
+slightly regress mean wrong cells from loop 3 to loop 5. The unresolved
+question is whether ordinary training scale changes this trajectory, not
+whether the current loop is numerically active.
+
+The archived browser-ready case bank is
+`runs/gdn2-futureseed-d192l10-step1000-eval-20260726T1514Z-42102bd/output/case_bank/`.
+
 The step-3000 stop rule is not triggered early: hard blank accuracy and train
 CE have clear positive slopes. Training therefore resumes from the exact
 step-1000 model/optimizer/RNG checkpoint after a recorded GPU1 lease rollover.

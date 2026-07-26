@@ -1,0 +1,48 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06
+git_sha=6e51f067a18d936bda7f3d588b7b3f32625b2b18
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=fla_gdn rwkv_kernel=statepassing gdn_mode=chunk gdn_progressive_base_expand_v=0.0 forward_dtype=bfloat16
+checkpoint_eval steps=500 holes=53
+[future_seed_loop stage=1:46-50] step=0100 ce=1.6018 total=1.6009 loop1=1.5990 loop_last=1.6018 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0200 ce=1.6631 total=1.6631 loop1=1.6636 loop_last=1.6631 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0300 ce=1.6328 total=1.6331 loop1=1.6343 loop_last=1.6328 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0400 ce=1.6398 total=1.6401 loop1=1.6413 loop_last=1.6398 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=2:51-55] step=0500 ce=1.6258 total=1.6260 loop1=1.6270 loop_last=1.6258 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=0500 holes53] loop5 exact=0.0000 blank=0.2707
+[train_checkpoint step=0500] path=/huyang2/double-loop/models/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/checkpoints/train_state_step000500.pt
+
+full-board metrics
+loop=1 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2614, early=0.1981, late=0.3254, early_late_gap=-0.1273
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2608, early=0.1986, late=0.3225, early_late_gap=-0.1239
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2608, early=0.1971, late=0.3228, early_late_gap=-0.1257
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2596, early=0.1947, late=0.3223, early_late_gap=-0.1276
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2596, early=0.1949, late=0.3218, early_late_gap=-0.1269
+        fs_gate=0.000, fs_update=0.000, fs_state_norm=0.000, fs_decay=0.00, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b46_50 blanks=46-50 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.3825, early=0.2580, late=0.5168, early_late_gap=-0.2588
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2659, early=0.2039, late=0.3279, early_late_gap=-0.1241
+b56_64 blanks=56-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.2528, early=0.1980, late=0.3104, early_late_gap=-0.1124
+
+case-bank artifacts
+official_b46_50 exact=0.0000 blank_acc=0.3792 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b46_50/index.html
+  cases=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b46_50/cases.json
+official_b51_55 exact=0.0000 blank_acc=0.2628 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b51_55/cases.json
+official_b56_64 exact=0.0000 blank_acc=0.2585 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 4}
+  index=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b56_64/index.html
+  cases=/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b56_64/cases.json
+Depth loop is neutral on full-board exact in this run.
+wrote /huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/futureseed_loop_case_seed52.html

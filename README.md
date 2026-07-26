@@ -52,25 +52,48 @@ training steps, and evaluator. Architecture-specific parameter count, wall
 time, and peak memory are reported rather than hidden.
 
 `gdn`, `gdn2`, and `kda` use exact official FLA layers from the pinned local
-wheel. `rwkv` uses the local RWKV7 state-passing CUDA kernel. The launcher
-refuses automatic kernel fallback.
+wheel. `rwkv` uses the audited official RWKV7 TimeMix contract with explicit
+initial/final state I/O and state-passing CUDA. The launcher refuses automatic
+kernel fallback.
 
-The latest clean GPU1 step-500 rerun is:
+The accepted shared-initialization GPU1 step-500 rerun is:
 
 | Backbone | Params | Train CE | Mixed loop5 exact | 46-50 exact | 51-64 exact | Sec/step | Peak |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| RWKV | 5.580M | 1.0432 | 0.0078 | 0.3359 | 0 | **3.43** | 9.04 GiB |
-| GDN | 5.980M | **0.9964** | 0.0215 | **0.8652** | 0 | 5.06 | **7.04 GiB** |
-| GDN2 | 6.946M | 1.0078 | 0.0195 | 0.7676 | 0 | 5.44 | 9.08 GiB |
-| KDA | 5.852M | 1.0051 | **0.0234** | 0.7285 | 0 | 5.34 | 7.55 GiB |
+| RWKV7 | 5.093M | 1.0190 | 0.0195 | 0.7285 | 0 | **4.04** | 10.78 GiB |
+| GDN | 4.867M | 1.0509 | 0.0059 | 0.3633 | 0 | 4.89 | **5.99 GiB** |
+| GDN2 | 5.462M | **1.0062** | **0.0234** | **0.7969** | 0 | 5.85 | 7.84 GiB |
+| KDA | 4.736M | 1.0179 | 0.0176 | 0.6465 | 0 | 5.58 | 6.45 GiB |
 
-GDN is the retained scale carrier: it gives the strongest finite-budget
-opening and has the demonstrated 30k-step clean scaling result above. This
+GDN2 is the strongest finite-budget opener in this state-matched table; RWKV7
+is the fastest. The separate local GDN-Triton recipe remains the retained scale
+carrier because it owns the demonstrated 30k-step clean result above. This
 table does not claim a universal architecture winner; all four remain at zero
-full-board exact beyond 50 blanks at this short budget. KDA's mixed edge is one
-board out of 512 over GDN, while GDN solves 70 more official 46-50 boards.
+full-board exact beyond 50 blanks at this short budget.
 Full provenance, loop curves, and same-puzzle cases are in
-[`research/reports/experiments/futureseed-sudoku-four-backbone-clean-rerun-20260724.md`](research/reports/experiments/futureseed-sudoku-four-backbone-clean-rerun-20260724.md).
+[`research/reports/experiments/futureseed-sudoku-official-rwkv7-four-backbone-20260724.md`](research/reports/experiments/futureseed-sudoku-official-rwkv7-four-backbone-20260724.md).
+
+## Causal FutureSeed Gate
+
+The fair carrier table above enables FutureSeed in every arm, so it does not by
+itself measure FutureSeed's contribution. The paired causal gate uses the same
+source, byte-identical initialization, data order, objective, optimizer, state
+geometry, five-loop budget, evaluator, and parameter count within each carrier.
+Only the FutureSeed injection scale and artifact paths differ.
+
+| Carrier | 46-50 exact FS | 46-50 exact noFS | FS time overhead | FS VRAM delta |
+|---|---:|---:|---:|---:|
+| RWKV7 | 0.7285 | 0 | +9.3% | +0.29 GiB |
+| GDN | 0.3633 | 0 | +7.2% | +0.34 GiB |
+| GDN2 | 0.7969 | 0 | +17.2% | +0.34 GiB |
+| KDA | 0.6465 | 0 | +8.2% | +0.34 GiB |
+
+Official source, CUDA/Triton backward, data hashes, per-pair arguments,
+constructor parameter hashes, and same-trained-weights functional checks all
+pass. This supports FutureSeed as a generic short-budget opening mechanism for
+causal recurrent carriers. It does not yet establish hard closure: every arm
+is still zero exact at 51-64 blanks. The full result and visualizations are in
+[`research/reports/experiments/futureseed-causal-four-backbone-20260726.md`](research/reports/experiments/futureseed-causal-four-backbone-20260726.md).
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 ./run.sh baseline_preflight

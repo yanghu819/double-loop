@@ -1,0 +1,52 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[futureseed-causal-contract] start rwkv
+Traceback (most recent call last):
+  File "/huyang2/double-loop/artifacts/launch/nofs-causal-20260726T022718Z-6e51f06/check_futureseed_causal_contract.py", line 316, in <module>
+    main()
+  File "/huyang2/double-loop/artifacts/launch/nofs-causal-20260726T022718Z-6e51f06/check_futureseed_causal_contract.py", line 295, in main
+    payload["backbones"][public_name] = check_backbone(
+  File "/huyang2/double-loop/artifacts/launch/nofs-causal-20260726T022718Z-6e51f06/check_futureseed_causal_contract.py", line 192, in check_backbone
+    with_future = run_arm(runner, public_name, 1.0, inputs, labels)
+  File "/huyang2/double-loop/artifacts/launch/nofs-causal-20260726T022718Z-6e51f06/check_futureseed_causal_contract.py", line 140, in run_arm
+    loop_logits, trace = model.forward_trace(inputs, loops=2, noise_scale=0.0)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2566, in forward_trace
+    z_l, l_diag, l_seed_memory = self.depth_update(
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2492, in depth_update
+    updated, diag, next_seed_memory = self.reasoner(hidden + injection, seed_memory=seed_memory)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1849, in forward
+    x, previous_state, v_first = block(
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1071, in forward
+    time_out, terminal_state, v_first = self.time_mix(
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 1007, in forward
+    recurrent_out, terminal_state = self._statepassing(**recurrent)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 929, in _statepassing
+    output, terminal_state = StatePassingRWKV7.apply(state, *recurrent_bf16)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/rwkv7_cuda/statepassing.py", line 132, in apply
+    return _StatePassingRWKV7Fn.apply(s0, r, w, k, v, a, b)
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/function.py", line 575, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/rwkv7_cuda/statepassing.py", line 82, in forward
+    _load_statepassing(head_dim)
+  File "/huyang2/double-loop/artifacts/worktrees/fs-causal-6e51f06/experiments/rwkv_fs_sudoku/rwkv7_cuda/statepassing.py", line 57, in _load_statepassing
+    load(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 1623, in load
+    return _jit_compile(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2076, in _jit_compile
+    _write_ninja_file_and_build_library(
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2180, in _write_ninja_file_and_build_library
+    verify_ninja_availability()
+  File "/opt/conda/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 2241, in verify_ninja_availability
+    raise RuntimeError("Ninja is required to load C++ extensions")
+RuntimeError: Ninja is required to load C++ extensions

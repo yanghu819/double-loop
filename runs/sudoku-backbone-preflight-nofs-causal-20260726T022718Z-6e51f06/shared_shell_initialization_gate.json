@@ -1,0 +1,1499 @@
+{
+  "backbones": {
+    "gdn": "fla_gdn",
+    "gdn2": "gdn2",
+    "kda": "kda",
+    "rwkv": "rwkv7"
+  },
+  "common_parameter_tensors": 77,
+  "cuda_visible_devices": "0",
+  "definition": "All parameters outside each block's time_mix are the shared shell.",
+  "device": "NVIDIA A800-SXM4-80GB",
+  "differing_names": [],
+  "differing_parameter_tensors": 0,
+  "hashes": {
+    "gdn": {
+      "embed.weight": "8206af9dd9c5038d4f931de243915e88a1667eb656cd6c780138f3caa34bf8b4",
+      "h_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "head.weight": "731983eecf202b7205f2628cba0b0fb795d44d5a656e7fc1db32d56abf21921f",
+      "l_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "position.weight": "cc8975391a668986fb8168be8de208583a6f0a70f0dfe839d6824f57829fdd59",
+      "reasoner.blocks.0.channel_mix.key.weight": "0e95b2bf6e858b538f07cd4f476bd636f2147ba6813092587fabf37428fd4586",
+      "reasoner.blocks.0.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.0.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.0.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.0.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.channel_mix.key.weight": "53c0b8d85c4126014a8bf25732df2b644a4bd108fadb596b6585ba8bc0496081",
+      "reasoner.blocks.1.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.1.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.1.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.channel_mix.key.weight": "977857db589605bff4566ec5dd39368d9468f0aa663b04f7fb549c1b59155001",
+      "reasoner.blocks.2.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.2.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.2.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.channel_mix.key.weight": "8a95400aeb5fd59835804889226463a40e0d80c37529f20bd0963a5faf3d5fb4",
+      "reasoner.blocks.3.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.3.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.3.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.channel_mix.key.weight": "9e216fdfdd418307d3947ba059d7a70a80ee109387fb0aa2fdbab9363c64d6d9",
+      "reasoner.blocks.4.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.4.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.4.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.channel_mix.key.weight": "33d237e7656e86565816cc592fa225f8ca04811d5492178a5d0c8249dfac9882",
+      "reasoner.blocks.5.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.5.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.5.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.channel_mix.key.weight": "bac6078322c8b08b89d69b70258b97a0b670e0ec722ac7d75ee33671f2164a43",
+      "reasoner.blocks.6.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.6.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.6.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.channel_mix.key.weight": "28d2d05dcae8022eded117cefc2ab4c428c6a21c6fc287f67df5f1258f1811fe",
+      "reasoner.blocks.7.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.7.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.7.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.channel_mix.key.weight": "7d2bd34d97bfb65fb281749d2ad8695775c364900219ec1f01c214f6d5c0d458",
+      "reasoner.blocks.8.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.8.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.8.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.channel_mix.key.weight": "bab18465a740e433bcabcd89dc210646d7c3b43c26355c68ad523e1bd378ae5d",
+      "reasoner.blocks.9.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.9.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.9.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310"
+    },
+    "gdn2": {
+      "embed.weight": "8206af9dd9c5038d4f931de243915e88a1667eb656cd6c780138f3caa34bf8b4",
+      "h_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "head.weight": "731983eecf202b7205f2628cba0b0fb795d44d5a656e7fc1db32d56abf21921f",
+      "l_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "position.weight": "cc8975391a668986fb8168be8de208583a6f0a70f0dfe839d6824f57829fdd59",
+      "reasoner.blocks.0.channel_mix.key.weight": "0e95b2bf6e858b538f07cd4f476bd636f2147ba6813092587fabf37428fd4586",
+      "reasoner.blocks.0.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.0.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.0.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.0.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.channel_mix.key.weight": "53c0b8d85c4126014a8bf25732df2b644a4bd108fadb596b6585ba8bc0496081",
+      "reasoner.blocks.1.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.1.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.1.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.channel_mix.key.weight": "977857db589605bff4566ec5dd39368d9468f0aa663b04f7fb549c1b59155001",
+      "reasoner.blocks.2.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.2.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.2.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.channel_mix.key.weight": "8a95400aeb5fd59835804889226463a40e0d80c37529f20bd0963a5faf3d5fb4",
+      "reasoner.blocks.3.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.3.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.3.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.channel_mix.key.weight": "9e216fdfdd418307d3947ba059d7a70a80ee109387fb0aa2fdbab9363c64d6d9",
+      "reasoner.blocks.4.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.4.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.4.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.channel_mix.key.weight": "33d237e7656e86565816cc592fa225f8ca04811d5492178a5d0c8249dfac9882",
+      "reasoner.blocks.5.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.5.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.5.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.channel_mix.key.weight": "bac6078322c8b08b89d69b70258b97a0b670e0ec722ac7d75ee33671f2164a43",
+      "reasoner.blocks.6.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.6.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.6.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.channel_mix.key.weight": "28d2d05dcae8022eded117cefc2ab4c428c6a21c6fc287f67df5f1258f1811fe",
+      "reasoner.blocks.7.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.7.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.7.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.channel_mix.key.weight": "7d2bd34d97bfb65fb281749d2ad8695775c364900219ec1f01c214f6d5c0d458",
+      "reasoner.blocks.8.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.8.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.8.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.channel_mix.key.weight": "bab18465a740e433bcabcd89dc210646d7c3b43c26355c68ad523e1bd378ae5d",
+      "reasoner.blocks.9.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.9.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.9.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310"
+    },
+    "kda": {
+      "embed.weight": "8206af9dd9c5038d4f931de243915e88a1667eb656cd6c780138f3caa34bf8b4",
+      "h_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "head.weight": "731983eecf202b7205f2628cba0b0fb795d44d5a656e7fc1db32d56abf21921f",
+      "l_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "position.weight": "cc8975391a668986fb8168be8de208583a6f0a70f0dfe839d6824f57829fdd59",
+      "reasoner.blocks.0.channel_mix.key.weight": "0e95b2bf6e858b538f07cd4f476bd636f2147ba6813092587fabf37428fd4586",
+      "reasoner.blocks.0.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.0.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.0.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.0.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.channel_mix.key.weight": "53c0b8d85c4126014a8bf25732df2b644a4bd108fadb596b6585ba8bc0496081",
+      "reasoner.blocks.1.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.1.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.1.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.channel_mix.key.weight": "977857db589605bff4566ec5dd39368d9468f0aa663b04f7fb549c1b59155001",
+      "reasoner.blocks.2.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.2.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.2.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.channel_mix.key.weight": "8a95400aeb5fd59835804889226463a40e0d80c37529f20bd0963a5faf3d5fb4",
+      "reasoner.blocks.3.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.3.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.3.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.channel_mix.key.weight": "9e216fdfdd418307d3947ba059d7a70a80ee109387fb0aa2fdbab9363c64d6d9",
+      "reasoner.blocks.4.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.4.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.4.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.channel_mix.key.weight": "33d237e7656e86565816cc592fa225f8ca04811d5492178a5d0c8249dfac9882",
+      "reasoner.blocks.5.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.5.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.5.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.channel_mix.key.weight": "bac6078322c8b08b89d69b70258b97a0b670e0ec722ac7d75ee33671f2164a43",
+      "reasoner.blocks.6.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.6.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.6.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.channel_mix.key.weight": "28d2d05dcae8022eded117cefc2ab4c428c6a21c6fc287f67df5f1258f1811fe",
+      "reasoner.blocks.7.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.7.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.7.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.channel_mix.key.weight": "7d2bd34d97bfb65fb281749d2ad8695775c364900219ec1f01c214f6d5c0d458",
+      "reasoner.blocks.8.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.8.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.8.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.channel_mix.key.weight": "bab18465a740e433bcabcd89dc210646d7c3b43c26355c68ad523e1bd378ae5d",
+      "reasoner.blocks.9.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.9.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.9.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310"
+    },
+    "rwkv": {
+      "embed.weight": "8206af9dd9c5038d4f931de243915e88a1667eb656cd6c780138f3caa34bf8b4",
+      "h_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "head.weight": "731983eecf202b7205f2628cba0b0fb795d44d5a656e7fc1db32d56abf21921f",
+      "l_init": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "out_norm.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "position.weight": "cc8975391a668986fb8168be8de208583a6f0a70f0dfe839d6824f57829fdd59",
+      "reasoner.blocks.0.channel_mix.key.weight": "0e95b2bf6e858b538f07cd4f476bd636f2147ba6813092587fabf37428fd4586",
+      "reasoner.blocks.0.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.0.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.0.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.0.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.0.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.channel_mix.key.weight": "53c0b8d85c4126014a8bf25732df2b644a4bd108fadb596b6585ba8bc0496081",
+      "reasoner.blocks.1.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.1.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.1.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.1.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.1.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.channel_mix.key.weight": "977857db589605bff4566ec5dd39368d9468f0aa663b04f7fb549c1b59155001",
+      "reasoner.blocks.2.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.2.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.2.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.2.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.2.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.channel_mix.key.weight": "8a95400aeb5fd59835804889226463a40e0d80c37529f20bd0963a5faf3d5fb4",
+      "reasoner.blocks.3.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.3.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.3.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.3.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.3.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.channel_mix.key.weight": "9e216fdfdd418307d3947ba059d7a70a80ee109387fb0aa2fdbab9363c64d6d9",
+      "reasoner.blocks.4.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.4.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.4.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.4.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.4.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.channel_mix.key.weight": "33d237e7656e86565816cc592fa225f8ca04811d5492178a5d0c8249dfac9882",
+      "reasoner.blocks.5.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.5.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.5.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.5.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.5.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.channel_mix.key.weight": "bac6078322c8b08b89d69b70258b97a0b670e0ec722ac7d75ee33671f2164a43",
+      "reasoner.blocks.6.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.6.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.6.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.6.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.6.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.channel_mix.key.weight": "28d2d05dcae8022eded117cefc2ab4c428c6a21c6fc287f67df5f1258f1811fe",
+      "reasoner.blocks.7.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.7.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.7.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.7.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.7.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.channel_mix.key.weight": "7d2bd34d97bfb65fb281749d2ad8695775c364900219ec1f01c214f6d5c0d458",
+      "reasoner.blocks.8.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.8.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.8.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.8.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.8.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.channel_mix.key.weight": "bab18465a740e433bcabcd89dc210646d7c3b43c26355c68ad523e1bd378ae5d",
+      "reasoner.blocks.9.channel_mix.value.weight": "250480ecefa3655c774b6a4e5d4eb16675ee4f181c2285c25020fac6e3aaf3b5",
+      "reasoner.blocks.9.future_seed_logit": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "reasoner.blocks.9.ln_channel.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_channel.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310",
+      "reasoner.blocks.9.ln_time.bias": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+      "reasoner.blocks.9.ln_time.weight": "5ce183e97a10e7aeeeecc15c49c055053961896c1d5d514d6e4c59dfd0544310"
+    }
+  },
+  "identical_parameter_tensors": 77,
+  "same_shape_parameter_tensors": 77,
+  "seed_reset_per_backbone": 52,
+  "shapes": {
+    "gdn": {
+      "embed.weight": [
+        10,
+        192
+      ],
+      "h_init": [
+        1,
+        1,
+        192
+      ],
+      "head.weight": [
+        9,
+        192
+      ],
+      "l_init": [
+        1,
+        1,
+        192
+      ],
+      "out_norm.bias": [
+        192
+      ],
+      "out_norm.weight": [
+        192
+      ],
+      "position.weight": [
+        81,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.0.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.0.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.1.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.1.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.2.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.2.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.3.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.3.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.4.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.4.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.5.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.5.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.6.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.6.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.7.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.7.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.8.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.8.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.9.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.9.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.weight": [
+        192
+      ]
+    },
+    "gdn2": {
+      "embed.weight": [
+        10,
+        192
+      ],
+      "h_init": [
+        1,
+        1,
+        192
+      ],
+      "head.weight": [
+        9,
+        192
+      ],
+      "l_init": [
+        1,
+        1,
+        192
+      ],
+      "out_norm.bias": [
+        192
+      ],
+      "out_norm.weight": [
+        192
+      ],
+      "position.weight": [
+        81,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.0.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.0.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.1.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.1.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.2.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.2.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.3.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.3.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.4.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.4.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.5.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.5.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.6.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.6.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.7.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.7.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.8.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.8.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.9.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.9.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.weight": [
+        192
+      ]
+    },
+    "kda": {
+      "embed.weight": [
+        10,
+        192
+      ],
+      "h_init": [
+        1,
+        1,
+        192
+      ],
+      "head.weight": [
+        9,
+        192
+      ],
+      "l_init": [
+        1,
+        1,
+        192
+      ],
+      "out_norm.bias": [
+        192
+      ],
+      "out_norm.weight": [
+        192
+      ],
+      "position.weight": [
+        81,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.0.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.0.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.1.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.1.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.2.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.2.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.3.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.3.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.4.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.4.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.5.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.5.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.6.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.6.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.7.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.7.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.8.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.8.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.9.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.9.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.weight": [
+        192
+      ]
+    },
+    "rwkv": {
+      "embed.weight": [
+        10,
+        192
+      ],
+      "h_init": [
+        1,
+        1,
+        192
+      ],
+      "head.weight": [
+        9,
+        192
+      ],
+      "l_init": [
+        1,
+        1,
+        192
+      ],
+      "out_norm.bias": [
+        192
+      ],
+      "out_norm.weight": [
+        192
+      ],
+      "position.weight": [
+        81,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.0.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.0.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.0.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.0.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.1.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.1.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.1.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.1.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.2.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.2.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.2.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.2.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.3.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.3.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.3.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.3.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.4.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.4.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.4.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.4.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.5.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.5.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.5.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.5.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.6.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.6.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.6.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.6.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.7.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.7.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.7.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.7.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.8.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.8.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.8.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.8.ln_time.weight": [
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.key.weight": [
+        768,
+        192
+      ],
+      "reasoner.blocks.9.channel_mix.value.weight": [
+        192,
+        768
+      ],
+      "reasoner.blocks.9.future_seed_logit": [
+        1,
+        6,
+        1,
+        1
+      ],
+      "reasoner.blocks.9.ln_channel.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_channel.weight": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.bias": [
+        192
+      ],
+      "reasoner.blocks.9.ln_time.weight": [
+        192
+      ]
+    }
+  },
+  "shared_shell_init_seed": 52,
+  "status": "PASS"
+}

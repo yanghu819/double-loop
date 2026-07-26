@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "canonical",
-  "updated_at": "2026-07-23T17:35:00+08:00",
+  "updated_at": "2026-07-26T13:50:00+08:00",
   "claim": "FutureSeed transfers terminal recurrent state across layers; depth loops add recurrent compute.",
   "canonical": {
     "runner": "experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py",
@@ -14,18 +14,21 @@
     "suite_launcher": "scripts/run_sudoku_backbone_suite.sh",
     "preflight": "scripts/run_sudoku_baseline_preflight.sh",
     "summarizer": "scripts/summarize_sudoku_backbone_benchmark.py",
+    "causal_contract": "scripts/check_futureseed_causal_contract.py",
+    "causal_summarizer": "scripts/summarize_futureseed_causal_carriers.py",
     "environment_lock": "experiments/rwkv_fs_sudoku/uv.lock",
     "fla_wheel": "wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"
   },
   "evidence": {
-    "training_source_sha": "8c7c7596987b365877603419ad4a7e0b91486119",
-    "benchmark": "runs/sudoku-backbone-benchmark-20260723T061503Z-manual-8c7c759",
-    "preflight": "runs/sudoku-backbone-preflight-20260723T053346Z-0ce0d93",
-    "report": "research/reports/experiments/futureseed-sudoku-four-backbone-baseline-20260723.md",
-    "shared_source_snapshot_sha256": "2e4defe0907602894f138f24ad1002402691b63263651c963e16eb5bf7794598"
+    "training_source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+    "benchmark": "runs/sudoku-backbone-benchmark-sharedinit-20260724T154020Z-6e51f06",
+    "causal_comparison": "runs/futureseed-causal-four-carrier-20260726T022718Z-6e51f06",
+    "preflight": "runs/sudoku-backbone-preflight-nofs-causal-20260726T022718Z-6e51f06",
+    "report": "research/reports/experiments/futureseed-causal-four-backbone-20260726.md",
+    "shared_source_snapshot_sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
   },
   "supported_benchmark_backbones": {
-    "rwkv": "local RWKV7 state-passing CUDA",
+    "rwkv": "official RWKV7 TimeMix contract with explicit state I/O and state-passing CUDA",
     "gdn": "official FLA GatedDeltaNet",
     "gdn2": "official FLA GatedDeltaNet2",
     "kda": "official FLA KimiDeltaAttention"

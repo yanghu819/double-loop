@@ -37,6 +37,15 @@ for scaling to harder spatial reasoning tasks.
 
 ## Current Evidence
 
+- Strong cross-carrier causal gate: under byte-identical paired initialization,
+  the same data/order/objective/optimizer/state/loop budget, and official
+  kernels, b46-50 loop5 full-board exact with/without FutureSeed is
+  `0.7285/0`, `0.3633/0`, `0.7969/0`, and `0.6465/0` for
+  RWKV7/GDN/GDN2/KDA. FutureSeed adds no parameters, costs
+  `7.2-17.2%` wall time and about `0.29-0.34 GiB`, and passes a separate
+  same-trained-weights functional contract. This supports a generic
+  short-budget causal opening claim, not hard closure: every arm is still zero
+  exact at 51-64 blanks.
 - Strong positive: RWKV9 Sudoku with and without FutureSeed, same CUDA
   state-passing backbone and same budget. Without FutureSeed, h12 loop5 exact is
   `0.0156` and early blank cells are much worse than late blank cells. With
@@ -101,6 +110,28 @@ for scaling to harder spatial reasoning tasks.
   only final token accuracy.
 
 ## Experimental Roadmap
+
+### E0. Quality-Matched Causal Efficiency
+
+Hypothesis: if FutureSeed is a cheap future-context mechanism rather than only
+an early curriculum shortcut, an efficient official causal carrier with
+FutureSeed should reach the same full-board quality in materially fewer
+optimizer steps or open 51-55 exact under the same clean scaling recipe.
+
+Method: select one carrier from the strict four-way gate, then train one FS and
+one noFS arm on the same independent-data schedule. Compare time/tokens to a
+preregistered quality target and evaluate 46-50/51-55/56-64 exact at fixed
+checkpoints. Do not tune the two arms separately and do not add noise, repair,
+selector, search, or task-specific losses.
+
+Decision:
+- A publishable efficiency result requires at least `20%` less wall time or
+  tokens to the same exact target, or a nonzero 51-55 exact frontier that noFS
+  does not reach at matched compute.
+- If both arms eventually converge at similar cost, narrow the claim to
+  finite-budget optimization.
+- If neither opens 51-55, stop carrier tables and treat global closure as a
+  separate state-capacity/data-scaling problem.
 
 ### E1. Official EqR Maze Objective Alignment
 

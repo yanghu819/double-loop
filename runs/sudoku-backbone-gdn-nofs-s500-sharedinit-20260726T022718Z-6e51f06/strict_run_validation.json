@@ -1,0 +1,70 @@
+{
+  "allowed_differing_args": [
+    "future_seed_scale",
+    "out_dir",
+    "train_checkpoint_dir"
+  ],
+  "differing_args": [
+    "future_seed_scale",
+    "out_dir",
+    "train_checkpoint_dir"
+  ],
+  "fairness_gate": {
+    "cuda_backward": "PASS",
+    "data_files_predate_futureseed_runs": "PASS",
+    "futureseed_onoff_initialization": "PASS",
+    "gpu1_device": "PASS",
+    "official_chunk_backward": "PASS",
+    "official_data_sha256": "PASS",
+    "official_fla_source": "PASS",
+    "official_rwkv7_source_and_cuda": "PASS",
+    "shared_shell_initialization": "PASS",
+    "silent_fallback": "FORBIDDEN",
+    "source_snapshot_within_suite": "PASS",
+    "status": "PASS",
+    "torch_reference_alignment": "PASS"
+  },
+  "fs_loop5_trace": {
+    "fs_gate_mean": 0.48752281069755554,
+    "fs_raw_rms_mean": 0.1571127325296402,
+    "fs_state_norm": 15.600729942321777
+  },
+  "fs_result_sha256": "92061501401658e5b69ab813c7c9b1bb1a51a355b6729a4ecd792b9d5ff2e21b",
+  "fs_source_snapshot": {
+    "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+    "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/source_snapshot.tar.gz",
+    "sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
+  },
+  "nofs_loop5_trace": {
+    "fs_gate_mean": 0.0,
+    "fs_raw_rms_mean": 0.0,
+    "fs_state_norm": 0.0
+  },
+  "nofs_result_sha256": "e1746aa7831eba9260921efb8362a8aa496ca79fb63679457f029bd3e00fae8e",
+  "nofs_source_snapshot": {
+    "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+    "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/source_snapshot.tar.gz",
+    "sha256": "6044af8706884fe919118fa8a68b966acd031915c17d94bcd01488047c6a0d11"
+  },
+  "official_data": {
+    "all_files_predate_futureseed_runs": true,
+    "mtimes": {
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__inputs.npy": "2026-06-21 04:57:44.351618607 +0000",
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__labels.npy": "2026-06-21 04:58:07.386487477 +0000",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__inputs.npy": "2026-07-11 15:06:38.593362462 +0000",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__labels.npy": "2026-07-11 15:06:39.003792050 +0000"
+    },
+    "sha256": {
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__inputs.npy": "cbc2ab9f1743d79da9c0c26273460140bf542a5fb3229cfdd80575615163bcd5",
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__labels.npy": "3d0bb8e73ecc5681675803c1cb518ebb4e771dac93a6741256a7a85ab8e29c2b",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__inputs.npy": "979f0f27411dfde97b725082cd29da03bea7c3b1c6b2bd2b15bfe95b76549cbc",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__labels.npy": "84e8a40dbb12d032eb9eba601c378d8388ea949430e07c00e80bc0947a59e48a"
+    },
+    "status": "PASS",
+    "test_realpath": "/huyang2/double-loop/official_eqr_sudoku_repro_20260623/data/sudoku-extreme-1k-aug-1000/test"
+  },
+  "parameter_count": 4866548,
+  "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+  "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+  "status": "PASS"
+}

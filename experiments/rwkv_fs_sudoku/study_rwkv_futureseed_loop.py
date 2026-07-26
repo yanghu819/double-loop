@@ -3886,6 +3886,7 @@ def write_case_html(
     *,
     title: str,
     model_label: str,
+    future_seed_enabled: bool,
     inputs: torch.Tensor,
     labels: torch.Tensor,
     clue_mask: torch.Tensor,
@@ -3899,6 +3900,7 @@ def write_case_html(
         sections.append(
             f'<div class="panel"><h3>loop {loop_idx}</h3>{grid_html(board_list(pred), solution, clue)}</div>'
         )
+    mechanism = "with FutureSeed" if future_seed_enabled else "without FutureSeed"
 
     body = f"""<!doctype html>
 <html>
@@ -3921,7 +3923,7 @@ h3 {{ margin: 0 0 8px; font-size: 13px; }}
 </head>
 <body>
 <h1>{html.escape(title)}</h1>
-<p class="meta">{html.escape(model_label)} with FutureSeed and depth-loop refinement. Green matches sampled solution, red differs, gray is clue.</p>
+<p class="meta">{html.escape(model_label)} {mechanism} and depth-loop refinement. Green matches sampled solution, red differs, gray is clue.</p>
 <div class="row">
   <div class="panel"><h3>puzzle</h3>{grid_html(puzzle, solution, clue)}</div>
   <div class="panel"><h3>solution</h3>{grid_html(solution, solution, [False] * CELLS)}</div>
@@ -4185,7 +4187,14 @@ def case_cell_diagnostic(
     return row
 
 
-def write_case_bank_index(path: Path, *, label: str, selected: Dict[str, List[Dict[str, Any]]], summary: Dict[str, Any]) -> None:
+def write_case_bank_index(
+    path: Path,
+    *,
+    label: str,
+    future_seed_enabled: bool,
+    selected: Dict[str, List[Dict[str, Any]]],
+    summary: Dict[str, Any],
+) -> None:
     cards = []
     for kind, cases in selected.items():
         rows = []
@@ -4213,6 +4222,7 @@ def write_case_bank_index(path: Path, *, label: str, selected: Dict[str, List[Di
 """
         )
 
+    mechanism = "FutureSeed" if future_seed_enabled else "No-FutureSeed"
     body = f"""<!doctype html>
 <html>
 <head>
@@ -4234,7 +4244,7 @@ a {{ color: #1f6feb; }}
 </style>
 </head>
 <body>
-<h1>{N}x{N} {html.escape(label)} FutureSeed loop case bank</h1>
+<h1>{N}x{N} {html.escape(label)} {mechanism} loop case bank</h1>
 <p>Eval sample: <code>{summary['eval_n']}</code>. Final loop exact: <code>{summary['final_exact']:.4f}</code>. Final loop blank accuracy: <code>{summary['final_blank_acc']:.4f}</code>. This artifact is diagnostic only; it does not change training.</p>
 <div class="grid">{''.join(cards)}</div>
 </body>
@@ -4433,7 +4443,13 @@ def export_case_bank(
             + "\n",
                 encoding="utf-8",
         )
-        write_case_bank_index(index_path, label=group_label, selected=selected, summary=holes_summary)
+        write_case_bank_index(
+            index_path,
+            label=group_label,
+            future_seed_enabled=model.reasoner.future_seed_scale > 0,
+            selected=selected,
+            summary=holes_summary,
+        )
         artifacts["holes"][group_label] = {
             "index_html": str(index_path.resolve()),
             "cases_json": str(json_path.resolve()),
@@ -4992,10 +5008,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     case_index = min(max(int(args.case_index), 0), inputs.shape[0] - 1)
     html_path = out_dir / f"futureseed_loop_case_seed{args.seed}.html"
     model_label = BACKBONE_DISPLAY_NAMES[args.backbone]
+    future_seed_enabled = args.future_seed_scale > 0
+    mechanism = "FutureSeed" if future_seed_enabled else "No-FutureSeed"
     write_case_html(
         html_path,
-        title=f"{N}x{N} {model_label} FutureSeed loop case",
+        title=f"{N}x{N} {model_label} {mechanism} loop case",
         model_label=model_label,
+        future_seed_enabled=future_seed_enabled,
         inputs=inputs[case_index],
         labels=labels[case_index],
         clue_mask=clue_mask[case_index],

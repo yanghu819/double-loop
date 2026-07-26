@@ -1178,3 +1178,39 @@
   expand-v, seed, LR, or loss into a table. The remaining paper question is
   FutureSeed's causal value under a chosen carrier and enough clean compute,
   not whether one more GDN geometry rescues a 500-step ranking.
+
+## 2026-07-26 FutureSeed causal four-carrier gate
+
+- A table where every carrier has FutureSeed cannot establish FutureSeed's
+  contribution. The minimum causal experiment is a paired on/off control for
+  every audited carrier, with only the state-injection scale and artifact paths
+  allowed to differ.
+- Native FutureSeed generalizes beyond RWKV7 at this short-budget gate.
+  Official46-50 loop5 exact changes from zero without FutureSeed to
+  `0.7285/0.3633/0.7969/0.6465` with FutureSeed for
+  RWKV7/GDN/GDN2/KDA. The preregistered rule required two carriers above
+  `+0.10`; all four pass.
+- The effect is not merely a small per-cell calibration gain. b46-50 blank
+  accuracy rises from about `0.38-0.39` to `0.97-0.99`, and full-board exact
+  moves from zero to hundreds of solved boards. GDN/GDN2/KDA noFS are initially
+  competitive at step100 but stall near CE `1.62-1.63` after the hard-stage
+  switch, while FS continues to about `1.01-1.05`.
+- A strict on/off contract must distinguish initialization from functional
+  activation. Official RWKV7 zero-initializes its output projection, so gate
+  gradients may be mathematically zero at construction time. Verify
+  byte-identical constructor hashes separately, then load the same trained
+  checkpoint into FS-on/off models and require only the intervention to change
+  output and gradients.
+- Fail closed on infrastructure too. Omitting the project-local `ninja` path
+  caused RWKV CUDA loading to stop rather than silently choose another
+  implementation. Archive these failed audit attempts; they explain why the
+  final contract is trustworthy.
+- Do not overclaim the positive result. Every carrier remains zero exact at
+  51-55 and 56-64 blanks. FutureSeed is now solid as a generic finite-budget
+  optimization/opening mechanism for causal recurrent carriers, but global
+  hard closure and asymptotic efficiency remain open.
+- The next experiment is not another carrier, seed, gate, or geometry table.
+  Use one efficient official carrier for a quality-matched scale test and ask
+  whether FS reaches a common quality target materially earlier or opens
+  51-55 exact. That decision directly tests the cheap-future-context paper
+  claim.

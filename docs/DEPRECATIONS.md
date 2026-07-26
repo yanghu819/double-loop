@@ -18,6 +18,8 @@ These paths receive fixes and define reproducible claims:
 | `configs/sudoku/backbone_benchmark.env` | canonical | Fair four-backbone contract |
 | `scripts/run_sudoku_backbone_*.sh` | canonical | Strict GPU1 benchmark launch |
 | `scripts/summarize_sudoku_backbone_benchmark.py` | canonical | Fairness validation and report |
+| `scripts/check_futureseed_causal_contract.py` | canonical | FS-on/off constructor and trained-weight functional contract |
+| `scripts/summarize_futureseed_causal_carriers.py` | canonical | Strict four-carrier causal on/off report |
 
 ## Supported but Not the Scale Default
 
@@ -29,12 +31,16 @@ These paths receive fixes and define reproducible claims:
 - Official FLA GDN is the public `gdn` benchmark arm. It is not silently mixed
   with the local `BACKBONE=gdn` scale implementation.
 
-The final matched benchmark is archived at
-`runs/sudoku-backbone-benchmark-20260723T061503Z-manual-8c7c759/`.
-At 500 steps, official GDN has the best train CE, mixed exact, easy-range
-closure, and official-FLA memory cost. RWKV is faster per step but opens less;
-GDN2 and KDA do not justify separate scale branches. All four remain supported
-for fair comparison.
+The accepted shared-initialization FutureSeed-on carrier table is archived at
+`runs/sudoku-backbone-benchmark-sharedinit-20260724T154020Z-6e51f06/`.
+Its paired causal on/off result is archived at
+`runs/futureseed-causal-four-carrier-20260726T022718Z-6e51f06/`.
+At 500 steps, GDN2 is the strongest 46-50-blank opener and RWKV7 is the fastest
+FS carrier, but all four are zero exact at 51-64 blanks. More importantly,
+FutureSeed raises 46-50 exact from zero without FS to
+`0.7285/0.3633/0.7969/0.6465` for RWKV7/GDN/GDN2/KDA. Use the causal report
+for the mechanism claim and the older long GDN scaling line for the current
+hard-data engineering default; do not mix those decisions.
 
 ## Deprecated Mechanisms
 

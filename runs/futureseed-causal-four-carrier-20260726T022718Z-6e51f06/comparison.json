@@ -1,0 +1,3170 @@
+{
+  "causal_contract": {
+    "backbones": {
+      "gdn": {
+        "functional_checkpoint": "/huyang2/double-loop/models/sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/checkpoints/train_state_step000500.pt",
+        "functional_checkpoint_sha256": "2074f4b2b586b93c176c8e39e1e4aa938f87b48856d710970b3172e095a44ef0",
+        "functional_parameter_fingerprint": "7cee4e68feeb415b4a51a051fc6dd0fc9d0cedb64674b456adb804dfe9ae7411",
+        "identical_functional_checkpoint_tensors": true,
+        "identical_initial_parameter_tensors": true,
+        "initial_parameter_fingerprint": "0d99321423aa23d60473457a421f22c8d6e1ed5956f72b43a900557aa88155a5",
+        "output_rms_delta": 1.3665440082550049,
+        "parameter_tensor_count": 207,
+        "status": "PASS",
+        "with_future": {
+          "backbone_grad_norm": 7.5647196779911985,
+          "fs_gate_mean": 0.48752281069755554,
+          "fs_state_norm": 15.600729942321777,
+          "future_seed_grad_names": [
+            "reasoner.blocks.1.future_seed_logit",
+            "reasoner.blocks.2.future_seed_logit",
+            "reasoner.blocks.3.future_seed_logit",
+            "reasoner.blocks.4.future_seed_logit",
+            "reasoner.blocks.5.future_seed_logit",
+            "reasoner.blocks.6.future_seed_logit",
+            "reasoner.blocks.7.future_seed_logit",
+            "reasoner.blocks.8.future_seed_logit",
+            "reasoner.blocks.9.future_seed_logit"
+          ],
+          "future_seed_grad_norm": 0.10031492060453145,
+          "future_seed_scale": 1.0,
+          "loss": 5.189220428466797,
+          "output_rms": 2.268268585205078,
+          "output_sha256": "3e07b36a86a850f9007883b8563ca4867c881532941fdcbf846b8bc663a4df24",
+          "parameter_count": 4866548,
+          "runtime": {
+            "backend_dispatch_disabled": true,
+            "conv_backend": "triton",
+            "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+            "layers": [
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 0
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 1
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 2
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 3
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 4
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 5
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 6
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 7
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 8
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 9
+              }
+            ],
+            "strict": true
+          }
+        },
+        "without_future": {
+          "backbone_grad_norm": 5.234434621686153,
+          "fs_gate_mean": 0.0,
+          "fs_state_norm": 0.0,
+          "future_seed_grad_names": [],
+          "future_seed_grad_norm": 0.0,
+          "future_seed_scale": 0.0,
+          "loss": 6.205896377563477,
+          "output_rms": 2.475114107131958,
+          "output_sha256": "a461e22d342ee39d75e9e6b533fc219112896341cc8ee29b0e1e01fb15c13643",
+          "parameter_count": 4866548,
+          "runtime": {
+            "backend_dispatch_disabled": true,
+            "conv_backend": "triton",
+            "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+            "layers": [
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 0
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 1
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 2
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 3
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 4
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 5
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 6
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 7
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 8
+              },
+              {
+                "class": "fla.layers.gated_deltanet.GatedDeltaNet",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 9
+              }
+            ],
+            "strict": true
+          }
+        }
+      },
+      "gdn2": {
+        "functional_checkpoint": "/huyang2/double-loop/models/sudoku-backbone-gdn2-s500-sharedinit-20260724T154020Z-6e51f06/checkpoints/train_state_step000500.pt",
+        "functional_checkpoint_sha256": "b73ca079602797a77096dcbf6c80c435a8e52b8c089903bb0029c02f496e3bbe",
+        "functional_parameter_fingerprint": "aaf3e047483c63b8b9aec0da8fbed5cbd488f440eea1b3ea7d6fa199056cec28",
+        "identical_functional_checkpoint_tensors": true,
+        "identical_initial_parameter_tensors": true,
+        "initial_parameter_fingerprint": "cbb639f87140fc5c73f519a24d46e8523c2a31319255f15bafbed55d44c4d39e",
+        "output_rms_delta": 1.6043401956558228,
+        "parameter_tensor_count": 247,
+        "status": "PASS",
+        "with_future": {
+          "backbone_grad_norm": 6.226064520436545,
+          "fs_gate_mean": 0.49742186069488525,
+          "fs_state_norm": 15.917500495910645,
+          "future_seed_grad_names": [
+            "reasoner.blocks.1.future_seed_logit",
+            "reasoner.blocks.2.future_seed_logit",
+            "reasoner.blocks.3.future_seed_logit",
+            "reasoner.blocks.4.future_seed_logit",
+            "reasoner.blocks.5.future_seed_logit",
+            "reasoner.blocks.6.future_seed_logit",
+            "reasoner.blocks.7.future_seed_logit",
+            "reasoner.blocks.8.future_seed_logit",
+            "reasoner.blocks.9.future_seed_logit"
+          ],
+          "future_seed_grad_norm": 0.05111439465460214,
+          "future_seed_scale": 1.0,
+          "loss": 5.392067909240723,
+          "output_rms": 2.4447648525238037,
+          "output_sha256": "f132514e85880add4609ef18144a7a60bd853253e359d68e28b6ba3f92c68a61",
+          "parameter_count": 5461688,
+          "runtime": {
+            "backend_dispatch_disabled": true,
+            "conv_backend": "triton",
+            "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+            "layers": [
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 0
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 1
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 2
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 3
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 4
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 5
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 6
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 7
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 8
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 9
+              }
+            ],
+            "strict": true
+          }
+        },
+        "without_future": {
+          "backbone_grad_norm": 5.90576431756714,
+          "fs_gate_mean": 0.0,
+          "fs_state_norm": 0.0,
+          "future_seed_grad_names": [],
+          "future_seed_grad_norm": 0.0,
+          "future_seed_scale": 0.0,
+          "loss": 6.300514221191406,
+          "output_rms": 2.449598789215088,
+          "output_sha256": "858d478eb3bf02f7382c09d36e43371c596f01ab2fa2ce26d4329965a079252b",
+          "parameter_count": 5461688,
+          "runtime": {
+            "backend_dispatch_disabled": true,
+            "conv_backend": "triton",
+            "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+            "layers": [
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 0
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 1
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 2
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 3
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 4
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 5
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 6
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 7
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 8
+              },
+              {
+                "class": "fla.layers.gdn2.GatedDeltaNet2",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 9
+              }
+            ],
+            "strict": true
+          }
+        }
+      },
+      "kda": {
+        "functional_checkpoint": "/huyang2/double-loop/models/sudoku-backbone-kda-s500-sharedinit-20260724T154020Z-6e51f06/checkpoints/train_state_step000500.pt",
+        "functional_checkpoint_sha256": "38d0c7701eb927d1118b2d1516dae7a69bd5e302fbfa0f4a15c435faf7c75dff",
+        "functional_parameter_fingerprint": "112d371f2614d573199c6848f3c3692f36f5bf85a67b23379098fd3f9e454653",
+        "identical_functional_checkpoint_tensors": true,
+        "identical_initial_parameter_tensors": true,
+        "initial_parameter_fingerprint": "498ce38de24a61f29b4e4c823816021171f7ae66786834efcb5d39a7cdcf0a09",
+        "output_rms_delta": 1.0495717525482178,
+        "parameter_tensor_count": 237,
+        "status": "PASS",
+        "with_future": {
+          "backbone_grad_norm": 7.022160041232093,
+          "fs_gate_mean": 0.49392807483673096,
+          "fs_state_norm": 15.80569839477539,
+          "future_seed_grad_names": [
+            "reasoner.blocks.1.future_seed_logit",
+            "reasoner.blocks.2.future_seed_logit",
+            "reasoner.blocks.3.future_seed_logit",
+            "reasoner.blocks.4.future_seed_logit",
+            "reasoner.blocks.5.future_seed_logit",
+            "reasoner.blocks.6.future_seed_logit",
+            "reasoner.blocks.7.future_seed_logit",
+            "reasoner.blocks.8.future_seed_logit",
+            "reasoner.blocks.9.future_seed_logit"
+          ],
+          "future_seed_grad_norm": 0.043177998097068675,
+          "future_seed_scale": 1.0,
+          "loss": 6.290865898132324,
+          "output_rms": 2.571133852005005,
+          "output_sha256": "9bcc2aa3905efcfd75dd59d424319561ef56256f40f953e87cc568ff7f0cc8c8",
+          "parameter_count": 4735928,
+          "runtime": {
+            "backend_dispatch_disabled": true,
+            "conv_backend": "triton",
+            "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+            "layers": [
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 0
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 1
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 2
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 3
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 4
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 5
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 6
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 7
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 8
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 9
+              }
+            ],
+            "strict": true
+          }
+        },
+        "without_future": {
+          "backbone_grad_norm": 5.729539246069024,
+          "fs_gate_mean": 0.0,
+          "fs_state_norm": 0.0,
+          "future_seed_grad_names": [],
+          "future_seed_grad_norm": 0.0,
+          "future_seed_scale": 0.0,
+          "loss": 6.048437118530273,
+          "output_rms": 2.3251688480377197,
+          "output_sha256": "de8654ed025a8da45319ff5550edb867f9bcb297a6358fa9717eb39d17f0dbd9",
+          "parameter_count": 4735928,
+          "runtime": {
+            "backend_dispatch_disabled": true,
+            "conv_backend": "triton",
+            "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+            "layers": [
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 0
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 1
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 2
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 3
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 4
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 5
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 6
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 7
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 8
+              },
+              {
+                "class": "fla.layers.kda.KimiDeltaAttention",
+                "conv_backends": {
+                  "k_conv1d": "triton",
+                  "q_conv1d": "triton",
+                  "v_conv1d": "triton"
+                },
+                "layer": 9
+              }
+            ],
+            "strict": true
+          }
+        }
+      },
+      "rwkv": {
+        "functional_checkpoint": "/huyang2/double-loop/models/sudoku-backbone-rwkv-s500-sharedinit-20260724T154020Z-6e51f06/checkpoints/train_state_step000500.pt",
+        "functional_checkpoint_sha256": "45da5c1acb1296be07a575740a18a7e4f0b0d2ea668199fd33bdee082b19bdaa",
+        "functional_parameter_fingerprint": "886166c367fce3fff1db01da5af8475b0c6db6228230888e09da989e6c914b89",
+        "identical_functional_checkpoint_tensors": true,
+        "identical_initial_parameter_tensors": true,
+        "initial_parameter_fingerprint": "60b11c06df51fd7470544a9db82bebdeee9241df322931a8a49516e72befae8e",
+        "output_rms_delta": 0.9918799996376038,
+        "parameter_tensor_count": 337,
+        "status": "PASS",
+        "with_future": {
+          "backbone_grad_norm": 6.575187972743103,
+          "fs_gate_mean": 0.5181711912155151,
+          "fs_state_norm": 16.581478118896484,
+          "future_seed_grad_names": [
+            "reasoner.blocks.1.future_seed_logit",
+            "reasoner.blocks.2.future_seed_logit",
+            "reasoner.blocks.3.future_seed_logit",
+            "reasoner.blocks.4.future_seed_logit",
+            "reasoner.blocks.5.future_seed_logit",
+            "reasoner.blocks.6.future_seed_logit",
+            "reasoner.blocks.7.future_seed_logit",
+            "reasoner.blocks.8.future_seed_logit",
+            "reasoner.blocks.9.future_seed_logit"
+          ],
+          "future_seed_grad_norm": 0.08608573027618886,
+          "future_seed_scale": 1.0,
+          "loss": 5.762619972229004,
+          "output_rms": 2.2843847274780273,
+          "output_sha256": "85638181c9f36c92d09edca360ae17c165230a20f36069727d87457e88e7696e",
+          "parameter_count": 5092668,
+          "runtime": {
+            "implementation": "official_rwkv7_timemix_with_explicit_state_io",
+            "kernel": "statepassing",
+            "official_kernel_blob": "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905",
+            "official_source_blob": "b4d167fedead2655d253c55eb47b65f00e7193d2",
+            "official_source_commit": "952102498e9ed367ea0a59ee64106916d474d30f",
+            "statepassing_cuda_sha256": "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
+          }
+        },
+        "without_future": {
+          "backbone_grad_norm": 5.993014254205776,
+          "fs_gate_mean": 0.0,
+          "fs_state_norm": 0.0,
+          "future_seed_grad_names": [],
+          "future_seed_grad_norm": 0.0,
+          "future_seed_scale": 0.0,
+          "loss": 5.199106216430664,
+          "output_rms": 2.0286877155303955,
+          "output_sha256": "461bdb84b1edcb4bcbe64f8ad2c4e5eb0a8d09f9252b3c88453c51af4d15d154",
+          "parameter_count": 5092668,
+          "runtime": {
+            "implementation": "official_rwkv7_timemix_with_explicit_state_io",
+            "kernel": "statepassing",
+            "official_kernel_blob": "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905",
+            "official_source_blob": "b4d167fedead2655d253c55eb47b65f00e7193d2",
+            "official_source_commit": "952102498e9ed367ea0a59ee64106916d474d30f",
+            "statepassing_cuda_sha256": "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
+          }
+        }
+      }
+    },
+    "cuda_visible_devices": "0",
+    "definition": "FutureSeed on/off constructors use byte-identical initial parameters. The functional check loads the same accepted step-500 FutureSeed checkpoint into both arms; only future_seed_scale changes recurrent initial-state injection.",
+    "device": "NVIDIA A800-SXM4-80GB",
+    "source_dirty": false,
+    "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+    "status": "PASS"
+  },
+  "data_identity": {
+    "all_files_predate_futureseed_runs": true,
+    "mtimes": {
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__inputs.npy": "2026-06-21 04:57:44.351618607 +0000",
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__labels.npy": "2026-06-21 04:58:07.386487477 +0000",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__inputs.npy": "2026-07-11 15:06:38.593362462 +0000",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__labels.npy": "2026-07-11 15:06:39.003792050 +0000"
+    },
+    "sha256": {
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__inputs.npy": "cbc2ab9f1743d79da9c0c26273460140bf542a5fb3229cfdd80575615163bcd5",
+      "/huyang2/double-loop/data/sudoku-extreme-full/test/all__labels.npy": "3d0bb8e73ecc5681675803c1cb518ebb4e771dac93a6741256a7a85ab8e29c2b",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__inputs.npy": "979f0f27411dfde97b725082cd29da03bea7c3b1c6b2bd2b15bfe95b76549cbc",
+      "/huyang2/double-loop/data/sudoku-extreme-full/train/all__labels.npy": "84e8a40dbb12d032eb9eba601c378d8388ea949430e07c00e80bc0947a59e48a"
+    },
+    "status": "PASS",
+    "test_realpath": "/huyang2/double-loop/official_eqr_sudoku_repro_20260623/data/sudoku-extreme-1k-aug-1000/test"
+  },
+  "decision": {
+    "b46_50_loop5_exact_delta": {
+      "gdn": 0.36328125,
+      "gdn2": 0.796875,
+      "kda": 0.646484375,
+      "rwkv": 0.728515625
+    },
+    "explanation": "FutureSeed improves 46-50-blank full-board exact by at least 10 points on 4 causal carriers (rwkv, gdn, gdn2, kda). The cross-carrier causal gate passes.",
+    "strong_carriers": [
+      "rwkv",
+      "gdn",
+      "gdn2",
+      "kda"
+    ],
+    "success_threshold": "at least two carriers with b46-50 loop5 exact delta >= +0.10",
+    "verdict": "SUPPORTED"
+  },
+  "fairness_gate": {
+    "cuda_backward": "PASS",
+    "data_files_predate_futureseed_runs": "PASS",
+    "futureseed_onoff_initialization": "PASS",
+    "gpu1_device": "PASS",
+    "official_chunk_backward": "PASS",
+    "official_data_sha256": "PASS",
+    "official_fla_source": "PASS",
+    "official_rwkv7_source_and_cuda": "PASS",
+    "shared_shell_initialization": "PASS",
+    "silent_fallback": "FORBIDDEN",
+    "source_snapshot_within_suite": "PASS",
+    "status": "PASS",
+    "torch_reference_alignment": "PASS"
+  },
+  "generated_at_utc": "2026-07-26T06:11:42.589991+00:00",
+  "intervention": {
+    "future_seed_scale": {
+      "with": 1.0,
+      "without": 0.0
+    }
+  },
+  "paired_validations": {
+    "gdn": {
+      "allowed_differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "fs_loop5_trace": {
+        "fs_gate_mean": 0.48752281069755554,
+        "fs_raw_rms_mean": 0.1571127325296402,
+        "fs_state_norm": 15.600729942321777
+      },
+      "fs_result_sha256": "92061501401658e5b69ab813c7c9b1bb1a51a355b6729a4ecd792b9d5ff2e21b",
+      "fs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
+      },
+      "nofs_loop5_trace": {
+        "fs_gate_mean": 0.0,
+        "fs_raw_rms_mean": 0.0,
+        "fs_state_norm": 0.0
+      },
+      "nofs_result_sha256": "e1746aa7831eba9260921efb8362a8aa496ca79fb63679457f029bd3e00fae8e",
+      "nofs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "6044af8706884fe919118fa8a68b966acd031915c17d94bcd01488047c6a0d11"
+      },
+      "parameter_count": 4866548,
+      "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+      "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+      "status": "PASS"
+    },
+    "gdn2": {
+      "allowed_differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "fs_loop5_trace": {
+        "fs_gate_mean": 0.49742186069488525,
+        "fs_raw_rms_mean": 0.37246614694595337,
+        "fs_state_norm": 15.917500495910645
+      },
+      "fs_result_sha256": "679a6c7e495067fc31dc2a3fb1db8b380e8ca9cdf500f999af23521773da66db",
+      "fs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-gdn2-s500-sharedinit-20260724T154020Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
+      },
+      "nofs_loop5_trace": {
+        "fs_gate_mean": 0.0,
+        "fs_raw_rms_mean": 0.0,
+        "fs_state_norm": 0.0
+      },
+      "nofs_result_sha256": "2c151ec20c94a9ef482672411ceac90775df4b88c0aabd8c52342f0e05a60d46",
+      "nofs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-gdn2-nofs-s500-sharedinit-20260726T022718Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "6044af8706884fe919118fa8a68b966acd031915c17d94bcd01488047c6a0d11"
+      },
+      "parameter_count": 5461688,
+      "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+      "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+      "status": "PASS"
+    },
+    "kda": {
+      "allowed_differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "fs_loop5_trace": {
+        "fs_gate_mean": 0.49392807483673096,
+        "fs_raw_rms_mean": 0.21913006901741028,
+        "fs_state_norm": 15.80569839477539
+      },
+      "fs_result_sha256": "a273664992868b86e795389dbc3e588a01c5dd2ce6e8fa6a144530e79dbc4057",
+      "fs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-kda-s500-sharedinit-20260724T154020Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
+      },
+      "nofs_loop5_trace": {
+        "fs_gate_mean": 0.0,
+        "fs_raw_rms_mean": 0.0,
+        "fs_state_norm": 0.0
+      },
+      "nofs_result_sha256": "6b58a152e88da38ed4b8a4d57e25089398042ce37d2b87d6d00f8022c7047372",
+      "nofs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-kda-nofs-s500-sharedinit-20260726T022718Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "6044af8706884fe919118fa8a68b966acd031915c17d94bcd01488047c6a0d11"
+      },
+      "parameter_count": 4735928,
+      "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+      "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+      "status": "PASS"
+    },
+    "rwkv": {
+      "allowed_differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "differing_args": [
+        "future_seed_scale",
+        "out_dir",
+        "train_checkpoint_dir"
+      ],
+      "fs_loop5_trace": {
+        "fs_gate_mean": 0.5181711912155151,
+        "fs_raw_rms_mean": 0.759943425655365,
+        "fs_state_norm": 16.58147621154785
+      },
+      "fs_result_sha256": "1d5d5ec519cc99064b16fb40da1ac95a4112fb10378b979f7b40069534fd4915",
+      "fs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-rwkv-s500-sharedinit-20260724T154020Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "432f1cffc19dfdec77e8188f1ab5668c3422e2e1b883bb6a2c2a3c9f49315a6b"
+      },
+      "nofs_loop5_trace": {
+        "fs_gate_mean": 0.0,
+        "fs_raw_rms_mean": 0.0,
+        "fs_state_norm": 0.0
+      },
+      "nofs_result_sha256": "1fbbe76e07e26ea96080337cd2b9dadd0bcfd3b152908e668284030ef67ad0f9",
+      "nofs_source_snapshot": {
+        "git_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+        "remote_path": "/huyang2/double-loop/runs/sudoku-backbone-rwkv-nofs-s500-sharedinit-20260726T022718Z-6e51f06/source_snapshot.tar.gz",
+        "sha256": "6044af8706884fe919118fa8a68b966acd031915c17d94bcd01488047c6a0d11"
+      },
+      "parameter_count": 5092668,
+      "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5",
+      "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18",
+      "status": "PASS"
+    }
+  },
+  "pairs": [
+    {
+      "case": {
+        "fs_html": "embedded_cases/rwkv-fs.html",
+        "fs_wrong_by_loop": {
+          "loop1": 24,
+          "loop2": 24,
+          "loop3": 24,
+          "loop4": 23,
+          "loop5": 23
+        },
+        "nofs_html": "embedded_cases/rwkv-nofs.html",
+        "nofs_wrong_by_loop": {
+          "loop1": 40,
+          "loop2": 41,
+          "loop3": 41,
+          "loop4": 41,
+          "loop5": 41
+        },
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5"
+      },
+      "case_banks": {
+        "b46_50": {
+          "fs": "../sudoku-backbone-rwkv-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b46_50/index.html",
+          "nofs": "../sudoku-backbone-rwkv-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b46_50/index.html"
+        },
+        "b51_55": {
+          "fs": "../sudoku-backbone-rwkv-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b51_55/index.html",
+          "nofs": "../sudoku-backbone-rwkv-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b51_55/index.html"
+        },
+        "b56_64": {
+          "fs": "../sudoku-backbone-rwkv-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b56_64/index.html",
+          "nofs": "../sudoku-backbone-rwkv-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b56_64/index.html"
+        }
+      },
+      "color": "#75418a",
+      "curve": {
+        "fs": [
+          {
+            "ce": 1.0092,
+            "step": 100
+          },
+          {
+            "ce": 1.1379,
+            "step": 200
+          },
+          {
+            "ce": 1.0441,
+            "step": 300
+          },
+          {
+            "ce": 1.0188,
+            "step": 400
+          },
+          {
+            "ce": 1.019,
+            "step": 500
+          }
+        ],
+        "nofs": [
+          {
+            "ce": 1.3936,
+            "step": 100
+          },
+          {
+            "ce": 1.6519,
+            "step": 200
+          },
+          {
+            "ce": 1.6372,
+            "step": 300
+          },
+          {
+            "ce": 1.6408,
+            "step": 400
+          },
+          {
+            "ce": 1.6274,
+            "step": 500
+          }
+        ]
+      },
+      "fs_run_name": "sudoku-backbone-rwkv-s500-sharedinit-20260724T154020Z-6e51f06",
+      "label": "RWKV7 TimeMix",
+      "mixed": {
+        "fs": [
+          {
+            "blank_acc": 0.4741092920303345,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.5181711912155151,
+              "fs_raw_rms_mean": 0.8081456422805786,
+              "fs_state_norm": 16.58147621154785
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.49673089385032654,
+            "exact": 0.01953125,
+            "future_seed": {
+              "fs_gate_mean": 0.5181711912155151,
+              "fs_raw_rms_mean": 0.7679683566093445,
+              "fs_state_norm": 16.58147621154785
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.49819937348365784,
+            "exact": 0.01953125,
+            "future_seed": {
+              "fs_gate_mean": 0.5181711912155151,
+              "fs_raw_rms_mean": 0.7615686655044556,
+              "fs_state_norm": 16.58147621154785
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.4977448284626007,
+            "exact": 0.01953125,
+            "future_seed": {
+              "fs_gate_mean": 0.5181711912155151,
+              "fs_raw_rms_mean": 0.7602764368057251,
+              "fs_state_norm": 16.58147621154785
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.4979546070098877,
+            "exact": 0.01953125,
+            "future_seed": {
+              "fs_gate_mean": 0.5181711912155151,
+              "fs_raw_rms_mean": 0.759943425655365,
+              "fs_state_norm": 16.58147621154785
+            },
+            "loop": 5
+          }
+        ],
+        "fs_loop_gain_exact": 0.01953125,
+        "loop5_blank_delta": 0.23506170511245728,
+        "loop5_exact_delta": 0.01953125,
+        "nofs": [
+          {
+            "blank_acc": 0.25981608033180237,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.2618439793586731,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.26268312335014343,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.26306772232055664,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.2628929018974304,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 5
+          }
+        ],
+        "nofs_loop_gain_exact": 0.0
+      },
+      "nofs_run_name": "sudoku-backbone-rwkv-nofs-s500-sharedinit-20260726T022718Z-6e51f06",
+      "parameter_count": 5092668,
+      "peak_allocated_mib": {
+        "fs": 11040.6142578125,
+        "nofs": 10740.93603515625
+      },
+      "public_name": "rwkv",
+      "ranges": {
+        "b46_50": {
+          "fs": [
+            {
+              "blank_acc": 0.9346207976341248,
+              "exact": 0.076171875,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.8241294026374817,
+                "fs_state_norm": 16.581478118896484
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.9879248738288879,
+              "exact": 0.67578125,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.8166220784187317,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.9895376563072205,
+              "exact": 0.708984375,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.8195590972900391,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.9902406930923462,
+              "exact": 0.724609375,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.8209740519523621,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.9903233647346497,
+              "exact": 0.728515625,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.8214219212532043,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.6077660918235779,
+          "loop5_exact_delta": 0.728515625,
+          "nofs": [
+            {
+              "blank_acc": 0.38549333810806274,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.3846249282360077,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.3840046226978302,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.38297080993652344,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.3825572729110718,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b51_55": {
+          "fs": [
+            {
+              "blank_acc": 0.4998388886451721,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.8093025088310242,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.518419086933136,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7724040150642395,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.5209966897964478,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7666440606117249,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.5227508544921875,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7655037641525269,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.522571861743927,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7652117609977722,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.260731041431427,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.26083844900131226,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.26083844900131226,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.2613038420677185,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.26159024238586426,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2618408203125,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b56_64": {
+          "fs": [
+            {
+              "blank_acc": 0.4496508836746216,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.806323766708374,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.4670386016368866,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7626316547393799,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.4678943157196045,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7552173733711243,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.4675862491130829,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7536495327949524,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.4673808813095093,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.5181711912155151,
+                "fs_raw_rms_mean": 0.7532374262809753,
+                "fs_state_norm": 16.58147621154785
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.2112540900707245,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.25533953309059143,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.2560240924358368,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.25509995222091675,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.25595563650131226,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2561267912387848,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        }
+      },
+      "train_ce": {
+        "delta": -0.6083672046661377,
+        "fs": 1.0190002024173737,
+        "nofs": 1.6273674070835114
+      },
+      "train_sec_per_step": {
+        "fs": 4.041863831996918,
+        "nofs": 3.696766686916351,
+        "overhead_frac": 0.09335107522526087
+      }
+    },
+    {
+      "case": {
+        "fs_html": "embedded_cases/gdn-fs.html",
+        "fs_wrong_by_loop": {
+          "loop1": 23,
+          "loop2": 21,
+          "loop3": 17,
+          "loop4": 17,
+          "loop5": 17
+        },
+        "nofs_html": "embedded_cases/gdn-nofs.html",
+        "nofs_wrong_by_loop": {
+          "loop1": 42,
+          "loop2": 42,
+          "loop3": 40,
+          "loop4": 40,
+          "loop5": 40
+        },
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5"
+      },
+      "case_banks": {
+        "b46_50": {
+          "fs": "../sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b46_50/index.html",
+          "nofs": "../sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b46_50/index.html"
+        },
+        "b51_55": {
+          "fs": "../sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b51_55/index.html",
+          "nofs": "../sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b51_55/index.html"
+        },
+        "b56_64": {
+          "fs": "../sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b56_64/index.html",
+          "nofs": "../sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b56_64/index.html"
+        }
+      },
+      "color": "#16705a",
+      "curve": {
+        "fs": [
+          {
+            "ce": 1.6202,
+            "step": 100
+          },
+          {
+            "ce": 1.4803,
+            "step": 200
+          },
+          {
+            "ce": 1.1469,
+            "step": 300
+          },
+          {
+            "ce": 1.0694,
+            "step": 400
+          },
+          {
+            "ce": 1.0509,
+            "step": 500
+          }
+        ],
+        "nofs": [
+          {
+            "ce": 1.6018,
+            "step": 100
+          },
+          {
+            "ce": 1.6631,
+            "step": 200
+          },
+          {
+            "ce": 1.6328,
+            "step": 300
+          },
+          {
+            "ce": 1.6398,
+            "step": 400
+          },
+          {
+            "ce": 1.6258,
+            "step": 500
+          }
+        ]
+      },
+      "fs_run_name": "sudoku-backbone-gdn-s500-sharedinit-20260724T154020Z-6e51f06",
+      "label": "GDN",
+      "mixed": {
+        "fs": [
+          {
+            "blank_acc": 0.47508829832077026,
+            "exact": 0.001953125,
+            "future_seed": {
+              "fs_gate_mean": 0.48752281069755554,
+              "fs_raw_rms_mean": 0.16424399614334106,
+              "fs_state_norm": 15.600729942321777
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.48732560873031616,
+            "exact": 0.005859375,
+            "future_seed": {
+              "fs_gate_mean": 0.48752281069755554,
+              "fs_raw_rms_mean": 0.15889684855937958,
+              "fs_state_norm": 15.600729942321777
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.4879899322986603,
+            "exact": 0.005859375,
+            "future_seed": {
+              "fs_gate_mean": 0.48752281069755554,
+              "fs_raw_rms_mean": 0.1575804352760315,
+              "fs_state_norm": 15.600729942321777
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.4888290762901306,
+            "exact": 0.005859375,
+            "future_seed": {
+              "fs_gate_mean": 0.48752281069755554,
+              "fs_raw_rms_mean": 0.1572142392396927,
+              "fs_state_norm": 15.600729942321777
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.48868921399116516,
+            "exact": 0.005859375,
+            "future_seed": {
+              "fs_gate_mean": 0.48752281069755554,
+              "fs_raw_rms_mean": 0.1571127325296402,
+              "fs_state_norm": 15.600729942321777
+            },
+            "loop": 5
+          }
+        ],
+        "fs_loop_gain_exact": 0.00390625,
+        "loop5_blank_delta": 0.22908291220664978,
+        "loop5_exact_delta": 0.005859375,
+        "nofs": [
+          {
+            "blank_acc": 0.2614244222640991,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.2608300447463989,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.260760098695755,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.25964125990867615,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.2596063017845154,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 5
+          }
+        ],
+        "nofs_loop_gain_exact": 0.0
+      },
+      "nofs_run_name": "sudoku-backbone-gdn-nofs-s500-sharedinit-20260726T022718Z-6e51f06",
+      "parameter_count": 4866548,
+      "peak_allocated_mib": {
+        "fs": 6129.7451171875,
+        "nofs": 5786.607421875
+      },
+      "public_name": "gdn",
+      "ranges": {
+        "b46_50": {
+          "fs": [
+            {
+              "blank_acc": 0.9421470761299133,
+              "exact": 0.1171875,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.1624344438314438,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.9652634263038635,
+              "exact": 0.3046875,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.1568364053964615,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.9685302972793579,
+              "exact": 0.345703125,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15543246269226074,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.9698949456214905,
+              "exact": 0.359375,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15504451096057892,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.9701430797576904,
+              "exact": 0.36328125,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.1549370437860489,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.5876685082912445,
+          "loop5_exact_delta": 0.36328125,
+          "nofs": [
+            {
+              "blank_acc": 0.38425275683403015,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.3821437358856201,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.38268133997917175,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.3822678029537201,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.3824745714664459,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b51_55": {
+          "fs": [
+            {
+              "blank_acc": 0.5026313066482544,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.16381938755512238,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.5131922960281372,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15838190913200378,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.5143736600875854,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15704819560050964,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.5146958827972412,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.1566779613494873,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.514982283115387,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15657496452331543,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.24913185834884644,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.2644900381565094,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.26606523990631104,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.266029417514801,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.266029417514801,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2658504247665405,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b56_64": {
+          "fs": [
+            {
+              "blank_acc": 0.44701534509658813,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.16449859738349915,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.45396357774734497,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15924815833568573,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.4541347324848175,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15795806050300598,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.4539293646812439,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.1575992852449417,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.45410048961639404,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.48752281069755554,
+                "fs_raw_rms_mean": 0.15749947726726532,
+                "fs_state_norm": 15.600729942321777
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.20132803916931152,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.25314897298812866,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.25369659066200256,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.2524644136428833,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.2530805170536041,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2527724504470825,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        }
+      },
+      "train_ce": {
+        "delta": -0.5749411284923553,
+        "fs": 1.0508939027786255,
+        "nofs": 1.6258350312709808
+      },
+      "train_sec_per_step": {
+        "fs": 4.885758666992188,
+        "nofs": 4.558857091903686,
+        "overhead_frac": 0.07170691436436183
+      }
+    },
+    {
+      "case": {
+        "fs_html": "embedded_cases/gdn2-fs.html",
+        "fs_wrong_by_loop": {
+          "loop1": 21,
+          "loop2": 19,
+          "loop3": 20,
+          "loop4": 20,
+          "loop5": 20
+        },
+        "nofs_html": "embedded_cases/gdn2-nofs.html",
+        "nofs_wrong_by_loop": {
+          "loop1": 39,
+          "loop2": 38,
+          "loop3": 39,
+          "loop4": 39,
+          "loop5": 39
+        },
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5"
+      },
+      "case_banks": {
+        "b46_50": {
+          "fs": "../sudoku-backbone-gdn2-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b46_50/index.html",
+          "nofs": "../sudoku-backbone-gdn2-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b46_50/index.html"
+        },
+        "b51_55": {
+          "fs": "../sudoku-backbone-gdn2-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b51_55/index.html",
+          "nofs": "../sudoku-backbone-gdn2-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b51_55/index.html"
+        },
+        "b56_64": {
+          "fs": "../sudoku-backbone-gdn2-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b56_64/index.html",
+          "nofs": "../sudoku-backbone-gdn2-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b56_64/index.html"
+        }
+      },
+      "color": "#b34a3d",
+      "curve": {
+        "fs": [
+          {
+            "ce": 1.6517,
+            "step": 100
+          },
+          {
+            "ce": 1.3333,
+            "step": 200
+          },
+          {
+            "ce": 1.0914,
+            "step": 300
+          },
+          {
+            "ce": 1.0332,
+            "step": 400
+          },
+          {
+            "ce": 1.0062,
+            "step": 500
+          }
+        ],
+        "nofs": [
+          {
+            "ce": 1.5579,
+            "step": 100
+          },
+          {
+            "ce": 1.6498,
+            "step": 200
+          },
+          {
+            "ce": 1.633,
+            "step": 300
+          },
+          {
+            "ce": 1.6352,
+            "step": 400
+          },
+          {
+            "ce": 1.6227,
+            "step": 500
+          }
+        ]
+      },
+      "fs_run_name": "sudoku-backbone-gdn2-s500-sharedinit-20260724T154020Z-6e51f06",
+      "label": "GDN2",
+      "mixed": {
+        "fs": [
+          {
+            "blank_acc": 0.4885493516921997,
+            "exact": 0.013671875,
+            "future_seed": {
+              "fs_gate_mean": 0.49742186069488525,
+              "fs_raw_rms_mean": 0.40503641963005066,
+              "fs_state_norm": 15.917500495910645
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.5016258358955383,
+            "exact": 0.021484375,
+            "future_seed": {
+              "fs_gate_mean": 0.49742186069488525,
+              "fs_raw_rms_mean": 0.3821498453617096,
+              "fs_state_norm": 15.917500495910645
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.5009265542030334,
+            "exact": 0.021484375,
+            "future_seed": {
+              "fs_gate_mean": 0.49742186069488525,
+              "fs_raw_rms_mean": 0.3749717175960541,
+              "fs_state_norm": 15.917500495910645
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.5012062788009644,
+            "exact": 0.0234375,
+            "future_seed": {
+              "fs_gate_mean": 0.49742186069488525,
+              "fs_raw_rms_mean": 0.3730100393295288,
+              "fs_state_norm": 15.917500495910645
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.501136302947998,
+            "exact": 0.0234375,
+            "future_seed": {
+              "fs_gate_mean": 0.49742186069488525,
+              "fs_raw_rms_mean": 0.37246614694595337,
+              "fs_state_norm": 15.917500495910645
+            },
+            "loop": 5
+          }
+        ],
+        "fs_loop_gain_exact": 0.009765625,
+        "loop5_blank_delta": 0.235725998878479,
+        "loop5_exact_delta": 0.0234375,
+        "nofs": [
+          {
+            "blank_acc": 0.2629278600215912,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.2656550407409668,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.2653753459453583,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.2658648192882538,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.26541030406951904,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 5
+          }
+        ],
+        "nofs_loop_gain_exact": 0.0
+      },
+      "nofs_run_name": "sudoku-backbone-gdn2-nofs-s500-sharedinit-20260726T022718Z-6e51f06",
+      "parameter_count": 5461688,
+      "peak_allocated_mib": {
+        "fs": 8024.95068359375,
+        "nofs": 7681.81298828125
+      },
+      "public_name": "gdn2",
+      "ranges": {
+        "b46_50": {
+          "fs": [
+            {
+              "blank_acc": 0.9739062190055847,
+              "exact": 0.416015625,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.3988547921180725,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.9899511933326721,
+              "exact": 0.73046875,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.37574610114097595,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.9916467070579529,
+              "exact": 0.771484375,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.368485689163208,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.9921842813491821,
+              "exact": 0.791015625,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.3664955496788025,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.992391049861908,
+              "exact": 0.796875,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.36594173312187195,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.5985443890094757,
+          "loop5_exact_delta": 0.796875,
+          "nofs": [
+            {
+              "blank_acc": 0.395004540681839,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.3934744894504547,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.3940534293651581,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.39401206374168396,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.39384666085243225,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b51_55": {
+          "fs": [
+            {
+              "blank_acc": 0.5095764994621277,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.40294966101646423,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.5251136422157288,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.37982916831970215,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.5249704718589783,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.3726957440376282,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.5254000425338745,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.3707495927810669,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.5259012579917908,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.37021276354789734,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.25851142406463623,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.2693230211734772,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.2687860131263733,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.26742562651634216,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.2674972116947174,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.26738983392715454,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b56_64": {
+          "fs": [
+            {
+              "blank_acc": 0.46204134821891785,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.40635210275650024,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.47265195846557617,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.38385167717933655,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.4724123775959015,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.37670597434043884,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.47234392166137695,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.3747568726539612,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.4722070097923279,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49742186069488525,
+                "fs_raw_rms_mean": 0.3742128312587738,
+                "fs_state_norm": 15.917500495910645
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.2153272032737732,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.257222056388855,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.25640061497688293,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.2560240924358368,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.25640061497688293,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2568798065185547,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        }
+      },
+      "train_ce": {
+        "delta": -0.6164804697036743,
+        "fs": 1.0062484443187714,
+        "nofs": 1.6227289140224457
+      },
+      "train_sec_per_step": {
+        "fs": 5.853801689147949,
+        "nofs": 4.993056217670441,
+        "overhead_frac": 0.1723884999394414
+      }
+    },
+    {
+      "case": {
+        "fs_html": "embedded_cases/kda-fs.html",
+        "fs_wrong_by_loop": {
+          "loop1": 28,
+          "loop2": 23,
+          "loop3": 24,
+          "loop4": 24,
+          "loop5": 24
+        },
+        "nofs_html": "embedded_cases/kda-nofs.html",
+        "nofs_wrong_by_loop": {
+          "loop1": 43,
+          "loop2": 41,
+          "loop3": 41,
+          "loop4": 40,
+          "loop5": 40
+        },
+        "puzzle_sha256": "b65514a35fb363f26847cc165b76d08b41063210d7d91de00aaf852977128aa5"
+      },
+      "case_banks": {
+        "b46_50": {
+          "fs": "../sudoku-backbone-kda-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b46_50/index.html",
+          "nofs": "../sudoku-backbone-kda-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b46_50/index.html"
+        },
+        "b51_55": {
+          "fs": "../sudoku-backbone-kda-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b51_55/index.html",
+          "nofs": "../sudoku-backbone-kda-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b51_55/index.html"
+        },
+        "b56_64": {
+          "fs": "../sudoku-backbone-kda-s500-sharedinit-20260724T154020Z-6e51f06/output/case_bank/official_b56_64/index.html",
+          "nofs": "../sudoku-backbone-kda-nofs-s500-sharedinit-20260726T022718Z-6e51f06/output/case_bank/official_b56_64/index.html"
+        }
+      },
+      "color": "#286aa6",
+      "curve": {
+        "fs": [
+          {
+            "ce": 1.6411,
+            "step": 100
+          },
+          {
+            "ce": 1.3358,
+            "step": 200
+          },
+          {
+            "ce": 1.1019,
+            "step": 300
+          },
+          {
+            "ce": 1.037,
+            "step": 400
+          },
+          {
+            "ce": 1.0179,
+            "step": 500
+          }
+        ],
+        "nofs": [
+          {
+            "ce": 1.5275,
+            "step": 100
+          },
+          {
+            "ce": 1.6541,
+            "step": 200
+          },
+          {
+            "ce": 1.6334,
+            "step": 300
+          },
+          {
+            "ce": 1.6403,
+            "step": 400
+          },
+          {
+            "ce": 1.6266,
+            "step": 500
+          }
+        ]
+      },
+      "fs_run_name": "sudoku-backbone-kda-s500-sharedinit-20260724T154020Z-6e51f06",
+      "label": "KDA",
+      "mixed": {
+        "fs": [
+          {
+            "blank_acc": 0.4815915524959564,
+            "exact": 0.001953125,
+            "future_seed": {
+              "fs_gate_mean": 0.49392807483673096,
+              "fs_raw_rms_mean": 0.2401478886604309,
+              "fs_state_norm": 15.80569839477539
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.4999125897884369,
+            "exact": 0.015625,
+            "future_seed": {
+              "fs_gate_mean": 0.49392807483673096,
+              "fs_raw_rms_mean": 0.22500784695148468,
+              "fs_state_norm": 15.80569839477539
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.5007517337799072,
+            "exact": 0.017578125,
+            "future_seed": {
+              "fs_gate_mean": 0.49392807483673096,
+              "fs_raw_rms_mean": 0.2206430286169052,
+              "fs_state_norm": 15.80569839477539
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.5009265542030334,
+            "exact": 0.017578125,
+            "future_seed": {
+              "fs_gate_mean": 0.49392807483673096,
+              "fs_raw_rms_mean": 0.2194591611623764,
+              "fs_state_norm": 15.80569839477539
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.5012062788009644,
+            "exact": 0.017578125,
+            "future_seed": {
+              "fs_gate_mean": 0.49392807483673096,
+              "fs_raw_rms_mean": 0.21913006901741028,
+              "fs_state_norm": 15.80569839477539
+            },
+            "loop": 5
+          }
+        ],
+        "fs_loop_gain_exact": 0.015625,
+        "loop5_blank_delta": 0.240026593208313,
+        "loop5_exact_delta": 0.017578125,
+        "nofs": [
+          {
+            "blank_acc": 0.2611447274684906,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 1
+          },
+          {
+            "blank_acc": 0.26121464371681213,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 2
+          },
+          {
+            "blank_acc": 0.2608650028705597,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 3
+          },
+          {
+            "blank_acc": 0.26149433851242065,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 4
+          },
+          {
+            "blank_acc": 0.26117968559265137,
+            "exact": 0.0,
+            "future_seed": {
+              "fs_gate_mean": 0.0,
+              "fs_raw_rms_mean": 0.0,
+              "fs_state_norm": 0.0
+            },
+            "loop": 5
+          }
+        ],
+        "nofs_loop_gain_exact": 0.0
+      },
+      "nofs_run_name": "sudoku-backbone-kda-nofs-s500-sharedinit-20260726T022718Z-6e51f06",
+      "parameter_count": 4735928,
+      "peak_allocated_mib": {
+        "fs": 6608.44970703125,
+        "nofs": 6265.31201171875
+      },
+      "public_name": "kda",
+      "ranges": {
+        "b46_50": {
+          "fs": [
+            {
+              "blank_acc": 0.9467372298240662,
+              "exact": 0.138671875,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.23302467167377472,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.9818046689033508,
+              "exact": 0.572265625,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.2160118818283081,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.9848234057426453,
+              "exact": 0.634765625,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.21128495037555695,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.9851955771446228,
+              "exact": 0.64453125,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.2099788337945938,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.9854437112808228,
+              "exact": 0.646484375,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.20961180329322815,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.5992887318134308,
+          "loop5_exact_delta": 0.646484375,
+          "nofs": [
+            {
+              "blank_acc": 0.38884294033050537,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.38772639632225037,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.38689935207366943,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.38632041215896606,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.38615497946739197,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b51_55": {
+          "fs": [
+            {
+              "blank_acc": 0.5010560750961304,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.23902924358844757,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.5192782878875732,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.22347065806388855,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.521784245967865,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.21907445788383484,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.5217126607894897,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.21787956357002258,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.5217484831809998,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.21754728257656097,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.25364264845848083,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.26721081137657166,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.26738983392715454,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.26792681217193604,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.26774781942367554,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2681058347225189,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        },
+        "b56_64": {
+          "fs": [
+            {
+              "blank_acc": 0.45214951038360596,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.24098177254199982,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.4648822546005249,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.22630079090595245,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.46635404229164124,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.22201664745807648,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.46642249822616577,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.220858633518219,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.46635404229164124,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.49392807483673096,
+                "fs_raw_rms_mean": 0.2205343097448349,
+                "fs_state_norm": 15.80569839477539
+              },
+              "loop": 5
+            }
+          ],
+          "fs_earliest_loop_reaching_nofs_loop5": 1,
+          "loop5_blank_delta": 0.21067222952842712,
+          "loop5_exact_delta": 0.0,
+          "nofs": [
+            {
+              "blank_acc": 0.2554764449596405,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 1
+            },
+            {
+              "blank_acc": 0.25530532002449036,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 2
+            },
+            {
+              "blank_acc": 0.2558871805667877,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 3
+            },
+            {
+              "blank_acc": 0.25544223189353943,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 4
+            },
+            {
+              "blank_acc": 0.2556818127632141,
+              "exact": 0.0,
+              "future_seed": {
+                "fs_gate_mean": 0.0,
+                "fs_raw_rms_mean": 0.0,
+                "fs_state_norm": 0.0
+              },
+              "loop": 5
+            }
+          ]
+        }
+      },
+      "train_ce": {
+        "delta": -0.6087151765823364,
+        "fs": 1.0179340243339539,
+        "nofs": 1.6266492009162903
+      },
+      "train_sec_per_step": {
+        "fs": 5.580169060230255,
+        "nofs": 5.158153425216675,
+        "overhead_frac": 0.0818152544572388
+      }
+    }
+  ],
+  "plan_id": "P-BASELINE-005",
+  "source_sha": "6e51f067a18d936bda7f3d588b7b3f32625b2b18"
+}

@@ -11,15 +11,16 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-27 07:42 CST): `P-SCALE-037` passed the step6000 gate
-and resumed exact checkpoint SHA256 `23eaa434...` on GPU1. Train CE is
-`0.7974`. Primary official 51-55/56-60/61-64 loop5 exact is
+Current update (2026-07-27 09:31 CST): `P-SCALE-037` passed the step6000 gate
+and reached an exact step7100 lease boundary on GPU1. Step7100 train CE is
+`0.7770`. Primary step6000 official 51-55/56-60/61-64 loop5 exact is
 `0.1914/0.0605/0.0078`, up from `0.0098/0.0098/0.0000` at step3000. Mixed
 loop1->5 exact is `0.0234->0.1426`. Selected 61-64 cases reduce mean wrong
 cells `26.4->14.3->6.6->4.1` across loops 1/2/3/5, including one 64-blank
 board solved from `26` wrong cells. GDN2 now has a strong delayed scaling
 slope, but remains below the historical long-run D224 GDN frontier. Continue
-unchanged to the predeclared step9000 gate.
+unchanged from checkpoint SHA256 `952f3377...` to the predeclared step9000
+gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|

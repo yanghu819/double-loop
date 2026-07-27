@@ -397,3 +397,15 @@ run therefore continues unchanged to step 9000; no width, depth, learning-rate,
 loss, or seed branch is opened. The exact checkpoint is
 `train_state_step006000.pt`, SHA256
 `23eaa434720f931965b3057a725b4f1f5a3aa8030da76be2c18c214d6ed9fc11`.
+
+### Step-7100 lease rollover
+
+The unchanged stage-3 continuation reaches step 7100 with train CE `0.7770`.
+Before the GPU1 lease expires, the complete model, AdamW, scheduler, data RNG,
+and Python/NumPy/Torch RNG checkpoint is hashed and the exact launcher process
+group `2102` is stopped. The checkpoint is
+`train_state_step007100.pt`, size `72,233,438` bytes, SHA256
+`952f3377642748d3f378be010a4443b61823edb6b984f635ded962c82f4860f8`.
+GPU1 workload `b1fdabeb-aafd-48ac-86db-1e86d7cac72a` is pending allocation.
+Resume must use this exact checkpoint and keep every experiment variable
+unchanged.

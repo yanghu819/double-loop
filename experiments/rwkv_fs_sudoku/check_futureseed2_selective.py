@@ -50,8 +50,13 @@ def main() -> None:
         layer_idx=1,
     )
     baseline_gate = torch.sigmoid(base_logit)
-    if not torch.equal(identity_gate, baseline_gate):
+    expanded_baseline_gate = baseline_gate.expand_as(identity_gate)
+    if not torch.equal(identity_gate, expanded_baseline_gate):
         raise AssertionError("Zero-initialized FutureSeed2 gate is not exact FutureSeed1")
+    if not torch.equal(state * identity_gate, state * baseline_gate):
+        raise AssertionError(
+            "Zero-initialized FutureSeed2 seeded state is not exact FutureSeed1"
+        )
     if float(identity_diag["fs2_seed_relative_change"]) != 0.0:
         raise AssertionError("Zero-initialized selective gate reports nonzero seed change")
 

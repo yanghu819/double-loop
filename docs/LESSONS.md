@@ -1214,3 +1214,26 @@
   whether FS reaches a common quality target materially earlier or opens
   51-55 exact. That decision directly tests the cheap-future-context paper
   claim.
+
+## 2026-07-28 FutureSeed2 static state-entry selection
+
+- Preserve the accepted baseline when testing a new FutureSeed mechanism.
+  The selective gate was zero-initialized, bit-exact to FutureSeed1, and
+  changed only how the already-computed GDN2 state crosses a layer boundary.
+- A mechanism being alive is not evidence that it is useful. After 100 steps,
+  gate delta RMS was `0.00950` and the imported seed moved by `0.53%`, but hard
+  exact mean fell `0.2318 -> 0.2090`; the 61-64 range fell
+  `0.1973 -> 0.1387`.
+- The failure is concentrated in late recurrent correction. On the same
+  64-blank board `b0048`, FutureSeed1 changes wrong cells
+  `32 -> 12 -> 3 -> 0 -> 0`; the static selective gate changes
+  `36 -> 13 -> 6 -> 6 -> 5`. Another shared board remains solved by both, so
+  this is sample-dependent damage rather than global model collapse.
+- A globally shared `K x V` mask cannot reliably classify a state entry as
+  always useful or harmful. Any later selection hypothesis must be explicitly
+  content-dependent. Do not turn that observation into a gate-rank, scale,
+  seed, LR, loss, or continuation sweep.
+- The strict official-FLA contract remained intact:
+  `fla.layers.gdn2.GatedDeltaNet2`, `ChunkGDN2FunctionBackward`, Triton q/k/v
+  convolution, GPU1, clean detached SHA, exact checkpoint migration, and no
+  fallback. Keep the original GDN2+FutureSeed1 checkpoint as the strong line.

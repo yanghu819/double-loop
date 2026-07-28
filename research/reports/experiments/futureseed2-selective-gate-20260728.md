@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-FS2-002`
-- Status: pre-registered
+- Status: completed, hypothesis rejected
 - Date: `2026-07-28`
 - Machine: AIStation `GPU1` only
 - Branch: `codex/futureseed2-selective-gate-20260728`
@@ -101,17 +101,92 @@ static state-entry selection and does not authorize a dynamic-gate sweep.
 
 ## 6. Artifacts
 
-Pending.
+- CUDA selective-gate check:
+  `/huyang2/double-loop/artifacts/launch/futureseed2-selective-module-check-5914b2e.log`
+- Strict official-FLA preflight:
+  `/huyang2/double-loop/artifacts/launch/futureseed2-selective-fla-preflight-5914b2e.json`
+- Two-step full-stack smoke:
+  `/huyang2/double-loop/runs/futureseed2-selective-state-smoke2-20260728T1558Z-5914b2e`
+- Formal run:
+  `/huyang2/double-loop/runs/futureseed2-selective-state-s9100-20260728T1604Z-5914b2e`
+- Local side-by-side visualization:
+  `runs/futureseed2-selective-20260728/index.html`
+- Machine-readable comparison:
+  `runs/futureseed2-selective-20260728/comparison.json`
 
 ## 7. Results
 
-Pending.
+### Integrity
+
+All fail-closed gates passed on GPU1:
+
+- Zero-initialized seeded state was bit-exact to FutureSeed1.
+- Activated gate matched the direct Torch formula with max absolute error `0`.
+- State, base-head-logit, and gate-delta gradients were finite and nonzero.
+- Official GDN2 output/state/gradient max absolute errors were
+  `5.99e-5 / 2.76e-4 / 2.34e-4`.
+- The runtime used `fla.layers.gdn2.GatedDeltaNet2`,
+  `ChunkGDN2FunctionBackward`, and Triton q/k/v convolution in all ten layers.
+- Checkpoint migration reported exactly
+  `reasoner.future_seed_selector.gate_delta` missing, no unexpected parameter,
+  and a successful optimizer-group expansion.
+- The formal run used clean detached source
+  `5914b2e4929e8f86b718a51f1b753de163b2cb8a`, the frozen step9000 checkpoint,
+  GPU1, the same optimizer/RNG/data/eval contract, and no fallback.
+
+### Matched result
+
+| metric | FutureSeed1 identity | FutureSeed2 selective | delta |
+|---|---:|---:|---:|
+| train CE at step9100 | 0.6435 | 0.6493 | +0.0058 |
+| mixed loop5 exact | 0.2520 | 0.2383 | -0.0137 |
+| official 51-55 loop5 exact | 0.3672 | 0.3672 | +0.0000 |
+| official 56-60 loop5 exact | 0.1309 | 0.1211 | -0.0098 |
+| official 61-64 loop5 exact | 0.1973 | 0.1387 | -0.0586 |
+| mean official hard exact | 0.2318 | 0.2090 | -0.0228 |
+| train wall seconds | 659.9 | 675.6 | +2.4% |
+| parameters | 5.462M | 5.517M | +1.01% |
+| peak allocated CUDA memory | 8.095 GiB | 8.211 GiB | +1.43% |
+
+The mechanism was active:
+
+- gate delta RMS: `0.00950`;
+- within-head state-entry gate standard deviation: `0.00224`;
+- imported-seed relative change: about `0.00525`.
+
+The 61-64 exact trajectories were:
+
+```text
+FutureSeed1:          0 -> 0 -> .0566 -> .1855 -> .1973
+FutureSeed2 selective:0 -> 0 -> .0469 -> .1172 -> .1387
+```
+
+The largest damage appears in late correction rather than initial opening. On
+shared 64-blank case `b0048`, FutureSeed1 changes wrong cells
+`32 -> 12 -> 3 -> 0 -> 0`, while static selective FutureSeed2 changes
+`36 -> 13 -> 6 -> 6 -> 5`. This is not global collapse: both variants solve
+shared case `b0197` by loop4. Static selection changes which examples converge,
+but not in a consistently useful direction.
 
 ## 8. Conclusion
 
-Pending.
+Reject static state-entry selection as FutureSeed2. It fails both success
+rules, despite a live gate and low systems overhead. Do not continue to
+step9300 and do not sweep gate rank, scale, seed, LR, loss, or training length.
+
+The useful mechanism conclusion is narrower than "selection never works." A
+single learned `K x V` mask is shared by every input, but the same state entry
+can carry useful evidence on one board and harmful evidence on another. The
+shared-case visualization supports this interpretation: one board remains
+solvable while another loses late-loop convergence. Any future selection
+mechanism must therefore test content-dependent routing as a new hypothesis,
+not tune this static mask.
+
+The frozen strict-official GDN2 plus FutureSeed1 checkpoint remains the strong
+baseline. No solver-specific rule, search, repair, selector, oracle inference,
+CPU model smoke, GPU2, or silent fallback was used.
 
 ## 9. Submission
 
-Not applicable. No experiment tag unless the established strong-score rule is
-met.
+Not applicable. No experiment tag because the primary score regressed and the
+mechanism claim was rejected.

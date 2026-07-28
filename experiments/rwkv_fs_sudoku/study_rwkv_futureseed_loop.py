@@ -19,6 +19,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint as torch_checkpoint
 
+from futureseed2_selective import (
+    FUTURE_SEED_GATE_MODES,
+    FutureSeedSelectiveGate,
+)
+
 try:
     from rwkv7_cuda import StatePassingRWKV7, WindRWKV7, statepassing_available, wind_available
 except Exception:  # pragma: no cover - CUDA extension is optional for CPU smoke.
@@ -1587,6 +1592,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_decay: float = 0.0,
         future_seed_update: str = "fixed",
         future_seed_norm_mode: str = "unit",
+        future_seed_gate_mode: str = "head",
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
         backbone: str = "rwkv",
@@ -1604,6 +1610,10 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
         if future_seed_norm_mode not in {"unit", "adaptive_rms"}:
             raise ValueError("future_seed_norm_mode must be one of: unit, adaptive_rms.")
+        if future_seed_gate_mode not in FUTURE_SEED_GATE_MODES:
+            raise ValueError(
+                f"future_seed_gate_mode must be one of: {', '.join(FUTURE_SEED_GATE_MODES)}."
+            )
         if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"}:
             raise ValueError("backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda.")
         self.backbone = backbone
@@ -1611,6 +1621,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_decay = float(future_seed_decay)
         self.future_seed_update = future_seed_update
         self.future_seed_norm_mode = future_seed_norm_mode
+        self.future_seed_gate_mode = future_seed_gate_mode
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
@@ -1628,6 +1639,23 @@ class FutureSeedRWKV(nn.Module):
         else:
             self.register_parameter("future_seed_norm_slope", None)
             self.register_parameter("future_seed_norm_bias", None)
+        expanded_head_dim = int(head_dim * float(gdn_expand_v))
+        if backbone in {"gdn", "fla_gdn", "kda"}:
+            state_row_dim = expanded_head_dim
+            state_col_dim = head_dim
+        elif backbone == "gdn2":
+            state_row_dim = head_dim
+            state_col_dim = expanded_head_dim
+        else:
+            state_row_dim = head_dim
+            state_col_dim = head_dim
+        self.future_seed_selector = FutureSeedSelectiveGate(
+            mode=future_seed_gate_mode,
+            layers=layers,
+            heads=heads,
+            row_dim=state_row_dim,
+            col_dim=state_col_dim,
+        )
         blocks: List[nn.Module] = []
         for layer_id in range(layers):
             if backbone == "rwkv":
@@ -1707,12 +1735,15 @@ class FutureSeedRWKV(nn.Module):
         norm_gain_stds = []
         memory_norms = []
         memory_delta_norms = []
+        selective_delta_rms = []
+        selective_gate_stds = []
+        selective_gate_mins = []
+        selective_gate_maxs = []
+        selective_seed_changes = []
         for layer_idx, block in enumerate(self.blocks):
             initial_state = None
             if layer_idx > 0:
                 assert previous_state is not None
-                gate = torch.sigmoid(block.future_seed_logit) * self.future_seed_scale
-                gates.append(gate.mean())
                 if self.future_seed_scale > 0:
                     if self.future_seed_update == "loop_residual":
                         assert self.future_seed_update_logit is not None
@@ -1751,6 +1782,28 @@ class FutureSeedRWKV(nn.Module):
                         keep = self.future_seed_decay
                         seed_state = keep * seed_state + (1.0 - keep) * previous_state
                         update_gates.append(x.new_tensor(1.0 - keep))
+                    gate, selective_diag = self.future_seed_selector(
+                        seed_state,
+                        base_logit=block.future_seed_logit,
+                        layer_idx=layer_idx,
+                    )
+                    gate = gate * self.future_seed_scale
+                    gates.append(gate.mean())
+                    selective_delta_rms.append(
+                        selective_diag["fs2_gate_delta_rms"]
+                    )
+                    selective_gate_stds.append(
+                        selective_diag["fs2_gate_std"]
+                    )
+                    selective_gate_mins.append(
+                        selective_diag["fs2_gate_min"]
+                    )
+                    selective_gate_maxs.append(
+                        selective_diag["fs2_gate_max"]
+                    )
+                    selective_seed_changes.append(
+                        selective_diag["fs2_seed_relative_change"]
+                    )
                     if self.gdn_progressive_base_head_v_dim > 0:
                         base_state, extra_state = seed_state.split(
                             self.gdn_progressive_base_head_v_dim,
@@ -1804,6 +1857,7 @@ class FutureSeedRWKV(nn.Module):
                     initial_state = normalized_state * gate * norm_gain_state.to(dtype=normalized_state.dtype)
                     state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
                 else:
+                    gates.append(x.new_zeros(()))
                     update_gates.append(x.new_zeros(()))
                     state_norms.append(x.new_zeros(()))
                     if next_seed_memory is not None:
@@ -1886,6 +1940,16 @@ class FutureSeedRWKV(nn.Module):
                 out["fs_raw_rms_std"] = torch.stack(raw_rms_stds).mean()
                 out["fs_norm_gain_mean"] = torch.stack(norm_gain_means).mean()
                 out["fs_norm_gain_std"] = torch.stack(norm_gain_stds).mean()
+            if selective_delta_rms:
+                out["fs2_gate_delta_rms"] = torch.stack(
+                    selective_delta_rms
+                ).mean()
+                out["fs2_gate_std"] = torch.stack(selective_gate_stds).mean()
+                out["fs2_gate_min"] = torch.stack(selective_gate_mins).min()
+                out["fs2_gate_max"] = torch.stack(selective_gate_maxs).max()
+                out["fs2_seed_relative_change"] = torch.stack(
+                    selective_seed_changes
+                ).mean()
             return x, out, next_seed_memory
         zero = x.new_zeros(())
         return (
@@ -1899,6 +1963,11 @@ class FutureSeedRWKV(nn.Module):
                 "fs_raw_rms_std": zero,
                 "fs_norm_gain_mean": zero,
                 "fs_norm_gain_std": zero,
+                "fs2_gate_delta_rms": zero,
+                "fs2_gate_std": zero,
+                "fs2_gate_min": zero,
+                "fs2_gate_max": zero,
+                "fs2_seed_relative_change": zero,
             },
             next_seed_memory,
         )
@@ -2050,6 +2119,7 @@ def load_training_checkpoint(
         "loop_update_logit",
         "reasoner.future_seed_norm_slope",
         "reasoner.future_seed_norm_bias",
+        "reasoner.future_seed_selector.gate_delta",
     }
     progressive_suffixes = (
         ".time_mix.o_norm_weight_extra",
@@ -2079,9 +2149,18 @@ def load_training_checkpoint(
         current_state = opt.state_dict()
         saved_groups = optimizer_state.get("param_groups", [])
         current_groups = current_state.get("param_groups", [])
-        current_names = [name for name, _param in model.named_parameters()]
+        name_by_parameter_id = {
+            id(parameter): name for name, parameter in model.named_parameters()
+        }
+        current_group_names = [
+            [name_by_parameter_id[id(parameter)] for parameter in group["params"]]
+            for group in opt.param_groups
+        ]
         current_param_count = sum(len(group.get("params", [])) for group in current_groups)
-        can_expand = len(saved_groups) == len(current_groups) and len(current_names) == current_param_count
+        can_expand = (
+            len(saved_groups) == len(current_groups) == len(current_group_names)
+            and sum(len(names) for names in current_group_names) == current_param_count
+        )
         if not can_expand:
             raise ValueError("Cannot expand optimizer state for missing model parameters")
         expanded_optimizer_state = copy.deepcopy(optimizer_state)
@@ -2091,14 +2170,20 @@ def load_training_checkpoint(
             for param_id in group.get("params", [])
         ]
         synthetic_param_id = (max(all_saved_params) + 1) if all_saved_params else 0
-        name_cursor = 0
-        for saved, current in zip(expanded_optimizer_state["param_groups"], current_groups):
+        for saved, current, names in zip(
+            expanded_optimizer_state["param_groups"],
+            current_groups,
+            current_group_names,
+        ):
             old_params = list(saved.get("params", []))
             new_params = []
             old_cursor = 0
-            for _param_id in current.get("params", []):
-                name = current_names[name_cursor]
-                name_cursor += 1
+            current_params = list(current.get("params", []))
+            if len(names) != len(current_params):
+                raise ValueError(
+                    "Optimizer parameter names do not match the current parameter group"
+                )
+            for name, _param_id in zip(names, current_params):
                 if name in inserted_parameters:
                     new_params.append(synthetic_param_id)
                     synthetic_param_id += 1
@@ -2116,6 +2201,11 @@ def load_training_checkpoint(
     if "rng_python" in checkpoint:
         rng.setstate(checkpoint["rng_python"])
     restore_rng_state(checkpoint.get("rng_torch", {}), device)
+    checkpoint["_load_migration"] = {
+        "missing_parameters": sorted(missing),
+        "unexpected_parameters": sorted(unexpected),
+        "optimizer_groups_expanded": bool(inserted_parameters),
+    }
     return checkpoint
 
 
@@ -2137,6 +2227,7 @@ class FutureSeedLoopSudoku(nn.Module):
         future_seed_decay: float,
         future_seed_update: str,
         future_seed_norm_mode: str,
+        future_seed_gate_mode: str,
         loop_feedback_scale: float,
         loop_feedback_detach: bool,
         loop_feedback_corrupt_prob: float,
@@ -2205,6 +2296,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_decay=future_seed_decay,
             future_seed_update=future_seed_update,
             future_seed_norm_mode=future_seed_norm_mode,
+            future_seed_gate_mode=future_seed_gate_mode,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
             backbone=backbone,
@@ -2818,6 +2910,16 @@ def fs_line(m: Dict[str, float]) -> str:
     if "fs_norm_gain_mean" in m:
         parts.append(f"fs_norm_gain={m['fs_norm_gain_mean']:.3f}")
         parts.append(f"fs_norm_gain_std={m.get('fs_norm_gain_std', 0.0):.3f}")
+    if "fs2_gate_delta_rms" in m:
+        parts.append(f"fs2_delta={m['fs2_gate_delta_rms']:.4f}")
+        parts.append(f"fs2_gate_std={m.get('fs2_gate_std', 0.0):.4f}")
+        parts.append(
+            "fs2_gate_range="
+            f"{m.get('fs2_gate_min', 0.0):.3f}:{m.get('fs2_gate_max', 0.0):.3f}"
+        )
+        parts.append(
+            f"fs2_seed_change={m.get('fs2_seed_relative_change', 0.0):.4f}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -2950,6 +3052,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_decay=args.future_seed_decay,
         future_seed_update=args.future_seed_update,
         future_seed_norm_mode=args.future_seed_norm_mode,
+        future_seed_gate_mode=args.future_seed_gate_mode,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_feedback_detach=bool(args.loop_feedback_detach),
         loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
@@ -3154,6 +3257,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             "checkpoint_version": checkpoint.get("version"),
             "checkpoint_reason": checkpoint.get("reason"),
             "checkpoint_elapsed_sec": checkpoint.get("elapsed_sec"),
+            "load_migration": checkpoint.get("_load_migration", {}),
         }
         print(
             f"resumed_train_checkpoint path={args.resume_train_checkpoint} "
@@ -3624,6 +3728,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         "future_seed_update": args.future_seed_update,
         "future_seed_norm_mode": args.future_seed_norm_mode,
+        "future_seed_gate_mode": args.future_seed_gate_mode,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
         "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
@@ -4671,6 +4776,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--d_model must equal --heads * --head_dim except for official FLA GDN geometry")
     if args.future_seed_scale < 0:
         raise ValueError("--future_seed_scale must be non-negative")
+    if args.future_seed_gate_mode == "state" and args.backbone != "gdn2":
+        raise ValueError(
+            "--future_seed_gate_mode state is initially restricted to the audited GDN2 state layout"
+        )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")
     if not (0.0 <= args.future_seed_decay < 1.0):
@@ -4791,6 +4900,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     print(
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
         f"mainline=future_seed_loop backbone={args.backbone} rwkv_kernel={args.rwkv_kernel} "
+        f"future_seed_gate_mode={args.future_seed_gate_mode} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
@@ -4961,6 +5071,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_decay": args.future_seed_decay,
         "future_seed_update": args.future_seed_update,
         "future_seed_norm_mode": args.future_seed_norm_mode,
+        "future_seed_gate_mode": args.future_seed_gate_mode,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
@@ -5140,6 +5251,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--future_seed_decay", type=float, default=0.0)
     p.add_argument("--future_seed_update", choices=("fixed", "learned", "loop_residual"), default="fixed")
     p.add_argument("--future_seed_norm_mode", choices=("unit", "adaptive_rms"), default="unit")
+    p.add_argument(
+        "--future_seed_gate_mode",
+        choices=FUTURE_SEED_GATE_MODES,
+        default="head",
+    )
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
     p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)

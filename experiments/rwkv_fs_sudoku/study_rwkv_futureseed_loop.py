@@ -1737,6 +1737,8 @@ class FutureSeedRWKV(nn.Module):
         memory_delta_norms = []
         selective_delta_rms = []
         selective_gate_stds = []
+        selective_gate_batch_stds = []
+        selective_content_feature_stds = []
         selective_gate_mins = []
         selective_gate_maxs = []
         selective_seed_changes = []
@@ -1794,6 +1796,12 @@ class FutureSeedRWKV(nn.Module):
                     )
                     selective_gate_stds.append(
                         selective_diag["fs2_gate_std"]
+                    )
+                    selective_gate_batch_stds.append(
+                        selective_diag["fs2_gate_batch_std"]
+                    )
+                    selective_content_feature_stds.append(
+                        selective_diag["fs2_content_feature_std"]
                     )
                     selective_gate_mins.append(
                         selective_diag["fs2_gate_min"]
@@ -1945,6 +1953,12 @@ class FutureSeedRWKV(nn.Module):
                     selective_delta_rms
                 ).mean()
                 out["fs2_gate_std"] = torch.stack(selective_gate_stds).mean()
+                out["fs2_gate_batch_std"] = torch.stack(
+                    selective_gate_batch_stds
+                ).mean()
+                out["fs2_content_feature_std"] = torch.stack(
+                    selective_content_feature_stds
+                ).mean()
                 out["fs2_gate_min"] = torch.stack(selective_gate_mins).min()
                 out["fs2_gate_max"] = torch.stack(selective_gate_maxs).max()
                 out["fs2_seed_relative_change"] = torch.stack(
@@ -1965,6 +1979,8 @@ class FutureSeedRWKV(nn.Module):
                 "fs_norm_gain_std": zero,
                 "fs2_gate_delta_rms": zero,
                 "fs2_gate_std": zero,
+                "fs2_gate_batch_std": zero,
+                "fs2_content_feature_std": zero,
                 "fs2_gate_min": zero,
                 "fs2_gate_max": zero,
                 "fs2_seed_relative_change": zero,
@@ -2120,6 +2136,7 @@ def load_training_checkpoint(
         "reasoner.future_seed_norm_slope",
         "reasoner.future_seed_norm_bias",
         "reasoner.future_seed_selector.gate_delta",
+        "reasoner.future_seed_selector.content_weight",
     }
     progressive_suffixes = (
         ".time_mix.o_norm_weight_extra",
@@ -2913,6 +2930,12 @@ def fs_line(m: Dict[str, float]) -> str:
     if "fs2_gate_delta_rms" in m:
         parts.append(f"fs2_delta={m['fs2_gate_delta_rms']:.4f}")
         parts.append(f"fs2_gate_std={m.get('fs2_gate_std', 0.0):.4f}")
+        parts.append(
+            f"fs2_batch_std={m.get('fs2_gate_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            f"fs2_feature_std={m.get('fs2_content_feature_std', 0.0):.4f}"
+        )
         parts.append(
             "fs2_gate_range="
             f"{m.get('fs2_gate_min', 0.0):.3f}:{m.get('fs2_gate_max', 0.0):.3f}"
@@ -4776,9 +4799,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--d_model must equal --heads * --head_dim except for official FLA GDN geometry")
     if args.future_seed_scale < 0:
         raise ValueError("--future_seed_scale must be non-negative")
-    if args.future_seed_gate_mode == "state" and args.backbone != "gdn2":
+    if args.future_seed_gate_mode in {"state", "content"} and args.backbone != "gdn2":
         raise ValueError(
-            "--future_seed_gate_mode state is initially restricted to the audited GDN2 state layout"
+            "--future_seed_gate_mode state/content is initially restricted to the audited GDN2 state layout"
         )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")

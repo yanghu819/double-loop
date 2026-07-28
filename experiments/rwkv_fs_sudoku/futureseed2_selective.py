@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 
-FUTURE_SEED_GATE_MODES = ("head", "state")
+FUTURE_SEED_GATE_MODES = ("head", "state", "content")
 
 
 class FutureSeedSelectiveGate(nn.Module):
@@ -42,10 +42,34 @@ class FutureSeedSelectiveGate(nn.Module):
             self.gate_delta._no_weight_decay = True
         else:
             self.register_parameter("gate_delta", None)
+        if mode == "content":
+            self.content_weight = nn.Parameter(
+                torch.zeros(layers - 1, heads, 5)
+            )
+            self.content_weight._no_weight_decay = True
+        else:
+            self.register_parameter("content_weight", None)
 
     @staticmethod
     def _rms(value: torch.Tensor) -> torch.Tensor:
         return value.float().square().mean(dim=(-1, -2)).sqrt()
+
+    @staticmethod
+    def _content_features(state: torch.Tensor) -> torch.Tensor:
+        value = state.float()
+        rms = value.square().mean(dim=(-1, -2)).sqrt().clamp_min(1e-6)
+        row_rms = value.square().mean(dim=-1).sqrt()
+        col_rms = value.square().mean(dim=-2).sqrt()
+        return torch.stack(
+            (
+                rms.log().clamp(min=-6.0, max=6.0),
+                value.mean(dim=(-1, -2)) / rms,
+                value.abs().mean(dim=(-1, -2)) / rms,
+                row_rms.std(dim=-1, unbiased=False) / rms,
+                col_rms.std(dim=-1, unbiased=False) / rms,
+            ),
+            dim=-1,
+        )
 
     def forward(
         self,
@@ -79,9 +103,45 @@ class FutureSeedSelectiveGate(nn.Module):
             return base_gate, {
                 "fs2_gate_delta_rms": zero,
                 "fs2_gate_std": zero,
+                "fs2_gate_batch_std": zero,
+                "fs2_content_feature_std": zero,
                 "fs2_gate_min": base_gate.min().to(dtype=state.dtype),
                 "fs2_gate_max": base_gate.max().to(dtype=state.dtype),
                 "fs2_seed_relative_change": zero,
+            }
+
+        if self.mode == "content":
+            assert self.content_weight is not None
+            features = self._content_features(state)
+            weight = self.content_weight[layer_idx - 1]
+            raw_delta = torch.einsum("bhf,hf->bh", features, weight)
+            delta = torch.tanh(raw_delta).unsqueeze(-1).unsqueeze(-1)
+            gate = torch.sigmoid(base_logit + delta)
+            baseline_seed = state * base_gate
+            selected_seed = state * gate
+            baseline_rms = self._rms(baseline_seed).clamp_min(1e-8)
+            change_rms = self._rms(selected_seed - baseline_seed)
+            return gate, {
+                "fs2_gate_delta_rms": delta.float()
+                .square()
+                .mean()
+                .sqrt()
+                .to(dtype=state.dtype),
+                "fs2_gate_std": zero,
+                "fs2_gate_batch_std": gate.float()
+                .std(dim=0, unbiased=False)
+                .mean()
+                .to(dtype=state.dtype),
+                "fs2_content_feature_std": features.std(
+                    dim=0, unbiased=False
+                )
+                .mean()
+                .to(dtype=state.dtype),
+                "fs2_gate_min": gate.min().to(dtype=state.dtype),
+                "fs2_gate_max": gate.max().to(dtype=state.dtype),
+                "fs2_seed_relative_change": (change_rms / baseline_rms)
+                .mean()
+                .to(dtype=state.dtype),
             }
 
         assert self.gate_delta is not None
@@ -100,6 +160,11 @@ class FutureSeedSelectiveGate(nn.Module):
             .std(dim=(-1, -2), unbiased=False)
             .mean()
             .to(dtype=state.dtype),
+            "fs2_gate_batch_std": gate.float()
+            .std(dim=0, unbiased=False)
+            .mean()
+            .to(dtype=state.dtype),
+            "fs2_content_feature_std": zero,
             "fs2_gate_min": gate.min().to(dtype=state.dtype),
             "fs2_gate_max": gate.max().to(dtype=state.dtype),
             "fs2_seed_relative_change": (change_rms / baseline_rms)

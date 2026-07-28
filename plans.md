@@ -196,3 +196,13 @@ gate when the pending GPU1 workload is allocated.
 - 2026-07-15: Matched D224/L12 full-diversity no-FutureSeed is still closed at step1000: CE `1.6580` vs matched FS `0.9971`; holes53/60/64 exact is all0 and blank `0.2657/0.2677/0.2671` vs FS exact `0.0176/0.0215/0.0215` and blank `0.5145/0.5254/0.5250`. no-FS loop1->5 is neutral, and visual hard cases keep almost all errors/conflicts. This is strong optimization/sample-efficiency evidence for FutureSeed, but delayed full-diversity scaling requires continuing the single predeclared arm to step3000 before making a final causal claim. Runner lesson: `sum(HOLE_STAGES)` is the global resume endpoint; it must equal the intended target step.
 - 2026-07-15: P-SCALE-033 remains strongly separated at step3000. Matched no-FS CE is `1.6379` vs FutureSeed `0.7939`; holes53/60/64 no-FS loop5 exact is all0 with blank `0.2737/0.2737/0.2755`, versus FutureSeed exact `0.0273/0.0332/0.0430` and blank `0.5788/0.5885/0.5844`. no-FS loop1->5 is still neutral, and its early/middle/late sequence accuracy remains `0.2057/0.2685/0.3488`; FutureSeed is nearly flat at `0.5840/0.5815/0.5863`. Same-checkpoint official visualization shows FutureSeed cases changing `14 wrong -> 0` while no-FS cases stay around `35 -> 32 -> 32` with conflicts fixed. This directly supports cheap future context and at least a large opening/sample-efficiency gain, but honor the predeclared delayed-scaling rule and continue unchanged to the step4500 kill gate; do not rescue no-FS with a sweep.
 - 2026-07-24: A strict one-seed carrier audit found an avoidable initialization confound in P-BASELINE-003. Resetting seed before each model left 11/77 shared tensors different because RWKV7/GDN/GDN2/KDA constructors consumed different random draws before ChannelMix and output-head initialization. The completed SHA `6ea7f8e` RWKV7/GDN arms remain valid implementation diagnostics but are not a clean ranking. The formal rerun now resets the shared shell from a separate fixed stream, resets post-init training RNG, and requires a GPU hash gate with zero differing shared tensors before any arm is accepted. Lesson: same seed is not automatically common random initialization across different architectures.
+# P-FS2-003 FutureSeed2 content-adaptive trust gate
+
+- status: in_progress
+- hypothesis: imported terminal-state quality varies by sample; a zero-init
+  per-sample/head trust gate derived from generic state statistics can improve
+  the hardest official Sudoku range without changing the state basis.
+- budget: one matched GPU1 step9000 -> step9100 probe; no sweep.
+- kill: stop if hard mean does not improve, 61-64 falls, or the gate stays
+  sample-invariant.
+- report: `research/reports/experiments/futureseed2-content-gate-20260729.md`

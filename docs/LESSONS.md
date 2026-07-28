@@ -1237,3 +1237,13 @@
   `fla.layers.gdn2.GatedDeltaNet2`, `ChunkGDN2FunctionBackward`, Triton q/k/v
   convolution, GPU1, clean detached SHA, exact checkpoint migration, and no
   fallback. Keep the original GDN2+FutureSeed1 checkpoint as the strong line.
+- 2026-07-29: A zero-init 270-parameter content-adaptive FutureSeed head-trust
+  gate is mathematically and operationally valid but does not beat the frozen
+  GDN2+FutureSeed1 control. Hard-range mean exact moves `0.2318 -> 0.2253`;
+  61-64 exact moves `0.1973 -> 0.1699`. Although recurrent-state summary
+  features vary across samples (`std=0.0714`), the resulting gate barely does
+  (`std=0.00065`). Along with the rejected static KxV mask, this shows that
+  simple seed-strength modulation is not FutureSeed2. Do not sweep gate
+  features, scale, seed, LR, loss, or length. A future mechanism must improve
+  seed content itself while preserving the state basis and exact baseline
+  initialization.

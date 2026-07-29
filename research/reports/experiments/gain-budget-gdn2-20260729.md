@@ -213,6 +213,20 @@ endpoint. This still preserves `delta`, minimizes shear, and never relaxes the
 requested budget. Its frequency remains explicit as
 `gain_budget_numerical_endpoint_frac`.
 
+### 7.4 One-pass performance at `ac566f96`
+
+The one-pass formulation again passed 24/24 math tests and every official FLA
+chunk/fused/backward/state/layer correctness gate. ABCCBA measured projection
+overhead `+20.9806%`, narrowly above the unchanged `20%` gate, and stopped
+before checkpoint smoke or formal training.
+
+The remaining systems retry does not remove a condition or change the
+projection. It combines the three device-wide fail-closed reductions
+(feasibility, delta preservation, and spectral validity) into one reduction,
+and removes an unnecessary finite-`tau` branch because validated
+`fixed_sigma` and `decay_funded` modes always produce finite tau. Any failing
+row still aborts before the recurrence.
+
 ## 8. Conclusion
 
 The implementation and official-kernel contract are valid, but the formal

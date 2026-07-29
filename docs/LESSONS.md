@@ -1320,6 +1320,11 @@
   matched external identity, so ABCCBA rejected it before training. Prefer one
   actual certificate pass with a preregistered numerical reserve over a second
   dense pass across every token and head.
+- One pass alone was not quite enough: `ac566f96` measured `+20.98%`, just
+  above the fixed `20%` gate. Do not rerun the same noisy benchmark until it
+  happens to pass. Multiple logically independent global assertions can share
+  one boolean certificate and one device reduction without weakening any
+  condition.
 - Strict and training lanes have different jobs. Official FP32
   fused-recurrent forward carries the hard certificate; official BF16 chunk
   carries real training and is audited under an explicit low-precision

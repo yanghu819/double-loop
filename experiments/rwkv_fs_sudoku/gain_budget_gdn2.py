@@ -160,13 +160,11 @@ def project_erase_gate(
     )
     infeasible = live & (tau_requested < minimum_feasible_tau)
     if infeasible_policy == "raise":
-        _fail_closed_assert(
-            (~infeasible).all(),
-            "requested gain budget is infeasible while preserving erase strength",
-        )
         tau_effective = tau_requested
+        feasible_certificate = ~infeasible
     else:
         tau_effective = torch.maximum(tau_requested, minimum_feasible_tau)
+        feasible_certificate = torch.ones_like(infeasible)
 
     # Project slightly inside the requested boundary so the single FP32
     # certificate pass remains strict after roundoff. If the available slack
@@ -179,17 +177,11 @@ def project_erase_gate(
         tau_effective - numerical_safety_margin,
     )
     x = 1.0 - delta
-    finite_tau = torch.isfinite(tau_projection)
-    cap_finite = (
+    cap = (
         (tau_projection - 1.0)
         * (tau_projection + 1.0)
         * (1.0 - (x / tau_projection).square())
     ).clamp_min(0.0)
-    cap = torch.where(
-        finite_tau,
-        cap_finite,
-        torch.full_like(cap_finite, torch.inf),
-    )
 
     active = live & (shear2 > cap)
     positive_cap = active & (cap > 0)
@@ -222,16 +214,17 @@ def project_erase_gate(
     )
     numerical_endpoint = (
         active
-        & finite_tau
         & (tau_projection <= minimum_feasible_tau)
     )
-    _fail_closed_assert(
-        (delta_abs_error <= 5e-6).all(),
-        "gain-budget projection failed to preserve erase strength in FP32",
+    certificate_valid = (
+        feasible_certificate
+        & (delta_abs_error <= 5e-6)
+        & (effective_sigma <= tau_effective + certificate_tolerance)
     )
     _fail_closed_assert(
-        (effective_sigma <= tau_effective + certificate_tolerance).all(),
-        "gain-budget FP32 numerical singular-value certificate failed",
+        certificate_valid.all(),
+        "gain-budget projection certificate failed: infeasible budget or "
+        "FP32 numerical violation",
     )
 
     stats = {

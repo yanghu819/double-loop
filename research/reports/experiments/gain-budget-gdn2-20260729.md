@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-GAIN-001`
-- Status: implementation complete; GPU1 validation pending
+- Status: strict preflight passed; formal numerical retry pending
 - Date: `2026-07-29`
 - Machine: AIStation `GPU1` only
 - Branch: `codex/gain-budget-gdn2-20260729`
@@ -139,12 +139,72 @@ artifacts.
 
 ## 7. Results
 
-Pending GPU1 validation and the single matched experiment.
+### 7.1 Strict preflight at `c4bcbbad`
+
+The split-precision contract passed on GPU1:
+
+- 23 pure-Torch mathematical/property tests passed.
+- Official FLA was pinned exactly to
+  `9c8e42e762fce087c27b673af4922795d9edb85e`.
+- Official BF16 chunk forward matched the naive recurrence for
+  `T=1,63,64,65,81,128`, including production `B2/H6/T81`.
+- The strict FP32 official fused-recurrent forward certificate passed.
+- Small-shape strict chunk backward VJP and production `H6` BF16 chunk
+  backward VJP passed.
+- State carry, untouched `mode=none` bitwise equality, external-identity VJP,
+  full-layer gradients, checkpoint resume, data manifest, and both two-step
+  exact-resume smokes passed.
+
+The ABCCBA benchmark measured:
+
+- official BF16 baseline: `0.01875085 s`;
+- matched external identity: `0.02532083 s`;
+- gain-budget candidate: `0.02536411 s`;
+- projection time overhead versus matched identity: `+0.1709%`;
+- projection peak-memory overhead versus matched identity: `+17.9985%`;
+- clipped token/head fraction: `0.6337448`.
+
+The larger `+35.27%` time difference from untouched official GDN2 to the
+external path is not attributed to the projection: both causal arms pay the
+same external-normalization and audit path.
+
+### 7.2 First formal attempt at `c4bcbbad`
+
+The matched control completed:
+
+- mixed exact by loop 1/2/3/4/5:
+  `0.0234/0.0449/0.1855/0.2344/0.2422`;
+- official 51-55 loop5 exact/blank:
+  `0.3516/0.7678`;
+- official 56-60 loop5 exact/blank:
+  `0.1426/0.6216`;
+- official 61-64 loop5 exact/blank:
+  `0.1895/0.8261`.
+
+The candidate stopped before its first logged training step with:
+
+```text
+gain-budget FP32 numerical singular-value certificate failed
+```
+
+The wrapper captured exact PID `14566`, exit status `1`, and wrote
+`abort.json`. No GPU process remained. Therefore this attempt gives no
+candidate score and cannot accept or reject the mechanism.
+
+The closed-form projection is mathematically valid. The failure occurs when a
+very large real batch near `tau=1` rounds a few ulps outside the strict FP32
+certificate. The retry does not relax the budget. Rows that still violate the
+certificate after the closed form move to `lambda=0`, the isotropic endpoint.
+This preserves `delta`, minimizes shear, and is the strict fail-closed member
+of the same projection family. Its frequency is logged explicitly as
+`gain_budget_numerical_endpoint_frac`.
 
 ## 8. Conclusion
 
-Pending. A negative result closes this projection without a cap, seed, loss,
-or training-length sweep.
+The implementation and official-kernel contract are valid, but the formal
+quality comparison is not yet complete. Exactly one numerical retry is
+authorized. A negative quality result after that retry closes this projection
+without a cap, seed, loss, or training-length sweep.
 
 ## 9. Submission
 

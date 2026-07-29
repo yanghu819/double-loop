@@ -1300,3 +1300,27 @@
   seed, LR, loss, or length. A future FutureSeed2 must improve how generic
   future evidence is formed or compressed, not merely send terminal state
   farther or keep it longer.
+
+## 2026-07-29 Gain-budget numerical contract
+
+- A mathematical closed form is not automatically a production certificate.
+  The projection passed small property tests and official CUDA parity, but a
+  real training batch near `tau=1` exposed a few-ulps FP32 boundary violation
+  before the first candidate step.
+- Treat a certificate abort separately from a mechanism result. The matched
+  control completed, but the candidate produced no score; it is invalid to
+  call that a negative quality result.
+- Do not silently add tolerance or relax the requested budget. The projection
+  family already contains a strict fail-closed endpoint: `lambda=0` preserves
+  effective erase strength and minimizes anisotropic shear. Use that endpoint
+  only for rows that fail the post-projection numerical certificate, and log
+  its frequency.
+- Strict and training lanes have different jobs. Official FP32
+  fused-recurrent forward carries the hard certificate; official BF16 chunk
+  carries real training and is audited under an explicit low-precision
+  tolerance. Neither mixed-dtype failure nor full-FP32 chunk failure is hidden
+  behind a fallback.
+- Keep the causal comparison fair. Untouched `mode=none` is the upstream
+  bitwise regression gate; `external_identity` and `decay_funded` share the
+  same external normalization, cast, kernel, and audit overhead. Only the erase
+  projection differs between the formal arms.

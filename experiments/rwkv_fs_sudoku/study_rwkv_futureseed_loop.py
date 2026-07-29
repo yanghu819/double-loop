@@ -1896,6 +1896,12 @@ class FLADeltaTimeMix(nn.Module):
             .float()
             .mean()
             .detach(),
+            "gdn2_gain_budget_numerical_endpoint_frac": projection[
+                "numerical_endpoint"
+            ]
+            .float()
+            .mean()
+            .detach(),
             "gdn2_gain_budget_lambda_mean": projection["scale"]
             .mean()
             .detach(),
@@ -2068,6 +2074,7 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_gain_budget_enabled": zero,
             "gdn2_gain_budget_clipped_frac": zero,
             "gdn2_gain_budget_infeasible_frac": zero,
+            "gdn2_gain_budget_numerical_endpoint_frac": zero,
             "gdn2_gain_budget_lambda_mean": x.new_ones(()),
             "gdn2_gain_budget_lambda_min": x.new_ones(()),
             "gdn2_gain_budget_tau_mean": zero,
@@ -4306,6 +4313,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_hidden_agg_noise_clip_frac = 0.0
     last_gain_budget_clipped_frac = 0.0
     last_gain_budget_infeasible_frac = 0.0
+    last_gain_budget_numerical_endpoint_frac = 0.0
     last_gain_budget_step_bound_max = 0.0
     last_gain_budget_delta_error_max = 0.0
     last_gain_budget_gate_relative_change = 0.0
@@ -4401,6 +4409,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_gain_budget_infeasible_frac = float(
             last_metrics.get("gain_budget_infeasible_frac", 0.0)
         )
+        last_gain_budget_numerical_endpoint_frac = float(
+            last_metrics.get("gain_budget_numerical_endpoint_frac", 0.0)
+        )
         last_gain_budget_step_bound_max = float(
             last_metrics.get("gain_budget_step_bound_max", 0.0)
         )
@@ -4467,6 +4478,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_hidden_agg_noise_clip_frac = 0.0
             accum_gain_budget_clipped_frac = 0.0
             accum_gain_budget_infeasible_frac = 0.0
+            accum_gain_budget_numerical_endpoint_frac = 0.0
             accum_gain_budget_step_bound_max = 0.0
             accum_gain_budget_delta_error_max = 0.0
             accum_gain_budget_gate_relative_change = 0.0
@@ -4602,6 +4614,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         .detach()
                         .cpu()
                     )
+                    accum_gain_budget_numerical_endpoint_frac += float(
+                        trace_last.get(
+                            "gdn2_gain_budget_numerical_endpoint_frac",
+                            ce_loss.new_zeros(()),
+                        )
+                        .detach()
+                        .cpu()
+                    )
                     accum_gain_budget_step_bound_max = max(
                         accum_gain_budget_step_bound_max,
                         float(
@@ -4666,6 +4686,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_gain_budget_infeasible_frac = (
                 accum_gain_budget_infeasible_frac / float(accum_count)
             )
+            last_gain_budget_numerical_endpoint_frac = (
+                accum_gain_budget_numerical_endpoint_frac / float(accum_count)
+            )
             last_gain_budget_step_bound_max = (
                 accum_gain_budget_step_bound_max
             )
@@ -4693,6 +4716,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"hagg_clip={last_hidden_agg_noise_clip_frac:.3f} "
                     f"gb_clip={last_gain_budget_clipped_frac:.4f} "
                     f"gb_infeas={last_gain_budget_infeasible_frac:.4f} "
+                    f"gb_endpoint={last_gain_budget_numerical_endpoint_frac:.4f} "
                     f"gb_bound={last_gain_budget_step_bound_max:.6f} "
                     f"gb_delta={last_gain_budget_delta_error_max:.2e} "
                     f"gb_change={last_gain_budget_gate_relative_change:.4f} "
@@ -4735,6 +4759,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
                         "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
                         "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+                        "gain_budget_numerical_endpoint_frac": last_gain_budget_numerical_endpoint_frac,
                         "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
@@ -4813,6 +4838,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
                             "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
                             "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+                            "gain_budget_numerical_endpoint_frac": last_gain_budget_numerical_endpoint_frac,
                             "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
                             "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                             "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
@@ -4870,6 +4896,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
                         "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
                         "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+                        "gain_budget_numerical_endpoint_frac": last_gain_budget_numerical_endpoint_frac,
                         "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
@@ -4945,6 +4972,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
         "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
         "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+        "gain_budget_numerical_endpoint_frac": last_gain_budget_numerical_endpoint_frac,
         "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,

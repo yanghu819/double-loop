@@ -107,6 +107,39 @@ class GainBudgetProjectionTests(unittest.TestCase):
             step_sigma = torch.linalg.matrix_norm(p @ d, ord=2)
             self.assertLessEqual(float(step_sigma), 1.0 + 3e-5)
 
+    def test_large_near_unit_budget_batch_fails_closed(self) -> None:
+        rows, key_dim = 65536, 32
+        k = fla_l2norm_fp32(
+            torch.randn(rows, key_dim, dtype=torch.bfloat16)
+        ).to(torch.bfloat16).float()
+        b = torch.randn(
+            rows,
+            key_dim,
+            dtype=torch.bfloat16,
+        ).sigmoid().float()
+        g = -torch.rand(rows, key_dim) * 1e-4
+        projected, stats = project_erase_gate(
+            k,
+            b,
+            g,
+            mode="decay_funded",
+            step_gain_cap=1.0,
+        )
+        tolerance = 2e-5 * stats["tau_effective"] + 2e-6
+        self.assertTrue(bool(torch.isfinite(projected).all()))
+        self.assertLessEqual(float(stats["delta_abs_error"].max()), 5e-6)
+        self.assertTrue(
+            bool(
+                (
+                    stats["effective_sigma"]
+                    <= stats["tau_effective"] + tolerance
+                ).all()
+            )
+        )
+        self.assertTrue(
+            bool((stats["effective_step_gain_bound"] <= 1.0001).all())
+        )
+
     def test_closed_form_sigma_matches_svd(self) -> None:
         for _ in range(64):
             k = fla_l2norm_fp32(torch.randn(17))

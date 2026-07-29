@@ -126,6 +126,7 @@ def project_erase_gate(
             "original_step_gain_bound": sigma * alpha_max,
             "effective_step_gain_bound": sigma * alpha_max,
             "clipped": zero.bool(),
+            "numerical_endpoint": zero.bool(),
             "infeasible": zero.bool(),
             "live": live,
             "delta_abs_error": zero,
@@ -192,9 +193,12 @@ def project_erase_gate(
         torch.where(positive_cap, active_scale, torch.zeros_like(active_scale)),
         torch.ones_like(active_scale),
     )
+
+    # A closed-form scale can land a few ulps outside the requested boundary
+    # for large, near-tau=1 batches. Fail closed at the isotropic endpoint:
+    # lambda=0 still preserves delta and has the minimum possible shear.
     projected = mean + scale * centered
     effective_gate = torch.where(live, projected, gate_fp32)
-
     effective_delta = (effective_gate * key2).sum(dim=-1, keepdim=True)
     effective_centered = effective_gate - effective_delta / n_safe
     effective_shear2 = (
@@ -208,6 +212,29 @@ def project_erase_gate(
         effective_shear2,
     )
     certificate_tolerance = 2e-5 * tau_effective + 2e-6
+    numerical_endpoint = (
+        live
+        & finite_tau
+        & (effective_sigma > tau_effective + certificate_tolerance)
+    )
+    scale = torch.where(
+        numerical_endpoint,
+        torch.zeros_like(scale),
+        scale,
+    )
+    projected = mean + scale * centered
+    effective_gate = torch.where(live, projected, gate_fp32)
+    effective_delta = (effective_gate * key2).sum(dim=-1, keepdim=True)
+    effective_centered = effective_gate - effective_delta / n_safe
+    effective_shear2 = (
+        n2
+        * (effective_centered.square() * key2).sum(dim=-1, keepdim=True)
+    )
+    delta_abs_error = (effective_delta - delta).abs()
+    effective_sigma = rank_one_transition_sigma(
+        effective_delta,
+        effective_shear2,
+    )
     _fail_closed_assert(
         (delta_abs_error <= 5e-6).all(),
         "gain-budget projection failed to preserve erase strength in FP32",
@@ -236,7 +263,8 @@ def project_erase_gate(
         "effective_sigma": effective_sigma,
         "original_step_gain_bound": original_sigma * alpha_max,
         "effective_step_gain_bound": effective_sigma * alpha_max,
-        "clipped": active,
+        "clipped": active | numerical_endpoint,
+        "numerical_endpoint": numerical_endpoint,
         "infeasible": infeasible,
         "live": live,
     }

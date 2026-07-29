@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gain-Budgeted GDN2 decision report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #171a1f;
+      --muted: #606773;
+      --line: #d9dee7;
+      --paper: #ffffff;
+      --wash: #f3f5f8;
+      --red: #b42318;
+      --red-soft: #fff0ee;
+      --green: #18794e;
+      --blue: #2457a6;
+      --gold: #8a5d00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--wash);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 22px 64px; }
+    h1 { margin: 0 0 6px; font-size: 30px; line-height: 1.15; }
+    h2 { margin: 0 0 14px; font-size: 19px; }
+    p { margin: 8px 0; }
+    .meta { color: var(--muted); font-family: ui-monospace, monospace; font-size: 13px; }
+    .decision {
+      margin: 22px 0;
+      padding: 16px 18px;
+      border-left: 5px solid var(--red);
+      background: var(--red-soft);
+    }
+    .decision strong { color: var(--red); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--paper);
+      padding: 18px;
+    }
+    .wide { grid-column: 1 / -1; }
+    .statline { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
+    .stat { min-width: 145px; }
+    .stat b { display: block; font-size: 22px; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 150px minmax(120px, 1fr) 90px;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .bar-track { height: 15px; background: #e8ecf2; }
+    .bar-fill { height: 100%; background: var(--blue); }
+    .bar-value { text-align: right; font-family: ui-monospace, monospace; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid var(--line); text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    ul { margin: 0; padding-left: 20px; }
+    li { margin: 6px 0; }
+    li strong { color: var(--green); }
+    .warning { color: var(--gold); font-weight: 700; }
+    .frames { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    iframe { width: 100%; height: 760px; border: 1px solid var(--line); background: white; }
+    a { color: var(--blue); }
+    code { font-family: ui-monospace, monospace; }
+    @media (max-width: 820px) {
+      main { padding: 18px 12px 44px; }
+      .grid, .frames { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+      .bar-row { grid-template-columns: 115px minmax(80px, 1fr) 75px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Gain-Budgeted GDN2: strict c=1 result</h1>
+  <div class="meta">P-GAIN-001 | GPU1 | source e4c929dd16629a586afb0089bd69090f8722371f | FLA 9c8e42e762fce087c27b673af4922795d9edb85e</div>
+
+  <div class="decision">
+    <strong>STOP at the systems gate.</strong>
+    The mechanism is mathematically correct, but it adds
+    32.14% steady-state
+    time over the matched identity path. The pre-registered limit was 20%.
+    Formal candidate training was not launched.
+  </div>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Steady-state layer cost</h2>
+      <div class="bar-row"><div class="bar-label">Matched identity</div><div class="bar-track"><div class="bar-fill" style="width:75.68%"></div></div><div class="bar-value">14.90 ms</div></div>
+<div class="bar-row"><div class="bar-label">Strict c=1 budget</div><div class="bar-track"><div class="bar-fill" style="width:100.00%"></div></div><div class="bar-value">19.69 ms</div></div>
+      <div class="statline">
+        <div class="stat"><b>32.14%</b><span>time overhead</span></div>
+        <div class="stat"><b>18.49%</b><span>memory overhead</span></div>
+        <div class="stat"><b>63.50%</b><span>checkpoint rows clipped</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Incremental peak memory</h2>
+      <div class="bar-row"><div class="bar-label">Matched identity</div><div class="bar-track"><div class="bar-fill" style="width:84.40%"></div></div><div class="bar-value">61.0 MiB</div></div>
+<div class="bar-row"><div class="bar-label">Strict c=1 budget</div><div class="bar-track"><div class="bar-fill" style="width:100.00%"></div></div><div class="bar-value">72.3 MiB</div></div>
+      <p>The timing uses ABCCBA order, 3 warmups, 8 samples, and 5
+      forward/backward repetitions per sample. Raw samples are in
+      <code>evidence/cuda_contract.json</code>.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Correctness before the stop</h2>
+      <p><strong>24/24</strong>
+      mathematical tests passed.</p>
+      <ul><li><strong>PASS</strong> chunk_boundary_forward</li>
+<li><strong>PASS</strong> fused_forward</li>
+<li><strong>PASS</strong> chunk_backward</li>
+<li><strong>PASS</strong> chunk_backward_bfloat16</li>
+<li><strong>PASS</strong> chunk_state_carry</li>
+<li><strong>PASS</strong> mode_none_exact</li>
+<li><strong>PASS</strong> budget_layer_backward</li></ul>
+      <p>No CPU model smoke, GPU2, search, repair, selector, or fallback was used.</p>
+    </section>
+
+    <section class="panel">
+      <h2>What the strict budget does</h2>
+      <div class="statline">
+        <div class="stat"><b>100.00%</b><span>training rows clipped</span></div>
+        <div class="stat"><b>56.40%</b><span>rows forced to isotropic endpoint</span></div>
+        <div class="stat"><b>0.019</b><span>mean retained anisotropy at loop5</span></div>
+        <div class="stat"><b>68.31%</b><span>relative gate change</span></div>
+      </div>
+      <p>It changes almost every erase gate and removes nearly all channel
+      anisotropy. This is not a gentle stability correction.</p>
+    </section>
+
+    <section class="panel wide">
+      <h2>Two-step checkpoint diagnostic</h2>
+      <p class="warning">Diagnostic only: n=8 from source
+      56030a1334e6be53f3ff56b7247d62a14cbd0933. This is not a formal candidate score.</p>
+      <div class="bar-row"><div class="bar-label">Identity loop5</div><div class="bar-track"><div class="bar-fill" style="width:62.50%"></div></div><div class="bar-value">0.625</div></div>
+<div class="bar-row"><div class="bar-label">Budget loop5</div><div class="bar-track"><div class="bar-fill" style="width:12.50%"></div></div><div class="bar-value">0.125</div></div>
+      <table>
+        <thead><tr><th>Readout</th><th>Identity exact</th><th>Budget exact</th><th>Identity blank acc</th><th>Budget blank acc</th></tr></thead>
+        <tbody><tr><td>Loop 1</td><td>0.000</td><td>0.000</td><td>0.604</td><td>0.538</td></tr>
+<tr><td>Loop 2</td><td>0.000</td><td>0.000</td><td>0.736</td><td>0.561</td></tr>
+<tr><td>Loop 3</td><td>0.375</td><td>0.000</td><td>0.809</td><td>0.581</td></tr>
+<tr><td>Loop 4</td><td>0.500</td><td>0.000</td><td>0.824</td><td>0.572</td></tr>
+<tr><td>Loop 5</td><td>0.500</td><td>0.000</td><td>0.824</td><td>0.577</td></tr></tbody>
+      </table>
+      <p>On the paired 51-55 blank subset, loop5 exact changes
+      0.625 to
+      0.125. Train CE changes
+      0.749 to 1.088.
+      This supports the same diagnosis as the systems gate: strict c=1
+      projection is too aggressive for this pretrained solver.</p>
+    </section>
+
+    <section class="panel wide">
+      <h2>Formal matched control context</h2>
+      <table>
+        <thead><tr><th>Official blank range</th><th>n</th><th>Loop5 exact</th><th>Loop5 blank acc</th></tr></thead>
+        <tbody><tr><td>b51-55</td><td>512</td><td>0.3750</td><td>0.7703</td></tr>
+<tr><td>b56-60</td><td>512</td><td>0.1348</td><td>0.6206</td></tr>
+<tr><td>b61-64</td><td>512</td><td>0.1543</td><td>0.8225</td></tr></tbody>
+      </table>
+      <p>The formal identity arm completed at source 56030a1. The formal
+      candidate never produced a valid score because earlier strict numerical
+      certificates stopped it. The current exact SHA fixed correctness but
+      failed the systems gate before any formal arm.</p>
+    </section>
+
+    <section class="panel wide">
+      <h2>Paired Sudoku boards across loops</h2>
+      <p>The two frames use the same fixed diagnostic cases. Open either frame
+      directly for full-width inspection.</p>
+      <div class="frames">
+        <div>
+          <p><a href="smoke_control_cases.html">Matched identity cases</a></p>
+          <iframe src="smoke_control_cases.html" title="Matched identity cases"></iframe>
+        </div>
+        <div>
+          <p><a href="smoke_budget_cases.html">Strict c=1 budget cases</a></p>
+          <iframe src="smoke_budget_cases.html" title="Strict budget cases"></iframe>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

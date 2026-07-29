@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-GAIN-001`
-- Status: scalar-certificate systems retry pending
+- Status: discarded at strict systems gate
 - Date: `2026-07-29`
 - Machine: AIStation `GPU1` only
 - Branch: `codex/gain-budget-gdn2-20260729`
@@ -288,14 +288,54 @@ K-dimensional gate once. It still recomputes the actual FP32 erase strength
 from that gate, and the caller still audits the BF16 gate that enters the
 official recurrence. No certificate, budget, or decision threshold changes.
 
+### 7.8 Final scalar-certificate result at `e4c929dd`
+
+The scalar-certificate implementation again passed 24/24 mathematical tests
+and every official FLA CUDA correctness gate:
+
+- chunk boundary and fused-recurrent forward;
+- FP32 and BF16 chunk backward;
+- split state carry;
+- untouched `mode=none` exact equality;
+- full gain-budget layer backward.
+
+The stable ABCCBA benchmark then measured:
+
+- matched external identity: `14.9004 ms`;
+- strict `c=1` gain budget: `19.6893 ms`;
+- projection time overhead: `+32.1395%`;
+- projection memory overhead: `+18.4866%`;
+- checkpoint clipping fraction: `63.4967%`.
+
+The time overhead exceeds the pre-registered `20%` maximum. Preflight wrote
+`abort.json`, left GPU1 at zero allocated memory, and did not launch either
+formal arm.
+
+The earlier exact-resume two-step smoke at `56030a13` remains diagnostic
+rather than a formal score, but explains the mechanism failure. The strict
+budget clipped `99.9958%` of training token/head rows, forced `56.4027%` to
+the zero-shear endpoint, changed the erase gate by `68.3114%`, and retained a
+mean loop5 anisotropy scale of only `0.0190`. On the paired eight-board
+51-55-blank subset, loop5 exact changed `0.625 -> 0.125`; train CE changed
+`0.749 -> 1.088`.
+
+The archived visualization contains raw timing samples, the complete CUDA
+contract, source snapshot, loop tables, and paired board renderings:
+
+`runs/gain-budget-gdn2-c1-final-20260730-e4c929d/visualizations/index.html`
+
 ## 8. Conclusion
 
-The implementation and official-kernel contract are valid, but the formal
-quality comparison is not yet complete. One scalar-certificate performance
-retry is authorized because it removes redundant tensor materialization
-without changing the mechanism. A systems failure or negative quality result
-after that retry closes this projection without a cap, seed, loss, or
-training-length sweep.
+Strict `c=1` Gain-Budgeted GDN2 is discarded. The implementation and
+official-kernel contract are correct, but the mechanism is neither cheap nor
+behavior-preserving at the pretrained operating point. Mild transient
+expansion is not simply wasted instability: this solver uses erase-gate
+anisotropy as part of its computation. Forcing every recurrent edit to be
+non-expansive modifies almost every gate and removes nearly all anisotropy.
+
+Do not sweep cap, seed, loss, LR, model size, or training length. A future
+stability idea must be identity-compatible and target rare outlier growth
+without globally constraining all recurrent edits.
 
 ## 9. Submission
 

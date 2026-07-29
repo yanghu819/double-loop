@@ -1,0 +1,44 @@
+{
+  "correctness_status": "passed_before_benchmark",
+  "decision": "discard_gain_budget_c1_without_cap_seed_loss_or_length_sweep",
+  "formal_training_launched": false,
+  "git_sha": "e4c929dd16629a586afb0089bd69090f8722371f",
+  "gpu_uuid": "GPU-608b6f50-c148-465f-02d7-7f1e3658c79a",
+  "preflight_exit": 1,
+  "preflight_pid": 7447,
+  "reason": "systems_gate_failed",
+  "stage": "strict_preflight",
+  "status": "stopped",
+  "systems_gate": {
+    "budget_clipped_frac": 0.6349665522575378,
+    "max_projection_overhead_frac": 0.2,
+    "projection_memory_overhead_frac": 0.18486628362914703,
+    "projection_time_overhead_frac": 0.3213948709861336,
+    "raw_time_samples": {
+      "decay_funded": [
+        0.017302073669433593,
+        0.017727725219726563,
+        0.01886952362060547,
+        0.017336985778808593,
+        0.026248773193359377,
+        0.022089791870117188,
+        0.02050912628173828,
+        0.021690733337402342
+      ],
+      "external_identity": [
+        0.014677580261230469,
+        0.013663194274902344,
+        0.013599494934082032,
+        0.013883673095703125,
+        0.022002764892578124,
+        0.015463162231445313,
+        0.015123239135742187,
+        0.019897587585449218
+      ]
+    },
+    "violations": [
+      "gain-budget projection time overhead exceeds 20% over the matched external identity: 0.3213948709861336"
+    ]
+  },
+  "timestamp_utc": "2026-07-29T17:16:54.134904+00:00"
+}

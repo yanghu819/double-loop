@@ -1355,3 +1355,16 @@
   bitwise regression gate; `external_identity` and `decay_funded` share the
   same external normalization, cast, kernel, and audit overhead. Only the erase
   projection differs between the formal arms.
+- Strict non-expansion was the wrong abstraction for this checkpoint. The
+  final scalar-certificate SHA passed 24/24 math tests and all official CUDA
+  correctness gates, but still cost `+32.14%` time over matched identity.
+  More importantly, the same-semantics smoke clipped `99.996%` of token/head
+  rows, forced `56.40%` to the isotropic endpoint, and retained mean
+  anisotropy scale `0.019`. It changed almost every memory edit rather than
+  removing rare pathological gain.
+- Do not assume non-normality is wasted instability. The paired smoke moved
+  51-55-blank loop5 exact `0.625 -> 0.125` and CE `0.749 -> 1.088` under the
+  strict budget. The pretrained solver uses mild transient expansion as
+  useful computation. Any future generic stability mechanism must preserve
+  the identity path and suppress only learned outliers, not globally force
+  every step under `c=1`.

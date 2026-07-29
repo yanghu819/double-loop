@@ -418,14 +418,20 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
                     )
                     == "none"
                     else (
-                        "audited_external_fp32_identity_plus_official_gdn2_kernel"
+                        (
+                            "external_fp32_normalization_then_bfloat16_"
+                            "tolerance_official_gdn2_chunk"
+                        )
                         if getattr(
                             getattr(block, "time_mix", None),
                             "gain_budget_mode",
                             "none",
                         )
                         == "external_identity"
-                        else "audited_external_fp32_gain_budget_plus_official_gdn2_kernel"
+                        else (
+                            "fp32_gain_budget_projected_then_bfloat16_tolerance_"
+                            "audited_official_gdn2_chunk"
+                        )
                     )
                 ),
             }
@@ -1802,17 +1808,31 @@ class FLADeltaTimeMix(nn.Module):
             b = b * 2.0
 
         with torch.autocast(device_type="cuda", enabled=False):
-            q_fp32 = fla_l2norm_fp32(q)
-            k_fp32 = fla_l2norm_fp32(k)
-            # FLA GDN2's WY Triton dot requires equal operand dtypes. Keep the
-            # complete recurrence FP32 so b_eff remains hard-certified; the
-            # surrounding model and its projected values remain BF16.
-            v_fp32 = v.float()
-            w_fp32 = w.float()
+            if not (
+                q.dtype
+                == k.dtype
+                == v.dtype
+                == b.dtype
+                == w.dtype
+                == torch.bfloat16
+            ):
+                raise RuntimeError(
+                    "Integrated Gain-Budget expects BF16 model projections; "
+                    f"got q/k/v/b/w={q.dtype}/{k.dtype}/{v.dtype}/"
+                    f"{b.dtype}/{w.dtype}"
+                )
+            # Normalize in FP32, then quantize before projection so the
+            # projection sees the exact key consumed by the official BF16
+            # chunk kernel. The strict FP32 certificate remains a separate
+            # fused-recurrent contract lane because upstream chunk training
+            # does not safely support a full FP32 recurrence.
+            q_kernel = fla_l2norm_fp32(q).to(dtype=q.dtype)
+            k_kernel = fla_l2norm_fp32(k).to(dtype=k.dtype)
+            g_kernel = g.float()
             effective_b, projection = project_erase_gate(
-                k_fp32,
-                b,
-                g,
+                k_kernel.float(),
+                b.float(),
+                g_kernel,
                 mode=(
                     "none"
                     if self.gain_budget_mode == "external_identity"
@@ -1824,13 +1844,24 @@ class FLADeltaTimeMix(nn.Module):
                 infeasible_policy=self.gain_budget_infeasible_policy,
             )
             gate_delta = effective_b - b.float()
+            b_kernel = effective_b.to(dtype=b.dtype)
+            _audited_b, quantized = project_erase_gate(
+                k_kernel.float(),
+                b_kernel.float(),
+                g_kernel,
+                mode="none",
+                infeasible_policy="raise",
+            )
+            quantized_delta_error = (
+                quantized["delta"] - projection["delta"]
+            ).abs()
             if core.num_v_heads > core.num_heads:
                 groups = core.num_v_heads // core.num_heads
-                q_fp32 = torch.repeat_interleave(q_fp32, groups, dim=-2)
-                k_fp32 = torch.repeat_interleave(k_fp32, groups, dim=-2)
-                g = torch.repeat_interleave(g, groups, dim=-2)
-                effective_b = torch.repeat_interleave(
-                    effective_b,
+                q_kernel = torch.repeat_interleave(q_kernel, groups, dim=-2)
+                k_kernel = torch.repeat_interleave(k_kernel, groups, dim=-2)
+                g_kernel = torch.repeat_interleave(g_kernel, groups, dim=-2)
+                b_kernel = torch.repeat_interleave(
+                    b_kernel,
                     groups,
                     dim=-2,
                 )
@@ -1842,12 +1873,12 @@ class FLADeltaTimeMix(nn.Module):
             if operation is None:
                 raise RuntimeError("The required official GDN2 kernel is unavailable")
             o, terminal_state = operation(
-                q=q_fp32,
-                k=k_fp32,
-                v=v_fp32,
-                g=g,
-                b=effective_b,
-                w=w_fp32,
+                q=q_kernel,
+                k=k_kernel,
+                v=v,
+                g=g_kernel,
+                b=b_kernel,
+                w=w,
                 initial_state=initial_state,
                 output_final_state=True,
                 use_qk_l2norm_in_kernel=False,
@@ -1883,7 +1914,7 @@ class FLADeltaTimeMix(nn.Module):
             ]
             .mean()
             .detach(),
-            "gdn2_gain_budget_effective_sigma_mean": projection[
+            "gdn2_gain_budget_effective_sigma_mean": quantized[
                 "effective_sigma"
             ]
             .mean()
@@ -1893,26 +1924,35 @@ class FLADeltaTimeMix(nn.Module):
             ]
             .mean()
             .detach(),
-            "gdn2_gain_budget_effective_step_bound": projection[
+            "gdn2_gain_budget_effective_step_bound": quantized[
                 "effective_step_gain_bound"
             ]
             .mean()
             .detach(),
-            "gdn2_gain_budget_effective_step_bound_max": projection[
+            "gdn2_gain_budget_effective_step_bound_max": quantized[
                 "effective_step_gain_bound"
             ]
             .max()
             .detach(),
-            "gdn2_gain_budget_delta_error_max": projection["delta_abs_error"]
+            "gdn2_gain_budget_delta_error_max": quantized_delta_error
+            .max()
+            .detach(),
+            "gdn2_gain_budget_fp32_projection_step_bound_max": projection[
+                "effective_step_gain_bound"
+            ]
+            .max()
+            .detach(),
+            "gdn2_gain_budget_fp32_projection_delta_error_max": projection[
+                "delta_abs_error"
+            ]
             .max()
             .detach(),
             "gdn2_gain_budget_gate_relative_change": (
                 gate_delta.square().mean().sqrt()
                 / b.float().square().mean().sqrt().clamp_min(1e-8)
             ).detach(),
-            "gdn2_gain_budget_fp32_numerical_certificate": x.new_tensor(
-                float(self.gain_budget_mode != "external_identity")
-            ),
+            "gdn2_gain_budget_fp32_numerical_certificate": x.new_zeros(()),
+            "gdn2_gain_budget_low_precision_tolerance_path": x.new_ones(()),
         }
 
         output_gate = core.g_proj(x).view(
@@ -2039,8 +2079,11 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_gain_budget_effective_step_bound": zero,
             "gdn2_gain_budget_effective_step_bound_max": zero,
             "gdn2_gain_budget_delta_error_max": zero,
+            "gdn2_gain_budget_fp32_projection_step_bound_max": zero,
+            "gdn2_gain_budget_fp32_projection_delta_error_max": zero,
             "gdn2_gain_budget_gate_relative_change": zero,
             "gdn2_gain_budget_fp32_numerical_certificate": zero,
+            "gdn2_gain_budget_low_precision_tolerance_path": zero,
         }
         return y, terminal_state
 

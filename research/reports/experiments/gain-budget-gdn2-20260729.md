@@ -56,8 +56,11 @@ Success requires one of:
   and mean loop1-to-loop5 exact gain improves over control by `>= +0.005`.
 
 Systems overhead must be `<=20%`. The mechanism must be active:
-projection clipping fraction `>=1%`, erase-strength error `<=5e-6`, no
-infeasible budget, and FP32 numerical step-gain bound `<=1.0001`.
+projection clipping fraction `>=1%` and no infeasible budget. The strict FP32
+official fused-recurrent lane must satisfy erase-strength error `<=5e-6` and
+step-gain bound `<=1.0001`. The actual official BF16 chunk training lane must
+satisfy post-cast erase-strength error `<=3e-3` and post-cast step-gain bound
+`<=1.001`; it is a declared tolerance path, not a hard certificate.
 
 Kill immediately on a provenance/kernel/gradient/checkpoint/no-fallback
 failure, NaN/OOM/wrong GPU, or certificate violation. Stop the formal
@@ -69,11 +72,15 @@ loss, model size, or continuation length after a negative result.
 
 - Official FLA `GatedDeltaNet2`, D192/L10/H6/K32/V32, short conv on.
 - Native FutureSeed1, five loops, equal CE on every loop.
-- BF16 model/projection path followed by an FP32 certified GDN2 recurrence:
-  external q/k normalization, effective erase gate, decay, value, and write
-  gate all enter the official kernel as FP32. Official FLA's WY Triton dot
-  requires equal operand dtypes, so the rejected FP32-q/k/b plus BF16-v/w
-  mixture is neither compilable nor used.
+- BF16 model projections, external FP32 q/k normalization, and FP32 erase
+  projection. Normalized q/k and projected erase gate are then cast to BF16
+  before the official chunk kernel. The actual post-cast key/gate/decay are
+  audited against the low-precision tolerance. A separate official FP32
+  fused-recurrent forward lane carries the hard mathematical certificate.
+- Mixed FP32 q/k/g/b plus BF16 v/w is rejected by official WY Triton. Full
+  FP32 official chunk is also rejected after a production H6/T81 GPU1 test
+  triggered illegal memory access during autotuning. Neither failed path is
+  used or hidden behind a fallback.
 - Effective batch 128, seed 52, exact same curriculum and official fixed
   evaluation cases.
 - No noise, repair, search, selector, oracle inference, or task-specific rule.
@@ -83,8 +90,8 @@ loss, model size, or continuation length after a negative result.
 - Persistent root: `/huyang2/double-loop`
 - All cache, wheel, model, run, and artifact paths stay below that root.
 - Complete preflight (pure-math CPU properties, CUDA contract,
-  official-kernel parity, backward from BF16 model projections through the
-  FP32 certified recurrence, state carry, benchmark, dataset manifest, and
+  strict FP32 fused-forward certification, official BF16 chunk parity and
+  backward at the production head shape, state carry, benchmark, dataset manifest, and
   both two-step exact-resume smokes):
 
 ```bash

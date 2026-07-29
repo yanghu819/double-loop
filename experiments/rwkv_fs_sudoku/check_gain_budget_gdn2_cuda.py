@@ -187,9 +187,8 @@ def prepare_projected(
     # part of the deterministic contract fixture.
     g = -0.003 - 0.002 * inputs["raw_g"].sigmoid()
     b = (2.0 * inputs["raw_b"]).sigmoid()
-    # Official GDN2's WY Triton dot requires all operands to share a dtype.
-    # The hard-certified lane therefore casts the quantized model projections
-    # to FP32 before the recurrence instead of silently casting b_eff to BF16.
+    # This helper is used only by the strict FP32 fused-forward lane and the
+    # small-shape FP32 chunk diagnostic, never by formal BF16 training.
     v = inputs["v"].float()
     w = inputs["raw_w"].sigmoid().float()
     b_effective, stats = project_erase_gate(
@@ -210,6 +209,57 @@ def prepare_projected(
         "w": w,
         "initial_state": inputs["h0"],
     }, stats
+
+
+def prepare_projected_bfloat16(
+    inputs: dict[str, torch.Tensor],
+) -> tuple[
+    dict[str, torch.Tensor],
+    dict[str, torch.Tensor],
+    dict[str, torch.Tensor],
+]:
+    """Build the exact low-precision lane consumed by official chunk GDN2."""
+    q = fla_l2norm_fp32(inputs["q_raw"]).to(torch.bfloat16)
+    k = fla_l2norm_fp32(inputs["k_raw"]).to(torch.bfloat16)
+    g = -0.003 - 0.002 * inputs["raw_g"].sigmoid()
+    b = (2.0 * inputs["raw_b"]).sigmoid().to(torch.bfloat16)
+    v = inputs["v"].to(torch.bfloat16)
+    w = inputs["raw_w"].sigmoid().to(torch.bfloat16)
+    effective_b_fp32, projection = project_erase_gate(
+        k.float(),
+        b.float(),
+        g.float(),
+        mode="decay_funded",
+        step_gain_cap=1.0,
+        sigma_cap_max=3.0,
+        infeasible_policy="raise",
+    )
+    effective_b = effective_b_fp32.to(torch.bfloat16)
+    _audited_b, actual = project_erase_gate(
+        k.float(),
+        effective_b.float(),
+        g.float(),
+        mode="none",
+        infeasible_policy="raise",
+    )
+    quantization = {
+        "delta_abs_error": (
+            actual["delta"] - projection["delta"]
+        ).abs(),
+        "effective_sigma": actual["effective_sigma"],
+        "effective_step_gain_bound": actual[
+            "effective_step_gain_bound"
+        ],
+    }
+    return {
+        "q": q,
+        "k": k,
+        "v": v,
+        "g": g.float(),
+        "b": effective_b,
+        "w": w,
+        "initial_state": inputs["h0"],
+    }, projection, quantization
 
 
 def independent_step_sigma_max(
@@ -242,9 +292,23 @@ def independent_step_sigma_max(
 
 def check_chunk_boundaries() -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
-    for tokens in (1, 63, 64, 65, 81, 128):
-        inputs = make_inputs(tokens=tokens, seed=20260729 + tokens)
-        projected, stats = prepare_projected(inputs)
+    cases = (
+        (1, 2, 1),
+        (63, 2, 1),
+        (64, 2, 1),
+        (65, 2, 1),
+        (81, 2, 1),
+        (128, 2, 1),
+        (81, 6, 2),
+    )
+    for tokens, heads, batch in cases:
+        inputs = make_inputs(
+            tokens=tokens,
+            heads=heads,
+            batch=batch,
+            seed=20260729 + tokens + heads * 100,
+        )
+        projected, stats, quantization = prepare_projected_bfloat16(inputs)
         actual_o, actual_state = chunk_gdn2(
             **projected,
             output_final_state=True,
@@ -256,15 +320,26 @@ def check_chunk_boundaries() -> dict[str, Any]:
         )
         row: dict[str, Any] = {
             "tokens": tokens,
-            "lane": "certified_fp32_recurrence_from_bfloat16_model_values",
+            "heads": heads,
+            "batch": batch,
+            "lane": (
+                "official_bfloat16_chunk_production_shape"
+                if heads == 6
+                else "official_bfloat16_chunk_boundary"
+            ),
             "kernel_input_dtypes": {
                 name: str(projected[name].dtype)
                 for name in ("q", "k", "v", "g", "b", "w", "initial_state")
             },
             "clipped_frac": float(stats["clipped"].float().mean().item()),
-            "delta_error_max": float(stats["delta_abs_error"].max().item()),
+            "fp32_projection_delta_error_max": float(
+                stats["delta_abs_error"].max().item()
+            ),
+            "quantized_delta_error_max": float(
+                quantization["delta_abs_error"].max().item()
+            ),
             "effective_step_bound_max": float(
-                stats["effective_step_gain_bound"].max().item()
+                quantization["effective_step_gain_bound"].max().item()
             ),
             "independent_actual_step_sigma_max": independent_step_sigma_max(
                 projected
@@ -290,70 +365,31 @@ def check_chunk_boundaries() -> dict[str, Any]:
         )
         if row["clipped_frac"] <= 0:
             raise AssertionError(f"projection did not activate at T={tokens}")
-        if row["delta_error_max"] > 5e-6:
+        if row["fp32_projection_delta_error_max"] > 5e-6:
             raise AssertionError(f"erase-strength preservation failed at T={tokens}")
-        if row["effective_step_bound_max"] > 1.0001:
-            raise AssertionError(f"gain budget failed at T={tokens}")
-        if row["independent_actual_step_sigma_max"] > 1.0001:
+        if row["quantized_delta_error_max"] > 3e-3:
             raise AssertionError(
-                f"independent P@D SVD certificate failed at T={tokens}"
+                f"BF16 erase-strength tolerance failed at T={tokens}"
+            )
+        if row["effective_step_bound_max"] > 1.001:
+            raise AssertionError(f"BF16 gain-budget tolerance failed at T={tokens}")
+        if row["independent_actual_step_sigma_max"] > 1.001:
+            raise AssertionError(
+                f"independent BF16 P@D SVD tolerance failed at T={tokens}"
             )
         rows.append(row)
-    strict_inputs = make_inputs(
-        tokens=81,
-        heads=6,
-        key_dim=32,
-        value_dim=32,
-        seed=20262081,
-        value_dtype=torch.float32,
-    )
-    strict_projected, strict_stats = prepare_projected(strict_inputs)
-    strict_o, strict_state = chunk_gdn2(
-        **strict_projected,
-        output_final_state=True,
-        use_qk_l2norm_in_kernel=False,
-    )
-    strict_ref_o, strict_ref_state = naive_recurrent_gdn2(
-        **strict_projected,
-        output_final_state=True,
-    )
-    strict_row: dict[str, Any] = {
-        "tokens": 81,
-        "heads": 6,
-        "lane": "strict_fp32_formal_geometry",
-        "clipped_frac": float(strict_stats["clipped"].float().mean().item()),
-        "independent_actual_step_sigma_max": independent_step_sigma_max(
-            strict_projected,
-        ),
-    }
-    strict_row.update(
-        assert_close(
-            strict_o,
-            strict_ref_o,
-            atol=3e-3,
-            rtol=3e-3,
-            label="output",
-        )
-    )
-    strict_row.update(
-        assert_close(
-            strict_state,
-            strict_ref_state,
-            atol=4e-3,
-            rtol=4e-3,
-            label="state",
-        )
-    )
-    if strict_row["independent_actual_step_sigma_max"] > 1.0001:
-        raise AssertionError("strict FP32 independent P@D SVD certificate failed")
-    rows.append(strict_row)
     return {"rows": rows}
 
 
 def check_fused_forward() -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
-    for tokens in (1, 63, 64):
-        inputs = make_inputs(tokens=tokens, seed=20260829 + tokens)
+    for tokens, heads in ((1, 2), (63, 2), (64, 2), (81, 6)):
+        inputs = make_inputs(
+            tokens=tokens,
+            heads=heads,
+            seed=20260829 + tokens + heads * 100,
+            value_dtype=torch.float32,
+        )
         projected, _stats = prepare_projected(inputs)
         actual_o, actual_state = fused_recurrent_gdn2(
             **projected,
@@ -366,7 +402,12 @@ def check_fused_forward() -> dict[str, Any]:
         )
         row: dict[str, Any] = {
             "tokens": tokens,
+            "heads": heads,
+            "lane": "strict_fp32_fused_recurrent_forward_certificate",
             "backward": "not_supported_by_upstream_fused_recurrent_gdn2",
+            "independent_actual_step_sigma_max": independent_step_sigma_max(
+                projected
+            ),
         }
         row.update(
             assert_close(
@@ -386,6 +427,10 @@ def check_fused_forward() -> dict[str, Any]:
                 label="state",
             )
         )
+        if row["independent_actual_step_sigma_max"] > 1.0001:
+            raise AssertionError(
+                "strict FP32 fused-recurrent P@D SVD certificate failed"
+            )
         rows.append(row)
     return {"rows": rows}
 
@@ -526,14 +571,15 @@ def check_chunk_backward() -> dict[str, Any]:
 def check_chunk_backward_bfloat16() -> dict[str, Any]:
     base = make_inputs(
         tokens=81,
-        heads=2,
+        batch=2,
+        heads=6,
         key_dim=32,
         value_dim=32,
         seed=20260931,
         value_dtype=torch.bfloat16,
         requires_grad=False,
     )
-    projected, stats = prepare_projected(base)
+    projected, stats, quantization = prepare_projected_bfloat16(base)
     generator = torch.Generator(device="cuda")
     generator.manual_seed(20260932)
     output_cotangent = torch.randn(
@@ -561,9 +607,18 @@ def check_chunk_backward_bfloat16() -> dict[str, Any]:
         state_cotangent=state_cotangent,
     )
     result: dict[str, Any] = {
-        "lane": "bfloat16_model_values_cast_to_certified_fp32_recurrence",
+        "lane": "official_bfloat16_chunk_training_tolerance",
         "autograd_fn": type(chunk_o.grad_fn).__name__,
         "clipped_frac": float(stats["clipped"].float().mean().item()),
+        "quantized_delta_error_max": float(
+            quantization["delta_abs_error"].max().item()
+        ),
+        "quantized_step_bound_max": float(
+            quantization["effective_step_gain_bound"].max().item()
+        ),
+        "independent_actual_step_sigma_max": independent_step_sigma_max(
+            projected
+        ),
         "kernel_input_dtypes": {
             name: str(value.dtype) for name, value in chunk_leaves.items()
         },
@@ -591,12 +646,12 @@ def check_chunk_backward_bfloat16() -> dict[str, Any]:
         gradient = chunk_grads[name]
         if not bool(torch.isfinite(gradient).all()):
             raise AssertionError(
-                f"non-finite BF16-projection FP32-recurrence gradient for {name}"
+                f"non-finite official BF16 chunk gradient for {name}"
             )
         norm = float(gradient.float().norm().item())
         if norm <= 0:
             raise AssertionError(
-                f"zero BF16-projection FP32-recurrence gradient for {name}"
+                f"zero official BF16 chunk gradient for {name}"
             )
         result["gradients"][name] = assert_close(
             gradient,
@@ -610,34 +665,47 @@ def check_chunk_backward_bfloat16() -> dict[str, Any]:
         result["gradients"][name]["relative_l2"] = relative_error
         if relative_error > 0.20:
             raise AssertionError(
-                "BF16-projection FP32-recurrence VJP relative L2 exceeds "
-                "20% for "
+                "Official BF16 chunk VJP relative L2 exceeds 20% for "
                 f"{name}: {relative_error}"
             )
+    if result["quantized_delta_error_max"] > 3e-3:
+        raise AssertionError("BF16 quantized erase-strength error exceeds tolerance")
+    if result["quantized_step_bound_max"] > 1.001:
+        raise AssertionError("BF16 quantized gain bound exceeds tolerance")
+    if result["independent_actual_step_sigma_max"] > 1.001:
+        raise AssertionError("independent BF16 P@D SVD exceeds tolerance")
     return result
 
 
 def check_chunk_state_carry() -> dict[str, Any]:
     rows = []
-    for lane, value_dtype, atol, rtol, seed in (
-        ("strict_fp32", torch.float32, 6e-3, 6e-3, 20260940),
+    for lane, value_dtype, heads, batch, atol, rtol, seed in (
+        ("strict_fp32_chunk_small_shape", torch.float32, 2, 1, 6e-3, 6e-3, 20260940),
         (
-            "bfloat16_model_values_to_certified_fp32_recurrence",
+            "official_bfloat16_chunk_production_shape",
             torch.bfloat16,
-            6e-3,
-            6e-3,
+            6,
+            2,
+            5e-2,
+            5e-2,
             20260941,
         ),
     ):
         inputs = make_inputs(
             tokens=81,
-            heads=2,
+            heads=heads,
+            batch=batch,
             key_dim=32,
             value_dim=32,
             seed=seed,
             value_dtype=value_dtype,
         )
-        projected, _stats = prepare_projected(inputs)
+        if value_dtype == torch.bfloat16:
+            projected, _stats, _quantization = prepare_projected_bfloat16(
+                inputs
+            )
+        else:
+            projected, _stats = prepare_projected(inputs)
         full_output, full_state = chunk_gdn2(
             **projected,
             output_final_state=True,
@@ -779,8 +847,8 @@ def check_mode_none_exact() -> dict[str, Any]:
         or external_state_relative_l2 > 2e-2
     ):
         raise AssertionError(
-            "external FP32 normalization changes the official no-projection "
-            "path too much: "
+            "external FP32 normalization plus BF16 recurrence changes the "
+            "official no-projection path too much: "
             f"output_rms={external_output_rms}, "
             f"output_max_abs={external_output_max_abs}, "
             f"output_relative_l2={external_output_relative_l2}, "
@@ -946,10 +1014,26 @@ def check_budget_layer_backward() -> dict[str, Any]:
     }
     if diagnostics["gdn2_gain_budget_clipped_frac"] <= 0:
         raise AssertionError("full layer did not activate gain-budget projection")
-    if diagnostics["gdn2_gain_budget_delta_error_max"] > 5e-6:
-        raise AssertionError("full-layer erase strength was not preserved")
-    if diagnostics["gdn2_gain_budget_effective_step_bound_max"] > 1.0001:
-        raise AssertionError("full-layer numerical gain certificate failed")
+    if diagnostics["gdn2_gain_budget_delta_error_max"] > 3e-3:
+        raise AssertionError(
+            "full-layer BF16 erase-strength tolerance was exceeded"
+        )
+    if diagnostics["gdn2_gain_budget_effective_step_bound_max"] > 1.001:
+        raise AssertionError("full-layer BF16 numerical tolerance was exceeded")
+    if (
+        diagnostics["gdn2_gain_budget_fp32_projection_delta_error_max"]
+        > 5e-6
+    ):
+        raise AssertionError("full-layer FP32 projection failed its certificate")
+    if (
+        diagnostics["gdn2_gain_budget_fp32_projection_step_bound_max"]
+        > 1.0001
+    ):
+        raise AssertionError("full-layer FP32 projection exceeded its bound")
+    if diagnostics["gdn2_gain_budget_fp32_numerical_certificate"] != 0.0:
+        raise AssertionError("BF16 chunk path was mislabeled as hard-certified")
+    if diagnostics["gdn2_gain_budget_low_precision_tolerance_path"] != 1.0:
+        raise AssertionError("BF16 chunk path did not declare tolerance mode")
     if x.grad is None or not bool(torch.isfinite(x.grad).all()):
         raise AssertionError("missing or non-finite full-layer input gradient")
     input_grad_norm = float(x.grad.float().norm().item())

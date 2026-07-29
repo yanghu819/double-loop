@@ -179,9 +179,9 @@ for expected_mode in ("external_identity", "decay_funded"):
             train.get("gain_budget_clipped_frac", 0.0) > 0.0
             and train.get("gain_budget_infeasible_frac", 1.0) == 0.0
             and train.get("gain_budget_step_bound_max", float("inf"))
-            <= 1.0001
+            <= 1.001
             and train.get("gain_budget_delta_error_max", float("inf"))
-            <= 5e-6
+            <= 3e-3
         )
 
 checks = {

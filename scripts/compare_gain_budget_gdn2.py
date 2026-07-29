@@ -911,8 +911,8 @@ def build_decision(
     mechanism_gate = (
         clipped >= 0.01
         and infeasible == 0.0
-        and step_bound <= 1.0001
-        and delta_error <= 5e-6
+        and step_bound <= 1.001
+        and delta_error <= 3e-3
     )
     return {
         "passed": bool(
@@ -946,9 +946,13 @@ def build_decision(
             "infeasible_frac": infeasible,
             "maximum_infeasible_frac": 0.0,
             "step_bound_max": step_bound,
-            "maximum_step_bound": 1.0001,
+            "maximum_step_bound": 1.001,
             "delta_error_max": delta_error,
-            "maximum_delta_error": 5e-6,
+            "maximum_delta_error": 3e-3,
+            "precision_contract": (
+                "official BF16 chunk tolerance; strict FP32 certificate "
+                "is enforced separately by formal preflight"
+            ),
         },
     }
 

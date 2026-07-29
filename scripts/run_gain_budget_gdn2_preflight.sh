@@ -206,10 +206,14 @@ for expected_mode, run_dir in run_rows:
             raise SystemExit("Gain-Budget smoke did not activate projection")
         if train.get("gain_budget_infeasible_frac", 1.0) != 0.0:
             raise SystemExit("Gain-Budget smoke encountered an infeasible budget")
-        if train.get("gain_budget_step_bound_max", float("inf")) > 1.0001:
-            raise SystemExit("Gain-Budget smoke violated its numerical bound")
-        if train.get("gain_budget_delta_error_max", float("inf")) > 5e-6:
-            raise SystemExit("Gain-Budget smoke failed erase-strength preservation")
+        if train.get("gain_budget_step_bound_max", float("inf")) > 1.001:
+            raise SystemExit(
+                "Gain-Budget smoke exceeded its declared BF16 tolerance"
+            )
+        if train.get("gain_budget_delta_error_max", float("inf")) > 3e-3:
+            raise SystemExit(
+                "Gain-Budget smoke exceeded BF16 erase-strength tolerance"
+            )
     smokes[expected_mode] = {
         "run_dir": str(run_dir),
         "result_path": str(result_path),
@@ -231,6 +235,12 @@ for expected_mode, run_dir in run_rows:
 
 payload = {
     "status": "passed",
+    "precision_contract": {
+        "formal_certificate": "FP32 official fused-recurrent forward",
+        "training_path": "official BF16 chunk with audited tolerance",
+        "training_max_step_bound": 1.001,
+        "training_max_delta_error": 3e-3,
+    },
     "git_sha": git_sha,
     "gpu_uuid": gpu_uuid,
     "cpu_properties_log": str(cpu_log_path),

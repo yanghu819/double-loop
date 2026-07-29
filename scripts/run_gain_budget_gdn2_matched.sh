@@ -117,12 +117,12 @@ first_diagnostic_violation() {
         exit
       }
       bound = token_value("gb_bound")
-      if (bound != "" && (invalid_number(bound) || bound + 0 > 1.0001)) {
+      if (bound != "" && (invalid_number(bound) || bound + 0 > 1.001)) {
         printf "gb_bound\t%s\t%s\n", step, bound
         exit
       }
       delta = token_value("gb_delta")
-      if (delta != "" && (invalid_number(delta) || delta + 0 > 0.000005)) {
+      if (delta != "" && (invalid_number(delta) || delta + 0 > 0.003)) {
         printf "gb_delta\t%s\t%s\n", step, delta
         exit
       }

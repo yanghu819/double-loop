@@ -1048,7 +1048,11 @@ def check_budget_layer_backward() -> dict[str, Any]:
     }
 
 
-def benchmark_layers(warmup: int, iterations: int) -> dict[str, Any]:
+def benchmark_layers(
+    warmup: int,
+    iterations: int,
+    inner_repeats: int,
+) -> dict[str, Any]:
     torch.manual_seed(20261229)
     kwargs = dict(
         d_model=192,
@@ -1101,23 +1105,41 @@ def benchmark_layers(warmup: int, iterations: int) -> dict[str, Any]:
         layer.zero_grad(set_to_none=True)
     torch.cuda.synchronize()
 
-    def measure_once(layer: FLADeltaTimeMix) -> tuple[float, int]:
+    if inner_repeats < 1:
+        raise ValueError("benchmark inner repeats must be positive")
+
+    def measure_time_once(layer: FLADeltaTimeMix) -> float:
+        layer.zero_grad(set_to_none=True)
+        torch.cuda.synchronize()
+        started = torch.cuda.Event(enable_timing=True)
+        finished = torch.cuda.Event(enable_timing=True)
+        started.record()
+        for _ in range(inner_repeats):
+            run(layer)
+        finished.record()
+        torch.cuda.synchronize()
+        elapsed_seconds = (
+            float(started.elapsed_time(finished))
+            / 1000.0
+            / float(inner_repeats)
+        )
+        layer.zero_grad(set_to_none=True)
+        return elapsed_seconds
+
+    def measure_memory_once(layer: FLADeltaTimeMix) -> int:
         layer.zero_grad(set_to_none=True)
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats()
         allocated_before = int(torch.cuda.memory_allocated())
-        started = torch.cuda.Event(enable_timing=True)
-        finished = torch.cuda.Event(enable_timing=True)
-        started.record()
         run(layer)
-        finished.record()
         torch.cuda.synchronize()
-        elapsed_seconds = float(started.elapsed_time(finished)) / 1000.0
-        incremental_peak = int(torch.cuda.max_memory_allocated()) - allocated_before
+        incremental_peak = (
+            int(torch.cuda.max_memory_allocated()) - allocated_before
+        )
         layer.zero_grad(set_to_none=True)
-        return elapsed_seconds, incremental_peak
+        return incremental_peak
 
     samples = {"baseline": [], "identity": [], "budget": []}
     memory_samples = {"baseline": [], "identity": [], "budget": []}
@@ -1139,10 +1161,16 @@ def benchmark_layers(warmup: int, iterations: int) -> dict[str, Any]:
         for name in sequence:
             if cursors[name] >= iterations:
                 continue
-            seconds, peak = measure_once(layers[name])
-            samples[name].append(seconds)
-            memory_samples[name].append(peak)
+            samples[name].append(measure_time_once(layers[name]))
             cursors[name] += 1
+
+    memory_cursors = {"baseline": 0, "identity": 0, "budget": 0}
+    while min(memory_cursors.values()) < iterations:
+        for name in sequence:
+            if memory_cursors[name] >= iterations:
+                continue
+            memory_samples[name].append(measure_memory_once(layers[name]))
+            memory_cursors[name] += 1
 
     baseline_seconds = statistics.median(samples["baseline"])
     identity_seconds = statistics.median(samples["identity"])
@@ -1153,6 +1181,7 @@ def benchmark_layers(warmup: int, iterations: int) -> dict[str, Any]:
     result = {
         "warmup": warmup,
         "iterations": iterations,
+        "inner_repeats": inner_repeats,
         "order": "ABCCBA",
         "baseline_seconds": baseline_seconds,
         "external_identity_seconds": identity_seconds,
@@ -1180,21 +1209,24 @@ def benchmark_layers(warmup: int, iterations: int) -> dict[str, Any]:
             ].float().item()
         ),
     }
+    violations = []
     if result["projection_time_overhead_frac"] > 0.20:
-        raise AssertionError(
+        violations.append(
             "gain-budget projection time overhead exceeds 20% over the "
             f"matched external identity: {result['projection_time_overhead_frac']}"
         )
     if result["projection_memory_overhead_frac"] > 0.20:
-        raise AssertionError(
+        violations.append(
             "gain-budget projection memory overhead exceeds 20% over the "
             "matched external identity: "
             f"{result['projection_memory_overhead_frac']}"
         )
     if result["budget_clipped_frac"] < 0.01:
-        raise AssertionError(
+        violations.append(
             "gain-budget clipping fraction is below the 1% mechanism gate"
         )
+    result["violations"] = violations
+    result["passed"] = not violations
     return result
 
 
@@ -1213,6 +1245,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-gpu-uuid", required=True)
     parser.add_argument("--benchmark-warmup", type=int, default=3)
     parser.add_argument("--benchmark-iterations", type=int, default=8)
+    parser.add_argument("--benchmark-inner-repeats", type=int, default=5)
     return parser.parse_args()
 
 
@@ -1280,6 +1313,7 @@ def main() -> None:
                 lambda: benchmark_layers(
                     args.benchmark_warmup,
                     args.benchmark_iterations,
+                    args.benchmark_inner_repeats,
                 ),
             ),
         )
@@ -1291,6 +1325,8 @@ def main() -> None:
                 json.dumps(result, indent=2, sort_keys=True),
                 encoding="utf-8",
             )
+            if name == "benchmark" and not result[name]["passed"]:
+                raise AssertionError("; ".join(result[name]["violations"]))
             print(
                 f"PASS {name} ({result[name]['elapsed_seconds']:.2f}s)",
                 flush=True,

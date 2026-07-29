@@ -1325,6 +1325,12 @@
   happens to pass. Multiple logically independent global assertions can share
   one boolean certificate and one device reduction without weakening any
   condition.
+- A benchmark can be the bug. The same layer-size test reported projection
+  overhead from `+0.17%` to `+26.46%` because it emptied the allocator and
+  timed one forward/backward per sample. Keep the fixed `20%` decision gate,
+  but estimate steady-state time from multiple warmed calls and measure
+  cold-cache memory separately. Always persist raw samples even when the gate
+  fails.
 - Strict and training lanes have different jobs. Official FP32
   fused-recurrent forward carries the hard certificate; official BF16 chunk
   carries real training and is audited under an explicit low-precision

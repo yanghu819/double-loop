@@ -100,6 +100,7 @@ def main() -> None:
         state.retain_grad()
 
     captured: dict[int, torch.Tensor] = {}
+    captured_input_dtypes: dict[int, torch.dtype] = {}
     hooks = []
     for layer_idx, block in enumerate(block_model.blocks):
         def capture_initial_state(
@@ -113,6 +114,7 @@ def main() -> None:
             if initial_state is None:
                 raise AssertionError(f"Layer {index} did not receive block memory")
             captured[index] = initial_state.detach().clone()
+            captured_input_dtypes[index] = _args[0].dtype
 
         hooks.append(block.register_forward_pre_hook(capture_initial_state, with_kwargs=True))
 
@@ -131,18 +133,22 @@ def main() -> None:
         raise AssertionError(f"Captured {len(captured)} block seeds, expected {len(block_model.blocks)}")
 
     routing_max_abs = 0.0
-    for layer_idx, state in enumerate(block_bank):
-        state_native = state.to(device=inputs.device, dtype=inputs.dtype)
-        denom = state_native.square().mean(
-            dim=(-1, -2),
-            keepdim=True,
-        ).sqrt().clamp(min=1e-6)
-        gate = torch.sigmoid(block_model.blocks[layer_idx].future_seed_logit)
-        expected = state_native / denom * gate
-        routing_max_abs = max(
-            routing_max_abs,
-            tensor_max_abs(captured[layer_idx], expected),
-        )
+    with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
+        for layer_idx, state in enumerate(block_bank):
+            state_native = state.to(
+                device=inputs.device,
+                dtype=captured_input_dtypes[layer_idx],
+            )
+            denom = state_native.square().mean(
+                dim=(-1, -2),
+                keepdim=True,
+            ).sqrt().clamp(min=1e-6)
+            gate = torch.sigmoid(block_model.blocks[layer_idx].future_seed_logit)
+            expected = state_native / denom * gate
+            routing_max_abs = max(
+                routing_max_abs,
+                tensor_max_abs(captured[layer_idx], expected),
+            )
     if routing_max_abs != 0.0:
         raise AssertionError(
             f"Same-layer block-state routing differs from the direct formula: {routing_max_abs}"
@@ -182,6 +188,10 @@ def main() -> None:
         "state0_grad_norm": float(state0_grad.float().norm().cpu()),
         "block0_gate_grad_norm": float(block0_gate_grad.float().norm().cpu()),
         "state_shapes": [list(state.shape) for state in block_bank],
+        "block_input_dtypes": [
+            str(captured_input_dtypes[layer_idx])
+            for layer_idx in range(len(block_model.blocks))
+        ],
         "runtime": runtime,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

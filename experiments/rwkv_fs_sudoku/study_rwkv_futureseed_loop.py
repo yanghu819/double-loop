@@ -1492,6 +1492,49 @@ class FLADeltaTimeMix(nn.Module):
             x.new_zeros(batch_size, int(self.core.value_dim), width),
         )
 
+    def read_recurrent_state(
+        self,
+        x: torch.Tensor,
+        state: torch.Tensor,
+    ) -> torch.Tensor:
+        """Read a GDN2 state in its producer layer's native coordinate system."""
+        if self.backbone != "gdn2":
+            raise ValueError("Compatible FutureSeed readout is initially restricted to GDN2.")
+        if not x.is_cuda:
+            raise RuntimeError("GDN2 FutureSeed readout is CUDA-only; CPU fallback is disabled.")
+        batch_size, seq_len, _channels = x.shape
+        expected = (batch_size, self.heads, self.head_dim, self.head_v_dim)
+        if tuple(state.shape) != expected:
+            raise ValueError(
+                f"GDN2 readout state shape {tuple(state.shape)} does not match {expected}"
+            )
+
+        q = self.core.q_proj(x)
+        if self.core.use_short_conv:
+            q, _conv_state = self.core.q_conv1d(
+                x=q,
+                cache=None,
+                output_final_state=False,
+            )
+        else:
+            q = F.silu(q)
+        q = F.normalize(
+            q.float().view(batch_size, seq_len, self.heads, self.head_dim),
+            dim=-1,
+            p=2.0,
+        )
+        readout = torch.einsum("bthk,bhkv->bthv", q, state.float())
+        gate = self.core.g_proj(x).view(
+            batch_size,
+            seq_len,
+            self.heads,
+            self.head_v_dim,
+        )
+        readout = self.core.o_norm(readout.to(dtype=x.dtype), gate)
+        return self.core.o_proj(
+            readout.reshape(batch_size, seq_len, self.value_dim)
+        )
+
     def forward(
         self,
         x: torch.Tensor,
@@ -1578,6 +1621,13 @@ class FLADeltaBlock(nn.Module):
         x = x + self.channel_mix(self.ln_channel(x))
         return x, terminal_state
 
+    def read_terminal_state(
+        self,
+        x: torch.Tensor,
+        state: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.time_mix.read_recurrent_state(self.ln_time(x), state)
+
 
 class FutureSeedRWKV(nn.Module):
     def __init__(
@@ -1594,6 +1644,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_norm_mode: str = "unit",
         future_seed_gate_mode: str = "head",
         future_seed_scope: str = "layer",
+        future_seed_readout_hop: int = 0,
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
         backbone: str = "rwkv",
@@ -1621,6 +1672,18 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("block FutureSeed currently requires future_seed_update=fixed.")
         if future_seed_scope == "block" and future_seed_gate_mode != "head":
             raise ValueError("block FutureSeed currently requires the canonical head gate.")
+        if future_seed_readout_hop < 0 or future_seed_readout_hop == 1:
+            raise ValueError("future_seed_readout_hop must be 0 or at least 2.")
+        if future_seed_readout_hop >= layers:
+            raise ValueError("future_seed_readout_hop must be smaller than the layer count.")
+        if future_seed_readout_hop > 0 and backbone != "gdn2":
+            raise ValueError("compatible FutureSeed readout is initially restricted to GDN2.")
+        if future_seed_readout_hop > 0 and future_seed_scope != "layer":
+            raise ValueError("compatible FutureSeed readout requires future_seed_scope=layer.")
+        if future_seed_readout_hop > 0 and future_seed_update != "fixed":
+            raise ValueError("compatible FutureSeed readout requires future_seed_update=fixed.")
+        if future_seed_readout_hop > 0 and future_seed_gate_mode != "head":
+            raise ValueError("compatible FutureSeed readout requires the canonical head gate.")
         if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"}:
             raise ValueError("backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda.")
         self.backbone = backbone
@@ -1630,6 +1693,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_norm_mode = future_seed_norm_mode
         self.future_seed_gate_mode = future_seed_gate_mode
         self.future_seed_scope = future_seed_scope
+        self.future_seed_readout_hop = int(future_seed_readout_hop)
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
@@ -1647,6 +1711,13 @@ class FutureSeedRWKV(nn.Module):
         else:
             self.register_parameter("future_seed_norm_slope", None)
             self.register_parameter("future_seed_norm_bias", None)
+        if self.future_seed_readout_hop > 0:
+            self.future_seed_readout_scale = nn.Parameter(
+                torch.zeros(layers - self.future_seed_readout_hop)
+            )
+            self.future_seed_readout_scale._no_weight_decay = True
+        else:
+            self.register_parameter("future_seed_readout_scale", None)
         expanded_head_dim = int(head_dim * float(gdn_expand_v))
         if backbone in {"gdn", "fla_gdn", "kda"}:
             state_row_dim = expanded_head_dim
@@ -1762,7 +1833,42 @@ class FutureSeedRWKV(nn.Module):
         selective_seed_changes = []
         block_seed_active = []
         block_seed_raw_norms = []
+        readout_scales = []
+        readout_raw_norms = []
+        readout_residual_norms = []
+        state_history: List[torch.Tensor] = []
         for layer_idx, block in enumerate(self.blocks):
+            if (
+                self.future_seed_readout_hop > 0
+                and self.future_seed_scale > 0
+                and layer_idx >= self.future_seed_readout_hop
+            ):
+                assert self.future_seed_readout_scale is not None
+                source_idx = layer_idx - self.future_seed_readout_hop
+                source_block = self.blocks[source_idx]
+                if not isinstance(source_block, FLADeltaBlock):
+                    raise TypeError(
+                        "Compatible FutureSeed readout requires an official FLA delta block."
+                    )
+                source_state = state_history[source_idx]
+                raw_readout = source_block.read_terminal_state(x, source_state)
+                readout_scale = self.future_seed_readout_scale[source_idx].to(
+                    device=x.device,
+                    dtype=x.dtype,
+                )
+                readout_residual = (
+                    raw_readout
+                    * readout_scale
+                    * self.future_seed_scale
+                )
+                x = x + readout_residual
+                readout_scales.append(readout_scale.abs())
+                readout_raw_norms.append(
+                    raw_readout.float().norm(dim=-1).mean().to(dtype=x.dtype)
+                )
+                readout_residual_norms.append(
+                    readout_residual.float().norm(dim=-1).mean().to(dtype=x.dtype)
+                )
             initial_state = None
             candidate_seed_state: Optional[torch.Tensor] = None
             using_block_seed = (
@@ -1996,9 +2102,10 @@ class FutureSeedRWKV(nn.Module):
                     )
             else:
                 x, previous_state = block(x, initial_state=initial_state)
+            assert previous_state is not None
+            state_history.append(previous_state)
             if self.future_seed_scope == "block":
                 assert next_seed_memory is not None
-                assert previous_state is not None
                 next_seed_memory.append(previous_state)
 
         if gates:
@@ -2043,6 +2150,24 @@ class FutureSeedRWKV(nn.Module):
                 if block_seed_raw_norms
                 else x.new_zeros(())
             )
+            out["fs2_readout_enabled"] = x.new_tensor(
+                1.0 if self.future_seed_readout_hop > 0 else 0.0
+            )
+            out["fs2_readout_scale_abs"] = (
+                torch.stack(readout_scales).mean()
+                if readout_scales
+                else x.new_zeros(())
+            )
+            out["fs2_readout_raw_norm"] = (
+                torch.stack(readout_raw_norms).mean()
+                if readout_raw_norms
+                else x.new_zeros(())
+            )
+            out["fs2_readout_residual_norm"] = (
+                torch.stack(readout_residual_norms).mean()
+                if readout_residual_norms
+                else x.new_zeros(())
+            )
             return x, out, next_seed_memory
         zero = x.new_zeros(())
         return (
@@ -2065,6 +2190,10 @@ class FutureSeedRWKV(nn.Module):
                 "fs2_seed_relative_change": zero,
                 "fs2_block_seed_active": zero,
                 "fs2_block_seed_raw_norm": zero,
+                "fs2_readout_enabled": zero,
+                "fs2_readout_scale_abs": zero,
+                "fs2_readout_raw_norm": zero,
+                "fs2_readout_residual_norm": zero,
             },
             next_seed_memory,
         )
@@ -2218,6 +2347,7 @@ def load_training_checkpoint(
         "reasoner.future_seed_norm_bias",
         "reasoner.future_seed_selector.gate_delta",
         "reasoner.future_seed_selector.content_weight",
+        "reasoner.future_seed_readout_scale",
     }
     progressive_suffixes = (
         ".time_mix.o_norm_weight_extra",
@@ -2354,6 +2484,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn_conv_size: int,
         gdn_allow_neg_eigval: bool,
         future_seed_scope: str = "layer",
+        future_seed_readout_hop: int = 0,
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -2397,6 +2528,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_norm_mode=future_seed_norm_mode,
             future_seed_gate_mode=future_seed_gate_mode,
             future_seed_scope=future_seed_scope,
+            future_seed_readout_hop=future_seed_readout_hop,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
             backbone=backbone,
@@ -3033,6 +3165,16 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(
             f"fs2_block_raw_norm={m.get('fs2_block_seed_raw_norm', 0.0):.3f}"
         )
+    if m.get("fs2_readout_enabled", 0.0) > 0:
+        parts.append(
+            f"fs2_readout_scale={m.get('fs2_readout_scale_abs', 0.0):.4f}"
+        )
+        parts.append(
+            f"fs2_readout_raw={m.get('fs2_readout_raw_norm', 0.0):.3f}"
+        )
+        parts.append(
+            f"fs2_readout_resid={m.get('fs2_readout_residual_norm', 0.0):.3f}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -3167,6 +3309,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_norm_mode=args.future_seed_norm_mode,
         future_seed_gate_mode=args.future_seed_gate_mode,
         future_seed_scope=args.future_seed_scope,
+        future_seed_readout_hop=args.future_seed_readout_hop,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_feedback_detach=bool(args.loop_feedback_detach),
         loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
@@ -3844,6 +3987,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_norm_mode": args.future_seed_norm_mode,
         "future_seed_gate_mode": args.future_seed_gate_mode,
         "future_seed_scope": args.future_seed_scope,
+        "future_seed_readout_hop": args.future_seed_readout_hop,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
         "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
@@ -4895,6 +5039,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError(
             "--future_seed_gate_mode state/content is initially restricted to the audited GDN2 state layout"
         )
+    if args.future_seed_readout_hop > 0 and args.backbone != "gdn2":
+        raise ValueError("--future_seed_readout_hop is initially restricted to GDN2")
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")
     if not (0.0 <= args.future_seed_decay < 1.0):
@@ -5016,6 +5162,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
         f"mainline=future_seed_loop backbone={args.backbone} rwkv_kernel={args.rwkv_kernel} "
         f"future_seed_gate_mode={args.future_seed_gate_mode} future_seed_scope={args.future_seed_scope} "
+        f"future_seed_readout_hop={args.future_seed_readout_hop} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
@@ -5188,6 +5335,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_norm_mode": args.future_seed_norm_mode,
         "future_seed_gate_mode": args.future_seed_gate_mode,
         "future_seed_scope": args.future_seed_scope,
+        "future_seed_readout_hop": args.future_seed_readout_hop,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
@@ -5373,6 +5521,7 @@ def parse_args() -> argparse.Namespace:
         default="head",
     )
     p.add_argument("--future_seed_scope", choices=("layer", "block"), default="layer")
+    p.add_argument("--future_seed_readout_hop", type=int, default=0)
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
     p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)

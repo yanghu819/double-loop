@@ -1593,6 +1593,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_update: str = "fixed",
         future_seed_norm_mode: str = "unit",
         future_seed_gate_mode: str = "head",
+        future_seed_scope: str = "layer",
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
         backbone: str = "rwkv",
@@ -1614,6 +1615,12 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError(
                 f"future_seed_gate_mode must be one of: {', '.join(FUTURE_SEED_GATE_MODES)}."
             )
+        if future_seed_scope not in {"layer", "block"}:
+            raise ValueError("future_seed_scope must be one of: layer, block.")
+        if future_seed_scope == "block" and future_seed_update != "fixed":
+            raise ValueError("block FutureSeed currently requires future_seed_update=fixed.")
+        if future_seed_scope == "block" and future_seed_gate_mode != "head":
+            raise ValueError("block FutureSeed currently requires the canonical head gate.")
         if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"}:
             raise ValueError("backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda.")
         self.backbone = backbone
@@ -1622,6 +1629,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_update = future_seed_update
         self.future_seed_norm_mode = future_seed_norm_mode
         self.future_seed_gate_mode = future_seed_gate_mode
+        self.future_seed_scope = future_seed_scope
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
@@ -1720,12 +1728,22 @@ class FutureSeedRWKV(nn.Module):
         *,
         seed_memory: Optional[List[Optional[torch.Tensor]]] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], Optional[List[torch.Tensor]]]:
-        if seed_memory is not None and len(seed_memory) != len(self.blocks) - 1:
-            raise ValueError(f"seed_memory has {len(seed_memory)} entries, expected {len(self.blocks) - 1}")
+        expected_seed_count = (
+            len(self.blocks) if self.future_seed_scope == "block" else len(self.blocks) - 1
+        )
+        if seed_memory is not None and len(seed_memory) != expected_seed_count:
+            raise ValueError(
+                f"seed_memory has {len(seed_memory)} entries, expected {expected_seed_count}"
+            )
         previous_state: Optional[torch.Tensor] = None
         seed_state: Optional[torch.Tensor] = None
         v_first: Optional[torch.Tensor] = None
-        next_seed_memory: Optional[List[torch.Tensor]] = [] if self.future_seed_update == "loop_residual" else None
+        next_seed_memory: Optional[List[torch.Tensor]] = (
+            []
+            if self.future_seed_scope == "block"
+            or self.future_seed_update == "loop_residual"
+            else None
+        )
         gates = []
         update_gates = []
         state_norms = []
@@ -1742,9 +1760,30 @@ class FutureSeedRWKV(nn.Module):
         selective_gate_mins = []
         selective_gate_maxs = []
         selective_seed_changes = []
+        block_seed_active = []
+        block_seed_raw_norms = []
         for layer_idx, block in enumerate(self.blocks):
             initial_state = None
-            if layer_idx > 0:
+            candidate_seed_state: Optional[torch.Tensor] = None
+            using_block_seed = (
+                self.future_seed_scope == "block" and seed_memory is not None
+            )
+            if using_block_seed:
+                prior_state = seed_memory[layer_idx]
+                if prior_state is None:
+                    raise ValueError(
+                        f"block FutureSeed is missing the state for layer {layer_idx}"
+                    )
+                candidate_seed_state = prior_state.to(
+                    device=x.device,
+                    dtype=x.dtype,
+                )
+                update_gates.append(x.new_ones(()))
+                block_seed_active.append(x.new_ones(()))
+                block_seed_raw_norms.append(
+                    candidate_seed_state.norm(dim=(-1, -2)).mean()
+                )
+            elif layer_idx > 0:
                 assert previous_state is not None
                 if self.future_seed_scale > 0:
                     if self.future_seed_update == "loop_residual":
@@ -1784,92 +1823,118 @@ class FutureSeedRWKV(nn.Module):
                         keep = self.future_seed_decay
                         seed_state = keep * seed_state + (1.0 - keep) * previous_state
                         update_gates.append(x.new_tensor(1.0 - keep))
+                    candidate_seed_state = seed_state
+            if candidate_seed_state is not None and self.future_seed_scale > 0:
+                if layer_idx == 0:
+                    gate = torch.sigmoid(block.future_seed_logit)
+                    selective_zero = x.new_zeros(())
+                    selective_diag = {
+                        "fs2_gate_delta_rms": selective_zero,
+                        "fs2_gate_std": selective_zero,
+                        "fs2_gate_batch_std": selective_zero,
+                        "fs2_content_feature_std": selective_zero,
+                        "fs2_gate_min": gate.min().to(dtype=x.dtype),
+                        "fs2_gate_max": gate.max().to(dtype=x.dtype),
+                        "fs2_seed_relative_change": selective_zero,
+                    }
+                else:
                     gate, selective_diag = self.future_seed_selector(
-                        seed_state,
+                        candidate_seed_state,
                         base_logit=block.future_seed_logit,
                         layer_idx=layer_idx,
                     )
-                    gate = gate * self.future_seed_scale
-                    gates.append(gate.mean())
-                    selective_delta_rms.append(
-                        selective_diag["fs2_gate_delta_rms"]
+                gate = gate * self.future_seed_scale
+                gates.append(gate.mean())
+                selective_delta_rms.append(
+                    selective_diag["fs2_gate_delta_rms"]
+                )
+                selective_gate_stds.append(
+                    selective_diag["fs2_gate_std"]
+                )
+                selective_gate_batch_stds.append(
+                    selective_diag["fs2_gate_batch_std"]
+                )
+                selective_content_feature_stds.append(
+                    selective_diag["fs2_content_feature_std"]
+                )
+                selective_gate_mins.append(
+                    selective_diag["fs2_gate_min"]
+                )
+                selective_gate_maxs.append(
+                    selective_diag["fs2_gate_max"]
+                )
+                selective_seed_changes.append(
+                    selective_diag["fs2_seed_relative_change"]
+                )
+                if self.gdn_progressive_base_head_v_dim > 0:
+                    base_state, extra_state = candidate_seed_state.split(
+                        self.gdn_progressive_base_head_v_dim,
+                        dim=-2,
                     )
-                    selective_gate_stds.append(
-                        selective_diag["fs2_gate_std"]
+                    bank_states = (base_state, extra_state)
+                    bank_denoms_native = [
+                        bank.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                        for bank in bank_states
+                    ]
+                    bank_denoms = [
+                        bank.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
+                        for bank in bank_states
+                    ]
+                    normalized_state = torch.cat(
+                        [bank / bank_denom for bank, bank_denom in zip(bank_states, bank_denoms_native)],
+                        dim=-2,
                     )
-                    selective_gate_batch_stds.append(
-                        selective_diag["fs2_gate_batch_std"]
-                    )
-                    selective_content_feature_stds.append(
-                        selective_diag["fs2_content_feature_std"]
-                    )
-                    selective_gate_mins.append(
-                        selective_diag["fs2_gate_min"]
-                    )
-                    selective_gate_maxs.append(
-                        selective_diag["fs2_gate_max"]
-                    )
-                    selective_seed_changes.append(
-                        selective_diag["fs2_seed_relative_change"]
-                    )
-                    if self.gdn_progressive_base_head_v_dim > 0:
-                        base_state, extra_state = seed_state.split(
-                            self.gdn_progressive_base_head_v_dim,
-                            dim=-2,
-                        )
-                        bank_states = (base_state, extra_state)
-                        bank_denoms_native = [
-                            bank.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                            for bank in bank_states
-                        ]
-                        bank_denoms = [
-                            bank.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                            for bank in bank_states
-                        ]
-                        normalized_state = torch.cat(
-                            [bank / bank_denom for bank, bank_denom in zip(bank_states, bank_denoms_native)],
-                            dim=-2,
-                        )
-                        denom = torch.cat(bank_denoms, dim=-2)
-                    else:
-                        denom_native = seed_state.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                        denom = seed_state.float().square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp(min=1e-6)
-                        normalized_state = seed_state / denom_native
-                    raw_rms_means.append(denom.mean().to(dtype=x.dtype))
-                    raw_rms_stds.append(denom.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
-                    if self.future_seed_norm_mode == "adaptive_rms":
-                        assert self.future_seed_norm_slope is not None
-                        assert self.future_seed_norm_bias is not None
-                        log_rms = denom.log().clamp(min=-6.0, max=6.0)
-                        slope = self.future_seed_norm_slope[layer_idx - 1].to(
-                            device=seed_state.device,
-                            dtype=log_rms.dtype,
-                        )
-                        bias = self.future_seed_norm_bias[layer_idx - 1].to(
-                            device=seed_state.device,
-                            dtype=log_rms.dtype,
-                        )
-                        norm_gain = torch.exp(0.5 * torch.tanh(slope * log_rms + bias))
-                    else:
-                        norm_gain = torch.ones_like(denom)
-                    norm_gain_means.append(norm_gain.mean().to(dtype=x.dtype))
-                    norm_gain_stds.append(norm_gain.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
-                    if self.gdn_progressive_base_head_v_dim > 0:
-                        norm_gain_state = torch.repeat_interleave(
-                            norm_gain,
-                            self.gdn_progressive_base_head_v_dim,
-                            dim=-2,
-                        )
-                    else:
-                        norm_gain_state = norm_gain
-                    initial_state = normalized_state * gate * norm_gain_state.to(dtype=normalized_state.dtype)
-                    state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
+                    denom = torch.cat(bank_denoms, dim=-2)
                 else:
-                    gates.append(x.new_zeros(()))
-                    update_gates.append(x.new_zeros(()))
-                    state_norms.append(x.new_zeros(()))
-                    if next_seed_memory is not None:
-                        next_seed_memory.append(previous_state)
+                    denom_native = candidate_seed_state.square().mean(
+                        dim=(-1, -2), keepdim=True
+                    ).sqrt().clamp(min=1e-6)
+                    denom = candidate_seed_state.float().square().mean(
+                        dim=(-1, -2), keepdim=True
+                    ).sqrt().clamp(min=1e-6)
+                    normalized_state = candidate_seed_state / denom_native
+                raw_rms_means.append(denom.mean().to(dtype=x.dtype))
+                raw_rms_stds.append(denom.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
+                if self.future_seed_norm_mode == "adaptive_rms":
+                    assert self.future_seed_norm_slope is not None
+                    assert self.future_seed_norm_bias is not None
+                    if layer_idx == 0:
+                        raise ValueError(
+                            "adaptive_rms is not supported for layer-zero block FutureSeed"
+                        )
+                    log_rms = denom.log().clamp(min=-6.0, max=6.0)
+                    slope = self.future_seed_norm_slope[layer_idx - 1].to(
+                        device=candidate_seed_state.device,
+                        dtype=log_rms.dtype,
+                    )
+                    bias = self.future_seed_norm_bias[layer_idx - 1].to(
+                        device=candidate_seed_state.device,
+                        dtype=log_rms.dtype,
+                    )
+                    norm_gain = torch.exp(0.5 * torch.tanh(slope * log_rms + bias))
+                else:
+                    norm_gain = torch.ones_like(denom)
+                norm_gain_means.append(norm_gain.mean().to(dtype=x.dtype))
+                norm_gain_stds.append(norm_gain.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
+                if self.gdn_progressive_base_head_v_dim > 0:
+                    norm_gain_state = torch.repeat_interleave(
+                        norm_gain,
+                        self.gdn_progressive_base_head_v_dim,
+                        dim=-2,
+                    )
+                else:
+                    norm_gain_state = norm_gain
+                initial_state = normalized_state * gate * norm_gain_state.to(dtype=normalized_state.dtype)
+                state_norms.append(initial_state.norm(dim=(-1, -2)).mean())
+            elif layer_idx > 0:
+                gates.append(x.new_zeros(()))
+                update_gates.append(x.new_zeros(()))
+                state_norms.append(x.new_zeros(()))
+                if (
+                    next_seed_memory is not None
+                    and self.future_seed_scope == "layer"
+                ):
+                    next_seed_memory.append(previous_state)
             if self.backbone == "rwkv7":
                 assert isinstance(block, RWKV7OfficialBlock)
                 if self.activation_checkpoint and self.training and torch.is_grad_enabled():
@@ -1931,6 +1996,10 @@ class FutureSeedRWKV(nn.Module):
                     )
             else:
                 x, previous_state = block(x, initial_state=initial_state)
+            if self.future_seed_scope == "block":
+                assert next_seed_memory is not None
+                assert previous_state is not None
+                next_seed_memory.append(previous_state)
 
         if gates:
             out = {
@@ -1964,6 +2033,16 @@ class FutureSeedRWKV(nn.Module):
                 out["fs2_seed_relative_change"] = torch.stack(
                     selective_seed_changes
                 ).mean()
+            out["fs2_block_seed_active"] = (
+                torch.stack(block_seed_active).mean()
+                if block_seed_active
+                else x.new_zeros(())
+            )
+            out["fs2_block_seed_raw_norm"] = (
+                torch.stack(block_seed_raw_norms).mean()
+                if block_seed_raw_norms
+                else x.new_zeros(())
+            )
             return x, out, next_seed_memory
         zero = x.new_zeros(())
         return (
@@ -1984,6 +2063,8 @@ class FutureSeedRWKV(nn.Module):
                 "fs2_gate_min": zero,
                 "fs2_gate_max": zero,
                 "fs2_seed_relative_change": zero,
+                "fs2_block_seed_active": zero,
+                "fs2_block_seed_raw_norm": zero,
             },
             next_seed_memory,
         )
@@ -2272,6 +2353,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn_use_short_conv: bool,
         gdn_conv_size: int,
         gdn_allow_neg_eigval: bool,
+        future_seed_scope: str = "layer",
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -2314,6 +2396,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_update=future_seed_update,
             future_seed_norm_mode=future_seed_norm_mode,
             future_seed_gate_mode=future_seed_gate_mode,
+            future_seed_scope=future_seed_scope,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
             backbone=backbone,
@@ -2943,6 +3026,13 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(
             f"fs2_seed_change={m.get('fs2_seed_relative_change', 0.0):.4f}"
         )
+    if "fs2_block_seed_active" in m:
+        parts.append(
+            f"fs2_block_active={m.get('fs2_block_seed_active', 0.0):.1f}"
+        )
+        parts.append(
+            f"fs2_block_raw_norm={m.get('fs2_block_seed_raw_norm', 0.0):.3f}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -3076,6 +3166,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_update=args.future_seed_update,
         future_seed_norm_mode=args.future_seed_norm_mode,
         future_seed_gate_mode=args.future_seed_gate_mode,
+        future_seed_scope=args.future_seed_scope,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_feedback_detach=bool(args.loop_feedback_detach),
         loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
@@ -3752,6 +3843,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_update": args.future_seed_update,
         "future_seed_norm_mode": args.future_seed_norm_mode,
         "future_seed_gate_mode": args.future_seed_gate_mode,
+        "future_seed_scope": args.future_seed_scope,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
         "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
@@ -4923,7 +5015,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     print(
         f"device={device} torch={torch.__version__} board={N}x{N} box={BOX_ROWS}x{BOX_COLS} "
         f"mainline=future_seed_loop backbone={args.backbone} rwkv_kernel={args.rwkv_kernel} "
-        f"future_seed_gate_mode={args.future_seed_gate_mode} "
+        f"future_seed_gate_mode={args.future_seed_gate_mode} future_seed_scope={args.future_seed_scope} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
@@ -5095,6 +5187,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_update": args.future_seed_update,
         "future_seed_norm_mode": args.future_seed_norm_mode,
         "future_seed_gate_mode": args.future_seed_gate_mode,
+        "future_seed_scope": args.future_seed_scope,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
@@ -5279,6 +5372,7 @@ def parse_args() -> argparse.Namespace:
         choices=FUTURE_SEED_GATE_MODES,
         default="head",
     )
+    p.add_argument("--future_seed_scope", choices=("layer", "block"), default="layer")
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
     p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)

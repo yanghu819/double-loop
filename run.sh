@@ -386,6 +386,7 @@ COMMON_ARGS=(
   --future_seed_update "${FUTURE_SEED_UPDATE:-fixed}"
   --future_seed_norm_mode "${FUTURE_SEED_NORM_MODE:-unit}"
   --future_seed_gate_mode "${FUTURE_SEED_GATE_MODE:-head}"
+  --future_seed_scope "${FUTURE_SEED_SCOPE:-layer}"
   --loop_feedback_scale "${LOOP_FEEDBACK_SCALE:-0.0}"
   --loop_feedback_detach "${LOOP_FEEDBACK_DETACH:-0}"
   --loop_feedback_corrupt_prob "${LOOP_FEEDBACK_CORRUPT_PROB:-0.0}"

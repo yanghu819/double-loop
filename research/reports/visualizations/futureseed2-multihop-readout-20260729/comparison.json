@@ -1,0 +1,114 @@
+{
+  "experiment": "P-FS2-005",
+  "hypothesis": "A two-layer-old terminal state may contain useful future evidence if the producer layer reads it in its own GDN2 coordinates and returns it to shared hidden space before reuse.",
+  "decision": "reject_compatible_two_hop_readout",
+  "source_sha": "5da8fcda08edb6ec80ec041560dbb243d9308fc8",
+  "matched_contract": {
+    "backbone": "official_fla_gdn2",
+    "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "resume_step": 9000,
+    "end_step": 9100,
+    "seed": 52,
+    "train_loops": 5,
+    "loss": "equal CE on every loop"
+  },
+  "runs": {
+    "futureseed1_identity": {
+      "run": "futureseed2-identity-s9100-20260728T1450Z-57455e4",
+      "source_sha": "57455e4d4047a905925defd2ffe285abff8aacb2",
+      "parameter_count": 5461688,
+      "train_seconds": 659.9245281219482,
+      "train_ce": 0.6435110121965408,
+      "mixed_exact_by_loop": [
+        0.0234375,
+        0.046875,
+        0.1953125,
+        0.24609375,
+        0.251953125
+      ],
+      "official_loop5_exact": {
+        "b51_55": 0.3671875,
+        "b56_60": 0.130859375,
+        "b61_64": 0.197265625
+      }
+    },
+    "compatible_two_hop_readout": {
+      "run": "futureseed2-readout-s9100-20260729T051613Z-5da8fcd",
+      "source_sha": "5da8fcda08edb6ec80ec041560dbb243d9308fc8",
+      "parameter_count": 5461696,
+      "train_seconds": 821.5489163398743,
+      "train_ce": 0.6436584442853928,
+      "mixed_exact_by_loop": [
+        0.0234375,
+        0.046875,
+        0.1796875,
+        0.232421875,
+        0.236328125
+      ],
+      "official_loop5_exact": {
+        "b51_55": 0.359375,
+        "b56_60": 0.13671875,
+        "b61_64": 0.171875
+      },
+      "readout_scale_abs": 0.0169672891497612,
+      "readout_raw_norm_by_loop": [
+        8.809518814086914,
+        22.879932403564453,
+        28.09255027770996,
+        27.26457405090332,
+        26.840503692626953
+      ],
+      "readout_residual_norm_by_loop": [
+        0.15690253674983978,
+        0.39087677001953125,
+        0.5604871511459351,
+        0.5312795639038086,
+        0.5133676528930664
+      ]
+    }
+  },
+  "matched_cases": [
+    {
+      "range": "b51_55",
+      "batch_index": 17,
+      "identity_wrong_by_loop": [22, 9, 2, 0, 0],
+      "readout_wrong_by_loop": [22, 13, 8, 6, 5],
+      "identity_html": "cases/case017_identity.html",
+      "readout_html": "cases/case017_readout.html"
+    },
+    {
+      "range": "b56_60",
+      "batch_index": 175,
+      "identity_wrong_by_loop": [20, 13, 4, 1, 1],
+      "readout_wrong_by_loop": [19, 10, 0, 0, 0],
+      "identity_html": "cases/case175_identity.html",
+      "readout_html": "cases/case175_readout.html"
+    },
+    {
+      "range": "b61_64",
+      "batch_index": 48,
+      "identity_wrong_by_loop": [32, 12, 3, 0, 0],
+      "readout_wrong_by_loop": [32, 15, 8, 1, 0],
+      "identity_html": "cases/case048_identity.html",
+      "readout_html": "cases/case048_readout.html"
+    }
+  ],
+  "contract": {
+    "identity_max_abs": 0.0,
+    "readout_formula_max_abs": 0.0,
+    "active_change_rms": 0.05836775526404381,
+    "active_residual_norm": 0.291015625,
+    "zero_init_scale_grad_norm": 0.1253117024898529
+  },
+  "deltas": {
+    "mixed_loop5_exact": -0.015625,
+    "hard_range_mean_exact": -0.009114583333333343,
+    "b51_55_exact": -0.0078125,
+    "b56_60_exact": 0.005859375,
+    "b61_64_exact": -0.025390625,
+    "train_time_fraction": 0.2449121665943348
+  },
+  "conclusion": "The producer-native readout is exact, trainable, and active, but its benefit is not consistent across boards. It preserves loops 1-2 exactly, then weakens later correction, regresses the hardest range, and costs 24.5% more training time. FutureSeed1's useful information is not improved by simply increasing its depth radius."
+}

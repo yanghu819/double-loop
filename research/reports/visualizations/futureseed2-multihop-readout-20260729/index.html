@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>FutureSeed2 Two-Hop Readout Decision</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #59636e;
+      --line: #c9d1d9;
+      --paper: #ffffff;
+      --page: #f3f5f7;
+      --good: #18794e;
+      --good-soft: #dafbe1;
+      --bad: #b42318;
+      --bad-soft: #ffebe9;
+      --blue: #2563eb;
+      --amber: #9a6700;
+      --violet: #7c3aed;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    main { width: min(1500px, 96vw); margin: 0 auto; padding: 28px 0 56px; }
+    h1 { margin: 0; font-size: 30px; line-height: 1.2; }
+    h2 { margin: 34px 0 12px; font-size: 21px; }
+    h3 { margin: 0 0 6px; font-size: 16px; }
+    p { margin: 6px 0; color: var(--muted); line-height: 1.55; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .verdict {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-left: 5px solid var(--bad);
+      background: var(--bad-soft);
+      line-height: 1.5;
+    }
+    .verdict strong { color: var(--bad); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .metric {
+      min-height: 108px;
+      padding: 14px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric .value { display: block; margin-top: 7px; font-size: 25px; font-weight: 750; }
+    .metric .delta { display: block; margin-top: 5px; font-size: 12px; }
+    .bad { color: var(--bad); }
+    .good { color: var(--good); }
+    .bands {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .band {
+      padding: 14px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 88px 1fr 62px;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .bar-track { height: 14px; background: #e8ebef; overflow: hidden; }
+    .bar { height: 100%; min-width: 1px; }
+    .bar.identity { background: var(--good); }
+    .bar.readout { background: var(--violet); }
+    .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+    .curve-wrap {
+      min-width: 0;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px;
+    }
+    canvas { width: 100%; height: 300px; display: block; }
+    .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); }
+    .swatch { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; }
+    .residual-list { margin: 18px 0 0; padding: 0; list-style: none; }
+    .residual-list li {
+      display: grid;
+      grid-template-columns: 56px 1fr 54px;
+      gap: 8px;
+      align-items: center;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .residual-track { height: 13px; background: #e8ebef; overflow: hidden; }
+    .residual-bar { height: 100%; background: var(--violet); }
+    .case {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 2px solid var(--line);
+    }
+    .trajectory {
+      display: grid;
+      grid-template-columns: 140px repeat(5, minmax(54px, 1fr));
+      gap: 6px;
+      max-width: 700px;
+      margin: 12px 0 16px;
+      font-size: 13px;
+    }
+    .trajectory span { padding: 7px 8px; text-align: center; background: var(--paper); border: 1px solid var(--line); }
+    .trajectory .name { text-align: left; font-weight: 650; }
+    .frames { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .frame {
+      min-width: 0;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .frame-head { padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 700; }
+    iframe { width: 100%; height: 660px; border: 0; background: white; }
+    .notes { padding: 16px 18px; background: #fff8c5; border-left: 5px solid var(--amber); }
+    .notes li { margin: 8px 0; line-height: 1.45; }
+    @media (max-width: 900px) {
+      .metrics, .bands, .chart-grid, .frames { grid-template-columns: 1fr; }
+      .trajectory { grid-template-columns: 116px repeat(5, minmax(42px, 1fr)); }
+      iframe { height: 560px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>FutureSeed2: compatible two-hop readout does not help</h1>
+  <p>Matched D192/L10 GDN2, same step9000 checkpoint, data, optimizer, 100 steps, every-loop CE, seed 52, official FLA/Triton. The only model change is eight zero-initialized two-hop readout scalars.</p>
+
+  <div class="verdict">
+    <strong>Decision: reject this mechanism.</strong>
+    The producer-native readout is exact and trainable, but increasing FutureSeed's depth radius weakens later-loop correction, regresses the hardest boards, and exceeds the 20% cost limit.
+  </div>
+
+  <section class="metrics">
+    <div class="metric">
+      <span class="label">Mixed loop5 exact</span>
+      <span class="value bad">23.63%</span>
+      <span class="delta">FutureSeed1 25.20%, delta -1.56 points</span>
+    </div>
+    <div class="metric">
+      <span class="label">Hard-range mean exact</span>
+      <span class="value bad">22.27%</span>
+      <span class="delta">FutureSeed1 23.18%, delta -0.91 points</span>
+    </div>
+    <div class="metric">
+      <span class="label">Final train CE</span>
+      <span class="value">0.6437</span>
+      <span class="delta">FutureSeed1 0.6435: optimization loss is unchanged</span>
+    </div>
+    <div class="metric">
+      <span class="label">Train time</span>
+      <span class="value bad">821.5s</span>
+      <span class="delta">FutureSeed1 659.9s, overhead +24.5%</span>
+    </div>
+  </section>
+
+  <h2>Official loop5 exact</h2>
+  <section class="bands">
+    <div class="band">
+      <h3>51–55 blanks</h3>
+      <div class="bar-row"><span>FutureSeed1</span><div class="bar-track"><div class="bar identity" style="width:91.80%"></div></div><strong>36.72%</strong></div>
+      <div class="bar-row"><span>Two-hop</span><div class="bar-track"><div class="bar readout" style="width:89.85%"></div></div><strong class="bad">35.94%</strong></div>
+    </div>
+    <div class="band">
+      <h3>56–60 blanks</h3>
+      <div class="bar-row"><span>FutureSeed1</span><div class="bar-track"><div class="bar identity" style="width:32.71%"></div></div><strong>13.09%</strong></div>
+      <div class="bar-row"><span>Two-hop</span><div class="bar-track"><div class="bar readout" style="width:34.18%"></div></div><strong class="good">13.67%</strong></div>
+    </div>
+    <div class="band">
+      <h3>61–64 blanks</h3>
+      <div class="bar-row"><span>FutureSeed1</span><div class="bar-track"><div class="bar identity" style="width:49.32%"></div></div><strong>19.73%</strong></div>
+      <div class="bar-row"><span>Two-hop</span><div class="bar-track"><div class="bar readout" style="width:42.97%"></div></div><strong class="bad">17.19%</strong></div>
+    </div>
+  </section>
+
+  <h2>What changes across loops</h2>
+  <section class="chart-grid">
+    <div class="curve-wrap">
+      <div class="legend">
+        <span><i class="swatch" style="background:#18794e"></i>FutureSeed1</span>
+        <span><i class="swatch" style="background:#7c3aed"></i>Compatible two-hop readout</span>
+      </div>
+      <canvas id="curve" width="1000" height="300" aria-label="Mixed exact accuracy by loop"></canvas>
+    </div>
+    <div class="curve-wrap">
+      <h3>Two-hop residual RMS</h3>
+      <p>The learned scale is only 0.017, but the old-state readout becomes much larger after loop1.</p>
+      <ul class="residual-list">
+        <li><span>Loop 1</span><div class="residual-track"><div class="residual-bar" style="width:28.0%"></div></div><strong>0.157</strong></li>
+        <li><span>Loop 2</span><div class="residual-track"><div class="residual-bar" style="width:69.7%"></div></div><strong>0.391</strong></li>
+        <li><span>Loop 3</span><div class="residual-track"><div class="residual-bar" style="width:100%"></div></div><strong>0.560</strong></li>
+        <li><span>Loop 4</span><div class="residual-track"><div class="residual-bar" style="width:94.8%"></div></div><strong>0.531</strong></li>
+        <li><span>Loop 5</span><div class="residual-track"><div class="residual-bar" style="width:91.6%"></div></div><strong>0.513</strong></li>
+      </ul>
+    </div>
+  </section>
+
+  <h2>Matched case visualizations</h2>
+  <p>Each pair uses the same official evaluation board. Red cells are wrong; blue underlines changed at that loop; orange outlines are Sudoku conflicts.</p>
+
+  <section class="case">
+    <h3>Case 17, 51–55 blanks: the extra path blocks closure</h3>
+    <div class="trajectory">
+      <span class="name">Wrong cells</span><span>Loop 1</span><span>Loop 2</span><span>Loop 3</span><span>Loop 4</span><span>Loop 5</span>
+      <span class="name good">FutureSeed1</span><span>22</span><span>9</span><span>2</span><span>0</span><span>0</span>
+      <span class="name bad">Two-hop</span><span>22</span><span>13</span><span>8</span><span>6</span><span>5</span>
+    </div>
+    <div class="frames">
+      <article class="frame"><div class="frame-head good">FutureSeed1: 22 → 0 wrong</div><iframe src="cases/case017_identity.html" loading="lazy"></iframe></article>
+      <article class="frame"><div class="frame-head bad">Two-hop: 22 → 5 wrong</div><iframe src="cases/case017_readout.html" loading="lazy"></iframe></article>
+    </div>
+  </section>
+
+  <section class="case">
+    <h3>Case 175, 56–60 blanks: the mechanism can help individual boards</h3>
+    <div class="trajectory">
+      <span class="name">Wrong cells</span><span>Loop 1</span><span>Loop 2</span><span>Loop 3</span><span>Loop 4</span><span>Loop 5</span>
+      <span class="name">FutureSeed1</span><span>20</span><span>13</span><span>4</span><span>1</span><span>1</span>
+      <span class="name good">Two-hop</span><span>19</span><span>10</span><span>0</span><span>0</span><span>0</span>
+    </div>
+    <div class="frames">
+      <article class="frame"><div class="frame-head">FutureSeed1: 20 → 1 wrong</div><iframe src="cases/case175_identity.html" loading="lazy"></iframe></article>
+      <article class="frame"><div class="frame-head good">Two-hop: 19 → 0 wrong</div><iframe src="cases/case175_readout.html" loading="lazy"></iframe></article>
+    </div>
+  </section>
+
+  <section class="case">
+    <h3>Case 48, 61–64 blanks: same answer, slower refinement</h3>
+    <div class="trajectory">
+      <span class="name">Wrong cells</span><span>Loop 1</span><span>Loop 2</span><span>Loop 3</span><span>Loop 4</span><span>Loop 5</span>
+      <span class="name good">FutureSeed1</span><span>32</span><span>12</span><span>3</span><span>0</span><span>0</span>
+      <span class="name">Two-hop</span><span>32</span><span>15</span><span>8</span><span>1</span><span>0</span>
+    </div>
+    <div class="frames">
+      <article class="frame"><div class="frame-head good">FutureSeed1 solves at loop4</div><iframe src="cases/case048_identity.html" loading="lazy"></iframe></article>
+      <article class="frame"><div class="frame-head">Two-hop solves at loop5</div><iframe src="cases/case048_readout.html" loading="lazy"></iframe></article>
+    </div>
+  </section>
+
+  <h2>Mechanism conclusion</h2>
+  <div class="notes">
+    <ul>
+      <li>This is not a broken implementation: zero-init identity and the direct state-read formula both have maximum error 0; the new scale receives gradient 0.125; all ten training layers use official FLA GDN2 with Triton convolution and no fallback.</li>
+      <li>Loops 1 and 2 are numerically tied in aggregate. The quality loss begins at loop3, exactly when the extra residual reaches its largest norm. The added path interferes with established refinement rather than improving initial opening.</li>
+      <li>The result is board-dependent: case 175 improves, while case 17 is turned from solved into five wrong cells. A fixed two-hop residual is not a reliable source of correction.</li>
+      <li>Training CE is unchanged while full-board exact falls. Ordinary token loss does not distinguish a useful cross-depth message from one that disrupts global closure.</li>
+      <li>Do not sweep hop, scale, seed, LR, loss, or length. Cross-more-layers and raw block carry are both closed. A later FutureSeed2 must improve how future evidence is formed, not merely send existing terminal state farther or keep it longer.</li>
+    </ul>
+  </div>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById("curve");
+  const ctx = canvas.getContext("2d");
+  const identity = [0.0234375, 0.046875, 0.1953125, 0.24609375, 0.251953125];
+  const readout = [0.0234375, 0.046875, 0.1796875, 0.232421875, 0.236328125];
+  const pad = { left: 70, right: 24, top: 24, bottom: 46 };
+  const width = canvas.width - pad.left - pad.right;
+  const height = canvas.height - pad.top - pad.bottom;
+  const maxY = 0.28;
+  ctx.font = "13px ui-sans-serif, system-ui";
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#d0d7de";
+  ctx.fillStyle = "#59636e";
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + height * i / 4;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(canvas.width - pad.right, y);
+    ctx.stroke();
+    const value = maxY * (1 - i / 4);
+    ctx.fillText(`${(value * 100).toFixed(0)}%`, 18, y + 4);
+  }
+  for (let i = 0; i < 5; i++) {
+    const x = pad.left + width * i / 4;
+    ctx.fillText(`Loop ${i + 1}`, x - 20, canvas.height - 16);
+  }
+  const draw = (values, color) => {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    values.forEach((value, index) => {
+      const x = pad.left + width * index / 4;
+      const y = pad.top + height * (1 - value / maxY);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    values.forEach((value, index) => {
+      const x = pad.left + width * index / 4;
+      const y = pad.top + height * (1 - value / maxY);
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  };
+  draw(identity, "#18794e");
+  draw(readout, "#7c3aed");
+})();
+</script>
+</body>
+</html>

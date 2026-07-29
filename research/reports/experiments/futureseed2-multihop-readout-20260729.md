@@ -5,7 +5,7 @@
 - Plan: `P-FS2-005`
 - Machine: AIStation GPU1, one A800 80GB
 - Branch: `codex/futureseed2-multihop-readout-20260729`
-- Status: approved, implementation in progress
+- Status: completed, hypothesis rejected
 
 ## 2. Mechanism Hypothesis
 
@@ -92,8 +92,108 @@ CUDA_VISIBLE_DEVICES=0 ./scripts/run_futureseed2_multihop_readout_arm.sh formal
 
 ## 7. Results
 
-Pending.
+### 7.1 Integrity
+
+The GPU1 contract passed before training:
+
+- device: NVIDIA A800-SXM4-80GB;
+- zero-init full-output maximum error: `0`;
+- producer-native readout formula maximum error: `0`;
+- activated readout output RMS change: `0.05837`;
+- zero-init scale gradient norm: `0.12531`;
+- official FLA source: `fe8fce9fc6984f22905f54cfa885dce1502baf26`;
+- exact class: `fla.layers.gdn2.GatedDeltaNet2`;
+- q/k/v convolution backend: Triton;
+- backend dispatch/fallback: disabled.
+
+The full D192/L10 model adds exactly eight parameters:
+`5,461,688 -> 5,461,696`. A two-step GPU full-stack smoke resumed the
+step9000 model, trained, checkpointed, and evaluated successfully. The new
+scale moved from zero to about `0.0029` in that smoke.
+
+### 7.2 Formal Run
+
+- control:
+  `futureseed2-identity-s9100-20260728T1450Z-57455e4`;
+- candidate:
+  `futureseed2-readout-s9100-20260729T051613Z-5da8fcd`;
+- candidate source:
+  `5da8fcda08edb6ec80ec041560dbb243d9308fc8`;
+- both resume the same exact step9000 checkpoint and train to step9100.
+
+Mixed exact by loop:
+
+| Model | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---:|---:|---:|---:|---:|
+| FutureSeed1 | 0.0234 | 0.0469 | 0.1953 | 0.2461 | 0.2520 |
+| two-hop readout | 0.0234 | 0.0469 | 0.1797 | 0.2324 | 0.2363 |
+
+Official loop5 exact:
+
+| Blank range | FutureSeed1 | two-hop | delta |
+|---|---:|---:|---:|
+| 51-55 | 0.3672 | 0.3594 | -0.0078 |
+| 56-60 | 0.1309 | 0.1367 | +0.0059 |
+| 61-64 | 0.1973 | 0.1719 | -0.0254 |
+| mean | 0.2318 | 0.2227 | -0.0091 |
+
+The candidate learns a nonzero mean absolute scale of `0.01697`. Its readout
+residual RMS by loop is `0.157/0.391/0.560/0.531/0.513`. Thus the mechanism
+is active, and its largest intervention coincides with the point where the
+loop curve first falls behind.
+
+Final train CE is essentially identical (`0.6435` control versus `0.6437`
+candidate), but full-board exact is worse. Candidate train time is `821.5s`
+versus `659.9s`, an overhead of `24.5%`, which also fails the preregistered
+`<20%` cost gate.
+
+### 7.3 Matched Cases
+
+- 51-55 blanks, batch 17: FutureSeed1 wrong cells
+  `22 -> 9 -> 2 -> 0 -> 0`; candidate
+  `22 -> 13 -> 8 -> 6 -> 5`.
+- 56-60 blanks, batch 175: FutureSeed1
+  `20 -> 13 -> 4 -> 1 -> 1`; candidate
+  `19 -> 10 -> 0 -> 0 -> 0`.
+- 61-64 blanks, batch 48: FutureSeed1
+  `32 -> 12 -> 3 -> 0 -> 0`; candidate
+  `32 -> 15 -> 8 -> 1 -> 0`.
+
+This is a board-dependent operating change, not a uniformly better future
+message. One medium-hard board improves, one easier hard board stops closing,
+and one hardest board needs an extra loop. The aggregate hardest range
+regresses.
+
+Artifacts:
+
+- dashboard:
+  `research/reports/visualizations/futureseed2-multihop-readout-20260729/index.html`;
+- machine-readable comparison:
+  `research/reports/visualizations/futureseed2-multihop-readout-20260729/comparison.json`;
+- remote run contract, score, logs, output, case banks, and lean source
+  snapshot are under
+  `/huyang2/double-loop/runs/futureseed2-readout-s9100-20260729T051613Z-5da8fcd`.
 
 ## 8. Decision
 
-Pending.
+Reject compatible two-hop readout and stop this branch after one run. It
+misses both quality gates, regresses 61-64 blanks, and exceeds the cost limit.
+Do not sweep hop count, scale initialization, seed, LR, loss, or continuation
+length.
+
+The useful conclusion is narrower and stronger than "old state is useless":
+the old terminal state can be queried exactly and can improve individual
+boards, but a fixed extra cross-depth residual is not a reliable correction
+direction. FutureSeed1's adjacent state transfer is already a specific useful
+interface; sending state farther or retaining it across a macro step does not
+automatically improve that interface.
+
+Together with `P-FS2-004`, this closes the two user-proposed radius axes:
+
+- raw same-layer block carry destroys iterative refinement;
+- producer-compatible two-hop readout preserves the baseline much better but
+  is slower and still weakens late correction.
+
+A later FutureSeed2 should change how generic future evidence is formed or
+compressed before injection. It should not merely transmit the existing
+terminal state farther in depth or longer in time.

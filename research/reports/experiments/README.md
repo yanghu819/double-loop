@@ -15,7 +15,9 @@ The next clean scaling test, separating nominal steps from previously unseen
 independent-board coverage, is tracked in
 `gdn-unseen-data-coverage-s31500-20260723.md`.
 
-The latest FutureSeed2 mechanism boundary is documented in
-`futureseed2-block-memory-20260729.md`: exact same-layer terminal-state carry
-preserves first-loop opening but destroys later-loop refinement, so simple
-block memory is rejected without a hyperparameter sweep.
+The latest FutureSeed2 mechanism boundaries are documented in
+`futureseed2-block-memory-20260729.md` and
+`futureseed2-multihop-readout-20260729.md`. Exact same-layer terminal-state
+carry destroys later-loop refinement; producer-compatible two-hop readout is
+active but slower and weakens hard closure. Both simple time/depth radius
+extensions are rejected without hyperparameter sweeps.

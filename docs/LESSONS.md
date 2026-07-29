@@ -1272,3 +1272,31 @@
   seed, LR, loss, or continuation length. A viable FutureSeed2 must learn a
   generic transformation or compression of future evidence before reuse while
   remaining exactly FutureSeed1 at initialization.
+
+## 2026-07-29 FutureSeed2 compatible two-hop readout
+
+- Coordinate compatibility is necessary but not sufficient. Querying an old
+  state with its producer layer's own q projection, state read, gated RMSNorm,
+  and output projection passes an exact direct-formula contract and is much
+  less destructive than raw state carry, but it still does not beat
+  FutureSeed1.
+- Separate activation from usefulness. The zero-initialized eight-scalar path
+  learns mean absolute scale `0.01697`; its residual RMS grows from `0.157` at
+  loop1 to `0.560` at loop3. Nevertheless mixed loop5 exact falls
+  `0.2520 -> 0.2363`, and 61-64 exact falls `0.1973 -> 0.1719`.
+- The interference begins after opening. Aggregate loops1 and2 are exactly
+  tied, then the candidate trails at loops3-5. On matched batch 17,
+  FutureSeed1 changes wrong cells `22 -> 9 -> 2 -> 0 -> 0`, while two-hop
+  readout changes `22 -> 13 -> 8 -> 6 -> 5`.
+- A mechanism can help one board and still be the wrong inductive bias. On
+  matched batch 175 the two-hop path solves at loop3 while FutureSeed1 retains
+  one error, but hard-range mean falls `0.2318 -> 0.2227`. Use distributions
+  and matched counterexamples, not a selected success story.
+- Efficiency is part of the mechanism claim. Reusing pretrained projections
+  adds only eight parameters but many extra small kernels; train time rises
+  `659.9s -> 821.5s` (`+24.5%`). Cheap parameter count is not cheap compute.
+- Close radius extension. Raw block carry and producer-compatible two-hop
+  readout answer the time- and depth-radius variants. Do not sweep hop, scale,
+  seed, LR, loss, or length. A future FutureSeed2 must improve how generic
+  future evidence is formed or compressed, not merely send terminal state
+  farther or keep it longer.

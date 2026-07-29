@@ -14,3 +14,8 @@ canonicalization run remains in
 The next clean scaling test, separating nominal steps from previously unseen
 independent-board coverage, is tracked in
 `gdn-unseen-data-coverage-s31500-20260723.md`.
+
+The latest FutureSeed2 mechanism boundary is documented in
+`futureseed2-block-memory-20260729.md`: exact same-layer terminal-state carry
+preserves first-loop opening but destroys later-loop refinement, so simple
+block memory is rejected without a hyperparameter sweep.

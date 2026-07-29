@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>FutureSeed2 Block Memory Decision</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #59636e;
+      --line: #c9d1d9;
+      --paper: #ffffff;
+      --page: #f3f5f7;
+      --good: #18794e;
+      --good-soft: #dafbe1;
+      --bad: #b42318;
+      --bad-soft: #ffebe9;
+      --blue: #2563eb;
+      --amber: #9a6700;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    main { width: min(1500px, 96vw); margin: 0 auto; padding: 28px 0 56px; }
+    h1 { margin: 0; font-size: 30px; line-height: 1.2; }
+    h2 { margin: 34px 0 12px; font-size: 21px; }
+    h3 { margin: 0 0 6px; font-size: 16px; }
+    p { margin: 6px 0; color: var(--muted); line-height: 1.55; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .verdict {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-left: 5px solid var(--bad);
+      background: var(--bad-soft);
+    }
+    .verdict strong { color: var(--bad); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .metric {
+      min-height: 108px;
+      padding: 14px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric .value { display: block; margin-top: 7px; font-size: 25px; font-weight: 750; }
+    .metric .delta { display: block; margin-top: 5px; font-size: 12px; }
+    .bad { color: var(--bad); }
+    .good { color: var(--good); }
+    .bands {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .band {
+      padding: 14px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 82px 1fr 58px;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .bar-track { height: 14px; background: #e8ebef; overflow: hidden; }
+    .bar { height: 100%; min-width: 1px; }
+    .bar.identity { background: var(--good); }
+    .bar.block { background: var(--bad); }
+    .curve-wrap {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px;
+    }
+    canvas { width: 100%; height: 300px; display: block; }
+    .legend { display: flex; gap: 18px; font-size: 13px; color: var(--muted); }
+    .swatch { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; }
+    .case {
+      margin-top: 16px;
+      padding-top: 18px;
+      border-top: 2px solid var(--line);
+    }
+    .trajectory {
+      display: grid;
+      grid-template-columns: 140px repeat(5, minmax(54px, 1fr));
+      gap: 6px;
+      max-width: 700px;
+      margin: 12px 0 16px;
+      font-size: 13px;
+    }
+    .trajectory span { padding: 7px 8px; text-align: center; background: var(--paper); border: 1px solid var(--line); }
+    .trajectory .name { text-align: left; font-weight: 650; }
+    .frames { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .frame {
+      min-width: 0;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .frame-head { padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 700; }
+    iframe { width: 100%; height: 660px; border: 0; background: white; }
+    .notes { padding: 16px 18px; background: #fff8c5; border-left: 5px solid var(--amber); }
+    .notes li { margin: 8px 0; line-height: 1.45; }
+    @media (max-width: 900px) {
+      .metrics, .bands, .frames { grid-template-columns: 1fr; }
+      .trajectory { grid-template-columns: 116px repeat(5, minmax(42px, 1fr)); }
+      iframe { height: 560px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>FutureSeed2: same-layer block memory fails</h1>
+  <p>Matched D192/L10 GDN2, same checkpoint, data, 100 optimizer steps, every-loop CE, seed 52, official FLA/Triton. Only the recurrent-state scope changed.</p>
+
+  <div class="verdict">
+    <strong>Decision: reject this mechanism.</strong>
+    The first loop remains close to the control, but carrying each layer's raw terminal state into the next macro step removes the control's loop refinement.
+  </div>
+
+  <section class="metrics">
+    <div class="metric">
+      <span class="label">Mixed loop5 exact</span>
+      <span class="value bad">1.95%</span>
+      <span class="delta">control 25.20%, delta -23.24 points</span>
+    </div>
+    <div class="metric">
+      <span class="label">Hard-range mean exact</span>
+      <span class="value bad">0.00%</span>
+      <span class="delta">control 23.18%, all three ranges collapse</span>
+    </div>
+    <div class="metric">
+      <span class="label">Final train CE</span>
+      <span class="value bad">0.9598</span>
+      <span class="delta">control 0.6435 despite equal training time</span>
+    </div>
+    <div class="metric">
+      <span class="label">Train time</span>
+      <span class="value">666.4s</span>
+      <span class="delta">control 659.9s, only +1.0%</span>
+    </div>
+  </section>
+
+  <h2>Official loop5 exact</h2>
+  <section class="bands">
+    <div class="band">
+      <h3>51–55 blanks</h3>
+      <div class="bar-row"><span>Control</span><div class="bar-track"><div class="bar identity" style="width:73.44%"></div></div><strong>36.72%</strong></div>
+      <div class="bar-row"><span>Block state</span><div class="bar-track"><div class="bar block" style="width:0%"></div></div><strong class="bad">0.00%</strong></div>
+    </div>
+    <div class="band">
+      <h3>56–60 blanks</h3>
+      <div class="bar-row"><span>Control</span><div class="bar-track"><div class="bar identity" style="width:26.17%"></div></div><strong>13.09%</strong></div>
+      <div class="bar-row"><span>Block state</span><div class="bar-track"><div class="bar block" style="width:0%"></div></div><strong class="bad">0.00%</strong></div>
+    </div>
+    <div class="band">
+      <h3>61–64 blanks</h3>
+      <div class="bar-row"><span>Control</span><div class="bar-track"><div class="bar identity" style="width:39.45%"></div></div><strong>19.73%</strong></div>
+      <div class="bar-row"><span>Block state</span><div class="bar-track"><div class="bar block" style="width:0%"></div></div><strong class="bad">0.00%</strong></div>
+    </div>
+  </section>
+
+  <h2>What the loops do</h2>
+  <div class="curve-wrap">
+    <div class="legend">
+      <span><i class="swatch" style="background:#18794e"></i>Control</span>
+      <span><i class="swatch" style="background:#b42318"></i>Same-layer block memory</span>
+    </div>
+    <canvas id="curve" width="1200" height="300" aria-label="Mixed exact accuracy by loop"></canvas>
+  </div>
+
+  <h2>Matched case visualizations</h2>
+  <p>Each pair uses the same official evaluation batch index. Red cells are wrong; blue underlines changed at that loop; orange outlines are Sudoku conflicts.</p>
+
+  <section class="case">
+    <h3>Case 120, 51–55 blanks</h3>
+    <div class="trajectory">
+      <span class="name">Wrong cells</span><span>Loop 1</span><span>Loop 2</span><span>Loop 3</span><span>Loop 4</span><span>Loop 5</span>
+      <span class="name good">Control</span><span>17</span><span>4</span><span>1</span><span>1</span><span>1</span>
+      <span class="name bad">Block state</span><span>18</span><span>13</span><span>13</span><span>13</span><span>14</span>
+    </div>
+    <div class="frames">
+      <article class="frame"><div class="frame-head good">Control: 17 → 1 wrong</div><iframe src="cases/case120_identity.html" loading="lazy"></iframe></article>
+      <article class="frame"><div class="frame-head bad">Block state: 18 → 14 wrong</div><iframe src="cases/case120_block.html" loading="lazy"></iframe></article>
+    </div>
+  </section>
+
+  <section class="case">
+    <h3>Case 86, 56–60 blanks</h3>
+    <div class="trajectory">
+      <span class="name">Wrong cells</span><span>Loop 1</span><span>Loop 2</span><span>Loop 3</span><span>Loop 4</span><span>Loop 5</span>
+      <span class="name good">Control</span><span>14</span><span>11</span><span>4</span><span>1</span><span>1</span>
+      <span class="name bad">Block state</span><span>15</span><span>10</span><span>11</span><span>11</span><span>11</span>
+    </div>
+    <div class="frames">
+      <article class="frame"><div class="frame-head good">Control: 14 → 1 wrong</div><iframe src="cases/case086_identity.html" loading="lazy"></iframe></article>
+      <article class="frame"><div class="frame-head bad">Block state: 15 → 11 wrong</div><iframe src="cases/case086_block.html" loading="lazy"></iframe></article>
+    </div>
+  </section>
+
+  <h2>Mechanism conclusion</h2>
+  <div class="notes">
+    <ul>
+      <li>The first-loop mixed exact is nearly unchanged: 2.34% control versus 2.15% block memory. The pretrained backbone itself was not broadly destroyed.</li>
+      <li>The control improves from 2.34% to 25.20% over loops. Block memory stays around 2%, so the damage is specifically to iterative refinement.</li>
+      <li>The saved state is routed exactly and receives gradients. Failure is not a fallback, disconnected tensor, extra parameters, or missing supervision.</li>
+      <li>A terminal GDN2 state is tied to the just-processed hidden trajectory. Reusing it as the next macro-step initial state is not the same operation as FutureSeed's cross-layer directional initialization.</li>
+      <li>Do not sweep state blend, gate bias, or decay. The next FutureSeed2 candidate must transform information into a compatible seed or communicate across more layers without carrying raw terminal state.</li>
+    </ul>
+  </div>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById("curve");
+  const ctx = canvas.getContext("2d");
+  const control = [0.0234375, 0.046875, 0.1953125, 0.24609375, 0.251953125];
+  const block = [0.021484375, 0.021484375, 0.01953125, 0.01953125, 0.01953125];
+  const pad = { left: 70, right: 24, top: 24, bottom: 46 };
+  const width = canvas.width - pad.left - pad.right;
+  const height = canvas.height - pad.top - pad.bottom;
+  const maxY = 0.28;
+  ctx.font = "13px ui-sans-serif, system-ui";
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#d0d7de";
+  ctx.fillStyle = "#59636e";
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + height * i / 4;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(canvas.width - pad.right, y);
+    ctx.stroke();
+    const value = maxY * (1 - i / 4);
+    ctx.fillText(`${(value * 100).toFixed(0)}%`, 18, y + 4);
+  }
+  for (let i = 0; i < 5; i++) {
+    const x = pad.left + width * i / 4;
+    ctx.fillText(`Loop ${i + 1}`, x - 20, canvas.height - 16);
+  }
+  const draw = (values, color) => {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    values.forEach((value, i) => {
+      const x = pad.left + width * i / 4;
+      const y = pad.top + height * (1 - value / maxY);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    values.forEach((value, i) => {
+      const x = pad.left + width * i / 4;
+      const y = pad.top + height * (1 - value / maxY);
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  };
+  draw(control, "#18794e");
+  draw(block, "#b42318");
+})();
+</script>
+</body>
+</html>

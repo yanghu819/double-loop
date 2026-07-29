@@ -1247,3 +1247,28 @@
   features, scale, seed, LR, loss, or length. A future mechanism must improve
   seed content itself while preserving the state basis and exact baseline
   initialization.
+
+## 2026-07-29 FutureSeed2 same-layer block memory
+
+- Do not assume that a recurrent terminal state is a reusable memory merely
+  because it returns to the same layer. The strict block-memory contract is
+  exact, uses the official FLA GDN2/Triton path, and adds no parameters, but
+  official 51-55/56-60/61-64 loop5 exact all fall to zero from
+  `0.3672/0.1309/0.1973`.
+- Separate first-pass competence from iterative compatibility. Mixed loop1
+  exact barely changes (`0.0234 -> 0.0215`), while loop5 exact collapses
+  (`0.2520 -> 0.0195`). The pretrained backbone still opens the puzzle; raw
+  state carry specifically destroys the computation that later loops perform.
+- FutureSeed1's cross-layer state transfer is a directional initialization,
+  not ordinary persistent memory. A same-layer terminal state contains
+  position- and pass-specific residue that the next macro step cannot consume
+  unchanged, even after the existing normalization and head gate.
+- Visualize matched trajectories before interpreting aggregate exact. On the
+  same 51-55-blank board, FutureSeed1 changes wrong cells
+  `17 -> 4 -> 1 -> 1 -> 1`, whereas block memory changes
+  `18 -> 13 -> 13 -> 13 -> 14`. This localizes the failure to refinement
+  rather than data identity or initial opening.
+- Close simple carry after this result. Do not sweep blend, strength, decay,
+  seed, LR, loss, or continuation length. A viable FutureSeed2 must learn a
+  generic transformation or compression of future evidence before reuse while
+  remaining exactly FutureSeed1 at initialization.

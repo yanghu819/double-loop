@@ -1,0 +1,84 @@
+{
+  "experiment": "P-FS2-004",
+  "hypothesis": "Reusing each layer's terminal recurrent state at the next block or loop call will extend FutureSeed over a longer horizon and improve hard Sudoku convergence.",
+  "decision": "reject_simple_same_layer_block_memory",
+  "source_sha": "d9228e73fafa1e94ea22c089d72287d829eca7fc",
+  "matched_contract": {
+    "parameter_count": 5461688,
+    "backbone": "official_fla_gdn2",
+    "fla_source_sha": "fe8fce9fc6984f22905f54cfa885dce1502baf26",
+    "backend_dispatch_disabled": true,
+    "conv_backend": "triton",
+    "resume_step": 9000,
+    "end_step": 9100,
+    "seed": 52,
+    "train_loops": 5,
+    "loss": "equal CE on every loop"
+  },
+  "runs": {
+    "identity": {
+      "run": "futureseed2-identity-s9100-20260728T1450Z-57455e4",
+      "train_seconds": 659.9245281219482,
+      "train_ce": 0.6435110121965408,
+      "train_loop1_ce": 0.9118897020816803,
+      "train_loop5_ce": 0.6435110121965408,
+      "mixed_exact_by_loop": [
+        0.0234375,
+        0.046875,
+        0.1953125,
+        0.24609375,
+        0.251953125
+      ],
+      "official_loop5_exact": {
+        "b51_55": 0.3671875,
+        "b56_60": 0.130859375,
+        "b61_64": 0.197265625
+      }
+    },
+    "same_layer_block_memory": {
+      "run": "futureseed2-block-s9100-20260729T040936Z-d9228e7",
+      "train_seconds": 666.3842194080353,
+      "train_ce": 0.959754541516304,
+      "train_loop1_ce": 0.9667910635471344,
+      "train_loop5_ce": 0.959754541516304,
+      "mixed_exact_by_loop": [
+        0.021484375,
+        0.021484375,
+        0.01953125,
+        0.01953125,
+        0.01953125
+      ],
+      "official_loop5_exact": {
+        "b51_55": 0.0,
+        "b56_60": 0.0,
+        "b61_64": 0.0
+      }
+    }
+  },
+  "matched_cases": [
+    {
+      "range": "b51_55",
+      "batch_index": 120,
+      "identity_wrong_by_loop": [17, 4, 1, 1, 1],
+      "block_wrong_by_loop": [18, 13, 13, 13, 14],
+      "identity_html": "cases/case120_identity.html",
+      "block_html": "cases/case120_block.html"
+    },
+    {
+      "range": "b56_60",
+      "batch_index": 86,
+      "identity_wrong_by_loop": [14, 11, 4, 1, 1],
+      "block_wrong_by_loop": [15, 10, 11, 11, 11],
+      "identity_html": "cases/case086_identity.html",
+      "block_html": "cases/case086_block.html"
+    }
+  ],
+  "contract": {
+    "first_pass_max_abs": 0.0,
+    "same_layer_routing_max_abs": 0.0,
+    "state0_grad_norm": 0.19896189868450165,
+    "block0_gate_grad_norm": 0.0009216918842867017,
+    "second_pass_change_rms": 0.4223611652851105
+  },
+  "conclusion": "The original first loop remains nearly intact, but raw same-layer terminal-state carry destroys the large loop1-to-loop5 refinement gain. A terminal recurrent state is not automatically a compatible future seed for the next macro step."
+}

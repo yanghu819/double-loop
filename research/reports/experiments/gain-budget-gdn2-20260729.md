@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-GAIN-001`
-- Status: strict preflight passed; formal numerical retry pending
+- Status: scalar-certificate systems retry pending
 - Date: `2026-07-29`
 - Machine: AIStation `GPU1` only
 - Branch: `codex/gain-budget-gdn2-20260729`
@@ -271,12 +271,31 @@ statistics use the exact rank-one result, while the BF16 gate actually passed
 to the official chunk recurrence is independently recomputed and checked
 against the declared `1.001` step-bound and `3e-3` delta tolerances.
 
+### 7.7 Rejected dense endpoint selection at `4715a5a`
+
+The analytic endpoint implementation passed all 24 math tests and every
+official CUDA correctness gate. The stable benchmark nevertheless measured
+projection time overhead `+28.1002%` and memory overhead `+18.4866%`.
+Preflight stopped at the unchanged `20%` systems gate before checkpoint smoke
+or formal training.
+
+Profiling the code path isolated the regression to several additional
+K-dimensional `where` operations after the scalar certificate had already
+decided which token/head rows needed the endpoint. The next and last systems
+retry makes all scale and endpoint decisions in scalar token/head space,
+computes the analytic post-projection singular value there, and constructs the
+K-dimensional gate once. It still recomputes the actual FP32 erase strength
+from that gate, and the caller still audits the BF16 gate that enters the
+official recurrence. No certificate, budget, or decision threshold changes.
+
 ## 8. Conclusion
 
 The implementation and official-kernel contract are valid, but the formal
-quality comparison is not yet complete. Exactly one numerical retry is
-authorized. A negative quality result after that retry closes this projection
-without a cap, seed, loss, or training-length sweep.
+quality comparison is not yet complete. One scalar-certificate performance
+retry is authorized because it removes redundant tensor materialization
+without changing the mechanism. A systems failure or negative quality result
+after that retry closes this projection without a cap, seed, loss, or
+training-length sweep.
 
 ## 9. Submission
 

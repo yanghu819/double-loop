@@ -199,72 +199,40 @@ def project_erase_gate(
         torch.ones_like(active_scale),
     )
 
-    projected = mean + scale * centered
-    effective_gate = torch.where(live, projected, gate_fp32)
-    effective_delta = (effective_gate * key2).sum(dim=-1, keepdim=True)
-    effective_centered = effective_gate - effective_delta / n_safe
-    effective_shear2 = (
-        n2
-        * (effective_centered.square() * key2).sum(dim=-1, keepdim=True)
-    )
-    delta_abs_error = (effective_delta - delta).abs()
     original_sigma = rank_one_transition_sigma(delta, shear2)
-    effective_sigma = rank_one_transition_sigma(
-        effective_delta,
-        effective_shear2,
-    )
     safety_endpoint = (
         active
         & (tau_projection <= minimum_feasible_tau)
     )
-    # The closed form is exact in real arithmetic, but a production-size FP32
-    # batch can still land outside the certified boundary after reductions.
-    # Select the analytic zero-shear endpoint for those rows without a second
-    # dense certificate pass. The BF16 recurrence path is audited again after
-    # casting the resulting gate.
+    effective_shear2 = scale.square() * shear2
+    effective_sigma = rank_one_transition_sigma(delta, effective_shear2)
     post_certificate_endpoint = (
         feasible_certificate
         & live
         & (effective_sigma > tau_effective + certificate_tolerance)
     )
-    numerical_endpoint = safety_endpoint | post_certificate_endpoint
     scale = torch.where(
         post_certificate_endpoint,
         torch.zeros_like(scale),
         scale,
     )
-    effective_gate = torch.where(
-        post_certificate_endpoint.expand_as(effective_gate),
-        mean.expand_as(effective_gate),
-        effective_gate,
-    )
-    effective_delta = torch.where(
-        post_certificate_endpoint,
-        delta,
-        effective_delta,
-    )
-    effective_shear2 = torch.where(
-        post_certificate_endpoint,
-        torch.zeros_like(effective_shear2),
-        effective_shear2,
-    )
-    delta_abs_error = torch.where(
-        post_certificate_endpoint,
-        torch.zeros_like(delta_abs_error),
-        delta_abs_error,
-    )
-    effective_sigma = torch.where(
-        post_certificate_endpoint,
-        minimum_feasible_tau,
-        effective_sigma,
-    )
-    certificate_valid = (
-        feasible_certificate
-        & (delta_abs_error <= 5e-6)
-        & (effective_sigma <= tau_effective + certificate_tolerance)
-    )
+    effective_shear2 = scale.square() * shear2
+    effective_sigma = rank_one_transition_sigma(delta, effective_shear2)
+    numerical_endpoint = safety_endpoint | post_certificate_endpoint
+
+    # Decide the scalar projection before constructing the K-dimensional gate.
+    # Delta is still recomputed from the actual FP32 gate, and the quantized
+    # BF16 gate consumed by FLA is independently audited by the caller.
+    projected = mean + scale * centered
+    effective_gate = torch.where(live, projected, gate_fp32)
+    effective_delta = (effective_gate * key2).sum(dim=-1, keepdim=True)
+    delta_abs_error = (effective_delta - delta).abs()
     _fail_closed_assert(
-        certificate_valid.all(),
+        (
+            feasible_certificate
+            & (delta_abs_error <= 5e-6)
+            & (effective_sigma <= tau_effective + certificate_tolerance)
+        ).all(),
         "gain-budget projection certificate failed: infeasible budget or "
         "FP32 numerical violation",
     )

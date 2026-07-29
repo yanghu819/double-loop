@@ -1340,6 +1340,12 @@
   certificate detects a residual violation, then independently audit the
   BF16 gate that enters the official recurrence. This is stricter and cheaper
   than a second dense FP32 certificate pass.
+- A scalar certificate should stay scalar until the final gate construction.
+  SHA `4715a5a8` passed every mathematical and CUDA correctness test, but
+  materializing several K-dimensional endpoint selections raised stable time
+  overhead to `+28.10%` even though memory stayed at `+18.49%`. Decide
+  token/head endpoint rows in scalar space, then construct the projected gate
+  once and independently audit the actual FP32/BF16 values.
 - Strict and training lanes have different jobs. Official FP32
   fused-recurrent forward carries the hard certificate; official BF16 chunk
   carries real training and is audited under an explicit low-precision

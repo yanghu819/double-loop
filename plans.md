@@ -11,7 +11,7 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-29 23:26 CST): `P-GAIN-001` is the only approved
+Current update (2026-07-30 01:11 CST): `P-GAIN-001` is the only approved
 mechanism probe. It asks whether GDN2's channel-wise erase gate is spending
 decay on useful forgetting or on non-normal one-step amplification. The
 decay-funded projection preserves effective erase strength and compresses only
@@ -47,7 +47,13 @@ control completed, but the candidate exposed another production-batch FP32
 rounding violation before step1. The final numerical retry selects the
 analytic `lambda=0` endpoint for exactly those post-certificate violators
 without a second dense pass; the actual BF16 gate is independently audited
-after cast. The mechanism preserves erase strength and does not relax the
+after cast. SHA `4715a5a8` passed every correctness gate, but multiple
+K-dimensional endpoint selections pushed stable time overhead to `+28.10%`
+(`+18.49%` memory), so it stopped before checkpoint smoke. The sole remaining
+implementation retry makes the endpoint decision entirely in scalar
+token/head certificate space and constructs the K-dimensional gate once. The
+actual FP32 erase strength and BF16 recurrence gate remain independently
+audited. The mechanism preserves erase strength and does not relax the
 requested budget.
 Do not sweep cap, seed, LR, loss, width, or length.
 

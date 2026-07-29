@@ -244,6 +244,33 @@ time and memory samples instead of losing them when the assertion is raised.
 This is one final stable systems measurement, not repeated sampling until a
 favorable outcome.
 
+### 7.6 Stable preflight and formal retry at `56030a13`
+
+The corrected benchmark passed:
+
+- projection time overhead versus matched identity: `+14.5554%`;
+- projection memory overhead versus matched identity: `+18.4618%`;
+- clipping fraction: `0.63497`;
+- all 24 math tests, official CUDA checks, checkpoint gates, and both
+  exact-resume smokes passed.
+
+The formal control completed with mixed loop1-to-loop5 exact
+`0.0234 -> 0.2324` and official 51-55/56-60/61-64 loop5 exact
+`0.3750/0.1348/0.1543`.
+
+The formal candidate again hit an FP32 post-certificate rounding violation
+before its first logged step. The wrapper tracked exact PID `4282`, wrote
+`abort.json`, and left no live GPU process. This still is not a candidate
+quality score.
+
+The final numerical retry does not increase the margin or rerun the same
+formula. It checks the actual one-pass `effective_sigma`; rows that remain
+outside the requested boundary select the analytic zero-shear endpoint
+(`lambda=0`). No second dense certificate pass is required. Those endpoint
+statistics use the exact rank-one result, while the BF16 gate actually passed
+to the official chunk recurrence is independently recomputed and checked
+against the declared `1.001` step-bound and `3e-3` delta tolerances.
+
 ## 8. Conclusion
 
 The implementation and official-kernel contract are valid, but the formal

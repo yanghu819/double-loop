@@ -129,6 +129,7 @@ def project_erase_gate(
             "effective_step_gain_bound": sigma * alpha_max,
             "clipped": zero.bool(),
             "numerical_endpoint": zero.bool(),
+            "post_certificate_endpoint": zero.bool(),
             "infeasible": zero.bool(),
             "live": live,
             "delta_abs_error": zero,
@@ -212,9 +213,50 @@ def project_erase_gate(
         effective_delta,
         effective_shear2,
     )
-    numerical_endpoint = (
+    safety_endpoint = (
         active
         & (tau_projection <= minimum_feasible_tau)
+    )
+    # The closed form is exact in real arithmetic, but a production-size FP32
+    # batch can still land outside the certified boundary after reductions.
+    # Select the analytic zero-shear endpoint for those rows without a second
+    # dense certificate pass. The BF16 recurrence path is audited again after
+    # casting the resulting gate.
+    post_certificate_endpoint = (
+        feasible_certificate
+        & live
+        & (effective_sigma > tau_effective + certificate_tolerance)
+    )
+    numerical_endpoint = safety_endpoint | post_certificate_endpoint
+    scale = torch.where(
+        post_certificate_endpoint,
+        torch.zeros_like(scale),
+        scale,
+    )
+    effective_gate = torch.where(
+        post_certificate_endpoint.expand_as(effective_gate),
+        mean.expand_as(effective_gate),
+        effective_gate,
+    )
+    effective_delta = torch.where(
+        post_certificate_endpoint,
+        delta,
+        effective_delta,
+    )
+    effective_shear2 = torch.where(
+        post_certificate_endpoint,
+        torch.zeros_like(effective_shear2),
+        effective_shear2,
+    )
+    delta_abs_error = torch.where(
+        post_certificate_endpoint,
+        torch.zeros_like(delta_abs_error),
+        delta_abs_error,
+    )
+    effective_sigma = torch.where(
+        post_certificate_endpoint,
+        minimum_feasible_tau,
+        effective_sigma,
     )
     certificate_valid = (
         feasible_certificate
@@ -250,6 +292,7 @@ def project_erase_gate(
         "effective_step_gain_bound": effective_sigma * alpha_max,
         "clipped": active | numerical_endpoint,
         "numerical_endpoint": numerical_endpoint,
+        "post_certificate_endpoint": post_certificate_endpoint,
         "infeasible": infeasible,
         "live": live,
     }

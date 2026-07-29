@@ -1331,6 +1331,15 @@
   but estimate steady-state time from multiple warmed calls and measure
   cold-cache memory separately. Always persist raw samples even when the gate
   fails.
+- The stable instrument put the projection at `+14.56%` time and `+18.46%`
+  memory, so systems cost is acceptable. It also confirmed that a small
+  interior margin is not a complete numerical fallback: a real formal batch
+  still crossed the FP32 certificate before step1.
+- Do not keep enlarging a guessed safety margin. The rank-one family has an
+  analytic zero-shear endpoint. Select it only after the actual one-pass
+  certificate detects a residual violation, then independently audit the
+  BF16 gate that enters the official recurrence. This is stricter and cheaper
+  than a second dense FP32 certificate pass.
 - Strict and training lanes have different jobs. Official FP32
   fused-recurrent forward carries the hard certificate; official BF16 chunk
   carries real training and is audited under an explicit low-precision

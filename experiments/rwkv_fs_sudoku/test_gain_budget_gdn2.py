@@ -143,6 +143,14 @@ class GainBudgetProjectionTests(unittest.TestCase):
             bool((stats["tau_projection"] <= stats["tau_effective"]).all())
         )
         self.assertTrue(bool(stats["numerical_endpoint"].any()))
+        endpoint_rows = stats["numerical_endpoint"].squeeze(-1)
+        endpoint_values = projected[endpoint_rows]
+        torch.testing.assert_close(
+            endpoint_values,
+            endpoint_values[:, :1].expand_as(endpoint_values),
+            rtol=0,
+            atol=0,
+        )
 
     def test_closed_form_sigma_matches_svd(self) -> None:
         for _ in range(64):

@@ -115,6 +115,8 @@ def project_erase_gate(
             "scale": one,
             "tau_requested": infinity,
             "tau_effective": infinity,
+            "tau_projection": infinity,
+            "numerical_safety_margin": zero,
             "minimum_feasible_tau": torch.maximum(
                 one,
                 (1.0 - delta).abs(),
@@ -166,12 +168,22 @@ def project_erase_gate(
     else:
         tau_effective = torch.maximum(tau_requested, minimum_feasible_tau)
 
+    # Project slightly inside the requested boundary so the single FP32
+    # certificate pass remains strict after roundoff. If the available slack
+    # is smaller than this numerical margin, fall closed to the minimum
+    # feasible tau; that endpoint has zero shear while preserving delta.
+    certificate_tolerance = 2e-5 * tau_effective + 2e-6
+    numerical_safety_margin = 0.5 * certificate_tolerance
+    tau_projection = torch.maximum(
+        minimum_feasible_tau,
+        tau_effective - numerical_safety_margin,
+    )
     x = 1.0 - delta
-    finite_tau = torch.isfinite(tau_effective)
+    finite_tau = torch.isfinite(tau_projection)
     cap_finite = (
-        (tau_effective - 1.0)
-        * (tau_effective + 1.0)
-        * (1.0 - (x / tau_effective).square())
+        (tau_projection - 1.0)
+        * (tau_projection + 1.0)
+        * (1.0 - (x / tau_projection).square())
     ).clamp_min(0.0)
     cap = torch.where(
         finite_tau,
@@ -194,9 +206,6 @@ def project_erase_gate(
         torch.ones_like(active_scale),
     )
 
-    # A closed-form scale can land a few ulps outside the requested boundary
-    # for large, near-tau=1 batches. Fail closed at the isotropic endpoint:
-    # lambda=0 still preserves delta and has the minimum possible shear.
     projected = mean + scale * centered
     effective_gate = torch.where(live, projected, gate_fp32)
     effective_delta = (effective_gate * key2).sum(dim=-1, keepdim=True)
@@ -211,29 +220,10 @@ def project_erase_gate(
         effective_delta,
         effective_shear2,
     )
-    certificate_tolerance = 2e-5 * tau_effective + 2e-6
     numerical_endpoint = (
-        live
+        active
         & finite_tau
-        & (effective_sigma > tau_effective + certificate_tolerance)
-    )
-    scale = torch.where(
-        numerical_endpoint,
-        torch.zeros_like(scale),
-        scale,
-    )
-    projected = mean + scale * centered
-    effective_gate = torch.where(live, projected, gate_fp32)
-    effective_delta = (effective_gate * key2).sum(dim=-1, keepdim=True)
-    effective_centered = effective_gate - effective_delta / n_safe
-    effective_shear2 = (
-        n2
-        * (effective_centered.square() * key2).sum(dim=-1, keepdim=True)
-    )
-    delta_abs_error = (effective_delta - delta).abs()
-    effective_sigma = rank_one_transition_sigma(
-        effective_delta,
-        effective_shear2,
+        & (tau_projection <= minimum_feasible_tau)
     )
     _fail_closed_assert(
         (delta_abs_error <= 5e-6).all(),
@@ -256,6 +246,8 @@ def project_erase_gate(
         "scale": scale,
         "tau_requested": tau_requested,
         "tau_effective": tau_effective,
+        "tau_projection": tau_projection,
+        "numerical_safety_margin": numerical_safety_margin,
         "minimum_feasible_tau": minimum_feasible_tau,
         "alpha_max": alpha_max,
         "ideal_step_gain_bound": tau_effective * alpha_max,

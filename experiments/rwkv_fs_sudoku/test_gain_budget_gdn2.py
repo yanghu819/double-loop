@@ -139,6 +139,10 @@ class GainBudgetProjectionTests(unittest.TestCase):
         self.assertTrue(
             bool((stats["effective_step_gain_bound"] <= 1.0001).all())
         )
+        self.assertTrue(
+            bool((stats["tau_projection"] <= stats["tau_effective"]).all())
+        )
+        self.assertTrue(bool(stats["numerical_endpoint"].any()))
 
     def test_closed_form_sigma_matches_svd(self) -> None:
         for _ in range(64):

@@ -193,10 +193,24 @@ candidate score and cannot accept or reject the mechanism.
 
 The closed-form projection is mathematically valid. The failure occurs when a
 very large real batch near `tau=1` rounds a few ulps outside the strict FP32
-certificate. The retry does not relax the budget. Rows that still violate the
-certificate after the closed form move to `lambda=0`, the isotropic endpoint.
-This preserves `delta`, minimizes shear, and is the strict fail-closed member
-of the same projection family. Its frequency is logged explicitly as
+certificate.
+
+### 7.3 Rejected double-certificate implementation at `755d5871`
+
+The first numerical fix recomputed the full post-projection certificate after
+moving residual violators to the isotropic endpoint. It passed 24/24 math
+tests and all official chunk/fused/backward/state/layer correctness checks.
+ABCCBA nevertheless measured candidate overhead `+23.3301%` versus matched
+external identity, above the pre-registered `20%` maximum. The preflight
+stopped before checkpoint smoke or formal training.
+
+This is an implementation-efficiency failure, not a quality result. The next
+exact SHA reserves half of the existing FP32 certificate tolerance before
+computing the closed-form projection. It then computes the actual certificate
+once. When this reserve consumes all feasible slack, `tau_projection` equals
+the minimum feasible tau and the projection reaches `lambda=0`, the isotropic
+endpoint. This still preserves `delta`, minimizes shear, and never relaxes the
+requested budget. Its frequency remains explicit as
 `gain_budget_numerical_endpoint_frac`.
 
 ## 8. Conclusion

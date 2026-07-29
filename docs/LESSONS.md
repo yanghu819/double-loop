@@ -1312,9 +1312,14 @@
   call that a negative quality result.
 - Do not silently add tolerance or relax the requested budget. The projection
   family already contains a strict fail-closed endpoint: `lambda=0` preserves
-  effective erase strength and minimizes anisotropic shear. Use that endpoint
-  only for rows that fail the post-projection numerical certificate, and log
-  its frequency.
+  effective erase strength and minimizes anisotropic shear. Reserve a small
+  interior margin before the closed-form projection; when the margin consumes
+  all feasible slack, use that endpoint and log its frequency.
+- A strict fix still has to be cheap. Recomputing the full certificate after
+  the endpoint passed every correctness check but added `23.33%` over the
+  matched external identity, so ABCCBA rejected it before training. Prefer one
+  actual certificate pass with a preregistered numerical reserve over a second
+  dense pass across every token and head.
 - Strict and training lanes have different jobs. Official FP32
   fused-recurrent forward carries the hard certificate; official BF16 chunk
   carries real training and is audited under an explicit low-precision

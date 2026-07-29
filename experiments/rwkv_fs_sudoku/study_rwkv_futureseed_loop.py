@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import html
+import importlib.metadata
 import json
 import math
 import os
 import random
+import subprocess
 import time
 from contextlib import nullcontext
 from dataclasses import asdict, dataclass
@@ -23,6 +26,7 @@ from futureseed2_selective import (
     FUTURE_SEED_GATE_MODES,
     FutureSeedSelectiveGate,
 )
+from gain_budget_gdn2 import fla_l2norm_fp32, project_erase_gate
 
 try:
     from rwkv7_cuda import StatePassingRWKV7, WindRWKV7, statepassing_available, wind_available
@@ -51,7 +55,7 @@ try:
     from fla.layers.gdn2 import GatedDeltaNet2
     from fla.layers.kda import KimiDeltaAttention
     from fla.models.utils import Cache as FLACache
-    from fla.ops.gdn2 import chunk_gdn2
+    from fla.ops.gdn2 import chunk_gdn2, fused_recurrent_gdn2
     from fla.ops.kda import chunk_kda
 except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
     FLAGatedDeltaNet = None
@@ -59,6 +63,7 @@ except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
     KimiDeltaAttention = None
     FLACache = None
     chunk_gdn2 = None
+    fused_recurrent_gdn2 = None
     chunk_kda = None
     FLA_DELTA_IMPORT_ERROR = exc
 else:
@@ -129,6 +134,8 @@ RWKV7_OFFICIAL_SOURCE_PATH = "RWKV-v7/train_temp/src/model.py"
 RWKV7_OFFICIAL_KERNEL_BLOB = "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905"
 RWKV7_OFFICIAL_KERNEL_PATH = "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu"
 RWKV7_STATEPASSING_CUDA_SHA256 = "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
+GAIN_BUDGET_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
+GAIN_BUDGET_WHEEL_SHA256 = "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
@@ -160,6 +167,208 @@ def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
 configure_sudoku(N, BOX_ROWS, BOX_COLS)
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def visible_gpu_uuid() -> str:
+    output = subprocess.check_output(
+        [
+            "nvidia-smi",
+            "-i",
+            "0",
+            "--query-gpu=uuid",
+            "--format=csv,noheader,nounits",
+        ],
+        text=True,
+    )
+    rows = [row.strip() for row in output.splitlines() if row.strip()]
+    if len(rows) != 1:
+        raise RuntimeError(
+            f"Expected exactly one visible physical GPU UUID, got {rows}"
+        )
+    return rows[0]
+
+
+def verify_installed_fla_against_manifest(
+    provenance: Dict[str, Any],
+) -> Dict[str, Any]:
+    import fla
+
+    package_root = Path(fla.__file__).resolve().parent
+    package_paths = [Path(path).resolve() for path in fla.__path__]
+    if package_paths != [package_root]:
+        raise RuntimeError(
+            f"FLA has unexpected namespace/package paths: {package_paths}"
+        )
+    if not str(package_root).startswith("/huyang2/double-loop/"):
+        raise RuntimeError(
+            f"FLA resolved outside the persistent project root: {package_root}"
+        )
+    expected_rows = provenance.get("source_file_hashes")
+    if not isinstance(expected_rows, dict) or not expected_rows:
+        raise RuntimeError("Gain-Budget manifest lacks FLA source file hashes")
+    tree_digest = hashlib.sha256()
+    for relative_path in sorted(expected_rows):
+        expected = expected_rows[relative_path].get("installed_sha256")
+        installed_path = package_root.parent / relative_path
+        if not installed_path.is_file():
+            raise RuntimeError(f"Installed FLA file is missing: {installed_path}")
+        actual = sha256_file(installed_path)
+        if actual != expected:
+            raise RuntimeError(
+                "Installed FLA changed after the CUDA contract: "
+                f"{relative_path} {actual} != {expected}"
+            )
+        tree_digest.update(relative_path.encode("utf-8"))
+        tree_digest.update(b"\0")
+        tree_digest.update(bytes.fromhex(actual))
+    installed_python_files = {
+        str(path.relative_to(package_root.parent))
+        for path in package_root.rglob("*.py")
+    }
+    expected_python_files = {
+        relative_path
+        for relative_path in expected_rows
+        if relative_path.endswith(".py")
+    }
+    extra_python_files = sorted(
+        installed_python_files - expected_python_files
+    )
+    if extra_python_files:
+        raise RuntimeError(
+            "Installed FLA gained Python files after the CUDA contract: "
+            f"{extra_python_files}"
+        )
+    tree_sha256 = tree_digest.hexdigest()
+    if tree_sha256 != provenance.get("installed_fla_tree_sha256"):
+        raise RuntimeError(
+            "Installed FLA aggregate hash changed after the CUDA contract: "
+            f"{tree_sha256} != "
+            f"{provenance.get('installed_fla_tree_sha256')}"
+        )
+    return {
+        "package_root": str(package_root),
+        "package_paths": [str(path) for path in package_paths],
+        "verified_file_count": len(expected_rows),
+        "installed_fla_tree_sha256": tree_sha256,
+    }
+
+
+def validate_gain_budget_contract_manifest() -> Dict[str, Any]:
+    manifest_value = os.environ.get("GAIN_BUDGET_CONTRACT_JSON", "").strip()
+    if not manifest_value:
+        raise RuntimeError(
+            "Gain-Budget strict mode requires GAIN_BUDGET_CONTRACT_JSON"
+        )
+    manifest_path = Path(manifest_value).resolve()
+    if not manifest_path.is_file():
+        raise RuntimeError(f"Gain-Budget CUDA contract is missing: {manifest_path}")
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    repo_root = Path(__file__).resolve().parents[2]
+    current_sha = subprocess.check_output(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
+    provenance = payload.get("provenance", {})
+    runtime_fla = verify_installed_fla_against_manifest(provenance)
+    current_gpu_uuid = visible_gpu_uuid()
+    current_gpu_name = torch.cuda.get_device_name(0)
+    current_wheel = (
+        repo_root
+        / "wheelhouse"
+        / "flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl"
+    )
+    current_wheel_sha256 = (
+        sha256_file(current_wheel) if current_wheel.is_file() else ""
+    )
+    checks = {
+        "status": payload.get("status") == "passed",
+        "git_sha": payload.get("git_sha") == current_sha,
+        "runtime_cuda_visible_devices": os.environ.get(
+            "CUDA_VISIBLE_DEVICES"
+        )
+        == "0",
+        "cuda_visible_devices": payload.get("cuda_visible_devices") == "0",
+        "runtime_single_gpu": torch.cuda.device_count() == 1,
+        "gpu_uuid": payload.get("gpu_uuid") == current_gpu_uuid,
+        "expected_gpu_uuid": payload.get("expected_gpu_uuid")
+        == current_gpu_uuid,
+        "gpu_name": payload.get("device") == current_gpu_name,
+        "gpu1": "A800" in current_gpu_name,
+        "fla_source": provenance.get("fla_source_sha")
+        == GAIN_BUDGET_FLA_SHA,
+        "wheel_manifest": provenance.get("wheel_sha256")
+        == GAIN_BUDGET_WHEEL_SHA256,
+        "wheel_runtime": current_wheel_sha256
+        == GAIN_BUDGET_WHEEL_SHA256,
+        "fla_tree": runtime_fla["installed_fla_tree_sha256"]
+        == provenance.get("installed_fla_tree_sha256"),
+        "fla_package_root": runtime_fla["package_root"]
+        == provenance.get("fla_package_root"),
+        "torch_version": payload.get("torch_version") == torch.__version__,
+        "triton_version": payload.get("triton_version")
+        == importlib.metadata.version("triton"),
+        "chunk": "chunk_boundary_forward" in payload,
+        "backward": "chunk_backward" in payload,
+        "backward_bfloat16": "chunk_backward_bfloat16" in payload,
+        "state_carry": "chunk_state_carry" in payload,
+        "mode_none": payload.get("mode_none_exact", {}).get(
+            "output_bitwise_equal"
+        )
+        is True,
+        "budget_layer": "budget_layer_backward" in payload,
+        "benchmark_time": payload.get("benchmark", {}).get(
+            "time_overhead_frac",
+            float("inf"),
+        )
+        <= 0.20,
+        "benchmark_memory": payload.get("benchmark", {}).get(
+            "memory_overhead_frac",
+            float("inf"),
+        )
+        <= 0.20,
+        "benchmark_projection_time": payload.get("benchmark", {}).get(
+            "projection_time_overhead_frac",
+            float("inf"),
+        )
+        <= 0.20,
+        "benchmark_projection_memory": payload.get("benchmark", {}).get(
+            "projection_memory_overhead_frac",
+            float("inf"),
+        )
+        <= 0.20,
+    }
+    failed = sorted(name for name, passed in checks.items() if not passed)
+    if failed:
+        raise RuntimeError(
+            f"Gain-Budget CUDA contract does not match this run: {failed}"
+        )
+    digest = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    return {
+        "path": str(manifest_path),
+        "sha256": digest,
+        "git_sha": current_sha,
+        "checks": checks,
+        "torch_version": payload.get("torch_version"),
+        "device": payload.get("device"),
+        "gpu_uuid": current_gpu_uuid,
+        "runtime_fla": runtime_fla,
+        "time_overhead_frac": payload["benchmark"]["time_overhead_frac"],
+        "memory_overhead_frac": payload["benchmark"]["memory_overhead_frac"],
+        "projection_time_overhead_frac": payload["benchmark"][
+            "projection_time_overhead_frac"
+        ],
+        "projection_memory_overhead_frac": payload["benchmark"][
+            "projection_memory_overhead_frac"
+        ],
+    }
+
+
 def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any]:
     if os.environ.get("FLA_DISABLE_BACKEND_DISPATCH") != "1":
         raise RuntimeError("Strict FLA mode requires FLA_DISABLE_BACKEND_DISPATCH=1 before Python starts")
@@ -171,7 +380,7 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         raise RuntimeError("FLA backend dispatch is active; refusing a run with possible silent backend substitution")
     marker = Path("/huyang2/double-loop/.cache/fla-source-sha")
     source_sha = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
-    expected_sha = "fe8fce9fc6984f22905f54cfa885dce1502baf26"
+    expected_sha = GAIN_BUDGET_FLA_SHA
     if source_sha != expected_sha:
         raise RuntimeError(f"Pinned FLA source marker mismatch: {source_sha!r} != {expected_sha}")
     expected_layers = {
@@ -190,25 +399,66 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             raise RuntimeError(
                 f"Layer {layer_idx} is {type(core)}, expected exact official class {expected}"
             )
-        conv_backends = {
-            name: getattr(core, name).backend
-            for name in ("q_conv1d", "k_conv1d", "v_conv1d")
-        }
-        if set(conv_backends.values()) != {"triton"}:
+        conv_backends = (
+            {
+                name: getattr(core, name).backend
+                for name in ("q_conv1d", "k_conv1d", "v_conv1d")
+            }
+            if core.use_short_conv
+            else {"q_conv1d": "disabled", "k_conv1d": "disabled", "v_conv1d": "disabled"}
+        )
+        if core.use_short_conv and set(conv_backends.values()) != {"triton"}:
             raise RuntimeError(f"Layer {layer_idx} changed short-conv backend: {conv_backends}")
         rows.append(
             {
                 "layer": layer_idx,
                 "class": f"{type(core).__module__}.{type(core).__qualname__}",
                 "conv_backends": conv_backends,
+                "gain_budget_mode": getattr(
+                    getattr(block, "time_mix", None),
+                    "gain_budget_mode",
+                    "none",
+                ),
+                "execution_path": (
+                    "official_layer_forward"
+                    if getattr(
+                        getattr(block, "time_mix", None),
+                        "gain_budget_mode",
+                        "none",
+                    )
+                    == "none"
+                    else (
+                        "audited_external_fp32_identity_plus_official_gdn2_kernel"
+                        if getattr(
+                            getattr(block, "time_mix", None),
+                            "gain_budget_mode",
+                            "none",
+                        )
+                        == "external_identity"
+                        else "audited_external_fp32_gain_budget_plus_official_gdn2_kernel"
+                    )
+                ),
             }
         )
+    gain_budget_enabled = any(
+        row["gain_budget_mode"] != "none" for row in rows
+    )
+    gain_budget_contract_required = (
+        gain_budget_enabled
+        or os.environ.get("REQUIRE_GAIN_BUDGET_CONTRACT") == "1"
+    )
+    gain_budget_contract = (
+        validate_gain_budget_contract_manifest()
+        if gain_budget_contract_required
+        else None
+    )
     return {
         "strict": True,
         "fla_source_sha": source_sha,
         "backend_dispatch_disabled": bool(_DISPATCH_DISABLED),
         "conv_backend": "triton",
         "layers": rows,
+        "gain_budget_contract": gain_budget_contract,
     }
 
 
@@ -1436,6 +1686,11 @@ class FLADeltaTimeMix(nn.Module):
         use_short_conv: bool,
         conv_size: int,
         allow_neg_eigval: bool,
+        gain_budget_mode: str = "none",
+        gain_budget_sigma_cap: float = 1.10,
+        gain_budget_step_cap: float = 1.0,
+        gain_budget_sigma_cap_max: float = 3.0,
+        gain_budget_infeasible_policy: str = "raise",
     ) -> None:
         super().__init__()
         if backbone not in {"fla_gdn", "gdn2", "kda"}:
@@ -1447,6 +1702,22 @@ class FLADeltaTimeMix(nn.Module):
             raise RuntimeError(f"BACKBONE={backbone} requires current flash-linear-attention: {reason}")
         if backbone != "fla_gdn" and d_model != heads * head_dim:
             raise ValueError(f"{backbone.upper()} keeps d_model == heads * head_dim for matched state size.")
+        if gain_budget_mode not in {
+            "none",
+            "external_identity",
+            "fixed_sigma",
+            "decay_funded",
+        }:
+            raise ValueError(
+                "gain_budget_mode must be none, external_identity, "
+                "fixed_sigma, or decay_funded"
+            )
+        if gain_budget_mode != "none" and backbone != "gdn2":
+            raise ValueError("Gain-Budget is restricted to the official GDN2 backbone")
+        if gain_budget_infeasible_policy not in {"raise", "relax"}:
+            raise ValueError("gain_budget_infeasible_policy must be raise or relax")
+        if gain_budget_mode != "none" and gain_budget_infeasible_policy != "raise":
+            raise ValueError("Integrated Gain-Budget is fail-closed and requires policy=raise")
 
         self.backbone = backbone
         self.heads = int(heads)
@@ -1455,6 +1726,12 @@ class FLADeltaTimeMix(nn.Module):
         if not math.isclose(float(self.head_v_dim), head_dim * float(expand_v), rel_tol=1e-5):
             raise ValueError("--gdn_expand_v must produce an integer value head dimension.")
         self.value_dim = self.heads * self.head_v_dim
+        self.gain_budget_mode = gain_budget_mode
+        self.gain_budget_sigma_cap = float(gain_budget_sigma_cap)
+        self.gain_budget_step_cap = float(gain_budget_step_cap)
+        self.gain_budget_sigma_cap_max = float(gain_budget_sigma_cap_max)
+        self.gain_budget_infeasible_policy = gain_budget_infeasible_policy
+        self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
         self.state_v_first = backbone != "gdn2"
@@ -1482,6 +1759,176 @@ class FLADeltaTimeMix(nn.Module):
         if backbone == "fla_gdn":
             layer_kwargs["use_gate"] = True
         self.core = layer_type(**layer_kwargs)
+
+    def _forward_gain_budget(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError("Gain-Budget requires the official GDN2 chunk op")
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = (
+                self._zero_conv_state(x)
+                if initial_state is not None
+                else (None, None, None)
+            )
+            q, _ = core.q_conv1d(
+                x=core.q_proj(x),
+                cache=conv_q,
+                output_final_state=True,
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(x),
+                cache=conv_k,
+                output_final_state=True,
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x),
+                cache=conv_v,
+                output_final_state=True,
+            )
+        else:
+            q = F.silu(core.q_proj(x))
+            k = F.silu(core.k_proj(x))
+            v = F.silu(core.v_proj(x))
+
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias)
+        b = core.b_proj(x).sigmoid()
+        w = core.w_proj(x).sigmoid()
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        b = b.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        with torch.autocast(device_type="cuda", enabled=False):
+            q_fp32 = fla_l2norm_fp32(q)
+            k_fp32 = fla_l2norm_fp32(k)
+            effective_b, projection = project_erase_gate(
+                k_fp32,
+                b,
+                g,
+                mode=(
+                    "none"
+                    if self.gain_budget_mode == "external_identity"
+                    else self.gain_budget_mode
+                ),
+                sigma_cap=self.gain_budget_sigma_cap,
+                step_gain_cap=self.gain_budget_step_cap,
+                sigma_cap_max=self.gain_budget_sigma_cap_max,
+                infeasible_policy=self.gain_budget_infeasible_policy,
+            )
+            gate_delta = effective_b - b.float()
+            if core.num_v_heads > core.num_heads:
+                groups = core.num_v_heads // core.num_heads
+                q_fp32 = torch.repeat_interleave(q_fp32, groups, dim=-2)
+                k_fp32 = torch.repeat_interleave(k_fp32, groups, dim=-2)
+                g = torch.repeat_interleave(g, groups, dim=-2)
+                effective_b = torch.repeat_interleave(
+                    effective_b,
+                    groups,
+                    dim=-2,
+                )
+            operation = (
+                fused_recurrent_gdn2
+                if seq_len <= 64 and not self.training
+                else chunk_gdn2
+            )
+            if operation is None:
+                raise RuntimeError("The required official GDN2 kernel is unavailable")
+            o, terminal_state = operation(
+                q=q_fp32,
+                k=k_fp32,
+                v=v,
+                g=g,
+                b=effective_b,
+                w=w,
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=False,
+            )
+
+        self.last_gain_budget_diag = {
+            "gdn2_gain_budget_enabled": x.new_tensor(
+                float(self.gain_budget_mode != "external_identity")
+            ),
+            "gdn2_gain_budget_clipped_frac": projection["clipped"]
+            .float()
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_infeasible_frac": projection["infeasible"]
+            .float()
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_lambda_mean": projection["scale"]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_lambda_min": projection["scale"].min().detach(),
+            "gdn2_gain_budget_tau_mean": projection["tau_requested"]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_tau_effective_mean": projection["tau_effective"]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_alpha_mean": projection["alpha_max"]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_original_sigma_mean": projection[
+                "original_sigma"
+            ]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_effective_sigma_mean": projection[
+                "effective_sigma"
+            ]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_original_step_bound": projection[
+                "original_step_gain_bound"
+            ]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_effective_step_bound": projection[
+                "effective_step_gain_bound"
+            ]
+            .mean()
+            .detach(),
+            "gdn2_gain_budget_effective_step_bound_max": projection[
+                "effective_step_gain_bound"
+            ]
+            .max()
+            .detach(),
+            "gdn2_gain_budget_delta_error_max": projection["delta_abs_error"]
+            .max()
+            .detach(),
+            "gdn2_gain_budget_gate_relative_change": (
+                gate_delta.square().mean().sqrt()
+                / b.float().square().mean().sqrt().clamp_min(1e-8)
+            ).detach(),
+            "gdn2_gain_budget_fp32_numerical_certificate": x.new_tensor(
+                float(self.gain_budget_mode != "external_identity")
+            ),
+        }
+
+        output_gate = core.g_proj(x).view(
+            batch_size,
+            seq_len,
+            core.num_v_heads,
+            core.head_v_dim,
+        )
+        o = core.o_norm(o.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
 
     def _zero_conv_state(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size = x.shape[0]
@@ -1556,6 +2003,12 @@ class FLADeltaTimeMix(nn.Module):
                 )
             initial_state = initial_state.float()
 
+        if self.gain_budget_mode != "none":
+            return self._forward_gain_budget(
+                x,
+                initial_state=initial_state,
+            )
+
         assert FLACache is not None
         cache = FLACache()
         if initial_state is not None:
@@ -1575,6 +2028,25 @@ class FLADeltaTimeMix(nn.Module):
         terminal_state = returned_cache[0]["recurrent_state"]
         if terminal_state is None:
             raise RuntimeError(f"{self.backbone.upper()} kernel did not return a terminal state.")
+        zero = x.new_zeros(())
+        self.last_gain_budget_diag = {
+            "gdn2_gain_budget_enabled": zero,
+            "gdn2_gain_budget_clipped_frac": zero,
+            "gdn2_gain_budget_infeasible_frac": zero,
+            "gdn2_gain_budget_lambda_mean": x.new_ones(()),
+            "gdn2_gain_budget_lambda_min": x.new_ones(()),
+            "gdn2_gain_budget_tau_mean": zero,
+            "gdn2_gain_budget_tau_effective_mean": zero,
+            "gdn2_gain_budget_alpha_mean": zero,
+            "gdn2_gain_budget_original_sigma_mean": zero,
+            "gdn2_gain_budget_effective_sigma_mean": zero,
+            "gdn2_gain_budget_original_step_bound": zero,
+            "gdn2_gain_budget_effective_step_bound": zero,
+            "gdn2_gain_budget_effective_step_bound_max": zero,
+            "gdn2_gain_budget_delta_error_max": zero,
+            "gdn2_gain_budget_gate_relative_change": zero,
+            "gdn2_gain_budget_fp32_numerical_certificate": zero,
+        }
         return y, terminal_state
 
 
@@ -1592,6 +2064,11 @@ class FLADeltaBlock(nn.Module):
         gdn_use_short_conv: bool,
         gdn_conv_size: int,
         gdn_allow_neg_eigval: bool,
+        gdn2_gain_budget_mode: str = "none",
+        gdn2_gain_budget_sigma_cap: float = 1.10,
+        gdn2_gain_budget_step_cap: float = 1.0,
+        gdn2_gain_budget_sigma_cap_max: float = 3.0,
+        gdn2_gain_budget_infeasible_policy: str = "raise",
     ) -> None:
         super().__init__()
         self.ln_time = nn.LayerNorm(d_model)
@@ -1606,6 +2083,11 @@ class FLADeltaBlock(nn.Module):
             use_short_conv=gdn_use_short_conv,
             conv_size=gdn_conv_size,
             allow_neg_eigval=gdn_allow_neg_eigval,
+            gain_budget_mode=gdn2_gain_budget_mode,
+            gain_budget_sigma_cap=gdn2_gain_budget_sigma_cap,
+            gain_budget_step_cap=gdn2_gain_budget_step_cap,
+            gain_budget_sigma_cap_max=gdn2_gain_budget_sigma_cap_max,
+            gain_budget_infeasible_policy=gdn2_gain_budget_infeasible_policy,
         )
         self.channel_mix = ChannelMix(d_model, channel_mult)
         self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
@@ -1654,6 +2136,11 @@ class FutureSeedRWKV(nn.Module):
         gdn_use_short_conv: bool = True,
         gdn_conv_size: int = 4,
         gdn_allow_neg_eigval: bool = False,
+        gdn2_gain_budget_mode: str = "none",
+        gdn2_gain_budget_sigma_cap: float = 1.10,
+        gdn2_gain_budget_step_cap: float = 1.0,
+        gdn2_gain_budget_sigma_cap_max: float = 3.0,
+        gdn2_gain_budget_infeasible_policy: str = "raise",
     ) -> None:
         super().__init__()
         if layers < 2:
@@ -1789,6 +2276,11 @@ class FutureSeedRWKV(nn.Module):
                         gdn_use_short_conv=gdn_use_short_conv,
                         gdn_conv_size=gdn_conv_size,
                         gdn_allow_neg_eigval=gdn_allow_neg_eigval,
+                        gdn2_gain_budget_mode=gdn2_gain_budget_mode,
+                        gdn2_gain_budget_sigma_cap=gdn2_gain_budget_sigma_cap,
+                        gdn2_gain_budget_step_cap=gdn2_gain_budget_step_cap,
+                        gdn2_gain_budget_sigma_cap_max=gdn2_gain_budget_sigma_cap_max,
+                        gdn2_gain_budget_infeasible_policy=gdn2_gain_budget_infeasible_policy,
                     )
                 )
         self.blocks = nn.ModuleList(blocks)
@@ -1837,6 +2329,7 @@ class FutureSeedRWKV(nn.Module):
         readout_raw_norms = []
         readout_residual_norms = []
         state_history: List[torch.Tensor] = []
+        gain_budget_values: Dict[str, List[torch.Tensor]] = {}
         for layer_idx, block in enumerate(self.blocks):
             if (
                 self.future_seed_readout_hop > 0
@@ -2104,6 +2597,9 @@ class FutureSeedRWKV(nn.Module):
                 x, previous_state = block(x, initial_state=initial_state)
             assert previous_state is not None
             state_history.append(previous_state)
+            if isinstance(block, FLADeltaBlock):
+                for key, value in block.time_mix.last_gain_budget_diag.items():
+                    gain_budget_values.setdefault(key, []).append(value)
             if self.future_seed_scope == "block":
                 assert next_seed_memory is not None
                 next_seed_memory.append(previous_state)
@@ -2168,33 +2664,52 @@ class FutureSeedRWKV(nn.Module):
                 if readout_residual_norms
                 else x.new_zeros(())
             )
+            for key, values in gain_budget_values.items():
+                stacked = torch.stack([value.float() for value in values])
+                out[key] = (
+                    stacked.max()
+                    if key.endswith("_max")
+                    else stacked.min()
+                    if key.endswith("_min")
+                    else stacked.mean()
+                )
             return x, out, next_seed_memory
         zero = x.new_zeros(())
+        zero_out = {
+            "fs_gate_mean": zero,
+            "fs_update_mean": zero,
+            "fs_state_norm": zero,
+            "fs_decay": zero,
+            "fs_raw_rms_mean": zero,
+            "fs_raw_rms_std": zero,
+            "fs_norm_gain_mean": zero,
+            "fs_norm_gain_std": zero,
+            "fs2_gate_delta_rms": zero,
+            "fs2_gate_std": zero,
+            "fs2_gate_batch_std": zero,
+            "fs2_content_feature_std": zero,
+            "fs2_gate_min": zero,
+            "fs2_gate_max": zero,
+            "fs2_seed_relative_change": zero,
+            "fs2_block_seed_active": zero,
+            "fs2_block_seed_raw_norm": zero,
+            "fs2_readout_enabled": zero,
+            "fs2_readout_scale_abs": zero,
+            "fs2_readout_raw_norm": zero,
+            "fs2_readout_residual_norm": zero,
+        }
+        for key, values in gain_budget_values.items():
+            stacked = torch.stack([value.float() for value in values])
+            zero_out[key] = (
+                stacked.max()
+                if key.endswith("_max")
+                else stacked.min()
+                if key.endswith("_min")
+                else stacked.mean()
+            )
         return (
             x,
-            {
-                "fs_gate_mean": zero,
-                "fs_update_mean": zero,
-                "fs_state_norm": zero,
-                "fs_decay": zero,
-                "fs_raw_rms_mean": zero,
-                "fs_raw_rms_std": zero,
-                "fs_norm_gain_mean": zero,
-                "fs_norm_gain_std": zero,
-                "fs2_gate_delta_rms": zero,
-                "fs2_gate_std": zero,
-                "fs2_gate_batch_std": zero,
-                "fs2_content_feature_std": zero,
-                "fs2_gate_min": zero,
-                "fs2_gate_max": zero,
-                "fs2_seed_relative_change": zero,
-                "fs2_block_seed_active": zero,
-                "fs2_block_seed_raw_norm": zero,
-                "fs2_readout_enabled": zero,
-                "fs2_readout_scale_abs": zero,
-                "fs2_readout_raw_norm": zero,
-                "fs2_readout_residual_norm": zero,
-            },
+            zero_out,
             next_seed_memory,
         )
 
@@ -2338,8 +2853,291 @@ def load_training_checkpoint(
     feature_buffer: FeatureNoiseBuffer,
     rng: random.Random,
     device: torch.device,
+    expected_args: argparse.Namespace | None = None,
 ) -> Dict[str, Any]:
+    def parse_curriculum_spec(raw: str) -> List[Tuple[int, int, int]]:
+        stages = []
+        for item in raw.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            span, duration = item.split(":", 1)
+            lo, hi = span.split("-", 1)
+            stage = (int(lo), int(hi), int(duration))
+            if stage[0] < 1 or stage[1] < stage[0] or stage[2] < 1:
+                raise RuntimeError(
+                    f"Invalid checkpoint curriculum stage: {item}"
+                )
+            stages.append(stage)
+        if not stages:
+            raise RuntimeError("Exact checkpoint resume requires hole_stages")
+        return stages
+
+    checkpoint_sha256 = ""
+    checkpoint_source_sha = ""
+    if expected_args is not None:
+        expected_checkpoint_sha256 = str(
+            expected_args.resume_train_checkpoint_sha256
+        ).strip()
+        if not expected_checkpoint_sha256:
+            raise RuntimeError(
+                "Exact checkpoint resume requires "
+                "--resume_train_checkpoint_sha256"
+            )
+        digest = hashlib.sha256()
+        with open(path, "rb") as checkpoint_file:
+            for chunk in iter(
+                lambda: checkpoint_file.read(8 * 1024 * 1024),
+                b"",
+            ):
+                digest.update(chunk)
+        checkpoint_sha256 = digest.hexdigest()
+        if checkpoint_sha256 != expected_checkpoint_sha256:
+            raise RuntimeError(
+                "Resume checkpoint SHA256 mismatch: "
+                f"{checkpoint_sha256} != {expected_checkpoint_sha256}"
+            )
+        expected_source_sha = str(
+            expected_args.resume_train_source_sha
+        ).strip()
+        if not expected_source_sha:
+            raise RuntimeError(
+                "Exact checkpoint resume requires --resume_train_source_sha"
+            )
+        checkpoint_path = Path(path).resolve()
+        checkpoint_run_name = checkpoint_path.parents[1].name
+        persistent_root = Path(
+            os.environ.get("PERSIST_ROOT", str(Path(__file__).resolve().parents[2]))
+        ).resolve()
+        source_run_dir = (
+            persistent_root
+            / "runs"
+            / checkpoint_run_name
+        )
+        source_head_path = source_run_dir / "source_HEAD.txt"
+        if not source_head_path.is_file():
+            raise RuntimeError(
+                f"Resume source provenance is missing: {source_head_path}"
+            )
+        checkpoint_source_sha = source_head_path.read_text(
+            encoding="utf-8"
+        ).strip()
+        if checkpoint_source_sha != expected_source_sha:
+            raise RuntimeError(
+                "Resume source SHA mismatch: "
+                f"{checkpoint_source_sha} != {expected_source_sha}"
+            )
+        source_config_path = source_run_dir / "config.json"
+        source_patch_path = source_run_dir / "source.patch"
+        if not source_config_path.is_file():
+            raise RuntimeError(
+                f"Resume source config is missing: {source_config_path}"
+            )
+        source_config = json.loads(
+            source_config_path.read_text(encoding="utf-8")
+        )
+        if (
+            source_config.get("run_name") != checkpoint_run_name
+            or source_config.get("git_sha") != expected_source_sha
+            or source_config.get("git_dirty") is not False
+        ):
+            raise RuntimeError(
+                "Resume run was not recorded from the expected clean source: "
+                f"{source_config}"
+            )
+        if not source_patch_path.is_file() or source_patch_path.stat().st_size != 0:
+            raise RuntimeError(
+                "Exact resume requires an empty recorded source.patch: "
+                f"{source_patch_path}"
+            )
     checkpoint = torch.load(path, map_location=device, weights_only=False)
+    resume_contract: Dict[str, Any] = {}
+    if expected_args is not None:
+        contract_fields = (
+            "batch",
+            "grad_accum_steps",
+            "d_model",
+            "layers",
+            "heads",
+            "head_dim",
+            "channel_mult",
+            "l_cycles",
+            "max_loops",
+            "backbone",
+            "gdn_mode",
+            "gdn_expand_v",
+            "gdn_use_short_conv",
+            "gdn_conv_size",
+            "gdn_allow_neg_eigval",
+            "future_seed_scale",
+            "future_seed_decay",
+            "future_seed_update",
+            "future_seed_norm_mode",
+            "future_seed_gate_mode",
+            "future_seed_scope",
+            "future_seed_readout_hop",
+            "lambda_",
+            "loop_update_mode",
+            "loop_update_gate_init",
+            "loop_loss",
+            "loop_loss_start",
+            "loop_loss_power",
+            "loop_loss_min_weight",
+            "loop_feedback_scale",
+            "loop_feedback_detach",
+            "loop_feedback_corrupt_prob",
+            "loop_feedback_corrupt_mix",
+            "loop_feedback_corrupt_mode",
+            "loop_time_scale",
+            "scratch_mode",
+            "scratch_scale",
+            "scratch_noise_scale",
+            "scratch_gauss_weight",
+            "scratch_gauss_projections",
+            "scratch_gate_bias",
+            "scratch_decay_bias",
+            "hidden_agg_noise_scale",
+            "hidden_agg_noise_temp",
+            "hidden_agg_noise_detach",
+            "hidden_agg_noise_mode",
+            "hidden_agg_noise_topk",
+            "hidden_agg_noise_max_norm",
+            "exact_margin_weight",
+            "exact_margin_tau",
+            "exact_margin_target",
+            "exact_margin_start_step",
+            "activation_checkpoint",
+            "forward_dtype",
+            "optimizer_contract",
+            "lr",
+            "weight_decay",
+            "blank_loss_weight",
+            "noise_scale",
+            "rollout_noise_scale",
+            "feature_buffer_size",
+            "feature_buffer_add",
+            "official_sudoku_data_dir",
+            "official_sudoku_train_split",
+            "official_sudoku_train_indices",
+            "hole_pattern",
+            "gdn_progressive_base_expand_v",
+            "fla_strict_official",
+            "shared_shell_init_seed",
+            "seed",
+        )
+        legacy_missing_defaults = {
+            "future_seed_gate_mode": "head",
+            "future_seed_scope": "layer",
+            "future_seed_readout_hop": 0,
+        }
+        saved_args = checkpoint.get("args")
+        if not isinstance(saved_args, dict):
+            raise RuntimeError("Exact checkpoint resume requires saved args")
+        mismatches = {}
+        accepted_legacy_defaults = {}
+        for field in contract_fields:
+            current_value = getattr(expected_args, field)
+            if field not in saved_args:
+                if (
+                    field in legacy_missing_defaults
+                    and current_value == legacy_missing_defaults[field]
+                ):
+                    accepted_legacy_defaults[field] = current_value
+                    continue
+                mismatches[field] = {
+                    "saved": "__MISSING__",
+                    "current": current_value,
+                }
+                continue
+            saved_value = saved_args[field]
+            if isinstance(current_value, float):
+                matches = math.isclose(
+                    float(saved_value),
+                    current_value,
+                    rel_tol=0.0,
+                    abs_tol=1e-12,
+                )
+            else:
+                matches = saved_value == current_value
+            if not matches:
+                mismatches[field] = {
+                    "saved": saved_value,
+                    "current": current_value,
+                }
+        if mismatches:
+            raise RuntimeError(
+                f"Exact checkpoint semantic contract mismatch: {mismatches}"
+            )
+        saved_stages = parse_curriculum_spec(
+            str(saved_args.get("hole_stages", ""))
+        )
+        current_stages = parse_curriculum_spec(
+            str(expected_args.hole_stages)
+        )
+        saved_at_step = int(checkpoint.get("saved_at_step", -1))
+        if saved_at_step < 0:
+            raise RuntimeError("Exact checkpoint lacks a valid saved_at_step")
+        consumed = 0
+        stage_context = []
+        for stage_index, saved_stage in enumerate(saved_stages):
+            if consumed >= saved_at_step:
+                break
+            if stage_index >= len(current_stages):
+                raise RuntimeError(
+                    "Current curriculum ends before the resume step"
+                )
+            current_stage = current_stages[stage_index]
+            saved_lo, saved_hi, saved_duration = saved_stage
+            current_lo, current_hi, current_duration = current_stage
+            if (saved_lo, saved_hi) != (current_lo, current_hi):
+                raise RuntimeError(
+                    "Resume curriculum range mismatch before checkpoint: "
+                    f"saved={saved_stage}, current={current_stage}"
+                )
+            required_in_stage = min(
+                saved_duration,
+                saved_at_step - consumed,
+            )
+            if current_duration < required_in_stage:
+                raise RuntimeError(
+                    "Current curriculum is shorter than the consumed "
+                    f"checkpoint prefix at stage {stage_index}: "
+                    f"{current_duration} < {required_in_stage}"
+                )
+            if required_in_stage == saved_duration and (
+                current_duration != saved_duration
+            ):
+                raise RuntimeError(
+                    "A completed pre-checkpoint curriculum stage changed "
+                    f"duration: saved={saved_stage}, current={current_stage}"
+                )
+            stage_context.append(
+                {
+                    "stage_index": stage_index,
+                    "holes_min": saved_lo,
+                    "holes_max": saved_hi,
+                    "consumed_steps": required_in_stage,
+                    "saved_duration": saved_duration,
+                    "current_duration": current_duration,
+                }
+            )
+            consumed += saved_duration
+        if sum(row["consumed_steps"] for row in stage_context) != saved_at_step:
+            raise RuntimeError(
+                "Resume curriculum does not cover the checkpoint step"
+            )
+        resume_contract = {
+            "fields": list(contract_fields),
+            "checkpoint_sha256": checkpoint_sha256,
+            "checkpoint_source_sha": checkpoint_source_sha,
+            "checkpoint_source_clean": True,
+            "checkpoint_source_config": str(source_config_path),
+            "checkpoint_source_patch": str(source_patch_path),
+            "accepted_legacy_defaults": accepted_legacy_defaults,
+            "curriculum_prefix": stage_context,
+            "saved_at_step": saved_at_step,
+            "matched": True,
+        }
     missing, unexpected = model.load_state_dict(checkpoint["model"], strict=False)
     allowed_missing = {
         "loop_update_logit",
@@ -2434,6 +3232,7 @@ def load_training_checkpoint(
         "unexpected_parameters": sorted(unexpected),
         "optimizer_groups_expanded": bool(inserted_parameters),
     }
+    checkpoint["_resume_contract"] = resume_contract
     return checkpoint
 
 
@@ -2483,6 +3282,11 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn_use_short_conv: bool,
         gdn_conv_size: int,
         gdn_allow_neg_eigval: bool,
+        gdn2_gain_budget_mode: str = "none",
+        gdn2_gain_budget_sigma_cap: float = 1.10,
+        gdn2_gain_budget_step_cap: float = 1.0,
+        gdn2_gain_budget_sigma_cap_max: float = 3.0,
+        gdn2_gain_budget_infeasible_policy: str = "raise",
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
     ) -> None:
@@ -2538,6 +3342,11 @@ class FutureSeedLoopSudoku(nn.Module):
             gdn_use_short_conv=gdn_use_short_conv,
             gdn_conv_size=gdn_conv_size,
             gdn_allow_neg_eigval=gdn_allow_neg_eigval,
+            gdn2_gain_budget_mode=gdn2_gain_budget_mode,
+            gdn2_gain_budget_sigma_cap=gdn2_gain_budget_sigma_cap,
+            gdn2_gain_budget_step_cap=gdn2_gain_budget_step_cap,
+            gdn2_gain_budget_sigma_cap_max=gdn2_gain_budget_sigma_cap_max,
+            gdn2_gain_budget_infeasible_policy=gdn2_gain_budget_infeasible_policy,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -3175,6 +3984,25 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(
             f"fs2_readout_resid={m.get('fs2_readout_residual_norm', 0.0):.3f}"
         )
+    if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
+        parts.append(
+            "gain_clip="
+            f"{m.get('gdn2_gain_budget_clipped_frac', 0.0):.3f}"
+        )
+        parts.append(
+            "gain_lambda="
+            f"{m.get('gdn2_gain_budget_lambda_mean', 1.0):.3f}/"
+            f"{m.get('gdn2_gain_budget_lambda_min', 1.0):.3f}"
+        )
+        parts.append(
+            "gain_bound="
+            f"{m.get('gdn2_gain_budget_original_step_bound', 0.0):.3f}->"
+            f"{m.get('gdn2_gain_budget_effective_step_bound', 0.0):.3f}"
+        )
+        parts.append(
+            "gain_delta_err="
+            f"{m.get('gdn2_gain_budget_delta_error_max', 0.0):.1e}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -3337,6 +4165,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn_use_short_conv=args.gdn_use_short_conv,
         gdn_conv_size=args.gdn_conv_size,
         gdn_allow_neg_eigval=args.gdn_allow_neg_eigval,
+        gdn2_gain_budget_mode=args.gdn2_gain_budget_mode,
+        gdn2_gain_budget_sigma_cap=args.gdn2_gain_budget_sigma_cap,
+        gdn2_gain_budget_step_cap=args.gdn2_gain_budget_step_cap,
+        gdn2_gain_budget_sigma_cap_max=args.gdn2_gain_budget_sigma_cap_max,
+        gdn2_gain_budget_infeasible_policy=args.gdn2_gain_budget_infeasible_policy,
     )
     if args.shared_shell_init_seed >= 0:
         model.reset_shared_shell_parameters(args.shared_shell_init_seed)
@@ -3433,6 +4266,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_hidden_agg_noise_entropy = 0.0
     last_hidden_agg_noise_max_weight = 0.0
     last_hidden_agg_noise_clip_frac = 0.0
+    last_gain_budget_clipped_frac = 0.0
+    last_gain_budget_infeasible_frac = 0.0
+    last_gain_budget_step_bound_max = 0.0
+    last_gain_budget_delta_error_max = 0.0
+    last_gain_budget_gate_relative_change = 0.0
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -3478,7 +4316,18 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             feature_buffer=feature_buffer,
             rng=rng,
             device=device,
+            expected_args=args if args.resume_require_exact_state else None,
         )
+        migration = checkpoint.get("_load_migration", {})
+        if args.resume_require_exact_state and (
+            migration.get("missing_parameters")
+            or migration.get("unexpected_parameters")
+            or migration.get("optimizer_groups_expanded")
+        ):
+            raise RuntimeError(
+                "Exact checkpoint resume required, but migration was needed: "
+                f"{migration}"
+            )
         global_step = int(checkpoint.get("saved_at_step", 0))
         checkpoint_evals = dict(checkpoint.get("checkpoint_evals", {}))
         last_metrics = dict(checkpoint.get("last_metrics", {}))
@@ -3508,6 +4357,21 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_hidden_agg_noise_entropy = float(last_metrics.get("hidden_agg_noise_entropy", 0.0))
         last_hidden_agg_noise_max_weight = float(last_metrics.get("hidden_agg_noise_max_weight", 0.0))
         last_hidden_agg_noise_clip_frac = float(last_metrics.get("hidden_agg_noise_clip_frac", 0.0))
+        last_gain_budget_clipped_frac = float(
+            last_metrics.get("gain_budget_clipped_frac", 0.0)
+        )
+        last_gain_budget_infeasible_frac = float(
+            last_metrics.get("gain_budget_infeasible_frac", 0.0)
+        )
+        last_gain_budget_step_bound_max = float(
+            last_metrics.get("gain_budget_step_bound_max", 0.0)
+        )
+        last_gain_budget_delta_error_max = float(
+            last_metrics.get("gain_budget_delta_error_max", 0.0)
+        )
+        last_gain_budget_gate_relative_change = float(
+            last_metrics.get("gain_budget_gate_relative_change", 0.0)
+        )
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -3515,6 +4379,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             "checkpoint_reason": checkpoint.get("reason"),
             "checkpoint_elapsed_sec": checkpoint.get("elapsed_sec"),
             "load_migration": checkpoint.get("_load_migration", {}),
+            "semantic_contract": checkpoint.get("_resume_contract", {}),
         }
         print(
             f"resumed_train_checkpoint path={args.resume_train_checkpoint} "
@@ -3562,6 +4427,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_hidden_agg_noise_entropy = 0.0
             accum_hidden_agg_noise_max_weight = 0.0
             accum_hidden_agg_noise_clip_frac = 0.0
+            accum_gain_budget_clipped_frac = 0.0
+            accum_gain_budget_infeasible_frac = 0.0
+            accum_gain_budget_step_bound_max = 0.0
+            accum_gain_budget_delta_error_max = 0.0
+            accum_gain_budget_gate_relative_change = 0.0
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
                     args,
@@ -3678,6 +4548,52 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     accum_hidden_agg_noise_clip_frac += float(
                         trace_last.get("hidden_agg_noise_clip_frac", ce_loss.new_zeros(())).detach().cpu()
                     )
+                    accum_gain_budget_clipped_frac += float(
+                        trace_last.get(
+                            "gdn2_gain_budget_clipped_frac",
+                            ce_loss.new_zeros(()),
+                        )
+                        .detach()
+                        .cpu()
+                    )
+                    accum_gain_budget_infeasible_frac += float(
+                        trace_last.get(
+                            "gdn2_gain_budget_infeasible_frac",
+                            ce_loss.new_zeros(()),
+                        )
+                        .detach()
+                        .cpu()
+                    )
+                    accum_gain_budget_step_bound_max = max(
+                        accum_gain_budget_step_bound_max,
+                        float(
+                            trace_last.get(
+                                "gdn2_gain_budget_effective_step_bound_max",
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        ),
+                    )
+                    accum_gain_budget_delta_error_max = max(
+                        accum_gain_budget_delta_error_max,
+                        float(
+                            trace_last.get(
+                                "gdn2_gain_budget_delta_error_max",
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        ),
+                    )
+                    accum_gain_budget_gate_relative_change += float(
+                        trace_last.get(
+                            "gdn2_gain_budget_gate_relative_change",
+                            ce_loss.new_zeros(()),
+                        )
+                        .detach()
+                        .cpu()
+                    )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
@@ -3706,6 +4622,21 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_hidden_agg_noise_entropy = accum_hidden_agg_noise_entropy / float(accum_count)
             last_hidden_agg_noise_max_weight = accum_hidden_agg_noise_max_weight / float(accum_count)
             last_hidden_agg_noise_clip_frac = accum_hidden_agg_noise_clip_frac / float(accum_count)
+            last_gain_budget_clipped_frac = (
+                accum_gain_budget_clipped_frac / float(accum_count)
+            )
+            last_gain_budget_infeasible_frac = (
+                accum_gain_budget_infeasible_frac / float(accum_count)
+            )
+            last_gain_budget_step_bound_max = (
+                accum_gain_budget_step_bound_max
+            )
+            last_gain_budget_delta_error_max = (
+                accum_gain_budget_delta_error_max
+            )
+            last_gain_budget_gate_relative_change = (
+                accum_gain_budget_gate_relative_change / float(accum_count)
+            )
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -3722,6 +4653,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"hagg_ent={last_hidden_agg_noise_entropy:.3f} "
                     f"hagg_maxw={last_hidden_agg_noise_max_weight:.3f} "
                     f"hagg_clip={last_hidden_agg_noise_clip_frac:.3f} "
+                    f"gb_clip={last_gain_budget_clipped_frac:.4f} "
+                    f"gb_infeas={last_gain_budget_infeasible_frac:.4f} "
+                    f"gb_bound={last_gain_budget_step_bound_max:.6f} "
+                    f"gb_delta={last_gain_budget_delta_error_max:.2e} "
+                    f"gb_change={last_gain_budget_gate_relative_change:.4f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -3759,6 +4695,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
                         "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
                         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
+                        "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
+                        "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+                        "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
+                        "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
+                        "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                     },
                     "eval_by_holes": {},
                 }
@@ -3832,6 +4773,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
                             "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
                             "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
+                            "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
+                            "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+                            "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
+                            "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
+                            "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         },
                         reason="eval_checkpoint",
                     )
@@ -3884,6 +4830,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
                         "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
                         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
+                        "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
+                        "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+                        "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
+                        "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
+                        "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                     },
                     reason="periodic",
                 )
@@ -3954,6 +4905,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "hidden_agg_noise_entropy": last_hidden_agg_noise_entropy,
         "hidden_agg_noise_max_weight": last_hidden_agg_noise_max_weight,
         "hidden_agg_noise_clip_frac": last_hidden_agg_noise_clip_frac,
+        "gain_budget_clipped_frac": last_gain_budget_clipped_frac,
+        "gain_budget_infeasible_frac": last_gain_budget_infeasible_frac,
+        "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
+        "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
+        "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "optimizer_steps": total_steps,
@@ -3972,9 +4928,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn_use_short_conv": bool(args.gdn_use_short_conv),
         "gdn_conv_size": args.gdn_conv_size,
         "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
+        "gdn2_gain_budget_mode": args.gdn2_gain_budget_mode,
+        "gdn2_gain_budget_sigma_cap": args.gdn2_gain_budget_sigma_cap,
+        "gdn2_gain_budget_step_cap": args.gdn2_gain_budget_step_cap,
+        "gdn2_gain_budget_sigma_cap_max": args.gdn2_gain_budget_sigma_cap_max,
+        "gdn2_gain_budget_infeasible_policy": args.gdn2_gain_budget_infeasible_policy,
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
         "resume_train_checkpoint": resume_info,
+        "resume_require_exact_state": bool(args.resume_require_exact_state),
         "save_train_checkpoint_every": args.save_train_checkpoint_every,
         "saved_train_checkpoints": saved_train_checkpoints,
         "cuda_max_memory_allocated_mb": (
@@ -4640,27 +5602,65 @@ def export_case_bank(
     device = next(model.parameters()).device
     feature_buffer = getattr(model, "feature_noise_buffer", None)
     artifacts: Dict[str, Any] = {"case_bank_root": str(bank_root.resolve()), "holes": {}}
-    groups: List[Tuple[int, str, Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]] = []
+    groups: List[
+        Tuple[
+            int,
+            str,
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+            Optional[Dict[str, Any]],
+        ]
+    ] = []
     if official_eval is not None:
         if official_blank_ranges:
             for offset, (label, lo, hi) in enumerate(official_blank_ranges):
+                eval_seed = seed + 91000 + offset * 997 + lo * 37 + hi
                 batch = official_eval.fixed_batch_by_blank_range(
                     eval_n,
-                    seed + 91000 + offset * 997 + lo * 37 + hi,
+                    eval_seed,
                     holes_min=lo,
                     holes_max=hi,
                     device=device,
                 )
-                groups.append((hi, f"official_{label}", batch))
+                groups.append(
+                    (
+                        hi,
+                        f"official_{label}",
+                        batch,
+                        {
+                            "eval_seed": int(eval_seed),
+                            "range_label": str(label),
+                            "holes_min": int(lo),
+                            "holes_max": int(hi),
+                        },
+                    )
+                )
         else:
-            groups.append((0, "official", official_eval.fixed_batch(eval_n, seed + 91000, device=device)))
+            eval_seed = seed + 91000
+            groups.append(
+                (
+                    0,
+                    "official",
+                    official_eval.fixed_batch(eval_n, eval_seed, device=device),
+                    {
+                        "eval_seed": int(eval_seed),
+                        "range_label": "all",
+                        "holes_min": None,
+                        "holes_max": None,
+                    },
+                )
+            )
     else:
         for holes in holes_values:
             batch = make_batch(eval_n, holes, holes, "random", random.Random(seed + 91000 + holes * 97), device=device)
-            groups.append((holes, f"h{holes}", batch))
-    for holes, group_label, batch in groups:
+            groups.append((holes, f"h{holes}", batch, None))
+    for holes, group_label, batch, official_metadata in groups:
         inputs, labels, clue_mask = batch
         max_loop = max(loop_values)
+        if official_metadata is not None and max_loop < 5:
+            raise ValueError(
+                "official all_cases export requires case_bank loop values "
+                "with a maximum of at least 5"
+            )
         with forward_autocast(forward_dtype, device):
             loop_logits, _fs_trace = model.forward_trace(
                 inputs,
@@ -4684,6 +5684,8 @@ def export_case_bank(
         labels_cpu = labels.detach().cpu()
         inputs_cpu = inputs.detach().cpu()
         preds_cpu = [pred.detach().cpu() for pred in loop_preds]
+        all_cases: List[Dict[str, Any]] = []
+        all_case_content_hashes: List[str] = []
         selected: Dict[str, List[Dict[str, Any]]] = {"solved_by_loop": [], "almost_solved": [], "hard_failure": []}
         candidates: Dict[str, List[Tuple[Tuple[float, ...], Dict[str, Any]]]] = {key: [] for key in selected}
 
@@ -4731,6 +5733,93 @@ def export_case_bank(
                     "_conflict_cells": sorted(conflict_cells),
                 }
                 previous = board
+
+            if official_metadata is not None:
+                input_tokens = list(puzzle)
+                label_tokens = list(solution)
+                clue_values = list(clue)
+                content_payload = {
+                    "clue_mask": clue_values,
+                    "input": input_tokens,
+                    "label_tokens": label_tokens,
+                }
+                content_sha256 = hashlib.sha256(
+                    json.dumps(
+                        content_payload,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest()
+                case_identity = {
+                    "batch_index": int(idx),
+                    "content_sha256": content_sha256,
+                    "eval_seed": int(official_metadata["eval_seed"]),
+                    "holes_max": official_metadata["holes_max"],
+                    "holes_min": official_metadata["holes_min"],
+                    "range_label": str(official_metadata["range_label"]),
+                    "split": str(official_eval.split),
+                }
+                case_id = "sha256:" + hashlib.sha256(
+                    json.dumps(
+                        case_identity,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest()
+                blank_count = len(blank_indices)
+                all_case_loops: Dict[str, Any] = {}
+                for loop in range(1, 6):
+                    prediction_tokens = [
+                        int(value)
+                        for value in preds_cpu[loop - 1][idx].view(-1).tolist()
+                    ]
+                    wrong_positions = [
+                        cell
+                        for cell, (predicted, target) in enumerate(
+                            zip(prediction_tokens, label_tokens)
+                        )
+                        if predicted != target
+                    ]
+                    wrong_blank_positions = [
+                        cell
+                        for cell in blank_indices
+                        if prediction_tokens[cell] != label_tokens[cell]
+                    ]
+                    all_case_loops[f"loop{loop}"] = {
+                        "blank_acc": 1.0
+                        - len(wrong_blank_positions) / max(blank_count, 1),
+                        "blank_count": int(blank_count),
+                        "label_exact": len(wrong_positions) == 0,
+                        "prediction": [
+                            value + 1 for value in prediction_tokens
+                        ],
+                        "prediction_tokens": prediction_tokens,
+                        "wrong_blank_count": int(len(wrong_blank_positions)),
+                        "wrong_clue_count": int(
+                            len(wrong_positions) - len(wrong_blank_positions)
+                        ),
+                        "wrong_count": int(len(wrong_positions)),
+                        "wrong_total_count": int(len(wrong_positions)),
+                    }
+                all_cases.append(
+                    {
+                        "batch_index": int(idx),
+                        "blank_count": int(blank_count),
+                        "case_id": case_id,
+                        "clue_mask": clue_values,
+                        "content_sha256": "sha256:" + content_sha256,
+                        "input": input_tokens,
+                        "label": [value + 1 for value in label_tokens],
+                        "label_tokens": label_tokens,
+                        "loops": all_case_loops,
+                        "puzzle": [
+                            value + 1 if clue_values[cell] else 0
+                            for cell, value in enumerate(input_tokens)
+                        ],
+                    }
+                )
+                all_case_content_hashes.append(content_sha256)
+
             first_key = f"loop{loop_values[0]}"
             final_key = f"loop{loop_values[-1]}"
             first_wrong = loops[first_key]["wrong_count"]
@@ -4814,11 +5903,67 @@ def export_case_bank(
             selected=selected,
             summary=holes_summary,
         )
-        artifacts["holes"][group_label] = {
+        group_artifacts = {
             "index_html": str(index_path.resolve()),
             "cases_json": str(json_path.resolve()),
             "summary": holes_summary,
         }
+        if official_metadata is not None:
+            data_hasher = hashlib.sha256()
+            for content_sha256 in all_case_content_hashes:
+                data_hasher.update(bytes.fromhex(content_sha256))
+            data_hash = "sha256:" + data_hasher.hexdigest()
+            all_cases_path = holes_dir / "all_cases.json"
+            all_cases_payload = {
+                "arm": {
+                    "future_seed_enabled": bool(
+                        model.reasoner.future_seed_scale > 0
+                    ),
+                    "future_seed_scale": float(
+                        model.reasoner.future_seed_scale
+                    ),
+                },
+                "cases": all_cases,
+                "data_hash": data_hash,
+                "data_hash_scope": (
+                    "sha256 over ordered per-case hashes of input, "
+                    "label_tokens, and clue_mask"
+                ),
+                "encoding": {
+                    "display_digits": f"1..{N}",
+                    "input_tokens": f"0..{N - 1}; blank={BLANK}",
+                    "prediction_tokens": f"0..{N - 1}",
+                    "puzzle_blank": 0,
+                },
+                "eval": {
+                    "actual_n": int(len(all_cases)),
+                    "eval_seed": int(official_metadata["eval_seed"]),
+                    "range": {
+                        "holes_max": official_metadata["holes_max"],
+                        "holes_min": official_metadata["holes_min"],
+                        "label": str(official_metadata["range_label"]),
+                    },
+                    "requested_n": int(eval_n),
+                    "split": str(official_eval.split),
+                },
+                "prediction_loops": [1, 2, 3, 4, 5],
+                "forward_trace_total_loops": int(max_loop),
+                "schema_version": "official_sudoku_all_cases.v1",
+            }
+            all_cases_path.write_text(
+                json.dumps(
+                    all_cases_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            group_artifacts["all_cases_json"] = str(
+                all_cases_path.resolve()
+            )
+            group_artifacts["data_hash"] = data_hash
+        artifacts["holes"][group_label] = group_artifacts
     return artifacts
 
 
@@ -5087,6 +6232,24 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--exact_margin_start_step must be non-negative")
     if args.forward_dtype not in {"float32", "bfloat16"}:
         raise ValueError("--forward_dtype must be 'float32' or 'bfloat16'")
+    if args.gdn2_gain_budget_mode != "none" and args.backbone != "gdn2":
+        raise ValueError("--gdn2_gain_budget_mode requires --backbone gdn2")
+    if args.gdn2_gain_budget_sigma_cap < 1.0:
+        raise ValueError("--gdn2_gain_budget_sigma_cap must be at least 1")
+    if args.gdn2_gain_budget_step_cap < 1.0:
+        raise ValueError("--gdn2_gain_budget_step_cap must be at least 1")
+    if args.gdn2_gain_budget_sigma_cap_max < 1.0:
+        raise ValueError("--gdn2_gain_budget_sigma_cap_max must be at least 1")
+    if (
+        args.gdn2_gain_budget_mode != "none"
+        and args.gdn2_gain_budget_infeasible_policy != "raise"
+    ):
+        raise ValueError("Integrated Gain-Budget requires infeasible_policy=raise")
+    if (
+        args.gdn2_gain_budget_mode != "none"
+        and not args.fla_strict_official
+    ):
+        raise ValueError("Gain-Budget requires --fla_strict_official")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -5164,6 +6327,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"future_seed_gate_mode={args.future_seed_gate_mode} future_seed_scope={args.future_seed_scope} "
         f"future_seed_readout_hop={args.future_seed_readout_hop} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
+        f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
     )
@@ -5365,6 +6529,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn_use_short_conv": bool(args.gdn_use_short_conv),
         "gdn_conv_size": args.gdn_conv_size,
         "gdn_allow_neg_eigval": bool(args.gdn_allow_neg_eigval),
+        "gdn2_gain_budget_mode": args.gdn2_gain_budget_mode,
+        "gdn2_gain_budget_sigma_cap": args.gdn2_gain_budget_sigma_cap,
+        "gdn2_gain_budget_step_cap": args.gdn2_gain_budget_step_cap,
+        "gdn2_gain_budget_sigma_cap_max": args.gdn2_gain_budget_sigma_cap_max,
+        "gdn2_gain_budget_infeasible_policy": args.gdn2_gain_budget_infeasible_policy,
         "fla_strict_official": bool(args.fla_strict_official),
         "fla_runtime": train_stats.get("fla_runtime", {"strict": False}),
         "forward_dtype": args.forward_dtype,
@@ -5547,6 +6716,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--exact_margin_start_step", type=int, default=0)
     p.add_argument("--activation_checkpoint", action="store_true")
     p.add_argument("--resume_train_checkpoint", default="")
+    p.add_argument("--resume_train_checkpoint_sha256", default="")
+    p.add_argument("--resume_train_source_sha", default="")
+    p.add_argument("--resume_require_exact_state", action="store_true")
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
@@ -5558,6 +6730,24 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--gdn_use_short_conv", type=int, choices=(0, 1), default=1)
     p.add_argument("--gdn_conv_size", type=int, default=4)
     p.add_argument("--gdn_allow_neg_eigval", action="store_true")
+    p.add_argument(
+        "--gdn2_gain_budget_mode",
+        choices=(
+            "none",
+            "external_identity",
+            "fixed_sigma",
+            "decay_funded",
+        ),
+        default="none",
+    )
+    p.add_argument("--gdn2_gain_budget_sigma_cap", type=float, default=1.10)
+    p.add_argument("--gdn2_gain_budget_step_cap", type=float, default=1.0)
+    p.add_argument("--gdn2_gain_budget_sigma_cap_max", type=float, default=3.0)
+    p.add_argument(
+        "--gdn2_gain_budget_infeasible_policy",
+        choices=("raise", "relax"),
+        default="raise",
+    )
     p.add_argument("--fla_strict_official", action="store_true")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")
     p.add_argument("--loop_loss_start", type=int, default=1)

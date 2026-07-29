@@ -2,8 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT_DIR="${1:-$REPO_ROOT/runs/sudoku-baseline-preflight-$(date -u +%Y%m%dT%H%M%SZ)}"
 PERSIST_ROOT="${PERSIST_ROOT:-$REPO_ROOT}"
+OUT_DIR="${1:-$PERSIST_ROOT/runs/sudoku-baseline-preflight-$(date -u +%Y%m%dT%H%M%SZ)}"
 ulimit -c 0
 
 if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
@@ -31,6 +31,9 @@ export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-$PERSIST_ROOT/.cache/
 export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$PERSIST_ROOT/.cache/torch_extensions}"
 export TMPDIR="${TMPDIR:-$PERSIST_ROOT/.cache/tmp}"
 export PATH="$PERSIST_ROOT/.cache/bin:$PATH"
+if [[ -z "${PYTHON_EXTRA_PATH:-}" && -s "$PERSIST_ROOT/.cache/python-extra-path" ]]; then
+  PYTHON_EXTRA_PATH="$(<"$PERSIST_ROOT/.cache/python-extra-path")"
+fi
 PYTHON_EXTRA_PATH="${PYTHON_EXTRA_PATH:-$PERSIST_ROOT/.cache/python-extra-pylib}"
 export PYTHONPATH="$PYTHON_EXTRA_PATH${PYTHONPATH:+:$PYTHONPATH}"
 PYTHON_BIN="${PYTHON_BIN:-/opt/conda/bin/python}"
@@ -50,7 +53,7 @@ mkdir -p \
 "$PYTHON_BIN" "$REPO_ROOT/experiments/rwkv_fs_sudoku/check_fla_delta_backbones.py" \
   --backbone all \
   --check all \
-  --wheel "$REPO_ROOT/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl" \
+  --wheel "$REPO_ROOT/wheelhouse/flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl" \
   --out "$OUT_DIR/fla_kernel_gate.json" \
   2>&1 | tee "$OUT_DIR/fla_kernel_gate.log"
 

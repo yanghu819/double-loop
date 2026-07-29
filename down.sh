@@ -2,20 +2,21 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="${OFFICIAL_SUDOKU_DATA_DIR:-$REPO_ROOT/data/sudoku-extreme-full}"
+PERSIST_ROOT="${PERSIST_ROOT:-$REPO_ROOT}"
+DATA_DIR="${OFFICIAL_SUDOKU_DATA_DIR:-$PERSIST_ROOT/data/sudoku-extreme-full}"
 
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$REPO_ROOT/.cache}"
-export UV_CACHE_DIR="${UV_CACHE_DIR:-$REPO_ROOT/.cache/uv}"
-export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$REPO_ROOT/.cache/pip}"
-export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/huggingface}"
-export TORCH_HOME="${TORCH_HOME:-$REPO_ROOT/.cache/torch}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PERSIST_ROOT/.cache}"
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$PERSIST_ROOT/.cache/uv}"
+export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$PERSIST_ROOT/.cache/pip}"
+export HF_HOME="${HF_HOME:-$PERSIST_ROOT/.cache/huggingface}"
+export TORCH_HOME="${TORCH_HOME:-$PERSIST_ROOT/.cache/torch}"
 
 mkdir -p \
-  "$REPO_ROOT/.cache" \
-  "$REPO_ROOT/artifacts" \
-  "$REPO_ROOT/models" \
-  "$REPO_ROOT/runs" \
-  "$REPO_ROOT/data" \
+  "$PERSIST_ROOT/.cache" \
+  "$PERSIST_ROOT/artifacts" \
+  "$PERSIST_ROOT/models" \
+  "$PERSIST_ROOT/runs" \
+  "$PERSIST_ROOT/data" \
   "$XDG_CACHE_HOME" \
   "$UV_CACHE_DIR" \
   "$PIP_CACHE_DIR" \
@@ -51,4 +52,18 @@ if [[ "$missing" == "1" ]]; then
 fi
 
 printf 'Official Sudoku data ready: %s\n' "$DATA_DIR"
-printf 'Pinned FLA wheel ready: %s\n' "$REPO_ROOT/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"
+FLA_WHEEL="$REPO_ROOT/wheelhouse/flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl"
+FLA_WHEEL_SHA256="0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
+python3 - "$FLA_WHEEL" "$FLA_WHEEL_SHA256" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+if not path.is_file():
+    raise SystemExit(f"Pinned FLA wheel is missing: {path}")
+actual = hashlib.sha256(path.read_bytes()).hexdigest()
+if actual != sys.argv[2]:
+    raise SystemExit(f"Pinned FLA wheel SHA256 mismatch: {actual} != {sys.argv[2]}")
+PY
+printf 'Pinned FLA wheel ready: %s\n' "$FLA_WHEEL"

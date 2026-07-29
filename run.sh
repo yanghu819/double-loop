@@ -3,8 +3,9 @@ set -euo pipefail
 
 MODE="${1:-smoke}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PERSIST_ROOT="${PERSIST_ROOT:-$REPO_ROOT}"
 EXP_DIR="$REPO_ROOT/experiments/rwkv_fs_sudoku"
-RUNS_ROOT="${RUNS_ROOT:-$REPO_ROOT/runs}"
+RUNS_ROOT="${RUNS_ROOT:-$PERSIST_ROOT/runs}"
 
 case "$MODE" in
   baseline)
@@ -24,17 +25,17 @@ case "$MODE" in
     ;;
 esac
 
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$REPO_ROOT/.cache}"
-export UV_CACHE_DIR="${UV_CACHE_DIR:-$REPO_ROOT/.cache/uv}"
-export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$REPO_ROOT/.cache/uv/python}"
-export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$REPO_ROOT/.cache/pip}"
-export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/huggingface}"
-export TORCH_HOME="${TORCH_HOME:-$REPO_ROOT/.cache/torch}"
-export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$REPO_ROOT/.cache/torch_extensions}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PERSIST_ROOT/.cache}"
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$PERSIST_ROOT/.cache/uv}"
+export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$PERSIST_ROOT/.cache/uv/python}"
+export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$PERSIST_ROOT/.cache/pip}"
+export HF_HOME="${HF_HOME:-$PERSIST_ROOT/.cache/huggingface}"
+export TORCH_HOME="${TORCH_HOME:-$PERSIST_ROOT/.cache/torch}"
+export TORCH_EXTENSIONS_DIR="${TORCH_EXTENSIONS_DIR:-$PERSIST_ROOT/.cache/torch_extensions}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
-export PATH="$REPO_ROOT/.cache/bin:$PATH"
+export PATH="$PERSIST_ROOT/.cache/bin:$PATH"
 
-mkdir -p "$REPO_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$REPO_ROOT/artifacts" "$REPO_ROOT/models" "$RUNS_ROOT"
+mkdir -p "$PERSIST_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$PERSIST_ROOT/artifacts" "$PERSIST_ROOT/models" "$RUNS_ROOT"
 
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe) ;;
@@ -49,8 +50,8 @@ if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
 fi
 
 PYTHON_BIN="${PYTHON_BIN:-}"
-if [[ -z "$PYTHON_BIN" && -s "$REPO_ROOT/.cache/python-bin" ]]; then
-  PYTHON_BIN="$(<"$REPO_ROOT/.cache/python-bin")"
+if [[ -z "$PYTHON_BIN" && -s "$PERSIST_ROOT/.cache/python-bin" ]]; then
+  PYTHON_BIN="$(<"$PERSIST_ROOT/.cache/python-bin")"
 fi
 if [[ -n "$PYTHON_BIN" && ! -x "$PYTHON_BIN" ]]; then
   printf 'Configured PYTHON_BIN is not executable: %s\n' "$PYTHON_BIN" >&2
@@ -58,8 +59,8 @@ if [[ -n "$PYTHON_BIN" && ! -x "$PYTHON_BIN" ]]; then
 fi
 
 PYTHON_EXTRA_PATH="${PYTHON_EXTRA_PATH:-}"
-if [[ -z "$PYTHON_EXTRA_PATH" && -s "$REPO_ROOT/.cache/python-extra-path" ]]; then
-  PYTHON_EXTRA_PATH="$(<"$REPO_ROOT/.cache/python-extra-path")"
+if [[ -z "$PYTHON_EXTRA_PATH" && -s "$PERSIST_ROOT/.cache/python-extra-path" ]]; then
+  PYTHON_EXTRA_PATH="$(<"$PERSIST_ROOT/.cache/python-extra-path")"
 fi
 if [[ -n "$PYTHON_EXTRA_PATH" ]]; then
   export PYTHONPATH="$PYTHON_EXTRA_PATH${PYTHONPATH:+:$PYTHONPATH}"
@@ -70,7 +71,7 @@ if [[ -z "$PYTHON_BIN" && -z "$UV_BIN" ]]; then
   if command -v uv >/dev/null 2>&1; then
     UV_BIN="$(command -v uv)"
   else
-    UV_BIN="$REPO_ROOT/.cache/uv-bootstrap/bin/uv"
+    UV_BIN="$PERSIST_ROOT/.cache/uv-bootstrap/bin/uv"
   fi
 fi
 
@@ -224,7 +225,7 @@ if [[ "$MODE" == "eqr_maze_probe" ]]; then
     if [[ -n "$PYTHON_BIN" ]]; then
       "$PYTHON_BIN" scripts/eqr_maze_probe.py "${MAZE_ARGS[@]}"
     else
-      UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python scripts/eqr_maze_probe.py "${MAZE_ARGS[@]}"
+      UV_PROJECT_ENVIRONMENT="$PERSIST_ROOT/.venv" "$UV_BIN" run python scripts/eqr_maze_probe.py "${MAZE_ARGS[@]}"
     fi
   ) 2>&1 | tee -a "$LOG_DIR/run.log"
 
@@ -283,7 +284,7 @@ if [[ "$MODE" == "rwkv_maze_probe" ]]; then
     if [[ -n "$PYTHON_BIN" ]]; then
       "$PYTHON_BIN" scripts/rwkv_maze_probe.py "${RWKV_MAZE_ARGS[@]}"
     else
-      UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python scripts/rwkv_maze_probe.py "${RWKV_MAZE_ARGS[@]}"
+      UV_PROJECT_ENVIRONMENT="$PERSIST_ROOT/.venv" "$UV_BIN" run python scripts/rwkv_maze_probe.py "${RWKV_MAZE_ARGS[@]}"
     fi
   ) 2>&1 | tee -a "$LOG_DIR/run.log"
 
@@ -342,7 +343,7 @@ if [[ "$MODE" == "eqr_probe" ]]; then
     if [[ -n "$PYTHON_BIN" ]]; then
       "$PYTHON_BIN" scripts/eqr_nohydra_probe.py "${EQR_ARGS[@]}"
     else
-      UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python scripts/eqr_nohydra_probe.py "${EQR_ARGS[@]}"
+      UV_PROJECT_ENVIRONMENT="$PERSIST_ROOT/.venv" "$UV_BIN" run python scripts/eqr_nohydra_probe.py "${EQR_ARGS[@]}"
     fi
   ) 2>&1 | tee -a "$LOG_DIR/run.log"
 
@@ -419,6 +420,11 @@ COMMON_ARGS=(
   --gdn_progressive_base_expand_v "${GDN_PROGRESSIVE_BASE_EXPAND_V:-0.0}"
   --gdn_use_short_conv "${GDN_USE_SHORT_CONV:-1}"
   --gdn_conv_size "${GDN_CONV_SIZE:-4}"
+  --gdn2_gain_budget_mode "${GDN2_GAIN_BUDGET_MODE:-none}"
+  --gdn2_gain_budget_sigma_cap "${GDN2_GAIN_BUDGET_SIGMA_CAP:-1.10}"
+  --gdn2_gain_budget_step_cap "${GDN2_GAIN_BUDGET_STEP_CAP:-1.0}"
+  --gdn2_gain_budget_sigma_cap_max "${GDN2_GAIN_BUDGET_SIGMA_CAP_MAX:-3.0}"
+  --gdn2_gain_budget_infeasible_policy "${GDN2_GAIN_BUDGET_INFEASIBLE_POLICY:-raise}"
   --lambda_ "${LAMBDA:-0.95}"
   --loop_update_mode "${LOOP_UPDATE_MODE:-fixed}"
   --loop_update_gate_init "${LOOP_UPDATE_GATE_INIT:-0.95}"
@@ -444,9 +450,18 @@ fi
 if [[ "${FLA_STRICT_OFFICIAL:-0}" == "1" ]]; then
   COMMON_ARGS+=(--fla_strict_official)
 fi
+if [[ "${RESUME_REQUIRE_EXACT_STATE:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--resume_require_exact_state)
+fi
 
 if [[ -n "${RESUME_TRAIN_CHECKPOINT:-}" ]]; then
   COMMON_ARGS+=(--resume_train_checkpoint "$RESUME_TRAIN_CHECKPOINT")
+fi
+if [[ -n "${RESUME_TRAIN_CHECKPOINT_SHA256:-}" ]]; then
+  COMMON_ARGS+=(--resume_train_checkpoint_sha256 "$RESUME_TRAIN_CHECKPOINT_SHA256")
+fi
+if [[ -n "${RESUME_TRAIN_SOURCE_SHA:-}" ]]; then
+  COMMON_ARGS+=(--resume_train_source_sha "$RESUME_TRAIN_SOURCE_SHA")
 fi
 if [[ -n "${TRAIN_CHECKPOINT_DIR:-}" ]]; then
   COMMON_ARGS+=(--train_checkpoint_dir "$TRAIN_CHECKPOINT_DIR")
@@ -504,17 +519,52 @@ fi
 
 printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"
 
-(
+run_training_process() {
   cd "$EXP_DIR"
   if [[ -n "$PYTHON_BIN" ]]; then
-    "$PYTHON_BIN" study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
-  else
-    UV_PROJECT_ENVIRONMENT="$REPO_ROOT/.venv" "$UV_BIN" run python study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
+    exec "$PYTHON_BIN" study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
   fi
-) 2>&1 | tee -a "$LOG_DIR/run.log"
+  exec env UV_PROJECT_ENVIRONMENT="$PERSIST_ROOT/.venv" \
+    "$UV_BIN" run python study_rwkv_futureseed_loop.py "${RUN_ARGS[@]}"
+}
+
+if [[ -n "${EXACT_TRAIN_PID_FILE:-}" ]]; then
+  mkdir -p "$(dirname "$EXACT_TRAIN_PID_FILE")"
+  run_training_process > >(tee -a "$LOG_DIR/run.log") 2>&1 &
+  TRAIN_PID=$!
+  PID_TMP="${EXACT_TRAIN_PID_FILE}.tmp.$$"
+  printf '%s\n' "$TRAIN_PID" > "$PID_TMP"
+  mv "$PID_TMP" "$EXACT_TRAIN_PID_FILE"
+  cleanup_exact_train_pid() {
+    rm -f "$EXACT_TRAIN_PID_FILE" "$PID_TMP"
+  }
+  terminate_exact_train() {
+    trap - INT TERM
+    if kill -0 "$TRAIN_PID" 2>/dev/null; then
+      kill -TERM "$TRAIN_PID"
+      wait "$TRAIN_PID" 2>/dev/null || true
+    fi
+    cleanup_exact_train_pid
+    exit 143
+  }
+  trap cleanup_exact_train_pid EXIT
+  trap terminate_exact_train INT TERM
+  set +e
+  wait "$TRAIN_PID"
+  TRAIN_STATUS=$?
+  set -e
+  cleanup_exact_train_pid
+  trap - EXIT INT TERM
+  if [[ "$TRAIN_STATUS" -ne 0 ]]; then
+    exit "$TRAIN_STATUS"
+  fi
+else
+  run_training_process 2>&1 | tee -a "$LOG_DIR/run.log"
+fi
 
 RECORD_ARGS=(--run-dir "$RUN_DIR" --mode "$MODE")
-if [[ "$MODE" == "smoke" && "${UPDATE_LEADERBOARD:-0}" != "1" ]]; then
+if [[ "${UPDATE_LEADERBOARD:-}" == "0" ]] || \
+  [[ "$MODE" == "smoke" && "${UPDATE_LEADERBOARD:-0}" != "1" ]]; then
   RECORD_ARGS+=(--no-leaderboard)
 fi
 python3 "$REPO_ROOT/scripts/record_experiment.py" "${RECORD_ARGS[@]}"

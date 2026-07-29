@@ -44,8 +44,8 @@ from fla.ops.kda.naive import naive_recurrent_kda
 from study_rwkv_futureseed_loop import FLADeltaTimeMix, FutureSeedRWKV
 
 
-EXPECTED_FLA_SHA = "fe8fce9fc6984f22905f54cfa885dce1502baf26"
-EXPECTED_WHEEL_SHA256 = "65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb"
+EXPECTED_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
+EXPECTED_WHEEL_SHA256 = "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
 PROVENANCE_FILES = (
     "fla/layers/gated_deltanet.py",
     "fla/layers/gdn2.py",
@@ -54,7 +54,15 @@ PROVENANCE_FILES = (
     "fla/ops/backends/__init__.py",
     "fla/ops/gated_delta_rule/chunk.py",
     "fla/ops/gdn2/chunk.py",
+    "fla/ops/gdn2/chunk_fwd.py",
+    "fla/ops/gdn2/chunk_bwd.py",
+    "fla/ops/gdn2/chunk_intra.py",
+    "fla/ops/gdn2/chunk_intra_token_parallel.py",
+    "fla/ops/gdn2/fused_recurrent.py",
+    "fla/ops/gdn2/naive.py",
+    "fla/ops/gdn2/wy_fast.py",
     "fla/ops/kda/chunk.py",
+    "fla/modules/l2norm.py",
     "fla/modules/conv/short_conv.py",
     "fla/modules/conv/triton/ops.py",
 )
@@ -97,14 +105,24 @@ def collect_provenance(wheel_path: Path) -> dict[str, Any]:
     package_root = Path(fla.__file__).resolve().parent
     if not str(package_root).startswith("/huyang2/double-loop/"):
         raise AssertionError(f"FLA was imported outside the persistent project root: {package_root}")
+    package_paths = [Path(path).resolve() for path in fla.__path__]
+    if package_paths != [package_root]:
+        raise AssertionError(f"FLA has unexpected namespace/package paths: {package_paths}")
     source_marker = Path("/huyang2/double-loop/.cache/fla-source-sha")
     marker_sha = source_marker.read_text(encoding="utf-8").strip() if source_marker.is_file() else ""
     if marker_sha != EXPECTED_FLA_SHA:
         raise AssertionError(f"FLA source marker mismatch: {marker_sha!r} != {EXPECTED_FLA_SHA}")
 
     file_hashes: dict[str, dict[str, str]] = {}
+    wheel_tree_digest = hashlib.sha256()
+    installed_tree_digest = hashlib.sha256()
     with zipfile.ZipFile(wheel_path) as archive:
-        for archive_name in PROVENANCE_FILES:
+        wheel_fla_files = sorted(
+            name
+            for name in archive.namelist()
+            if name.startswith("fla/") and not name.endswith("/")
+        )
+        for archive_name in wheel_fla_files:
             installed_path = package_root.parent / archive_name
             if not installed_path.is_file():
                 raise FileNotFoundError(f"Installed FLA source missing: {installed_path}")
@@ -121,6 +139,30 @@ def collect_provenance(wheel_path: Path) -> dict[str, Any]:
                 "wheel_sha256": wheel_file_sha,
                 "installed_sha256": installed_file_sha,
             }
+            encoded_name = archive_name.encode("utf-8")
+            wheel_tree_digest.update(encoded_name)
+            wheel_tree_digest.update(b"\0")
+            wheel_tree_digest.update(bytes.fromhex(wheel_file_sha))
+            installed_tree_digest.update(encoded_name)
+            installed_tree_digest.update(b"\0")
+            installed_tree_digest.update(bytes.fromhex(installed_file_sha))
+        installed_python_files = {
+            str(path.relative_to(package_root.parent))
+            for path in package_root.rglob("*.py")
+        }
+        wheel_python_files = {
+            name for name in wheel_fla_files if name.endswith(".py")
+        }
+        extra_python_files = sorted(installed_python_files - wheel_python_files)
+        if extra_python_files:
+            raise AssertionError(
+                f"Installed FLA contains Python files absent from pinned wheel: {extra_python_files}"
+            )
+        missing_audited_files = sorted(set(PROVENANCE_FILES) - set(wheel_fla_files))
+        if missing_audited_files:
+            raise AssertionError(
+                f"Pinned wheel lacks required audited files: {missing_audited_files}"
+            )
 
     symbols = {
         "fla_gdn_layer": FLAGatedDeltaNet,
@@ -154,6 +196,7 @@ def collect_provenance(wheel_path: Path) -> dict[str, Any]:
     return {
         "fla_version": importlib.metadata.version("flash-linear-attention"),
         "fla_package_root": str(package_root),
+        "fla_package_paths": [str(path) for path in package_paths],
         "fla_source_sha": marker_sha,
         "wheel_path": str(wheel_path),
         "wheel_sha256": wheel_sha,
@@ -161,6 +204,9 @@ def collect_provenance(wheel_path: Path) -> dict[str, Any]:
         "conv_backend": os.environ["FLA_CONV_BACKEND"],
         "symbols": symbol_rows,
         "source_file_hashes": file_hashes,
+        "wheel_fla_tree_sha256": wheel_tree_digest.hexdigest(),
+        "installed_fla_tree_sha256": installed_tree_digest.hexdigest(),
+        "verified_fla_file_count": len(file_hashes),
     }
 
 
@@ -538,7 +584,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--wheel",
         type=Path,
-        default=Path("/huyang2/double-loop/wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl"),
+        default=Path(
+            "/huyang2/double-loop/wheelhouse/"
+            "flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl"
+        ),
     )
     parser.add_argument("--out", type=Path, default=None)
     return parser.parse_args()

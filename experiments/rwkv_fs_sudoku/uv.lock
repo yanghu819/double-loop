@@ -152,10 +152,38 @@ wheels = [
 [[package]]
 name = "flash-linear-attention"
 version = "0.5.2"
-source = { path = "../../wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl" }
-wheels = [
-    { filename = "flash_linear_attention-0.5.2-py3-none-any.whl", hash = "sha256:65f57bf2aa937991fc497bd63f42883d263ead8646f21f2492735ccddd82d0eb" },
+source = { path = "../../wheelhouse/flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl" }
+dependencies = [
+    { name = "einops" },
+    { name = "transformers" },
 ]
+wheels = [
+    { filename = "flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl", hash = "sha256:0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "causal-conv1d", marker = "extra == 'conv1d'", specifier = ">=1.4.0" },
+    { name = "datasets", marker = "extra == 'benchmark'", specifier = ">=3.3.0" },
+    { name = "einops" },
+    { name = "matplotlib", marker = "extra == 'benchmark'" },
+    { name = "pandas", marker = "extra == 'benchmark'" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-xdist", marker = "extra == 'test'" },
+    { name = "tilelang", marker = "extra == 'tilelang'", specifier = ">=0.1.9" },
+    { name = "torch", marker = "extra == 'cpu'", specifier = ">=2.7.0" },
+    { name = "torch", marker = "extra == 'cuda'", specifier = ">=2.7.0" },
+    { name = "torch", marker = "extra == 'npu'", specifier = "==2.7.1" },
+    { name = "torch", marker = "extra == 'rocm'", specifier = ">=2.7.0" },
+    { name = "torch", marker = "extra == 'xpu'", specifier = ">=2.7.0" },
+    { name = "torch-npu", marker = "extra == 'npu'", specifier = "==2.7.1.post4" },
+    { name = "torchvision", marker = "extra == 'npu'", specifier = "==0.22.1" },
+    { name = "transformers", specifier = ">=4.45.0" },
+    { name = "triton", marker = "extra == 'cpu'", specifier = ">=3.3" },
+    { name = "triton", marker = "extra == 'cuda'", specifier = ">=3.3" },
+    { name = "triton-ascend", marker = "extra == 'npu'", specifier = "==3.2.1" },
+]
+provides-extras = ["cuda", "rocm", "xpu", "npu", "cpu", "tilelang", "conv1d", "benchmark", "test"]
 
 [[package]]
 name = "fsspec"
@@ -964,7 +992,7 @@ dependencies = [
 requires-dist = [
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "einops", specifier = ">=0.8.0" },
-    { name = "flash-linear-attention", path = "../../wheelhouse/flash_linear_attention-0.5.2-py3-none-any.whl" },
+    { name = "flash-linear-attention", path = "../../wheelhouse/flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl" },
     { name = "ninja", specifier = ">=1.11.1" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pydantic", specifier = ">=2.0" },

@@ -1,0 +1,141 @@
+# Gain-Budgeted GDN2
+
+## 1. Metainfo
+
+- Plan: `P-GAIN-001`
+- Status: implementation complete; GPU1 validation pending
+- Date: `2026-07-29`
+- Machine: AIStation `GPU1` only
+- Branch: `codex/gain-budget-gdn2-20260729`
+- FLA source: `9c8e42e762fce087c27b673af4922795d9edb85e`
+- Parent checkpoint:
+  `/huyang2/double-loop/models/gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd/checkpoints/train_state_step009000.pt`
+- Parent checkpoint SHA256:
+  `606caf5229590f157d7a0f952423c719f4c17688003309a7bd0664e579588dd7`
+- Parent source SHA:
+  `42102bd65a28d60bde6b09ef93343692740582a1`
+
+## 2. Mechanism Hypothesis
+
+GDN2's channel-wise erase gate can preserve useful erase strength while still
+creating a large non-normal one-step gain through anisotropy. This can make
+memory updates sensitive without adding useful capacity. Projecting only that
+anisotropic component under a decay-funded gain budget should improve stable
+late-loop correction while preserving the original rank-one recurrence,
+parameters, data, loss, and FutureSeed path.
+
+The intervention is generic. It uses only the current normalized key, erase
+gate, and actual log decay. It does not inspect Sudoku labels or rules.
+
+## 3. Prediction And Decision
+
+Only one matched comparison is authorized:
+
+- official GDN2 plus FutureSeed through the audited external FP32 path with
+  an identity erase projection, `mode=external_identity`;
+- the same checkpoint and training contract, `mode=decay_funded`.
+
+Both resume step9000 and stop at step9100. Their projection, normalization,
+kernel, dtype, checkpoint, data, and RNG paths are identical except that the
+candidate replaces `b` with `b_eff`. Untouched `mode=none` remains a bit-exact
+upstream regression gate, not the causal comparison arm.
+
+The parent checkpoint was trained with the older pinned FLA tree `fe8fce9`.
+This probe intentionally transitions both arms to official FLA
+`9c8e42e`. It is an exact model/optimizer/RNG continuation and a fair
+within-probe comparison, but it is not an exact continuation of the parent's
+software environment. Historical step9000 metrics are therefore context, not
+the matched control score.
+
+Success requires one of:
+
+- mean loop5 exact over official 51-55, 56-60, and 61-64 improves by
+  `>= +0.015`, with no individual range regressing by more than `0.01`, and
+  mean loop1-to-loop5 exact gain does not regress;
+- 56-60 or 61-64 improves by `>= +0.02`, 51-55 regresses by at most `0.01`,
+  and mean loop1-to-loop5 exact gain improves over control by `>= +0.005`.
+
+Systems overhead must be `<=20%`. The mechanism must be active:
+projection clipping fraction `>=1%`, erase-strength error `<=5e-6`, no
+infeasible budget, and FP32 numerical step-gain bound `<=1.0001`.
+
+Kill immediately on a provenance/kernel/gradient/checkpoint/no-fallback
+failure, NaN/OOM/wrong GPU, or certificate violation. Stop the formal
+intervention if clipping is `<1%`. Stop by step50 if CE is more than `0.15`
+worse than matched control and has not recovered. Do not sweep cap, seed, LR,
+loss, model size, or continuation length after a negative result.
+
+## 4. Fixed Configuration
+
+- Official FLA `GatedDeltaNet2`, D192/L10/H6/K32/V32, short conv on.
+- Native FutureSeed1, five loops, equal CE on every loop.
+- BF16 model path, FP32 external q/k normalization and FP32 effective erase
+  gate for the gain-budget recurrence.
+- Effective batch 128, seed 52, exact same curriculum and official fixed
+  evaluation cases.
+- No noise, repair, search, selector, oracle inference, or task-specific rule.
+
+## 5. Commands And Environment
+
+- Persistent root: `/huyang2/double-loop`
+- All cache, wheel, model, run, and artifact paths stay below that root.
+- Complete preflight (pure-math CPU properties, CUDA contract,
+  official-kernel parity, BF16 backward, state carry, benchmark, dataset
+  manifest, and both two-step exact-resume smokes):
+
+```bash
+GPU1_UUID=<GPU1_UUID_FROM_AISTATION_HELPER> \
+CUDA_VISIBLE_DEVICES=0 \
+./scripts/run_gain_budget_gdn2_preflight.sh
+```
+
+- Formal matched run. This is the only authorized formal launcher because it
+  enforces control-first execution, exact-PID termination, CE/certificate
+  kill criteria, comparison, and decision generation:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 ./scripts/run_gain_budget_gdn2_matched.sh
+```
+
+The detached source SHA and final run names will be filled after the
+implementation commit. Both matched arms refuse to start without the same
+passing formal-ready manifest bound to that exact source SHA, pinned FLA tree,
+pre-registered GPU1 UUID, CUDA contract hash, and two exact-resume smoke
+artifacts.
+
+## 6. Required Validation
+
+1. Pure Torch projection properties and closed-form singular value vs SVD.
+2. CUDA official chunk output/state/backward parity at sequence boundaries,
+   including Sudoku length 81, production BF16 backward, and split
+   state-carry equivalence.
+3. Official fused recurrent forward parity for lengths at most 64; upstream
+   fused backward is unsupported and must be reported as such.
+4. `mode=none` bitwise equality to the untouched official layer and unchanged
+   checkpoint parameter keys.
+5. Full gain-budget layer finite, nonzero gradients for q/k/v/decay/erase/write.
+6. Exact parent checkpoint hash, parent source SHA, optimizer/RNG state, and
+   semantic resume contract.
+7. Full checkpoint load, two-step GPU1 smoke, wall-time and VRAM benchmark.
+8. SHA256 manifest over all official train/test input and label arrays,
+   revalidated before each formal arm.
+9. Official 512-case-per-range metrics remain the only primary score. A
+   separate fixed 256-case-per-range pool is content-hashed and paired only
+   for loop1..5 diagnostics and side-by-side visualization.
+10. The comparator requires clean identical source SHA/config semantics,
+    recomputes every paired-case error count, evaluates the preregistered
+    score/systems/mechanism gates, and emits the sole leaderboard row.
+
+## 7. Results
+
+Pending GPU1 validation and the single matched experiment.
+
+## 8. Conclusion
+
+Pending. A negative result closes this projection without a cap, seed, loss,
+or training-length sweep.
+
+## 9. Submission
+
+Not applicable. No tag unless the hard score is strong and the mechanism claim
+passes its pre-registered gate.

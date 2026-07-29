@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import torch
@@ -167,7 +168,10 @@ def main() -> None:
     ) == 0.0:
         raise AssertionError("Block-zero FutureSeed gate did not receive a finite nonzero gradient")
 
-    runtime = runner.strict_fla_runtime_summary(block_model, "gdn2")
+    runtime = runner.strict_fla_runtime_summary(
+        SimpleNamespace(reasoner=block_model),
+        "gdn2",
+    )
     result: dict[str, Any] = {
         "status": "pass",
         "device": torch.cuda.get_device_name(device),

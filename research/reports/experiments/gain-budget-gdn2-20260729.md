@@ -69,8 +69,11 @@ loss, model size, or continuation length after a negative result.
 
 - Official FLA `GatedDeltaNet2`, D192/L10/H6/K32/V32, short conv on.
 - Native FutureSeed1, five loops, equal CE on every loop.
-- BF16 model path, FP32 external q/k normalization and FP32 effective erase
-  gate for the gain-budget recurrence.
+- BF16 model/projection path followed by an FP32 certified GDN2 recurrence:
+  external q/k normalization, effective erase gate, decay, value, and write
+  gate all enter the official kernel as FP32. Official FLA's WY Triton dot
+  requires equal operand dtypes, so the rejected FP32-q/k/b plus BF16-v/w
+  mixture is neither compilable nor used.
 - Effective batch 128, seed 52, exact same curriculum and official fixed
   evaluation cases.
 - No noise, repair, search, selector, oracle inference, or task-specific rule.
@@ -80,8 +83,9 @@ loss, model size, or continuation length after a negative result.
 - Persistent root: `/huyang2/double-loop`
 - All cache, wheel, model, run, and artifact paths stay below that root.
 - Complete preflight (pure-math CPU properties, CUDA contract,
-  official-kernel parity, BF16 backward, state carry, benchmark, dataset
-  manifest, and both two-step exact-resume smokes):
+  official-kernel parity, backward from BF16 model projections through the
+  FP32 certified recurrence, state carry, benchmark, dataset manifest, and
+  both two-step exact-resume smokes):
 
 ```bash
 GPU1_UUID=<GPU1_UUID_FROM_AISTATION_HELPER> \
@@ -107,8 +111,8 @@ artifacts.
 
 1. Pure Torch projection properties and closed-form singular value vs SVD.
 2. CUDA official chunk output/state/backward parity at sequence boundaries,
-   including Sudoku length 81, production BF16 backward, and split
-   state-carry equivalence.
+   including Sudoku length 81, BF16-model-to-FP32-recurrence backward, and
+   split state-carry equivalence.
 3. Official fused recurrent forward parity for lengths at most 64; upstream
    fused backward is unsupported and must be reported as such.
 4. `mode=none` bitwise equality to the untouched official layer and unchanged

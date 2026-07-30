@@ -271,6 +271,15 @@ def render_board(
 def build_html(payload: Dict[str, Any], cases: list[Dict[str, Any]]) -> str:
     orders = list(payload["orders"])
     loops = payload["loops"]
+    runtime = payload["runtime"]
+    runtime_label = runtime.get("implementation")
+    if runtime_label is None:
+        layers = runtime.get("layers", [])
+        runtime_label = (
+            f"{layers[0].get('class', 'unknown')}/{layers[0].get('execution_path', 'unknown')}"
+            if layers
+            else "unknown"
+        )
     metric_rows = []
     for order in orders:
         row = payload["orders"][order]
@@ -336,7 +345,7 @@ code {{ background:#e2e8f0; padding:2px 4px; }}
 <table><thead><tr><th>Traversal</th><th>Loop</th><th>Exact</th><th>Blank accuracy</th><th>Valid</th><th>Blank predictions changed vs row</th><th>Wall sec</th></tr></thead>
 <tbody>{''.join(metric_rows)}</tbody></table>
 <h2>Integrity</h2>
-<p>Checkpoint <code>{html.escape(payload['checkpoint_sha256'])}</code>; source <code>{html.escape(payload['source_sha'])}</code>; official runtime <code>{html.escape(str(payload['runtime']['implementation']))}</code>. Paired encoding roundtrip max error is <code>{payload['max_paired_encoding_roundtrip_abs']:.3e}</code>.</p>
+<p>Checkpoint <code>{html.escape(payload['checkpoint_sha256'])}</code>; source <code>{html.escape(payload['source_sha'])}</code>; official runtime <code>{html.escape(str(runtime_label))}</code>. Paired encoding roundtrip max error is <code>{payload['max_paired_encoding_roundtrip_abs']:.3e}</code>.</p>
 {''.join(case_sections)}
 </body></html>
 """

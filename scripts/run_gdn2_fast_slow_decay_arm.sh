@@ -51,6 +51,7 @@ CONTRACT_JSON="${FAST_SLOW_CONTRACT_JSON:-$PERSIST_ROOT/artifacts/gdn2-fast-slow
 "$PYTHON_BIN" - "$CONTRACT_JSON" "$GIT_SHA" <<'PY'
 import json
 import pathlib
+import subprocess
 import sys
 
 path = pathlib.Path(sys.argv[1])
@@ -63,6 +64,25 @@ if payload.get("status") != "passed":
 if payload.get("git_sha") != expected_sha:
     raise SystemExit(
         f"Fast-Slow CUDA contract SHA mismatch: {payload.get('git_sha')} != {expected_sha}"
+    )
+gpu_uuids = [
+    row.strip()
+    for row in subprocess.check_output(
+        [
+            "nvidia-smi",
+            "-i",
+            "0",
+            "--query-gpu=uuid",
+            "--format=csv,noheader,nounits",
+        ],
+        text=True,
+    ).splitlines()
+    if row.strip()
+]
+if gpu_uuids != [payload.get("gpu_uuid")]:
+    raise SystemExit(
+        f"Fast-Slow CUDA contract GPU mismatch: {gpu_uuids} != "
+        f"{[payload.get('gpu_uuid')]}"
     )
 PY
 
@@ -77,6 +97,42 @@ if [[ "$PHASE" == "smoke" ]]; then
   export SAVE_TRAIN_CHECKPOINT_EVERY=
   export CASE_BANK_N=0
   export FULL_LOG_EVERY=1
+else
+  READY_JSON="${FAST_SLOW_READY_JSON:-$PERSIST_ROOT/artifacts/gdn2-fast-slow-decay/$GIT_SHA/formal_ready.json}"
+  "$PYTHON_BIN" - "$READY_JSON" "$CONTRACT_JSON" "$GIT_SHA" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+ready_path = pathlib.Path(sys.argv[1])
+contract_path = pathlib.Path(sys.argv[2])
+expected_sha = sys.argv[3]
+if not ready_path.is_file():
+    raise SystemExit(f"Fast-Slow formal-ready manifest is missing: {ready_path}")
+payload = json.loads(ready_path.read_text(encoding="utf-8"))
+checks = {
+    "status": payload.get("status") == "passed",
+    "git_sha": payload.get("git_sha") == expected_sha,
+    "contract_hash": payload.get("cuda_contract_sha256")
+    == hashlib.sha256(contract_path.read_bytes()).hexdigest(),
+}
+failed = sorted(name for name, passed in checks.items() if not passed)
+if failed:
+    raise SystemExit(f"Fast-Slow formal-ready checks failed: {failed}")
+for key in (
+    "official_fla_gdn2",
+    "pure_math_log",
+    "external_identity_smoke",
+    "positive_causal_smoke",
+):
+    row = payload.get("evidence", {}).get(key, {})
+    path = pathlib.Path(row.get("path", ""))
+    if not path.is_file():
+        raise SystemExit(f"Fast-Slow formal-ready evidence missing: {key}: {path}")
+    if hashlib.sha256(path.read_bytes()).hexdigest() != row.get("sha256"):
+        raise SystemExit(f"Fast-Slow formal-ready evidence hash mismatch: {key}")
+PY
 fi
 
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"

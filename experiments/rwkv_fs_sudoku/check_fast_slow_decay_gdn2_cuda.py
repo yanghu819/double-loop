@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -303,6 +304,16 @@ def main() -> None:
         "git_sha": args.git_sha,
         "torch_version": torch.__version__,
         "device": torch.cuda.get_device_name(device),
+        "gpu_uuid": subprocess.check_output(
+            [
+                "nvidia-smi",
+                "-i",
+                "0",
+                "--query-gpu=uuid",
+                "--format=csv,noheader,nounits",
+            ],
+            text=True,
+        ).strip(),
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     try:

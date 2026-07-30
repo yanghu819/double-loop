@@ -346,6 +346,17 @@ def main() -> None:
 
     control_train = control["metrics"]["train"]
     candidate_train = candidate["metrics"]["train"]
+    if control_train["parameter_count"] != candidate_train["parameter_count"]:
+        raise ValueError(
+            "matched parameter counts differ: "
+            f"{control_train['parameter_count']} != "
+            f"{candidate_train['parameter_count']}"
+        )
+    if (
+        control_train["trainable_parameter_count"]
+        != candidate_train["trainable_parameter_count"]
+    ):
+        raise ValueError("matched trainable parameter counts differ")
     candidate_diag = candidate_train["fast_slow_decay"]
     time_overhead = (
         float(candidate_train["train_sec"]) / float(control_train["train_sec"]) - 1.0

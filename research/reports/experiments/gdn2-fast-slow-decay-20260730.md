@@ -73,6 +73,7 @@ sweep kernel length, rho, seed, LR, loss, width, or continuation length.
 ## 5. Commands And Environment
 
 ```bash
+GPU1_UUID=<UUID_FROM_AISTATION_GPU1_PROBE> \
 CUDA_VISIBLE_DEVICES=0 ./scripts/run_gdn2_fast_slow_decay_preflight.sh
 CUDA_VISIBLE_DEVICES=0 ./scripts/run_gdn2_fast_slow_decay_matched.sh
 ```
@@ -84,7 +85,8 @@ All caches, wheels, models, runs, and artifacts remain under
 
 1. Constant preservation, strict causality, positivity/range, identity, total
    variation reduction, and parameter/input gradients in pure Torch.
-2. Exact pinned official FLA GDN2 source with backend dispatch disabled.
+2. Exact pinned official FLA GDN2 source and wheel file tree, with backend
+   dispatch disabled and the physical CUDA UUID bound to AIStation GPU1.
 3. Official output/state and input/state/core-gradient parity for the external
    identity wrapper.
 4. Candidate backward traverses `ChunkGDN2FunctionBackward`; controller,

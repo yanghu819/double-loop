@@ -1,0 +1,51 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal
+git_sha=2867c8892b97e1c2d6111241b538c499543cd639
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn2 rwkv_kernel=auto future_seed_gate_mode=head future_seed_scope=layer future_seed_readout_hop=0 gdn_mode=chunk gdn_progressive_base_expand_v=0.0 gdn2_gain_budget=none gdn2_fast_slow_decay=positive_causal forward_dtype=bfloat16
+checkpoint_eval steps=9100 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/models/gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd/checkpoints/train_state_step009000.pt step=9000 reason=eval_checkpoint
+[future_seed_loop stage=4:51-64] step=9025 ce=0.6393 total=0.7210 loop1=0.9223 loop_last=0.6393 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0997 slow_lag=0.1491 slow_tv=0.9836 slow_change=0.0117 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9050 ce=0.6757 total=0.7520 loop1=0.9287 loop_last=0.6757 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0993 slow_lag=0.1483 slow_tv=0.9837 slow_change=0.0117 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=9050] path=/huyang2/double-loop/models/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/checkpoints/train_state_step009050.pt
+[future_seed_loop stage=4:51-64] step=9075 ce=0.7434 total=0.8061 loop1=0.9520 loop_last=0.7434 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0992 slow_lag=0.1479 slow_tv=0.9838 slow_change=0.0113 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9100 ce=0.6536 total=0.7277 loop1=0.9119 loop_last=0.6536 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0990 slow_lag=0.1475 slow_tv=0.9839 slow_change=0.0111 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=9100 holes60] loop5 exact=0.0020 blank=0.4774
+[train_checkpoint step=9100] path=/huyang2/double-loop/models/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/checkpoints/train_state_step009100.pt
+
+full-board metrics
+loop=1 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5689, early=0.5645, late=0.5760, early_late_gap=-0.0115
+        fs_gate=0.521, fs_update=1.000, fs_state_norm=16.663, fs_decay=0.00, fs_raw_rms=1.977, fs_raw_rms_std=0.376, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.280:0.709, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, slow_decay=1, slow_rho/lag=0.099/0.148, slow_tv=1.5633->1.5383, slow_change=0.0114, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0391, valid=0.0391, solved=0.0391, blank_acc=0.6460, early=0.6446, late=0.6455, early_late_gap=-0.0008
+        fs_gate=0.521, fs_update=1.000, fs_state_norm=16.663, fs_decay=0.00, fs_raw_rms=1.510, fs_raw_rms_std=0.376, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.280:0.709, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, slow_decay=1, slow_rho/lag=0.099/0.148, slow_tv=2.1674->2.1330, slow_change=0.0106, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.1855, valid=0.1855, solved=0.1855, blank_acc=0.6820, early=0.6802, late=0.6829, early_late_gap=-0.0027
+        fs_gate=0.521, fs_update=1.000, fs_state_norm=16.663, fs_decay=0.00, fs_raw_rms=1.702, fs_raw_rms_std=0.456, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.280:0.709, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, slow_decay=1, slow_rho/lag=0.099/0.148, slow_tv=2.7966->2.7516, slow_change=0.0108, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.2422, valid=0.2422, solved=0.2422, blank_acc=0.6904, early=0.6903, late=0.6883, early_late_gap=+0.0021
+        fs_gate=0.521, fs_update=1.000, fs_state_norm=16.663, fs_decay=0.00, fs_raw_rms=1.752, fs_raw_rms_std=0.467, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.280:0.709, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, slow_decay=1, slow_rho/lag=0.099/0.148, slow_tv=2.8014->2.7563, slow_change=0.0108, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.2500, valid=0.2500, solved=0.2500, blank_acc=0.6918, early=0.6920, late=0.6895, early_late_gap=+0.0025
+        fs_gate=0.521, fs_update=1.000, fs_state_norm=16.663, fs_decay=0.00, fs_raw_rms=1.761, fs_raw_rms_std=0.474, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.280:0.709, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, slow_decay=1, slow_rho/lag=0.099/0.148, slow_tv=2.7749->2.7301, slow_change=0.0108, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b51_55 blanks=51-55 n=512 exact=0.3535, valid=0.3535, solved=0.3535, blank_acc=0.7713, early=0.7734, late=0.7714, early_late_gap=+0.0020
+b56_60 blanks=56-60 n=512 exact=0.1465, valid=0.1465, solved=0.1465, blank_acc=0.6213, early=0.6160, late=0.6236, early_late_gap=-0.0077
+b61_64 blanks=61-64 n=512 exact=0.1621, valid=0.1621, solved=0.1621, blank_acc=0.8234, early=0.8191, late=0.8273, early_late_gap=-0.0082
+
+case-bank artifacts
+official_b51_55 exact=0.3594 blank_acc=0.7723 selected={'solved_by_loop': 8, 'almost_solved': 8, 'hard_failure': 8}
+  index=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/case_bank/official_b51_55/cases.json
+official_b56_60 exact=0.1445 blank_acc=0.6266 selected={'solved_by_loop': 8, 'almost_solved': 5, 'hard_failure': 8}
+  index=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/case_bank/official_b56_60/index.html
+  cases=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/case_bank/official_b56_60/cases.json
+official_b61_64 exact=0.1445 blank_acc=0.8189 selected={'solved_by_loop': 8, 'almost_solved': 8, 'hard_failure': 8}
+  index=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/case_bank/official_b61_64/index.html
+  cases=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/case_bank/official_b61_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal/output/futureseed_loop_case_seed52.html
+recorded run=gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal score=0.25 key=metrics.eval_clean.loop5.label_exact
+completed run_dir=/huyang2/double-loop/runs/gdn2-fast-slow-matched-20260730T064321Z-2867c88-positive-causal

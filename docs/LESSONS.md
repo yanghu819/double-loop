@@ -1368,3 +1368,30 @@
   useful computation. Any future generic stability mechanism must preserve
   the identity path and suppress only learned outliers, not globally force
   every step under `c=1`.
+
+## 2026-07-30 GDN2 Fast-Slow decay
+
+- Smooth forgetting is mechanically valid but not a hard-Sudoku solution.
+  A positive causal K=4 FIR lowers forgetting-hazard TV to `0.9839x`, keeps
+  erase/write token-fast, and preserves the exact official GDN2 recurrent
+  kernel and backward path.
+- Exact identity controls matter. The shared wrapper is bit-exact to untouched
+  GDN2 in output, terminal state, and every checked gradient, both with and
+  without a FutureSeed initial state. The quality result is therefore not an
+  implementation fallback.
+- Lower gate variation is not the same as better recurrent convergence.
+  Mixed loop5 exact rises `0.2402 -> 0.2500`, but official
+  51-55/56-60/61-64 changes
+  `0.3594/0.1387/0.1641 -> 0.3535/0.1465/0.1621`; hard mean delta is exactly
+  zero.
+- Selected examples can lie in either direction. One paired board changes
+  from 19 wrong cells to solved, while another changes from 3 wrong cells to
+  26 wrong cells. The intervention changes which attractor wins rather than
+  making all trajectories more stable.
+- Cheap layer math can still retain expensive activations. The microbenchmark
+  reports `+6.97%` time and `+8.18%` memory, while the full D192/L10
+  five-loop training graph reports `+7.19%` time and `+20.65%` peak memory.
+  Measure the complete model before calling a gate filter cheap.
+- Close decay-only smoothing on this line. Do not sweep FIR length, rho, seed,
+  LR, loss, width, or duration. Clean data/compute scaling has stronger
+  evidence and better matches the bitter lesson.

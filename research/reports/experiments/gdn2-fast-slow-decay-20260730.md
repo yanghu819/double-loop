@@ -3,10 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-FSMC-001`
-- Status: approved, awaiting GPU1
+- Status: discarded after the single preregistered probe
 - Date: `2026-07-30`
 - Machine: AIStation `GPU1` only
+- Physical GPU UUID: `GPU-c1d7c624-a393-befa-3807-7e00602d65ca`
 - Branch: `codex/gdn2-fast-slow-decay-20260730`
+- Implementation/result source SHA:
+  `2867c8892b97e1c2d6111241b538c499543cd639`
 - FLA source: `9c8e42e762fce087c27b673af4922795d9edb85e`
 - Parent checkpoint:
   `/huyang2/double-loop/models/gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd/checkpoints/train_state_step009000.pt`
@@ -101,12 +104,97 @@ All caches, wheels, models, runs, and artifacts remain under
 
 ## 7. Results
 
-Pending GPU1 allocation.
+### Integrity and mechanism
+
+- Six pure-Torch FIR tests pass: constant preservation, strict causality,
+  positivity/range, exact external identity, TV reduction, and finite nonzero
+  gradients.
+- Pinned FLA `9c8e42e` reference errors are small:
+  output `5.99e-05`, terminal state `2.76e-04`, and maximum gradient
+  `2.34e-04`.
+- `external_identity` is exactly equal to untouched official GDN2 both with
+  and without a FutureSeed-like initial state: output, terminal state, and all
+  checked gradients have maximum absolute error `0`.
+- The candidate backward graph contains `ChunkGDN2FunctionBackward`.
+  Controller, input, and initial-state gradients are finite and nonzero.
+- The layer contract measures `+6.97%` time and `+8.18%` peak memory.
+- The full-model run measures `763.52s -> 818.41s` (`+7.19%`) and
+  `8278.24MiB -> 9987.85MiB` (`+20.65%`) peak memory.
+- At step9100 the learned mechanism remains active:
+  hazard TV ratio `0.9839`, `rho=0.0990`, lag mass `0.1475`, and relative
+  hazard change `0.0111`.
+
+### Primary quality
+
+| Evaluation | Control | Fast-Slow | Delta |
+|---|---:|---:|---:|
+| Mixed loop1 exact | 0.0234 | 0.0234 | +0.0000 |
+| Mixed loop3 exact | 0.1777 | 0.1855 | +0.0078 |
+| Mixed loop5 exact | 0.2402 | 0.2500 | +0.0098 |
+| Official 51-55 loop5 exact | 0.3594 | 0.3535 | -0.0059 |
+| Official 56-60 loop5 exact | 0.1387 | 0.1465 | +0.0078 |
+| Official 61-64 loop5 exact | 0.1641 | 0.1621 | -0.0020 |
+| Official three-range mean | 0.2207 | 0.2207 | +0.0000 |
+
+The score gate fails: mean hard exact does not improve, and neither hardest
+range gains the required `+0.02`. The systems gate also fails because
+full-model peak memory is `+20.65%`.
+
+### Paired case distribution
+
+The 256-board visualization bank is diagnostic and is not substituted for the
+primary 512-board official metrics.
+
+| Range | Candidate better / worse / tied at loop5 | Mean candidate-control wrong cells |
+|---|---:|---:|
+| 51-55 | 87 / 68 / 101 | -0.242 |
+| 56-60 | 106 / 90 / 60 | -0.133 |
+| 61-64 | 103 / 117 / 36 | +0.074 |
+
+The extrema expose instability rather than a reliable gain:
+
+- largest rescue: control loop5 has 19 wrong cells; Fast-Slow loop5 solves;
+- largest regression: control goes `15 -> 6 -> 3` wrong across loops
+  `1/3/5`, while Fast-Slow goes `18 -> 27 -> 26`;
+- hardest shared case: control goes `32 -> 43 -> 43`; Fast-Slow goes
+  `32 -> 42 -> 41`.
+
+Archived evidence:
+
+- `runs/gdn2-fast-slow-comparison-20260730T064321Z-2867c88/score.json`
+- `runs/gdn2-fast-slow-comparison-20260730T064321Z-2867c88/comparison.json`
+- `runs/gdn2-fast-slow-comparison-20260730T064321Z-2867c88/contracts/`
+- `runs/gdn2-fast-slow-comparison-20260730T064321Z-2867c88/visualizations/index.html`
 
 ## 8. Interpretation
 
-Pending.
+The attachment's mechanical claim is correct: a positive causal FIR creates a
+slow forgetting timescale while keeping erase/write token-fast, and it can be
+implemented without changing the official recurrent kernel. The optimization
+path also remains healthy.
+
+The task claim is not supported. A one-percent change in the forgetting
+hazard is enough to move some boards into a better attractor and other boards
+into a much worse one. The average official exact score is unchanged. Smooth
+forgetting therefore changes the selected solution basin, but does not make
+the recurrent dynamics reliably converge toward the globally consistent
+board.
+
+The mixed `+0.0098` is not a reason to tune K or rho. It is smaller than the
+preregistered gate, does not replicate across the fixed official ranges, and
+comes with both large paired wins and large paired regressions. More ordinary
+data/compute on the clean GDN2+FutureSeed baseline remains better supported
+than hand-tuning a memory timescale.
 
 ## 9. Decision And Reuse
 
-Pending.
+- Discard decay-only Fast-Slow Memory Control for hard Sudoku.
+- Do not continue to step9300.
+- Do not sweep FIR length, rho, initialization, seed, LR, loss, model size, or
+  training length.
+- Reuse the positive-causal FIR and exact identity/CUDA contract only if a
+  different task supplies independent evidence for an explicit slow-memory
+  timescale.
+- Keep the frozen strict-official GDN2+FutureSeed1 line as the baseline.
+- The next high-ROI axis is clean data/model/compute scaling or a generic
+  state update with an explicit convergence reason, not another gate filter.

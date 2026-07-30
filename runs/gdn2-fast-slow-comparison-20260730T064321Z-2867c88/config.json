@@ -1,0 +1,24 @@
+{
+  "candidate_intervention": {
+    "current_weight_init": 0.85,
+    "kernel_size": 4,
+    "mode": "positive_causal",
+    "rho_init": 0.1
+  },
+  "critical_args": {
+    "backbone": "gdn2",
+    "batch": 32,
+    "d_model": 192,
+    "future_seed_scale": 1.0,
+    "future_seed_scope": "layer",
+    "grad_accum_steps": 4,
+    "head_dim": 32,
+    "heads": 6,
+    "layers": 10,
+    "loop_loss": "all",
+    "max_loops": 5,
+    "official_sudoku_data_dir": "/huyang2/double-loop/data/sudoku-extreme-full",
+    "resume_train_checkpoint": "/huyang2/double-loop/models/gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd/checkpoints/train_state_step009000.pt",
+    "seed": 52
+  }
+}

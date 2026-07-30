@@ -41,7 +41,7 @@ fi
 # CPU is used only for deterministic FIR algebra properties, never model smoke.
 (
   cd "$REPO_ROOT/experiments/rwkv_fs_sudoku"
-  "$PYTHON_BIN" -m pytest test_fast_slow_decay_gdn2.py -q
+  "$PYTHON_BIN" test_fast_slow_decay_gdn2.py
 ) | tee "$ARTIFACT_DIR/pure_math.log"
 
 (

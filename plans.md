@@ -11,7 +11,7 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-30 17:10 CST): `P-ADDR-001` strongly survives its
+Current update (2026-07-30 18:02 CST): `P-ADDR-001` strongly survives its
 falsifier. On the same 256 official 51-64-blank boards, row-major loop5 reaches
 `0.2617` exact / `0.6970` blank accuracy, while reverse, column, box, and
 fixed-random traversal all fall to `0` exact and at most `0.1839` blank
@@ -23,6 +23,14 @@ hidden content responsible for V/decay/erase/write/output gates, and train both
 this model and a matched normal-GDN2 control under the same randomized cell
 orders from the same step9000 checkpoint. No row/column/box rules, new slots,
 new parameters, or kernel fallback are allowed.
+
+`P-OCC-001` is a separate generic-memory falsifier motivated by KDA's
+fine-grained decay. It does not replace or modify the Sudoku experiment:
+channel-wise decay can encode age, while repeated writes to one semantic key
+need a query-matchable occurrence address. Both matched KDA arms receive the
+same additive occurrence metadata; only the candidate binds that metadata into
+Q/K with a parameter-free rotation. Oracle success is required before spending
+any work on a learned key-local counter.
 
 Current update (2026-07-30 15:25 CST): `P-FSMC-001` is discarded after its
 single preregistered matched GPU1 probe. Exact SHA `2867c889` passed all six
@@ -134,6 +142,7 @@ gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-OCC-001 | in_progress | KDA 的 channel-wise decay 能保存不同时间尺度，但同一 semantic key 的多次写入仍共用地址；它能表示“多旧”，不能让 query 指定“第几次写入”。若 repeated-key address collision 是根因，在两臂都拿到同一 additive occurrence metadata 时，把 occurrence id 以无参数 rotary 方式绑定到 K/Q 应显著提高 nth-occurrence retrieval。 | 独立通用记忆 probe，不改 Sudoku：strict official FLA `chunk_kda`、D128/H4/K32/expand-v2、同参数同初始化同 batch，一臂 content address，一臂 oracle occurrence rotary。训练 length128/target repeat8 300 steps；primary OOD length512/repeat16。只跑一 seed；不跑 position-beta/global-RoPE/Versioned-KDA 表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | smoke + <=10m formal target | OOD accuracy delta `>=+0.20` 且 candidate `>=0.70` 才进入 learned key-local counter；delta `<+0.10` 直接砍掉，不扫 rotary/base/beta/seed。 | pending; GPU1 queued |
 | P-ADDR-002 | in_progress | `P-ADDR-001` 证明 additive position metadata 没丢，但 GDN2 仍死绑 row-major；本质可能是同一个 hidden 同时决定 address 和 payload，使 key-space 的可旋转自由度把“哪里”和“写什么”纠缠在一起。若把 canonical position 只送入 Q/K、hidden 只负责 V/decay/erase/write/output gate，模型应更容易学到与遍历顺序无关的记忆地址。 | 从同一 strict-official-FLA step9000 GDN2+native-FS checkpoint 续训两臂：normal GDN2 control 与 parameter-neutral `position_qk` Address-Payload GDN2；两臂每个 microbatch 使用同一确定性 random cell permutation，labels/output 保持 canonical；100-step kill gate，只有 signal 才到 300 steps。官方 kernel、FutureSeed、数据、optimizer、seed、batch、loops 全 matched。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | 2 arms x 100-step gate, max 300 steps | candidate 相对 control 的非-row平均 blank acc `>=+0.10` 或非-row exact `>=+0.03`，且 row-major exact 不低于 control 超过 `0.03`；若 step100 loss 不降且 random blank `<0.30`，立即停。 | pending |
 | P-ADDR-001 | done | 若 GDN2 的 distributed state 没把内容稳定绑定到绝对 cell，当前 hard blank cliff 会依赖 row-major 序列化；同一 token-position pair 换遍历顺序就会掉分。 | Frozen step9000 strict GDN2+native FutureSeed；official 51-64 blanks `n=256`；row/reverse/column/box/fixed-random 五种 paired traversal，位置 ID 随 cell 移动，输出还原后评分。只做一次 GPU eval，不训练、不改 kernel、不加 Sudoku rule。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | <10m | 任一非 row 顺序 exact 下降 `>0.03` 或 blank acc 下降 `>0.02` 才继续做 generic Address-Payload GDN2；否则立即关闭，不做 position token/address 表。 | Hypothesis survives strongly. loop5 row exact/blank `0.2617/0.6970`; reverse `0/0.1339`; column `0/0.1277`; box `0/0.1839`; fixed-random `0/0.1228`. Paired encoding roundtrip is exact, so additive position information is present but not used as an order-independent recurrent address. This does not yet prove address entanglement causes the blank cliff; P-ADDR-002 is the causal mechanism test. |
 | P-FSMC-001 | discarded | GDN2 的逐 token forgetting hazard 若变化过快，会反复清掉仍有用的状态；让 forgetting 形成一个慢时间尺度、同时保留 erase/write 的当前 token 快路径，可能提高 51-64 blanks 的全盘闭合。 | 在每层官方 GDN2 gate 预计算后，对 `hazard=-log_decay` 做 per-head K=4 正权归一化 causal FIR，再以 learnable `rho` 与 raw hazard 凸组合。recurrent/chunk kernel、rank-1 update、FutureSeed、loss/data/loop 全不变。matched control 使用同 wrapper/参数/FIR计算但 identity 输出。Frozen step9000 单 seed续到9100。 | GPU1 A800 80GB only；禁止GPU2和CPU模型smoke | completed 2026-07-30 14:13-15:13 CST；strict preflight + 2x100 steps | 候选 hazard TV ratio `<=0.995`、系统开销`<=20%`，且hard三档mean exact `>=+0.01`并无单档低于`-0.01`，或56-64任一`>=+0.02`且51-55不低于`-0.01`。失败即关闭，不扫K/rho/seed/LR/loss。 | Exact SHA `2867c889` on physical GPU1 `GPU-c1d7c...`. Six math tests, official FLA `9c8e42e` reference/adapter/native-FutureSeed checks, exact identity output/state/all gradients, `ChunkGDN2FunctionBackward`, nonzero controller/h0/input/state/core gradients, checkpoint hash/resume, and paired hashes all pass. Mechanism active: TV ratio=`0.9839`, rho=`0.0990`, lag mass=`0.1475`, relative hazard change=`0.0111`. Mixed loop5 exact `0.2402->0.2500`, but official 51-55/56-60/61-64 `0.3594/0.1387/0.1641 -> 0.3535/0.1465/0.1621`; mean delta=`0.0000`, so both score gates fail. Formal time/peak-memory overhead=`+7.19%/+20.65%`. Case bank contains both `19->0` rescue and `3->26` regression; hardest shared case worsens after loop1 in both arms. Smooth decay changes basins rather than reliable closure. Discard; no K/rho/seed/LR/loss/width/length sweep. |

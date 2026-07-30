@@ -26,6 +26,10 @@ from futureseed2_selective import (
     FUTURE_SEED_GATE_MODES,
     FutureSeedSelectiveGate,
 )
+from fast_slow_decay_gdn2 import (
+    FAST_SLOW_DECAY_MODES,
+    FastSlowDecayController,
+)
 from gain_budget_gdn2 import fla_l2norm_fp32, project_erase_gate
 
 try:
@@ -116,6 +120,19 @@ BOX_COLS = 3
 CELLS = 81
 BLANK = 9
 VOCAB = 10
+FAST_SLOW_TRAIN_KEYS = (
+    "gdn2_fast_slow_enabled",
+    "gdn2_fast_slow_rho_mean",
+    "gdn2_fast_slow_current_weight",
+    "gdn2_fast_slow_lag_mass",
+    "gdn2_fast_slow_raw_hazard_mean",
+    "gdn2_fast_slow_effective_hazard_mean",
+    "gdn2_fast_slow_raw_tv",
+    "gdn2_fast_slow_effective_tv",
+    "gdn2_fast_slow_tv_ratio",
+    "gdn2_fast_slow_relative_change",
+    "gdn2_fast_slow_alpha_mean",
+)
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
@@ -409,28 +426,51 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
                     "gain_budget_mode",
                     "none",
                 ),
+                "fast_slow_decay_mode": getattr(
+                    getattr(block, "time_mix", None),
+                    "fast_slow_decay_mode",
+                    "none",
+                ),
                 "execution_path": (
-                    "official_layer_forward"
+                    "positive_causal_hazard_then_official_gdn2_chunk"
                     if getattr(
                         getattr(block, "time_mix", None),
-                        "gain_budget_mode",
+                        "fast_slow_decay_mode",
                         "none",
                     )
-                    == "none"
+                    == "positive_causal"
                     else (
-                        (
-                            "external_fp32_normalization_then_bfloat16_"
-                            "tolerance_official_gdn2_chunk"
-                        )
+                        "external_identity_hazard_then_official_gdn2_chunk"
                         if getattr(
                             getattr(block, "time_mix", None),
-                            "gain_budget_mode",
+                            "fast_slow_decay_mode",
                             "none",
                         )
                         == "external_identity"
                         else (
-                            "fp32_gain_budget_projected_then_bfloat16_tolerance_"
-                            "audited_official_gdn2_chunk"
+                            "official_layer_forward"
+                            if getattr(
+                                getattr(block, "time_mix", None),
+                                "gain_budget_mode",
+                                "none",
+                            )
+                            == "none"
+                            else (
+                                (
+                                    "external_fp32_normalization_then_bfloat16_"
+                                    "tolerance_official_gdn2_chunk"
+                                )
+                                if getattr(
+                                    getattr(block, "time_mix", None),
+                                    "gain_budget_mode",
+                                    "none",
+                                )
+                                == "external_identity"
+                                else (
+                                    "fp32_gain_budget_projected_then_bfloat16_"
+                                    "tolerance_audited_official_gdn2_chunk"
+                                )
+                            )
                         )
                     )
                 ),
@@ -1687,6 +1727,10 @@ class FLADeltaTimeMix(nn.Module):
         gain_budget_step_cap: float = 1.0,
         gain_budget_sigma_cap_max: float = 3.0,
         gain_budget_infeasible_policy: str = "raise",
+        fast_slow_decay_mode: str = "none",
+        fast_slow_decay_kernel_size: int = 4,
+        fast_slow_decay_rho_init: float = 0.10,
+        fast_slow_decay_current_weight_init: float = 0.85,
     ) -> None:
         super().__init__()
         if backbone not in {"fla_gdn", "gdn2", "kda"}:
@@ -1714,6 +1758,15 @@ class FLADeltaTimeMix(nn.Module):
             raise ValueError("gain_budget_infeasible_policy must be raise or relax")
         if gain_budget_mode != "none" and gain_budget_infeasible_policy != "raise":
             raise ValueError("Integrated Gain-Budget is fail-closed and requires policy=raise")
+        if fast_slow_decay_mode not in FAST_SLOW_DECAY_MODES:
+            raise ValueError(
+                "fast_slow_decay_mode must be one of: "
+                f"{', '.join(FAST_SLOW_DECAY_MODES)}"
+            )
+        if fast_slow_decay_mode != "none" and backbone != "gdn2":
+            raise ValueError("Fast-Slow decay is restricted to the official GDN2 backbone")
+        if fast_slow_decay_mode != "none" and gain_budget_mode != "none":
+            raise ValueError("Fast-Slow decay and Gain-Budget cannot be enabled together")
 
         self.backbone = backbone
         self.heads = int(heads)
@@ -1727,6 +1780,7 @@ class FLADeltaTimeMix(nn.Module):
         self.gain_budget_step_cap = float(gain_budget_step_cap)
         self.gain_budget_sigma_cap_max = float(gain_budget_sigma_cap_max)
         self.gain_budget_infeasible_policy = gain_budget_infeasible_policy
+        self.fast_slow_decay_mode = fast_slow_decay_mode
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -1755,6 +1809,16 @@ class FLADeltaTimeMix(nn.Module):
         if backbone == "fla_gdn":
             layer_kwargs["use_gate"] = True
         self.core = layer_type(**layer_kwargs)
+        self.fast_slow_decay = (
+            FastSlowDecayController(
+                heads=heads,
+                kernel_size=fast_slow_decay_kernel_size,
+                rho_init=fast_slow_decay_rho_init,
+                current_weight_init=fast_slow_decay_current_weight_init,
+            )
+            if fast_slow_decay_mode != "none"
+            else None
+        )
 
     def _forward_gain_budget(
         self,
@@ -1959,6 +2023,136 @@ class FLADeltaTimeMix(nn.Module):
             ).detach(),
             "gdn2_gain_budget_fp32_numerical_certificate": x.new_zeros(()),
             "gdn2_gain_budget_low_precision_tolerance_path": x.new_ones(()),
+            "gdn2_fast_slow_enabled": x.new_zeros(()),
+            "gdn2_fast_slow_rho_mean": x.new_zeros(()),
+            "gdn2_fast_slow_rho_min": x.new_zeros(()),
+            "gdn2_fast_slow_rho_max": x.new_zeros(()),
+            "gdn2_fast_slow_current_weight": x.new_ones(()),
+            "gdn2_fast_slow_lag_mass": x.new_zeros(()),
+            "gdn2_fast_slow_raw_hazard_mean": x.new_zeros(()),
+            "gdn2_fast_slow_effective_hazard_mean": x.new_zeros(()),
+            "gdn2_fast_slow_raw_tv": x.new_zeros(()),
+            "gdn2_fast_slow_effective_tv": x.new_zeros(()),
+            "gdn2_fast_slow_tv_ratio": x.new_ones(()),
+            "gdn2_fast_slow_relative_change": x.new_zeros(()),
+            "gdn2_fast_slow_alpha_mean": x.new_ones(()),
+        }
+
+        output_gate = core.g_proj(x).view(
+            batch_size,
+            seq_len,
+            core.num_v_heads,
+            core.head_v_dim,
+        )
+        o = core.o_norm(o.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
+
+    def _forward_fast_slow_decay(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError("Fast-Slow decay requires the official GDN2 chunk op")
+        if self.fast_slow_decay is None:
+            raise RuntimeError("Fast-Slow decay controller is missing")
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = (
+                self._zero_conv_state(x)
+                if initial_state is not None
+                else (None, None, None)
+            )
+            q, _ = core.q_conv1d(
+                x=core.q_proj(x),
+                cache=conv_q,
+                output_final_state=True,
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(x),
+                cache=conv_k,
+                output_final_state=True,
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x),
+                cache=conv_v,
+                output_final_state=True,
+            )
+        else:
+            q = F.silu(core.q_proj(x))
+            k = F.silu(core.k_proj(x))
+            v = F.silu(core.v_proj(x))
+
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias)
+        b = core.b_proj(x).sigmoid()
+        w = core.w_proj(x).sigmoid()
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        b = b.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+        effective_g, fast_slow_diag = self.fast_slow_decay(
+            g,
+            mode=self.fast_slow_decay_mode,
+        )
+
+        if core.num_v_heads > core.num_heads:
+            groups = core.num_v_heads // core.num_heads
+            q = torch.repeat_interleave(q, groups, dim=-2)
+            k = torch.repeat_interleave(k, groups, dim=-2)
+            effective_g = torch.repeat_interleave(effective_g, groups, dim=-2)
+            b = torch.repeat_interleave(b, groups, dim=-2)
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        operation = (
+            fused_recurrent_gdn2
+            if seq_len <= 64 and not self.training
+            else chunk_gdn2
+        )
+        if operation is None:
+            raise RuntimeError("The required official GDN2 kernel is unavailable")
+        o, terminal_state = operation(
+            q=q,
+            k=k,
+            v=v,
+            g=effective_g,
+            b=b,
+            w=w,
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+
+        zero = x.new_zeros(())
+        self.last_gain_budget_diag = {
+            "gdn2_gain_budget_enabled": zero,
+            "gdn2_gain_budget_clipped_frac": zero,
+            "gdn2_gain_budget_infeasible_frac": zero,
+            "gdn2_gain_budget_numerical_endpoint_frac": zero,
+            "gdn2_gain_budget_lambda_mean": x.new_ones(()),
+            "gdn2_gain_budget_lambda_min": x.new_ones(()),
+            "gdn2_gain_budget_tau_mean": zero,
+            "gdn2_gain_budget_tau_effective_mean": zero,
+            "gdn2_gain_budget_alpha_mean": zero,
+            "gdn2_gain_budget_original_sigma_mean": zero,
+            "gdn2_gain_budget_effective_sigma_mean": zero,
+            "gdn2_gain_budget_original_step_bound": zero,
+            "gdn2_gain_budget_effective_step_bound": zero,
+            "gdn2_gain_budget_effective_step_bound_max": zero,
+            "gdn2_gain_budget_delta_error_max": zero,
+            "gdn2_gain_budget_fp32_projection_step_bound_max": zero,
+            "gdn2_gain_budget_fp32_projection_delta_error_max": zero,
+            "gdn2_gain_budget_gate_relative_change": zero,
+            "gdn2_gain_budget_fp32_numerical_certificate": zero,
+            "gdn2_gain_budget_low_precision_tolerance_path": zero,
+            **fast_slow_diag,
         }
 
         output_gate = core.g_proj(x).view(
@@ -2049,6 +2243,11 @@ class FLADeltaTimeMix(nn.Module):
                 x,
                 initial_state=initial_state,
             )
+        if self.fast_slow_decay_mode != "none":
+            return self._forward_fast_slow_decay(
+                x,
+                initial_state=initial_state,
+            )
 
         assert FLACache is not None
         cache = FLACache()
@@ -2091,6 +2290,19 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_gain_budget_gate_relative_change": zero,
             "gdn2_gain_budget_fp32_numerical_certificate": zero,
             "gdn2_gain_budget_low_precision_tolerance_path": zero,
+            "gdn2_fast_slow_enabled": zero,
+            "gdn2_fast_slow_rho_mean": zero,
+            "gdn2_fast_slow_rho_min": zero,
+            "gdn2_fast_slow_rho_max": zero,
+            "gdn2_fast_slow_current_weight": x.new_ones(()),
+            "gdn2_fast_slow_lag_mass": zero,
+            "gdn2_fast_slow_raw_hazard_mean": zero,
+            "gdn2_fast_slow_effective_hazard_mean": zero,
+            "gdn2_fast_slow_raw_tv": zero,
+            "gdn2_fast_slow_effective_tv": zero,
+            "gdn2_fast_slow_tv_ratio": x.new_ones(()),
+            "gdn2_fast_slow_relative_change": zero,
+            "gdn2_fast_slow_alpha_mean": x.new_ones(()),
         }
         return y, terminal_state
 
@@ -2114,6 +2326,10 @@ class FLADeltaBlock(nn.Module):
         gdn2_gain_budget_step_cap: float = 1.0,
         gdn2_gain_budget_sigma_cap_max: float = 3.0,
         gdn2_gain_budget_infeasible_policy: str = "raise",
+        gdn2_fast_slow_decay_mode: str = "none",
+        gdn2_fast_slow_decay_kernel_size: int = 4,
+        gdn2_fast_slow_decay_rho_init: float = 0.10,
+        gdn2_fast_slow_decay_current_weight_init: float = 0.85,
     ) -> None:
         super().__init__()
         self.ln_time = nn.LayerNorm(d_model)
@@ -2133,6 +2349,12 @@ class FLADeltaBlock(nn.Module):
             gain_budget_step_cap=gdn2_gain_budget_step_cap,
             gain_budget_sigma_cap_max=gdn2_gain_budget_sigma_cap_max,
             gain_budget_infeasible_policy=gdn2_gain_budget_infeasible_policy,
+            fast_slow_decay_mode=gdn2_fast_slow_decay_mode,
+            fast_slow_decay_kernel_size=gdn2_fast_slow_decay_kernel_size,
+            fast_slow_decay_rho_init=gdn2_fast_slow_decay_rho_init,
+            fast_slow_decay_current_weight_init=(
+                gdn2_fast_slow_decay_current_weight_init
+            ),
         )
         self.channel_mix = ChannelMix(d_model, channel_mult)
         self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
@@ -2186,6 +2408,10 @@ class FutureSeedRWKV(nn.Module):
         gdn2_gain_budget_step_cap: float = 1.0,
         gdn2_gain_budget_sigma_cap_max: float = 3.0,
         gdn2_gain_budget_infeasible_policy: str = "raise",
+        gdn2_fast_slow_decay_mode: str = "none",
+        gdn2_fast_slow_decay_kernel_size: int = 4,
+        gdn2_fast_slow_decay_rho_init: float = 0.10,
+        gdn2_fast_slow_decay_current_weight_init: float = 0.85,
     ) -> None:
         super().__init__()
         if layers < 2:
@@ -2326,6 +2552,16 @@ class FutureSeedRWKV(nn.Module):
                         gdn2_gain_budget_step_cap=gdn2_gain_budget_step_cap,
                         gdn2_gain_budget_sigma_cap_max=gdn2_gain_budget_sigma_cap_max,
                         gdn2_gain_budget_infeasible_policy=gdn2_gain_budget_infeasible_policy,
+                        gdn2_fast_slow_decay_mode=gdn2_fast_slow_decay_mode,
+                        gdn2_fast_slow_decay_kernel_size=(
+                            gdn2_fast_slow_decay_kernel_size
+                        ),
+                        gdn2_fast_slow_decay_rho_init=(
+                            gdn2_fast_slow_decay_rho_init
+                        ),
+                        gdn2_fast_slow_decay_current_weight_init=(
+                            gdn2_fast_slow_decay_current_weight_init
+                        ),
                     )
                 )
         self.blocks = nn.ModuleList(blocks)
@@ -3198,9 +3434,17 @@ def load_training_checkpoint(
         ".time_mix.g_proj_extra.weight",
         ".time_mix.o_proj_extra.weight",
     )
+    fast_slow_suffixes = (
+        ".time_mix.fast_slow_decay.kernel_logits",
+        ".time_mix.fast_slow_decay.rho_logit",
+    )
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
-        key for key in missing if key not in allowed_missing and not key.endswith(progressive_suffixes)
+        key
+        for key in missing
+        if key not in allowed_missing
+        and not key.endswith(progressive_suffixes)
+        and not key.endswith(fast_slow_suffixes)
     ]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
     if bad_missing or bad_unexpected:
@@ -3332,6 +3576,10 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_gain_budget_step_cap: float = 1.0,
         gdn2_gain_budget_sigma_cap_max: float = 3.0,
         gdn2_gain_budget_infeasible_policy: str = "raise",
+        gdn2_fast_slow_decay_mode: str = "none",
+        gdn2_fast_slow_decay_kernel_size: int = 4,
+        gdn2_fast_slow_decay_rho_init: float = 0.10,
+        gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
     ) -> None:
@@ -3392,6 +3640,12 @@ class FutureSeedLoopSudoku(nn.Module):
             gdn2_gain_budget_step_cap=gdn2_gain_budget_step_cap,
             gdn2_gain_budget_sigma_cap_max=gdn2_gain_budget_sigma_cap_max,
             gdn2_gain_budget_infeasible_policy=gdn2_gain_budget_infeasible_policy,
+            gdn2_fast_slow_decay_mode=gdn2_fast_slow_decay_mode,
+            gdn2_fast_slow_decay_kernel_size=gdn2_fast_slow_decay_kernel_size,
+            gdn2_fast_slow_decay_rho_init=gdn2_fast_slow_decay_rho_init,
+            gdn2_fast_slow_decay_current_weight_init=(
+                gdn2_fast_slow_decay_current_weight_init
+            ),
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -4048,6 +4302,23 @@ def fs_line(m: Dict[str, float]) -> str:
             "gain_delta_err="
             f"{m.get('gdn2_gain_budget_delta_error_max', 0.0):.1e}"
         )
+    if "gdn2_fast_slow_enabled" in m:
+        parts.append(
+            f"slow_decay={m.get('gdn2_fast_slow_enabled', 0.0):.0f}"
+        )
+        parts.append(
+            "slow_rho/lag="
+            f"{m.get('gdn2_fast_slow_rho_mean', 0.0):.3f}/"
+            f"{m.get('gdn2_fast_slow_lag_mass', 0.0):.3f}"
+        )
+        parts.append(
+            "slow_tv="
+            f"{m.get('gdn2_fast_slow_raw_tv', 0.0):.4f}->"
+            f"{m.get('gdn2_fast_slow_effective_tv', 0.0):.4f}"
+        )
+        parts.append(
+            f"slow_change={m.get('gdn2_fast_slow_relative_change', 0.0):.4f}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -4215,6 +4486,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn2_gain_budget_step_cap=args.gdn2_gain_budget_step_cap,
         gdn2_gain_budget_sigma_cap_max=args.gdn2_gain_budget_sigma_cap_max,
         gdn2_gain_budget_infeasible_policy=args.gdn2_gain_budget_infeasible_policy,
+        gdn2_fast_slow_decay_mode=args.gdn2_fast_slow_decay_mode,
+        gdn2_fast_slow_decay_kernel_size=args.gdn2_fast_slow_decay_kernel_size,
+        gdn2_fast_slow_decay_rho_init=args.gdn2_fast_slow_decay_rho_init,
+        gdn2_fast_slow_decay_current_weight_init=(
+            args.gdn2_fast_slow_decay_current_weight_init
+        ),
     )
     if args.shared_shell_init_seed >= 0:
         model.reset_shared_shell_parameters(args.shared_shell_init_seed)
@@ -4317,6 +4594,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_gain_budget_step_bound_max = 0.0
     last_gain_budget_delta_error_max = 0.0
     last_gain_budget_gate_relative_change = 0.0
+    last_fast_slow_diag = {
+        key: 0.0 for key in FAST_SLOW_TRAIN_KEYS
+    }
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -4365,10 +4645,25 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             expected_args=args if args.resume_require_exact_state else None,
         )
         migration = checkpoint.get("_load_migration", {})
+        expected_fast_slow_insertions = {
+            name
+            for name, _parameter in model.named_parameters()
+            if ".time_mix.fast_slow_decay." in name
+        }
+        migrated_missing = set(migration.get("missing_parameters", []))
+        declared_fast_slow_migration = (
+            bool(expected_fast_slow_insertions)
+            and migrated_missing == expected_fast_slow_insertions
+            and not migration.get("unexpected_parameters")
+            and migration.get("optimizer_groups_expanded") is True
+        )
         if args.resume_require_exact_state and (
-            migration.get("missing_parameters")
-            or migration.get("unexpected_parameters")
-            or migration.get("optimizer_groups_expanded")
+            (
+                migration.get("missing_parameters")
+                or migration.get("unexpected_parameters")
+                or migration.get("optimizer_groups_expanded")
+            )
+            and not declared_fast_slow_migration
         ):
             raise RuntimeError(
                 "Exact checkpoint resume required, but migration was needed: "
@@ -4421,6 +4716,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         last_gain_budget_gate_relative_change = float(
             last_metrics.get("gain_budget_gate_relative_change", 0.0)
         )
+        saved_fast_slow_diag = last_metrics.get("fast_slow_decay", {})
+        if isinstance(saved_fast_slow_diag, dict):
+            last_fast_slow_diag = {
+                key: float(saved_fast_slow_diag.get(key, 0.0))
+                for key in FAST_SLOW_TRAIN_KEYS
+            }
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -4482,6 +4783,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_gain_budget_step_bound_max = 0.0
             accum_gain_budget_delta_error_max = 0.0
             accum_gain_budget_gate_relative_change = 0.0
+            accum_fast_slow_diag = {
+                key: 0.0 for key in FAST_SLOW_TRAIN_KEYS
+            }
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
                     args,
@@ -4652,6 +4956,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         .detach()
                         .cpu()
                     )
+                    for key in FAST_SLOW_TRAIN_KEYS:
+                        accum_fast_slow_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
@@ -4698,6 +5011,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_gain_budget_gate_relative_change = (
                 accum_gain_budget_gate_relative_change / float(accum_count)
             )
+            last_fast_slow_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_fast_slow_diag.items()
+            }
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -4720,6 +5037,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"gb_bound={last_gain_budget_step_bound_max:.6f} "
                     f"gb_delta={last_gain_budget_delta_error_max:.2e} "
                     f"gb_change={last_gain_budget_gate_relative_change:.4f} "
+                    f"slow_rho={last_fast_slow_diag['gdn2_fast_slow_rho_mean']:.4f} "
+                    f"slow_lag={last_fast_slow_diag['gdn2_fast_slow_lag_mass']:.4f} "
+                    f"slow_tv={last_fast_slow_diag['gdn2_fast_slow_tv_ratio']:.4f} "
+                    f"slow_change={last_fast_slow_diag['gdn2_fast_slow_relative_change']:.4f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -4763,6 +5084,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
+                        "fast_slow_decay": dict(last_fast_slow_diag),
                     },
                     "eval_by_holes": {},
                 }
@@ -4842,6 +5164,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
                             "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                             "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
+                            "fast_slow_decay": dict(last_fast_slow_diag),
                         },
                         reason="eval_checkpoint",
                     )
@@ -4900,6 +5223,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
+                        "fast_slow_decay": dict(last_fast_slow_diag),
                     },
                     reason="periodic",
                 )
@@ -4976,6 +5300,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gain_budget_step_bound_max": last_gain_budget_step_bound_max,
         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
+        "fast_slow_decay": dict(last_fast_slow_diag),
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "optimizer_steps": total_steps,
@@ -4999,6 +5324,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn2_gain_budget_step_cap": args.gdn2_gain_budget_step_cap,
         "gdn2_gain_budget_sigma_cap_max": args.gdn2_gain_budget_sigma_cap_max,
         "gdn2_gain_budget_infeasible_policy": args.gdn2_gain_budget_infeasible_policy,
+        "gdn2_fast_slow_decay_mode": args.gdn2_fast_slow_decay_mode,
+        "gdn2_fast_slow_decay_kernel_size": args.gdn2_fast_slow_decay_kernel_size,
+        "gdn2_fast_slow_decay_rho_init": args.gdn2_fast_slow_decay_rho_init,
+        "gdn2_fast_slow_decay_current_weight_init": (
+            args.gdn2_fast_slow_decay_current_weight_init
+        ),
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
         "resume_train_checkpoint": resume_info,
@@ -6316,6 +6647,31 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         and not args.fla_strict_official
     ):
         raise ValueError("Gain-Budget requires --fla_strict_official")
+    if (
+        args.gdn2_fast_slow_decay_mode != "none"
+        and args.backbone != "gdn2"
+    ):
+        raise ValueError("--gdn2_fast_slow_decay_mode requires --backbone gdn2")
+    if (
+        args.gdn2_fast_slow_decay_mode != "none"
+        and args.gdn2_gain_budget_mode != "none"
+    ):
+        raise ValueError("Fast-Slow decay and Gain-Budget cannot be enabled together")
+    if (
+        args.gdn2_fast_slow_decay_mode != "none"
+        and not args.fla_strict_official
+    ):
+        raise ValueError("Fast-Slow decay requires --fla_strict_official")
+    if args.gdn2_fast_slow_decay_kernel_size < 1:
+        raise ValueError("--gdn2_fast_slow_decay_kernel_size must be positive")
+    if not (0.0 < args.gdn2_fast_slow_decay_rho_init < 1.0):
+        raise ValueError("--gdn2_fast_slow_decay_rho_init must be in (0, 1)")
+    if not (
+        0.0 < args.gdn2_fast_slow_decay_current_weight_init <= 1.0
+    ):
+        raise ValueError(
+            "--gdn2_fast_slow_decay_current_weight_init must be in (0, 1]"
+        )
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -6394,6 +6750,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"future_seed_readout_hop={args.future_seed_readout_hop} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
+        f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
     )
@@ -6600,6 +6957,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn2_gain_budget_step_cap": args.gdn2_gain_budget_step_cap,
         "gdn2_gain_budget_sigma_cap_max": args.gdn2_gain_budget_sigma_cap_max,
         "gdn2_gain_budget_infeasible_policy": args.gdn2_gain_budget_infeasible_policy,
+        "gdn2_fast_slow_decay_mode": args.gdn2_fast_slow_decay_mode,
+        "gdn2_fast_slow_decay_kernel_size": args.gdn2_fast_slow_decay_kernel_size,
+        "gdn2_fast_slow_decay_rho_init": args.gdn2_fast_slow_decay_rho_init,
+        "gdn2_fast_slow_decay_current_weight_init": (
+            args.gdn2_fast_slow_decay_current_weight_init
+        ),
         "fla_strict_official": bool(args.fla_strict_official),
         "fla_runtime": train_stats.get("fla_runtime", {"strict": False}),
         "forward_dtype": args.forward_dtype,
@@ -6813,6 +7176,18 @@ def parse_args() -> argparse.Namespace:
         "--gdn2_gain_budget_infeasible_policy",
         choices=("raise", "relax"),
         default="raise",
+    )
+    p.add_argument(
+        "--gdn2_fast_slow_decay_mode",
+        choices=FAST_SLOW_DECAY_MODES,
+        default="none",
+    )
+    p.add_argument("--gdn2_fast_slow_decay_kernel_size", type=int, default=4)
+    p.add_argument("--gdn2_fast_slow_decay_rho_init", type=float, default=0.10)
+    p.add_argument(
+        "--gdn2_fast_slow_decay_current_weight_init",
+        type=float,
+        default=0.85,
     )
     p.add_argument("--fla_strict_official", action="store_true")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")

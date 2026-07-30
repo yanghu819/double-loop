@@ -11,6 +11,21 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
+Current update (2026-07-30 15:40 CST): `P-FSMC-001` is the single approved
+Fast-Slow Memory Control probe. The mechanism hypothesis is that tokenwise
+GDN2 decay changes too abruptly and repeatedly clears useful recurrent state.
+The candidate applies a learned positive causal K=4 low-pass only to the
+forgetting hazard `-log(alpha)`; current-token erase and write gates remain
+untouched. A matched `external_identity` arm traverses the same explicit
+official FLA GDN2 wrapper and adds the same parameters, but returns raw decay
+unchanged. Both arms resume the frozen strict-official GDN2+FutureSeed1
+step9000 checkpoint and train exactly 100 steps on one seed. First require
+FIR causality/range/gradient tests, official GDN2 output/state/backward parity,
+full-stack checkpoint smokes, and `<=20%` systems overhead. Accept only if
+hard 51-64 exact improves under the preregistered score gate and decay
+temporal variation falls measurably (`TV ratio <=0.995`); otherwise close decay smoothing
+without a K/rho/seed/LR/loss sweep.
+
 Current update (2026-07-30 01:27 CST): `P-GAIN-001` is discarded. It asked
 whether GDN2's channel-wise erase gate is spending
 decay on useful forgetting or on non-normal one-step amplification. The
@@ -103,6 +118,7 @@ gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-FSMC-001 | approved | GDN2 的逐 token forgetting hazard 若变化过快，会反复清掉仍有用的状态；让 forgetting 形成一个慢时间尺度、同时保留 erase/write 的当前 token 快路径，可能提高 51-64 blanks 的全盘闭合。 | 在每层官方 GDN2 gate 预计算后，对 `hazard=-log_decay` 做 per-head K=4 正权归一化 causal FIR，再以 learnable `rho` 与 raw hazard 凸组合。recurrent/chunk kernel、rank-1 update、FutureSeed、loss/data/loop 全不变。matched control 使用同 wrapper/参数/FIR计算但 identity 输出。Frozen step9000 单 seed续到9100。 | GPU1 A800 80GB only；禁止GPU2和CPU模型smoke | preflight + 2x100 steps，约30分钟有效GPU时间 | 候选 hazard TV ratio `<=0.995`、系统开销`<=20%`，且hard三档mean exact `>=+0.01`并无单档低于`-0.01`，或56-64任一`>=+0.02`且51-55不低于`-0.01`。失败即关闭，不扫K/rho/seed/LR/loss。 | Pending. |
 | P-GAIN-001 | discarded | GDN2 erase-gate anisotropy may spend decay on harmful transient gain; preserving weighted erase strength while compressing only anisotropy could improve late-loop closure. | Strict decay-funded `c=1` projection around official FLA GDN2, with matched external-normalization identity control, exact checkpoint resume, one seed, and pre-registered mathematical/CUDA/systems/quality gates. | GPU1 A800 80GB only; GPU2 and CPU model smoke forbidden | stopped at strict preflight | Candidate overhead `<=20%`, then hard-range exact and loop-gain gates; any failure closes the direction without a cap/seed/LR/loss/length sweep. | Discarded. Exact SHA `e4c929dd` passed 24/24 math and every official FLA CUDA correctness gate, but stable time/memory overhead was `+32.14%/+18.49%`, so formal training was not launched. Same-semantics n=8 smoke clipped `99.996%` of rows, forced `56.40%` to the isotropic endpoint, retained mean anisotropy scale `0.019`, and changed paired 51-55 loop5 exact `0.625->0.125`. Strict `c=1` is an expensive, destructive constraint rather than a useful stabilizer. |
 | P-FS2-005 | discarded | 旧 state 跨更多层可能仍含有未来信息，但 raw state 属于 producer 的 Q/K/V 坐标，直接交给远层解释会重复 P-FS2-001/004 的坐标错误。若先让 producer 用自己的 query/output 把 terminal state 读回共享 hidden space，再做两层 skip，应能扩大 FutureSeed depth radius 而不破坏基线。 | 保留完整 FS1 adjacent initial-state path。在 layer `l>=2`，用 layer `l-2` 的官方 GDN2 `q_proj + native state read + gated RMSNorm + o_proj` 产生 hidden residual；每条 two-hop edge 只新增一个零初始化 scalar，起点 bit-exact。Frozen step9000 单 seed续到9100，contract验证 readout direct formula/zero-init identity/gradient/official FLA no-fallback。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-29 13:09-13:35 CST；contract、2-step smoke、唯一100-step formal | hard mean `>=+0.01` 且61-64不退，或56-60/61-64任一`>=+0.02`且51-55退化`<=0.01`；overhead `<20%`；必须有后期净修正。失败即关闭 compatible two-hop readout，不扫hop/scale/seed/LR/loss/时长。 | Integrity全过：zero-init/readout公式max abs均`0`，官方FLA GDN2/Triton/no-fallback通过，新增8参数且scale梯度`0.1253`。机制学活（scale=`0.01697`，loop1-5 residual RMS=`0.157/0.391/0.560/0.531/0.513`），但mixed loop5 `0.2520->0.2363`；official51-55/56-60/61-64=`0.3672/0.1309/0.1973 -> 0.3594/0.1367/0.1719`，hard mean delta=`-0.0091`。train CE相同但时间`659.9->821.5s`（`+24.5%`）。共享case显示一题改善、一题停止闭合、一题多花一轮；拒绝跨层radius扩展，不扫hop/scale/seed/LR/loss/时长。 |
 | P-FS2-004 | discarded | FutureSeed1 已能跨层提供未来信息，但后续 recurrent call 每次重建每层 state。若 hard Sudoku 的晚期错误来自记忆重建而非 seed 强度不足，那么同一层在下一 call 续用自己的 terminal state，应让 loop 继续修正且避开跨层坐标不匹配。 | 新增 `future_seed_scope=block`：第一次 call 与 canonical FS1 bit-exact；此后每层只接自己上一 call 的 terminal state，经现有 unit normalization/head gate 注入。无新参数、gate、loss、noise或任务规则。Frozen strict GDN2+FS1 step9000 单 seed续训到9100；先过GPU contract和2-step full-stack。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-29 12:25 CST；contract、2-step smoke、100-step formal | 61-64 exact `>=0.2173`，hard mean `>=0.2418`，51-55不低于`0.3572`；必须有后期净修正。失败即关闭简单state复用，不扫混合系数/seed/LR/loss/时长。 | Strict contract exact：first pass/state routing max abs均`0`，官方FLA GDN2/Triton/no-fallback通过；参数不变。第一轮能力几乎不变，mixed loop1 control/block=`0.0234/0.0215`，但loop5=`0.2520/0.0195`；official51-55/56-60/61-64从`0.3672/0.1309/0.1973`全部掉到`0`。共享case错误数 control `17->4->1->1->1`，block `18->13->13->13->14`。结论：raw terminal state不是兼容的下一macro-step seed；关闭简单block memory，不续训、不扫blend/gate/decay。 |

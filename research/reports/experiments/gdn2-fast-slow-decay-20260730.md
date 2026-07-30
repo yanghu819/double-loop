@@ -88,7 +88,8 @@ All caches, wheels, models, runs, and artifacts remain under
 2. Exact pinned official FLA GDN2 source and wheel file tree, with backend
    dispatch disabled and the physical CUDA UUID bound to AIStation GPU1.
 3. Official output/state and input/state/core-gradient parity for the external
-   identity wrapper.
+   identity wrapper, both without an initial state and with a FutureSeed-like
+   initial state.
 4. Candidate backward traverses `ChunkGDN2FunctionBackward`; controller,
    input, and initial-state gradients are finite and nonzero.
 5. Production-shape warmed time and peak-memory overhead at most 20% versus

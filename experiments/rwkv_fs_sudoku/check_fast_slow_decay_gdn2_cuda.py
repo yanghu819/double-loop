@@ -71,8 +71,13 @@ def build_mixer(mode: str, device: torch.device) -> FLADeltaTimeMix:
     ).to(device)
 
 
-def check_identity(device: torch.device) -> dict[str, Any]:
-    torch.manual_seed(7301)
+def check_identity_case(
+    device: torch.device,
+    *,
+    seed: int,
+    with_initial_state: bool,
+) -> dict[str, Any]:
+    torch.manual_seed(seed)
     official = build_mixer("none", device)
     identity = build_mixer("external_identity", device)
     identity.core.load_state_dict(official.core.state_dict(), strict=True)
@@ -80,10 +85,14 @@ def check_identity(device: torch.device) -> dict[str, Any]:
     identity.train()
     x_official = torch.randn(2, 81, 64, device=device, requires_grad=True)
     x_identity = x_official.detach().clone().requires_grad_(True)
-    state_official = (
-        torch.randn(2, 4, 16, 16, device=device, dtype=torch.float32) * 0.05
-    ).requires_grad_(True)
-    state_identity = state_official.detach().clone().requires_grad_(True)
+    state_official = None
+    state_identity = None
+    if with_initial_state:
+        state_official = (
+            torch.randn(2, 4, 16, 16, device=device, dtype=torch.float32)
+            * 0.05
+        ).requires_grad_(True)
+        state_identity = state_official.detach().clone().requires_grad_(True)
 
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         y_official, h_official = official(
@@ -118,13 +127,18 @@ def check_identity(device: torch.device) -> dict[str, Any]:
         identity.core.b_proj.weight,
         identity.core.w_proj.weight,
     ]
+    official_inputs = [x_official, *official_parameters]
+    identity_inputs = [x_identity, *identity_parameters]
+    if state_official is not None and state_identity is not None:
+        official_inputs.insert(1, state_official)
+        identity_inputs.insert(1, state_identity)
     grads_official = torch.autograd.grad(
         loss_official,
-        [x_official, state_official, *official_parameters],
+        official_inputs,
     )
     grads_identity = torch.autograd.grad(
         loss_identity,
-        [x_identity, state_identity, *identity_parameters],
+        identity_inputs,
     )
     gradient_errors = [
         max_abs(left, right)
@@ -135,6 +149,7 @@ def check_identity(device: torch.device) -> dict[str, Any]:
         "state_max_abs": state_error,
         "gradient_max_abs": max(gradient_errors),
         "gradient_errors": gradient_errors,
+        "with_initial_state": with_initial_state,
         "identity_enabled": float(
             identity.last_gain_budget_diag["gdn2_fast_slow_enabled"].item()
         ),
@@ -149,8 +164,23 @@ def check_identity(device: torch.device) -> dict[str, Any]:
     return result
 
 
+def check_identity(device: torch.device) -> dict[str, Any]:
+    return {
+        "without_initial_state": check_identity_case(
+            device,
+            seed=7301,
+            with_initial_state=False,
+        ),
+        "with_initial_state": check_identity_case(
+            device,
+            seed=7302,
+            with_initial_state=True,
+        ),
+    }
+
+
 def check_candidate(device: torch.device) -> dict[str, Any]:
-    torch.manual_seed(7302)
+    torch.manual_seed(7303)
     candidate = build_mixer("positive_causal", device)
     candidate.train()
     x = torch.randn(2, 81, 64, device=device, requires_grad=True)
@@ -228,7 +258,7 @@ def timed_step(
 
 
 def check_benchmark(device: torch.device) -> dict[str, Any]:
-    torch.manual_seed(7303)
+    torch.manual_seed(7304)
     control = FLADeltaTimeMix(
         192,
         6,

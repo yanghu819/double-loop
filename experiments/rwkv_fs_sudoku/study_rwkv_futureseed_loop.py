@@ -153,6 +153,8 @@ RWKV7_OFFICIAL_KERNEL_PATH = "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu"
 RWKV7_STATEPASSING_CUDA_SHA256 = "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
 GAIN_BUDGET_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
 GAIN_BUDGET_WHEEL_SHA256 = "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
+GDN2_ADDRESS_MODES = ("none", "position_qk")
+CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
 def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
@@ -179,6 +181,57 @@ def configure_sudoku(size: int, box_rows: int, box_cols: int) -> None:
         for bc in range(0, N, BOX_COLS)
     ]
     UNITS = ROWS + COLS + BOXES
+
+
+def normalize_cell_order(
+    cell_order: Optional[torch.Tensor],
+    *,
+    cells: int,
+    device: torch.device,
+) -> Optional[torch.Tensor]:
+    if cell_order is None:
+        return None
+    order = cell_order.to(device=device, dtype=torch.long)
+    if order.ndim != 1 or order.numel() != cells:
+        raise ValueError(
+            f"cell_order must be a 1D permutation of {cells} cells, got {tuple(order.shape)}"
+        )
+    expected = torch.arange(cells, device=device)
+    if not torch.equal(order.sort().values, expected):
+        raise ValueError("cell_order must contain every canonical cell exactly once")
+    return order
+
+
+def restore_canonical_cell_order(
+    sequence_tensor: torch.Tensor,
+    cell_order: Optional[torch.Tensor],
+) -> torch.Tensor:
+    if cell_order is None:
+        return sequence_tensor
+    inverse = torch.empty_like(cell_order)
+    inverse[cell_order] = torch.arange(cell_order.numel(), device=cell_order.device)
+    return sequence_tensor.index_select(1, inverse)
+
+
+def training_cell_order(
+    *,
+    mode: str,
+    seed: int,
+    global_step: int,
+    accumulation_index: int,
+    device: torch.device,
+) -> Optional[torch.Tensor]:
+    if mode == "row_major":
+        return None
+    if mode != "random":
+        raise ValueError(f"Unknown cell-order training mode: {mode}")
+    generator = torch.Generator(device="cpu")
+    generator.manual_seed(
+        int(seed)
+        + 1_000_003 * int(global_step)
+        + 10_007 * int(accumulation_index)
+    )
+    return torch.randperm(CELLS, generator=generator).to(device=device)
 
 
 configure_sudoku(N, BOX_ROWS, BOX_COLS)
@@ -416,64 +469,37 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         )
         if core.use_short_conv and set(conv_backends.values()) != {"triton"}:
             raise RuntimeError(f"Layer {layer_idx} changed short-conv backend: {conv_backends}")
+        time_mix = getattr(block, "time_mix", None)
+        address_mode = getattr(time_mix, "address_mode", "none")
+        fast_slow_mode = getattr(time_mix, "fast_slow_decay_mode", "none")
+        gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
+        if address_mode == "position_qk":
+            execution_path = "canonical_position_qk_then_official_gdn2_chunk"
+        elif fast_slow_mode == "positive_causal":
+            execution_path = "positive_causal_hazard_then_official_gdn2_chunk"
+        elif fast_slow_mode == "external_identity":
+            execution_path = "external_identity_hazard_then_official_gdn2_chunk"
+        elif gain_budget_mode == "none":
+            execution_path = "official_layer_forward"
+        elif gain_budget_mode == "external_identity":
+            execution_path = (
+                "external_fp32_normalization_then_bfloat16_"
+                "tolerance_official_gdn2_chunk"
+            )
+        else:
+            execution_path = (
+                "fp32_gain_budget_projected_then_bfloat16_"
+                "tolerance_audited_official_gdn2_chunk"
+            )
         rows.append(
             {
                 "layer": layer_idx,
                 "class": f"{type(core).__module__}.{type(core).__qualname__}",
                 "conv_backends": conv_backends,
-                "gain_budget_mode": getattr(
-                    getattr(block, "time_mix", None),
-                    "gain_budget_mode",
-                    "none",
-                ),
-                "fast_slow_decay_mode": getattr(
-                    getattr(block, "time_mix", None),
-                    "fast_slow_decay_mode",
-                    "none",
-                ),
-                "execution_path": (
-                    "positive_causal_hazard_then_official_gdn2_chunk"
-                    if getattr(
-                        getattr(block, "time_mix", None),
-                        "fast_slow_decay_mode",
-                        "none",
-                    )
-                    == "positive_causal"
-                    else (
-                        "external_identity_hazard_then_official_gdn2_chunk"
-                        if getattr(
-                            getattr(block, "time_mix", None),
-                            "fast_slow_decay_mode",
-                            "none",
-                        )
-                        == "external_identity"
-                        else (
-                            "official_layer_forward"
-                            if getattr(
-                                getattr(block, "time_mix", None),
-                                "gain_budget_mode",
-                                "none",
-                            )
-                            == "none"
-                            else (
-                                (
-                                    "external_fp32_normalization_then_bfloat16_"
-                                    "tolerance_official_gdn2_chunk"
-                                )
-                                if getattr(
-                                    getattr(block, "time_mix", None),
-                                    "gain_budget_mode",
-                                    "none",
-                                )
-                                == "external_identity"
-                                else (
-                                    "fp32_gain_budget_projected_then_bfloat16_"
-                                    "tolerance_audited_official_gdn2_chunk"
-                                )
-                            )
-                        )
-                    )
-                ),
+                "address_mode": address_mode,
+                "gain_budget_mode": gain_budget_mode,
+                "fast_slow_decay_mode": fast_slow_mode,
+                "execution_path": execution_path,
             }
         )
     gain_budget_enabled = any(
@@ -1731,6 +1757,7 @@ class FLADeltaTimeMix(nn.Module):
         fast_slow_decay_kernel_size: int = 4,
         fast_slow_decay_rho_init: float = 0.10,
         fast_slow_decay_current_weight_init: float = 0.85,
+        address_mode: str = "none",
     ) -> None:
         super().__init__()
         if backbone not in {"fla_gdn", "gdn2", "kda"}:
@@ -1767,6 +1794,18 @@ class FLADeltaTimeMix(nn.Module):
             raise ValueError("Fast-Slow decay is restricted to the official GDN2 backbone")
         if fast_slow_decay_mode != "none" and gain_budget_mode != "none":
             raise ValueError("Fast-Slow decay and Gain-Budget cannot be enabled together")
+        if address_mode not in GDN2_ADDRESS_MODES:
+            raise ValueError(
+                f"address_mode must be one of: {', '.join(GDN2_ADDRESS_MODES)}"
+            )
+        if address_mode != "none" and backbone != "gdn2":
+            raise ValueError("Address-payload separation is restricted to GDN2")
+        if address_mode != "none" and (
+            gain_budget_mode != "none" or fast_slow_decay_mode != "none"
+        ):
+            raise ValueError(
+                "Address-payload separation cannot be mixed with Gain-Budget or Fast-Slow decay"
+            )
 
         self.backbone = backbone
         self.heads = int(heads)
@@ -1781,6 +1820,7 @@ class FLADeltaTimeMix(nn.Module):
         self.gain_budget_sigma_cap_max = float(gain_budget_sigma_cap_max)
         self.gain_budget_infeasible_policy = gain_budget_infeasible_policy
         self.fast_slow_decay_mode = fast_slow_decay_mode
+        self.address_mode = address_mode
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -1819,6 +1859,17 @@ class FLADeltaTimeMix(nn.Module):
             if fast_slow_decay_mode != "none"
             else None
         )
+
+    @staticmethod
+    def _zero_address_diag(x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros(())
+        return {
+            "gdn2_address_enabled": zero,
+            "gdn2_address_qk_diag_cosine": zero,
+            "gdn2_address_qk_offdiag_cosine": zero,
+            "gdn2_address_qk_contrast": zero,
+            "gdn2_address_order_displacement": zero,
+        }
 
     def _forward_gain_budget(
         self,
@@ -2036,6 +2087,7 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_fast_slow_tv_ratio": x.new_ones(()),
             "gdn2_fast_slow_relative_change": x.new_zeros(()),
             "gdn2_fast_slow_alpha_mean": x.new_ones(()),
+            **self._zero_address_diag(x),
         }
 
         output_gate = core.g_proj(x).view(
@@ -2153,6 +2205,139 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_gain_budget_fp32_numerical_certificate": zero,
             "gdn2_gain_budget_low_precision_tolerance_path": zero,
             **fast_slow_diag,
+            **self._zero_address_diag(x),
+        }
+
+        output_gate = core.g_proj(x).view(
+            batch_size,
+            seq_len,
+            core.num_v_heads,
+            core.head_v_dim,
+        )
+        o = core.o_norm(o.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
+
+    def _forward_position_qk(
+        self,
+        x: torch.Tensor,
+        *,
+        address: torch.Tensor,
+        cell_order: Optional[torch.Tensor],
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError("Position-addressed Q/K requires the official GDN2 chunk op")
+        if address.shape != x.shape:
+            raise ValueError(
+                f"Canonical address stream shape {tuple(address.shape)} "
+                f"does not match hidden stream {tuple(x.shape)}"
+            )
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = (
+                self._zero_conv_state(x)
+                if initial_state is not None
+                else (None, None, None)
+            )
+            # Q/K are computed in canonical position order, then gathered into
+            # the current traversal. V and all state-edit gates remain content driven.
+            q, _ = core.q_conv1d(
+                x=core.q_proj(address),
+                cache=conv_q,
+                output_final_state=True,
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(address),
+                cache=conv_k,
+                output_final_state=True,
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x),
+                cache=conv_v,
+                output_final_state=True,
+            )
+        else:
+            q = F.silu(core.q_proj(address))
+            k = F.silu(core.k_proj(address))
+            v = F.silu(core.v_proj(x))
+
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        q_canonical = q
+        k_canonical = k
+        if cell_order is not None:
+            q = q.index_select(1, cell_order)
+            k = k.index_select(1, cell_order)
+
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias)
+        b = core.b_proj(x).sigmoid()
+        w = core.w_proj(x).sigmoid()
+        g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        b = b.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+
+        if core.num_v_heads > core.num_heads:
+            groups = core.num_v_heads // core.num_heads
+            q = torch.repeat_interleave(q, groups, dim=-2)
+            k = torch.repeat_interleave(k, groups, dim=-2)
+            g = torch.repeat_interleave(g, groups, dim=-2)
+            b = torch.repeat_interleave(b, groups, dim=-2)
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        operation = (
+            fused_recurrent_gdn2
+            if seq_len <= 64 and not self.training
+            else chunk_gdn2
+        )
+        if operation is None:
+            raise RuntimeError("The required official GDN2 kernel is unavailable")
+        o, terminal_state = operation(
+            q=q,
+            k=k,
+            v=v,
+            g=g,
+            b=b,
+            w=w,
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+
+        with torch.no_grad():
+            q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
+            k_unit = F.normalize(k_canonical[:1].float(), dim=-1)
+            similarity = torch.einsum("bthd,bshd->bhts", q_unit, k_unit)
+            diagonal_sum = similarity.diagonal(dim1=-2, dim2=-1).sum()
+            diagonal_count = core.num_heads * seq_len
+            diagonal_mean = diagonal_sum / max(diagonal_count, 1)
+            offdiag_count = core.num_heads * seq_len * max(seq_len - 1, 1)
+            offdiag_mean = (
+                (similarity.sum() - diagonal_sum) / max(offdiag_count, 1)
+                if seq_len > 1
+                else similarity.new_zeros(())
+            )
+        if cell_order is None or seq_len <= 1:
+            order_displacement = x.new_zeros(())
+        else:
+            canonical = torch.arange(seq_len, device=cell_order.device)
+            order_displacement = (
+                (cell_order - canonical).abs().float().mean() / float(seq_len - 1)
+            ).to(dtype=x.dtype)
+        self.last_gain_budget_diag = {
+            **self._zero_address_diag(x),
+            "gdn2_address_enabled": x.new_ones(()),
+            "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
+            "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
+            "gdn2_address_qk_contrast": (
+                diagonal_mean - offdiag_mean
+            ).detach().to(dtype=x.dtype),
+            "gdn2_address_order_displacement": order_displacement.detach(),
         }
 
         output_gate = core.g_proj(x).view(
@@ -2222,6 +2407,8 @@ class FLADeltaTimeMix(nn.Module):
         x: torch.Tensor,
         *,
         initial_state: Optional[torch.Tensor] = None,
+        address: Optional[torch.Tensor] = None,
+        cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         if not x.is_cuda:
             raise RuntimeError(f"BACKBONE={self.backbone} is CUDA-only; CPU fallback is intentionally disabled.")
@@ -2246,6 +2433,15 @@ class FLADeltaTimeMix(nn.Module):
         if self.fast_slow_decay_mode != "none":
             return self._forward_fast_slow_decay(
                 x,
+                initial_state=initial_state,
+            )
+        if self.address_mode == "position_qk":
+            if address is None:
+                raise ValueError("position_qk address mode requires a canonical address stream")
+            return self._forward_position_qk(
+                x,
+                address=address,
+                cell_order=cell_order,
                 initial_state=initial_state,
             )
 
@@ -2303,6 +2499,7 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_fast_slow_tv_ratio": x.new_ones(()),
             "gdn2_fast_slow_relative_change": zero,
             "gdn2_fast_slow_alpha_mean": x.new_ones(()),
+            **self._zero_address_diag(x),
         }
         return y, terminal_state
 
@@ -2330,6 +2527,7 @@ class FLADeltaBlock(nn.Module):
         gdn2_fast_slow_decay_kernel_size: int = 4,
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
+        gdn2_address_mode: str = "none",
     ) -> None:
         super().__init__()
         self.ln_time = nn.LayerNorm(d_model)
@@ -2355,6 +2553,7 @@ class FLADeltaBlock(nn.Module):
             fast_slow_decay_current_weight_init=(
                 gdn2_fast_slow_decay_current_weight_init
             ),
+            address_mode=gdn2_address_mode,
         )
         self.channel_mix = ChannelMix(d_model, channel_mult)
         self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
@@ -2364,8 +2563,16 @@ class FLADeltaBlock(nn.Module):
         x: torch.Tensor,
         *,
         initial_state: Optional[torch.Tensor] = None,
+        address: Optional[torch.Tensor] = None,
+        cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        time_out, terminal_state = self.time_mix(self.ln_time(x), initial_state=initial_state)
+        normalized_address = self.ln_time(address) if address is not None else None
+        time_out, terminal_state = self.time_mix(
+            self.ln_time(x),
+            initial_state=initial_state,
+            address=normalized_address,
+            cell_order=cell_order,
+        )
         x = x + time_out
         x = x + self.channel_mix(self.ln_channel(x))
         return x, terminal_state
@@ -2412,6 +2619,7 @@ class FutureSeedRWKV(nn.Module):
         gdn2_fast_slow_decay_kernel_size: int = 4,
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
+        gdn2_address_mode: str = "none",
     ) -> None:
         super().__init__()
         if layers < 2:
@@ -2453,6 +2661,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_scope = future_seed_scope
         self.future_seed_readout_hop = int(future_seed_readout_hop)
         self.activation_checkpoint = bool(activation_checkpoint)
+        self.gdn2_address_mode = gdn2_address_mode
         self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
             update_init = min(max(1.0 - self.future_seed_decay, 1e-4), 1.0 - 1e-4)
@@ -2562,6 +2771,7 @@ class FutureSeedRWKV(nn.Module):
                         gdn2_fast_slow_decay_current_weight_init=(
                             gdn2_fast_slow_decay_current_weight_init
                         ),
+                        gdn2_address_mode=gdn2_address_mode,
                     )
                 )
         self.blocks = nn.ModuleList(blocks)
@@ -2571,6 +2781,8 @@ class FutureSeedRWKV(nn.Module):
         x: torch.Tensor,
         *,
         seed_memory: Optional[List[Optional[torch.Tensor]]] = None,
+        address: Optional[torch.Tensor] = None,
+        cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], Optional[List[torch.Tensor]]]:
         expected_seed_count = (
             len(self.blocks) if self.future_seed_scope == "block" else len(self.blocks) - 1
@@ -2859,6 +3071,10 @@ class FutureSeedRWKV(nn.Module):
                         v_first=v_first,
                     )
             elif self.activation_checkpoint and self.training and torch.is_grad_enabled():
+                if address is not None:
+                    raise RuntimeError(
+                        "GDN2 address mode currently forbids activation checkpointing"
+                    )
                 if initial_state is None:
                     x, previous_state = torch_checkpoint(
                         lambda block_input: block(block_input, initial_state=None),
@@ -2874,6 +3090,13 @@ class FutureSeedRWKV(nn.Module):
                         use_reentrant=False,
                         preserve_rng_state=False,
                     )
+            elif isinstance(block, FLADeltaBlock):
+                x, previous_state = block(
+                    x,
+                    initial_state=initial_state,
+                    address=address,
+                    cell_order=cell_order,
+                )
             else:
                 x, previous_state = block(x, initial_state=initial_state)
             assert previous_state is not None
@@ -3250,6 +3473,8 @@ def load_training_checkpoint(
             "gdn_use_short_conv",
             "gdn_conv_size",
             "gdn_allow_neg_eigval",
+            "gdn2_address_mode",
+            "cell_order_train",
             "future_seed_scale",
             "future_seed_decay",
             "future_seed_update",
@@ -3310,6 +3535,8 @@ def load_training_checkpoint(
             "future_seed_gate_mode": "head",
             "future_seed_scope": "layer",
             "future_seed_readout_hop": 0,
+            "gdn2_address_mode": "none",
+            "cell_order_train": "row_major",
         }
         saved_args = checkpoint.get("args")
         if not isinstance(saved_args, dict):
@@ -3580,6 +3807,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_fast_slow_decay_kernel_size: int = 4,
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
+        gdn2_address_mode: str = "none",
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
     ) -> None:
@@ -3611,6 +3839,7 @@ class FutureSeedLoopSudoku(nn.Module):
         self.hidden_agg_noise_mode = hidden_agg_noise_mode
         self.hidden_agg_noise_topk = int(hidden_agg_noise_topk)
         self.hidden_agg_noise_max_norm = float(hidden_agg_noise_max_norm)
+        self.gdn2_address_mode = gdn2_address_mode
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -3646,6 +3875,7 @@ class FutureSeedLoopSudoku(nn.Module):
             gdn2_fast_slow_decay_current_weight_init=(
                 gdn2_fast_slow_decay_current_weight_init
             ),
+            gdn2_address_mode=gdn2_address_mode,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -3735,9 +3965,29 @@ class FutureSeedLoopSudoku(nn.Module):
                 projection = projection / projection.norm(dim=-1, keepdim=True).clamp(min=1e-6)
                 self.scratch_projection.copy_(projection)
 
-    def input_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
+    def input_sequence(
+        self,
+        inputs: torch.Tensor,
+        *,
+        cell_order: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         positions = torch.arange(CELLS, dtype=torch.long, device=inputs.device)
-        return self.embed(inputs) + self.position(positions).unsqueeze(0)
+        if cell_order is None:
+            ordered_inputs = inputs
+            ordered_positions = positions
+        else:
+            ordered_inputs = inputs.index_select(1, cell_order)
+            ordered_positions = cell_order
+        return self.embed(ordered_inputs) + self.position(ordered_positions).unsqueeze(0)
+
+    def canonical_address_sequence(
+        self,
+        *,
+        batch_size: int,
+        device: torch.device,
+    ) -> torch.Tensor:
+        positions = torch.arange(CELLS, dtype=torch.long, device=device)
+        return self.position(positions).unsqueeze(0).expand(batch_size, -1, -1)
 
     def scratch_gaussian_loss(self, residual: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         if self.scratch_projection.numel() == 0:
@@ -3920,8 +4170,15 @@ class FutureSeedLoopSudoku(nn.Module):
         seed_memory: Optional[List[Optional[torch.Tensor]]] = None,
         loop_idx: int = 0,
         stream_idx: int = 0,
+        address: Optional[torch.Tensor] = None,
+        cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], Optional[List[torch.Tensor]]]:
-        updated, diag, next_seed_memory = self.reasoner(hidden + injection, seed_memory=seed_memory)
+        updated, diag, next_seed_memory = self.reasoner(
+            hidden + injection,
+            seed_memory=seed_memory,
+            address=address,
+            cell_order=cell_order,
+        )
         if self.loop_update_logit is None:
             update_gate = hidden.new_tensor(self.lambda_)
         else:
@@ -3963,9 +4220,23 @@ class FutureSeedLoopSudoku(nn.Module):
         feature_buffer: Optional[FeatureNoiseBuffer] = None,
         update_feature_buffer: bool = False,
         feature_buffer_add: int = 2048,
+        cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[List[torch.Tensor], List[Dict[str, torch.Tensor]]]:
-        x = self.input_sequence(inputs)
+        cell_order = normalize_cell_order(
+            cell_order,
+            cells=CELLS,
+            device=inputs.device,
+        )
+        x = self.input_sequence(inputs, cell_order=cell_order)
         batch_size, seq_len, _channels = x.shape
+        address = (
+            self.canonical_address_sequence(
+                batch_size=batch_size,
+                device=inputs.device,
+            )
+            if self.gdn2_address_mode != "none"
+            else None
+        )
         z_h = self.h_init.expand(batch_size, seq_len, -1)
         z_l = self.l_init.expand(batch_size, seq_len, -1)
         feedback: Optional[torch.Tensor] = None
@@ -4006,6 +4277,8 @@ class FutureSeedLoopSudoku(nn.Module):
                     seed_memory=l_seed_memory,
                     loop_idx=loop_idx,
                     stream_idx=0,
+                    address=address,
+                    cell_order=cell_order,
                 )
                 if "loop_update_gate" in l_diag:
                     l_update_gates.append(l_diag["loop_update_gate"])
@@ -4020,9 +4293,12 @@ class FutureSeedLoopSudoku(nn.Module):
                 seed_memory=h_seed_memory,
                 loop_idx=loop_idx,
                 stream_idx=1,
+                address=address,
+                cell_order=cell_order,
             )
             board_h = self.out_norm(z_h[:, :CELLS])
-            logits = self.head(board_h)
+            sequence_logits = self.head(board_h)
+            logits = restore_canonical_cell_order(sequence_logits, cell_order)
             loop_logits.append(logits)
             fs_diag = dict(fs_diag)
             fs_diag["loop_update_gate_h"] = fs_diag.pop("loop_update_gate", zero)
@@ -4036,7 +4312,9 @@ class FutureSeedLoopSudoku(nn.Module):
             scratch, scratch_diag = self.update_scratch(scratch, z_h)
             fs_diag.update(scratch_diag)
             if self.loop_feedback is not None and self.loop_feedback_scale > 0:
-                feedback_probs, feedback_diag = self.feedback_probs_from_logits(logits)
+                feedback_probs, feedback_diag = self.feedback_probs_from_logits(
+                    sequence_logits
+                )
                 feedback = self.loop_feedback(feedback_probs) * self.loop_feedback_scale
                 fs_diag.update(feedback_diag)
                 fs_diag["loop_feedback_next_norm"] = feedback.norm(dim=-1).mean()
@@ -4492,6 +4770,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn2_fast_slow_decay_current_weight_init=(
             args.gdn2_fast_slow_decay_current_weight_init
         ),
+        gdn2_address_mode=args.gdn2_address_mode,
     )
     if args.shared_shell_init_seed >= 0:
         model.reset_shared_shell_parameters(args.shared_shell_init_seed)
@@ -4796,6 +5075,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     rng,
                     device=device,
                 )
+                cell_order = training_cell_order(
+                    mode=args.cell_order_train,
+                    seed=args.seed,
+                    global_step=global_step,
+                    accumulation_index=_accum_idx,
+                    device=device,
+                )
                 with forward_autocast(args.forward_dtype, device):
                     loop_logits, _fs_trace = model.forward_trace(
                         inputs,
@@ -4804,6 +5090,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         feature_buffer=feature_buffer,
                         update_feature_buffer=model.training,
                         feature_buffer_add=args.feature_buffer_add,
+                        cell_order=cell_order,
                     )
                 loop_losses = [
                     loss_from_logits(logits, labels, clue_mask, blank_weight=args.blank_loss_weight)
@@ -5330,6 +5617,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn2_fast_slow_decay_current_weight_init": (
             args.gdn2_fast_slow_decay_current_weight_init
         ),
+        "gdn2_address_mode": args.gdn2_address_mode,
+        "cell_order_train": args.cell_order_train,
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
         "resume_train_checkpoint": resume_info,
@@ -6672,6 +6961,25 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError(
             "--gdn2_fast_slow_decay_current_weight_init must be in (0, 1]"
         )
+    if args.gdn2_address_mode != "none" and args.backbone != "gdn2":
+        raise ValueError("--gdn2_address_mode requires --backbone gdn2")
+    if args.gdn2_address_mode != "none" and not args.fla_strict_official:
+        raise ValueError("--gdn2_address_mode requires --fla_strict_official")
+    if args.gdn2_address_mode != "none" and (
+        args.gdn2_gain_budget_mode != "none"
+        or args.gdn2_fast_slow_decay_mode != "none"
+    ):
+        raise ValueError(
+            "Address-payload separation cannot be mixed with Gain-Budget or Fast-Slow decay"
+        )
+    if args.gdn2_address_mode != "none" and args.activation_checkpoint:
+        raise ValueError(
+            "--gdn2_address_mode currently forbids --activation_checkpoint"
+        )
+    if args.gdn2_address_mode != "none" and args.future_seed_readout_hop > 0:
+        raise ValueError(
+            "--gdn2_address_mode currently forbids compatible FutureSeed readout"
+        )
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -6751,6 +7059,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
+        f"gdn2_address={args.gdn2_address_mode} "
+        f"cell_order_train={args.cell_order_train} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
     )
@@ -6963,6 +7273,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn2_fast_slow_decay_current_weight_init": (
             args.gdn2_fast_slow_decay_current_weight_init
         ),
+        "gdn2_address_mode": args.gdn2_address_mode,
+        "cell_order_train": args.cell_order_train,
         "fla_strict_official": bool(args.fla_strict_official),
         "fla_runtime": train_stats.get("fla_runtime", {"strict": False}),
         "forward_dtype": args.forward_dtype,
@@ -7188,6 +7500,16 @@ def parse_args() -> argparse.Namespace:
         "--gdn2_fast_slow_decay_current_weight_init",
         type=float,
         default=0.85,
+    )
+    p.add_argument(
+        "--gdn2_address_mode",
+        choices=GDN2_ADDRESS_MODES,
+        default="none",
+    )
+    p.add_argument(
+        "--cell_order_train",
+        choices=CELL_ORDER_TRAIN_MODES,
+        default="row_major",
     )
     p.add_argument("--fla_strict_official", action="store_true")
     p.add_argument("--loop_loss", choices=("final", "all", "shaped", "delayed"), default="final")

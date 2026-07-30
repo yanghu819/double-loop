@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-ADDR-001`
-- Status: in progress
+- Status: done
 - Machine: AIStation GPU1, one A800 80GB
 - Source base: `e1d44ec5ffb0af0e487398da1b00ff374fcfe872`
 - Date: 2026-07-30 CST
@@ -46,15 +46,41 @@ a different order.
 
 ## 6. Artifacts
 
-Pending.
+- Remote run:
+  `/huyang2/double-loop/runs/gdn2-cell-order-counterfactual-20260730T0845Z-c430c9b`
+- Local mirror:
+  `runs/gdn2-cell-order-counterfactual-20260730T0845Z-c430c9b`
+- Files: `score.json`, `cases.json`, `index.html`, `run.log`.
+- Probe source SHA: `c430c9b41df807683335d8f230d1e33ffc412dbf`.
 
 ## 7. Results
 
-Pending.
+| traversal | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|
+| row-major | 0.2617 | 0.6970 |
+| reverse | 0.0000 | 0.1339 |
+| column-major | 0.0000 | 0.1277 |
+| box-major | 0.0000 | 0.1839 |
+| fixed-random | 0.0000 | 0.1228 |
+
+- Worst non-row exact delta: `-0.2617`.
+- Worst non-row blank-accuracy delta: `-0.5743`.
+- Paired token-plus-position encoding roundtrip max error: exactly `0`.
+- Runtime: exact official `fla.layers.gdn2.GatedDeltaNet2`, pinned FLA
+  `9c8e42e`, Triton Q/K/V short convolutions, backend dispatch disabled.
 
 ## 8. Conclusion
 
-Pending.
+The model has absolute position information, but it does not use that
+information as an order-independent recurrent address. Traversal order is a
+dominant part of the learned computation. This result authorizes one causal
+mechanism probe that separates position-addressed Q/K from content-driven V
+and gates.
+
+It does **not** yet prove that address entanglement causes the 51-64 blank
+cliff. That stronger claim requires `P-ADDR-002`: the new mechanism must beat
+a matched random-order normal-GDN2 control without sacrificing row-major
+quality.
 
 ## 9. Submission
 

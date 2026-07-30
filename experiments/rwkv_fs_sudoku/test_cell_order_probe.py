@@ -35,6 +35,45 @@ def test_canonicalize_inverts_sequence_permutation() -> None:
         torch.testing.assert_close(restored, source, rtol=0.0, atol=0.0)
 
 
+def test_runner_restore_matches_probe_canonicalization() -> None:
+    source = torch.arange(2 * 81 * 3).reshape(2, 81, 3)
+    for permutation in MODULE.cell_orders(9, 52081).values():
+        sequence = source[:, permutation]
+        restored = MODULE.runner.restore_canonical_cell_order(
+            sequence,
+            permutation,
+        )
+        torch.testing.assert_close(restored, source, rtol=0.0, atol=0.0)
+
+
+def test_random_training_order_is_deterministic_and_step_specific() -> None:
+    first = MODULE.runner.training_cell_order(
+        mode="random",
+        seed=52,
+        global_step=9000,
+        accumulation_index=0,
+        device=torch.device("cpu"),
+    )
+    repeated = MODULE.runner.training_cell_order(
+        mode="random",
+        seed=52,
+        global_step=9000,
+        accumulation_index=0,
+        device=torch.device("cpu"),
+    )
+    next_step = MODULE.runner.training_cell_order(
+        mode="random",
+        seed=52,
+        global_step=9001,
+        accumulation_index=0,
+        device=torch.device("cpu"),
+    )
+    assert first is not None and repeated is not None and next_step is not None
+    torch.testing.assert_close(first, repeated, rtol=0.0, atol=0.0)
+    assert not torch.equal(first, next_step)
+    assert sorted(first.tolist()) == list(range(81))
+
+
 def test_html_accepts_strict_fla_runtime_schema() -> None:
     loop_metrics = {
         "label_exact": 0.1,

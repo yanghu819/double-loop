@@ -120,6 +120,9 @@ def build_model(saved_args: Dict[str, Any]) -> runner.FutureSeedLoopSudoku:
         ),
         gdn2_gain_budget_mode="none",
         gdn2_fast_slow_decay_mode="none",
+        gdn2_address_mode=str(
+            saved_value(saved_args, "gdn2_address_mode", "none")
+        ),
     )
 
 
@@ -182,30 +185,20 @@ def evaluate_order(
 ) -> Dict[str, Any]:
     device = inputs.device
     permutation = permutation.to(device)
-    permuted_inputs = inputs[:, permutation]
-    position_ids = permutation
-
-    def paired_input_sequence(sequence_inputs: torch.Tensor) -> torch.Tensor:
-        if sequence_inputs.shape[1] != position_ids.numel():
-            raise ValueError("Paired order probe received an unexpected sequence length")
-        return model.embed(sequence_inputs) + model.position(position_ids).unsqueeze(0)
-
-    model.input_sequence = paired_input_sequence  # type: ignore[method-assign]
     torch.cuda.reset_peak_memory_stats(device)
     torch.cuda.synchronize(device)
     started = time.perf_counter()
     with runner.forward_autocast(forward_dtype, device):
         sequence_logits, trace = model.forward_trace(
-            permuted_inputs,
+            inputs,
             loops=loops,
             noise_scale=0.0,
+            cell_order=permutation,
         )
     torch.cuda.synchronize(device)
     elapsed = time.perf_counter() - started
 
-    canonical_logits = [
-        canonicalize(logits, permutation).detach().float() for logits in sequence_logits
-    ]
+    canonical_logits = [logits.detach().float() for logits in sequence_logits]
     loop_rows: Dict[str, Any] = {}
     predictions = []
     for loop_idx, logits in enumerate(canonical_logits, start=1):
@@ -214,7 +207,8 @@ def evaluate_order(
         predictions.append(prediction.detach().cpu())
 
     encoded_sequence = (
-        model.embed(permuted_inputs) + model.position(position_ids).unsqueeze(0)
+        model.embed(inputs[:, permutation])
+        + model.position(permutation).unsqueeze(0)
     )
     canonical_encoding = canonicalize(encoded_sequence, permutation)
     reference_encoding = model.embed(inputs) + model.position(

@@ -34,28 +34,27 @@ def positive_causal_hazard_smooth(
     kernel_sum = kernel.sum(dim=-1, keepdim=True)
     normalized = kernel / kernel_sum
     numerator = torch.zeros_like(hazard)
-    denominator = hazard.new_zeros(hazard.shape[0], hazard.shape[1], hazard.shape[2], 1)
-    batch, length, heads, _channels = hazard.shape
-    valid = hazard.new_ones(batch, length, heads, 1)
+    _batch, length, heads, _channels = hazard.shape
+    available_lags = torch.arange(length, device=hazard.device).clamp_max(
+        normalized.shape[1] - 1
+    )
+    denominator = (
+        normalized.cumsum(dim=-1)[:, available_lags]
+        .transpose(0, 1)
+        .view(1, length, heads, 1)
+    )
     for lag in range(normalized.shape[1]):
         if lag == 0:
             shifted_hazard = hazard
-            shifted_valid = valid
         elif lag >= length:
             shifted_hazard = torch.zeros_like(hazard)
-            shifted_valid = torch.zeros_like(valid)
         else:
             shifted_hazard = F.pad(
                 hazard[:, :-lag],
                 (0, 0, 0, 0, lag, 0),
             )
-            shifted_valid = F.pad(
-                valid[:, :-lag],
-                (0, 0, 0, 0, lag, 0),
-            )
         weight = normalized[:, lag].view(1, 1, heads, 1)
         numerator = numerator + shifted_hazard * weight
-        denominator = denominator + shifted_valid * weight
     return numerator / denominator.clamp_min(torch.finfo(hazard.dtype).tiny)
 
 

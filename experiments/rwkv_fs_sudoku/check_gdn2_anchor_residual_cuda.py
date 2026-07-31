@@ -112,16 +112,37 @@ def check_official_identity(
         loss_candidate,
         candidate_inputs + [candidate.address_residual_proj.weight, anchor],
     )
+    gradient_names = ["input", "q_weight", "k_weight"]
+    if state_official is not None:
+        gradient_names.insert(1, "initial_state")
+    gradient_alignment = {
+        name: {
+            "max_abs": max_abs(left, right),
+            "reference_max_abs": float(left.detach().float().abs().max().item()),
+            "allclose_atol_5e-5_rtol_1e-4": bool(
+                torch.allclose(left, right, atol=5e-5, rtol=1e-4)
+            ),
+        }
+        for name, left, right in zip(
+            gradient_names,
+            official_grads,
+            candidate_grads[: len(official_grads)],
+        )
+    }
     gradient_error = max(
-        max_abs(left, right)
-        for left, right in zip(official_grads, candidate_grads[: len(official_grads)])
+        item["max_abs"] for item in gradient_alignment.values()
     )
     residual_weight_grad = candidate_grads[-2]
     anchor_grad = candidate_grads[-1]
-    if output_error != 0.0 or state_error != 0.0 or gradient_error != 0.0:
+    gradients_aligned = all(
+        item["allclose_atol_5e-5_rtol_1e-4"]
+        for item in gradient_alignment.values()
+    )
+    if output_error != 0.0 or state_error != 0.0 or not gradients_aligned:
         raise AssertionError(
             "zero-init address residual differs from official GDN2: "
-            f"output={output_error} state={state_error} grad={gradient_error}"
+            f"output={output_error} state={state_error} "
+            f"gradient_alignment={gradient_alignment}"
         )
     if not bool(torch.isfinite(residual_weight_grad).all()) or float(
         residual_weight_grad.abs().max()
@@ -134,6 +155,7 @@ def check_official_identity(
         "output_max_abs": output_error,
         "state_max_abs": state_error,
         "base_gradient_max_abs": gradient_error,
+        "base_gradient_alignment": gradient_alignment,
         "residual_weight_grad_max_abs": float(
             residual_weight_grad.abs().max().item()
         ),

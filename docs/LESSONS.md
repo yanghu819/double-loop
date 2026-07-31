@@ -1437,6 +1437,36 @@
   increase generic capacity or independent data coverage, not append another
   300 steps to the same state.
 
+## 2026-07-31 GDN2 stable address binding
+
+- GDN2 does not store a separate symbolic key beside each value. Its recurrent
+  matrix is written in K coordinates and later read in Q coordinates. A stable
+  token-plus-position address therefore has to define a usable coordinate
+  system, not merely appear as extra metadata in the hidden state.
+- Parameterization matters. Fixed and learned rotations were active but
+  harmful (`0.1757` and `0.1696` mean hard blank versus normal `0.2037`). A
+  direct Euclidean residual shared by Q and K is the first clean positive:
+  CE `1.9370 -> 1.6845`, mean hard blank `0.2037 -> 0.2844`, and mean
+  loop1-to-loop5 gain changes from `-0.0135` to `+0.0089`.
+- More freedom is not automatically better. Fully independent read/write
+  address maps add twice the address parameters but reach only `0.2313`, trail
+  the shared map by `-0.0531`, and cost `+54.7%` runtime over normal. On a
+  mechanically selected board, shared corrects `34 -> 30` wrong cells while
+  split maps regress `41 -> 44`.
+- The retained interpretation is a shared memory namespace. K writes and Q
+  reads benefit from the same stable address basis; forcing them to learn two
+  bases and their alignment from task loss makes optimization harder. This is
+  generic to recurrent linear attention and does not encode a Sudoku rule.
+- Keep the evidence boundary precise. Shared address binding is a real partial
+  improvement, but every 51-64 blank range still has zero exact. Do not sweep
+  phase, scale, rank, seed, LR, loss, or duration. Test transfer next on matched
+  associative retrieval or language modeling before naming a general GDN3.
+- CUDA equivalence has two contracts. Zero-init output and terminal state are
+  bit-exact, while the pinned BF16/Triton backward can vary across clean
+  processes because of GPU accumulation (`0.0` versus `0.0625` max base-gradient
+  difference in observed runs). Report per-tensor tolerance and reference scale
+  instead of claiming impossible cross-process bit identity.
+
 ## 2026-07-31 KDA occurrence rotary
 
 - Fine-grained decay represents multiple ages but does not automatically

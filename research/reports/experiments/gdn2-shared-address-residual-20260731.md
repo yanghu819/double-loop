@@ -91,11 +91,15 @@ loss, or initialization table. Budget: about 25 minutes on GPU1.
 
 ## 7. Results
 
-CUDA validation passed against pinned official FLA `9c8e42e7`: zero-init
-output/state/base-gradient errors were exactly `0.0` with and without initial
-state; the new weight had a nonzero first-step gradient; active input, anchor,
-state, and weight gradients were finite/nonzero; reorder error was `0.0`; and
-the graph retained `ChunkGDN2FunctionBackward`.
+The original CUDA validation process against pinned official FLA `9c8e42e7`
+reported zero-init output/state/base-gradient errors of exactly `0.0`; the new
+weight had a nonzero first-step gradient; active input, anchor, state, and
+weight gradients were finite/nonzero; reorder error was `0.0`; and the graph
+retained `ChunkGDN2FunctionBackward`. A later clean cross-process regression
+kept output/state exact and localized a `2.956e-5` difference solely to the
+initial-state gradient (reference max `21.25`), consistent with BF16/Triton
+backward accumulation. The checker now reports per-tensor numerical alignment
+instead of overclaiming cross-process bit identity.
 
 | Step9100 metric | Normal GDN2 | Shared address residual | Delta |
 |---|---:|---:|---:|

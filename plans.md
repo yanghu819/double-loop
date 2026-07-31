@@ -11,15 +11,16 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-31 21:02 CST): `P-ABIND-003` is a real but sub-threshold
-positive. Shared direct address residual lowers CE `1.9370->1.6845`, raises
-mean hard blank `0.2037->0.2844` (`+0.0807`), stays within `+19.5%` runtime,
-and improves every range loop1->5. Paired 64-blank b133 corrects `51->44`
-wrong cells while control worsens `55->58`. It misses the preregistered
-`+0.10` primary gate, so no unchanged continuation. `P-ABIND-004` is now the
-sole active mechanism test: decouple only read-address Q and write-address K
-residual projections, matching the key causal freedom in successful pure
-position-Q/K. Do not run duration, width, rank, scalar, seed, LR, or loss tables.
+Current update (2026-07-31 22:18 CST): `P-ABIND-004` is discarded. Fully split
+read/write stable-address maps are active and use more capacity, but mean hard
+blank is only `0.2313`: `+0.0276` over normal and `-0.0531` behind the shared
+map. CE is `1.7730`, mean loop gain only `+0.0027`, runtime overhead `+54.7%`,
+and exact remains zero. Mechanically selected boards show shared correcting
+`34->30` errors while split regresses `41->44`. Do not continue to step9300 or
+sweep rank/scale/seed/LR/loss/duration. Retain `P-ABIND-003`: recurrent K writes
+and Q reads benefit from one stable shared coordinate namespace. The next proof
+must move to a generic retrieval or language task, not another Sudoku address
+parameterization.
 
 Current update (2026-07-31 17:31 CST): address/payload-factorized GDN2 is now an
 explicit retained milestone, recorded in
@@ -235,7 +236,7 @@ gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-ABIND-004 | in-progress | Shared address residual 已给出`+0.0807`和真实loop修正，但强制 read/write 共用一个对称地址映射；pure position-Q/K 使用独立Q/K映射并达到`+0.2296`。若剩余差距来自 read/write address 的非对称性，独立零初始化Q/K residual应跨过主门槛。 | 每层两个无bias `W_addr_q/W_addr_k:D->D`，均zero init；分别加到content Q/K后进入不变official normalization/chunk/Triton。从exact step9000只到9100；同control/data/order/optimizer/FutureSeed/loops。只跑这一 candidate，不续shared、不跑shared-vs-split表外变体。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | CUDA contract + smoke + 100-step gate，约30m | Primary mean hard blank vs normal`>=+0.10`、CE`>=0.20` better、loop correction、overhead`<=25%`; strong mean`>=0.40`。若未超过shared `0.2844`至少`+0.03`，或CE`>1.60`、loop无修正、residual爆炸，立即停。 |
+| P-ABIND-004 | discarded | Shared address residual 已给出`+0.0807`和真实loop修正，但强制 read/write 共用一个对称地址映射；pure position-Q/K 使用独立Q/K映射并达到`+0.2296`。若剩余差距来自 read/write address 的非对称性，独立零初始化Q/K residual应跨过主门槛。 | 每层两个无bias `W_addr_q/W_addr_k:D->D`，均zero init；分别加到content Q/K后进入不变official normalization/chunk/Triton。从exact step9000只到9100；同control/data/order/optimizer/FutureSeed/loops。只跑这一 candidate，不续shared、不跑shared-vs-split表外变体。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract+smoke+100-step gate | Active but negative. CE`1.7730`; mean hard blank`0.2313`, only`+0.0276` vs normal and`-0.0531` vs shared; loop gain`+0.0027`; runtime`+54.7%`; exact0. More capacity does not help. Shared coordinate alignment is the useful bias; stop without continuation/sweep. |
 | P-ABIND-003 | done | 两种 rotation 都已证明“保留 content geometry 再转角度”不是有效地址绑定；pure position-Q/K 的正信号更像来自直接 learned Euclidean address directions。若把 stable anchor 的一个共享零初始化向量直接加到 content Q/K，read/write 应获得一致稳定坐标，同时官方 Q/K normalization 自动控制强度。 | 每层新增无bias `W_address:D->D`，zero init；`a=W_address(LN(anchor))`，`q=q_content+a`,`k=k_content+a` 后进入不变的 official GDN2 chunk/Triton。exact step9000->9100，一个 candidate，同 matched control/data/random-order/optimizer/FutureSeed/loops。只测试 shared residual；不跑 separate-QK/scale/rank/seed/LR/loss表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract+smoke+100-step gate | Weak positive below primary. CE`1.9370->1.6845`; mean hard blank`0.2037->0.2844` (`+0.0807`); all ranges improve loop1->5; b133 errors`51->44`; runtime+19.5%. Misses +0.10 primary, exact0, so no continuation. Retain Euclidean binding insight; test only Q/K decoupling next. |
 | P-ABIND-002 | discarded | `P-ABIND-001` 证明固定 anchor-channel 配对会轻微破坏 semantic address，而 pure position-Q/K 证明 rich learned address projections 很有效。若 `theta` 由 stable anchor 学习生成到每个 head/state plane，则模型能保留 content Q/K，同时自己学会 address-specific memory coordinates。 | 新增零初始化 `W_theta: D -> H*(K/2)`：`theta=pi*tanh(W_theta(LN(anchor)))`，用同一 theta 正交旋转 content Q/K，再调用未改的 official GDN2 chunk kernel。从 exact step9000 parent 只续100步到9100，与已有 matched normal/position-QK/scalar-rotary 比。一个 candidate；不扫 rank/scale/angle/seed/LR/loss。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract + smoke + 100-step gate | Exact official zero-init identity and official chunk backward pass. Phase field active/diverse: mean phase1.02rad, token std0.79, plane std1.16, Q/K change1.00/1.09. Yet CE`1.9370->1.9560`, mean hard blank`0.2037->0.1696` (`-0.0341`), all ranges regress loop1->5; runtime+18.5%. Rotation parameterization rejected, no sweep. |
 | P-ABIND-001 | discarded | GDN2 state 中的 semantic key 没有与稳定输入身份做代数绑定；纯 position-Q/K 证明稳定地址有用但丢失语义。若用零初始化正交旋转把普通 input anchor 绑定到动态 content Q/K，应在保留语言可迁移性的同时减少 key collision。 | 从 exact strict-FLA step9000 GDN2+FutureSeed checkpoint 只跑一个 `anchor_rotary` candidate 到 step9100；同模型/数据/random order/optimizer/seed/loop/FutureSeed/kernel，与已有 normal-GDN2 step9100 control 比。每层只增加每head一个零初始化旋转强度；state、rank-1 update、官方kernel不变。只有 primary signal才原样续到9300。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract + smoke + 100-step gate | CUDA zero-init output/state/gradient all max-abs0 and official chunk backward retained. Operator active at scale0.00984 / phase0.01277, but CE `1.9370->2.0218`, mean hard blank `0.2037->0.1757` (`-0.0279`), runtime `+23.7%`, and all ranges regress loop1->5. Fixed arbitrary phase map corrupts address; discard without sweep. |

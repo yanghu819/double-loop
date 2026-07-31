@@ -1,0 +1,53 @@
+mode=full
+run_dir=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c
+git_sha=eec018cfda8dbd590680a2c1a78059caf94c151b
+git_dirty=0
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+device=cuda torch=2.7.0+cu126 board=9x9 box=3x3 mainline=future_seed_loop backbone=gdn2 rwkv_kernel=auto future_seed_gate_mode=head future_seed_scope=layer future_seed_readout_hop=0 gdn_mode=chunk gdn_progressive_base_expand_v=0.0 gdn2_gain_budget=none gdn2_fast_slow_decay=none gdn2_address=position_qk cell_order_train=random forward_dtype=bfloat16
+checkpoint_eval steps=9300 holes=53,60,64
+resumed_train_checkpoint path=/huyang2/double-loop/models/gdn2-address-position_qk-s9100-20260731T035618Z-4b94220/checkpoints/train_state_step009100.pt step=9100 reason=eval_checkpoint
+[future_seed_loop stage=4:51-64] step=9125 ce=1.1122 total=1.1260 loop1=1.1739 loop_last=1.1122 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9150 ce=1.0276 total=1.0466 loop1=1.1071 loop_last=1.0276 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9175 ce=1.0385 total=1.0571 loop1=1.1170 loop_last=1.0385 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9200 ce=1.0009 total=1.0210 loop1=1.0835 loop_last=1.0009 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[train_checkpoint step=9200] path=/huyang2/double-loop/models/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/checkpoints/train_state_step009200.pt
+[future_seed_loop stage=4:51-64] step=9225 ce=0.9997 total=1.0206 loop1=1.0861 loop_last=0.9997 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9250 ce=1.0007 total=1.0208 loop1=1.0837 loop_last=1.0007 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9275 ce=1.0018 total=1.0204 loop1=1.0798 loop_last=1.0018 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[future_seed_loop stage=4:51-64] step=9300 ce=0.9661 total=0.9885 loop1=1.0555 loop_last=0.9661 exact_margin=0.0000 softmin=0.000 upd_l=0.950 upd_h=0.950 fb_next=0.000 fb_corrupt=0.000 fb_conf=0.000 hagg_norm=0.000 hagg_raw=0.000 hagg_ent=0.000 hagg_maxw=0.000 hagg_clip=0.000 gb_clip=0.0000 gb_infeas=0.0000 gb_endpoint=0.0000 gb_bound=0.000000 gb_delta=0.00e+00 gb_change=0.0000 slow_rho=0.0000 slow_lag=0.0000 slow_tv=0.0000 slow_change=0.0000 scratch_delta=0.000 scratch_gauss=0.0000
+[checkpoint_eval step=9300 holes60] loop5 exact=0.0000 blank=0.4474
+[train_checkpoint step=9300] path=/huyang2/double-loop/models/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/checkpoints/train_state_step009300.pt
+
+full-board metrics
+loop=1 exact=0.0020, valid=0.0020, solved=0.0020, blank_acc=0.4936, early=0.4956, late=0.4917, early_late_gap=+0.0039
+        fs_gate=0.522, fs_update=1.000, fs_state_norm=16.708, fs_decay=0.00, fs_raw_rms=3.162, fs_raw_rms_std=0.162, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.283:0.707, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=2 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5314, early=0.5301, late=0.5296, early_late_gap=+0.0005
+        fs_gate=0.522, fs_update=1.000, fs_state_norm=16.708, fs_decay=0.00, fs_raw_rms=2.582, fs_raw_rms_std=0.175, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.283:0.707, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=3 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5424, early=0.5385, late=0.5449, early_late_gap=-0.0064
+        fs_gate=0.522, fs_update=1.000, fs_state_norm=16.708, fs_decay=0.00, fs_raw_rms=2.445, fs_raw_rms_std=0.174, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.283:0.707, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=4 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5447, early=0.5424, late=0.5464, early_late_gap=-0.0041
+        fs_gate=0.522, fs_update=1.000, fs_state_norm=16.708, fs_decay=0.00, fs_raw_rms=2.397, fs_raw_rms_std=0.174, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.283:0.707, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+loop=5 exact=0.0234, valid=0.0234, solved=0.0234, blank_acc=0.5443, early=0.5418, late=0.5450, early_late_gap=-0.0031
+        fs_gate=0.522, fs_update=1.000, fs_state_norm=16.708, fs_decay=0.00, fs_raw_rms=2.383, fs_raw_rms_std=0.174, fs_norm_gain=1.000, fs_norm_gain_std=0.000, fs2_delta=0.0000, fs2_gate_std=0.0000, fs2_batch_std=0.0000, fs2_feature_std=0.0000, fs2_gate_range=0.283:0.707, fs2_seed_change=0.0000, fs2_block_active=0.0, fs2_block_raw_norm=0.000, fb_in=0.000, fb_next=0.000, loop_time=0.000, upd_l=0.950, upd_h=0.950, scratch_gate=0.000, scratch_decay=0.000, scratch_delta=0.000, scratch_resid=0.000
+
+official sudoku eval split=test eval_n=512 seed=1051
+
+official blank-range metrics
+b51_55 blanks=51-55 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5660, early=0.5695, late=0.5620, early_late_gap=+0.0074
+b56_60 blanks=56-60 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5057, early=0.5109, late=0.5035, early_late_gap=+0.0075
+b61_64 blanks=61-64 n=512 exact=0.0000, valid=0.0000, solved=0.0000, blank_acc=0.5594, early=0.5564, late=0.5604, early_late_gap=-0.0040
+
+case-bank artifacts
+official_b51_55 exact=0.0000 blank_acc=0.5443 selected={'solved_by_loop': 0, 'almost_solved': 1, 'hard_failure': 8}
+  index=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/case_bank/official_b51_55/index.html
+  cases=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/case_bank/official_b51_55/cases.json
+official_b56_60 exact=0.0000 blank_acc=0.5068 selected={'solved_by_loop': 0, 'almost_solved': 4, 'hard_failure': 8}
+  index=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/case_bank/official_b56_60/index.html
+  cases=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/case_bank/official_b56_60/cases.json
+official_b61_64 exact=0.0000 blank_acc=0.5595 selected={'solved_by_loop': 0, 'almost_solved': 0, 'hard_failure': 8}
+  index=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/case_bank/official_b61_64/index.html
+  cases=/huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/case_bank/official_b61_64/cases.json
+Depth loop adds useful full-board refinement.
+wrote /huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/futureseed_loop_seed52.json
+wrote /huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/futureseed_loop_seed52.md
+wrote /huyang2/double-loop/runs/gdn2-address-position_qk-s9300-20260731T041227Z-eec018c/output/futureseed_loop_case_seed52.html

@@ -48,14 +48,15 @@ for scaling to harder spatial reasoning tasks.
   exact at 51-64 blanks.
 - New carrier-side mechanism evidence: under randomized Sudoku cell traversal,
   separating GDN2 memory address from payload raises equal-compute step9100
-  mean official 51-64 blank accuracy from `0.2037` to `0.4333`. Canonical
-  position drives only Q/K; content still drives V and all memory-edit/output
-  gates, with no new parameters or recurrent-kernel change. Candidate-only
-  scaling to step9300 reaches mean blank accuracy `0.5437` and shows real
-  loop correction on matched boards, but official hard exact remains zero.
-  This supports address/payload factorization as a promising FutureSeed carrier,
-  not yet a paper result. A publishable comparison requires both arms at the
-  same total compute.
+  mean official 51-64 blank accuracy from `0.2037` to `0.4333`. At matched
+  step9300 it raises the same metric from `0.2753` to `0.5437` and lowers CE
+  from `1.5707` to `0.9661`. Canonical position drives only Q/K; content still
+  drives V and all memory-edit/output gates, with no new parameters or
+  recurrent-kernel change. On matched 64-blank batch69, normal GDN2 changes
+  `53->50->50->51->51` wrong cells while the split carrier changes
+  `32->21->18->15->15`. This is persistent optimization and loop-correction
+  evidence, but official hard exact remains zero. A paper claim still needs
+  clean matched scaling to convert partial accuracy into global closure.
 - Strong positive: RWKV9 Sudoku with and without FutureSeed, same CUDA
   state-passing backbone and same budget. Without FutureSeed, h12 loop5 exact is
   `0.0156` and early blank cells are much worse than late blank cells. With

@@ -24,7 +24,10 @@ extensions are rejected without hyperparameter sweeps.
 
 The latest generic memory-address tests are documented in
 `gdn2-address-payload-random-order-20260730.md` and
-`kda-occurrence-address-probe-20260730.md`. Canonical-position Q/K substantially
-improves randomly ordered GDN2+FutureSeed training and produces real later-loop
-correction, but official 51-64 exact remains zero. Standard occurrence rotary
-does not make overwritten KDA values queryable and is rejected.
+`gdn2-address-matched-total-compute-20260731.md`. Canonical-position Q/K
+substantially improves randomly ordered GDN2+FutureSeed training and produces
+real later-loop correction. Its mean official hard blank advantage remains
+`+0.2683` at matched step9300, but official 51-64 exact remains zero. The
+separate `kda-occurrence-address-probe-20260730.md` shows that standard
+occurrence rotary does not make overwritten KDA values queryable and is
+rejected.

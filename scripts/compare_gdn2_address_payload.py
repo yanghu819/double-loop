@@ -217,12 +217,32 @@ def render(
     control_step = int(control_train["optimizer_steps"])
     candidate_step = int(candidate_train["optimizer_steps"])
     same_budget = control_step == candidate_step
+    control_mean = sum(row["control_blank_acc"] for row in rows) / len(rows)
+    candidate_mean = sum(row["candidate_blank_acc"] for row in rows) / len(rows)
+    mean_delta = candidate_mean - control_mean
     budget_note = (
         f"same optimizer step {control_step}"
         if same_budget
         else (
             f"shared step9000 parent; control stopped at step{control_step}, "
             f"positive candidate continued to step{candidate_step}"
+        )
+    )
+    comparison_note = (
+        (
+            f"Both arms use the same {control_step} optimizer steps, parameter "
+            "count, data, evaluation cases, and loop budget. The position-Q/K "
+            f"arm improves mean hard-range blank accuracy by {mean_delta:+.4f}. "
+            "Exact remains zero, so the address split removes a substantial "
+            "optimization bottleneck but does not solve global consistency."
+        )
+        if same_budget
+        else (
+            "The position-Q/K arm learns the random-order continuation much "
+            "faster and more than doubles hard-range blank accuracy. Exact "
+            "remains zero, so this is mechanism evidence rather than a solved "
+            "Sudoku result. Because optimizer steps differ, this page is not a "
+            "matched-total-compute quality estimate."
         )
     )
     address_diag = candidate_summary["metrics"]["official_eval_by_blank_range"][
@@ -282,7 +302,7 @@ def render(
 font:15px/1.45 system-ui,sans-serif}} main{{max-width:1500px;margin:auto;padding:24px}}
 h1{{font-size:27px;margin:0 0 6px}} h2{{font-size:20px;margin-top:30px}}
 .decision{{background:#fff;border-left:5px solid #087f5b;padding:14px 18px}}
-.metrics{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}}
+.metrics{{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}}
 .metric{{background:#fff;border:1px solid #d8dde2;padding:12px;border-radius:6px}}
 .metric b{{display:block;font-size:24px}} table{{width:100%;border-collapse:collapse;
 background:#fff}} th,td{{padding:9px;border:1px solid #d8dde2;text-align:left}}
@@ -309,15 +329,13 @@ height:3px;background:#168aad}} code{{background:#e9ecef;padding:2px 4px}}
 </style></head><body><main>
 <h1>Canonical address versus content-entangled GDN2</h1>
 <p class="decision"><b>Mechanism signal, not solved Sudoku.</b><br>
-The position-Q/K arm learns the random-order continuation much faster and more
-than doubles hard-range blank accuracy. Exact remains zero, so the address split
-fixes a substantial optimization bottleneck but not the remaining global
-consistency problem. The equal-compute causal comparison was made separately at
-step9100; this page shows the stopped control against the preregistered positive
-candidate continuation and is not a same-compute quality estimate.</p>
+{html.escape(comparison_note)}</p>
 <div class="metrics">
 <div class="metric"><span>Control step{control_step} train CE</span><b>{control_train['train_ce_loss']:.3f}</b></div>
 <div class="metric"><span>Position-Q/K step{candidate_step} train CE</span><b>{candidate_train['train_ce_loss']:.3f}</b></div>
+<div class="metric"><span>Control mean hard blank acc</span><b>{control_mean:.4f}</b></div>
+<div class="metric"><span>Position-Q/K mean hard blank acc</span><b>{candidate_mean:.4f}</b></div>
+<div class="metric"><span>Mean hard blank acc delta</span><b>{mean_delta:+.4f}</b></div>
 <div class="metric"><span>Matched-case loop correction</span><b>{candidate_loop_gain:+d} cells</b></div>
 <div class="metric"><span>Matched-case final advantage</span><b>{cross_arm_gain:+d} cells</b></div>
 </div>
@@ -358,6 +376,8 @@ def main() -> None:
         candidate_banks["b61_64"],
     )
     rows = metric_rows(control_summary, candidate_summary)
+    control_mean = sum(row["control_blank_acc"] for row in rows) / len(rows)
+    candidate_mean = sum(row["candidate_blank_acc"] for row in rows) / len(rows)
     payload = {
         "control_run": str(args.control_run),
         "candidate_run": str(args.candidate_run),
@@ -368,6 +388,9 @@ def main() -> None:
             candidate_summary["metrics"]["train"]["optimizer_steps"]
         ),
         "metric_rows": rows,
+        "mean_control_blank_acc": control_mean,
+        "mean_candidate_blank_acc": candidate_mean,
+        "mean_delta_blank_acc": candidate_mean - control_mean,
         "selected_batch_index": control_case["batch_index"],
         "selected_control_wrong": {
             loop: wrong(control_case, loop) for loop in LOOPS

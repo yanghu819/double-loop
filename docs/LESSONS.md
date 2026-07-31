@@ -1411,23 +1411,23 @@
 - Keep the evidence boundary precise. Both equal-compute arms still have zero
   exact on every hard range. The mechanism fixes a large optimization problem;
   it does not by itself establish global Sudoku closure.
-- Scaling the positive arm is informative because the slope remains strong.
-  At step9300 mean hard blank accuracy reaches `0.5437`, train CE reaches
-  `0.9661`, and mixed loop1->5 exact changes `0.00195 -> 0.02344`. Official
-  51-64 exact remains zero, so more local correctness is not yet enough.
-- Later loops can become useful after address learning improves. On the same
-  64-blank board, the step9300 candidate changes `37 -> 23 -> 15` wrong cells
-  across loops1/2/5 while the stopped control changes `48 -> 48 -> 49`.
-  The remaining limitation is global consistency after partial correction,
-  not universal loop copying.
-- Never present the step9300 candidate versus step9100 control as matched
-  compute. The causal claim comes from the step9100 pair; the longer candidate
-  shows only a positive conditional scaling slope. A paper-quality follow-up
-  needs both arms trained for the same total compute.
+- The advantage persists at matched total compute. At identical step9300,
+  parameters, data, case hashes, loop budget, and official kernel, mean hard
+  blank accuracy is `0.2753 -> 0.5437` and train CE is
+  `1.5707 -> 0.9661`. The earlier result was not an extra-200-step artifact.
+- Later loops become useful after address learning improves. On matched
+  64-blank batch69, normal GDN2 changes
+  `53 -> 50 -> 50 -> 51 -> 51` wrong cells, while position-Q/K changes
+  `32 -> 21 -> 18 -> 15 -> 15`. Address factorization improves both the
+  initial representation and recurrent correction.
+- Keep the evidence boundary precise. Every separately sampled official
+  51-64 range still has zero exact at step9300. The next bottleneck is global
+  consistency after partial correction, not address binding alone.
 - This direction remains compatible with the bitter lesson: it is a generic,
   parameter-neutral factorization of recurrent address and payload, not a
   Sudoku rule. Continue only with clean data/model/compute scaling and a
-  matched control, not address-mode, loss-weight, or seed tables.
+  matched from-scratch data/model/compute scaling, not address-mode,
+  loss-weight, or seed tables.
 
 ## 2026-07-31 KDA occurrence rotary
 

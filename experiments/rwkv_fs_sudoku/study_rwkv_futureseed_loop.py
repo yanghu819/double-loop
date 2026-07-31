@@ -114,6 +114,40 @@ def gdn_triton_available() -> Tuple[bool, str]:
     return True, "ok"
 
 
+def apply_anchor_rotary_address(
+    tensor: torch.Tensor,
+    anchor: torch.Tensor,
+    head_scale: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Bind a stable address to Q/K with a norm-preserving pairwise rotation."""
+    if tensor.shape != anchor.shape:
+        raise ValueError(
+            f"Address rotation shape mismatch: tensor={tuple(tensor.shape)} "
+            f"anchor={tuple(anchor.shape)}"
+        )
+    if tensor.ndim != 4 or tensor.shape[-1] % 2:
+        raise ValueError("Address rotation expects [B, T, H, even K]")
+    if head_scale.shape != (tensor.shape[-2],):
+        raise ValueError(
+            f"Address rotation scale {tuple(head_scale.shape)} does not match "
+            f"{tensor.shape[-2]} heads"
+        )
+
+    pair_shape = (*tensor.shape[:-1], tensor.shape[-1] // 2, 2)
+    tensor_pair = tensor.float().reshape(pair_shape)
+    anchor_pair = anchor.float().reshape(pair_shape)
+    phase_source = math.pi * torch.tanh(anchor_pair.mean(dim=-1))
+    phase = phase_source * torch.tanh(head_scale.float()).view(1, 1, -1, 1)
+    cosine = torch.cos(phase)
+    sine = torch.sin(phase)
+    first, second = tensor_pair.unbind(dim=-1)
+    rotated = torch.stack(
+        (first * cosine - second * sine, first * sine + second * cosine),
+        dim=-1,
+    ).reshape_as(tensor)
+    return rotated.to(dtype=tensor.dtype), phase
+
+
 N = 9
 BOX_ROWS = 3
 BOX_COLS = 3
@@ -132,6 +166,15 @@ FAST_SLOW_TRAIN_KEYS = (
     "gdn2_fast_slow_tv_ratio",
     "gdn2_fast_slow_relative_change",
     "gdn2_fast_slow_alpha_mean",
+)
+ADDRESS_TRAIN_KEYS = (
+    "gdn2_address_enabled",
+    "gdn2_address_rotation_scale_abs",
+    "gdn2_address_phase_abs",
+    "gdn2_address_q_relative_change",
+    "gdn2_address_k_relative_change",
+    "gdn2_address_q_norm_error",
+    "gdn2_address_k_norm_error",
 )
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
@@ -153,7 +196,7 @@ RWKV7_OFFICIAL_KERNEL_PATH = "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu"
 RWKV7_STATEPASSING_CUDA_SHA256 = "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
 GAIN_BUDGET_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
 GAIN_BUDGET_WHEEL_SHA256 = "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
-GDN2_ADDRESS_MODES = ("none", "position_qk")
+GDN2_ADDRESS_MODES = ("none", "position_qk", "anchor_rotary")
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
@@ -475,6 +518,8 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         if address_mode == "position_qk":
             execution_path = "canonical_position_qk_then_official_gdn2_chunk"
+        elif address_mode == "anchor_rotary":
+            execution_path = "content_qk_anchor_rotation_then_official_gdn2_chunk"
         elif fast_slow_mode == "positive_causal":
             execution_path = "positive_causal_hazard_then_official_gdn2_chunk"
         elif fast_slow_mode == "external_identity":
@@ -1821,6 +1866,11 @@ class FLADeltaTimeMix(nn.Module):
         self.gain_budget_infeasible_policy = gain_budget_infeasible_policy
         self.fast_slow_decay_mode = fast_slow_decay_mode
         self.address_mode = address_mode
+        self.address_rotation_scale = (
+            nn.Parameter(torch.zeros(self.heads))
+            if address_mode == "anchor_rotary"
+            else None
+        )
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -1869,6 +1919,12 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_address_qk_offdiag_cosine": zero,
             "gdn2_address_qk_contrast": zero,
             "gdn2_address_order_displacement": zero,
+            "gdn2_address_rotation_scale_abs": zero,
+            "gdn2_address_phase_abs": zero,
+            "gdn2_address_q_relative_change": zero,
+            "gdn2_address_k_relative_change": zero,
+            "gdn2_address_q_norm_error": zero,
+            "gdn2_address_k_norm_error": zero,
         }
 
     def _forward_gain_budget(
@@ -2350,6 +2406,164 @@ class FLADeltaTimeMix(nn.Module):
         o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
         return o, terminal_state
 
+    def _forward_anchor_rotary(
+        self,
+        x: torch.Tensor,
+        *,
+        address: torch.Tensor,
+        cell_order: Optional[torch.Tensor],
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError("Anchor-addressed Q/K requires the official GDN2 chunk op")
+        if address.shape != x.shape:
+            raise ValueError(
+                f"Canonical anchor stream shape {tuple(address.shape)} "
+                f"does not match hidden stream {tuple(x.shape)}"
+            )
+        if self.address_rotation_scale is None:
+            raise RuntimeError("anchor_rotary requires a learned rotation scale")
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = (
+                self._zero_conv_state(x)
+                if initial_state is not None
+                else (None, None, None)
+            )
+            q, _ = core.q_conv1d(
+                x=core.q_proj(x),
+                cache=conv_q,
+                output_final_state=True,
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(x),
+                cache=conv_k,
+                output_final_state=True,
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x),
+                cache=conv_v,
+                output_final_state=True,
+            )
+        else:
+            q = F.silu(core.q_proj(x))
+            k = F.silu(core.k_proj(x))
+            v = F.silu(core.v_proj(x))
+
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        anchor_heads = address.reshape(
+            batch_size,
+            seq_len,
+            core.num_heads,
+            core.head_k_dim,
+        )
+        if cell_order is not None:
+            anchor_heads = anchor_heads.index_select(1, cell_order)
+        q_before = q
+        k_before = k
+        q, phase = apply_anchor_rotary_address(
+            q,
+            anchor_heads,
+            self.address_rotation_scale,
+        )
+        k, _ = apply_anchor_rotary_address(
+            k,
+            anchor_heads,
+            self.address_rotation_scale,
+        )
+        q_rotated = q
+        k_rotated = k
+
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias)
+        b = core.b_proj(x).sigmoid()
+        w = core.w_proj(x).sigmoid()
+        g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        b = b.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+
+        if core.num_v_heads > core.num_heads:
+            groups = core.num_v_heads // core.num_heads
+            q = torch.repeat_interleave(q, groups, dim=-2)
+            k = torch.repeat_interleave(k, groups, dim=-2)
+            g = torch.repeat_interleave(g, groups, dim=-2)
+            b = torch.repeat_interleave(b, groups, dim=-2)
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        operation = (
+            fused_recurrent_gdn2
+            if seq_len <= 64 and not self.training
+            else chunk_gdn2
+        )
+        if operation is None:
+            raise RuntimeError("The required official GDN2 kernel is unavailable")
+        o, terminal_state = operation(
+            q=q,
+            k=k,
+            v=v,
+            g=g,
+            b=b,
+            w=w,
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+
+        with torch.no_grad():
+            q_before_f = q_before.float()
+            k_before_f = k_before.float()
+            q_after_f = q_rotated.float()
+            k_after_f = k_rotated.float()
+            q_relative_change = (
+                (q_after_f - q_before_f).norm()
+                / q_before_f.norm().clamp(min=1e-6)
+            )
+            k_relative_change = (
+                (k_after_f - k_before_f).norm()
+                / k_before_f.norm().clamp(min=1e-6)
+            )
+            q_norm_error = (
+                q_after_f.norm(dim=-1) - q_before_f.norm(dim=-1)
+            ).abs().max()
+            k_norm_error = (
+                k_after_f.norm(dim=-1) - k_before_f.norm(dim=-1)
+            ).abs().max()
+        if cell_order is None or seq_len <= 1:
+            order_displacement = x.new_zeros(())
+        else:
+            canonical = torch.arange(seq_len, device=cell_order.device)
+            order_displacement = (
+                (cell_order - canonical).abs().float().mean() / float(seq_len - 1)
+            ).to(dtype=x.dtype)
+        self.last_gain_budget_diag = {
+            **self._zero_address_diag(x),
+            "gdn2_address_enabled": x.new_ones(()),
+            "gdn2_address_order_displacement": order_displacement.detach(),
+            "gdn2_address_rotation_scale_abs": torch.tanh(
+                self.address_rotation_scale.float()
+            ).abs().mean().detach().to(dtype=x.dtype),
+            "gdn2_address_phase_abs": phase.abs().mean().detach().to(dtype=x.dtype),
+            "gdn2_address_q_relative_change": q_relative_change.detach().to(dtype=x.dtype),
+            "gdn2_address_k_relative_change": k_relative_change.detach().to(dtype=x.dtype),
+            "gdn2_address_q_norm_error": q_norm_error.detach().to(dtype=x.dtype),
+            "gdn2_address_k_norm_error": k_norm_error.detach().to(dtype=x.dtype),
+        }
+
+        output_gate = core.g_proj(x).view(
+            batch_size,
+            seq_len,
+            core.num_v_heads,
+            core.head_v_dim,
+        )
+        o = core.o_norm(o.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
+
     def _zero_conv_state(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size = x.shape[0]
         width = int(self.core.conv_size)
@@ -2439,6 +2653,15 @@ class FLADeltaTimeMix(nn.Module):
             if address is None:
                 raise ValueError("position_qk address mode requires a canonical address stream")
             return self._forward_position_qk(
+                x,
+                address=address,
+                cell_order=cell_order,
+                initial_state=initial_state,
+            )
+        if self.address_mode == "anchor_rotary":
+            if address is None:
+                raise ValueError("anchor_rotary address mode requires a canonical anchor stream")
+            return self._forward_anchor_rotary(
                 x,
                 address=address,
                 cell_order=cell_order,
@@ -3665,6 +3888,9 @@ def load_training_checkpoint(
         ".time_mix.fast_slow_decay.kernel_logits",
         ".time_mix.fast_slow_decay.rho_logit",
     )
+    address_operator_suffixes = (
+        ".time_mix.address_rotation_scale",
+    )
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
         key
@@ -3672,6 +3898,7 @@ def load_training_checkpoint(
         if key not in allowed_missing
         and not key.endswith(progressive_suffixes)
         and not key.endswith(fast_slow_suffixes)
+        and not key.endswith(address_operator_suffixes)
     ]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
     if bad_missing or bad_unexpected:
@@ -3989,6 +4216,11 @@ class FutureSeedLoopSudoku(nn.Module):
         positions = torch.arange(CELLS, dtype=torch.long, device=device)
         return self.position(positions).unsqueeze(0).expand(batch_size, -1, -1)
 
+    def canonical_input_anchor_sequence(self, inputs: torch.Tensor) -> torch.Tensor:
+        """Stable token-plus-position address anchor, independent of recurrent loops."""
+        positions = torch.arange(CELLS, dtype=torch.long, device=inputs.device)
+        return self.embed(inputs) + self.position(positions).unsqueeze(0)
+
     def scratch_gaussian_loss(self, residual: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         if self.scratch_projection.numel() == 0:
             zero = residual.new_zeros(())
@@ -4234,7 +4466,9 @@ class FutureSeedLoopSudoku(nn.Module):
                 batch_size=batch_size,
                 device=inputs.device,
             )
-            if self.gdn2_address_mode != "none"
+            if self.gdn2_address_mode == "position_qk"
+            else self.canonical_input_anchor_sequence(inputs)
+            if self.gdn2_address_mode == "anchor_rotary"
             else None
         )
         z_h = self.h_init.expand(batch_size, seq_len, -1)
@@ -4597,6 +4831,23 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(
             f"slow_change={m.get('gdn2_fast_slow_relative_change', 0.0):.4f}"
         )
+    if m.get("gdn2_address_enabled", 0.0) > 0:
+        parts.append(
+            f"addr_scale={m.get('gdn2_address_rotation_scale_abs', 0.0):.4f}"
+        )
+        parts.append(
+            f"addr_phase={m.get('gdn2_address_phase_abs', 0.0):.4f}"
+        )
+        parts.append(
+            "addr_qk_change="
+            f"{m.get('gdn2_address_q_relative_change', 0.0):.4f}/"
+            f"{m.get('gdn2_address_k_relative_change', 0.0):.4f}"
+        )
+        parts.append(
+            "addr_norm_err="
+            f"{m.get('gdn2_address_q_norm_error', 0.0):.1e}/"
+            f"{m.get('gdn2_address_k_norm_error', 0.0):.1e}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -4876,6 +5127,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_fast_slow_diag = {
         key: 0.0 for key in FAST_SLOW_TRAIN_KEYS
     }
+    last_address_diag = {
+        key: 0.0 for key in ADDRESS_TRAIN_KEYS
+    }
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -5001,6 +5255,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_fast_slow_diag.get(key, 0.0))
                 for key in FAST_SLOW_TRAIN_KEYS
             }
+        saved_address_diag = last_metrics.get("address_operator", {})
+        if isinstance(saved_address_diag, dict):
+            last_address_diag = {
+                key: float(saved_address_diag.get(key, 0.0))
+                for key in ADDRESS_TRAIN_KEYS
+            }
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -5064,6 +5324,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_gain_budget_gate_relative_change = 0.0
             accum_fast_slow_diag = {
                 key: 0.0 for key in FAST_SLOW_TRAIN_KEYS
+            }
+            accum_address_diag = {
+                key: 0.0 for key in ADDRESS_TRAIN_KEYS
             }
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
@@ -5252,6 +5515,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in ADDRESS_TRAIN_KEYS:
+                        accum_address_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
@@ -5302,6 +5574,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_fast_slow_diag.items()
             }
+            last_address_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_address_diag.items()
+            }
             if args.log_every and global_step % args.log_every == 0:
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
@@ -5328,6 +5604,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"slow_lag={last_fast_slow_diag['gdn2_fast_slow_lag_mass']:.4f} "
                     f"slow_tv={last_fast_slow_diag['gdn2_fast_slow_tv_ratio']:.4f} "
                     f"slow_change={last_fast_slow_diag['gdn2_fast_slow_relative_change']:.4f} "
+                    f"addr_scale={last_address_diag['gdn2_address_rotation_scale_abs']:.4f} "
+                    f"addr_phase={last_address_diag['gdn2_address_phase_abs']:.4f} "
+                    f"addr_qchg={last_address_diag['gdn2_address_q_relative_change']:.4f} "
+                    f"addr_kchg={last_address_diag['gdn2_address_k_relative_change']:.4f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )
@@ -5372,6 +5652,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         "fast_slow_decay": dict(last_fast_slow_diag),
+                        "address_operator": dict(last_address_diag),
                     },
                     "eval_by_holes": {},
                 }
@@ -5452,6 +5733,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                             "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                             "fast_slow_decay": dict(last_fast_slow_diag),
+                            "address_operator": dict(last_address_diag),
                         },
                         reason="eval_checkpoint",
                     )
@@ -5511,6 +5793,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         "fast_slow_decay": dict(last_fast_slow_diag),
+                        "address_operator": dict(last_address_diag),
                     },
                     reason="periodic",
                 )
@@ -5588,6 +5871,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
         "fast_slow_decay": dict(last_fast_slow_diag),
+        "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "optimizer_steps": total_steps,

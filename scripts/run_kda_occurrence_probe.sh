@@ -2,6 +2,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PERSIST_ROOT="${PERSIST_ROOT:-/huyang2/double-loop}"
+if [[ "$PERSIST_ROOT" != "/huyang2/double-loop" ]]; then
+  printf 'PERSIST_ROOT must be /huyang2/double-loop, got %s\n' \
+    "$PERSIST_ROOT" >&2
+  exit 2
+fi
+export PERSIST_ROOT
 MODE="${1:-formal}"
 if [[ "$MODE" != "smoke" && "$MODE" != "formal" ]]; then
   printf 'usage: %s smoke|formal\n' "$0" >&2
@@ -40,16 +47,16 @@ SOURCE_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 export SOURCE_SHA
 export FLA_DISABLE_BACKEND_DISPATCH=1
 export FLA_CONV_BACKEND=triton
-export XDG_CACHE_HOME="$REPO_ROOT/.cache"
-export TRITON_CACHE_DIR="$REPO_ROOT/.cache/triton"
-export TORCHINDUCTOR_CACHE_DIR="$REPO_ROOT/.cache/torchinductor"
-export TORCH_EXTENSIONS_DIR="$REPO_ROOT/.cache/torch_extensions"
-export TMPDIR="$REPO_ROOT/.cache/tmp"
-export PATH="$REPO_ROOT/.cache/bin:$PATH"
-if [[ -z "${PYTHON_EXTRA_PATH:-}" && -s "$REPO_ROOT/.cache/python-extra-path" ]]; then
-  PYTHON_EXTRA_PATH="$(<"$REPO_ROOT/.cache/python-extra-path")"
+export XDG_CACHE_HOME="$PERSIST_ROOT/.cache"
+export TRITON_CACHE_DIR="$PERSIST_ROOT/.cache/triton"
+export TORCHINDUCTOR_CACHE_DIR="$PERSIST_ROOT/.cache/torchinductor"
+export TORCH_EXTENSIONS_DIR="$PERSIST_ROOT/.cache/torch_extensions"
+export TMPDIR="$PERSIST_ROOT/.cache/tmp"
+export PATH="$PERSIST_ROOT/.cache/bin:$PATH"
+if [[ -z "${PYTHON_EXTRA_PATH:-}" && -s "$PERSIST_ROOT/.cache/python-extra-path" ]]; then
+  PYTHON_EXTRA_PATH="$(<"$PERSIST_ROOT/.cache/python-extra-path")"
 fi
-PYTHON_EXTRA_PATH="${PYTHON_EXTRA_PATH:-$REPO_ROOT/.cache/python-extra-pylib}"
+PYTHON_EXTRA_PATH="${PYTHON_EXTRA_PATH:-$PERSIST_ROOT/.cache/python-extra-pylib}"
 export PYTHONPATH="$PYTHON_EXTRA_PATH${PYTHONPATH:+:$PYTHONPATH}"
 PYTHON_BIN="${PYTHON_BIN:-/opt/conda/bin/python}"
 if [[ ! -x "$PYTHON_BIN" ]]; then
@@ -75,6 +82,7 @@ printf '%s\n' "$VISIBLE_UUID" > "$OUT_DIR/gpu_uuid.txt"
   printf 'FLA_CONV_BACKEND=%s\n' "$FLA_CONV_BACKEND"
   printf 'FLA_DISABLE_BACKEND_DISPATCH=%s\n' "$FLA_DISABLE_BACKEND_DISPATCH"
   printf 'GPU1_UUID=%s\n' "$GPU1_UUID"
+  printf 'PERSIST_ROOT=%s\n' "$PERSIST_ROOT"
   printf 'PYTHON_BIN=%s\n' "$PYTHON_BIN"
   printf 'RUN_NAME=%s\n' "$RUN_NAME"
   printf 'SOURCE_SHA=%s\n' "$SOURCE_SHA"

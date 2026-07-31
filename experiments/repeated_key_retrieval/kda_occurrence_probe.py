@@ -605,6 +605,14 @@ order. The query asks for one numbered occurrence.</p>
 
 
 def strict_runtime_metadata(repo_root: Path) -> dict[str, Any]:
+    persistent_root = Path(
+        os.environ.get("PERSIST_ROOT", "/huyang2/double-loop")
+    ).resolve()
+    if persistent_root != Path("/huyang2/double-loop"):
+        raise RuntimeError(
+            "PERSIST_ROOT must resolve to /huyang2/double-loop, got "
+            f"{persistent_root}"
+        )
     for variable in (
         "XDG_CACHE_HOME",
         "TRITON_CACHE_DIR",
@@ -637,7 +645,7 @@ def strict_runtime_metadata(repo_root: Path) -> dict[str, Any]:
     package_root = Path(fla.__file__).resolve().parent
     if not str(package_root).startswith("/huyang2/double-loop/"):
         raise RuntimeError(f"FLA package is outside persistent root: {package_root}")
-    source_marker = repo_root / ".cache" / "fla-source-sha"
+    source_marker = persistent_root / ".cache" / "fla-source-sha"
     source_sha = source_marker.read_text(encoding="utf-8").strip()
     if source_sha != EXPECTED_FLA_SHA:
         raise RuntimeError(
@@ -661,6 +669,7 @@ def strict_runtime_metadata(repo_root: Path) -> dict[str, Any]:
         "torch_version": torch.__version__,
         "fla_version": fla.__version__,
         "fla_package_root": str(package_root),
+        "persistent_root": str(persistent_root),
         "fla_source_sha": source_sha,
         "fla_wheel_sha256": wheel_sha,
         "fla_backend_dispatch_disabled": bool(_DISPATCH_DISABLED),

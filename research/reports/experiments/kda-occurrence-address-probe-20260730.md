@@ -6,7 +6,7 @@
 - Date: 2026-07-30 CST
 - Machine: AIStation GPU1 only
 - Source branch: `codex/gdn2-address-binding-20260730`
-- Status: implementation complete; GPU1 is queued
+- Status: implementation complete; CUDA smoke retry pending
 
 ## 2. Hypothesis
 
@@ -59,7 +59,16 @@ SHA, and GPU UUID.
 
 ## 7. Results
 
-Pending GPU1 availability.
+GPU1 became available on 2026-07-31 11:18 CST. The first CUDA smoke stopped
+before model construction because the launcher looked for the pinned FLA
+installation under the detached worktree's private `.cache`. The audited
+installation actually lives in the shared persistent project cache:
+`/huyang2/double-loop/.cache/fla-active`.
+
+This is an environment failure, not an experiment result. The launcher now
+uses `/huyang2/double-loop/.cache` for every detached worktree and the runtime
+provenance check reads the source marker from that same root. No package was
+downloaded, no kernel fallback was enabled, and no CPU model path was used.
 
 ## 8. Decision
 

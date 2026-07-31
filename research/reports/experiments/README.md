@@ -33,3 +33,8 @@ two hard ranges, but misses its preregistered continuation gates and exposes
 large paired regressions; short continuation stacking is stopped. The separate
 `kda-occurrence-address-probe-20260730.md` shows that standard occurrence
 rotary does not make overwritten KDA values queryable and is rejected.
+
+This result is marked as an important retained algorithm milestone in
+`docs/MILESTONE_GDN2_ADDRESS_PAYLOAD.md`. That document is the canonical
+plain-language mechanism description and claim boundary; the experiment reports
+remain the detailed evidence source.

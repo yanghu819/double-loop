@@ -11,6 +11,15 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
+Current update (2026-07-31 17:31 CST): address/payload-factorized GDN2 is now an
+explicit retained milestone, recorded in
+`docs/MILESTONE_GDN2_ADDRESS_PAYLOAD.md` and tagged as
+`milestone/gdn2-address-payload-v1-20260731`. This marks the mechanism as the
+strongest current GDN2 carrier modification, not as solved hard Sudoku or a
+universal GDN2 replacement. The next proof remains one clean from-scratch,
+matched-initialization/data/compute comparison; no address/loss/seed table is
+authorized by the milestone.
+
 Current update (2026-07-31 15:04 CST): `P-ADDR-004` is complete and does not
 authorize another short continuation. Step9300->9600 clean 51-64 hard-stage
 training lowers CE `0.9661->0.9460` and raises mean official hard blank

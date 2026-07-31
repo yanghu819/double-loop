@@ -37,6 +37,10 @@ for scaling to harder spatial reasoning tasks.
 
 ## Current Evidence
 
+- **Important retained milestone:**
+  [`Address/Payload-Factorized GDN2`](MILESTONE_GDN2_ADDRESS_PAYLOAD.md) is the
+  canonical algorithm record for the position-Q/K carrier, its matched-compute
+  evidence, its scaling boundary, and the claims that are not yet allowed.
 - Strong cross-carrier causal gate: under byte-identical paired initialization,
   the same data/order/objective/optimizer/state/loop budget, and official
   kernels, b46-50 loop5 full-board exact with/without FutureSeed is

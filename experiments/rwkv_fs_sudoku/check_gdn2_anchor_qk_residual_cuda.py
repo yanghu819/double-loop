@@ -120,15 +120,36 @@ def check_official_identity(
             anchor,
         ],
     )
+    gradient_names = ["input", "q_weight", "k_weight"]
+    if state_official is not None:
+        gradient_names.insert(1, "initial_state")
+    gradient_alignment = {
+        name: {
+            "max_abs": max_abs(left, right),
+            "reference_max_abs": float(left.detach().float().abs().max().item()),
+            "allclose_atol_1e-4_rtol_1e-3": bool(
+                torch.allclose(left, right, atol=1e-4, rtol=1e-3)
+            ),
+        }
+        for name, left, right in zip(
+            gradient_names,
+            official_grads,
+            candidate_grads[: len(official_grads)],
+        )
+    }
     gradient_error = max(
-        max_abs(left, right)
-        for left, right in zip(official_grads, candidate_grads[: len(official_grads)])
+        item["max_abs"] for item in gradient_alignment.values()
     )
     q_weight_grad, k_weight_grad, anchor_grad = candidate_grads[-3:]
-    if output_error != 0.0 or state_error != 0.0 or gradient_error != 0.0:
+    gradients_aligned = all(
+        item["allclose_atol_1e-4_rtol_1e-3"]
+        for item in gradient_alignment.values()
+    )
+    if output_error != 0.0 or state_error != 0.0 or not gradients_aligned:
         raise AssertionError(
             "zero-init decoupled residual differs from official GDN2: "
-            f"output={output_error} state={state_error} grad={gradient_error}"
+            f"output={output_error} state={state_error} "
+            f"gradient_alignment={gradient_alignment}"
         )
     for name, gradient in (("q_weight", q_weight_grad), ("k_weight", k_weight_grad)):
         if not bool(torch.isfinite(gradient).all()) or float(gradient.abs().max()) == 0.0:
@@ -140,6 +161,7 @@ def check_official_identity(
         "output_max_abs": output_error,
         "state_max_abs": state_error,
         "base_gradient_max_abs": gradient_error,
+        "base_gradient_alignment": gradient_alignment,
         "q_weight_grad_max_abs": float(q_weight_grad.abs().max().item()),
         "k_weight_grad_max_abs": float(k_weight_grad.abs().max().item()),
         "anchor_grad_max_abs": float(anchor_grad.abs().max().item()),

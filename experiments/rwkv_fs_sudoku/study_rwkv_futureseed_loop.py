@@ -148,6 +148,32 @@ def apply_anchor_rotary_address(
     return rotated.to(dtype=tensor.dtype), phase
 
 
+def apply_address_phase_rotation(
+    tensor: torch.Tensor,
+    phase: torch.Tensor,
+) -> torch.Tensor:
+    """Apply an address-specific orthogonal rotation to paired Q/K channels."""
+    if tensor.ndim != 4 or tensor.shape[-1] % 2:
+        raise ValueError("Address phase rotation expects [B, T, H, even K]")
+    expected_phase_shape = (*tensor.shape[:-1], tensor.shape[-1] // 2)
+    if tuple(phase.shape) != expected_phase_shape:
+        raise ValueError(
+            f"Address phase shape {tuple(phase.shape)} does not match "
+            f"{expected_phase_shape}"
+        )
+
+    tensor_pair = tensor.float().reshape(*tensor.shape[:-1], tensor.shape[-1] // 2, 2)
+    phase_f = phase.float()
+    cosine = torch.cos(phase_f)
+    sine = torch.sin(phase_f)
+    first, second = tensor_pair.unbind(dim=-1)
+    rotated = torch.stack(
+        (first * cosine - second * sine, first * sine + second * cosine),
+        dim=-1,
+    ).reshape_as(tensor)
+    return rotated.to(dtype=tensor.dtype)
+
+
 N = 9
 BOX_ROWS = 3
 BOX_COLS = 3
@@ -175,6 +201,9 @@ ADDRESS_TRAIN_KEYS = (
     "gdn2_address_k_relative_change",
     "gdn2_address_q_norm_error",
     "gdn2_address_k_norm_error",
+    "gdn2_address_phase_weight_rms",
+    "gdn2_address_phase_token_std",
+    "gdn2_address_phase_plane_std",
 )
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
@@ -196,7 +225,7 @@ RWKV7_OFFICIAL_KERNEL_PATH = "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu"
 RWKV7_STATEPASSING_CUDA_SHA256 = "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
 GAIN_BUDGET_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
 GAIN_BUDGET_WHEEL_SHA256 = "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
-GDN2_ADDRESS_MODES = ("none", "position_qk", "anchor_rotary")
+GDN2_ADDRESS_MODES = ("none", "position_qk", "anchor_rotary", "anchor_phase")
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
@@ -520,6 +549,8 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = "canonical_position_qk_then_official_gdn2_chunk"
         elif address_mode == "anchor_rotary":
             execution_path = "content_qk_anchor_rotation_then_official_gdn2_chunk"
+        elif address_mode == "anchor_phase":
+            execution_path = "content_qk_learned_address_phase_then_official_gdn2_chunk"
         elif fast_slow_mode == "positive_causal":
             execution_path = "positive_causal_hazard_then_official_gdn2_chunk"
         elif fast_slow_mode == "external_identity":
@@ -1845,6 +1876,8 @@ class FLADeltaTimeMix(nn.Module):
             )
         if address_mode != "none" and backbone != "gdn2":
             raise ValueError("Address-payload separation is restricted to GDN2")
+        if address_mode in {"anchor_rotary", "anchor_phase"} and head_dim % 2:
+            raise ValueError("Anchor address rotation requires an even GDN2 head dimension")
         if address_mode != "none" and (
             gain_budget_mode != "none" or fast_slow_decay_mode != "none"
         ):
@@ -1871,6 +1904,13 @@ class FLADeltaTimeMix(nn.Module):
             if address_mode == "anchor_rotary"
             else None
         )
+        self.address_phase_proj = (
+            nn.Linear(d_model, self.heads * (self.head_dim // 2), bias=False)
+            if address_mode == "anchor_phase"
+            else None
+        )
+        if self.address_phase_proj is not None:
+            nn.init.zeros_(self.address_phase_proj.weight)
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -1925,6 +1965,9 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_address_k_relative_change": zero,
             "gdn2_address_q_norm_error": zero,
             "gdn2_address_k_norm_error": zero,
+            "gdn2_address_phase_weight_rms": zero,
+            "gdn2_address_phase_token_std": zero,
+            "gdn2_address_phase_plane_std": zero,
         }
 
     def _forward_gain_budget(
@@ -2421,8 +2464,14 @@ class FLADeltaTimeMix(nn.Module):
                 f"Canonical anchor stream shape {tuple(address.shape)} "
                 f"does not match hidden stream {tuple(x.shape)}"
             )
-        if self.address_rotation_scale is None:
-            raise RuntimeError("anchor_rotary requires a learned rotation scale")
+        if self.address_mode == "anchor_rotary":
+            if self.address_rotation_scale is None:
+                raise RuntimeError("anchor_rotary requires a learned rotation scale")
+        elif self.address_mode == "anchor_phase":
+            if self.address_phase_proj is None:
+                raise RuntimeError("anchor_phase requires a learned phase projection")
+        else:
+            raise RuntimeError(f"unsupported anchor rotation mode: {self.address_mode}")
         core = self.core
         batch_size, seq_len, _channels = x.shape
 
@@ -2454,26 +2503,45 @@ class FLADeltaTimeMix(nn.Module):
 
         q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
         k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
-        anchor_heads = address.reshape(
-            batch_size,
-            seq_len,
-            core.num_heads,
-            core.head_k_dim,
-        )
-        if cell_order is not None:
-            anchor_heads = anchor_heads.index_select(1, cell_order)
         q_before = q
         k_before = k
-        q, phase = apply_anchor_rotary_address(
-            q,
-            anchor_heads,
-            self.address_rotation_scale,
-        )
-        k, _ = apply_anchor_rotary_address(
-            k,
-            anchor_heads,
-            self.address_rotation_scale,
-        )
+        if self.address_mode == "anchor_rotary":
+            anchor_heads = address.reshape(
+                batch_size,
+                seq_len,
+                core.num_heads,
+                core.head_k_dim,
+            )
+            if cell_order is not None:
+                anchor_heads = anchor_heads.index_select(1, cell_order)
+            assert self.address_rotation_scale is not None
+            q, phase = apply_anchor_rotary_address(
+                q,
+                anchor_heads,
+                self.address_rotation_scale,
+            )
+            k, _ = apply_anchor_rotary_address(
+                k,
+                anchor_heads,
+                self.address_rotation_scale,
+            )
+        else:
+            address_ordered = (
+                address
+                if cell_order is None
+                else address.index_select(1, cell_order)
+            )
+            assert self.address_phase_proj is not None
+            phase = math.pi * torch.tanh(
+                self.address_phase_proj(address_ordered).float().view(
+                    batch_size,
+                    seq_len,
+                    core.num_heads,
+                    core.head_k_dim // 2,
+                )
+            )
+            q = apply_address_phase_rotation(q, phase)
+            k = apply_address_phase_rotation(k, phase)
         q_rotated = q
         k_rotated = k
 
@@ -2544,14 +2612,27 @@ class FLADeltaTimeMix(nn.Module):
             **self._zero_address_diag(x),
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_order_displacement": order_displacement.detach(),
-            "gdn2_address_rotation_scale_abs": torch.tanh(
-                self.address_rotation_scale.float()
-            ).abs().mean().detach().to(dtype=x.dtype),
+            "gdn2_address_rotation_scale_abs": (
+                torch.tanh(self.address_rotation_scale.float()).abs().mean()
+                if self.address_rotation_scale is not None
+                else x.new_zeros((), dtype=torch.float32)
+            ).detach().to(dtype=x.dtype),
             "gdn2_address_phase_abs": phase.abs().mean().detach().to(dtype=x.dtype),
             "gdn2_address_q_relative_change": q_relative_change.detach().to(dtype=x.dtype),
             "gdn2_address_k_relative_change": k_relative_change.detach().to(dtype=x.dtype),
             "gdn2_address_q_norm_error": q_norm_error.detach().to(dtype=x.dtype),
             "gdn2_address_k_norm_error": k_norm_error.detach().to(dtype=x.dtype),
+            "gdn2_address_phase_weight_rms": (
+                self.address_phase_proj.weight.float().square().mean().sqrt()
+                if self.address_phase_proj is not None
+                else x.new_zeros((), dtype=torch.float32)
+            ).detach().to(dtype=x.dtype),
+            "gdn2_address_phase_token_std": phase.float().std(
+                dim=1, unbiased=False
+            ).mean().detach().to(dtype=x.dtype),
+            "gdn2_address_phase_plane_std": phase.float().std(
+                dim=-1, unbiased=False
+            ).mean().detach().to(dtype=x.dtype),
         }
 
         output_gate = core.g_proj(x).view(
@@ -2658,9 +2739,11 @@ class FLADeltaTimeMix(nn.Module):
                 cell_order=cell_order,
                 initial_state=initial_state,
             )
-        if self.address_mode == "anchor_rotary":
+        if self.address_mode in {"anchor_rotary", "anchor_phase"}:
             if address is None:
-                raise ValueError("anchor_rotary address mode requires a canonical anchor stream")
+                raise ValueError(
+                    f"{self.address_mode} address mode requires a canonical anchor stream"
+                )
             return self._forward_anchor_rotary(
                 x,
                 address=address,
@@ -3890,6 +3973,7 @@ def load_training_checkpoint(
     )
     address_operator_suffixes = (
         ".time_mix.address_rotation_scale",
+        ".time_mix.address_phase_proj.weight",
     )
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
@@ -4468,7 +4552,7 @@ class FutureSeedLoopSudoku(nn.Module):
             )
             if self.gdn2_address_mode == "position_qk"
             else self.canonical_input_anchor_sequence(inputs)
-            if self.gdn2_address_mode == "anchor_rotary"
+            if self.gdn2_address_mode in {"anchor_rotary", "anchor_phase"}
             else None
         )
         z_h = self.h_init.expand(batch_size, seq_len, -1)
@@ -4848,6 +4932,13 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn2_address_q_norm_error', 0.0):.1e}/"
             f"{m.get('gdn2_address_k_norm_error', 0.0):.1e}"
         )
+        if m.get("gdn2_address_phase_weight_rms", 0.0) > 0:
+            parts.append(
+                "addr_phase_field="
+                f"{m.get('gdn2_address_phase_weight_rms', 0.0):.4f}/"
+                f"{m.get('gdn2_address_phase_token_std', 0.0):.4f}/"
+                f"{m.get('gdn2_address_phase_plane_std', 0.0):.4f}"
+            )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:
@@ -5608,6 +5699,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"addr_phase={last_address_diag['gdn2_address_phase_abs']:.4f} "
                     f"addr_qchg={last_address_diag['gdn2_address_q_relative_change']:.4f} "
                     f"addr_kchg={last_address_diag['gdn2_address_k_relative_change']:.4f} "
+                    f"addr_wrms={last_address_diag['gdn2_address_phase_weight_rms']:.4f} "
+                    f"addr_tstd={last_address_diag['gdn2_address_phase_token_std']:.4f} "
+                    f"addr_pstd={last_address_diag['gdn2_address_phase_plane_std']:.4f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )

@@ -4,8 +4,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARM="${1:-}"
 PHASE="${2:-formal}"
-if [[ "$ARM" != "control" && "$ARM" != "position_qk" && "$ARM" != "anchor_rotary" ]]; then
-  printf 'usage: %s control|position_qk|anchor_rotary [smoke|formal]\n' "$0" >&2
+if [[ "$ARM" != "control" && "$ARM" != "position_qk" && \
+      "$ARM" != "anchor_rotary" && "$ARM" != "anchor_phase" ]]; then
+  printf 'usage: %s control|position_qk|anchor_rotary|anchor_phase [smoke|formal]\n' "$0" >&2
   exit 2
 fi
 if [[ "$PHASE" != "smoke" && "$PHASE" != "formal" ]]; then
@@ -65,7 +66,8 @@ if [[ "$PHASE" == "formal" && "$P_ADDR_TARGET_STEP" != "9100" ]]; then
         'Control continuation is restricted to the explicit matched step9300 falsifier.' >&2
       exit 6
     fi
-  elif [[ "$ARM" != "position_qk" && "$ARM" != "anchor_rotary" ]]; then
+  elif [[ "$ARM" != "position_qk" && "$ARM" != "anchor_rotary" && \
+          "$ARM" != "anchor_phase" ]]; then
     printf 'Unsupported continuation arm: %s.\n' "$ARM" >&2
     exit 6
   fi

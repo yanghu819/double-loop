@@ -54,8 +54,15 @@ set +a
 
 P_ADDR_TARGET_STEP="${P_ADDR_TARGET_STEP:-9100}"
 if [[ "$PHASE" == "formal" && "$P_ADDR_TARGET_STEP" != "9100" ]]; then
-  if [[ "$ARM" != "position_qk" ]]; then
-    printf 'Only the positive position_qk arm may continue past step 9100.\n' >&2
+  if [[ "$ARM" == "control" ]]; then
+    if [[ "${P_ADDR_MATCHED_CONTROL_CONTINUATION:-0}" != "1" || \
+          "$P_ADDR_TARGET_STEP" != "9300" ]]; then
+      printf '%s\n' \
+        'Control continuation is restricted to the explicit matched step9300 falsifier.' >&2
+      exit 6
+    fi
+  elif [[ "$ARM" != "position_qk" ]]; then
+    printf 'Unsupported continuation arm: %s.\n' "$ARM" >&2
     exit 6
   fi
   if [[ "$P_ADDR_TARGET_STEP" -le 9100 ]]; then

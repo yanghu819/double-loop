@@ -21,3 +21,10 @@ The latest FutureSeed2 mechanism boundaries are documented in
 carry destroys later-loop refinement; producer-compatible two-hop readout is
 active but slower and weakens hard closure. Both simple time/depth radius
 extensions are rejected without hyperparameter sweeps.
+
+The latest generic memory-address tests are documented in
+`gdn2-address-payload-random-order-20260730.md` and
+`kda-occurrence-address-probe-20260730.md`. Canonical-position Q/K substantially
+improves randomly ordered GDN2+FutureSeed training and produces real later-loop
+correction, but official 51-64 exact remains zero. Standard occurrence rotary
+does not make overwritten KDA values queryable and is rejected.

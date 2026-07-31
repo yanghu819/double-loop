@@ -214,6 +214,17 @@ def render(
     )
     control_train = control_summary["metrics"]["train"]
     candidate_train = candidate_summary["metrics"]["train"]
+    control_step = int(control_train["optimizer_steps"])
+    candidate_step = int(candidate_train["optimizer_steps"])
+    same_budget = control_step == candidate_step
+    budget_note = (
+        f"same optimizer step {control_step}"
+        if same_budget
+        else (
+            f"shared step9000 parent; control stopped at step{control_step}, "
+            f"positive candidate continued to step{candidate_step}"
+        )
+    )
     address_diag = candidate_summary["metrics"]["official_eval_by_blank_range"][
         "b51_55"
     ]["eval_clean"]["loop5/future_seed"]
@@ -301,10 +312,12 @@ height:3px;background:#168aad}} code{{background:#e9ecef;padding:2px 4px}}
 The position-Q/K arm learns the random-order continuation much faster and more
 than doubles hard-range blank accuracy. Exact remains zero, so the address split
 fixes a substantial optimization bottleneck but not the remaining global
-consistency problem.</p>
+consistency problem. The equal-compute causal comparison was made separately at
+step9100; this page shows the stopped control against the preregistered positive
+candidate continuation and is not a same-compute quality estimate.</p>
 <div class="metrics">
-<div class="metric"><span>Control train CE</span><b>{control_train['train_ce_loss']:.3f}</b></div>
-<div class="metric"><span>Position-Q/K train CE</span><b>{candidate_train['train_ce_loss']:.3f}</b></div>
+<div class="metric"><span>Control step{control_step} train CE</span><b>{control_train['train_ce_loss']:.3f}</b></div>
+<div class="metric"><span>Position-Q/K step{candidate_step} train CE</span><b>{candidate_train['train_ce_loss']:.3f}</b></div>
 <div class="metric"><span>Matched-case loop correction</span><b>{candidate_loop_gain:+d} cells</b></div>
 <div class="metric"><span>Matched-case final advantage</span><b>{cross_arm_gain:+d} cells</b></div>
 </div>
@@ -314,7 +327,7 @@ consistency problem.</p>
 <table><thead><tr><th>blanks</th><th>control blank acc</th>
 <th>position-Q/K blank acc</th><th>delta</th><th>control exact</th>
 <th>position-Q/K exact</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table>
-<h2>Same 64-blank board, same checkpoint budget</h2>
+<h2>Same 64-blank board, {html.escape(budget_note)}</h2>
 <p>Red cells are wrong, green cells are right, gray cells are clues, and a blue
 underline marks a value changed since the preceding displayed loop. Batch
 <code>{control_case['batch_index']}</code> is selected mechanically for the
@@ -348,6 +361,12 @@ def main() -> None:
     payload = {
         "control_run": str(args.control_run),
         "candidate_run": str(args.candidate_run),
+        "control_optimizer_steps": int(
+            control_summary["metrics"]["train"]["optimizer_steps"]
+        ),
+        "candidate_optimizer_steps": int(
+            candidate_summary["metrics"]["train"]["optimizer_steps"]
+        ),
         "metric_rows": rows,
         "selected_batch_index": control_case["batch_index"],
         "selected_control_wrong": {

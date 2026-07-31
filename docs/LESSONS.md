@@ -1395,3 +1395,51 @@
 - Close decay-only smoothing on this line. Do not sweep FIR length, rho, seed,
   LR, loss, width, or duration. Clean data/compute scaling has stronger
   evidence and better matches the bitter lesson.
+
+## 2026-07-31 GDN2 address-payload separation
+
+- Absolute position metadata can be present without becoming a stable recurrent
+  address. The frozen counterfactual preserves each token's canonical position
+  embedding but collapses under non-row traversals, so additive metadata alone
+  does not make GDN2 order-independent.
+- Decouple where memory is accessed from what memory carries. Driving only Q/K
+  from canonical position while keeping hidden content responsible for
+  V/decay/erase/write/output raises equal-compute step9100 mean official 51-64
+  blank accuracy from `0.2037` to `0.4333`; train CE falls
+  `1.9370 -> 1.2196`. Parameters, data, optimizer, FutureSeed, loops, and the
+  official FLA recurrence are unchanged.
+- Keep the evidence boundary precise. Both equal-compute arms still have zero
+  exact on every hard range. The mechanism fixes a large optimization problem;
+  it does not by itself establish global Sudoku closure.
+- Scaling the positive arm is informative because the slope remains strong.
+  At step9300 mean hard blank accuracy reaches `0.5437`, train CE reaches
+  `0.9661`, and mixed loop1->5 exact changes `0.00195 -> 0.02344`. Official
+  51-64 exact remains zero, so more local correctness is not yet enough.
+- Later loops can become useful after address learning improves. On the same
+  64-blank board, the step9300 candidate changes `37 -> 23 -> 15` wrong cells
+  across loops1/2/5 while the stopped control changes `48 -> 48 -> 49`.
+  The remaining limitation is global consistency after partial correction,
+  not universal loop copying.
+- Never present the step9300 candidate versus step9100 control as matched
+  compute. The causal claim comes from the step9100 pair; the longer candidate
+  shows only a positive conditional scaling slope. A paper-quality follow-up
+  needs both arms trained for the same total compute.
+- This direction remains compatible with the bitter lesson: it is a generic,
+  parameter-neutral factorization of recurrent address and payload, not a
+  Sudoku rule. Continue only with clean data/model/compute scaling and a
+  matched control, not address-mode, loss-weight, or seed tables.
+
+## 2026-07-31 KDA occurrence rotary
+
+- Fine-grained decay represents multiple ages but does not automatically
+  create queryable versions of repeated writes to the same semantic key.
+- Standard occurrence rotary changes recency preference. It raises the
+  in-distribution final-occurrence accuracy `0.2222 -> 0.6481`, while other
+  occurrence indices remain near chance.
+- The primary length512/repeat16 result is negative: content addressing reaches
+  `0.0371` and occurrence rotary reaches `0.0313`. Both are near 32-class
+  chance, so the preregistered old-version retrieval hypothesis fails.
+- Do not tune rotary base, frequency, beta, seed, width, or duration, and do not
+  build a learned counter on this evidence. A future revisit requires
+  qualitatively different versioned/orthogonal state capacity rather than
+  better occurrence labels on an overwrite-like state.

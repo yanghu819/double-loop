@@ -6,8 +6,8 @@ ARM="${1:-}"
 PHASE="${2:-formal}"
 if [[ "$ARM" != "control" && "$ARM" != "position_qk" && \
       "$ARM" != "anchor_rotary" && "$ARM" != "anchor_phase" && \
-      "$ARM" != "anchor_residual" ]]; then
-  printf 'usage: %s control|position_qk|anchor_rotary|anchor_phase|anchor_residual [smoke|formal]\n' "$0" >&2
+      "$ARM" != "anchor_residual" && "$ARM" != "anchor_qk_residual" ]]; then
+  printf 'usage: %s control|position_qk|anchor_rotary|anchor_phase|anchor_residual|anchor_qk_residual [smoke|formal]\n' "$0" >&2
   exit 2
 fi
 if [[ "$PHASE" != "smoke" && "$PHASE" != "formal" ]]; then
@@ -15,7 +15,7 @@ if [[ "$PHASE" != "smoke" && "$PHASE" != "formal" ]]; then
   exit 2
 fi
 if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
-  printf 'P-ADDR-002 is GPU1-only and requires CUDA_VISIBLE_DEVICES=0.\n' >&2
+  printf 'GDN2 address probes are GPU1-only and require CUDA_VISIBLE_DEVICES=0.\n' >&2
   exit 3
 fi
 if [[ -z "${GPU1_UUID:-}" ]]; then
@@ -68,7 +68,8 @@ if [[ "$PHASE" == "formal" && "$P_ADDR_TARGET_STEP" != "9100" ]]; then
       exit 6
     fi
   elif [[ "$ARM" != "position_qk" && "$ARM" != "anchor_rotary" && \
-          "$ARM" != "anchor_phase" && "$ARM" != "anchor_residual" ]]; then
+          "$ARM" != "anchor_phase" && "$ARM" != "anchor_residual" && \
+          "$ARM" != "anchor_qk_residual" ]]; then
     printf 'Unsupported continuation arm: %s.\n' "$ARM" >&2
     exit 6
   fi

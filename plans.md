@@ -11,17 +11,15 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
-Current update (2026-07-31 20:31 CST): `P-ABIND-002` is discarded. It passed
-exact official-GDN2 CUDA identity/provenance tests and learned a strongly
-noncollapsed address phase field, but step9100 mean hard blank was `0.1696`
-versus normal `0.2037` (`-0.0341`), CE `1.9560` versus `1.9370`, and every
-range slightly regressed loop1->5. Mean phase reached `1.02` rad and Q/K moved
-about one entire norm, so lack of capacity/activity is ruled out. Both fixed
-and learned rotation are closed without angle/scale/rank/seed/LR/loss sweeps.
-The sole next gate is `P-ABIND-003`: a shared zero-init stable-address vector
-is added directly to content Q and K before the unchanged official GDN2
-normalization/kernel. This tests learned Euclidean memory coordinates, the
-mechanism pure position-Q/K actually supports.
+Current update (2026-07-31 21:02 CST): `P-ABIND-003` is a real but sub-threshold
+positive. Shared direct address residual lowers CE `1.9370->1.6845`, raises
+mean hard blank `0.2037->0.2844` (`+0.0807`), stays within `+19.5%` runtime,
+and improves every range loop1->5. Paired 64-blank b133 corrects `51->44`
+wrong cells while control worsens `55->58`. It misses the preregistered
+`+0.10` primary gate, so no unchanged continuation. `P-ABIND-004` is now the
+sole active mechanism test: decouple only read-address Q and write-address K
+residual projections, matching the key causal freedom in successful pure
+position-Q/K. Do not run duration, width, rank, scalar, seed, LR, or loss tables.
 
 Current update (2026-07-31 17:31 CST): address/payload-factorized GDN2 is now an
 explicit retained milestone, recorded in
@@ -237,7 +235,8 @@ gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-ABIND-003 | in-progress | 两种 rotation 都已证明“保留 content geometry 再转角度”不是有效地址绑定；pure position-Q/K 的正信号更像来自直接 learned Euclidean address directions。若把 stable anchor 的一个共享零初始化向量直接加到 content Q/K，read/write 应获得一致稳定坐标，同时官方 Q/K normalization 自动控制强度。 | 每层新增无bias `W_address:D->D`，zero init；`a=W_address(LN(anchor))`，`q=q_content+a`,`k=k_content+a` 后进入不变的 official GDN2 chunk/Triton。exact step9000->9100，一个 candidate，同 matched control/data/random-order/optimizer/FutureSeed/loops。只测试 shared residual；不跑 separate-QK/scale/rank/seed/LR/loss表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | CUDA contract + smoke + 100-step gate，约25m | Primary: mean hard blank vs normal`>=+0.10`、CE`>=0.20` better、loop correction、overhead`<=20%`; strong mean`>=0.40`。delta`<+0.05`、CE`>1.70`、address residual inactive/overwrites content或loop无修正即停。 |
+| P-ABIND-004 | in-progress | Shared address residual 已给出`+0.0807`和真实loop修正，但强制 read/write 共用一个对称地址映射；pure position-Q/K 使用独立Q/K映射并达到`+0.2296`。若剩余差距来自 read/write address 的非对称性，独立零初始化Q/K residual应跨过主门槛。 | 每层两个无bias `W_addr_q/W_addr_k:D->D`，均zero init；分别加到content Q/K后进入不变official normalization/chunk/Triton。从exact step9000只到9100；同control/data/order/optimizer/FutureSeed/loops。只跑这一 candidate，不续shared、不跑shared-vs-split表外变体。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | CUDA contract + smoke + 100-step gate，约30m | Primary mean hard blank vs normal`>=+0.10`、CE`>=0.20` better、loop correction、overhead`<=25%`; strong mean`>=0.40`。若未超过shared `0.2844`至少`+0.03`，或CE`>1.60`、loop无修正、residual爆炸，立即停。 |
+| P-ABIND-003 | done | 两种 rotation 都已证明“保留 content geometry 再转角度”不是有效地址绑定；pure position-Q/K 的正信号更像来自直接 learned Euclidean address directions。若把 stable anchor 的一个共享零初始化向量直接加到 content Q/K，read/write 应获得一致稳定坐标，同时官方 Q/K normalization 自动控制强度。 | 每层新增无bias `W_address:D->D`，zero init；`a=W_address(LN(anchor))`，`q=q_content+a`,`k=k_content+a` 后进入不变的 official GDN2 chunk/Triton。exact step9000->9100，一个 candidate，同 matched control/data/random-order/optimizer/FutureSeed/loops。只测试 shared residual；不跑 separate-QK/scale/rank/seed/LR/loss表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract+smoke+100-step gate | Weak positive below primary. CE`1.9370->1.6845`; mean hard blank`0.2037->0.2844` (`+0.0807`); all ranges improve loop1->5; b133 errors`51->44`; runtime+19.5%. Misses +0.10 primary, exact0, so no continuation. Retain Euclidean binding insight; test only Q/K decoupling next. |
 | P-ABIND-002 | discarded | `P-ABIND-001` 证明固定 anchor-channel 配对会轻微破坏 semantic address，而 pure position-Q/K 证明 rich learned address projections 很有效。若 `theta` 由 stable anchor 学习生成到每个 head/state plane，则模型能保留 content Q/K，同时自己学会 address-specific memory coordinates。 | 新增零初始化 `W_theta: D -> H*(K/2)`：`theta=pi*tanh(W_theta(LN(anchor)))`，用同一 theta 正交旋转 content Q/K，再调用未改的 official GDN2 chunk kernel。从 exact step9000 parent 只续100步到9100，与已有 matched normal/position-QK/scalar-rotary 比。一个 candidate；不扫 rank/scale/angle/seed/LR/loss。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract + smoke + 100-step gate | Exact official zero-init identity and official chunk backward pass. Phase field active/diverse: mean phase1.02rad, token std0.79, plane std1.16, Q/K change1.00/1.09. Yet CE`1.9370->1.9560`, mean hard blank`0.2037->0.1696` (`-0.0341`), all ranges regress loop1->5; runtime+18.5%. Rotation parameterization rejected, no sweep. |
 | P-ABIND-001 | discarded | GDN2 state 中的 semantic key 没有与稳定输入身份做代数绑定；纯 position-Q/K 证明稳定地址有用但丢失语义。若用零初始化正交旋转把普通 input anchor 绑定到动态 content Q/K，应在保留语言可迁移性的同时减少 key collision。 | 从 exact strict-FLA step9000 GDN2+FutureSeed checkpoint 只跑一个 `anchor_rotary` candidate 到 step9100；同模型/数据/random order/optimizer/seed/loop/FutureSeed/kernel，与已有 normal-GDN2 step9100 control 比。每层只增加每head一个零初始化旋转强度；state、rank-1 update、官方kernel不变。只有 primary signal才原样续到9300。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract + smoke + 100-step gate | CUDA zero-init output/state/gradient all max-abs0 and official chunk backward retained. Operator active at scale0.00984 / phase0.01277, but CE `1.9370->2.0218`, mean hard blank `0.2037->0.1757` (`-0.0279`), runtime `+23.7%`, and all ranges regress loop1->5. Fixed arbitrary phase map corrupts address; discard without sweep. |
 | P-ADDR-004 | done | Matched step9300 已证明 canonical position-Q/K 不是多训练200步的假象；但 official 51-64 exact 仍全0。若剩余瓶颈主要是 hard-distribution compute 不足，则保持模型、数据、FutureSeed、loop、loss、kernel 全不变，再给300步纯51-64 hard-stage，应该把至少一档 exact 打开，并保留 loop1->5 修正。 | 从 exact position-Q/K step9300 checkpoint 只续到9600；D192/L10/H6/D32、5.462M params、batch128、seed52、random cell order、all-loop CE、official data/FLA chunk+Triton 全不变。单臂只判断 closure slope，不做新的架构因果比较；不跑 control/seed/loss/address/duration 表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；300 hard-stage steps + official eval/viz | Weak opening below gate. CE `0.9661->0.9460`; hard blank mean `0.5437->0.5800` (`+0.0364`). 51-55/56-60 exact `0->0.0059`, 61-64 stays0; all loop1 exact0, so later loops create the few solves. b56_60 batch247 final errors `4->0`; b61_64 best `29->10`, worst `23->34`. Misses exact0.02, mean0.60 and blank+0.04 gates. Stop short continuation stacking; next scale capacity/state/data from matched init. |

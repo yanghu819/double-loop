@@ -209,6 +209,10 @@ ADDRESS_TRAIN_KEYS = (
     "gdn2_address_residual_token_std",
     "gdn2_address_residual_q_ratio",
     "gdn2_address_residual_k_ratio",
+    "gdn2_address_q_residual_weight_rms",
+    "gdn2_address_k_residual_weight_rms",
+    "gdn2_address_q_residual_rms",
+    "gdn2_address_k_residual_rms",
 )
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
@@ -236,6 +240,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_rotary",
     "anchor_phase",
     "anchor_residual",
+    "anchor_qk_residual",
 )
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
@@ -564,6 +569,8 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = "content_qk_learned_address_phase_then_official_gdn2_chunk"
         elif address_mode == "anchor_residual":
             execution_path = "content_qk_shared_address_residual_then_official_gdn2_chunk"
+        elif address_mode == "anchor_qk_residual":
+            execution_path = "content_qk_decoupled_address_residual_then_official_gdn2_chunk"
         elif fast_slow_mode == "positive_causal":
             execution_path = "positive_causal_hazard_then_official_gdn2_chunk"
         elif fast_slow_mode == "external_identity":
@@ -1931,6 +1938,20 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.address_residual_proj is not None:
             nn.init.zeros_(self.address_residual_proj.weight)
+        self.address_q_residual_proj = (
+            nn.Linear(d_model, d_model, bias=False)
+            if address_mode == "anchor_qk_residual"
+            else None
+        )
+        self.address_k_residual_proj = (
+            nn.Linear(d_model, d_model, bias=False)
+            if address_mode == "anchor_qk_residual"
+            else None
+        )
+        if self.address_q_residual_proj is not None:
+            nn.init.zeros_(self.address_q_residual_proj.weight)
+        if self.address_k_residual_proj is not None:
+            nn.init.zeros_(self.address_k_residual_proj.weight)
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -1993,6 +2014,10 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_address_residual_token_std": zero,
             "gdn2_address_residual_q_ratio": zero,
             "gdn2_address_residual_k_ratio": zero,
+            "gdn2_address_q_residual_weight_rms": zero,
+            "gdn2_address_k_residual_weight_rms": zero,
+            "gdn2_address_q_residual_rms": zero,
+            "gdn2_address_k_residual_rms": zero,
         }
 
     def _forward_gain_budget(
@@ -2498,6 +2523,14 @@ class FLADeltaTimeMix(nn.Module):
         elif self.address_mode == "anchor_residual":
             if self.address_residual_proj is None:
                 raise RuntimeError("anchor_residual requires a learned residual projection")
+        elif self.address_mode == "anchor_qk_residual":
+            if (
+                self.address_q_residual_proj is None
+                or self.address_k_residual_proj is None
+            ):
+                raise RuntimeError(
+                    "anchor_qk_residual requires learned Q and K residual projections"
+                )
         else:
             raise RuntimeError(f"unsupported anchor address mode: {self.address_mode}")
         core = self.core
@@ -2533,7 +2566,8 @@ class FLADeltaTimeMix(nn.Module):
         k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
         q_before = q
         k_before = k
-        address_vector: Optional[torch.Tensor] = None
+        q_address_vector: Optional[torch.Tensor] = None
+        k_address_vector: Optional[torch.Tensor] = None
         if self.address_mode == "anchor_rotary":
             anchor_heads = address.reshape(
                 batch_size,
@@ -2571,21 +2605,51 @@ class FLADeltaTimeMix(nn.Module):
             )
             q = apply_address_phase_rotation(q, phase)
             k = apply_address_phase_rotation(k, phase)
-        else:
+        elif self.address_mode == "anchor_residual":
             address_ordered = (
                 address
                 if cell_order is None
                 else address.index_select(1, cell_order)
             )
             assert self.address_residual_proj is not None
-            address_vector = self.address_residual_proj(address_ordered).view(
+            q_address_vector = self.address_residual_proj(address_ordered).view(
                 batch_size,
                 seq_len,
                 core.num_heads,
                 core.head_k_dim,
             )
-            q = q + address_vector.to(dtype=q.dtype)
-            k = k + address_vector.to(dtype=k.dtype)
+            k_address_vector = q_address_vector
+            q = q + q_address_vector.to(dtype=q.dtype)
+            k = k + k_address_vector.to(dtype=k.dtype)
+            phase = q.new_zeros(
+                batch_size,
+                seq_len,
+                core.num_heads,
+                1,
+                dtype=torch.float32,
+            )
+        else:
+            address_ordered = (
+                address
+                if cell_order is None
+                else address.index_select(1, cell_order)
+            )
+            assert self.address_q_residual_proj is not None
+            assert self.address_k_residual_proj is not None
+            q_address_vector = self.address_q_residual_proj(address_ordered).view(
+                batch_size,
+                seq_len,
+                core.num_heads,
+                core.head_k_dim,
+            )
+            k_address_vector = self.address_k_residual_proj(address_ordered).view(
+                batch_size,
+                seq_len,
+                core.num_heads,
+                core.head_k_dim,
+            )
+            q = q + q_address_vector.to(dtype=q.dtype)
+            k = k + k_address_vector.to(dtype=k.dtype)
             phase = q.new_zeros(
                 batch_size,
                 seq_len,
@@ -2659,6 +2723,43 @@ class FLADeltaTimeMix(nn.Module):
             order_displacement = (
                 (cell_order - canonical).abs().float().mean() / float(seq_len - 1)
             ).to(dtype=x.dtype)
+        zero_float = x.new_zeros((), dtype=torch.float32)
+        if self.address_residual_proj is not None:
+            shared_weight_rms = (
+                self.address_residual_proj.weight.float().square().mean().sqrt()
+            )
+            q_residual_weight_rms = shared_weight_rms
+            k_residual_weight_rms = shared_weight_rms
+        else:
+            q_residual_weight_rms = (
+                self.address_q_residual_proj.weight.float().square().mean().sqrt()
+                if self.address_q_residual_proj is not None
+                else zero_float
+            )
+            k_residual_weight_rms = (
+                self.address_k_residual_proj.weight.float().square().mean().sqrt()
+                if self.address_k_residual_proj is not None
+                else zero_float
+            )
+        q_residual_rms = (
+            q_address_vector.float().square().mean().sqrt()
+            if q_address_vector is not None
+            else zero_float
+        )
+        k_residual_rms = (
+            k_address_vector.float().square().mean().sqrt()
+            if k_address_vector is not None
+            else zero_float
+        )
+        residual_token_std = (
+            0.5
+            * (
+                q_address_vector.float().std(dim=1, unbiased=False).mean()
+                + k_address_vector.float().std(dim=1, unbiased=False).mean()
+            )
+            if q_address_vector is not None and k_address_vector is not None
+            else zero_float
+        )
         self.last_gain_budget_diag = {
             **self._zero_address_diag(x),
             "gdn2_address_enabled": x.new_ones(()),
@@ -2685,32 +2786,34 @@ class FLADeltaTimeMix(nn.Module):
                 dim=-1, unbiased=False
             ).mean().detach().to(dtype=x.dtype),
             "gdn2_address_residual_weight_rms": (
-                self.address_residual_proj.weight.float().square().mean().sqrt()
-                if self.address_residual_proj is not None
-                else x.new_zeros((), dtype=torch.float32)
+                0.5 * (q_residual_weight_rms + k_residual_weight_rms)
             ).detach().to(dtype=x.dtype),
             "gdn2_address_residual_rms": (
-                address_vector.float().square().mean().sqrt()
-                if address_vector is not None
-                else x.new_zeros((), dtype=torch.float32)
+                0.5 * (q_residual_rms + k_residual_rms)
             ).detach().to(dtype=x.dtype),
-            "gdn2_address_residual_token_std": (
-                address_vector.float().std(dim=1, unbiased=False).mean()
-                if address_vector is not None
-                else x.new_zeros((), dtype=torch.float32)
-            ).detach().to(dtype=x.dtype),
+            "gdn2_address_residual_token_std": residual_token_std.detach().to(
+                dtype=x.dtype
+            ),
             "gdn2_address_residual_q_ratio": (
-                address_vector.float().norm()
+                q_address_vector.float().norm()
                 / q_before.float().norm().clamp(min=1e-6)
-                if address_vector is not None
-                else x.new_zeros((), dtype=torch.float32)
+                if q_address_vector is not None
+                else zero_float
             ).detach().to(dtype=x.dtype),
             "gdn2_address_residual_k_ratio": (
-                address_vector.float().norm()
+                k_address_vector.float().norm()
                 / k_before.float().norm().clamp(min=1e-6)
-                if address_vector is not None
-                else x.new_zeros((), dtype=torch.float32)
+                if k_address_vector is not None
+                else zero_float
             ).detach().to(dtype=x.dtype),
+            "gdn2_address_q_residual_weight_rms": q_residual_weight_rms.detach().to(
+                dtype=x.dtype
+            ),
+            "gdn2_address_k_residual_weight_rms": k_residual_weight_rms.detach().to(
+                dtype=x.dtype
+            ),
+            "gdn2_address_q_residual_rms": q_residual_rms.detach().to(dtype=x.dtype),
+            "gdn2_address_k_residual_rms": k_residual_rms.detach().to(dtype=x.dtype),
         }
 
         output_gate = core.g_proj(x).view(
@@ -2821,6 +2924,7 @@ class FLADeltaTimeMix(nn.Module):
             "anchor_rotary",
             "anchor_phase",
             "anchor_residual",
+            "anchor_qk_residual",
         }:
             if address is None:
                 raise ValueError(
@@ -4057,6 +4161,8 @@ def load_training_checkpoint(
         ".time_mix.address_rotation_scale",
         ".time_mix.address_phase_proj.weight",
         ".time_mix.address_residual_proj.weight",
+        ".time_mix.address_q_residual_proj.weight",
+        ".time_mix.address_k_residual_proj.weight",
     )
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
@@ -4637,6 +4743,7 @@ class FutureSeedLoopSudoku(nn.Module):
             "anchor_rotary",
             "anchor_phase",
             "anchor_residual",
+            "anchor_qk_residual",
         }:
             address = self.canonical_input_anchor_sequence(inputs)
         else:
@@ -5033,6 +5140,14 @@ def fs_line(m: Dict[str, float]) -> str:
                 f"{m.get('gdn2_address_residual_token_std', 0.0):.4f}/"
                 f"{m.get('gdn2_address_residual_q_ratio', 0.0):.4f}/"
                 f"{m.get('gdn2_address_residual_k_ratio', 0.0):.4f}"
+            )
+        if m.get("gdn2_address_q_residual_weight_rms", 0.0) > 0:
+            parts.append(
+                "addr_qk_residual="
+                f"{m.get('gdn2_address_q_residual_weight_rms', 0.0):.4f}/"
+                f"{m.get('gdn2_address_k_residual_weight_rms', 0.0):.4f}/"
+                f"{m.get('gdn2_address_q_residual_rms', 0.0):.4f}/"
+                f"{m.get('gdn2_address_k_residual_rms', 0.0):.4f}"
             )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
@@ -5801,6 +5916,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"addr_rstd={last_address_diag['gdn2_address_residual_token_std']:.4f} "
                     f"addr_rq={last_address_diag['gdn2_address_residual_q_ratio']:.4f} "
                     f"addr_rk={last_address_diag['gdn2_address_residual_k_ratio']:.4f} "
+                    f"addr_qwrms={last_address_diag['gdn2_address_q_residual_weight_rms']:.4f} "
+                    f"addr_kwrms={last_address_diag['gdn2_address_k_residual_weight_rms']:.4f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )

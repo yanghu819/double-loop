@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-ABIND-003`
-- Status: in progress
+- Status: done as a weak positive; no unchanged continuation authorized
 - Approved by user: 2026-07-31
 - Machine: AIStation GPU1, one A800 80GB
 - Source branch: `codex/gdn2-address-operator-20260731`
@@ -78,15 +78,61 @@ loss, or initialization table. Budget: about 25 minutes on GPU1.
 
 ## 6. Artifacts
 
-Pending.
+- Formal run: `gdn2-address-anchor_residual-s9100-20260731T124800Z-7aa3f7b`
+- Remote run directory:
+  `/huyang2/double-loop/runs/gdn2-address-anchor_residual-s9100-20260731T124800Z-7aa3f7b`
+- Local mirror:
+  `.codex-transfer/localrepo/runs/gdn2-address-anchor_residual-s9100-20260731T124800Z-7aa3f7b`
+- CUDA contract log:
+  `/huyang2/double-loop/artifacts/launch/gdn2-anchor-residual-cuda-check-7aa3f7b.log`
+- Exact clean source: `7aa3f7b182bd62a1dcfba40a1a9dd24e6ac1dcad`.
+- Archive includes config, score, metadata, logs, source snapshot/SHA/patch,
+  checkpoint eval, all case banks, JSON/Markdown, and HTML visualizations.
 
 ## 7. Results
 
-Pending.
+CUDA validation passed against pinned official FLA `9c8e42e7`: zero-init
+output/state/base-gradient errors were exactly `0.0` with and without initial
+state; the new weight had a nonzero first-step gradient; active input, anchor,
+state, and weight gradients were finite/nonzero; reorder error was `0.0`; and
+the graph retained `ChunkGDN2FunctionBackward`.
+
+| Step9100 metric | Normal GDN2 | Shared address residual | Delta |
+|---|---:|---:|---:|
+| train CE | 1.9370 | 1.6845 | -0.2525 better |
+| 51-55 loop5 blank acc | 0.2120 | 0.3106 | +0.0986 |
+| 56-60 loop5 blank acc | 0.2119 | 0.2860 | +0.0741 |
+| 61-64 loop5 blank acc | 0.1871 | 0.2565 | +0.0694 |
+| mean hard blank acc | 0.2037 | 0.2844 | +0.0807 |
+| train elapsed | 649.9 s | 776.9 s | +19.5% |
+| parameters | 5,461,688 | 5,830,328 | +368,640 |
+
+The residual stayed materially smaller than content Q/K: at step9100 its
+mean RMS was `0.5231`, with Q/K relative ratios `0.2782/0.3651`. Unlike either
+rotation, it improved every official range from loop1 to loop5:
+`0.3008->0.3106`, `0.2763->0.2860`, and `0.2492->0.2565`. Exact remains zero.
+
+All paired data hashes match. On mechanically selected 64-blank batch 133,
+wrong cells change normal `55->58`, pure position-Q/K `42->40`, and shared
+residual `51->46->47->44->44` across loops1-5. The archived HTML therefore
+shows genuine recurrent correction, not only a better loop1 operating point.
 
 ## 8. Decision And Lessons
 
-Pending.
+Keep direct Euclidean address residual as the first successful generic binding
+mechanism in this sequence. It passes CE, systems, activity, and real-loop-
+correction checks, and beats normal GDN2 by `+0.0807` mean hard blank.
+
+It narrowly misses the preregistered primary quality threshold `+0.10`, so an
+unchanged step9300 continuation is not authorized. Exact remains zero, and the
+result is not yet a paper-level win.
+
+The remaining high-value causal difference from pure position-Q/K is that the
+current candidate forces reads and writes to share one address map. That
+creates a symmetric address similarity, while ordinary Q/K and the successful
+position diagnostic use independent read/write maps. The next one-shot test
+decouples only those two residual projections. It is not a width/rank/scale or
+training-duration sweep.
 
 ## 9. Submission
 

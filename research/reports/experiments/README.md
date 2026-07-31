@@ -27,7 +27,9 @@ The latest generic memory-address tests are documented in
 `gdn2-address-matched-total-compute-20260731.md`. Canonical-position Q/K
 substantially improves randomly ordered GDN2+FutureSeed training and produces
 real later-loop correction. Its mean official hard blank advantage remains
-`+0.2683` at matched step9300, but official 51-64 exact remains zero. The
-separate `kda-occurrence-address-probe-20260730.md` shows that standard
-occurrence rotary does not make overwritten KDA values queryable and is
-rejected.
+`+0.2683` at matched step9300. The follow-up
+`gdn2-address-hard-stage-scale-20260731.md` first opens exact to `0.0059` in
+two hard ranges, but misses its preregistered continuation gates and exposes
+large paired regressions; short continuation stacking is stopped. The separate
+`kda-occurrence-address-probe-20260730.md` shows that standard occurrence
+rotary does not make overwritten KDA values queryable and is rejected.

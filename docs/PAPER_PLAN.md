@@ -55,8 +55,11 @@ for scaling to harder spatial reasoning tasks.
   recurrent-kernel change. On matched 64-blank batch69, normal GDN2 changes
   `53->50->50->51->51` wrong cells while the split carrier changes
   `32->21->18->15->15`. This is persistent optimization and loop-correction
-  evidence, but official hard exact remains zero. A paper claim still needs
-  clean matched scaling to convert partial accuracy into global closure.
+  evidence. A clean step9300->9600 hard-stage continuation first opens exact
+  to `0.0059` in 51-55 and 56-60 through later loops, but mean hard blank only
+  rises `+0.0364` and 61-64 exact remains zero. The paper can claim improved
+  address learning and conditional recurrent correction, not robust global
+  closure. The next evidence gate needs matched capacity/data scaling.
 - Strong positive: RWKV9 Sudoku with and without FutureSeed, same CUDA
   state-passing backbone and same budget. Without FutureSeed, h12 loop5 exact is
   `0.0156` and early blank cells are much worse than late blank cells. With

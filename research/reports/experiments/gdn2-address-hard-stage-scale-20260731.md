@@ -3,10 +3,11 @@
 ## 1. Metainfo
 
 - Plan: `P-ADDR-004`
-- Status: preregistered; one GPU1 continuation pending
+- Status: completed; weak exact opening below the continuation gate
 - Machine: AIStation GPU1, one A800 80GB
 - Source branch: `codex/gdn2-address-binding-20260730`
 - Preregistered: 2026-07-31 14:20 CST
+- Completed: 2026-07-31 15:04 CST
 
 ## 2. Question
 
@@ -73,8 +74,48 @@ alone is insufficient.
 
 ## 8. Artifacts
 
-Pending.
+- Run:
+  `runs/gdn2-address-position_qk-s9600-20260731T062629Z-f8151df/`
+- Matched step9300/9600 comparison JSON, HTML, and four screenshots:
+  `runs/gdn2-address-scale-s9300-s9600-20260731/`
+- Source SHA:
+  `f8151df36cf3c29e3da13eaa169274fa7e427e05`, clean.
+- Source snapshot SHA256:
+  `6e9090fa5cc30eb46b65d676414a378fe18a126a07805ea1b568654dc1cb253a`.
+- The source tarball and model checkpoints remain outside Git.
 
 ## 9. Results And Decision
 
-Pending.
+The run completed all 300 optimizer steps. The step9450 kill condition did not
+fire: CE was `0.9442`, below `0.95`. Final step9600 CE was `0.9460`, compared
+with `0.9661` at step9300.
+
+| official blank range | step9300 blank | step9600 blank | delta | step9300 exact | step9600 exact |
+|---|---:|---:|---:|---:|---:|
+| 51-55 | 0.5660 | 0.5845 | +0.0185 | 0.0000 | 0.0059 |
+| 56-60 | 0.5057 | 0.5171 | +0.0114 | 0.0000 | 0.0059 |
+| 61-64 | 0.5594 | 0.6386 | +0.0792 | 0.0000 | 0.0000 |
+| mean | 0.5437 | 0.5800 | **+0.0364** | 0.0000 | 0.0039 |
+
+The primary gate fails: no range reaches exact `0.02`, mean blank is below
+`0.60`, and 61-64 exact remains zero. The preregistered `+0.04` blank-only
+partial gate is also missed narrowly. This is nevertheless a real weak
+opening, not a zero result: official loop1 exact is zero in every range, while
+loop5 reaches `0.0059` in 51-55 and 56-60.
+
+Paired visualization explains the mixed aggregate:
+
+- Exact-opening 56-blank batch247 changes at step9300
+  `20 -> 12 -> 5 -> 4 -> 4` wrong cells and at step9600
+  `19 -> 9 -> 2 -> 0 -> 0`.
+- Largest 64-blank improvement, batch31, changes final wrong cells
+  `29 -> 10`; loop correction strengthens from `+7` to `+25`.
+- Largest 64-blank regression, batch133, changes final wrong cells
+  `23 -> 34`; loop correction weakens from `+13` to `+2`.
+
+**Decision:** stop short continuation stacking. More clean hard-stage compute
+can open a few exact solves and strongly help the hardest-range average, but
+the gain is heterogeneous and misses every continuation threshold. The next
+high-value scaling test must increase generic model/state capacity or
+independent data coverage from a matched initialization. Do not tune duration,
+loss, seed, or address mode around this checkpoint.

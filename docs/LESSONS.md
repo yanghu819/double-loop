@@ -1425,9 +1425,17 @@
   consistency after partial correction, not address binding alone.
 - This direction remains compatible with the bitter lesson: it is a generic,
   parameter-neutral factorization of recurrent address and payload, not a
-  Sudoku rule. Continue only with clean data/model/compute scaling and a
-  matched from-scratch data/model/compute scaling, not address-mode,
-  loss-weight, or seed tables.
+  Sudoku rule. Continue only with matched from-scratch data/model/compute
+  scaling, not address-mode, loss-weight, or seed tables.
+- More compute helps, but short continuation stacking is already showing
+  diminishing and heterogeneous returns. Step9300->9600 raises mean hard blank
+  `0.5437 -> 0.5800` and opens exact `0.0059` in two ranges, entirely through
+  later loops. It misses the predeclared `0.02` exact and `+0.04` blank gates.
+- Average scaling can hide unstable trajectories. One 56-blank board goes from
+  four final errors to solved, and one 64-blank board improves `29 -> 10`, but
+  another 64-blank board regresses `23 -> 34`. The next scaling axis should
+  increase generic capacity or independent data coverage, not append another
+  300 steps to the same state.
 
 ## 2026-07-31 KDA occurrence rotary
 

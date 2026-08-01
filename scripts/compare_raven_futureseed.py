@@ -157,7 +157,14 @@ def main() -> None:
     if gdn2["puzzle_sha256"] != raven["puzzle_sha256"]:
         raise RuntimeError("Primary visualization puzzle differs across arms")
 
-    ignored = {"backbone", "gdn_use_short_conv", "raven_num_slots", "raven_topk", "out_dir"}
+    ignored = {
+        "backbone",
+        "gdn_use_short_conv",
+        "raven_num_slots",
+        "raven_topk",
+        "out_dir",
+        "train_checkpoint_dir",
+    }
     mismatches = {
         key: [gdn2["args"].get(key), raven["args"].get(key)]
         for key in sorted(set(gdn2["args"]) | set(raven["args"]))

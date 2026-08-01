@@ -1481,3 +1481,28 @@
   build a learned counter on this evidence. A future revisit requires
   qualitatively different versioned/orthogonal state capacity rather than
   better occurrence labels on an overwrite-like state.
+
+## 2026-08-01 Address-conditioned GDN2 write carrier
+
+- A mechanism can be algebraically exact and CUDA-correct but still be useless
+  because its easiest optimization path is not the intended behavior. The
+  carrier fold reproduces the direct recurrence within BF16 tolerance, keeps
+  the official `ChunkGDN2FunctionBackward`, and is exactly the shared-address
+  baseline when the carrier is one.
+- The near-one sigmoid carrier did not learn selective memory writes. After the
+  matched continuation its mean is `0.997525`, token std is only `1.05e-5`, no
+  value is below `0.95`, and effective write norm is uniformly reduced by
+  about `0.25%`. This is global shrinkage, not address-specific routing.
+- Mechanical capacity is not evidence of useful computation. The candidate
+  adds only 3,840 parameters and remains numerically stable, yet mean official
+  51-64 loop5 blank changes only `0.501809 -> 0.501669`, CE is slightly worse,
+  and loop correction is unchanged while time/VRAM rise `11.42%/31.72%`.
+- Close this exact `sigmoid(6 + bias + scale * address)` design. Do not sweep
+  its seed, bias, scale, LR, loss, rank, width, or duration. A future generic
+  carrier must expose address variation through a nonsaturated exact-identity
+  parameterization and demonstrate selective writes on an interference or
+  retrieval task before returning to downstream benchmarks.
+- Keep the causal boundary clear: this negative result rejects one optimization
+  geometry, not the broader idea that online memory learning rates can depend
+  on address. The shared Euclidean address residual remains the retained GDN2
+  modification.

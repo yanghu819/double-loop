@@ -11,6 +11,20 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
+Current update (2026-08-01 13:27 CST): `P-CARRIER-001` is discarded after its
+single preregistered GPU1 probe. The algebraic fold matches the direct Torch
+recurrence and keeps the pinned official FLA CUDA backward, but the learned
+carrier is effectively constant: mean `0.997525`, token std `0.0000105`, and
+no value below `0.95`. Relative to the exact matched shared-address control,
+mean official 51-64 loop5 blank changes `0.501809 -> 0.501669`, CE changes
+`1.055997 -> 1.056259`, loop gain changes `0.060443 -> 0.060008`, runtime is
+`+11.42%`, and peak allocated VRAM is `+31.72%`; hard exact remains zero.
+Close the near-one sigmoid carrier parameterization without a seed, bias,
+scale, LR, loss, width, or duration sweep. Retain shared Euclidean address
+binding as the baseline; any future address-specific learning-rate test must
+change optimization geometry and first show selective writes on a generic
+interference/retrieval task.
+
 Current update (2026-08-01 CST): `P-CARRIER-001` is the sole user-authorized
 mechanism probe. Shared stable Q/K address binding is retained; the new question
 is whether a per-token/head/K-channel carrier conditioned on that same address
@@ -247,7 +261,7 @@ gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-CARRIER-001 | in-progress | Shared Q/K address 已减少地址冲突，但同一个 key 同时定义 erase 和哪些 K rows 接收 correction。若 shared address 还能控制逐 K-channel carrier，模型可在不编码任务规则的情况下减少 online memory interference。 | 保留 `anchor_residual`；新增 `carrier=sigmoid(6+bias_delta+scale*address)`，并用 `k'=c*k,b'=r^2*b/c,w'=r*w,r=||c*k||/||k||` 精确折叠进不变 official GDN2 kernel。matched shared control vs carrier 从同一 step9100 到9200；一个 seed，无 gate/bias/scale/rank/LR/loss/时长表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | CUDA gate + 2x100 steps，约35分钟 | candidate mean hard blank `>=+0.03`，或 CE `>=0.05` lower 且 loop gain 更强；carrier token std `>=0.002`；state RMS `<2x` control；无收益或 overhead>25% 则停止 | in progress |
+| P-CARRIER-001 | discarded | Shared Q/K address 已减少地址冲突，但同一个 key 同时定义 erase 和哪些 K rows 接收 correction。若 shared address 还能控制逐 K-channel carrier，模型可在不编码任务规则的情况下减少 online memory interference。 | 保留 `anchor_residual`；新增 `carrier=sigmoid(6+bias_delta+scale*address)`，并用 `k'=c*k,b'=r^2*b/c,w'=r*w,r=||c*k||/||k||` 精确折叠进不变 official GDN2 kernel。matched shared control vs carrier 从同一 step9100 到9200；一个 seed，无 gate/bias/scale/rank/LR/loss/时长表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-08-01；CUDA contract + smoke + 2x100 matched steps | candidate mean hard blank `>=+0.03`，或 CE `>=0.05` lower 且 loop gain 更强；carrier token std `>=0.002`；state RMS `<2x` control；无收益或 overhead>25% 则停止 | CUDA fold/real backward pass, but carrier collapses to near-global shrink: token std `1.05e-5`, mean `0.997525`, no value `<0.95`. Mean hard loop5 blank `0.501809->0.501669` (`-0.000140`), CE `1.055997->1.056259`, loop gain `0.060443->0.060008`, exact0, runtime `+11.42%`, VRAM `+31.72%`. Reject this sigmoid carrier without sweep; retain shared address residual. |
 | P-ABIND-004 | discarded | Shared address residual 已给出`+0.0807`和真实loop修正，但强制 read/write 共用一个对称地址映射；pure position-Q/K 使用独立Q/K映射并达到`+0.2296`。若剩余差距来自 read/write address 的非对称性，独立零初始化Q/K residual应跨过主门槛。 | 每层两个无bias `W_addr_q/W_addr_k:D->D`，均zero init；分别加到content Q/K后进入不变official normalization/chunk/Triton。从exact step9000只到9100；同control/data/order/optimizer/FutureSeed/loops。只跑这一 candidate，不续shared、不跑shared-vs-split表外变体。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract+smoke+100-step gate | Active but negative. CE`1.7730`; mean hard blank`0.2313`, only`+0.0276` vs normal and`-0.0531` vs shared; loop gain`+0.0027`; runtime`+54.7%`; exact0. More capacity does not help. Shared coordinate alignment is the useful bias; stop without continuation/sweep. |
 | P-ABIND-003 | done | 两种 rotation 都已证明“保留 content geometry 再转角度”不是有效地址绑定；pure position-Q/K 的正信号更像来自直接 learned Euclidean address directions。若把 stable anchor 的一个共享零初始化向量直接加到 content Q/K，read/write 应获得一致稳定坐标，同时官方 Q/K normalization 自动控制强度。 | 每层新增无bias `W_address:D->D`，zero init；`a=W_address(LN(anchor))`，`q=q_content+a`,`k=k_content+a` 后进入不变的 official GDN2 chunk/Triton。exact step9000->9100，一个 candidate，同 matched control/data/random-order/optimizer/FutureSeed/loops。只测试 shared residual；不跑 separate-QK/scale/rank/seed/LR/loss表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract+smoke+100-step gate | Weak positive below primary. CE`1.9370->1.6845`; mean hard blank`0.2037->0.2844` (`+0.0807`); all ranges improve loop1->5; b133 errors`51->44`; runtime+19.5%. Misses +0.10 primary, exact0, so no continuation. Retain Euclidean binding insight; test only Q/K decoupling next. |
 | P-ABIND-002 | discarded | `P-ABIND-001` 证明固定 anchor-channel 配对会轻微破坏 semantic address，而 pure position-Q/K 证明 rich learned address projections 很有效。若 `theta` 由 stable anchor 学习生成到每个 head/state plane，则模型能保留 content Q/K，同时自己学会 address-specific memory coordinates。 | 新增零初始化 `W_theta: D -> H*(K/2)`：`theta=pi*tanh(W_theta(LN(anchor)))`，用同一 theta 正交旋转 content Q/K，再调用未改的 official GDN2 chunk kernel。从 exact step9000 parent 只续100步到9100，与已有 matched normal/position-QK/scalar-rotary 比。一个 candidate；不扫 rank/scale/angle/seed/LR/loss。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract + smoke + 100-step gate | Exact official zero-init identity and official chunk backward pass. Phase field active/diverse: mean phase1.02rad, token std0.79, plane std1.16, Q/K change1.00/1.09. Yet CE`1.9370->1.9560`, mean hard blank`0.2037->0.1696` (`-0.0341`), all ranges regress loop1->5; runtime+18.5%. Rotation parameterization rejected, no sweep. |

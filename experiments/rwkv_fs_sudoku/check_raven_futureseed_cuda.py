@@ -57,6 +57,7 @@ def main() -> None:
     require(FLARaven is not None and FLACache is not None, "Official Raven/FLA Cache import failed")
     persist_root = Path(os.environ.get("PERSIST_ROOT", "")).resolve()
     require(str(persist_root) == "/huyang2/double-loop", "PERSIST_ROOT contract drifted")
+    allowed_cache_root = Path("/huyang2/double-loop/.cache")
     for cache_name in (
         "XDG_CACHE_HOME",
         "TRITON_CACHE_DIR",
@@ -66,7 +67,7 @@ def main() -> None:
     ):
         cache_path = Path(os.environ.get(cache_name, "")).resolve()
         require(
-            str(cache_path).startswith("/huyang2/double-loop/.cache/"),
+            cache_path == allowed_cache_root or allowed_cache_root in cache_path.parents,
             f"{cache_name} must stay under /huyang2/double-loop/.cache, got {cache_path}",
         )
     source_sha, source_root, source_module = resolve_strict_fla_source("raven")

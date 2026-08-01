@@ -55,6 +55,20 @@ def main() -> None:
     require(torch.cuda.is_available(), "CUDA is unavailable; CPU fallback is forbidden")
     require(torch.cuda.device_count() == 1, "The process must expose exactly GPU1")
     require(FLARaven is not None and FLACache is not None, "Official Raven/FLA Cache import failed")
+    persist_root = Path(os.environ.get("PERSIST_ROOT", "")).resolve()
+    require(str(persist_root) == "/huyang2/double-loop", "PERSIST_ROOT contract drifted")
+    for cache_name in (
+        "XDG_CACHE_HOME",
+        "TRITON_CACHE_DIR",
+        "TORCHINDUCTOR_CACHE_DIR",
+        "TORCH_EXTENSIONS_DIR",
+        "TMPDIR",
+    ):
+        cache_path = Path(os.environ.get(cache_name, "")).resolve()
+        require(
+            str(cache_path).startswith("/huyang2/double-loop/.cache/"),
+            f"{cache_name} must stay under /huyang2/double-loop/.cache, got {cache_path}",
+        )
     source_sha, source_root, source_module = resolve_strict_fla_source("raven")
     require(source_sha == RAVEN_FLA_SHA, "Unexpected Raven FLA source SHA")
 
@@ -190,6 +204,16 @@ def main() -> None:
         "fla_source_sha": source_sha,
         "fla_source_root": source_root,
         "fla_source_module": source_module,
+        "cache_roots": {
+            name: os.environ[name]
+            for name in (
+                "XDG_CACHE_HOME",
+                "TRITON_CACHE_DIR",
+                "TORCHINDUCTOR_CACHE_DIR",
+                "TORCH_EXTENSIONS_DIR",
+                "TMPDIR",
+            )
+        },
         "official_class": f"{type(mix.core).__module__}.{type(mix.core).__qualname__}",
         "official_kernel": "fla.ops.gsa.chunk_gsa",
         "mode": mix.core.mode,

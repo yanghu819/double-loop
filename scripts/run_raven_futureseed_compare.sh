@@ -7,11 +7,22 @@ TIMESTAMP="${RAVEN_COMPARE_TIMESTAMP:-$(date -u +%Y%m%dT%H%M%SZ)}"
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 GROUP_NAME="${RAVEN_COMPARE_GROUP:-raven-futureseed-vs-gdn2-${TIMESTAMP}-${GIT_SHA:0:7}}"
 GROUP_DIR="$PERSIST_ROOT/runs/$GROUP_NAME"
-mkdir -p "$GROUP_DIR"
+mkdir -p \
+  "$GROUP_DIR" \
+  "$PERSIST_ROOT/.cache/triton-raven-31d15f7" \
+  "$PERSIST_ROOT/.cache/torchinductor-raven-31d15f7" \
+  "$PERSIST_ROOT/.cache/torch_extensions" \
+  "$PERSIST_ROOT/.cache/tmp"
 
 GPU_UUID="$(nvidia-smi --query-gpu=uuid --format=csv,noheader -i 0 | tr -d '[:space:]')"
 CONTRACT_JSON="$GROUP_DIR/raven_cuda_contract.json"
 CUDA_VISIBLE_DEVICES=0 \
+PERSIST_ROOT="$PERSIST_ROOT" \
+XDG_CACHE_HOME="$PERSIST_ROOT/.cache" \
+TRITON_CACHE_DIR="$PERSIST_ROOT/.cache/triton-raven-31d15f7" \
+TORCHINDUCTOR_CACHE_DIR="$PERSIST_ROOT/.cache/torchinductor-raven-31d15f7" \
+TORCH_EXTENSIONS_DIR="$PERSIST_ROOT/.cache/torch_extensions" \
+TMPDIR="$PERSIST_ROOT/.cache/tmp" \
 FLA_DISABLE_BACKEND_DISPATCH=1 \
 FLA_CONV_BACKEND=triton \
 FLA_EXPECTED_SOURCE_SHA=31d15f7554bd5df05d3da6f75e09146279d2b1a8 \

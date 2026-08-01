@@ -1,0 +1,62 @@
+{
+  "status": "pass",
+  "torch_version": "2.7.0+cu126",
+  "gpu": {
+    "index": "0",
+    "uuid": "GPU-7db97dd1-77e8-df7f-570e-09e7059ba5a3",
+    "name": "NVIDIA A800-SXM4-80GB"
+  },
+  "fla_source_sha": "31d15f7554bd5df05d3da6f75e09146279d2b1a8",
+  "fla_source_root": "/huyang2/double-loop/.cache/fla-upstream-31d15f7",
+  "fla_source_module": "/huyang2/double-loop/.cache/fla-upstream-31d15f7/fla/layers/raven.py",
+  "cache_roots": {
+    "XDG_CACHE_HOME": "/huyang2/double-loop/.cache",
+    "TRITON_CACHE_DIR": "/huyang2/double-loop/.cache/triton-raven-31d15f7",
+    "TORCHINDUCTOR_CACHE_DIR": "/huyang2/double-loop/.cache/torchinductor-raven-31d15f7",
+    "TORCH_EXTENSIONS_DIR": "/huyang2/double-loop/.cache/torch_extensions",
+    "TMPDIR": "/huyang2/double-loop/.cache/tmp"
+  },
+  "official_class": "fla.layers.raven.Raven",
+  "official_kernel": "fla.ops.gsa.chunk_gsa",
+  "mode": "chunk",
+  "state": {
+    "head_dim": 32,
+    "num_slots": 16,
+    "topk": 2,
+    "occupancy": 0.125,
+    "raven_elements_per_head": 1024,
+    "gdn2_elements_per_head": 1024,
+    "packed_shape": [
+      2,
+      2,
+      64,
+      16
+    ],
+    "pack_roundtrip_exact": true
+  },
+  "adapter_matches_official_output": true,
+  "adapter_matches_official_state": true,
+  "initial_state_output_rms_change": 0.04479965940117836,
+  "future_seed_output_rms_change": 0.5943717956542969,
+  "training_loss": 0.3381061851978302,
+  "gradients": {
+    "router": true,
+    "key": true,
+    "value": true
+  },
+  "matched_gdn2": {
+    "official_class": "fla.layers.gdn2.GatedDeltaNet2",
+    "state_shape": [
+      2,
+      2,
+      32,
+      32
+    ],
+    "training_loss": 0.06728550046682358,
+    "gradients": {
+      "key": true,
+      "value": true
+    }
+  },
+  "cpu_fallback": false
+}

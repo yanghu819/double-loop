@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raven FutureSeed vs GDN2</title>
+<style>
+body{margin:0;font:14px/1.5 ui-sans-serif,system-ui;color:#171717;background:#f7f7f5}
+header,section{padding:24px max(24px,calc((100vw - 1180px)/2))}header{background:#171717;color:white}
+h1{margin:0 0 8px;font-size:28px}h2{font-size:19px;margin:0 0 14px}p{max-width:900px}
+table{width:100%;border-collapse:collapse;background:white}th,td{padding:10px;border:1px solid #d8d8d3;text-align:right}th:first-child,td:first-child{text-align:left}
+.verdict{font-size:17px;font-weight:700;color:#9b3426}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#d8d8d3;border:1px solid #d8d8d3}
+.fact{background:white;padding:14px}.fact b{display:block;font-size:20px}
+.cases{display:grid;grid-template-columns:1fr 1fr;gap:12px}iframe{width:100%;height:760px;border:1px solid #bbb;background:white}
+@media(max-width:800px){.facts,.cases{grid-template-columns:1fr}iframe{height:680px}}
+</style></head><body>
+<header><h1>Raven + FutureSeed vs GDN2 + FutureSeed</h1><p>Same source, official Sudoku data, seed, optimizer, loop supervision, and 1024 recurrent-state elements per head.</p></header>
+<section><p class="verdict">Raven does not beat GDN2 on the primary hard-range exact metric.</p><div class="facts">
+<div class="fact"><span>51-55 exact delta</span><b>+0.0000</b></div>
+<div class="fact"><span>51-55 blank-acc delta</span><b>-0.0782</b></div>
+<div class="fact"><span>Raven loop gain</span><b>+0.0000</b></div>
+<div class="fact"><span>Raven speed ratio</span><b>1.275x</b></div></div></section>
+<section><h2>Hardness ranges, loop 5</h2><table><thead><tr><th>blanks</th><th>GDN2 exact</th><th>Raven exact</th><th>exact delta</th><th>GDN2 blank acc</th><th>Raven blank acc</th></tr></thead><tbody><tr><td>46-50</td><td>79.69%</td><td>0.00%</td><td>-0.7969</td><td>99.18%</td><td>77.71%</td></tr><tr><td>51-55</td><td>0.00%</td><td>0.00%</td><td>+0.0000</td><td>52.57%</td><td>44.75%</td></tr><tr><td>56-64</td><td>0.00%</td><td>0.00%</td><td>+0.0000</td><td>46.80%</td><td>40.52%</td></tr></tbody></table></section>
+<section><h2>Loop behavior on the shared visual case</h2><table><thead><tr><th>loop</th><th>GDN2 exact</th><th>Raven exact</th><th>GDN2 blank acc</th><th>Raven blank acc</th><th>GDN2 wrong cells</th><th>Raven wrong cells</th></tr></thead><tbody><tr><td>1</td><td>0.98%</td><td>0.00%</td><td>48.54%</td><td>41.97%</td><td>23</td><td>34</td></tr><tr><td>2</td><td>1.56%</td><td>0.00%</td><td>50.11%</td><td>42.95%</td><td>21</td><td>31</td></tr><tr><td>3</td><td>1.95%</td><td>0.00%</td><td>50.11%</td><td>42.87%</td><td>22</td><td>31</td></tr><tr><td>4</td><td>1.95%</td><td>0.00%</td><td>50.15%</td><td>42.91%</td><td>22</td><td>30</td></tr><tr><td>5</td><td>1.95%</td><td>0.00%</td><td>50.12%</td><td>42.92%</td><td>22</td><td>30</td></tr></tbody></table></section>
+<section><h2>Same hard case, side by side</h2><div class="cases"><iframe src="../raven-futureseed-vs-gdn2-20260801T104903Z-f2306f8-gdn2/output/futureseed_loop_case_seed52.html" title="GDN2 case"></iframe><iframe src="../raven-futureseed-vs-gdn2-20260801T104903Z-f2306f8-raven/output/futureseed_loop_case_seed52.html" title="Raven case"></iframe></div></section>
+</body></html>

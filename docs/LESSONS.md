@@ -1506,3 +1506,27 @@
   geometry, not the broader idea that online memory learning rates can depend
   on address. The shared Euclidean address residual remains the retained GDN2
   modification.
+
+## 2026-08-01 Raven as a FutureSeed carrier
+
+- A newer architecture is not automatically a better carrier. Under the same
+  FutureSeed shell and exactly 1024 recurrent-state values per head, official
+  Raven reaches train CE `1.1388` versus GDN2 `1.0186` and is `27.5%` slower
+  per optimizer step.
+- Sparse routing does reduce model and memory cost: Raven uses 4.650M
+  parameters and 7262 MiB peak allocation versus GDN2's 5.462M and 8025 MiB.
+  That systems saving is real, but it is not a quality win.
+- Dense global constraints are a poor match for this small-slot regime. On
+  official 46-50 blanks, GDN2 reaches `0.7969` exact while Raven remains at
+  zero despite `0.7771` blank accuracy. On 51-55 blanks, Raven trails blank
+  accuracy by `0.0782`; both remain exact zero.
+- Raven's loops are not completely inert. The shared case changes from 34 to
+  30 wrong cells, but aggregate exact remains zero and loop5 mostly preserves
+  the loop2 operating point. GDN2 starts much closer and has nonzero exact.
+- Preserve the evidence boundary. This rejects matched-state Raven as the
+  current Sudoku/FutureSeed backbone, not Raven's long-context recall claim.
+  Test Raven again only when the question is sparse long-range retrieval; do
+  not rescue this Sudoku result with slot, top-k, seed, LR, or loss tables.
+- Infrastructure failures are not scientific evidence. The first launch was
+  halted by an expired GPU1 lease before step100 and has a separate
+  `abort.json`; only the exact clean relaunch is used in the comparison.

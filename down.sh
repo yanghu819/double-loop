@@ -67,3 +67,22 @@ if actual != sys.argv[2]:
     raise SystemExit(f"Pinned FLA wheel SHA256 mismatch: {actual} != {sys.argv[2]}")
 PY
 printf 'Pinned FLA wheel ready: %s\n' "$FLA_WHEEL"
+
+RAVEN_FLA_COMMIT="31d15f7554bd5df05d3da6f75e09146279d2b1a8"
+RAVEN_FLA_ROOT="${RAVEN_FLA_SOURCE_ROOT:-$PERSIST_ROOT/.cache/fla-upstream-31d15f7}"
+if [[ "${DOWNLOAD_RAVEN_FLA:-0}" == "1" && ! -d "$RAVEN_FLA_ROOT/.git" ]]; then
+  git clone --filter=blob:none https://github.com/fla-org/flash-linear-attention.git "$RAVEN_FLA_ROOT"
+  git -C "$RAVEN_FLA_ROOT" checkout --detach "$RAVEN_FLA_COMMIT"
+fi
+if [[ "${REQUIRE_RAVEN_FLA:-0}" == "1" || "${DOWNLOAD_RAVEN_FLA:-0}" == "1" ]]; then
+  if [[ ! -d "$RAVEN_FLA_ROOT/.git" ]]; then
+    printf 'Pinned Raven FLA checkout is missing: %s\n' "$RAVEN_FLA_ROOT" >&2
+    exit 5
+  fi
+  RAVEN_FLA_ACTUAL="$(git -C "$RAVEN_FLA_ROOT" rev-parse HEAD)"
+  if [[ "$RAVEN_FLA_ACTUAL" != "$RAVEN_FLA_COMMIT" ]]; then
+    printf 'Pinned Raven FLA SHA mismatch: %s != %s\n' "$RAVEN_FLA_ACTUAL" "$RAVEN_FLA_COMMIT" >&2
+    exit 5
+  fi
+  printf 'Pinned Raven FLA source ready: %s @ %s\n' "$RAVEN_FLA_ROOT" "$RAVEN_FLA_ACTUAL"
+fi

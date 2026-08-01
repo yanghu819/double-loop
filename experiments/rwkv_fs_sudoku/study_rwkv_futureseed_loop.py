@@ -74,6 +74,16 @@ else:
     FLA_DELTA_IMPORT_ERROR = None
 
 try:
+    from fla.layers.raven import Raven as FLARaven
+    from fla.ops.gsa import chunk_gsa
+except Exception as exc:  # pragma: no cover - Raven requires a newer pinned FLA tree.
+    FLARaven = None
+    chunk_gsa = None
+    FLA_RAVEN_IMPORT_ERROR = exc
+else:
+    FLA_RAVEN_IMPORT_ERROR = None
+
+try:
     from gdn_triton import gdn_triton_recurrent
 except Exception as exc:  # pragma: no cover - optional CUDA/Triton dependency.
     gdn_triton_recurrent = None
@@ -99,12 +109,16 @@ def fla_delta_available(backbone: str) -> Tuple[bool, str]:
         "fla_gdn": (FLAGatedDeltaNet, chunk_gated_delta_rule),
         "gdn2": (GatedDeltaNet2, chunk_gdn2),
         "kda": (KimiDeltaAttention, chunk_kda),
+        "raven": (FLARaven, chunk_gsa),
     }
     if backbone not in implementations:
         return False, f"unknown FLA delta backbone: {backbone}"
     layer, kernel = implementations[backbone]
     if layer is None or kernel is None:
-        return False, f"flash-linear-attention import failed: {FLA_DELTA_IMPORT_ERROR}"
+        import_error = (
+            FLA_RAVEN_IMPORT_ERROR if backbone == "raven" else FLA_DELTA_IMPORT_ERROR
+        )
+        return False, f"flash-linear-attention import failed: {import_error}"
     return True, "ok"
 
 
@@ -281,6 +295,7 @@ BACKBONE_DISPLAY_NAMES = {
     "fla_gdn": "GDN (official FLA)",
     "gdn2": "GDN2 (official FLA)",
     "kda": "KDA (official FLA)",
+    "raven": "Raven (official FLA)",
 }
 RWKV7_OFFICIAL_SOURCE_COMMIT = "952102498e9ed367ea0a59ee64106916d474d30f"
 RWKV7_OFFICIAL_SOURCE_BLOB = "b4d167fedead2655d253c55eb47b65f00e7193d2"
@@ -289,6 +304,8 @@ RWKV7_OFFICIAL_KERNEL_BLOB = "827faeb06b9d2b6e31b3efe85af6d3ae4cf88905"
 RWKV7_OFFICIAL_KERNEL_PATH = "RWKV-v7/train_temp/cuda/rwkv7_clampw.cu"
 RWKV7_STATEPASSING_CUDA_SHA256 = "59a90a0521b1851da17c008c685f959d586af1a7d28056b29a7478ab92c1c892"
 GAIN_BUDGET_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
+RAVEN_FLA_SHA = "31d15f7554bd5df05d3da6f75e09146279d2b1a8"
+ALLOWED_FLA_SOURCE_SHAS = frozenset((GAIN_BUDGET_FLA_SHA, RAVEN_FLA_SHA))
 GAIN_BUDGET_WHEEL_SHA256 = "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a"
 GDN2_ADDRESS_MODES = (
     "none",
@@ -574,6 +591,52 @@ def validate_gain_budget_contract_manifest() -> Dict[str, Any]:
     }
 
 
+def resolve_strict_fla_source(backbone: str) -> Tuple[str, str, str]:
+    expected_sha = os.environ.get("FLA_EXPECTED_SOURCE_SHA", GAIN_BUDGET_FLA_SHA).strip()
+    if expected_sha not in ALLOWED_FLA_SOURCE_SHAS:
+        raise RuntimeError(f"Unapproved FLA source SHA: {expected_sha!r}")
+    if backbone == "raven" and expected_sha != RAVEN_FLA_SHA:
+        raise RuntimeError(
+            f"Raven requires the pinned latest FLA SHA {RAVEN_FLA_SHA}, got {expected_sha}"
+        )
+
+    expected_layer = {
+        "fla_gdn": FLAGatedDeltaNet,
+        "gdn2": GatedDeltaNet2,
+        "kda": KimiDeltaAttention,
+        "raven": FLARaven,
+    }[backbone]
+    if expected_layer is None:
+        raise RuntimeError(f"Official FLA layer for {backbone} is unavailable")
+    module = __import__(expected_layer.__module__, fromlist=[expected_layer.__name__])
+    module_path = Path(module.__file__).resolve()
+
+    source_root_value = os.environ.get("FLA_SOURCE_ROOT", "").strip()
+    if source_root_value:
+        source_root = Path(source_root_value).resolve()
+        expected_package_root = (source_root / "fla").resolve()
+        if expected_package_root not in module_path.parents:
+            raise RuntimeError(
+                f"FLA module {module_path} is outside pinned source root {source_root}"
+            )
+        source_sha = subprocess.check_output(
+            ["git", "-C", str(source_root), "rev-parse", "HEAD"],
+            text=True,
+        ).strip()
+    else:
+        marker = Path(
+            os.environ.get(
+                "FLA_SOURCE_SHA_MARKER",
+                "/huyang2/double-loop/.cache/fla-source-sha",
+            )
+        )
+        source_sha = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+        source_root = module_path.parents[1]
+    if source_sha != expected_sha:
+        raise RuntimeError(f"Pinned FLA source mismatch: {source_sha!r} != {expected_sha}")
+    return source_sha, str(source_root), str(module_path)
+
+
 def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any]:
     if os.environ.get("FLA_DISABLE_BACKEND_DISPATCH") != "1":
         raise RuntimeError("Strict FLA mode requires FLA_DISABLE_BACKEND_DISPATCH=1 before Python starts")
@@ -583,15 +646,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
 
     if not _DISPATCH_DISABLED:
         raise RuntimeError("FLA backend dispatch is active; refusing a run with possible silent backend substitution")
-    marker = Path("/huyang2/double-loop/.cache/fla-source-sha")
-    source_sha = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
-    expected_sha = GAIN_BUDGET_FLA_SHA
-    if source_sha != expected_sha:
-        raise RuntimeError(f"Pinned FLA source marker mismatch: {source_sha!r} != {expected_sha}")
+    source_sha, source_root, source_module = resolve_strict_fla_source(backbone)
     expected_layers = {
         "fla_gdn": FLAGatedDeltaNet,
         "gdn2": GatedDeltaNet2,
         "kda": KimiDeltaAttention,
+        "raven": FLARaven,
     }
     expected = expected_layers[backbone]
     rows = []
@@ -604,15 +664,16 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             raise RuntimeError(
                 f"Layer {layer_idx} is {type(core)}, expected exact official class {expected}"
             )
+        use_short_conv = bool(getattr(core, "use_short_conv", False))
         conv_backends = (
             {
                 name: getattr(core, name).backend
                 for name in ("q_conv1d", "k_conv1d", "v_conv1d")
             }
-            if core.use_short_conv
+            if use_short_conv
             else {"q_conv1d": "disabled", "k_conv1d": "disabled", "v_conv1d": "disabled"}
         )
-        if core.use_short_conv and set(conv_backends.values()) != {"triton"}:
+        if use_short_conv and set(conv_backends.values()) != {"triton"}:
             raise RuntimeError(f"Layer {layer_idx} changed short-conv backend: {conv_backends}")
         time_mix = getattr(block, "time_mix", None)
         address_mode = getattr(time_mix, "address_mode", "none")
@@ -637,6 +698,8 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = "positive_causal_hazard_then_official_gdn2_chunk"
         elif fast_slow_mode == "external_identity":
             execution_path = "external_identity_hazard_then_official_gdn2_chunk"
+        elif backbone == "raven":
+            execution_path = "official_raven_sparse_slot_router_then_gsa_chunk"
         elif gain_budget_mode == "none":
             execution_path = "official_layer_forward"
         elif gain_budget_mode == "external_identity":
@@ -658,6 +721,14 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
                 "gain_budget_mode": gain_budget_mode,
                 "fast_slow_decay_mode": fast_slow_mode,
                 "execution_path": execution_path,
+                "state_elements_per_head": (
+                    int(core.num_slots) * (int(core.head_k_dim) + int(core.head_v_dim))
+                    if backbone == "raven"
+                    else int(getattr(time_mix, "head_dim"))
+                    * int(getattr(time_mix, "head_v_dim"))
+                ),
+                "num_slots": int(core.num_slots) if backbone == "raven" else None,
+                "topk": int(core.topk) if backbone == "raven" else None,
             }
         )
     gain_budget_enabled = any(
@@ -675,6 +746,8 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
     return {
         "strict": True,
         "fla_source_sha": source_sha,
+        "fla_source_root": source_root,
+        "fla_source_module": source_module,
         "backend_dispatch_disabled": bool(_DISPATCH_DISABLED),
         "conv_backend": "triton",
         "layers": rows,
@@ -1916,10 +1989,14 @@ class FLADeltaTimeMix(nn.Module):
         fast_slow_decay_rho_init: float = 0.10,
         fast_slow_decay_current_weight_init: float = 0.85,
         address_mode: str = "none",
+        raven_num_slots: int = 0,
+        raven_topk: int = 0,
     ) -> None:
         super().__init__()
-        if backbone not in {"fla_gdn", "gdn2", "kda"}:
-            raise ValueError("FLA delta backbone must be 'fla_gdn', 'gdn2', or 'kda'.")
+        if backbone not in {"fla_gdn", "gdn2", "kda", "raven"}:
+            raise ValueError(
+                "FLA backbone must be 'fla_gdn', 'gdn2', 'kda', or 'raven'."
+            )
         if mode != "chunk":
             raise ValueError(f"BACKBONE={backbone} supports only GDN_MODE=chunk during training.")
         ok, reason = fla_delta_available(backbone)
@@ -1927,6 +2004,8 @@ class FLADeltaTimeMix(nn.Module):
             raise RuntimeError(f"BACKBONE={backbone} requires current flash-linear-attention: {reason}")
         if backbone != "fla_gdn" and d_model != heads * head_dim:
             raise ValueError(f"{backbone.upper()} keeps d_model == heads * head_dim for matched state size.")
+        if backbone == "raven" and use_short_conv:
+            raise ValueError("Official Raven does not use short convolution; set GDN_USE_SHORT_CONV=0.")
         if gain_budget_mode not in {
             "none",
             "external_identity",
@@ -1981,6 +2060,23 @@ class FLADeltaTimeMix(nn.Module):
         self.gain_budget_infeasible_policy = gain_budget_infeasible_policy
         self.fast_slow_decay_mode = fast_slow_decay_mode
         self.address_mode = address_mode
+        if backbone == "raven":
+            matched_state_elements = self.head_dim * self.head_v_dim
+            slot_width = self.head_dim + self.head_v_dim
+            if raven_num_slots <= 0:
+                if matched_state_elements % slot_width:
+                    raise ValueError(
+                        "Automatic Raven state matching is not integral; set --raven_num_slots explicitly."
+                    )
+                raven_num_slots = matched_state_elements // slot_width
+            if raven_num_slots < 1:
+                raise ValueError("Raven requires at least one memory slot.")
+            if raven_topk <= 0:
+                raven_topk = max(1, int(round(raven_num_slots / 8)))
+            if not 1 <= raven_topk <= raven_num_slots:
+                raise ValueError("Raven top-k must be between 1 and the number of slots.")
+        self.raven_num_slots = int(raven_num_slots)
+        self.raven_topk = int(raven_topk)
         self.address_rotation_scale = (
             nn.Parameter(torch.zeros(self.heads))
             if address_mode == "anchor_rotary"
@@ -2034,24 +2130,44 @@ class FLADeltaTimeMix(nn.Module):
             "fla_gdn": FLAGatedDeltaNet,
             "gdn2": GatedDeltaNet2,
             "kda": KimiDeltaAttention,
+            "raven": FLARaven,
         }
         layer_type = layer_types[backbone]
         assert layer_type is not None
-        layer_kwargs = dict(
-            hidden_size=d_model,
-            expand_v=expand_v,
-            head_dim=head_dim,
-            num_heads=heads,
-            num_v_heads=heads,
-            mode="chunk",
-            use_short_conv=bool(use_short_conv),
-            allow_neg_eigval=bool(allow_neg_eigval),
-            conv_size=int(conv_size),
-            conv_bias=False,
-            layer_idx=0,
-        )
-        if backbone == "fla_gdn":
-            layer_kwargs["use_gate"] = True
+        if backbone == "raven":
+            layer_kwargs = dict(
+                hidden_size=d_model,
+                expand_k=1.0,
+                expand_v=expand_v,
+                num_heads=heads,
+                num_kv_heads=heads,
+                num_slots=self.raven_num_slots,
+                topk=self.raven_topk,
+                mode="chunk",
+                decay_type="Mamba2",
+                add_gumbel_noise=True,
+                router_score="sigmoid",
+                router_type="lin",
+                use_rope=False,
+                use_short_conv=False,
+                layer_idx=0,
+            )
+        else:
+            layer_kwargs = dict(
+                hidden_size=d_model,
+                expand_v=expand_v,
+                head_dim=head_dim,
+                num_heads=heads,
+                num_v_heads=heads,
+                mode="chunk",
+                use_short_conv=bool(use_short_conv),
+                allow_neg_eigval=bool(allow_neg_eigval),
+                conv_size=int(conv_size),
+                conv_bias=False,
+                layer_idx=0,
+            )
+            if backbone == "fla_gdn":
+                layer_kwargs["use_gate"] = True
         self.core = layer_type(**layer_kwargs)
         self.fast_slow_decay = (
             FastSlowDecayController(
@@ -3013,6 +3129,51 @@ class FLADeltaTimeMix(nn.Module):
         o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
         return o, terminal_state
 
+    def pack_recurrent_state(self, state: Any) -> torch.Tensor:
+        """Pack Raven's dual GSA cache into one lossless FutureSeed tensor."""
+        if self.backbone != "raven":
+            if not isinstance(state, torch.Tensor):
+                raise TypeError(f"{self.backbone} recurrent state must be a tensor")
+            return state
+        if not isinstance(state, (tuple, list)) or len(state) != 2:
+            raise TypeError("Raven recurrent state must be the official (key_state, value_state) tuple")
+        key_state, value_state = state
+        if not isinstance(key_state, torch.Tensor) or not isinstance(value_state, torch.Tensor):
+            raise TypeError("Raven key/value recurrent states must be tensors")
+        expected_key = (key_state.shape[0], self.heads, self.head_dim, self.raven_num_slots)
+        expected_value = (
+            key_state.shape[0],
+            self.heads,
+            self.raven_num_slots,
+            self.head_v_dim,
+        )
+        if tuple(key_state.shape) != expected_key or tuple(value_state.shape) != expected_value:
+            raise ValueError(
+                "Raven recurrent state shape mismatch: "
+                f"key={tuple(key_state.shape)} expected={expected_key}, "
+                f"value={tuple(value_state.shape)} expected={expected_value}"
+            )
+        return torch.cat((key_state, value_state.transpose(-1, -2)), dim=-2)
+
+    def unpack_recurrent_state(self, state: torch.Tensor) -> Any:
+        if self.backbone != "raven":
+            return state
+        expected = (
+            state.shape[0],
+            self.heads,
+            self.head_dim + self.head_v_dim,
+            self.raven_num_slots,
+        )
+        if tuple(state.shape) != expected:
+            raise ValueError(
+                f"Raven packed state shape {tuple(state.shape)} does not match {expected}"
+            )
+        key_state, value_state_t = state.split(
+            (self.head_dim, self.head_v_dim),
+            dim=-2,
+        )
+        return key_state.contiguous(), value_state_t.transpose(-1, -2).contiguous()
+
     def _zero_conv_state(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size = x.shape[0]
         width = int(self.core.conv_size)
@@ -3076,11 +3237,19 @@ class FLADeltaTimeMix(nn.Module):
         if not x.is_cuda:
             raise RuntimeError(f"BACKBONE={self.backbone} is CUDA-only; CPU fallback is intentionally disabled.")
         batch_size, seq_len, _channels = x.shape
-        expected = (
-            (batch_size, self.heads, self.head_v_dim, self.head_dim)
-            if self.state_v_first
-            else (batch_size, self.heads, self.head_dim, self.head_v_dim)
-        )
+        if self.backbone == "raven":
+            expected = (
+                batch_size,
+                self.heads,
+                self.head_dim + self.head_v_dim,
+                self.raven_num_slots,
+            )
+        else:
+            expected = (
+                (batch_size, self.heads, self.head_v_dim, self.head_dim)
+                if self.state_v_first
+                else (batch_size, self.heads, self.head_dim, self.head_v_dim)
+            )
         if initial_state is not None:
             if tuple(initial_state.shape) != expected:
                 raise ValueError(
@@ -3129,8 +3298,12 @@ class FLADeltaTimeMix(nn.Module):
         cache = FLACache()
         if initial_state is not None:
             cache.update(
-                recurrent_state=initial_state,
-                conv_state=self._zero_conv_state(x) if self.core.use_short_conv else None,
+                recurrent_state=self.unpack_recurrent_state(initial_state),
+                conv_state=(
+                    self._zero_conv_state(x)
+                    if bool(getattr(self.core, "use_short_conv", False))
+                    else None
+                ),
                 layer_idx=0,
                 offset=0,
             )
@@ -3141,9 +3314,10 @@ class FLADeltaTimeMix(nn.Module):
         )
         if returned_cache is None or len(returned_cache) == 0:
             raise RuntimeError(f"{self.backbone.upper()} official layer did not return its FLA cache.")
-        terminal_state = returned_cache[0]["recurrent_state"]
-        if terminal_state is None:
+        raw_terminal_state = returned_cache[0]["recurrent_state"]
+        if raw_terminal_state is None:
             raise RuntimeError(f"{self.backbone.upper()} kernel did not return a terminal state.")
+        terminal_state = self.pack_recurrent_state(raw_terminal_state)
         zero = x.new_zeros(())
         self.last_gain_budget_diag = {
             "gdn2_gain_budget_enabled": zero,
@@ -3208,6 +3382,8 @@ class FLADeltaBlock(nn.Module):
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_address_mode: str = "none",
+        raven_num_slots: int = 0,
+        raven_topk: int = 0,
     ) -> None:
         super().__init__()
         self.ln_time = nn.LayerNorm(d_model)
@@ -3234,6 +3410,8 @@ class FLADeltaBlock(nn.Module):
                 gdn2_fast_slow_decay_current_weight_init
             ),
             address_mode=gdn2_address_mode,
+            raven_num_slots=raven_num_slots,
+            raven_topk=raven_topk,
         )
         self.channel_mix = ChannelMix(d_model, channel_mult)
         self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
@@ -3300,6 +3478,8 @@ class FutureSeedRWKV(nn.Module):
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_address_mode: str = "none",
+        raven_num_slots: int = 0,
+        raven_topk: int = 0,
     ) -> None:
         super().__init__()
         if layers < 2:
@@ -3330,8 +3510,10 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("compatible FutureSeed readout requires future_seed_update=fixed.")
         if future_seed_readout_hop > 0 and future_seed_gate_mode != "head":
             raise ValueError("compatible FutureSeed readout requires the canonical head gate.")
-        if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"}:
-            raise ValueError("backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda.")
+        if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"}:
+            raise ValueError(
+                "backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda, raven."
+            )
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -3372,6 +3554,17 @@ class FutureSeedRWKV(nn.Module):
         elif backbone == "gdn2":
             state_row_dim = head_dim
             state_col_dim = expanded_head_dim
+        elif backbone == "raven":
+            state_row_dim = head_dim + expanded_head_dim
+            if raven_num_slots <= 0:
+                matched_state_elements = head_dim * expanded_head_dim
+                slot_width = head_dim + expanded_head_dim
+                if matched_state_elements % slot_width:
+                    raise ValueError(
+                        "Automatic Raven state matching is not integral; set --raven_num_slots."
+                    )
+                raven_num_slots = matched_state_elements // slot_width
+            state_col_dim = int(raven_num_slots)
         else:
             state_row_dim = head_dim
             state_col_dim = head_dim
@@ -3452,6 +3645,8 @@ class FutureSeedRWKV(nn.Module):
                             gdn2_fast_slow_decay_current_weight_init
                         ),
                         gdn2_address_mode=gdn2_address_mode,
+                        raven_num_slots=raven_num_slots,
+                        raven_topk=raven_topk,
                     )
                 )
         self.blocks = nn.ModuleList(blocks)
@@ -4154,6 +4349,8 @@ def load_training_checkpoint(
             "gdn_conv_size",
             "gdn_allow_neg_eigval",
             "gdn2_address_mode",
+            "raven_num_slots",
+            "raven_topk",
             "cell_order_train",
             "future_seed_scale",
             "future_seed_decay",
@@ -4216,6 +4413,8 @@ def load_training_checkpoint(
             "future_seed_scope": "layer",
             "future_seed_readout_hop": 0,
             "gdn2_address_mode": "none",
+            "raven_num_slots": 0,
+            "raven_topk": 0,
             "cell_order_train": "row_major",
         }
         saved_args = checkpoint.get("args")
@@ -4498,6 +4697,8 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_address_mode: str = "none",
+        raven_num_slots: int = 0,
+        raven_topk: int = 0,
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
     ) -> None:
@@ -4566,6 +4767,8 @@ class FutureSeedLoopSudoku(nn.Module):
                 gdn2_fast_slow_decay_current_weight_init
             ),
             gdn2_address_mode=gdn2_address_mode,
+            raven_num_slots=raven_num_slots,
+            raven_topk=raven_topk,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -5528,6 +5731,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             args.gdn2_fast_slow_decay_current_weight_init
         ),
         gdn2_address_mode=args.gdn2_address_mode,
+        raven_num_slots=args.raven_num_slots,
+        raven_topk=args.raven_topk,
     )
     if args.shared_shell_init_seed >= 0:
         model.reset_shared_shell_parameters(args.shared_shell_init_seed)
@@ -6423,6 +6628,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             args.gdn2_fast_slow_decay_current_weight_init
         ),
         "gdn2_address_mode": args.gdn2_address_mode,
+        "raven_num_slots": args.raven_num_slots,
+        "raven_topk": args.raven_topk,
         "cell_order_train": args.cell_order_train,
         "forward_dtype": args.forward_dtype,
         "activation_checkpoint": bool(args.activation_checkpoint),
@@ -7785,6 +7992,19 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError(
             "--gdn2_address_mode currently forbids compatible FutureSeed readout"
         )
+    if args.raven_num_slots < 0 or args.raven_topk < 0:
+        raise ValueError("--raven_num_slots and --raven_topk must be non-negative")
+    if args.backbone == "raven":
+        if not args.fla_strict_official:
+            raise ValueError("Raven requires --fla_strict_official")
+        if args.gdn_use_short_conv:
+            raise ValueError("Official Raven requires --gdn_use_short_conv 0")
+        if args.activation_checkpoint:
+            raise ValueError(
+                "Raven activation checkpointing is disabled until route RNG replay is audited"
+            )
+    elif args.raven_num_slots or args.raven_topk:
+        raise ValueError("Raven slot arguments require --backbone raven")
     configure_sudoku(args.size, args.box_rows, args.box_cols)
     if args.layers < 2:
         raise ValueError("--layers must be at least 2 for FutureSeed.")
@@ -7821,7 +8041,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
-    if args.backbone in {"fla_gdn", "gdn2", "kda"}:
+    if args.backbone in {"fla_gdn", "gdn2", "kda", "raven"}:
         if args.gdn_mode != "chunk":
             raise ValueError(f"--backbone {args.backbone} requires --gdn_mode chunk during training.")
         ok, reason = fla_delta_available(args.backbone)
@@ -7831,8 +8051,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
-    if args.fla_strict_official and args.backbone not in {"fla_gdn", "gdn2", "kda"}:
-        raise ValueError("--fla_strict_official is valid only for fla_gdn, gdn2, or kda")
+    if args.fla_strict_official and args.backbone not in {"fla_gdn", "gdn2", "kda", "raven"}:
+        raise ValueError(
+            "--fla_strict_official is valid only for fla_gdn, gdn2, kda, or raven"
+        )
     if args.backbone == "rwkv7":
         if args.rwkv_kernel not in {"statepassing", "torch"}:
             raise ValueError("--backbone rwkv7 requires an explicit statepassing or torch kernel; fallback is forbidden")
@@ -7865,6 +8087,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
         f"gdn2_address={args.gdn2_address_mode} "
+        f"raven_slots/topk={args.raven_num_slots}/{args.raven_topk} "
         f"cell_order_train={args.cell_order_train} "
         f"forward_dtype={args.forward_dtype}",
         flush=True,
@@ -8079,6 +8302,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             args.gdn2_fast_slow_decay_current_weight_init
         ),
         "gdn2_address_mode": args.gdn2_address_mode,
+        "raven_num_slots": args.raven_num_slots,
+        "raven_topk": args.raven_topk,
         "cell_order_train": args.cell_order_train,
         "fla_strict_official": bool(args.fla_strict_official),
         "fla_runtime": train_stats.get("fla_runtime", {"strict": False}),
@@ -8268,7 +8493,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
-    p.add_argument("--backbone", choices=("rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda"), default="rwkv")
+    p.add_argument(
+        "--backbone",
+        choices=("rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"),
+        default="rwkv",
+    )
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")
     p.add_argument("--gdn_mode", choices=("chunk", "naive_recurrent", "triton_recurrent"), default="chunk")
     p.add_argument("--gdn_expand_v", type=float, default=1.0)
@@ -8310,6 +8539,18 @@ def parse_args() -> argparse.Namespace:
         "--gdn2_address_mode",
         choices=GDN2_ADDRESS_MODES,
         default="none",
+    )
+    p.add_argument(
+        "--raven_num_slots",
+        type=int,
+        default=0,
+        help="Raven slots per head; 0 exactly matches GDN2 state elements.",
+    )
+    p.add_argument(
+        "--raven_topk",
+        type=int,
+        default=0,
+        help="Raven write slots per token; 0 uses 12.5 percent occupancy.",
     )
     p.add_argument(
         "--cell_order_train",

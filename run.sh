@@ -431,6 +431,8 @@ COMMON_ARGS=(
   --gdn2_fast_slow_decay_rho_init "${GDN2_FAST_SLOW_DECAY_RHO_INIT:-0.10}"
   --gdn2_fast_slow_decay_current_weight_init "${GDN2_FAST_SLOW_DECAY_CURRENT_WEIGHT_INIT:-0.85}"
   --gdn2_address_mode "${GDN2_ADDRESS_MODE:-none}"
+  --raven_num_slots "${RAVEN_NUM_SLOTS:-0}"
+  --raven_topk "${RAVEN_TOPK:-0}"
   --lambda_ "${LAMBDA:-0.95}"
   --loop_update_mode "${LOOP_UPDATE_MODE:-fixed}"
   --loop_update_gate_init "${LOOP_UPDATE_GATE_INIT:-0.95}"

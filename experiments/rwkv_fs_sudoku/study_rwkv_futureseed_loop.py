@@ -174,6 +174,51 @@ def apply_address_phase_rotation(
     return rotated.to(dtype=tensor.dtype)
 
 
+def fold_gdn2_write_carrier_into_official_inputs(
+    k: torch.Tensor,
+    b: torch.Tensor,
+    w: torch.Tensor,
+    carrier: torch.Tensor,
+    *,
+    eps: float = 1e-6,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Express an independent K-row write carrier through the official GDN2 op.
+
+    The official kernel L2-normalizes K, then uses the same unit key for erase
+    and rank-one write. For c in (0, 1], let r = ||c * k|| / ||k||. Passing
+    k'=c*k, b'=r^2*b/c, and w'=r*w makes the normalized official recurrence
+    exactly equal to writing with c*k_unit while keeping erase at b*k_unit.
+    """
+    if k.shape != b.shape or k.shape != carrier.shape:
+        raise ValueError(
+            "GDN2 carrier expects matching K-axis tensors: "
+            f"k={tuple(k.shape)} b={tuple(b.shape)} carrier={tuple(carrier.shape)}"
+        )
+    if w.shape[:-1] != k.shape[:-1]:
+        raise ValueError(
+            "GDN2 carrier expects W to share batch/time/head axes with K: "
+            f"k={tuple(k.shape)} w={tuple(w.shape)}"
+        )
+    k_float = k.float()
+    carrier_float = carrier.float().clamp(min=eps, max=1.0)
+    carried_k_float = carrier_float * k_float
+    base_norm = k_float.norm(dim=-1, keepdim=True).clamp_min(eps)
+    carried_norm = carried_k_float.norm(dim=-1, keepdim=True).clamp_min(eps)
+    write_norm_ratio = carried_norm / base_norm
+    b_effective = (
+        b.float() * write_norm_ratio.square() / carrier_float
+    ).to(dtype=b.dtype)
+    w_effective = (
+        w.float() * write_norm_ratio
+    ).to(dtype=w.dtype)
+    return (
+        carried_k_float.to(dtype=k.dtype),
+        b_effective,
+        w_effective,
+        write_norm_ratio,
+    )
+
+
 N = 9
 BOX_ROWS = 3
 BOX_COLS = 3
@@ -213,6 +258,17 @@ ADDRESS_TRAIN_KEYS = (
     "gdn2_address_k_residual_weight_rms",
     "gdn2_address_q_residual_rms",
     "gdn2_address_k_residual_rms",
+    "gdn2_address_terminal_state_rms",
+    "gdn2_address_carrier_mean",
+    "gdn2_address_carrier_std",
+    "gdn2_address_carrier_token_std",
+    "gdn2_address_carrier_min",
+    "gdn2_address_carrier_below_095_frac",
+    "gdn2_address_carrier_scale_rms",
+    "gdn2_address_carrier_bias_delta_rms",
+    "gdn2_address_carrier_write_norm_ratio",
+    "gdn2_address_carrier_b_input_relative_change",
+    "gdn2_address_carrier_w_input_relative_change",
 )
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
@@ -241,6 +297,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_phase",
     "anchor_residual",
     "anchor_qk_residual",
+    "anchor_carrier",
 )
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
@@ -571,6 +628,11 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = "content_qk_shared_address_residual_then_official_gdn2_chunk"
         elif address_mode == "anchor_qk_residual":
             execution_path = "content_qk_decoupled_address_residual_then_official_gdn2_chunk"
+        elif address_mode == "anchor_carrier":
+            execution_path = (
+                "shared_address_conditioned_write_carrier_folded_into_"
+                "official_gdn2_chunk"
+            )
         elif fast_slow_mode == "positive_causal":
             execution_path = "positive_causal_hazard_then_official_gdn2_chunk"
         elif fast_slow_mode == "external_identity":
@@ -1933,7 +1995,7 @@ class FLADeltaTimeMix(nn.Module):
             nn.init.zeros_(self.address_phase_proj.weight)
         self.address_residual_proj = (
             nn.Linear(d_model, d_model, bias=False)
-            if address_mode == "anchor_residual"
+            if address_mode in {"anchor_residual", "anchor_carrier"}
             else None
         )
         if self.address_residual_proj is not None:
@@ -1952,6 +2014,17 @@ class FLADeltaTimeMix(nn.Module):
             nn.init.zeros_(self.address_q_residual_proj.weight)
         if self.address_k_residual_proj is not None:
             nn.init.zeros_(self.address_k_residual_proj.weight)
+        self.address_carrier_scale = (
+            nn.Parameter(torch.zeros(self.heads, self.head_dim))
+            if address_mode == "anchor_carrier"
+            else None
+        )
+        self.address_carrier_bias_delta = (
+            nn.Parameter(torch.zeros(self.heads, self.head_dim))
+            if address_mode == "anchor_carrier"
+            else None
+        )
+        self.address_carrier_base_logit = 6.0
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -2018,6 +2091,17 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_address_k_residual_weight_rms": zero,
             "gdn2_address_q_residual_rms": zero,
             "gdn2_address_k_residual_rms": zero,
+            "gdn2_address_terminal_state_rms": zero,
+            "gdn2_address_carrier_mean": zero,
+            "gdn2_address_carrier_std": zero,
+            "gdn2_address_carrier_token_std": zero,
+            "gdn2_address_carrier_min": zero,
+            "gdn2_address_carrier_below_095_frac": zero,
+            "gdn2_address_carrier_scale_rms": zero,
+            "gdn2_address_carrier_bias_delta_rms": zero,
+            "gdn2_address_carrier_write_norm_ratio": zero,
+            "gdn2_address_carrier_b_input_relative_change": zero,
+            "gdn2_address_carrier_w_input_relative_change": zero,
         }
 
     def _forward_gain_budget(
@@ -2520,9 +2604,18 @@ class FLADeltaTimeMix(nn.Module):
         elif self.address_mode == "anchor_phase":
             if self.address_phase_proj is None:
                 raise RuntimeError("anchor_phase requires a learned phase projection")
-        elif self.address_mode == "anchor_residual":
+        elif self.address_mode in {"anchor_residual", "anchor_carrier"}:
             if self.address_residual_proj is None:
-                raise RuntimeError("anchor_residual requires a learned residual projection")
+                raise RuntimeError(
+                    f"{self.address_mode} requires a learned residual projection"
+                )
+            if self.address_mode == "anchor_carrier" and (
+                self.address_carrier_scale is None
+                or self.address_carrier_bias_delta is None
+            ):
+                raise RuntimeError(
+                    "anchor_carrier requires address-conditioned carrier parameters"
+                )
         elif self.address_mode == "anchor_qk_residual":
             if (
                 self.address_q_residual_proj is None
@@ -2605,7 +2698,7 @@ class FLADeltaTimeMix(nn.Module):
             )
             q = apply_address_phase_rotation(q, phase)
             k = apply_address_phase_rotation(k, phase)
-        elif self.address_mode == "anchor_residual":
+        elif self.address_mode in {"anchor_residual", "anchor_carrier"}:
             address_ordered = (
                 address
                 if cell_order is None
@@ -2669,14 +2762,50 @@ class FLADeltaTimeMix(nn.Module):
         w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
+        carrier: Optional[torch.Tensor] = None
+        if self.address_mode == "anchor_carrier":
+            assert q_address_vector is not None
+            assert self.address_carrier_scale is not None
+            assert self.address_carrier_bias_delta is not None
+            carrier_logit = (
+                self.address_carrier_base_logit
+                + self.address_carrier_bias_delta.float().view(
+                    1, 1, core.num_heads, core.head_k_dim
+                )
+                + self.address_carrier_scale.float().view(
+                    1, 1, core.num_heads, core.head_k_dim
+                )
+                * q_address_vector.float()
+            )
+            carrier = torch.sigmoid(carrier_logit)
+
         if core.num_v_heads > core.num_heads:
             groups = core.num_v_heads // core.num_heads
             q = torch.repeat_interleave(q, groups, dim=-2)
             k = torch.repeat_interleave(k, groups, dim=-2)
             g = torch.repeat_interleave(g, groups, dim=-2)
             b = torch.repeat_interleave(b, groups, dim=-2)
+            if carrier is not None:
+                carrier = torch.repeat_interleave(carrier, groups, dim=-2)
         if core.allow_neg_eigval:
             b = b * 2.0
+
+        b_before_carrier = b
+        w_before_carrier = w
+        write_norm_ratio = k.new_ones(
+            batch_size,
+            seq_len,
+            core.num_v_heads,
+            1,
+            dtype=torch.float32,
+        )
+        if carrier is not None:
+            k, b, w, write_norm_ratio = fold_gdn2_write_carrier_into_official_inputs(
+                k,
+                b,
+                w,
+                carrier,
+            )
 
         operation = (
             fused_recurrent_gdn2
@@ -2760,6 +2889,33 @@ class FLADeltaTimeMix(nn.Module):
             if q_address_vector is not None and k_address_vector is not None
             else zero_float
         )
+        carrier_mean = carrier.float().mean() if carrier is not None else zero_float
+        carrier_std = (
+            carrier.float().std(unbiased=False) if carrier is not None else zero_float
+        )
+        carrier_token_std = (
+            carrier.float().std(dim=1, unbiased=False).mean()
+            if carrier is not None
+            else zero_float
+        )
+        carrier_min = carrier.float().min() if carrier is not None else zero_float
+        carrier_below_095_frac = (
+            (carrier.float() < 0.95).float().mean()
+            if carrier is not None
+            else zero_float
+        )
+        carrier_b_input_relative_change = (
+            (b.float() - b_before_carrier.float()).norm()
+            / b_before_carrier.float().norm().clamp(min=1e-6)
+            if carrier is not None
+            else zero_float
+        )
+        carrier_w_input_relative_change = (
+            (w.float() - w_before_carrier.float()).norm()
+            / w_before_carrier.float().norm().clamp(min=1e-6)
+            if carrier is not None
+            else zero_float
+        )
         self.last_gain_budget_diag = {
             **self._zero_address_diag(x),
             "gdn2_address_enabled": x.new_ones(()),
@@ -2814,6 +2970,37 @@ class FLADeltaTimeMix(nn.Module):
             ),
             "gdn2_address_q_residual_rms": q_residual_rms.detach().to(dtype=x.dtype),
             "gdn2_address_k_residual_rms": k_residual_rms.detach().to(dtype=x.dtype),
+            "gdn2_address_terminal_state_rms": (
+                terminal_state.float().square().mean().sqrt()
+            ).detach().to(dtype=x.dtype),
+            "gdn2_address_carrier_mean": carrier_mean.detach().to(dtype=x.dtype),
+            "gdn2_address_carrier_std": carrier_std.detach().to(dtype=x.dtype),
+            "gdn2_address_carrier_token_std": carrier_token_std.detach().to(
+                dtype=x.dtype
+            ),
+            "gdn2_address_carrier_min": carrier_min.detach().to(dtype=x.dtype),
+            "gdn2_address_carrier_below_095_frac": (
+                carrier_below_095_frac.detach().to(dtype=x.dtype)
+            ),
+            "gdn2_address_carrier_scale_rms": (
+                self.address_carrier_scale.float().square().mean().sqrt()
+                if self.address_carrier_scale is not None
+                else zero_float
+            ).detach().to(dtype=x.dtype),
+            "gdn2_address_carrier_bias_delta_rms": (
+                self.address_carrier_bias_delta.float().square().mean().sqrt()
+                if self.address_carrier_bias_delta is not None
+                else zero_float
+            ).detach().to(dtype=x.dtype),
+            "gdn2_address_carrier_write_norm_ratio": (
+                write_norm_ratio.float().mean().detach().to(dtype=x.dtype)
+            ),
+            "gdn2_address_carrier_b_input_relative_change": (
+                carrier_b_input_relative_change.detach().to(dtype=x.dtype)
+            ),
+            "gdn2_address_carrier_w_input_relative_change": (
+                carrier_w_input_relative_change.detach().to(dtype=x.dtype)
+            ),
         }
 
         output_gate = core.g_proj(x).view(
@@ -2925,6 +3112,7 @@ class FLADeltaTimeMix(nn.Module):
             "anchor_phase",
             "anchor_residual",
             "anchor_qk_residual",
+            "anchor_carrier",
         }:
             if address is None:
                 raise ValueError(
@@ -4163,6 +4351,8 @@ def load_training_checkpoint(
         ".time_mix.address_residual_proj.weight",
         ".time_mix.address_q_residual_proj.weight",
         ".time_mix.address_k_residual_proj.weight",
+        ".time_mix.address_carrier_scale",
+        ".time_mix.address_carrier_bias_delta",
     )
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
@@ -4744,6 +4934,7 @@ class FutureSeedLoopSudoku(nn.Module):
             "anchor_phase",
             "anchor_residual",
             "anchor_qk_residual",
+            "anchor_carrier",
         }:
             address = self.canonical_input_anchor_sequence(inputs)
         else:
@@ -5148,6 +5339,20 @@ def fs_line(m: Dict[str, float]) -> str:
                 f"{m.get('gdn2_address_k_residual_weight_rms', 0.0):.4f}/"
                 f"{m.get('gdn2_address_q_residual_rms', 0.0):.4f}/"
                 f"{m.get('gdn2_address_k_residual_rms', 0.0):.4f}"
+            )
+        if m.get("gdn2_address_carrier_mean", 0.0) > 0:
+            parts.append(
+                "addr_carrier="
+                f"{m.get('gdn2_address_carrier_mean', 0.0):.4f}/"
+                f"{m.get('gdn2_address_carrier_std', 0.0):.4f}/"
+                f"{m.get('gdn2_address_carrier_token_std', 0.0):.4f}/"
+                f"{m.get('gdn2_address_carrier_min', 0.0):.4f}"
+            )
+            parts.append(
+                "addr_carrier_effect="
+                f"{m.get('gdn2_address_carrier_write_norm_ratio', 0.0):.4f}/"
+                f"{m.get('gdn2_address_carrier_b_input_relative_change', 0.0):.4f}/"
+                f"{m.get('gdn2_address_carrier_w_input_relative_change', 0.0):.4f}"
             )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
@@ -5918,6 +6123,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"addr_rk={last_address_diag['gdn2_address_residual_k_ratio']:.4f} "
                     f"addr_qwrms={last_address_diag['gdn2_address_q_residual_weight_rms']:.4f} "
                     f"addr_kwrms={last_address_diag['gdn2_address_k_residual_weight_rms']:.4f} "
+                    f"carrier={last_address_diag['gdn2_address_carrier_mean']:.4f}/"
+                    f"{last_address_diag['gdn2_address_carrier_std']:.4f}/"
+                    f"{last_address_diag['gdn2_address_carrier_token_std']:.4f} "
+                    f"carrier_min={last_address_diag['gdn2_address_carrier_min']:.4f} "
+                    f"carrier_r={last_address_diag['gdn2_address_carrier_write_norm_ratio']:.4f} "
+                    f"addr_state={last_address_diag['gdn2_address_terminal_state_rms']:.4f} "
                     f"scratch_delta={last_scratch_delta:.3f} scratch_gauss={last_scratch_gauss_loss:.4f}",
                     flush=True,
                 )

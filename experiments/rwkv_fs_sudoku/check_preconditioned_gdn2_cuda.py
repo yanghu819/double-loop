@@ -164,6 +164,13 @@ def check_official_kernel(device: torch.device) -> dict[str, Any]:
     b = torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16)
     w = torch.sigmoid(torch.randn(value_shape, device=device)).to(torch.bfloat16)
     state = 0.04 * torch.randn(2, 4, 16, 24, device=device)
+    q.requires_grad_(True)
+    k.requires_grad_(True)
+    v.requires_grad_(True)
+    g.requires_grad_(True)
+    b.requires_grad_(True)
+    w.requires_grad_(True)
+    state.requires_grad_(True)
     q_unit, k_unit = normalize_qk_fp32(q, k)
     initial_precision = futureseed_row_precision(state)
     multiplier, _diag = causal_tied_atk_preconditioner(

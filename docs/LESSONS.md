@@ -1575,3 +1575,26 @@
 - The preregistered mixed-exact gate passes, so the high-ROI decision is one
   unchanged continuation to step12000. Do not branch into loss, noise, state,
   width, depth, seed, or curriculum variants before that endpoint.
+
+## 2026-08-03 GDN2 clean scaling endpoint at step 12000
+
+- The step10000 improvement was not a transient checkpoint. With every
+  scientific variable unchanged, mixed loop5 full-board exact rises again from
+  `0.2852` to `0.3379`; official 51-55/56-60/61-64 exact reaches
+  `0.4492/0.1543/0.2637`.
+- Scale acts mainly through recurrent computation. Loop1 stays at `0.0234`,
+  while loop1-to-loop5 exact gain widens from `+0.2617` at step10000 to
+  `+0.3145` at step12000. This rejects the explanation that longer training
+  merely improves a one-pass predictor.
+- The remaining ceiling is now localized. Most improvement happens by loop4:
+  mixed exact is `0.3320` at loop4 and `0.3379` at loop5. Successful 64-blank
+  boards can move `35 -> 22 -> 4 -> 0`, while failures stall
+  `22 -> 17 -> 11 -> 5 -> 5`. More compute teaches a strong attractor, but not
+  universal closure of the last few coupled errors.
+- Respect the preregistered boundary. Combined 56-64 exact reaches `0.2090`,
+  but 51-55 exact misses `0.50` and the strong gates are not met. Do not call
+  this a strong success, do not tag it, and do not append an unregistered
+  training tail.
+- The next causal question is not another GDN2 modification. Run one matched
+  long no-FutureSeed control. Only that comparison can distinguish a genuine
+  long-scale FutureSeed advantage from ordinary GDN2, data, and loop scaling.

@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-SCALE-037`
-- Status: step-3000 gate passed; exact checkpoint resumed toward step 6000
+- Status: completed at the preregistered step-12000 endpoint
 - Preregistered: 2026-07-26 19:43 CST / 2026-07-26 11:43 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -515,3 +515,50 @@ GPU memory returned to zero before GPU1 restart. The sole valid resume config
 is `configs/sudoku/gdn2_scale_resume_12000_from11000.env`; the next leg must
 restore model, optimizer, scheduler, data RNG, and training RNG unchanged and
 run the remaining 1000 steps on GPU1.
+
+### Step-12000 endpoint
+
+The final run is
+`gdn2-futureseed-clean-scale-s12000-final-20260802T163724Z-5889462`, bound to
+clean source SHA `5889462cb9234ee8632a2dcb3c0690dee2f82e0d`. The exact final
+train-state checkpoint is `train_state_step012000.pt`, SHA256
+`66b805cf163a6b0eaae1ec6ed74f9f7a8b3cc6e21919b58268b8150ae5ae3b37`.
+The second GPU1 allocation repeated the strict no-fallback preflight: official
+FLA source `9c8e42e...`, `GatedDeltaNet2`, `ChunkGDN2FunctionBackward`, Triton
+Q/K/V convolutions, initial-state gradients, and Torch/CUDA output, terminal
+state, and gradient agreement all passed. The run used 5,461,688 parameters,
+8,095 MiB peak allocated VRAM, and no CPU model execution or GPU2.
+
+| Evaluation | loop1 exact | loop2 exact | loop3 exact | loop4 exact | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|---:|---:|---:|---:|
+| mixed official test | `0.0234` | `0.0430` | `0.2324` | `0.3320` | `0.3379` | `0.7317` |
+| official 46-50 | `0.9941` | `1.0000` | `1.0000` | `1.0000` | `1.0000` | `1.0000` |
+| official 51-55 | `0.0000` | `0.0547` | `0.3574` | `0.4355` | `0.4492` | `0.8058` |
+| official 56-60 | `0.0000` | `0.0195` | `0.0938` | `0.1484` | `0.1543` | `0.6256` |
+| official 61-64 | `0.0000` | `0.0000` | `0.0723` | `0.2266` | `0.2637` | `0.8575` |
+
+Ordinary clean scaling remains productive through the endpoint. From step10000
+to12000, mixed loop5 exact improves `0.2852 -> 0.3379` (`+0.0527`), 51-55
+improves `0.4062 -> 0.4492`, 56-60 improves `0.1387 -> 0.1543`, and 61-64
+improves `0.1797 -> 0.2637`. Mean official 51-64 exact moves
+`0.2415 -> 0.2891`. The 56-64 two-range mean is `0.2090`, crossing that half
+of the primary gate, but 51-55 misses its `0.50` requirement and neither strong
+gate is reached (`mixed <0.45`, 56-64 mean `<0.30`). The primary gate therefore
+misses overall; this is not a strong success and not a tagging result.
+
+The loop evidence is stronger than at step10000. Mixed exact rises
+`0.0234 -> 0.0430 -> 0.2324 -> 0.3320 -> 0.3379`; loop1 remains unchanged
+while loop1-to-loop5 gain widens to `+0.3145`. On a selected 64-blank board,
+wrong cells fall `35 -> 22 -> 4 -> 0 -> 0` and conflicts fall
+`26 -> 22 -> 11 -> 0 -> 0`. A hard failure instead falls
+`22 -> 17 -> 11 -> 5 -> 5`, with conflicts `24 -> 19 -> 19 -> 9 -> 9`.
+Thus more training improves both the operating point and late recurrent
+closure, but loop5 itself adds little over loop4 and a five-cell tail remains.
+
+Decision: close `P-SCALE-037` at its registered 12k endpoint. Do not append
+another arbitrary clean-training tail or branch into width, loss, noise, gate,
+seed, or checkpoint selection. The result justifies one expensive but decisive
+next experiment: a from-scratch matched no-FutureSeed GDN2 control with the
+same initialization shell, data order, optimizer budget, every-loop CE, CUDA
+path, and evaluator. That control is required to determine whether FutureSeed
+changes the long-scale frontier, rather than only the short-budget opening.

@@ -1557,3 +1557,21 @@
   baseline. Revisit write preconditioning only with a fused kernel or on a
   direct online-memory interference/retrieval task where its mechanism can be
   isolated.
+
+## 2026-08-02 GDN2 clean scaling at step 10000
+
+- Clean data and optimizer compute remain productive on the canonical
+  D192/L10 GDN2 FutureSeed trajectory. Mixed loop5 full-board exact improves
+  `0.2520 -> 0.2852` from step9100 to10000, while loop1 stays near `0.0234`;
+  the extra solves are created by recurrent refinement rather than a stronger
+  one-pass predictor.
+- Do not mistake a positive aggregate scaling slope for monotonic behavior in
+  every difficulty bucket. Official 51-55 improves to `0.4062`, but 56-60 and
+  61-64 remain volatile; mean 51-64 exact moves only `0.2318 -> 0.2415`.
+- Hard-case trajectories are essential evidence. A 64-blank case reaches
+  `31 -> 18 -> 3 -> 1 -> 0` wrong cells across loops 1-5, while failures stall
+  on a few high-confidence wrong digits. Report both, rather than reducing the
+  run to average blank accuracy.
+- The preregistered mixed-exact gate passes, so the high-ROI decision is one
+  unchanged continuation to step12000. Do not branch into loss, noise, state,
+  width, depth, seed, or curriculum variants before that endpoint.

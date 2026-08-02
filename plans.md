@@ -299,6 +299,19 @@ blank accuracy improves while those full-board metrics remain flat, stop the
 ordinary clean scaling line. No model, loss, noise, order, seed, width, depth,
 state size, or loop-count change is allowed.
 
+Current update (2026-08-02 20:26 CST): the unchanged step10000 gate passes.
+Against the current-code matched step9100 checkpoint, mixed loop5 exact rises
+`0.2520 -> 0.2852` (`+0.0332`), above the preregistered `+0.02` continuation
+threshold. Mixed loop1-to-loop5 exact gain strengthens from `+0.2285` to
+`+0.2617`. Official 51-55/56-60/61-64 loop5 exact is
+`0.4062/0.1387/0.1797`; their mean moves `0.2318 -> 0.2415`, so the far tail is
+still noisy rather than uniformly monotone. The 256-board visualization bank
+contains 64-blank cases that move `31 -> 18 -> 3 -> 1 -> 0` wrong cells, plus
+hard failures that stop at a few high-confidence errors. Continue the exact
+same model, data order, optimizer/RNG state, FutureSeed, loop loss, and official
+FLA CUDA path to the original step12000 endpoint. GPU1 lease rollover may split
+execution only at a complete 100-step checkpoint; it is not a scientific arm.
+
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
 | P-PCOND-001 | discarded | Stable position-Q/K addresses where memory lives, but not how repeated writes should be conditioned. If repeated directions create ill-conditioned online updates, tied causal curvature should improve the strongest GDN2+FutureSeed carrier; FutureSeed row energy should be useful as initial precision rather than only initial content. | Parameter-neutral `A_t=exp(g_t)A_{t-1}+b_t*k_t^2`; bounded PGDN-style multiplier `m_t`; pass `k'=m*k,b'=b/m` to preserve erase while changing write geometry. Keep official `chunk_gdn2`, position-Q/K, data, optimizer, random order, loop5/all-loop CE, and step9000 parent fixed. One 100-step candidate against frozen matched position-Q/K control. | GPU1 A800 80GB only; no GPU2/CPU model smoke/fallback | completed 2026-08-02; CUDA contract + smoke + one 100-step matched candidate | Mean 51-64 blank `>=+0.03`, no range `<-0.03`, overhead `<=20%`; otherwise stop. No squash/center/gate/seed/LR/loss sweep. | Weak positive below gate. CE `1.2196->1.1434`; official 51-55/56-60/61-64 loop5 blank `0.4704/0.4293/0.4001 -> 0.4919/0.4459/0.4312`, mean `+0.0230`; all hard exact0. Time `+27.5%`, allocated VRAM `+60.9%`, params matched. Mechanism is active and numerically correct, but most gain is loop1 rather than stronger recurrent correction. Reject exact implementation; no sweep. |

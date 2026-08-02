@@ -452,3 +452,48 @@ Exact launch config:
 
 - `configs/sudoku/gdn2_scale_resume_10000.env`
 - `CUDA_VISIBLE_DEVICES=0 BASELINE_CONFIG=configs/sudoku/gdn2_scale_resume_10000.env scripts/run_canonical_gdn2_scale.sh`
+
+### Step-10000 gate and final continuation decision
+
+The exact step-10000 run is
+`gdn2-futureseed-clean-scale-s10000-20260802T104025Z-cfdab41`, bound to clean
+source SHA `cfdab41acf5ce5a161307b60c906b94de9f28896`. The train-state checkpoint
+is `train_state_step010000.pt`, SHA256
+`2b720c4a4a38e5eb37df2c0c30a193f55c14d36167ccb578274c4aaa9806ceca`.
+Strict GPU1 preflight verified official FLA source `9c8e42e...`, the official
+`GatedDeltaNet2` class, `ChunkGDN2FunctionBackward`, Triton Q/K/V convolutions,
+nonzero initial-state gradients, and Torch/CUDA output, state, and gradient
+agreement. No fallback or CPU model execution occurred.
+
+| Evaluation | loop1 exact | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|---:|
+| mixed official test | `0.0234` | `0.2852` | `0.7115` |
+| official 46-50 | `0.9961` | `1.0000` | `1.0000` |
+| official 51-55 | `0.0000` | `0.4062` | `0.7977` |
+| official 56-60 | `0.0000` | `0.1387` | `0.6188` |
+| official 61-64 | `0.0000` | `0.1797` | `0.8312` |
+
+Mixed exact across loops 1-5 is
+`0.0234 / 0.0312 / 0.1953 / 0.2734 / 0.2852`. Relative to the matched
+step9100 readout, mixed loop5 exact improves `0.2520 -> 0.2852`, a `+0.0332`
+gain that passes the predeclared `+0.02` gate. Its loop1-to-loop5 gain also
+widens `+0.2285 -> +0.2617`. Mean official 51-64 exact rises only
+`0.2318 -> 0.2415`; 51-55 improves, while the two harder buckets fluctuate.
+The proper conclusion is therefore that ordinary scaling still improves
+aggregate full-board closure and recurrent correction, not that every hard
+bucket is monotone.
+
+The case bank makes the loop mechanism concrete. One 64-blank board changes
+from `31` wrong cells at loop1 to `18`, `3`, `1`, and `0` at loops 2-5; its
+constraint-conflict count reaches zero. Other boards stall on a small set of
+high-confidence wrong digits. This is genuine iterative correction rather
+than a token-accuracy-only gain, but it also identifies the remaining upper
+tail.
+
+Decision: continue the unchanged trajectory to the original step12000
+endpoint. The only intervention is 2000 additional `51-64` optimizer steps.
+The exact launch config is `configs/sudoku/gdn2_scale_resume_12000.env`. No
+architecture, loss, noise, order, seed, model size, state size, loop count,
+batch, optimizer, scheduler, or evaluator changes are allowed. Because one
+GPU1 lease cannot hold all 2000 steps, stop only on a complete 100-step
+checkpoint, record the infrastructure rollover, and resume exactly.

@@ -31,6 +31,13 @@ from fast_slow_decay_gdn2 import (
     FastSlowDecayController,
 )
 from gain_budget_gdn2 import fla_l2norm_fp32, project_erase_gate
+from preconditioned_gdn2 import (
+    GDN2_PRECONDITION_MODES,
+    causal_tied_atk_preconditioner,
+    fold_preconditioned_write_into_gdn2,
+    futureseed_row_precision,
+    normalize_qk_fp32,
+)
 
 try:
     from rwkv7_cuda import StatePassingRWKV7, WindRWKV7, statepassing_available, wind_available
@@ -283,6 +290,20 @@ ADDRESS_TRAIN_KEYS = (
     "gdn2_address_carrier_write_norm_ratio",
     "gdn2_address_carrier_b_input_relative_change",
     "gdn2_address_carrier_w_input_relative_change",
+)
+PRECONDITION_TRAIN_KEYS = (
+    "gdn2_precondition_enabled",
+    "gdn2_precondition_multiplier_mean",
+    "gdn2_precondition_multiplier_std",
+    "gdn2_precondition_multiplier_min",
+    "gdn2_precondition_multiplier_max",
+    "gdn2_precondition_log_precision_mean",
+    "gdn2_precondition_log_precision_std",
+    "gdn2_precondition_seed_precision_mean",
+    "gdn2_precondition_seed_precision_std",
+    "gdn2_precondition_write_relative_change",
+    "gdn2_precondition_erase_error_max",
+    "gdn2_precondition_erase_error_rms",
 )
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
@@ -679,7 +700,17 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         address_mode = getattr(time_mix, "address_mode", "none")
         fast_slow_mode = getattr(time_mix, "fast_slow_decay_mode", "none")
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
-        if address_mode == "position_qk":
+        precondition_mode = getattr(time_mix, "precondition_mode", "none")
+        if precondition_mode != "none" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_futureseed_tied_preconditioner_"
+                "then_official_gdn2_chunk"
+            )
+        elif precondition_mode != "none":
+            execution_path = (
+                "futureseed_tied_preconditioner_then_official_gdn2_chunk"
+            )
+        elif address_mode == "position_qk":
             execution_path = "canonical_position_qk_then_official_gdn2_chunk"
         elif address_mode == "anchor_rotary":
             execution_path = "content_qk_anchor_rotation_then_official_gdn2_chunk"
@@ -720,6 +751,7 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
                 "address_mode": address_mode,
                 "gain_budget_mode": gain_budget_mode,
                 "fast_slow_decay_mode": fast_slow_mode,
+                "precondition_mode": precondition_mode,
                 "execution_path": execution_path,
                 "state_elements_per_head": (
                     int(core.num_slots) * (int(core.head_k_dim) + int(core.head_v_dim))
@@ -1988,6 +2020,7 @@ class FLADeltaTimeMix(nn.Module):
         fast_slow_decay_kernel_size: int = 4,
         fast_slow_decay_rho_init: float = 0.10,
         fast_slow_decay_current_weight_init: float = 0.85,
+        precondition_mode: str = "none",
         address_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -2031,6 +2064,19 @@ class FLADeltaTimeMix(nn.Module):
             raise ValueError("Fast-Slow decay is restricted to the official GDN2 backbone")
         if fast_slow_decay_mode != "none" and gain_budget_mode != "none":
             raise ValueError("Fast-Slow decay and Gain-Budget cannot be enabled together")
+        if precondition_mode not in GDN2_PRECONDITION_MODES:
+            raise ValueError(
+                "precondition_mode must be one of: "
+                f"{', '.join(GDN2_PRECONDITION_MODES)}"
+            )
+        if precondition_mode != "none" and backbone != "gdn2":
+            raise ValueError("Tied preconditioning is restricted to GDN2")
+        if precondition_mode != "none" and (
+            gain_budget_mode != "none" or fast_slow_decay_mode != "none"
+        ):
+            raise ValueError(
+                "Tied preconditioning cannot be mixed with Gain-Budget or Fast-Slow decay"
+            )
         if address_mode not in GDN2_ADDRESS_MODES:
             raise ValueError(
                 f"address_mode must be one of: {', '.join(GDN2_ADDRESS_MODES)}"
@@ -2044,6 +2090,10 @@ class FLADeltaTimeMix(nn.Module):
         ):
             raise ValueError(
                 "Address-payload separation cannot be mixed with Gain-Budget or Fast-Slow decay"
+            )
+        if precondition_mode != "none" and address_mode not in {"none", "position_qk"}:
+            raise ValueError(
+                "Tied preconditioning currently composes only with none or position_qk addressing"
             )
 
         self.backbone = backbone
@@ -2059,6 +2109,7 @@ class FLADeltaTimeMix(nn.Module):
         self.gain_budget_sigma_cap_max = float(gain_budget_sigma_cap_max)
         self.gain_budget_infeasible_policy = gain_budget_infeasible_policy
         self.fast_slow_decay_mode = fast_slow_decay_mode
+        self.precondition_mode = precondition_mode
         self.address_mode = address_mode
         if backbone == "raven":
             matched_state_elements = self.head_dim * self.head_v_dim
@@ -2219,6 +2270,167 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_address_carrier_b_input_relative_change": zero,
             "gdn2_address_carrier_w_input_relative_change": zero,
         }
+
+    @staticmethod
+    def _zero_precondition_diag(x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in PRECONDITION_TRAIN_KEYS}
+
+    def _forward_preconditioned_gdn2(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor],
+        address: Optional[torch.Tensor],
+        cell_order: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Run a tied curvature-aware write through the unchanged GDN2 kernel."""
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError("Tied preconditioning requires the official GDN2 chunk op")
+        if self.precondition_mode == "none":
+            raise RuntimeError("Preconditioned GDN2 path selected with mode=none")
+        use_position_address = self.address_mode == "position_qk"
+        if use_position_address and (address is None or address.shape != x.shape):
+            raise ValueError(
+                "position_qk preconditioning requires an address stream matching x"
+            )
+
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+        qk_source = address if use_position_address else x
+        assert qk_source is not None
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = (
+                self._zero_conv_state(x)
+                if initial_state is not None
+                else (None, None, None)
+            )
+            q, _ = core.q_conv1d(
+                x=core.q_proj(qk_source),
+                cache=conv_q,
+                output_final_state=True,
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(qk_source),
+                cache=conv_k,
+                output_final_state=True,
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x),
+                cache=conv_v,
+                output_final_state=True,
+            )
+        else:
+            q = F.silu(core.q_proj(qk_source))
+            k = F.silu(core.k_proj(qk_source))
+            v = F.silu(core.v_proj(x))
+
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        q_canonical = q
+        k_canonical = k
+        if use_position_address and cell_order is not None:
+            q = q.index_select(1, cell_order)
+            k = k.index_select(1, cell_order)
+
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias)
+        b = core.b_proj(x).sigmoid()
+        w = core.w_proj(x).sigmoid()
+        g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        b = b.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+
+        if core.num_v_heads > core.num_heads:
+            groups = core.num_v_heads // core.num_heads
+            q = torch.repeat_interleave(q, groups, dim=-2)
+            k = torch.repeat_interleave(k, groups, dim=-2)
+            g = torch.repeat_interleave(g, groups, dim=-2)
+            b = torch.repeat_interleave(b, groups, dim=-2)
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        q_unit, k_unit = normalize_qk_fp32(q, k)
+        initial_precision = (
+            futureseed_row_precision(initial_state)
+            if self.precondition_mode == "futureseed_tied_atk"
+            else None
+        )
+        multiplier, precondition_diag = causal_tied_atk_preconditioner(
+            k_unit,
+            g,
+            b,
+            initial_precision=initial_precision,
+        )
+        k_write, b_kernel, fold_diag = fold_preconditioned_write_into_gdn2(
+            k_unit,
+            b,
+            multiplier,
+        )
+
+        operation = (
+            fused_recurrent_gdn2
+            if seq_len <= 64 and not self.training
+            else chunk_gdn2
+        )
+        if operation is None:
+            raise RuntimeError("The required official GDN2 kernel is unavailable")
+        o, terminal_state = operation(
+            q=q_unit,
+            k=k_write,
+            v=v,
+            g=g,
+            b=b_kernel,
+            w=w,
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=False,
+        )
+
+        address_diag = self._zero_address_diag(x)
+        if use_position_address:
+            with torch.no_grad():
+                q_address = F.normalize(q_canonical[:1].float(), dim=-1)
+                k_address = F.normalize(k_canonical[:1].float(), dim=-1)
+                similarity = torch.einsum("bthd,bshd->bhts", q_address, k_address)
+                diagonal_sum = similarity.diagonal(dim1=-2, dim2=-1).sum()
+                diagonal_count = core.num_heads * seq_len
+                diagonal_mean = diagonal_sum / max(diagonal_count, 1)
+                offdiag_count = core.num_heads * seq_len * max(seq_len - 1, 1)
+                offdiag_mean = (
+                    (similarity.sum() - diagonal_sum) / max(offdiag_count, 1)
+                    if seq_len > 1
+                    else similarity.new_zeros(())
+                )
+            address_diag.update(
+                {
+                    "gdn2_address_enabled": x.new_ones(()),
+                    "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(x.dtype),
+                    "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(x.dtype),
+                    "gdn2_address_qk_contrast": (
+                        diagonal_mean - offdiag_mean
+                    ).detach().to(x.dtype),
+                }
+            )
+
+        zero = x.new_zeros(())
+        self.last_gain_budget_diag = {
+            "gdn2_gain_budget_enabled": zero,
+            "gdn2_fast_slow_enabled": zero,
+            **address_diag,
+            **precondition_diag,
+            **fold_diag,
+        }
+        output_gate = core.g_proj(x).view(
+            batch_size,
+            seq_len,
+            core.num_v_heads,
+            core.head_v_dim,
+        )
+        o = core.o_norm(o.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
 
     def _forward_gain_budget(
         self,
@@ -3267,6 +3479,17 @@ class FLADeltaTimeMix(nn.Module):
                 x,
                 initial_state=initial_state,
             )
+        if self.precondition_mode != "none":
+            if self.address_mode == "position_qk" and address is None:
+                raise ValueError(
+                    "position_qk preconditioning requires a canonical address stream"
+                )
+            return self._forward_preconditioned_gdn2(
+                x,
+                initial_state=initial_state,
+                address=address,
+                cell_order=cell_order,
+            )
         if self.address_mode == "position_qk":
             if address is None:
                 raise ValueError("position_qk address mode requires a canonical address stream")
@@ -3354,6 +3577,7 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_fast_slow_relative_change": zero,
             "gdn2_fast_slow_alpha_mean": x.new_ones(()),
             **self._zero_address_diag(x),
+            **self._zero_precondition_diag(x),
         }
         return y, terminal_state
 
@@ -3381,6 +3605,7 @@ class FLADeltaBlock(nn.Module):
         gdn2_fast_slow_decay_kernel_size: int = 4,
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
+        gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -3409,6 +3634,7 @@ class FLADeltaBlock(nn.Module):
             fast_slow_decay_current_weight_init=(
                 gdn2_fast_slow_decay_current_weight_init
             ),
+            precondition_mode=gdn2_precondition_mode,
             address_mode=gdn2_address_mode,
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
@@ -3477,6 +3703,7 @@ class FutureSeedRWKV(nn.Module):
         gdn2_fast_slow_decay_kernel_size: int = 4,
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
+        gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -3523,6 +3750,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_scope = future_seed_scope
         self.future_seed_readout_hop = int(future_seed_readout_hop)
         self.activation_checkpoint = bool(activation_checkpoint)
+        self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
         self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
@@ -3644,6 +3872,7 @@ class FutureSeedRWKV(nn.Module):
                         gdn2_fast_slow_decay_current_weight_init=(
                             gdn2_fast_slow_decay_current_weight_init
                         ),
+                        gdn2_precondition_mode=gdn2_precondition_mode,
                         gdn2_address_mode=gdn2_address_mode,
                         raven_num_slots=raven_num_slots,
                         raven_topk=raven_topk,
@@ -4348,6 +4577,7 @@ def load_training_checkpoint(
             "gdn_use_short_conv",
             "gdn_conv_size",
             "gdn_allow_neg_eigval",
+            "gdn2_precondition_mode",
             "gdn2_address_mode",
             "raven_num_slots",
             "raven_topk",
@@ -4412,6 +4642,7 @@ def load_training_checkpoint(
             "future_seed_gate_mode": "head",
             "future_seed_scope": "layer",
             "future_seed_readout_hop": 0,
+            "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
             "raven_num_slots": 0,
             "raven_topk": 0,
@@ -4696,6 +4927,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_fast_slow_decay_kernel_size: int = 4,
         gdn2_fast_slow_decay_rho_init: float = 0.10,
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
+        gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -4730,6 +4962,7 @@ class FutureSeedLoopSudoku(nn.Module):
         self.hidden_agg_noise_mode = hidden_agg_noise_mode
         self.hidden_agg_noise_topk = int(hidden_agg_noise_topk)
         self.hidden_agg_noise_max_norm = float(hidden_agg_noise_max_norm)
+        self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
@@ -4766,6 +4999,7 @@ class FutureSeedLoopSudoku(nn.Module):
             gdn2_fast_slow_decay_current_weight_init=(
                 gdn2_fast_slow_decay_current_weight_init
             ),
+            gdn2_precondition_mode=gdn2_precondition_mode,
             gdn2_address_mode=gdn2_address_mode,
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
@@ -5730,6 +5964,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn2_fast_slow_decay_current_weight_init=(
             args.gdn2_fast_slow_decay_current_weight_init
         ),
+        gdn2_precondition_mode=args.gdn2_precondition_mode,
         gdn2_address_mode=args.gdn2_address_mode,
         raven_num_slots=args.raven_num_slots,
         raven_topk=args.raven_topk,
@@ -5837,6 +6072,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_gain_budget_gate_relative_change = 0.0
     last_fast_slow_diag = {
         key: 0.0 for key in FAST_SLOW_TRAIN_KEYS
+    }
+    last_precondition_diag = {
+        key: 0.0 for key in PRECONDITION_TRAIN_KEYS
     }
     last_address_diag = {
         key: 0.0 for key in ADDRESS_TRAIN_KEYS
@@ -5966,6 +6204,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_fast_slow_diag.get(key, 0.0))
                 for key in FAST_SLOW_TRAIN_KEYS
             }
+        saved_precondition_diag = last_metrics.get("precondition", {})
+        if isinstance(saved_precondition_diag, dict):
+            last_precondition_diag = {
+                key: float(saved_precondition_diag.get(key, 0.0))
+                for key in PRECONDITION_TRAIN_KEYS
+            }
         saved_address_diag = last_metrics.get("address_operator", {})
         if isinstance(saved_address_diag, dict):
             last_address_diag = {
@@ -6035,6 +6279,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_gain_budget_gate_relative_change = 0.0
             accum_fast_slow_diag = {
                 key: 0.0 for key in FAST_SLOW_TRAIN_KEYS
+            }
+            accum_precondition_diag = {
+                key: 0.0 for key in PRECONDITION_TRAIN_KEYS
             }
             accum_address_diag = {
                 key: 0.0 for key in ADDRESS_TRAIN_KEYS
@@ -6226,6 +6473,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in PRECONDITION_TRAIN_KEYS:
+                        accum_precondition_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in ADDRESS_TRAIN_KEYS:
                         accum_address_diag[key] += float(
                             trace_last.get(
@@ -6285,6 +6541,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_fast_slow_diag.items()
             }
+            last_precondition_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_precondition_diag.items()
+            }
             last_address_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_address_diag.items()
@@ -6315,6 +6575,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"slow_lag={last_fast_slow_diag['gdn2_fast_slow_lag_mass']:.4f} "
                     f"slow_tv={last_fast_slow_diag['gdn2_fast_slow_tv_ratio']:.4f} "
                     f"slow_change={last_fast_slow_diag['gdn2_fast_slow_relative_change']:.4f} "
+                    f"pre_m={last_precondition_diag['gdn2_precondition_multiplier_mean']:.4f}/"
+                    f"{last_precondition_diag['gdn2_precondition_multiplier_std']:.4f} "
+                    f"pre_seed={last_precondition_diag['gdn2_precondition_seed_precision_mean']:.4f} "
+                    f"pre_write={last_precondition_diag['gdn2_precondition_write_relative_change']:.4f} "
+                    f"pre_erase={last_precondition_diag['gdn2_precondition_erase_error_max']:.2e} "
                     f"addr_scale={last_address_diag['gdn2_address_rotation_scale_abs']:.4f} "
                     f"addr_phase={last_address_diag['gdn2_address_phase_abs']:.4f} "
                     f"addr_qchg={last_address_diag['gdn2_address_q_relative_change']:.4f} "
@@ -6378,6 +6643,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         "fast_slow_decay": dict(last_fast_slow_diag),
+                        "precondition": dict(last_precondition_diag),
                         "address_operator": dict(last_address_diag),
                     },
                     "eval_by_holes": {},
@@ -6459,6 +6725,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                             "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                             "fast_slow_decay": dict(last_fast_slow_diag),
+                            "precondition": dict(last_precondition_diag),
                             "address_operator": dict(last_address_diag),
                         },
                         reason="eval_checkpoint",
@@ -6519,6 +6786,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         "fast_slow_decay": dict(last_fast_slow_diag),
+                        "precondition": dict(last_precondition_diag),
                         "address_operator": dict(last_address_diag),
                     },
                     reason="periodic",
@@ -6597,6 +6865,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gain_budget_delta_error_max": last_gain_budget_delta_error_max,
         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
         "fast_slow_decay": dict(last_fast_slow_diag),
+        "precondition": dict(last_precondition_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -6627,6 +6896,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn2_fast_slow_decay_current_weight_init": (
             args.gdn2_fast_slow_decay_current_weight_init
         ),
+        "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
@@ -7973,6 +8243,24 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError(
             "--gdn2_fast_slow_decay_current_weight_init must be in (0, 1]"
         )
+    if args.gdn2_precondition_mode != "none" and args.backbone != "gdn2":
+        raise ValueError("--gdn2_precondition_mode requires --backbone gdn2")
+    if args.gdn2_precondition_mode != "none" and not args.fla_strict_official:
+        raise ValueError("Tied preconditioning requires --fla_strict_official")
+    if args.gdn2_precondition_mode != "none" and (
+        args.gdn2_gain_budget_mode != "none"
+        or args.gdn2_fast_slow_decay_mode != "none"
+    ):
+        raise ValueError(
+            "Tied preconditioning cannot be mixed with Gain-Budget or Fast-Slow decay"
+        )
+    if args.gdn2_precondition_mode != "none" and args.gdn2_address_mode not in {
+        "none",
+        "position_qk",
+    }:
+        raise ValueError(
+            "Tied preconditioning currently composes only with none or position_qk addressing"
+        )
     if args.gdn2_address_mode != "none" and args.backbone != "gdn2":
         raise ValueError("--gdn2_address_mode requires --backbone gdn2")
     if args.gdn2_address_mode != "none" and not args.fla_strict_official:
@@ -8086,6 +8374,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
+        f"gdn2_precondition={args.gdn2_precondition_mode} "
         f"gdn2_address={args.gdn2_address_mode} "
         f"raven_slots/topk={args.raven_num_slots}/{args.raven_topk} "
         f"cell_order_train={args.cell_order_train} "
@@ -8301,6 +8590,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn2_fast_slow_decay_current_weight_init": (
             args.gdn2_fast_slow_decay_current_weight_init
         ),
+        "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
@@ -8534,6 +8824,11 @@ def parse_args() -> argparse.Namespace:
         "--gdn2_fast_slow_decay_current_weight_init",
         type=float,
         default=0.85,
+    )
+    p.add_argument(
+        "--gdn2_precondition_mode",
+        choices=GDN2_PRECONDITION_MODES,
+        default="none",
     )
     p.add_argument(
         "--gdn2_address_mode",

@@ -11,6 +11,19 @@ selector tricks.
 
 ## A. Current Candidate Plan
 
+Current update (2026-08-02 CST): `P-PCOND-001` is the sole active mechanism
+probe. Hypothesis: position-Q/K already supplies a stable address, but GDN2
+still writes every key direction with the same local geometry. A causal
+diagonal curvature statistic tied to GDN2's own decay/erase gates can reduce
+online interference; FutureSeed's state row energy initializes that statistic,
+so the future seed carries both memory content and confidence. The erase
+operator remains algebraically unchanged and the exact official GDN2
+chunk/Triton kernel is retained. Run one step9000->9100 candidate and compare
+with the frozen matched position-Q/K step9100 result. Continue only for
+`>=+0.03` mean official 51-64 blank gain with no range worse than `-0.03`,
+finite gradients, erase error `<8e-3`, and systems overhead `<=20%`. Otherwise
+discard without squash/center/gate/seed/LR/loss sweep.
+
 Current update (2026-08-01 21:05 CST): `P-RAVEN-001` is discarded after its
 single strict GPU1 matched gate. Exact official FLA Raven and GDN2 classes,
 CUDA kernels, backward, FutureSeed state packing, source, data, seed,
@@ -275,6 +288,7 @@ gate when the pending GPU1 workload is allocated.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-PCOND-001 | in_progress | Stable position-Q/K addresses where memory lives, but not how repeated writes should be conditioned. If repeated directions create ill-conditioned online updates, tied causal curvature should improve the strongest GDN2+FutureSeed carrier; FutureSeed row energy should be useful as initial precision rather than only initial content. | Parameter-neutral `A_t=exp(g_t)A_{t-1}+b_t*k_t^2`; bounded PGDN-style multiplier `m_t`; pass `k'=m*k,b'=b/m` to preserve erase while changing write geometry. Keep official `chunk_gdn2`, position-Q/K, data, optimizer, random order, loop5/all-loop CE, and step9000 parent fixed. One 100-step candidate against frozen matched position-Q/K control. | GPU1 A800 80GB only; no GPU2/CPU model smoke/fallback | CUDA contract + one 100-step run, about 15 minutes | Mean 51-64 blank `>=+0.03`, no range `<-0.03`, overhead `<=20%`; otherwise stop. No squash/center/gate/seed/LR/loss sweep. | pending GPU1 queue and CUDA contract. |
 | P-RAVEN-001 | discarded | Raven 的 sparse content-routed slots 只改动被选中的 memory slots，可能比 GDN2 dense state update 更少覆盖 FutureSeed 提供的未来上下文。若这是机制优势，同 state budget 下 hard blank range 应更早打开，而不是靠多一倍 memory。 | 官方 FLA SHA 31d15f7；matched D192/L10/H6/D32、FutureSeed1、loop5 all-loop CE、effective batch128、official Sudoku、seed52、500 steps。GDN2 state=32x32=1024；Raven dual state=16x(32+32)=1024，top2。先跑 CUDA exact-class/source/state/backward contract，再各跑一个 arm。 | GPU1 A800 80GB only；禁止 GPU2/CPU model smoke/fallback | completed 2026-08-01；contract + 2x500 steps + three-range eval/viz | Raven 在 51-55 exact/blank 或 fixed holes53 上实质优于 GDN2，且 loop5 不退化；若无优势则不扫 slots/topk/seed，转而把 Raven 定位成 retrieval carrier 而非 Sudoku carrier。 | Negative. GDN2/Raven CE `1.0186/1.1388`, sec/step `6.041/7.703`, VRAM `8025/7262MiB`, params `5.462/4.650M`. 46-50 exact `0.7969/0`; 51-55 blank `0.5257/0.4475`; 56-64 blank `0.4680/0.4052`; hard exact0 for both. Shared case wrong cells `23->22` vs `34->30`; Raven loop exact stays0. Sparse slots save memory but do not beat dense GDN2 on this dense-constraint task. No slot/top-k/seed/loss sweep. |
 | P-CARRIER-001 | discarded | Shared Q/K address 已减少地址冲突，但同一个 key 同时定义 erase 和哪些 K rows 接收 correction。若 shared address 还能控制逐 K-channel carrier，模型可在不编码任务规则的情况下减少 online memory interference。 | 保留 `anchor_residual`；新增 `carrier=sigmoid(6+bias_delta+scale*address)`，并用 `k'=c*k,b'=r^2*b/c,w'=r*w,r=||c*k||/||k||` 精确折叠进不变 official GDN2 kernel。matched shared control vs carrier 从同一 step9100 到9200；一个 seed，无 gate/bias/scale/rank/LR/loss/时长表。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-08-01；CUDA contract + smoke + 2x100 matched steps | candidate mean hard blank `>=+0.03`，或 CE `>=0.05` lower 且 loop gain 更强；carrier token std `>=0.002`；state RMS `<2x` control；无收益或 overhead>25% 则停止 | CUDA fold/real backward pass, but carrier collapses to near-global shrink: token std `1.05e-5`, mean `0.997525`, no value `<0.95`. Mean hard loop5 blank `0.501809->0.501669` (`-0.000140`), CE `1.055997->1.056259`, loop gain `0.060443->0.060008`, exact0, runtime `+11.42%`, VRAM `+31.72%`. Reject this sigmoid carrier without sweep; retain shared address residual. |
 | P-ABIND-004 | discarded | Shared address residual 已给出`+0.0807`和真实loop修正，但强制 read/write 共用一个对称地址映射；pure position-Q/K 使用独立Q/K映射并达到`+0.2296`。若剩余差距来自 read/write address 的非对称性，独立零初始化Q/K residual应跨过主门槛。 | 每层两个无bias `W_addr_q/W_addr_k:D->D`，均zero init；分别加到content Q/K后进入不变official normalization/chunk/Triton。从exact step9000只到9100；同control/data/order/optimizer/FutureSeed/loops。只跑这一 candidate，不续shared、不跑shared-vs-split表外变体。 | GPU1 A800 80GB only；禁止GPU2/CPU model smoke/fallback | completed 2026-07-31；CUDA contract+smoke+100-step gate | Active but negative. CE`1.7730`; mean hard blank`0.2313`, only`+0.0276` vs normal and`-0.0531` vs shared; loop gain`+0.0027`; runtime`+54.7%`; exact0. More capacity does not help. Shared coordinate alignment is the useful bias; stop without continuation/sweep. |

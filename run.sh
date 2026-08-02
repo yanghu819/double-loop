@@ -430,6 +430,7 @@ COMMON_ARGS=(
   --gdn2_fast_slow_decay_kernel_size "${GDN2_FAST_SLOW_DECAY_KERNEL_SIZE:-4}"
   --gdn2_fast_slow_decay_rho_init "${GDN2_FAST_SLOW_DECAY_RHO_INIT:-0.10}"
   --gdn2_fast_slow_decay_current_weight_init "${GDN2_FAST_SLOW_DECAY_CURRENT_WEIGHT_INIT:-0.85}"
+  --gdn2_precondition_mode "${GDN2_PRECONDITION_MODE:-none}"
   --gdn2_address_mode "${GDN2_ADDRESS_MODE:-none}"
   --raven_num_slots "${RAVEN_NUM_SLOTS:-0}"
   --raven_topk "${RAVEN_TOPK:-0}"

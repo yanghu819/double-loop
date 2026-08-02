@@ -112,9 +112,14 @@ def check_algebra(device: torch.device) -> dict[str, Any]:
     _q, k_unit = normalize_qk_fp32(k, k)
     g = -0.01 - 0.04 * torch.rand(shape, device=device)
     b = torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16)
-    state = 0.15 * torch.randn(2, 4, 16, 16, device=device)
+    state = 0.15 * torch.randn(2, 4, 16, 24, device=device)
     initial_precision = futureseed_row_precision(state)
     assert initial_precision is not None
+    if tuple(initial_precision.shape) != (2, 4, 16):
+        raise AssertionError(
+            "FutureSeed precision reduced the wrong recurrent-state axis: "
+            f"{tuple(initial_precision.shape)}"
+        )
     parallel, diag = causal_tied_atk_preconditioner(
         k_unit,
         g,
@@ -153,11 +158,12 @@ def check_official_kernel(device: torch.device) -> dict[str, Any]:
     shape = (2, 81, 4, 16)
     q = torch.randn(shape, device=device, dtype=torch.bfloat16)
     k = torch.randn(shape, device=device, dtype=torch.bfloat16)
-    v = torch.randn(shape, device=device, dtype=torch.bfloat16)
+    value_shape = (2, 81, 4, 24)
+    v = torch.randn(value_shape, device=device, dtype=torch.bfloat16)
     g = -0.01 - 0.04 * torch.rand(shape, device=device)
     b = torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16)
-    w = torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16)
-    state = 0.04 * torch.randn(2, 4, 16, 16, device=device)
+    w = torch.sigmoid(torch.randn(value_shape, device=device)).to(torch.bfloat16)
+    state = 0.04 * torch.randn(2, 4, 16, 24, device=device)
     q_unit, k_unit = normalize_qk_fp32(q, k)
     initial_precision = futureseed_row_precision(state)
     multiplier, _diag = causal_tied_atk_preconditioner(
@@ -211,13 +217,14 @@ def check_official_kernel(device: torch.device) -> dict[str, Any]:
 def check_backward_parity(device: torch.device) -> dict[str, Any]:
     torch.manual_seed(9205)
     shape = (1, 33, 2, 16)
-    state_shape = (1, 2, 16, 16)
+    value_shape = (1, 33, 2, 24)
+    state_shape = (1, 2, 16, 24)
 
     def leaves() -> tuple[torch.Tensor, ...]:
         return (
             torch.randn(shape, device=device, dtype=torch.bfloat16).requires_grad_(True),
             torch.randn(shape, device=device, dtype=torch.bfloat16).requires_grad_(True),
-            torch.randn(shape, device=device, dtype=torch.bfloat16).requires_grad_(True),
+            torch.randn(value_shape, device=device, dtype=torch.bfloat16).requires_grad_(True),
             (-0.01 - 0.04 * torch.rand(shape, device=device)).requires_grad_(True),
             torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16).requires_grad_(True),
             torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16).requires_grad_(True),
@@ -308,7 +315,7 @@ def build(mode: str, device: torch.device) -> FLADeltaTimeMix:
         4,
         16,
         backbone="gdn2",
-        expand_v=1.0,
+        expand_v=1.5,
         mode="chunk",
         use_short_conv=True,
         conv_size=4,
@@ -322,7 +329,7 @@ def check_full_layer_backward(device: torch.device) -> dict[str, Any]:
     layer = build("futureseed_tied_atk", device)
     layer.train()
     x = torch.randn(2, 81, 64, device=device, requires_grad=True)
-    state = (0.04 * torch.randn(2, 4, 16, 16, device=device)).requires_grad_(True)
+    state = (0.04 * torch.randn(2, 4, 16, 24, device=device)).requires_grad_(True)
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
         output, terminal = layer(x, initial_state=state)
         loss = output.float().square().mean() + 0.01 * terminal.float().square().mean()
@@ -364,7 +371,7 @@ def benchmark(device: torch.device) -> dict[str, Any]:
     candidate = build("futureseed_tied_atk", device).train()
     candidate.core.load_state_dict(base.core.state_dict(), strict=True)
     x = torch.randn(8, 81, 64, device=device)
-    state = 0.04 * torch.randn(8, 4, 16, 16, device=device)
+    state = 0.04 * torch.randn(8, 4, 16, 24, device=device)
 
     def measure(layer: FLADeltaTimeMix) -> tuple[float, float]:
         for _ in range(3):

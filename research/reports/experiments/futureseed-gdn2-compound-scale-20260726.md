@@ -497,3 +497,21 @@ architecture, loss, noise, order, seed, model size, state size, loop count,
 batch, optimizer, scheduler, or evaluator changes are allowed. Because one
 GPU1 lease cannot hold all 2000 steps, stop only on a complete 100-step
 checkpoint, record the infrastructure rollover, and resume exactly.
+
+### Step-11000 lease rollover
+
+The first final-stage leg reached step11000 before the GPU1 lease boundary.
+Train CE over steps10100-11000 is
+`0.6347/0.5732/0.6188/0.6889/0.5547/0.6591/0.5702/0.6979/0.7585/0.6527`.
+This is stochastic hard-batch variation around the established regime, with no
+NaN, OOM, or persistent divergence.
+
+The guard waited for both `train_state_step011000.pt` and the matching
+checkpoint-complete log line. It then stopped exact process group `1851` and
+wrote `abort.json` with `scientific_failure=false`. The checkpoint is
+72,313,438 bytes, SHA256
+`3879e6c0af3958fca4b64c2466e6d66867297f487d3287b7bd88148c899e7ed7`.
+GPU memory returned to zero before GPU1 restart. The sole valid resume config
+is `configs/sudoku/gdn2_scale_resume_12000_from11000.env`; the next leg must
+restore model, optimizer, scheduler, data RNG, and training RNG unchanged and
+run the remaining 1000 steps on GPU1.

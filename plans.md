@@ -312,6 +312,17 @@ same model, data order, optimizer/RNG state, FutureSeed, loop loss, and official
 FLA CUDA path to the original step12000 endpoint. GPU1 lease rollover may split
 execution only at a complete 100-step checkpoint; it is not a scientific arm.
 
+Current update (2026-08-02 22:06 CST): the first step12000 execution leg reached
+the planned complete step11000 lease boundary. Train CE at steps10100-11000 is
+`0.6347/0.5732/0.6188/0.6889/0.5547/0.6591/0.5702/0.6979/0.7585/0.6527`;
+there is no NaN, OOM, or persistent loss divergence. The exact train-state
+checkpoint is 72,313,438 bytes with SHA256 `3879e6c0...`. A guard waited for
+the checkpoint-complete log line, terminated exact process group `1851`, wrote
+`abort.json` as `infrastructure_lease_rollover`, and verified GPU1 returned to
+zero memory. GPU1 was then restarted and is pending allocation. Resume only
+from `configs/sudoku/gdn2_scale_resume_12000_from11000.env`; do not use GPU2 or
+change any scientific variable.
+
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
 | P-PCOND-001 | discarded | Stable position-Q/K addresses where memory lives, but not how repeated writes should be conditioned. If repeated directions create ill-conditioned online updates, tied causal curvature should improve the strongest GDN2+FutureSeed carrier; FutureSeed row energy should be useful as initial precision rather than only initial content. | Parameter-neutral `A_t=exp(g_t)A_{t-1}+b_t*k_t^2`; bounded PGDN-style multiplier `m_t`; pass `k'=m*k,b'=b/m` to preserve erase while changing write geometry. Keep official `chunk_gdn2`, position-Q/K, data, optimizer, random order, loop5/all-loop CE, and step9000 parent fixed. One 100-step candidate against frozen matched position-Q/K control. | GPU1 A800 80GB only; no GPU2/CPU model smoke/fallback | completed 2026-08-02; CUDA contract + smoke + one 100-step matched candidate | Mean 51-64 blank `>=+0.03`, no range `<-0.03`, overhead `<=20%`; otherwise stop. No squash/center/gate/seed/LR/loss sweep. | Weak positive below gate. CE `1.2196->1.1434`; official 51-55/56-60/61-64 loop5 blank `0.4704/0.4293/0.4001 -> 0.4919/0.4459/0.4312`, mean `+0.0230`; all hard exact0. Time `+27.5%`, allocated VRAM `+60.9%`, params matched. Mechanism is active and numerically correct, but most gain is loop1 rather than stronger recurrent correction. Reject exact implementation; no sweep. |

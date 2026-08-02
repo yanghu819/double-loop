@@ -409,3 +409,46 @@ group `2102` is stopped. The checkpoint is
 GPU1 workload `b1fdabeb-aafd-48ac-86db-1e86d7cac72a` is pending allocation.
 Resume must use this exact checkpoint and keep every experiment variable
 unchanged.
+
+### Step-9000 gate and step-10000 resume
+
+The unchanged run reached step 9000 in the final `51-64` curriculum stage.
+Train CE is `0.6524`. The exact checkpoint is
+`train_state_step009000.pt`, size `72,248,862` bytes, SHA256
+`606caf5229590f157d7a0f952423c719f4c17688003309a7bd0664e579588dd7`.
+
+The original read-only evaluation from source SHA `42102bd65a28...` reports:
+
+| Evaluation | loop1 exact | loop5 exact | loop5 blank accuracy |
+|---|---:|---:|---:|
+| mixed official test | `0.0234` | `0.2500` | `0.6949` |
+| official 46-50 | `0.9902` | `1.0000` | `1.0000` |
+| official 51-55 | `0.0000` | `0.3926` | `0.7803` |
+| official 56-60 | `0.0000` | `0.1211` | `0.6084` |
+| official 61-64 | `0.0000` | `0.1094` | `0.8058` |
+
+Compared with step 6000, mixed exact rises `0.1426 -> 0.2500` and official
+51-55 rises `0.1914 -> 0.3926`. The two harder ranges are nonzero and later
+loops still account for almost all solved boards. This passes the original
+continuation criterion; ordinary scaling has not yet been falsified.
+
+A subsequent identity-only FutureSeed1 continuation to step 9100 is exactly
+the same scientific arm and preserves model, optimizer, scheduler, data RNG,
+training RNG, data, loop loss, and kernel. Under the current evaluator it gives
+mixed loop5 exact `0.2520`, official 51-55/56-60/61-64 exact
+`0.3672/0.1309/0.1973`, and train CE `0.6435`. Its exact checkpoint SHA256 is
+`5f80e850c1407a3c3225adb1e335a72026abc66aa9486f609005ce65bad91429`.
+It is therefore the nonduplicative resume point for the step-10000 gate.
+
+The step-10000 intervention changes only the amount of final-stage optimizer
+compute: `51-64` exposure grows from 1100 to 2000 steps. It does not add a
+module, loss term, noise source, traversal change, seed, width, state, or loop.
+Prediction: if the remaining failure is ordinary under-training, mixed exact
+or mean official 51-64 exact should improve by at least `0.02` while the large
+loop1-to-loop5 exact gain remains. If CE/blank improves but both full-board
+signals are flat or regress, stop and do not spend the final 2000 steps.
+
+Exact launch config:
+
+- `configs/sudoku/gdn2_scale_resume_10000.env`
+- `CUDA_VISIBLE_DEVICES=0 BASELINE_CONFIG=configs/sudoku/gdn2_scale_resume_10000.env scripts/run_canonical_gdn2_scale.sh`

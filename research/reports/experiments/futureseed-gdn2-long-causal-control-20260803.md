@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-001`
-- Status: running; complete step500 checkpoint archived, GPU1 lease rollover pending
+- Status: running; exact step2500 state archived, GPU1 restart queued
 - Preregistered: 2026-08-03 02:45 CST / 2026-08-02 18:45 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -165,3 +165,22 @@ steps; it becomes larger on every frozen hard readout than at step500. This is
 strong evidence for short-budget optimization/information value and against a
 mere first-few-step initialization artifact. It still does not establish a
 12k frontier difference, so the unchanged no-FutureSeed trajectory continues.
+
+## Step 2500 Infrastructure Rollover
+
+The unchanged no-FutureSeed trajectory continued from step500 to step2500 on
+GPU1. Train CE remained on the same high plateau after entering the 51-55
+curriculum: steps2000/2100/2200/2300/2400/2500 are
+`1.5942/1.5891/1.6033/1.6063/1.5855/1.5833`. This is process evidence, not a
+scientific endpoint; the preregistration explicitly forbids stopping only
+because hard exact may remain closed at step3000.
+
+The lease guard waited for both the complete step2500 log record and atomic
+train-state file, then stopped exact process group `913`. The checkpoint is
+72,248,723 bytes with SHA256
+`f9030611801826f018faf20c934ce4445444cd966cabf190e88d81ae51283a55`.
+An independent hash/size check passed, all training processes exited, and GPU1
+had no compute process. `abort.json` records
+`infrastructure_lease_rollover`, `scientific_failure=false`. Resume only via
+`configs/sudoku/gdn2_scale_nofs_resume_12000_from02500.env`; no model, data,
+optimizer, loop, loss, seed, kernel, or evaluation variable changes.

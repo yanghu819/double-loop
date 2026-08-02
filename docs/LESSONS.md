@@ -1623,3 +1623,11 @@
   budget. No-FutureSeed loop5-minus-loop1 hard blank changes by less than
   `0.0025` in magnitude and all fixed exact scores remain zero. Continue long
   training to test delayed catch-up rather than adding a loop-specific hack.
+- Through step2500, no-FutureSeed CE remains near `1.58-1.61`; this is a strong
+  delayed-opening warning but not the preregistered endpoint. Do not turn a
+  discouraging intermediate curve into an early scientific stop. Preserve the
+  exact state across GPU leases and answer the 12k asymptotic question.
+- The step2500 lease rollover is verified infrastructure, not another
+  experiment: atomic checkpoint, SHA256, byte count, exact process-group stop,
+  empty GPU process list, and `scientific_failure=false` are all required before
+  the next detached-SHA resume.

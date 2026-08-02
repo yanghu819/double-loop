@@ -136,3 +136,32 @@ has SHA256
 only through `configs/sudoku/gdn2_scale_nofs_resume_12000_from00500.env`, which
 enables exact semantic-contract, source-SHA, checkpoint-hash, optimizer, data
 RNG, and training RNG restoration. No scientific variable changes.
+
+## Step 1000 Science Gate
+
+GPU1 resumed the exact step500 state under clean detached source
+`ef58ed858c02745b60092e94541a88eb140ae977`. The strict official-FLA CUDA
+preflight passed again on the newly allocated physical GPU, including official
+source/wheel hashes, disabled backend dispatch, Triton convolution, Torch
+reference alignment, adapter checks, native FutureSeed-stack checks, and real
+backward. The resume log confirms `step=500 reason=eval_checkpoint`; step600
+switches to the preregistered 51-55 curriculum and all FutureSeed and optional
+mechanism diagnostics remain zero.
+
+The complete step1000 fixed-batch readout is:
+
+| Holes | no-FS loop1 exact/blank | no-FS loop5 exact/blank | FS loop5 exact/blank | FS minus no-FS blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.0000/0.3885` | `0.0000/0.3887` | not in frozen hard table | n/a |
+| 53 | `0.0000/0.2783` | `0.0000/0.2778` | `0.0000/0.5599` | `+0.2821` |
+| 58 | `0.0000/0.2601` | `0.0000/0.2609` | `0.0000/0.4448` | `+0.1839` |
+| 64 | `0.0000/0.2625` | `0.0000/0.2649` | `0.0000/0.5315` | `+0.2666` |
+
+No-FutureSeed train CE is `1.59664`; after the stage transition it stays near
+`1.61` from steps600-900. Hard loop5-minus-loop1 blank gains are only
+`-0.0004/+0.0008/+0.0025`, and exact remains zero everywhere. The
+FutureSeed advantage therefore does not vanish after another 500 optimizer
+steps; it becomes larger on every frozen hard readout than at step500. This is
+strong evidence for short-budget optimization/information value and against a
+mere first-few-step initialization artifact. It still does not establish a
+12k frontier difference, so the unchanged no-FutureSeed trajectory continues.

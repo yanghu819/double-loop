@@ -1615,3 +1615,11 @@
 - Lease boundaries are not experiments. Preserve the exact model, optimizer,
   data RNG, Python/Torch/CUDA RNG, and fixed evaluation state through a hashed
   checkpoint, then resume under semantic-contract validation.
+- The step1000 gate rules out a first-few-step transient. No-FutureSeed hard
+  blank accuracy remains around `0.26-0.28`, while FutureSeed reaches
+  `0.44-0.56`; the FS-minus-no-FS gap grows on holes53/58/64 compared with
+  step500.
+- More loops do not compensate for missing future initialization at this
+  budget. No-FutureSeed loop5-minus-loop1 hard blank changes by less than
+  `0.0025` in magnitude and all fixed exact scores remain zero. Continue long
+  training to test delayed catch-up rather than adding a loop-specific hack.

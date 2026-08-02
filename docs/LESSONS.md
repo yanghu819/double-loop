@@ -1530,3 +1530,30 @@
 - Infrastructure failures are not scientific evidence. The first launch was
   halted by an expired GPU1 lease before step100 and has a separate
   `abort.json`; only the exact clean relaunch is used in the comparison.
+
+## 2026-08-02 FutureSeed-tied causal write preconditioning
+
+- Separating stable address from online write geometry is mechanically sound.
+  A parameter-free causal curvature state can be folded into official GDN2 as
+  `k'=m*k,b'=b/m`, preserving the erase address while changing the rank-one
+  write direction. CUDA forward, terminal state, backward, full-layer
+  gradients, and `ChunkGDN2FunctionBackward` all pass against a direct CUDA
+  Torch recurrence.
+- The quality signal is real but too small. Against the exact frozen
+  position-Q/K step9100 control, hard 51-64 loop5 blank improves
+  `0.4333 -> 0.4563` and CE improves `1.2196 -> 1.1434`, but mean delta
+  `+0.0230` misses the `+0.03` gate and official hard exact remains zero.
+- Better local optimization is not the same as better recurrent reasoning.
+  Most candidate advantage is already visible at loop1; its additional
+  loop1-to-loop5 gain over control is only `+0.0023/+0.0053/+0.0014` across
+  the three hard ranges. Some cases improve sharply, while other predictions
+  freeze or regress.
+- Generic prefix curvature is currently too expensive: formal training time
+  rises `27.5%` and peak allocated VRAM rises `60.9%`, despite unchanged
+  parameters and official GDN2 recurrence. Do not hide this systems failure
+  behind the blank-accuracy gain.
+- Close this exact implementation. Do not sweep multiplier bounds, center,
+  strength, seed, LR, loss, width, or duration. Preserve position-Q/K as the
+  baseline. Revisit write preconditioning only with a fused kernel or on a
+  direct online-memory interference/retrieval task where its mechanism can be
+  isolated.

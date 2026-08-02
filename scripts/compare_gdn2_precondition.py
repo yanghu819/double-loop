@@ -153,9 +153,15 @@ def prediction_boards(case: dict[str, Any], arm: str) -> list[str]:
 def scalar_train_diagnostics(summary: dict[str, Any]) -> dict[str, float]:
     train = summary["metrics"]["train"]
     result = {}
-    for key, value in train.items():
-        if key.startswith("gdn2_precondition_") and isinstance(value, (int, float)):
-            result[key] = float(value)
+    sources = (train, train.get("precondition", {}))
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        for key, value in source.items():
+            if key.startswith("gdn2_precondition_") and isinstance(
+                value, (int, float)
+            ):
+                result[key] = float(value)
     return result
 
 

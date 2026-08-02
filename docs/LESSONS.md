@@ -1598,3 +1598,20 @@
 - The next causal question is not another GDN2 modification. Run one matched
   long no-FutureSeed control. Only that comparison can distinguish a genuine
   long-scale FutureSeed advantage from ordinary GDN2, data, and loop scaling.
+
+## 2026-08-03 Matched no-FutureSeed step500 gate
+
+- Turning off only native FutureSeed creates a large early learning gap even
+  in the strongest clean official-FLA GDN2 setup. At step500, holes53/58/64
+  blank accuracy is `0.2727/0.2539/0.2639` without FutureSeed versus
+  `0.5133/0.3830/0.4356` with it.
+- The no-FutureSeed model has not opened full-board exact even at holes50, and
+  loop5 is slightly worse than loop1 on each fixed hard set. At this budget,
+  recurrent computation alone does not recover the future information that
+  FutureSeed supplies to deeper layers.
+- Do not overclaim this as an endpoint advantage. It establishes strong
+  short-budget optimization/information value; only the unchanged 12k control
+  can show whether the advantage persists or merely shifts the learning curve.
+- Lease boundaries are not experiments. Preserve the exact model, optimizer,
+  data RNG, Python/Torch/CUDA RNG, and fixed evaluation state through a hashed
+  checkpoint, then resume under semantic-contract validation.

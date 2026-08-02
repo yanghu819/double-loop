@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-001`
-- Status: preregistered
+- Status: running; complete step500 checkpoint archived, GPU1 lease rollover pending
 - Preregistered: 2026-08-03 02:45 CST / 2026-08-02 18:45 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -102,3 +102,37 @@ recurrent backbone, while preserving the official forward/backward kernel.
 This single task is still not enough for a universal claim; Maze or language
 evidence remains required.
 
+## Step 500 Execution Gate
+
+The first execution leg used clean detached source
+`53670e0a3c8f8367bc921d88034bdd6d4ff82891` on GPU1 only. Strict checks passed
+for the pinned official FLA source, `GatedDeltaNet2`,
+`ChunkGDN2FunctionBackward`, Triton short convolution, Torch/CUDA reference
+alignment, native FutureSeed cache plumbing, and no fallback. A full-size
+two-step CUDA smoke also passed before the formal launch. Step100 completed in
+about ten minutes, below the 15-minute systems kill criterion.
+
+The complete fixed-batch step500 readout is:
+
+| Holes | no-FS loop1 exact/blank | no-FS loop5 exact/blank | FS loop5 exact/blank | FS minus no-FS blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.0000/0.4046` | `0.0000/0.4051` | not in frozen hard table | n/a |
+| 53 | `0.0000/0.2751` | `0.0000/0.2727` | `0.0000/0.5133` | `+0.2406` |
+| 58 | `0.0000/0.2546` | `0.0000/0.2539` | `0.0000/0.3830` | `+0.1291` |
+| 64 | `0.0000/0.2649` | `0.0000/0.2639` | `0.0000/0.4356` | `+0.1717` |
+
+Train CE is `1.22484`; loop1/loop5 losses are `1.22892/1.22484`. The control
+has not opened full-board exact even at holes50, and its later loops do not yet
+improve hard blank accuracy. This is a large short-budget FutureSeed advantage,
+but it does not answer the preregistered long-scale endpoint, so training must
+continue unchanged.
+
+The guard waited for both the step500 fixed evaluation and atomic train-state
+save, then stopped exact process group `2857`. The 72,202,195-byte checkpoint
+has SHA256
+`13fb1a5c93b9a497c2925dbe482bebe0e3474022c06cb7d9c08144ef1ef05921`.
+`abort.json` records `infrastructure_lease_rollover` with
+`scientific_failure=false`, and GPU1 returned to zero allocated memory. Resume
+only through `configs/sudoku/gdn2_scale_nofs_resume_12000_from00500.env`, which
+enables exact semantic-contract, source-SHA, checkpoint-hash, optimizer, data
+RNG, and training RNG restoration. No scientific variable changes.

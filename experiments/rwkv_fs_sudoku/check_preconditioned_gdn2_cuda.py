@@ -234,7 +234,7 @@ def check_backward_parity(device: torch.device) -> dict[str, Any]:
             torch.randn(value_shape, device=device, dtype=torch.bfloat16).requires_grad_(True),
             (-0.01 - 0.04 * torch.rand(shape, device=device)).requires_grad_(True),
             torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16).requires_grad_(True),
-            torch.sigmoid(torch.randn(shape, device=device)).to(torch.bfloat16).requires_grad_(True),
+            torch.sigmoid(torch.randn(value_shape, device=device)).to(torch.bfloat16).requires_grad_(True),
             (0.04 * torch.randn(state_shape, device=device)).requires_grad_(True),
         )
 

@@ -1,0 +1,33 @@
+{
+  "completed_at_utc": "2026-08-03T20:20:54Z",
+  "gpu": {
+    "count": 1,
+    "name": "NVIDIA A100-SXM4-80GB",
+    "observed_training_memory_mib": 11597,
+    "uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519"
+  },
+  "host": "other-bdb4893c-wvq6t",
+  "plan_id": "P-CAUSAL-001",
+  "run_name": "futureseed-causal-step9000-paired-viz-20260803T202002Z-d24674c",
+  "runtime": {
+    "backend_dispatch_disabled": true,
+    "fla_class": "fla.layers.gdn2.GatedDeltaNet2",
+    "fla_execution_path": "official_layer_forward",
+    "fla_source_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+    "short_conv_backend": "triton",
+    "strict": true,
+    "torch": "2.7.0+cu126"
+  },
+  "status": "completed",
+  "systems": {
+    "elapsed_fields_comparable": false,
+    "future_seed_checkpoint_elapsed_sec_field": 10613.092719078064,
+    "no_future_seed_checkpoint_elapsed_sec_field": 20868.066623687744,
+    "no_future_seed_step8100_to9000_sec_per_step": 4.582815904617309,
+    "no_future_seed_step8100_to9000_steps_per_hour": 785.5432282088625,
+    "noncomparable_reason": "The arms crossed different physical GPUs and lease segments; optimizer steps and fixed data are the scientific comparison.",
+    "paired_visualization_wall_sec": 52
+  },
+  "training_status_after_visualization": "no-FutureSeed control healthy at step9100 and continuing unchanged to step12000",
+  "visualization_pid": 10117
+}

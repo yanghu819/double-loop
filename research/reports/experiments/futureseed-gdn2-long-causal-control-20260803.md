@@ -283,3 +283,55 @@ registered decision is to continue unchanged to step9000 and step12000. Do not
 compare wall time across arms: the reference and control used different lease
 segments and physical GPUs; optimizer-step and fixed-data comparisons are the
 valid evidence.
+## Step 9000 Science Gate
+
+The unchanged no-FutureSeed control reached the exact step9000 checkpoint on
+one visible GPU1, an NVIDIA A100-SXM4-80GB. Training remains PID/PGID 2347
+under clean detached source b312b02b54941d8fd03ceefa5396317bd55c82e2.
+The 72,372,755-byte checkpoint has SHA256
+555e1373bb4c83c80f2157ee8cea7a86ba29fe8db645f5f71578e887b94bd597.
+The frozen FutureSeed checkpoint is step9000 with SHA256
+606caf5229590f157d7a0f952423c719f4c17688003309a7bd0664e579588dd7.
+
+The fixed 512-board-per-hole comparison is:
+
+| Holes | no-FS loop1 exact/blank | no-FS loop5 exact/blank | FS loop1 exact/blank | FS loop5 exact/blank |
+|---:|---:|---:|---:|---:|
+| 50 | 0.0000/0.4133 | 0.0000/0.4145 | 0.9697/0.9988 | 1.0000/1.0000 |
+| 53 | 0.0000/0.3031 | 0.0000/0.3040 | 0.0000/0.6421 | 0.4824/0.8605 |
+| 58 | 0.0000/0.2752 | 0.0000/0.2744 | 0.0000/0.4747 | 0.0371/0.5551 |
+| 64 | 0.0000/0.2738 | 0.0000/0.2727 | 0.0000/0.5567 | 0.1230/0.8110 |
+
+Over holes53/58/64, FutureSeed/no-FutureSeed loop5 exact mean is
+0.21419/0.00000, blank mean is 0.74222/0.28372, and loop1-to-loop5 blank gain
+is +0.18439/-0.00033. Train CE is 0.65240/1.59670. The no-FutureSeed model has
+therefore not opened after 9000 steps; later loops still reproduce nearly the
+same local operating point.
+
+A strict-CUDA paired diagnostic from visualization source
+d24674c26369309288b42bf57249097ed8e26b03 evaluated the same 128 boards per
+official 51-55/56-60/61-64 range. It verified official FLA GatedDeltaNet2,
+source 9c8e42e, official layer forward, chunk/Triton execution, backend
+dispatch disabled, one CUDA device, and byte-verified checkpoints. Paired
+FutureSeed/no-FutureSeed loop5 exact is 0.19531/0.00000 and blank accuracy is
+0.74137/0.28221. No-FutureSeed removes 0.55/0.20/0.18 mean wrong cells across
+loops; FutureSeed removes 8.56/6.84/17.47. A selected 64-blank board changes
+36 -> 17 -> 6 -> 1 -> 0 wrong cells with FutureSeed while no-FutureSeed stays
+near 50 wrong. Same-board visualizations are archived under
+runs/futureseed-causal-step9000-paired-viz-20260803T202002Z-d24674c/.
+
+The control used about 4.583 seconds per optimizer step between steps8100 and
+9000, or 785.5 steps/hour, with 11,597 MiB observed steady training memory.
+The paired visualization completed in about 52 seconds while the control
+continued to step9100. The checkpoint JSON elapsed fields are 20,868 seconds
+for no-FutureSeed and 10,613 seconds for FutureSeed, but those wall times are
+not directly comparable because the arms crossed different physical GPUs and
+lease segments.
+
+No-FutureSeed has now consumed 9000 steps, 50% more than the frozen FutureSeed
+step6000 gate, and still does not match its exact, blank-accuracy, or recurrent
+correction level. This establishes a greater-than-1.5x optimizer-step
+compression lower bound for reaching the FutureSeed step6000 hard level.
+It remains an intermediate finite-compute result, not the registered 12k
+frontier decision or a universal task claim. Continue unchanged to step12000;
+do not rescue the control, add a seed, or tag this sub-0.50 gate.

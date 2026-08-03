@@ -1669,3 +1669,20 @@
   information-flow advantage, not yet an asymptotic frontier or language-task
   claim. Continue the preregistered control to step9000/12000 and do not compare
   wall times across different physical GPUs and lease segments.
+- Step9000 strengthens the causal claim rather than merely repeating step6000.
+  No-FutureSeed still has zero fixed hard exact, hard blank accuracy 0.2837,
+  and essentially zero loop gain; FutureSeed reaches 0.2142 exact, 0.7422
+  blank accuracy, and +0.1844 loop1-to-loop5 blank gain.
+- The same-puzzle evidence separates initialization from recurrent computation.
+  FutureSeed turns loop computation into large correction trajectories, while
+  the matched causal control spends loops around the same wrong board.
+- Compute compression is now lower-bounded, not guessed. No-FutureSeed at
+  step9000 still fails to reach FutureSeed at step6000, so reaching that hard
+  level requires more than 1.5x the optimizer steps without FutureSeed.
+- Do not convert this intermediate win into an endpoint or universal claim.
+  The preregistered same-step frontier decision remains step12000, and Maze or
+  language evidence is still required for a broad paper claim.
+- Report systems measurements honestly. Current no-FutureSeed throughput is
+  about 4.583 seconds/step with 11,597 MiB steady VRAM, but raw elapsed fields
+  across the two arms are not speed evidence because physical GPUs and lease
+  histories differ.

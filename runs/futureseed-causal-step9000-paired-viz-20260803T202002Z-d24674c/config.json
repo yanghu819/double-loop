@@ -1,0 +1,59 @@
+{
+  "budget": "One read-only GPU1 evaluation of 128 paired cases per hard blank range; no training-state mutation",
+  "checkpoint_step": 9000,
+  "constraints": {
+    "cpu_model_smoke": false,
+    "fallback": false,
+    "gpu": "GPU1 only",
+    "repair_search_selector_or_task_rules": false,
+    "seed_sweep": false
+  },
+  "evaluation": {
+    "cases_per_kind": 3,
+    "eval_n_per_range": 128,
+    "forward_dtype": "bfloat16",
+    "loops": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "official_blank_ranges": [
+      [
+        51,
+        55
+      ],
+      [
+        56,
+        60
+      ],
+      [
+        61,
+        64
+      ]
+    ],
+    "seed": 52
+  },
+  "future_seed_checkpoint": {
+    "path": "/huyang2/double-loop/models/gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd/checkpoints/train_state_step009000.pt",
+    "sha256": "606caf5229590f157d7a0f952423c719f4c17688003309a7bd0664e579588dd7",
+    "source_sha": "42102bd65a28d60bde6b09ef93343692740582a1"
+  },
+  "hypothesis": "Native FutureSeed changes finite-compute optimization and recurrent information flow versus a matched causal GDN2 control.",
+  "kill_criteria": [
+    "checkpoint hash or optimizer-step mismatch",
+    "nonofficial FLA class/source or backend dispatch",
+    "anything other than one visible CUDA GPU",
+    "OOM, nonfinite output, or mismatched paired data identity"
+  ],
+  "no_future_seed_checkpoint": {
+    "path": "/huyang2/double-loop/models/gdn2-nofs-taskmode-s12000-from4500-20260803T141650Z-b312b02/checkpoints/train_state_step009000.pt",
+    "sha256": "555e1373bb4c83c80f2157ee8cea7a86ba29fe8db645f5f71578e887b94bd597",
+    "source_sha": "b312b02b54941d8fd03ceefa5396317bd55c82e2"
+  },
+  "plan_id": "P-CAUSAL-001",
+  "prediction": "FutureSeed keeps a positive hard exact delta, at least +0.10 blank accuracy, and materially larger loop1-to-loop5 correction at step9000.",
+  "run_name": "futureseed-causal-step9000-paired-viz-20260803T202002Z-d24674c",
+  "visualization_source_sha": "d24674c26369309288b42bf57249097ed8e26b03"
+}

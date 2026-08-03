@@ -375,6 +375,10 @@ def main() -> None:
         row["no_future_seed"]["loops"]["loop5"]["blank_acc"]
         for row in range_summary.values()
     ) / len(range_summary)
+    supported = (
+        hard_fs_exact > hard_nofs_exact
+        and hard_fs_blank - hard_nofs_blank >= 0.10
+    )
     summary = {
         "schema_version": "futureseed_paired_checkpoint_comparison.v1",
         "checkpoint_step": args.expected_step,
@@ -391,9 +395,17 @@ def main() -> None:
             "blank_acc_delta": hard_fs_blank - hard_nofs_blank,
         },
         "decision": {
-            "supported": hard_fs_exact > hard_nofs_exact and hard_fs_blank - hard_nofs_blank >= 0.10,
-            "label": "FutureSeed strongly separates from the matched causal control at step6000.",
-            "reason": "The paired hard-case pool shows a large exact and blank-accuracy advantage without changing the data, backbone width/depth, optimizer-step budget, or loop supervision.",
+            "supported": supported,
+            "label": (
+                f"FutureSeed separates from the matched causal control at step {args.expected_step}."
+                if supported
+                else f"This paired pool is inconclusive at step {args.expected_step}."
+            ),
+            "reason": (
+                "The paired hard-case pool shows both an exact and a large blank-accuracy advantage without changing the data, backbone width/depth, optimizer-step budget, or loop supervision."
+                if supported
+                else "The paired pool does not simultaneously show a positive exact delta and at least +0.10 blank accuracy; use the preregistered aggregate gate for the scientific decision."
+            ),
         },
     }
     (args.out_dir / "comparison.json").write_text(

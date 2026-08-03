@@ -3,9 +3,9 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-001`
-- Status: running; exact step4500 state archived, GPU1 restart queued
+- Status: running; step6000 science gate archived, continuing unchanged
 - Preregistered: 2026-08-03 02:45 CST / 2026-08-02 18:45 UTC
-- Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
+- Machine: AIStation GPU1 only; A800 prior legs, A100-SXM4-80GB task-mode current leg
 - GPU2: forbidden
 - CPU model smoke: forbidden
 - Seed: 52 only
@@ -242,3 +242,44 @@ supervision, and every other scientific variable. A 10-second utilization
 audit observed low A800 SM occupancy (`16-27%`) but only 11.6/80GB allocated
 and unchanged step throughput; changing microbatch or accumulation inside this
 matched causal control would invalidate parity with the frozen FutureSeed run.
+
+## Step 6000 Science Gate
+
+The exact step4500 state resumed in AIStation task mode on one visible GPU1,
+an NVIDIA A100-SXM4-80GB. Clean detached training source is
+`b312b02b54941d8fd03ceefa5396317bd55c82e2`; the strict official-FLA CUDA
+preflight passed in 146 seconds with backend dispatch disabled, Triton short
+convolution, official `GatedDeltaNet2`, real backward, and no fallback. The
+formal process remains PID/PGID `2347` and continued beyond step6500 after this
+read-only gate.
+
+The fixed 512-board-per-hole comparison is:
+
+| Holes | no-FS loop1 exact/blank | no-FS loop5 exact/blank | FS loop1 exact/blank | FS loop5 exact/blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.0000/0.4067` | `0.0000/0.4097` | `0.9192/0.9972` | `1.0000/1.0000` |
+| 53 | `0.0000/0.2974` | `0.0000/0.2998` | `0.0000/0.6090` | `0.1777/0.7871` |
+| 58 | `0.0000/0.2638` | `0.0000/0.2647` | `0.0000/0.4596` | `0.0117/0.4853` |
+| 64 | `0.0000/0.2635` | `0.0000/0.2642` | `0.0000/0.5272` | `0.0059/0.6628` |
+
+Over holes53/58/64, FutureSeed/no-FutureSeed loop5 exact mean is
+`0.06510/0.00000`, blank mean is `0.64507/0.27624`, and loop1-to-loop5 blank
+gain is `+0.11316/+0.00135`. Train CE is `0.79736/1.60346`. Thus FutureSeed
+does not merely shift one-pass calibration: it both opens the optimization and
+makes later recurrent loops useful under the same optimizer-step budget.
+
+A separate strict-CUDA paired diagnostic evaluated the same 128 boards per
+official 51-55/56-60/61-64 range. FutureSeed/no-FutureSeed loop5 exact is
+`0.07031/0.00000` and blank accuracy is `0.63346/0.27529`. No-FutureSeed removes
+only `0.12/0.13/0.12` mean wrong cells from loop1 to loop5; FutureSeed removes
+`7.24/3.39/8.23`. Same-puzzle loop1/3/5 visualizations and complete case JSON
+are archived under
+`runs/futureseed-causal-step6000-paired-viz-20260803T170049Z-6be5bc2/`.
+
+This is strong finite-compute causal evidence and already exceeds a marginal
+`+0.03` mechanism effect. It is not the preregistered asymptotic endpoint.
+Because no-FutureSeed did not exceed the frozen FutureSeed step9000 gate, the
+registered decision is to continue unchanged to step9000 and step12000. Do not
+compare wall time across arms: the reference and control used different lease
+segments and physical GPUs; optimizer-step and fixed-data comparisons are the
+valid evidence.

@@ -1,0 +1,40 @@
+{
+  "budget": "One read-only GPU1 evaluation of 128 paired cases per hard blank range; no training-state mutation",
+  "checkpoint_step": 6000,
+  "constraints": {
+    "cpu_model_smoke": false,
+    "fallback": false,
+    "gpu": "GPU1 only",
+    "repair_search_selector_or_task_rules": false,
+    "seed_sweep": false
+  },
+  "evaluation": {
+    "cases_per_kind": 3,
+    "eval_n_per_range": 128,
+    "forward_dtype": "bfloat16",
+    "loops": [1, 2, 3, 4, 5],
+    "official_blank_ranges": [[51, 55], [56, 60], [61, 64]],
+    "seed": 52
+  },
+  "future_seed_checkpoint": {
+    "path": "/huyang2/double-loop/models/gdn2-futureseed-d192l10-s12000-20260726T131301Z-42102bd/checkpoints/train_state_step006000.pt",
+    "sha256": "23eaa434720f931965b3057a725b4f1f5a3aa8030da76be2c18c214d6ed9fc11",
+    "source_sha": "42102bd65a28d60bde6b09ef93343692740582a1"
+  },
+  "hypothesis": "Native FutureSeed changes finite-compute optimization and recurrent information flow versus a matched causal GDN2 control.",
+  "kill_criteria": [
+    "checkpoint hash or optimizer-step mismatch",
+    "nonofficial FLA class/source or backend dispatch",
+    "anything other than one visible CUDA GPU",
+    "OOM, nonfinite output, or mismatched paired data identity"
+  ],
+  "no_future_seed_checkpoint": {
+    "path": "/huyang2/double-loop/models/gdn2-nofs-taskmode-s12000-from4500-20260803T141650Z-b312b02/checkpoints/train_state_step006000.pt",
+    "sha256": "57343942f2d6082a8f169b658c053748cb6d739bbb0a1fae8a1af58e832b4706",
+    "source_sha": "b312b02b54941d8fd03ceefa5396317bd55c82e2"
+  },
+  "plan_id": "P-CAUSAL-001",
+  "prediction": "FutureSeed has positive hard exact delta, at least +0.10 blank accuracy, and larger loop1-to-loop5 correction at step6000.",
+  "run_name": "futureseed-causal-step6000-paired-viz-20260803T170049Z-6be5bc2",
+  "visualization_source_sha": "6be5bc280ab6b44b2d5a105792f447d191bb7b59"
+}

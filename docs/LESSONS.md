@@ -1655,3 +1655,17 @@
 - Step4500 is another verified lease boundary: atomic model/optimizer/data-RNG
   state, SHA256 and byte count, exact process-group stop, empty compute-process
   list, and `scientific_failure=false` are required before exact continuation.
+- Step6000 turns the early gap into strong finite-compute causal evidence.
+  No-FutureSeed/FutureSeed hard loop5 exact mean is `0/0.0651`, blank accuracy
+  is `0.2762/0.6451`, and train CE is `1.6035/0.7974` under matched optimizer
+  steps, data, architecture, loop supervision, and official FLA GDN2 kernels.
+- FutureSeed is not only improving loop1. On fixed holes53/58/64, mean
+  loop1-to-loop5 blank gain is `+0.1132` with FutureSeed and `+0.00135` without
+  it. A paired 384-board visualization confirms that no-FutureSeed removes
+  about one eighth of one wrong cell per range while FutureSeed removes several
+  and creates exact boards. FutureSeed opens a state in which recurrent compute
+  becomes useful; loop count alone does not synthesize missing future context.
+- Keep the conclusion bounded. This proves a large same-step optimization and
+  information-flow advantage, not yet an asymptotic frontier or language-task
+  claim. Continue the preregistered control to step9000/12000 and do not compare
+  wall times across different physical GPUs and lease segments.

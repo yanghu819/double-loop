@@ -1643,3 +1643,15 @@
   final frontier gap. Continue the same no-FutureSeed trajectory to the
   preregistered endpoint instead of converting the positive intermediate result
   into a premature stop.
+- The no-FutureSeed plateau survives the harder-data transition: CE stays near
+  `1.61` from steps4100-4500 after the curriculum expands to 51-60 blanks. This
+  strengthens the delayed-opening diagnosis but still is not a substitute for
+  the registered step6000/9000/12000 fixed evaluations.
+- A strict matched control can be compute-inefficient on an A800 without being
+  a fallback: this run used official CUDA kernels and 11.6GB VRAM while a
+  10-second sample showed `16-27%` SM utilization. Do not change microbatch or
+  accumulation mid-trajectory just to fill the card; preserve causal parity,
+  then optimize systems throughput in a separate experiment.
+- Step4500 is another verified lease boundary: atomic model/optimizer/data-RNG
+  state, SHA256 and byte count, exact process-group stop, empty compute-process
+  list, and `scientific_failure=false` are required before exact continuation.

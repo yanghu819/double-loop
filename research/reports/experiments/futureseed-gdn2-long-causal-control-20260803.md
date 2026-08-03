@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-001`
-- Status: running; step3000 science gate archived, unchanged trajectory continues
+- Status: running; exact step4500 state archived, GPU1 restart queued
 - Preregistered: 2026-08-03 02:45 CST / 2026-08-02 18:45 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -216,3 +216,29 @@ the preregistered rule, the unchanged no-FutureSeed trajectory continues; no
 rescue, second seed, loss change, or mechanism change is allowed. The complete
 compact comparison is archived in
 `research/reports/experiments/futureseed-gdn2-long-causal-control-step3000.json`.
+
+## Step 4500 Infrastructure Rollover
+
+The unchanged no-FutureSeed trajectory crossed from the `51-55` curriculum
+into `51-60` at step4100 exactly as configured. Train CE at
+steps4100/4200/4300/4400/4500 is
+`1.6122/1.6094/1.6105/1.6142/1.6092`. This remains a flat delayed-opening
+warning, not a new scientific endpoint; the next registered fixed evaluation
+is step6000.
+
+The checkpoint-complete guard waited for both the step4500 log marker and the
+atomic train-state file, then stopped exact process group `763`. The checkpoint
+is 72,291,667 bytes with SHA256
+`203db6e47bfd32d7b70e2769fdaafc50ed0ce3dce75bc2a0aefbf31a8b0de385`.
+Independent size/hash checks passed, all launcher/train/guard processes exited,
+and the GPU compute-process list was empty. `abort.json` records
+`infrastructure_lease_rollover`, `scientific_failure=false`, and stop time
+`2026-08-03T01:58:30Z`.
+
+Resume only through
+`configs/sudoku/gdn2_scale_nofs_resume_12000_from04500.env`, which preserves
+the model, optimizer, scheduler, data RNG, training RNG, curriculum, loop
+supervision, and every other scientific variable. A 10-second utilization
+audit observed low A800 SM occupancy (`16-27%`) but only 11.6/80GB allocated
+and unchanged step throughput; changing microbatch or accumulation inside this
+matched causal control would invalidate parity with the frozen FutureSeed run.

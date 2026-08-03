@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-001`
-- Status: running; exact step2500 state archived, GPU1 restart queued
+- Status: running; step3000 science gate archived, unchanged trajectory continues
 - Preregistered: 2026-08-03 02:45 CST / 2026-08-02 18:45 UTC
 - Machine: AIStation GPU1, NVIDIA A800-SXM4-80GB
 - GPU2: forbidden
@@ -184,3 +184,35 @@ had no compute process. `abort.json` records
 `infrastructure_lease_rollover`, `scientific_failure=false`. Resume only via
 `configs/sudoku/gdn2_scale_nofs_resume_12000_from02500.env`; no model, data,
 optimizer, loop, loss, seed, kernel, or evaluation variable changes.
+
+## Step 3000 Science Gate
+
+GPU1 restarted on a new physical A800 and checked out clean detached source
+`a79b65a09a10d676d09edb36d41de3f5abf0eeb7`. The complete official-FLA CUDA
+preflight passed in 163 seconds with `fallback=false`. Exact restoration from
+the hashed step2500 model, optimizer, scheduler, data RNG, and training RNG
+state passed; the log reports `step=2500 reason=periodic`.
+
+The frozen same-step comparison is:
+
+| Holes | no-FS loop1 exact/blank | no-FS loop5 exact/blank | FS loop1 exact/blank | FS loop5 exact/blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.0000/0.3941` | `0.0000/0.3956` | `0.8384/0.9960` | `1.0000/1.0000` |
+| 53 | `0.0000/0.2943` | `0.0000/0.2927` | `0.0000/0.5627` | `0.0215/0.6271` |
+| 58 | `0.0000/0.2569` | `0.0000/0.2583` | `0.0000/0.4475` | `0.0000/0.4598` |
+| 64 | `0.0000/0.2534` | `0.0000/0.2533` | `0.0000/0.5177` | `0.0000/0.5916` |
+
+No-FutureSeed versus FutureSeed train CE is `1.5946` versus `0.8270`. Mean
+loop5 blank accuracy over holes53/58/64 is `0.2681` versus `0.5595`, a
+FutureSeed gap of `+0.2914`. No-FutureSeed loop5-minus-loop1 blank change is
+only `-0.0016/+0.0014/-0.0001` on holes53/58/64. This is not an exact-score
+edge case: FutureSeed fully solves the fixed holes50 batch at loop5 while the
+matched no-FutureSeed model has zero exact and only `0.3956` blank accuracy.
+
+The step3000 gate therefore establishes a large finite-compute optimization
+and information gap, and shows that extra loops still cannot compensate for
+missing FutureSeed at this budget. It does not prove a 12k frontier gap. Per
+the preregistered rule, the unchanged no-FutureSeed trajectory continues; no
+rescue, second seed, loss change, or mechanism change is allowed. The complete
+compact comparison is archived in
+`research/reports/experiments/futureseed-gdn2-long-causal-control-step3000.json`.

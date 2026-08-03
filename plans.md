@@ -381,6 +381,14 @@ The exact process group stopped, `abort.json` records
 `configs/sudoku/gdn2_scale_nofs_resume_12000_from02500.env`. This is a lease
 rollover, not a new arm or science endpoint; step3000 remains the next gate.
 
+Step3000 science update: no-FutureSeed/FutureSeed train CE is
+`1.5946/0.8270`; mean holes53/58/64 loop5 blank accuracy is `0.2681/0.5595`.
+No-FutureSeed exact is zero on all fixed sets, including holes50 where
+FutureSeed loop5 is fully solved. Its hard loop1-to-loop5 blank changes are
+only `-0.0016/+0.0014/-0.0001`. This establishes a large finite-compute
+FutureSeed advantage and rules out a small calibration artifact, but it is not
+the 12k endpoint. Continue the one unchanged arm; do not rescue or add a seed.
+
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
 | P-CAUSAL-001 | in_progress | P-SCALE-037 proves that strict official GDN2 plus native FutureSeed keeps improving through 12k and that extra solves are created after loop1, but it does not isolate FutureSeed from ordinary long GDN2 training. If FutureSeed removes a real causal optimization/information bottleneck, an otherwise identical no-FS model should learn the hard frontier more slowly or finish materially lower. | One from-scratch no-FS arm: source `configs/sudoku/gdn2_scale_nofs_12000.env`, D192/L10/H6/D32/expand-v1, official full-diversity data and exact `46-50:500,51-55:3500,51-60:4000,51-64:4000` curriculum, loop5/every-loop CE, effective batch128, BF16, seed52, strict official FLA GDN2 chunk/Triton/no-fallback. Only `FUTURE_SEED_SCALE=1->0`; checkpoints/eval at500/1000/3000/6000/9000/12000. No second seed or rescue. | GPU1 A800 80GB only; GPU2/CPU model smoke forbidden | up to about 20 GPU-hours across exact checkpoint lease rollovers | Persistent value if FS minus no-FS is `>=0.03` on mixed or mean official51-64 exact at12k; compute compression if no-FS needs `>=20%` more steps to cross frozen FS6k/9k readouts. If both endpoint gaps `<0.02`, retain only short-budget acceleration. Stop early only for integrity/systems failure or if no-FS step6000 already exceeds every frozen FS step9000 fixed-hard readout. | Step1000: no-FS holes53/58/64 loop5 exact all0 and blank `0.2778/0.2609/0.2649`, behind FutureSeed by `0.2821/0.1839/0.2666`; hard loop5-minus-loop1 blank is only `-0.0004/+0.0008/+0.0025`, CE `1.5966`. Step500 exact checkpoint `13fb1a5c...05921` resumed under full semantic validation after a non-scientific GPU1 rollover. Early advantage has not narrowed; continue unchanged. |

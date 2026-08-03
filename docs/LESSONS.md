@@ -1631,3 +1631,15 @@
   experiment: atomic checkpoint, SHA256, byte count, exact process-group stop,
   empty GPU process list, and `scientific_failure=false` are all required before
   the next detached-SHA resume.
+- The matched step3000 result rules out a small calibration gap. No-FutureSeed
+  versus FutureSeed train CE is `1.5946` versus `0.8270`; mean holes53/58/64
+  loop5 blank accuracy is `0.2681` versus `0.5595`. Even holes50 is `0` exact
+  and `0.3956` blank without FutureSeed versus fully solved with FutureSeed.
+- More recurrent loops do not synthesize missing future context at step3000.
+  No-FutureSeed loop1-to-loop5 hard blank changes stay within `0.0016`, while
+  FutureSeed improves materially across loops. The current evidence supports
+  FutureSeed as an optimization/information opener, not merely a readout tweak.
+- Keep the claim bounded: step3000 proves a large finite-compute gap, not a
+  final frontier gap. Continue the same no-FutureSeed trajectory to the
+  preregistered endpoint instead of converting the positive intermediate result
+  into a premature stop.

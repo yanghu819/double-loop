@@ -1,0 +1,66 @@
+{
+  "backward": {
+    "bidirectional_attention": {
+      "gradient_max": 0.488897442817688,
+      "loss": 5.537981986999512
+    },
+    "causal_gdn2": {
+      "gradient_max": 0.2555611729621887,
+      "loss": 5.573512077331543
+    },
+    "future_seed_gdn2": {
+      "gradient_max": 0.20141007006168365,
+      "loss": 5.590920448303223
+    }
+  },
+  "bidirectional_class": "experiments.zoology_mlm.bidirectional_attention.FullBidirectionalAttention",
+  "bidirectional_is_causal": false,
+  "bidirectional_parameters": 461440,
+  "cuda_device_count": 1,
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519",
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "future_dependency_mean_abs": {
+    "bidirectional_attention": 0.04822760075330734,
+    "causal_gdn2": 0.0,
+    "future_seed_gdn2": 0.1768699437379837
+  },
+  "future_seed_gate_gradient_max": 0.0015208738623186946,
+  "gdn2_class": "fla.layers.gdn2.GatedDeltaNet2",
+  "gdn2_conv_backends": [
+    "triton",
+    "triton"
+  ],
+  "gdn2_mode": [
+    "chunk",
+    "chunk"
+  ],
+  "gdn2_parameters": 563408,
+  "gdn2_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+  "masked_tokens_per_example": 38,
+  "matched_gdn2_init_hash": "790ecd2498226b7f254ac9c8da9f8e990ce54a5b01812a67b26cd2030660a3fd",
+  "peak_cuda_mem_bytes": 363300864,
+  "prepared_sha256": "3987c057693c67e0b2de5bd249c5ef84391d39bb10c23a563f8b187f5122ffa2",
+  "prepared_shapes": {
+    "train_inputs": [
+      20000,
+      256
+    ],
+    "train_labels": [
+      20000,
+      256
+    ],
+    "valid_inputs": [
+      2000,
+      256
+    ],
+    "valid_labels": [
+      2000,
+      256
+    ]
+  },
+  "probe_position": 6,
+  "scale0_output_max_diff": 0.0,
+  "shared_init_max_diff": 0.0,
+  "torch_device_uuid_raw": "53e9f3b4-2966-65d3-6614-09c540921519"
+}

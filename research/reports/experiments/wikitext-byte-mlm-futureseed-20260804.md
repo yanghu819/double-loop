@@ -1,7 +1,7 @@
 # WikiText-103 Masked Recovery: Native FutureSeed Gate
 
 - Plan: `P-CAUSAL-008`
-- Status: in progress
+- Status: discarded (registered carrier-validity gate failed)
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -108,3 +108,88 @@ Archive masked validation CE/accuracy/exact, opening epoch, parameter count,
 training tokens, warmed throughput, peak memory, FutureSeed gap closure, data
 and source hashes, strict preflight, logs, and same-window masked-token
 visualizations for all three arms. Update this report only after the fixed gate.
+
+## Result
+
+The fixed three-arm run completed on source SHA
+`01b5dc70aef9af3c47f638785df57173e84723d5`. The registered carrier-validity
+condition failed: the full noncausal attention arm was substantially worse than
+the causal GDN2 arm. Therefore this run cannot measure how much of a valid
+causal-to-bidirectional language gap FutureSeed closes.
+
+| arm | masked accuracy | masked CE | exact windows | parameters | warmed tokens/s | warmed peak CUDA memory |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| causal GDN2 | `0.424737` | `2.018437` | `0/2000` | `563,408` | `981,294` | `553,473,536` B |
+| FutureSeed GDN2 | `0.421829` | `2.031740` | `0/2000` | `563,408` | `921,913` | `556,623,872` B |
+| bidirectional attention | `0.187855` | `3.167591` | `0/2000` | `461,440` | `2,556,030` | `378,702,336` B |
+
+All arms saw the same 20,000 training windows for four epochs, or 20.48M input
+tokens, and the same 2,000 validation windows with 76,000 masked targets. The
+causal and FutureSeed arms had identical initialization hashes and parameter
+counts. Their validation accuracy curves were:
+
+```text
+epoch                 0        1        2        3
+causal GDN2       0.3486   0.3890   0.4101   0.4247
+FutureSeed GDN2   0.3388   0.3820   0.4055   0.4218
+bidirectional     0.1879   0.1879   0.1879   0.1879
+```
+
+FutureSeed was slightly worse than the matched causal arm at the registered
+endpoint: accuracy delta `-0.002908`, CE delta `+0.013303`. It made 3,999
+wrong-to-right masked-token repairs but 4,220 right-to-wrong regressions, for a
+net `-221` correct tokens. The difference was not isolated to one sequence
+region: early/middle/late accuracy was `0.4119/0.4226/0.4310` for FutureSeed
+versus `0.4150/0.4276/0.4316` for causal GDN2.
+
+These values are a boundary for this exact byte-level setup, not a negative
+language conclusion. The bidirectional arm achieved only `0.187855` accuracy,
+was worse than causal GDN2 on 1,991 of 2,000 windows, and never moved from its
+epoch-0 accuracy. Because the supposed upper bound did not learn, the
+registered kill rule invalidates the carrier before a FutureSeed claim can be
+made. The computed numeric "gap closure" is meaningless when the ceiling is
+below the baseline and must not be reported as scientific evidence.
+
+## Integrity Checks
+
+- GPU1 was the only visible device: A100-SXM4-80GB, UUID
+  `GPU-53e9f3b4-2966-65d3-6614-09c540921519` (PyTorch reports the UUID without
+  the `GPU-` prefix).
+- Both recurrent arms used pinned official FLA `GatedDeltaNet2` at commit
+  `9c8e42e`, chunk mode, and the Triton short-convolution path. No fallback ran.
+- Scale 0 was output-identical to the ordinary causal path and had zero future
+  perturbation dependency. FutureSeed dependency was `0.176870`, bidirectional
+  attention dependency was `0.048228`, and the FutureSeed gate gradient was
+  finite and nonzero (`0.001521`).
+- The prepared dataset hash was
+  `3987c057693c67e0b2de5bd249c5ef84391d39bb10c23a563f8b187f5122ffa2`.
+- The source snapshot archive hash was
+  `58b25411eb771f518e934e1f6a387bfb5d6929679b23f9437ae2fc688583c094`.
+- Only independently warmed per-step benchmarks are retained as systems
+  evidence. Raw sequential arm times include compilation and validation and
+  are not compared.
+
+## Visualization And Failure Shape
+
+The archived HTML shows 12 identical validation windows for all three arms,
+with each masked byte marked correct or wrong. It confirms that FutureSeed
+produces different predictions but has balanced repairs and regressions, while
+the attention arm remains near a frequent-byte solution rather than using
+right context effectively.
+
+Visualization:
+`runs/zoology-wikitext-byte-mlm-20260804T0645Z-01b5dc7/visualizations/index.html`.
+
+## Decision
+
+Stop this exact gate. Do not rescue it by extending epochs or tuning tokenizer,
+mask rate, LR, width, depth, loss, or seed. The next high-information step is
+to reproduce an established bidirectional masked-language baseline with its
+validated model, tokenizer, data processing, and training recipe. Only after
+that ceiling clearly beats a strict causal control should GDN2 and native
+FutureSeed replace its mixer under matched conditions. This mirrors the
+successful P-CAUSAL-005 strategy: validate the carrier first, then test the
+mechanism.
+
+Full artifacts remain on AIStation at
+`/huyang2/double-loop/runs/zoology-wikitext-byte-mlm-20260804T0645Z-01b5dc7`.

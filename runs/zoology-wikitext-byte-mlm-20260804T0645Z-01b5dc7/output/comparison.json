@@ -1,0 +1,193 @@
+{
+  "arms": {
+    "bidirectional_attention": {
+      "arm": "bidirectional_attention",
+      "data_hashes": {
+        "train": "6f93f9776814190dc8084a55bae3edee38e7848361da2190cb6ffb6fffd5dd09",
+        "validation": "a6164d6efb1a4cef61755754da7a3c8d873f17d053b8726cf76a1b071a7f0723"
+      },
+      "elapsed_sec_including_validation": 12.407355941832066,
+      "epochs": 4,
+      "init_hash": "c9738bed5bdafc82e4d1d83dbc6f1a0aca388213e6e95fa3abf051ac598677ad",
+      "metrics": {
+        "examples": 2000,
+        "masked_accuracy": 0.18785526315789475,
+        "masked_ce": 3.1675908267372535,
+        "masked_exact": 0.0,
+        "masked_tokens": 76000
+      },
+      "opening_epoch_at_0.10_accuracy": 0,
+      "parameter_hash": "c563a595dff936a7e73d889874f36775476feb121ae49e09cd82013fc632752f",
+      "parameters": 461440,
+      "peak_training_cuda_mem_bytes": 361990656,
+      "train_examples": 20000,
+      "train_tokens": 20480000,
+      "valid_curve": [
+        {
+          "epoch": 0,
+          "valid/accuracy": 0.18785526315789475,
+          "valid/loss": 3.18987774848938
+        },
+        {
+          "epoch": 1,
+          "valid/accuracy": 0.18785526315789475,
+          "valid/loss": 3.1886701583862305
+        },
+        {
+          "epoch": 2,
+          "valid/accuracy": 0.18785526315789475,
+          "valid/loss": 3.1738734245300293
+        },
+        {
+          "epoch": 3,
+          "valid/accuracy": 0.18785526315789475,
+          "valid/loss": 3.1683096885681152
+        }
+      ],
+      "warmed_step_benchmark": {
+        "elapsed_sec": 0.12819883227348328,
+        "examples_per_sec": 9984.49032101485,
+        "measured_steps": 20,
+        "peak_cuda_mem_bytes": 378702336.0,
+        "tokens_per_sec": 2556029.5221798015
+      }
+    },
+    "causal_gdn2": {
+      "arm": "causal_gdn2",
+      "data_hashes": {
+        "train": "6f93f9776814190dc8084a55bae3edee38e7848361da2190cb6ffb6fffd5dd09",
+        "validation": "a6164d6efb1a4cef61755754da7a3c8d873f17d053b8726cf76a1b071a7f0723"
+      },
+      "elapsed_sec_including_validation": 43.83925509825349,
+      "epochs": 4,
+      "future_seed": {
+        "future_seed_gate": null,
+        "future_seed_norm": null,
+        "future_seed_raw_rms": null,
+        "future_seed_scale": 0.0
+      },
+      "init_hash": "790ecd2498226b7f254ac9c8da9f8e990ce54a5b01812a67b26cd2030660a3fd",
+      "metrics": {
+        "examples": 2000,
+        "masked_accuracy": 0.42473684210526313,
+        "masked_ce": 2.018437045448705,
+        "masked_exact": 0.0,
+        "masked_tokens": 76000
+      },
+      "opening_epoch_at_0.10_accuracy": 0,
+      "parameter_hash": "f4a0f6d3e429fb15a276cbf3e4a36e0c8ef0f3b16e6a05467c1282d8c2591c9c",
+      "parameters": 563408,
+      "peak_training_cuda_mem_bytes": 536761856,
+      "train_examples": 20000,
+      "train_tokens": 20480000,
+      "valid_curve": [
+        {
+          "epoch": 0,
+          "valid/accuracy": 0.34860526315789475,
+          "valid/loss": 2.3283603191375732
+        },
+        {
+          "epoch": 1,
+          "valid/accuracy": 0.38898684210526313,
+          "valid/loss": 2.1439950466156006
+        },
+        {
+          "epoch": 2,
+          "valid/accuracy": 0.41014473684210523,
+          "valid/loss": 2.0628867149353027
+        },
+        {
+          "epoch": 3,
+          "valid/accuracy": 0.42473684210526313,
+          "valid/loss": 2.0170083045959473
+        }
+      ],
+      "warmed_step_benchmark": {
+        "elapsed_sec": 0.3339264579117298,
+        "examples_per_sec": 3833.1793413577175,
+        "measured_steps": 20,
+        "peak_cuda_mem_bytes": 553473536.0,
+        "tokens_per_sec": 981293.9113875757
+      }
+    },
+    "future_seed_gdn2": {
+      "arm": "future_seed_gdn2",
+      "data_hashes": {
+        "train": "6f93f9776814190dc8084a55bae3edee38e7848361da2190cb6ffb6fffd5dd09",
+        "validation": "a6164d6efb1a4cef61755754da7a3c8d873f17d053b8726cf76a1b071a7f0723"
+      },
+      "elapsed_sec_including_validation": 31.46789000555873,
+      "epochs": 4,
+      "future_seed": {
+        "future_seed_gate": 0.4301517605781555,
+        "future_seed_norm": 13.764856338500977,
+        "future_seed_raw_rms": 0.03318516165018082,
+        "future_seed_scale": 1.0
+      },
+      "init_hash": "790ecd2498226b7f254ac9c8da9f8e990ce54a5b01812a67b26cd2030660a3fd",
+      "metrics": {
+        "examples": 2000,
+        "masked_accuracy": 0.421828947368421,
+        "masked_ce": 2.031739999871505,
+        "masked_exact": 0.0,
+        "masked_tokens": 76000
+      },
+      "opening_epoch_at_0.10_accuracy": 0,
+      "parameter_hash": "f4a0f6d3e429fb15a276cbf3e4a36e0c8ef0f3b16e6a05467c1282d8c2591c9c",
+      "parameters": 563408,
+      "peak_training_cuda_mem_bytes": 539912192,
+      "train_examples": 20000,
+      "train_tokens": 20480000,
+      "valid_curve": [
+        {
+          "epoch": 0,
+          "valid/accuracy": 0.33878947368421053,
+          "valid/loss": 2.3419337272644043
+        },
+        {
+          "epoch": 1,
+          "valid/accuracy": 0.3819605263157895,
+          "valid/loss": 2.1662709712982178
+        },
+        {
+          "epoch": 2,
+          "valid/accuracy": 0.4055,
+          "valid/loss": 2.07947039604187
+        },
+        {
+          "epoch": 3,
+          "valid/accuracy": 0.421828947368421,
+          "valid/loss": 2.0304884910583496
+        }
+      ],
+      "warmed_step_benchmark": {
+        "elapsed_sec": 0.35543469339609146,
+        "examples_per_sec": 3601.224145482011,
+        "measured_steps": 20,
+        "peak_cuda_mem_bytes": 556623872.0,
+        "tokens_per_sec": 921913.3812433948
+      }
+    }
+  },
+  "bidirectional_vs_causal": {
+    "masked_accuracy_delta": -0.2368815789473684,
+    "masked_ce_delta": 1.1491537812885486
+  },
+  "future_seed_gap_closure": {
+    "accuracy": 0.01227573182247405,
+    "ce": 0.011576304790020045
+  },
+  "future_seed_vs_causal": {
+    "masked_accuracy_delta": -0.0029078947368421093,
+    "masked_ce_delta": 0.013302954422800273
+  },
+  "protocol": {
+    "loops": "not used; this gate isolates cross-layer state transfer",
+    "mask_rate": 0.15,
+    "seed": 123,
+    "sequence_length": 256,
+    "train_examples": 20000,
+    "validation_examples": 2000,
+    "vocab": "UTF-8 bytes plus one mask token"
+  }
+}

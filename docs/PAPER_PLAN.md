@@ -409,3 +409,29 @@ asymptotic scaling, or wall-time efficiency. The next paper gate should test
 one meaningful transfer axis rather than repeat seeds: OOD sequence/association
 load or an established masked/retrieval language task with a warmed full
 noncausal reference.
+
+## 2026-08-04 Established-Text Gate Boundary
+
+`P-CAUSAL-008` does not extend the paper claim to natural language. The matched
+WikiText byte-MLM run produced masked accuracy `0.4247` for causal GDN2 and
+`0.4218` for FutureSeed, but the proposed full-bidirectional attention ceiling
+reached only `0.1879`. This fires the preregistered carrier-validity kill rule:
+the attention reference did not learn the task, so the run cannot say whether
+FutureSeed closes a meaningful future-context language gap.
+
+The mechanism implementation itself passed the strict checks: scale 0 was
+identical to causal GDN2, causal future dependency was zero, FutureSeed future
+dependency and gate gradient were nonzero, both recurrent arms had identical
+parameters and initialization, and official FLA/Triton executed without a
+fallback. FutureSeed was nevertheless slightly worse in this exact invalid
+carrier. Report that boundary honestly; do not present it as either positive
+or negative language evidence and do not tune the failed attention shell.
+
+The next paper gate must start by reproducing a validated, established
+bidirectional masked-language implementation and recipe. It must visibly beat
+a strict causal reference on masked recovery before any recurrent mixer is
+substituted. Once that carrier is valid, compare matched official-FLA GDN2
+scale 0 and native FutureSeed scale 1 with the same data, initialization,
+training tokens, optimizer, width, depth, and metric. Until then, P-CAUSAL-007
+remains the clean cross-task directionality evidence and language transfer is
+an open question.

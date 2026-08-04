@@ -1716,3 +1716,20 @@
 - This result is strong enough to stop synthetic seed repetition. The next
   decision-changing evidence must test transfer or OOD scaling; one synthetic
   directionality task cannot establish language-model quality.
+- P-CAUSAL-008 is an invalid language carrier, not a FutureSeed failure. On the
+  fixed WikiText byte-MLM gate, causal GDN2 reached `0.4247` masked accuracy,
+  FutureSeed reached `0.4218`, and the intended full-bidirectional ceiling
+  reached only `0.1879`. Because the ceiling did not open, no causal-to-future
+  quality gap existed for FutureSeed to close.
+- An active mechanism is not automatically useful evidence. P-CAUSAL-008
+  verified scale-0 identity, zero causal future dependency, nonzero FutureSeed
+  dependency and gate gradient, yet FutureSeed still had 3,999 repairs versus
+  4,220 regressions. Correct plumbing does not rescue an invalid benchmark
+  carrier.
+- A tiny custom byte-level attention model is not an established masked-language
+  baseline merely because it uses noncausal attention. As with Zoology MQAR,
+  first reproduce a validated upstream bidirectional MLM recipe; only then
+  replace its mixer with matched GDN2 and FutureSeed.
+- Compare systems only after independent warmup. Sequential wall times include
+  Triton compilation and validation order, so P-CAUSAL-008 retains warmed
+  throughput and peak memory but makes no raw wall-time claim.

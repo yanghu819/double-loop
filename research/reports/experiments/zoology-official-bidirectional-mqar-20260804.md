@@ -3,10 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-011`
-- Status: approved; not yet launched
+- Status: in progress; strict preflight precedes the registered arm
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-011-official-bidir-mqar`
+- Source SHA: `40002497ed5e56f1879b996d09608065c963b27d`
+- Run: `zoology-official-bidir-mqar-20260804T093000Z-4000249`
+- Exact launcher PID/PGID: `46796/46796`
 
 ## 2. Hypothesis
 

@@ -3,13 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-013`
-- Status: clean D256/H8/D32 relaunch in progress
+- Status: second infrastructure-only preflight stop; audit fix pending relaunch
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-013-gdn2-capacity1024`
-- Source SHA: `9bdae8f4df62230c27940e5e681cd7e8d14c9bbe`
-- Run: `zoology-gdn2-state-capacity1024-20260804T103146Z-9bdae8f`
-- Exact launcher PID/PGID: `50697/50697`
+- Last source SHA: `9bdae8f4df62230c27940e5e681cd7e8d14c9bbe`
+- Last run: `zoology-gdn2-state-capacity1024-20260804T103146Z-9bdae8f`
+- Last exact launcher PID/PGID: `50697/50697`
 - Parent result: `P-CAUSAL-012`
 
 ## 2. Mechanism Hypothesis
@@ -78,6 +78,16 @@ used. Before observing any model-quality result, the candidate was revised to
 the official already-validated `head_dim=32` geometry: D256/H8/D32. It still
 scales total recurrent state 2x and model width 2x while preserving the
 scientific question and all quality gates.
+
+The second preflight-only launch at source `9bdae8f4`, run
+`zoology-gdn2-state-capacity1024-20260804T103146Z-9bdae8f`, also stopped
+before training and is likewise infrastructure-only (`scientific_failure=false`).
+Crucially, the supported D256/H8/D32 official-FLA CUDA forward and backward had
+already completed. The stop came from our final audit reading the nonexistent
+generic attribute `layer.conv1d` instead of official GDN2's
+`layer.q_conv1d`. The audit now uses the same explicit `q_conv1d.backend`
+check as the previously validated P-CAUSAL-012 preflight. This changes no
+model, optimizer, data, budget, or registered quality gate.
 
 ## 6. Required Readouts
 

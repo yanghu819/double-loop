@@ -1,0 +1,13 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+Traceback (most recent call last):
+  File "/huyang2/double-loop/worktrees/p-causal-013-9bdae8f4/scripts/check_zoology_gdn2_state_capacity.py", line 308, in <module>
+    main()
+  File "/huyang2/double-loop/worktrees/p-causal-013-9bdae8f4/scripts/check_zoology_gdn2_state_capacity.py", line 273, in main
+    conv_backends = [
+  File "/huyang2/double-loop/worktrees/p-causal-013-9bdae8f4/scripts/check_zoology_gdn2_state_capacity.py", line 274, in <listcomp>
+    mixer.layer.conv1d.backend for values in mixers.values() for mixer in values
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1940, in __getattr__
+    raise AttributeError(
+AttributeError: 'GatedDeltaNet2' object has no attribute 'conv1d'. Did you mean: 'k_conv1d'?

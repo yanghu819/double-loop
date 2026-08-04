@@ -271,7 +271,9 @@ def main() -> None:
         raise RuntimeError(f"Candidate recurrent state size is wrong: {state_values}")
     modes = [mixer.layer.mode for values in mixers.values() for mixer in values]
     conv_backends = [
-        mixer.layer.conv1d.backend for values in mixers.values() for mixer in values
+        getattr(mixer.layer.q_conv1d, "backend", None)
+        for values in mixers.values()
+        for mixer in values
     ]
     if any(mode != "chunk" for mode in modes):
         raise RuntimeError(f"Unexpected GDN2 mode: {modes}")

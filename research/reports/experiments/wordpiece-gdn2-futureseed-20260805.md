@@ -103,8 +103,18 @@ devices before the already device-independent byte hashes ran. The corrective
 commit compares detached CPU tensors and changes no model, data, optimization,
 metric or registered decision gate.
 
+The second preflight at corrective SHA `d0c030e1` also stopped before training.
+Its autograd auditor stored only Python object IDs while traversing the graph;
+released node wrappers allowed ID reuse, so it incorrectly stopped after
+`NllLossBackward0 -> LogSoftmaxBackward0` and reported that the deeper FLA node
+was absent. The follow-up keeps node wrappers alive during traversal. This
+changes only the fail-closed auditor, not model execution or the protocol.
+
 ## Artifacts And Result
 
 Formal experiment not launched. The first preflight implementation abort is at
 `runs/wordpiece-gdn2-fs-preflight-20260804T2235Z-ebed175`; its prepared schedule
 hash is `99fb776e5703376411b72c861bd368557228e4f40d4369385c6c5223b4231a26`.
+The second implementation abort is at
+`runs/wordpiece-gdn2-fs-preflight2-20260804T2240Z-d0c030e` and has the same
+prepared schedule hash.

@@ -506,11 +506,13 @@ def autograd_graph_names(tensor: torch.Tensor) -> list[str]:
     names: list[str] = []
     queue = [tensor.grad_fn]
     seen: set[int] = set()
+    keepalive = []
     while queue:
         fn = queue.pop(0)
         if fn is None or id(fn) in seen:
             continue
         seen.add(id(fn))
+        keepalive.append(fn)
         names.append(type(fn).__name__)
         queue.extend(
             next_fn

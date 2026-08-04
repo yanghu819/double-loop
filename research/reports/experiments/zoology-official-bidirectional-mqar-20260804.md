@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-011`
-- Status: in progress; strict preflight precedes the registered arm
+- Status: discarded by the registered directional carrier gate
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-011-official-bidir-mqar`
@@ -62,9 +62,13 @@ The launcher runs a full-size CUDA preflight before the only training arm.
 
 ## 6. Artifacts
 
-Pending. The formal run will archive resolved config, preflight, score, logs,
-source snapshot hash, exact source/data hashes, PID/PGID, GPU state and HTML
-hardest-case visualization under `/huyang2/double-loop/runs`.
+- Remote/local run: `runs/zoology-official-bidir-mqar-20260804T093000Z-4000249`.
+- Resolved protocol: `config.json` and `output/config.json`.
+- Integrity: `preflight.json`, `preflight.log`, `git_sha.txt`, GPU snapshots,
+  and `source_snapshot.sha256`.
+- Result: `score.json`, `output/metrics.jsonl`, `formal.log`, and
+  `abort.json` for the scientific gate failure.
+- Visualization: `visualizations/index.html`, summary and 12 hardest cases.
 
 ## 7. Registered Readouts
 
@@ -93,4 +97,61 @@ does not itself compare FutureSeed against attention.
 
 ## 9. Result And Submission
 
-Pending. No tag is authorized for a carrier-only calibration.
+The implementation and provenance checks passed, but the carrier did not open.
+
+Preflight proved:
+
+- exactly one GPU1 with the registered UUID;
+- exact clean Zoology commit and source hashes;
+- exact P-CAUSAL-007 train/test hashes;
+- official causal and bidirectional state keys, parameter count (`437,760`)
+  and every initialized tensor identical (`max diff=0`);
+- official causal future perturbation dependency exactly `0`, versus
+  bidirectional mean dependency `0.007393`;
+- finite full-size CUDA forward/backward for both classes.
+
+Training then consumed the registered 30 epochs, or 19.2M input tokens:
+
+| Metric | Official MHA, mask removed |
+|---|---:|
+| past accuracy / exact / CE | `0.4850 / 0.216 / 0.8314` |
+| future accuracy / exact / CE | `0.4845 / 0.218 / 0.8635` |
+| balanced accuracy | `0.48475` |
+| joint exact | `0.048` |
+| best validation accuracy | `0.5015` at epoch13 |
+| final validation accuracy | `0.48475` at epoch29 |
+| warmed training throughput | `321,951` tokens/s |
+| warmed peak allocated memory | `69.6` MiB |
+| training plus validation time | `79.98` seconds |
+
+The model immediately rises above the random-vocabulary regime, but settles
+near a two-way ambiguity instead of undergoing P-CAUSAL-005's sharp retrieval
+transition. Seeing both sides is therefore not sufficient for this exact
+architecture to bind a repeated key to its adjacent value. Removing the mask
+also removes the useful order-aligned bias that the official causal baseline
+exploits. That interpretation is consistent with the nearly symmetric
+past/future metrics and CE near a binary ambiguity, but it remains a mechanism
+inference rather than a direct proof.
+
+The registered gate required both directional accuracies at least `0.90`, so
+the experiment is discarded without a second seed, extra epoch, LR, width,
+depth, head, dropout or loss rescue. This cannot be cited as evidence that
+FutureSeed beats Transformers. It says only that this exact mask-removal
+carrier is not a valid quality ceiling for directional MQAR.
+
+Artifacts:
+
+- `runs/zoology-official-bidir-mqar-20260804T093000Z-4000249`;
+- `preflight.json`, `score.json`, logs and `abort.json`;
+- validation curve and 12 hardest fixed cases in
+  `visualizations/index.html`;
+- source snapshot SHA256 recorded; the 66 MiB archive remains outside Git.
+
+Next decision: do not spend another run repairing attention. Directly test the
+already-validated strict official-FLA GDN2 no-FutureSeed/FutureSeed pair at
+length1024 and combine it with the frozen L64 endpoint. That isolates the
+paper's core mechanism scaling question. Attention quality/cost calibration
+must later use a task and established recipe where a bidirectional carrier is
+independently known to open.
+
+No tag is authorized.

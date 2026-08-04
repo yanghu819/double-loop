@@ -1,0 +1,18 @@
+{
+  "carrier": "exact upstream Zoology MHA with only causal mask removed",
+  "data": "fixed mixed-direction MQAR, length64, four associations",
+  "early_stop": "upstream valid accuracy > 0.99",
+  "forbidden": [
+    "FutureSeed",
+    "GDN2",
+    "second seed",
+    "LR/width/depth/loss sweep"
+  ],
+  "git_sha": "40002497ed5e56f1879b996d09608065c963b27d",
+  "max_epochs": 30,
+  "model": "D128/L2/H1, upstream positions and MLP",
+  "plan": "P-CAUSAL-011",
+  "registered_pass": "past accuracy >= 0.90 and future accuracy >= 0.90",
+  "run_name": "zoology-official-bidir-mqar-20260804T093000Z-4000249",
+  "training": "batch32, AdamW1e-3, WD0.1, cosine, seed123"
+}

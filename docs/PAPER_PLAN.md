@@ -457,3 +457,15 @@ run therefore stopped before L1024. This is not a Transformer comparison.
 Before drawing a scaling curve, reproduce the exact upstream Zoology MHA with
 only its causal mask removed and allow the pre-existing official opening
 budget; only an opened attention carrier can define the quality/cost ceiling.
+
+### P-CAUSAL-011 Official-MHA Mask-Removal Boundary
+
+The stricter carrier check also failed. The exact upstream MHA, with identical
+parameters and initialization and only its causal mask removed, had verified
+future dependency but finished 30 epochs at past/future accuracy
+`0.4850/0.4845` and joint exact `0.048`. This closes the mask-removal carrier,
+not bidirectional Transformers in general. The paper must not claim an
+attention quality win from P-CAUSAL-010/011. The next core figure should first
+establish causal GDN2 versus native FutureSeed length scaling at L64/L1024;
+an attention quality/cost frontier remains conditional on a separate task and
+published bidirectional recipe that independently opens.

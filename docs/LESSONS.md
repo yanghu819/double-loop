@@ -1748,3 +1748,12 @@
   upstream Zoology MHA is known to open sharply only around epoch25, validate
   the exact official MHA with only its mask removed before using attention as a
   ceiling. Do not call an under-opened custom attention arm a Transformer loss.
+- P-CAUSAL-011 showed that even the exact official Zoology MHA does not become
+  a valid directional-MQAR ceiling merely by deleting its causal mask. Source,
+  parameters and initialization were exact; future dependency was active; yet
+  30 epochs ended at past/future accuracy `0.4850/0.4845` and joint exact
+  `0.048`. The causal order is part of the original carrier's useful binding
+  bias, not just a restriction. Full visibility without a suitable binding
+  bias can remain ambiguous. Do not rescue this mask-removal baseline and do
+  not use it to claim a Transformer loss; test FutureSeed length scaling
+  directly, and calibrate attention later on an independently opened task.

@@ -23,6 +23,9 @@ case "$MODE" in
   baseline_preflight)
     exec "$REPO_ROOT/scripts/run_sudoku_baseline_preflight.sh" "${2:-}"
     ;;
+  established_mlm)
+    exec "$REPO_ROOT/scripts/run_established_bert_mlm.sh" "${2:?Usage: ./run.sh established_mlm <bidirectional|causal>}"
+    ;;
 esac
 
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PERSIST_ROOT/.cache}"

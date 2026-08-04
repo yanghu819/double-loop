@@ -1740,3 +1740,11 @@
   Stop before causal/GDN2/FutureSeed rather than rescuing the baseline after
   seeing the curve. This result is a carrier-budget boundary, not FutureSeed
   evidence.
+- A noncausal dependency check proves only that information can flow; it does
+  not prove the attention carrier has learned the association. In P-CAUSAL-010
+  the near-parameter-matched SDPA arm had nonzero future dependency but
+  plateaued near `0.50` accuracy and `0.81` CE on both directions, while native
+  FutureSeed reached `0.992` future accuracy under the same ten epochs. Because
+  upstream Zoology MHA is known to open sharply only around epoch25, validate
+  the exact official MHA with only its mask removed before using attention as a
+  ceiling. Do not call an under-opened custom attention arm a Transformer loss.

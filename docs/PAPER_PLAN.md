@@ -445,3 +445,15 @@ FutureSeed arm was run. This is not a language result for or against
 FutureSeed. The paper should now prioritize the validated directional-MQAR
 scaling and cost frontier; natural-language transfer remains a later gate that
 requires a genuinely opened published recipe.
+
+### P-CAUSAL-010 Scaling Carrier Boundary
+
+The L64 matched GDN2 pair replicated the mechanism strongly: no-FutureSeed
+past/future accuracy was `0.9965/0.0100`, while native FutureSeed reached
+`0.9985/0.9920` and `0.981` joint exact. However, the registered
+parameter-matched full SDPA reference reached only about `0.50` on both
+directions in ten epochs, despite a verified nonzero future dependency. The
+run therefore stopped before L1024. This is not a Transformer comparison.
+Before drawing a scaling curve, reproduce the exact upstream Zoology MHA with
+only its causal mask removed and allow the pre-existing official opening
+budget; only an opened attention carrier can define the quality/cost ceiling.

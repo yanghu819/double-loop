@@ -1,0 +1,66 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l64-k4/data_f9fb602ec39142e2e3cccd83d039d052.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l64-k4/data_2adc20577404e078be7efe1e99261ea4.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+{
+  "attention_is_causal": false,
+  "attention_parameter_delta_fraction": 0.0006529783066095916,
+  "conv_backends": [
+    "triton",
+    "triton"
+  ],
+  "cuda_device_count": 1,
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_uuid": "53e9f3b4-2966-65d3-6614-09c540921519",
+  "fla_gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "fla_wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+  "future_dependencies": {
+    "bidirectional_attention_mean": 0.0006046153721399605,
+    "causal_gdn2_max": 0.0,
+    "future_seed_gdn2_mean": 0.006392602808773518
+  },
+  "future_seed_gate_gradient_max": 0.001397312618792057,
+  "gdn2_class": "fla.layers.gdn2.GatedDeltaNet2",
+  "gdn2_modes": [
+    "chunk",
+    "chunk"
+  ],
+  "gdn2_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+  "length1024_data_hashes": {
+    "test": "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f",
+    "train": "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
+  },
+  "length64_data_hashes": {
+    "test": "3fa26a5a04b8302001231451bce23c4f5372648d8cdd9fe6116d8e418f470209",
+    "train": "31bac228c46a1c85b0b0e164675c7f65e9bb0a3d4b733d4c42d7c057bd6d5bf9"
+  },
+  "losses_and_gradients": {
+    "bidirectional_attention": {
+      "gradient_max": 0.20090782642364502,
+      "loss": 5.5611958503723145
+    },
+    "causal_gdn2": {
+      "gradient_max": 0.10384725034236908,
+      "loss": 5.563232421875
+    },
+    "future_seed_gdn2": {
+      "gradient_max": 0.10079258680343628,
+      "loss": 5.563726425170898
+    }
+  },
+  "parameter_counts": {
+    "bidirectional_attention": 662016,
+    "causal_gdn2": 661584,
+    "future_seed_gdn2": 661584
+  },
+  "peak_cuda_mem_bytes": 1553518592,
+  "scale0_output_max_diff": 0.0,
+  "shared_init_max_diff": 0.0,
+  "zoology_sha": "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+}

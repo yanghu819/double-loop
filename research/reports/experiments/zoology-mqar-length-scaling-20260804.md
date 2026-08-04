@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-010`
-- Status: in progress; exact-SHA CUDA preflight starting
+- Status: discarded by the registered L64 attention-carrier gate
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-010-mqar-length-scaling`
@@ -125,5 +125,53 @@ quality or end-to-end wall-time superiority.
 
 ## 9. Result And Submission
 
-Pending. No tag is authorized before a valid endpoint and archived systems
-comparison.
+The strict CUDA preflight passed completely at L1024 before training:
+
+- exact single GPU1 and pinned Zoology/FLA wheel/GDN2 source hashes;
+- direct official GDN2 versus scale-0 max output difference `0`;
+- causal future perturbation dependency `0`;
+- FutureSeed and noncausal-attention dependencies `0.006393` and `0.000605`;
+- nonzero FutureSeed gate gradient `0.001397` and finite backward for all arms;
+- L1024 parameters `661,584/661,584/662,016`, so attention differed from
+  GDN2 by only `+0.0653%`;
+- exact P-CAUSAL-007 L64 train/test hashes reproduced.
+
+The registered L64 gate then produced:
+
+| Metric | Causal GDN2 | GDN2 + FutureSeed | noncausal SDPA |
+|---|---:|---:|---:|
+| past accuracy | 0.9965 | 0.9985 | 0.4980 |
+| future accuracy | 0.0100 | 0.9920 | 0.4995 |
+| past exact | 0.9930 | 0.9970 | 0.1960 |
+| future exact | 0 | 0.9840 | 0.2140 |
+| joint exact | 0 | 0.9810 | 0.0400 |
+| future CE | 4.7085 | 0.0280 | 0.8125 |
+| parameters | 538,704 | 538,704 | 539,136 |
+| warmed train tokens/s | 102,015 | 117,245 | 373,314 |
+| warmed peak allocated | 85.9 MiB | 87.4 MiB | 66.1 MiB |
+
+The two GDN2 arms pass their gate decisively and independently replicate the
+P-CAUSAL-007 mechanism. The noncausal attention path is active, but its loss
+and accuracy flatten near a two-way ambiguity: it sees later tokens yet does
+not learn reliable key-value binding in ten epochs. Since the registered gate
+required both attention directions above0.90, the process exited after L64 and
+did not spend compute on L1024.
+
+This run is discarded as a length-scaling comparison, not as FutureSeed
+evidence. The failed custom attention cannot be called a quality ceiling and
+cannot support a claim that FutureSeed beats Transformers. The next experiment
+must use the exact upstream Zoology MHA architecture with only the causal mask
+removed and the already-known official opening budget of at most30 epochs.
+That is one carrier correction, not a seed/LR/width/loss rescue.
+
+Artifacts:
+
+- run: `runs/zoology-mqar-length-endpoints-20260804T085500Z-4b90962`;
+- root result: `score.json` and `output/comparison.json`;
+- strict preflight: `preflight.json`;
+- same-sequence visualization: `visualizations/index.html`;
+- abort: `abort.json`, scientific gate failure after L64;
+- source snapshot SHA256 is archived; the 64 MiB snapshot itself remains
+  outside Git.
+
+No tag is authorized.

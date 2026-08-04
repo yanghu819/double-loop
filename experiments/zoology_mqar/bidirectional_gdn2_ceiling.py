@@ -28,7 +28,6 @@ from experiments.zoology_mqar.futureseed_directionality import (
     model_hash,
 )
 from experiments.zoology_mqar.length_scaling import (
-    BATCH_SIZE,
     GDN2_HEAD_DIM,
     MODEL_HEADS,
     MODEL_WIDTH,
@@ -43,6 +42,7 @@ from experiments.zoology_mqar.length_scaling import (
 
 SEQUENCE_LENGTH = 512
 NUM_KV_PAIRS = 4
+BATCH_SIZE = 32
 MAX_EPOCHS = 10
 ARMS = ("causal_gdn2", "future_seed_gdn2", "explicit_bidirectional_gdn2")
 REFERENCE_GIT_SHA = "cbe7060d1962ef4fd6f9c7df6e9556b34ec9779b"

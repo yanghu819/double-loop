@@ -92,3 +92,14 @@ Only after this gate passes may a separate preregistered experiment replace
 the mixer with matched official-FLA GDN2 scale 0/1. No reverse scan, extra
 layer, extra step, oracle, selector, search, repair, or text-specific rule is
 allowed.
+
+## Launch Audit
+
+- `established-bert-mlm-bidirectional-20260804T073834Z-97c1af7` exited before
+  the first optimizer step because the offline accuracy metric path was sourced
+  as a shell variable but not exported to the exact upstream Python child.
+- CUDA preflight had passed, no training result was produced, GPU memory
+  returned to zero, and the run contains `abort.json` with
+  `scientific_failure=false`. The launcher now exports the entire pinned env
+  file before materializing and executing `run_mlm.py`; no experimental
+  setting changed.

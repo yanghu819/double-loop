@@ -9,7 +9,9 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 P009_CONFIG="${P009_CONFIG:-$REPO_ROOT/configs/retrieval/established_bert_mlm.env}"
+set -a
 source "$P009_CONFIG"
+set +a
 
 export CUDA_VISIBLE_DEVICES=0
 export XDG_CACHE_HOME="$PERSIST_ROOT/.cache"

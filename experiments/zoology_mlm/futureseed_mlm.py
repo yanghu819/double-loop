@@ -106,7 +106,6 @@ def build_config(
         data=data,
         model=model,
         max_epochs=max_epochs,
-        early_stopping_metric=None,
         early_stopping_threshold=1.1,
         learning_rate=1e-3,
         weight_decay=0.1,

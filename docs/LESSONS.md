@@ -1889,3 +1889,18 @@
   a cross-device equality check and Python object-ID reuse during autograd graph
   traversal. Both were implementation-only aborts archived before training;
   neither can be counted as a scientific failure.
+- P-CAUSAL-020 falsifies the simplest downstream-depth explanation for P019.
+  Moving from L2/one seed route to L4/three routes raises suffix-removal CE cost
+  `0.4392->0.5865`, so the extra routes carry more future information, but the
+  matched CE advantage grows only `0.08735->0.09948`. One hop was not the main
+  bottleneck.
+- Statistical significance is not practical significance. L4 FutureSeed's
+  accuracy delta `+0.00759` has a positive paired interval and yields 147
+  repairs versus 111 regressions, but it remains far below the registered
+  `+0.03` quality gate. Report the positive interval without promoting it to a
+  headline win.
+- More model depth is not automatically useful scaling under a fixed small data
+  budget. L4 nearly doubles trainable contextual parameters and cuts diagnostic
+  throughput relative to L2, while gaining only `+0.01213` additional CE
+  advantage. Stop L6/L8 table filling; the next credible language test needs a
+  larger training regime or a different established carrier.

@@ -9,20 +9,19 @@ Primary evidence target: show whether FutureSeed supplies cheap future context
 for recurrent reasoners under matched compute, without solver-specific repair or
 selector tricks.
 
-Current update (2026-08-05 CST): `P-CAUSAL-020` is the sole active language
-scaling gate. `P-CAUSAL-019` proved that L2 native FutureSeed uses right context
-(suffix-removal CE cost `+0.4392`) and improves matched CE by `0.08735`, but it
-changes masked accuracy by only `+0.00253`. The new hypothesis is that L2 has
-only one terminal-state transfer and too little downstream computation to turn
-that information into decisions. Keep the exact WordPiece data, frozen lexical
-table, D128/H4/D32 state size, optimizer, seed, 20.48M tokens and official FLA
-kernel; scale only depth to L4, creating three learned cross-layer seed routes.
-Run one matched causal/FutureSeed pair. Continue the real-text claim only for
-accuracy `>=+0.03` or CE `>=0.20` with positive paired interval, same-sign
-step1000 effect, positive suffix utility, and all three seed gates active. A CE
-gain `>=0.15` and at least `+0.05` over L2 is mechanism amplification but still
-below the headline gate. Otherwise stop shallow-language depth scaling; do not
-extend steps or sweep depth, LR, mask, freeze policy, loss, or seed.
+Current update (2026-08-05 CST): `P-CAUSAL-020` is complete and closes the
+small-depth language scaling line. At fixed WordPiece data, D128 state width,
+optimizer, seed and 20.48M tokens, L4 creates three active FutureSeed routes.
+Causal/FutureSeed accuracy is `0.27668/0.28427` (`+0.00759`, paired interval
+fully positive) and CE is `5.32369/5.22421` (`0.09948` improvement). Suffix
+removal cost rises from L2 `0.43915` to L4 `0.58652`, and net token repairs rise
+`12->36`, so added routes are genuinely used. But CE advantage grows only
+`+0.01213` over L2, missing the registered `+0.05` depth-amplification
+requirement and both strong gates. One transfer was not the primary bottleneck.
+Do not run L3/L6/L8, longer steps, LR, mask, freeze-policy, loss or seed rescue.
+Retain P019/P020 as real-text mechanism evidence, not a language-quality claim;
+a future headline needs a materially larger pretraining regime or a different
+established carrier.
 
 ## A. Current Candidate Plan
 

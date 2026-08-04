@@ -653,3 +653,25 @@ real-text directionality evidence and a scaling motivation. Do not tune or
 extend the exact L2 endpoint; a future language test must change one meaningful
 scaling axis, preferably depth/multiple transfer opportunities, under a new
 preregistration.
+
+### P-CAUSAL-020 Real-Text Depth Boundary
+
+The registered depth test scaled only the official-FLA GDN2 stack from L2 to
+L4 while keeping D128 state width, WordPiece/WikiText tensors, frozen lexical
+table, optimizer, seed and 20.48M training tokens fixed. The scale-0 and
+scale-1 arms each had 4,965,722 parameters. Strict preflight verified three
+active terminal-state routes with nonzero gate gradients and zero causal future
+dependency.
+
+L4 causal/FutureSeed accuracy is `0.276677/0.284268`; its `+0.007592` paired
+interval is `[0.00084,0.01426]`. CE is `5.323694/5.224210`, a `0.099484`
+improvement with interval `[0.07965,0.11964]`. Suffix removal costs FutureSeed
+`0.586523` CE, confirming stronger right-context use than L2. Yet CE advantage
+increases by only `0.01213` over L2 and misses the registered `0.05` depth gain,
+the `0.20` strong CE gate and the `+0.03` accuracy gate.
+
+The paper may state that the real-text route persists across depth and becomes
+statistically visible in top-1 accuracy. It may not state that depth scaling
+solves masked language modeling or yields competitive quality. Close small
+depth sweeps; a future language headline requires a materially larger
+pretraining regime or another independently validated carrier.

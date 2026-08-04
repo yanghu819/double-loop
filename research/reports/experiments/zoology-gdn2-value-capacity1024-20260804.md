@@ -3,11 +3,17 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-014`
-- Status: preregistered implementation passed static/fairness review; pending clean GPU1 launch
+- Status: in progress after strict detached-SHA GPU1 launch
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-014-gdn2-value-state`
 - Parent result: `P-CAUSAL-013`
+- Source SHA: `b2db9d2e8e29f3df0cd3bd3588312e402c27fad7`
+- Run: `zoology-gdn2-value-capacity1024-20260804T112629Z-b2db9d2`
+- Started: `2026-08-04T11:26:29Z`
+- Remote detached worktree: `/huyang2/double-loop/worktrees/p-causal-014-b2db9d2`
+- Launcher PID/PGID: `55495/55495`
+- Launcher log: `/huyang2/double-loop/artifacts/launch/zoology-gdn2-value-capacity1024-20260804T112629Z-b2db9d2.launcher.log`
 
 ## 2. Mechanism Hypothesis
 

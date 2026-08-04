@@ -3,13 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-013`
-- Status: implementation correction pending clean relaunch
+- Status: clean D256/H8/D32 relaunch in progress
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-013-gdn2-capacity1024`
-- Source SHA: `87827f0a360c7883a69f882611f89deb1129e5c7`
-- Run: `zoology-gdn2-state-capacity1024-20260804T102407Z-87827f0`
-- Exact launcher PID/PGID: `48673/48673`
+- Source SHA: `9bdae8f4df62230c27940e5e681cd7e8d14c9bbe`
+- Run: `zoology-gdn2-state-capacity1024-20260804T103146Z-9bdae8f`
+- Exact launcher PID/PGID: `50697/50697`
 - Parent result: `P-CAUSAL-012`
 
 ## 2. Mechanism Hypothesis

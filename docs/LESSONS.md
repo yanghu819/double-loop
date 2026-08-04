@@ -1701,3 +1701,18 @@
   longer, repeat another seed, or tune a rescue. The next decision-changing
   test is cross-task generalization of the same causal mechanism. Maze or
   language/retrieval evidence is required before making a universal claim.
+- The validated Zoology directionality gate isolates the mechanism outside
+  Sudoku. A matched causal GDN2 reaches `0.9305` past-query accuracy but only
+  `0.0110` future-query accuracy; native FutureSeed reaches `0.9955/0.9930`.
+  Future-query exact changes from `0` to `0.9860` with the same parameters,
+  initialization, data, optimizer, epochs, and official FLA kernel.
+- FutureSeed is terminal-state transfer, not a reverse scan. Perturbing later
+  values changes no-FS early-query logits by exactly zero and FS logits by mean
+  `0.07178`; scale 0 is output-identical to the validated causal GDN2 path and
+  the FutureSeed gate receives a nonzero gradient.
+- Do not claim raw speed from the sequential pair. The first arm paid Triton
+  compilation, so `703.7` versus `935.7` examples/s is an archived systems
+  observation, not a randomized warmed efficiency comparison.
+- This result is strong enough to stop synthetic seed repetition. The next
+  decision-changing evidence must test transfer or OOD scaling; one synthetic
+  directionality task cannot establish language-model quality.

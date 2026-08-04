@@ -392,3 +392,20 @@ the FutureSeed idea but avoids the stable-wrong attractor:
   losing long-budget exact, or reaches the same quality with less recurrent
   compute. Failure means the current formulation is only an early optimization
   aid, not a standalone mixer replacement.
+
+## 2026-08-04 Cross-Task Directionality Gate
+
+`P-CAUSAL-007` supplies the first clean non-Sudoku causal mechanism result. In
+the validated upstream Zoology shell with pinned official FLA GDN2, the matched
+no-FutureSeed model reaches 93.05% on write-before-query retrieval but only
+1.10% on query-before-write retrieval. Native cross-layer terminal-state
+seeding reaches 99.55% and 99.30%, respectively, with identical parameters,
+initialization, data, optimizer, kernel, and epoch budget. Future-query exact
+changes from 0% to 98.60%.
+
+This supports the narrow paper claim that FutureSeed is a cheap future-context
+route for causal recurrent stacks. It does not yet support language quality,
+asymptotic scaling, or wall-time efficiency. The next paper gate should test
+one meaningful transfer axis rather than repeat seeds: OOD sequence/association
+load or an established masked/retrieval language task with a warmed full
+noncausal reference.

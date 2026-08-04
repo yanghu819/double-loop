@@ -1,7 +1,7 @@
 # Native FutureSeed Directionality In Validated Zoology GDN2
 
 - Plan: `P-CAUSAL-007`
-- Status: preregistered
+- Status: done
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -51,7 +51,7 @@ with one deterministic directional MQAR generator:
 
 Both arms use D128/L2/H4/D32 official FLA GDN2, expand-v1, short-conv4,
 training chunk recurrence, BF16 layer autocast, learned positions, the same MLP,
-batch 32, AdamW LR 1e-3/WD 0.1/cosine, seed 123, and at most 20 epochs. The only
+batch 32, AdamW LR 1e-3/WD 0.1/cosine, seed 123, and exactly 10 epochs. The only
 experimental variable is `future_seed_scale=0` versus `1`. The per-head gate is
 present in both arms, so parameter count and initialization are matched.
 
@@ -106,3 +106,75 @@ batch is therefore balanced while the total examples, four associations,
 vocabulary, sequence length, loss, model, optimizer, and ten-epoch budget stay
 fixed. Directional metrics are now computed from disjoint preregistered query
 position bands. No model or loss hyperparameter changed.
+
+## Result
+
+The corrected, balanced run completed on 2026-08-04 using one task-mode GPU1.
+It passes every preregistered strong-support condition:
+
+| Metric | No FutureSeed | FutureSeed | Delta |
+|---|---:|---:|---:|
+| past accuracy | 0.9305 | 0.9955 | +0.0650 |
+| future accuracy | 0.0110 | 0.9930 | +0.9820 |
+| past exact | 0.8770 | 0.9910 | +0.1140 |
+| future exact | 0.0000 | 0.9860 | +0.9860 |
+| balanced accuracy | 0.47075 | 0.99425 | +0.52350 |
+| past CE | 0.29065 | 0.01479 | -0.27586 |
+| future CE | 4.57885 | 0.01943 | -4.55941 |
+
+The control is a valid carrier rather than a failed model: it reaches 93.05%
+on causally available past queries. It remains at 1.10% on future queries,
+close to the 1/96 random-value rate. FutureSeed solves both directions and does
+not trade away the causal direction.
+
+The training curves separate immediately. FutureSeed balanced validation
+accuracy is 0.4900 after epoch 0 and 0.9605 after epoch 2; no-FutureSeed is
+0.01025 and 0.01875 at the same points and reaches only 0.47075 by epoch 9.
+
+## Integrity And Systems Diagnostics
+
+- identical parameter count: 538,704 in both arms;
+- identical initialization hash:
+  `1bbba1ac6d1bd2edcb4f85e47805c7662756da53f413cb7582e8061c46e18835`;
+- identical train/test hashes:
+  `31bac228...d6d5bf9` and `3fa26a5a...470209`;
+- scale-0 wrapper versus validated upstream GDN2 max output difference: 0;
+- changing later values changes no-FS early-query logits by exactly 0;
+- the same perturbation changes FS early-query logits by mean 0.07178;
+- FutureSeed gate gradient max: 5.64e-4, so the route participates in training;
+- learned gate: 0.5262; normalized seed-state norm: 16.84;
+- strict pinned official FLA GDN2 chunk recurrence and Triton short convolution;
+- one visible A100 GPU; GPU returned to 0 MiB after completion.
+
+Raw fixed-budget measurements are 703.7 versus 935.7 examples/s and 350.5
+versus 343.2 MB peak allocated memory. They are archived but are not evidence
+of a FutureSeed speedup: the no-FS arm ran first and paid one-time Triton
+compilation. A randomized or separately warmed systems protocol is required
+for an efficiency claim.
+
+No outer reasoning loop is used here, so loop1-to-final gain is not applicable.
+This experiment deliberately isolates cross-layer terminal-state transfer.
+
+## Decision
+
+`P-CAUSAL-007` strongly supports the narrow cross-task mechanism claim:
+FutureSeed gives a causal recurrent stack access to information that appears
+later in the input, without a reverse scan and without increasing parameters.
+Together with the matched Sudoku frontier result, this is now evidence on two
+tasks. It still does not establish language-model quality or general-purpose
+bidirectional replacement quality.
+
+Do not repeat this result with another seed, easier vocabulary, or a length
+table. The next paper gate must test transfer: a single preregistered OOD
+length/association generalization result or an established language/retrieval
+task where FutureSeed is compared with causal GDN2 and a full noncausal
+reference under an honest compute protocol.
+
+## Artifacts
+
+- Run: `runs/zoology-gdn2-fs-directionality-mixed-20260804T0427Z-181896e`
+- Comparison: `output/comparison.json`
+- Same-sequence cases: `output/paired_hardest_cases.json`
+- Visualization: `visualizations/index.html`
+- Source snapshot SHA256:
+  `a23059a9cebd969df20913d0128e650ec19aecc0f86bb173fdf52f47ebc93157`

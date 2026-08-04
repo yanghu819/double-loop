@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-010`
-- Status: approved; awaiting exact-SHA CUDA preflight
+- Status: in progress; exact-SHA CUDA preflight starting
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-010-mqar-length-scaling`

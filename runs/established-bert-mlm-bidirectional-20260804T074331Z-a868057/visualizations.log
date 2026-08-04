@@ -1,0 +1,15 @@
+BertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly overwritten. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+{
+  "candidate_windows": 64,
+  "gpu_uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519",
+  "masked_accuracy": 0.05320945945945946,
+  "masked_ce": 7.395402444375528,
+  "masked_tokens": 1184,
+  "model_config_is_decoder": false,
+  "model_dir": "/huyang2/double-loop/models/established-bert-mlm-bidirectional-20260804T074331Z-a868057",
+  "protocol": "official grouping plus deterministic standard 15% MLM corruption",
+  "seed": 123
+}

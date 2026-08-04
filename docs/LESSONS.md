@@ -1733,3 +1733,10 @@
 - Compare systems only after independent warmup. Sequential wall times include
   Triton compilation and validation order, so P-CAUSAL-008 retains warmed
   throughput and peak memory but makes no raw wall-time claim.
+- An established architecture is still not a valid carrier when the registered
+  budget does not open it. Exact Transformers BERT-mini on WordPiece
+  WikiText-103 reached only `0.0716` masked accuracy after 20.48M input tokens
+  and was nearly flat after step500, missing the preregistered `0.10` endpoint.
+  Stop before causal/GDN2/FutureSeed rather than rescuing the baseline after
+  seeing the curve. This result is a carrier-budget boundary, not FutureSeed
+  evidence.

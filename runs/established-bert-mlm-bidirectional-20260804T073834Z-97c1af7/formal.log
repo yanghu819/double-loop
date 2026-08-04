@@ -1,0 +1,352 @@
+/opt/conda/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:136: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/huyang2/double-loop/.cache/huggingface/datasets')}
+  warn(msg)
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please submit your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching /usr/local/cuda/lib64...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 117
+CUDA SETUP: Loading binary /opt/conda/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda117.so...
+08/04/2026 07:38:56 - WARNING - __main__ - Process rank: 0, device: cuda:0, n_gpu: 1, distributed training: False, 16-bits training: False
+08/04/2026 07:38:56 - INFO - __main__ - Training/evaluation parameters TrainingArguments(
+_n_gpu=1,
+accelerator_config={'split_batches': False, 'dispatch_batches': None, 'even_batches': True, 'use_seedable_sampler': True, 'non_blocking': False, 'gradient_accumulation_kwargs': None, 'use_configured_state': False},
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-06,
+auto_find_batch_size=False,
+average_tokens_across_devices=False,
+batch_eval_metrics=False,
+bf16=True,
+bf16_full_eval=False,
+data_seed=123,
+dataloader_drop_last=False,
+dataloader_num_workers=0,
+dataloader_persistent_workers=False,
+dataloader_pin_memory=True,
+dataloader_prefetch_factor=None,
+ddp_backend=None,
+ddp_broadcast_buffers=None,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=None,
+disable_tqdm=False,
+dispatch_batches=None,
+do_eval=True,
+do_predict=False,
+do_train=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_do_concat_batches=True,
+eval_on_start=False,
+eval_steps=250,
+eval_strategy=steps,
+eval_use_gather_object=False,
+evaluation_strategy=None,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+fsdp=[],
+fsdp_config={'min_num_params': 0, 'xla': False, 'xla_fsdp_v2': False, 'xla_fsdp_grad_ckpt': False},
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=1,
+gradient_checkpointing=False,
+gradient_checkpointing_kwargs=None,
+greater_is_better=None,
+group_by_length=False,
+half_precision_backend=auto,
+hub_always_push=False,
+hub_model_id=None,
+hub_private_repo=False,
+hub_strategy=every_save,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_for_metrics=[],
+include_inputs_for_metrics=False,
+include_num_input_tokens_seen=False,
+include_tokens_per_second=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=0.0001,
+length_column_name=length,
+load_best_model_at_end=False,
+local_rank=0,
+log_level=passive,
+log_level_replica=warning,
+log_on_each_node=True,
+logging_dir=/huyang2/double-loop/models/established-bert-mlm-bidirectional-20260804T073834Z-97c1af7/runs/Aug04_07-38-56_other-bdb4893c-wvq6t,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=50,
+logging_strategy=steps,
+lr_scheduler_kwargs={},
+lr_scheduler_type=linear,
+max_grad_norm=1.0,
+max_steps=1250,
+metric_for_best_model=None,
+mp_parameters=,
+neftune_noise_alpha=None,
+no_cuda=False,
+num_train_epochs=3.0,
+optim=adamw_torch,
+optim_args=None,
+optim_target_modules=None,
+output_dir=/huyang2/double-loop/models/established-bert-mlm-bidirectional-20260804T073834Z-97c1af7,
+overwrite_output_dir=True,
+past_index=-1,
+per_device_eval_batch_size=256,
+per_device_train_batch_size=128,
+prediction_loss_only=False,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+ray_scope=last,
+remove_unused_columns=True,
+report_to=[],
+restore_callback_states_from_checkpoint=False,
+resume_from_checkpoint=None,
+run_name=/huyang2/double-loop/models/established-bert-mlm-bidirectional-20260804T073834Z-97c1af7,
+save_on_each_node=False,
+save_only_model=False,
+save_safetensors=True,
+save_steps=500,
+save_strategy=no,
+save_total_limit=None,
+seed=123,
+skip_memory_metrics=True,
+split_batches=None,
+tf32=None,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torch_empty_cache_steps=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+use_cpu=False,
+use_ipex=False,
+use_legacy_prediction_loop=False,
+use_liger_kernel=False,
+use_mps_device=False,
+warmup_ratio=0.1,
+warmup_steps=0,
+weight_decay=0.01,
+)
+Using custom data configuration default-c0fe4d0d241b235b
+08/04/2026 07:38:56 - INFO - datasets.builder - Using custom data configuration default-c0fe4d0d241b235b
+Loading Dataset Infos from /opt/conda/lib/python3.10/site-packages/datasets/packaged_modules/json
+08/04/2026 07:38:56 - INFO - datasets.info - Loading Dataset Infos from /opt/conda/lib/python3.10/site-packages/datasets/packaged_modules/json
+Generating dataset json (/huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092)
+08/04/2026 07:38:56 - INFO - datasets.builder - Generating dataset json (/huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092)
+Downloading and preparing dataset json/default to /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092...
+08/04/2026 07:38:56 - INFO - datasets.builder - Downloading and preparing dataset json/default to /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092...
+Downloading took 0.0 min
+08/04/2026 07:38:56 - INFO - datasets.download.download_manager - Downloading took 0.0 min
+Checksum Computation took 0.0 min
+08/04/2026 07:38:56 - INFO - datasets.download.download_manager - Checksum Computation took 0.0 min
+Generating train split
+08/04/2026 07:38:56 - INFO - datasets.builder - Generating train split
+
+Generating train split: 0 examples [00:00, ? examples/s]
+Generating train split: 20000 examples [00:00, 627260.68 examples/s]
+Generating validation split
+08/04/2026 07:38:56 - INFO - datasets.builder - Generating validation split
+
+Generating validation split: 0 examples [00:00, ? examples/s]
+Generating validation split: 3760 examples [00:00, 478418.37 examples/s]
+Unable to verify splits sizes.
+08/04/2026 07:38:56 - INFO - datasets.utils.info_utils - Unable to verify splits sizes.
+Dataset json downloaded and prepared to /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092. Subsequent calls will reuse this data.
+08/04/2026 07:38:56 - INFO - datasets.builder - Dataset json downloaded and prepared to /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092. Subsequent calls will reuse this data.
+[INFO|configuration_utils.py:677] 2026-08-04 07:38:56,976 >> loading configuration file /huyang2/double-loop/worktrees/p-causal-009-97c1af7/configs/retrieval/bert_mini_bidirectional.json
+[INFO|configuration_utils.py:746] 2026-08-04 07:38:56,978 >> Model config BertConfig {
+  "_name_or_path": "/huyang2/double-loop/worktrees/p-causal-009-97c1af7/configs/retrieval/bert_mini_bidirectional.json",
+  "attention_probs_dropout_prob": 0.1,
+  "classifier_dropout": null,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 128,
+  "initializer_range": 0.02,
+  "intermediate_size": 512,
+  "layer_norm_eps": 1e-12,
+  "max_position_embeddings": 512,
+  "model_type": "bert",
+  "num_attention_heads": 2,
+  "num_hidden_layers": 2,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.46.3",
+  "type_vocab_size": 2,
+  "use_cache": false,
+  "vocab_size": 30522
+}
+
+[INFO|hub.py:363] 2026-08-04 07:38:56,978 >> Offline mode: forcing local_files_only=True
+[INFO|tokenization_auto.py:706] 2026-08-04 07:38:56,978 >> Could not locate the tokenizer configuration file, will try to use the model config instead.
+[INFO|hub.py:363] 2026-08-04 07:38:56,978 >> Offline mode: forcing local_files_only=True
+[INFO|configuration_utils.py:677] 2026-08-04 07:38:56,979 >> loading configuration file /huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed/config.json
+[INFO|configuration_utils.py:746] 2026-08-04 07:38:56,980 >> Model config BertConfig {
+  "_name_or_path": "/huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed",
+  "attention_probs_dropout_prob": 0.1,
+  "classifier_dropout": null,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 128,
+  "initializer_range": 0.02,
+  "intermediate_size": 512,
+  "layer_norm_eps": 1e-12,
+  "max_position_embeddings": 512,
+  "model_type": "bert",
+  "num_attention_heads": 2,
+  "num_hidden_layers": 2,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.46.3",
+  "type_vocab_size": 2,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+[INFO|tokenization_utils_base.py:2092] 2026-08-04 07:38:56,980 >> Offline mode: forcing local_files_only=True
+[INFO|tokenization_utils_base.py:2209] 2026-08-04 07:38:56,981 >> loading file vocab.txt
+[INFO|tokenization_utils_base.py:2209] 2026-08-04 07:38:56,981 >> loading file tokenizer.json
+[INFO|tokenization_utils_base.py:2209] 2026-08-04 07:38:56,981 >> loading file added_tokens.json
+[INFO|tokenization_utils_base.py:2209] 2026-08-04 07:38:56,981 >> loading file special_tokens_map.json
+[INFO|tokenization_utils_base.py:2209] 2026-08-04 07:38:56,981 >> loading file tokenizer_config.json
+[INFO|configuration_utils.py:677] 2026-08-04 07:38:56,981 >> loading configuration file /huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed/config.json
+[INFO|configuration_utils.py:746] 2026-08-04 07:38:56,982 >> Model config BertConfig {
+  "_name_or_path": "/huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed",
+  "attention_probs_dropout_prob": 0.1,
+  "classifier_dropout": null,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 128,
+  "initializer_range": 0.02,
+  "intermediate_size": 512,
+  "layer_norm_eps": 1e-12,
+  "max_position_embeddings": 512,
+  "model_type": "bert",
+  "num_attention_heads": 2,
+  "num_hidden_layers": 2,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.46.3",
+  "type_vocab_size": 2,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+[INFO|configuration_utils.py:677] 2026-08-04 07:38:57,032 >> loading configuration file /huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed/config.json
+[INFO|configuration_utils.py:746] 2026-08-04 07:38:57,033 >> Model config BertConfig {
+  "_name_or_path": "/huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed",
+  "attention_probs_dropout_prob": 0.1,
+  "classifier_dropout": null,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 128,
+  "initializer_range": 0.02,
+  "intermediate_size": 512,
+  "layer_norm_eps": 1e-12,
+  "max_position_embeddings": 512,
+  "model_type": "bert",
+  "num_attention_heads": 2,
+  "num_hidden_layers": 2,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.46.3",
+  "type_vocab_size": 2,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+08/04/2026 07:38:57 - INFO - __main__ - Training new model from scratch
+[INFO|modeling_utils.py:1670] 2026-08-04 07:38:57,051 >> Instantiating BertForMaskedLM model under default dtype torch.float32.
+[WARNING|logging.py:328] 2026-08-04 07:38:57,051 >> BertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly overwritten. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+[INFO|configuration_utils.py:1096] 2026-08-04 07:38:57,052 >> Generate config GenerationConfig {
+  "pad_token_id": 0,
+  "use_cache": false
+}
+
+
+Running tokenizer on every text in dataset:   0%|          | 0/20000 [00:00<?, ? examples/s]Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-6b9d2bd11ec92545.arrow
+08/04/2026 07:38:57 - INFO - datasets.arrow_dataset - Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-6b9d2bd11ec92545.arrow
+
+Running tokenizer on every text in dataset:   5%|▌         | 1000/20000 [00:00<00:03, 6092.26 examples/s]
+Running tokenizer on every text in dataset:  10%|█         | 2000/20000 [00:00<00:03, 5861.05 examples/s]
+Running tokenizer on every text in dataset:  15%|█▌        | 3000/20000 [00:00<00:02, 6315.69 examples/s]
+Running tokenizer on every text in dataset:  20%|██        | 4000/20000 [00:00<00:04, 3871.82 examples/s]
+Running tokenizer on every text in dataset:  25%|██▌       | 5000/20000 [00:01<00:03, 4720.84 examples/s]
+Running tokenizer on every text in dataset:  30%|███       | 6000/20000 [00:01<00:02, 5385.31 examples/s]
+Running tokenizer on every text in dataset:  35%|███▌      | 7000/20000 [00:01<00:02, 5485.95 examples/s]
+Running tokenizer on every text in dataset:  40%|████      | 8000/20000 [00:01<00:02, 5683.28 examples/s]
+Running tokenizer on every text in dataset:  45%|████▌     | 9000/20000 [00:01<00:01, 5914.07 examples/s]
+Running tokenizer on every text in dataset:  50%|█████     | 10000/20000 [00:01<00:01, 6131.78 examples/s]
+Running tokenizer on every text in dataset:  55%|█████▌    | 11000/20000 [00:01<00:01, 6188.84 examples/s]
+Running tokenizer on every text in dataset:  60%|██████    | 12000/20000 [00:02<00:01, 6308.13 examples/s]
+Running tokenizer on every text in dataset:  65%|██████▌   | 13000/20000 [00:02<00:01, 6298.00 examples/s]
+Running tokenizer on every text in dataset:  70%|███████   | 14000/20000 [00:02<00:00, 6454.03 examples/s]
+Running tokenizer on every text in dataset:  75%|███████▌  | 15000/20000 [00:02<00:00, 6573.60 examples/s]
+Running tokenizer on every text in dataset:  80%|████████  | 16000/20000 [00:02<00:00, 6346.08 examples/s]
+Running tokenizer on every text in dataset:  85%|████████▌ | 17000/20000 [00:02<00:00, 6371.23 examples/s]
+Running tokenizer on every text in dataset:  90%|█████████ | 18000/20000 [00:03<00:00, 6443.64 examples/s]
+Running tokenizer on every text in dataset:  95%|█████████▌| 19000/20000 [00:03<00:00, 6560.46 examples/s]
+Running tokenizer on every text in dataset: 100%|██████████| 20000/20000 [00:03<00:00, 6636.62 examples/s]
+Running tokenizer on every text in dataset: 100%|██████████| 20000/20000 [00:03<00:00, 5977.45 examples/s]
+
+Running tokenizer on every text in dataset:   0%|          | 0/3760 [00:00<?, ? examples/s]Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-5d6f58831f28bbf0.arrow
+08/04/2026 07:39:00 - INFO - datasets.arrow_dataset - Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-5d6f58831f28bbf0.arrow
+
+Running tokenizer on every text in dataset:  27%|██▋       | 1000/3760 [00:00<00:00, 7506.91 examples/s]
+Running tokenizer on every text in dataset:  53%|█████▎    | 2000/3760 [00:00<00:00, 3236.93 examples/s]
+Running tokenizer on every text in dataset:  80%|███████▉  | 3000/3760 [00:00<00:00, 4031.81 examples/s]
+Running tokenizer on every text in dataset: 100%|██████████| 3760/3760 [00:00<00:00, 4579.29 examples/s]
+Running tokenizer on every text in dataset: 100%|██████████| 3760/3760 [00:00<00:00, 4314.27 examples/s]
+
+Grouping texts in chunks of 128:   0%|          | 0/20000 [00:00<?, ? examples/s]Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-9902153c1d3b0dd4.arrow
+08/04/2026 07:39:01 - INFO - datasets.arrow_dataset - Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-9902153c1d3b0dd4.arrow
+
+Grouping texts in chunks of 128:   5%|▌         | 1000/20000 [00:00<00:03, 5007.46 examples/s]
+Grouping texts in chunks of 128:  10%|█         | 2000/20000 [00:00<00:02, 6034.14 examples/s]
+Grouping texts in chunks of 128:  15%|█▌        | 3000/20000 [00:00<00:02, 7352.98 examples/s]
+Grouping texts in chunks of 128:  20%|██        | 4000/20000 [00:00<00:01, 8178.98 examples/s]
+Grouping texts in chunks of 128:  30%|███       | 6000/20000 [00:00<00:01, 9634.10 examples/s]
+Grouping texts in chunks of 128:  35%|███▌      | 7000/20000 [00:00<00:01, 9285.46 examples/s]
+Grouping texts in chunks of 128:  40%|████      | 8000/20000 [00:00<00:01, 9362.84 examples/s]
+Grouping texts in chunks of 128:  50%|█████     | 10000/20000 [00:01<00:01, 9681.87 examples/s]
+Grouping texts in chunks of 128:  55%|█████▌    | 11000/20000 [00:01<00:00, 9568.46 examples/s]
+Grouping texts in chunks of 128:  60%|██████    | 12000/20000 [00:01<00:00, 9675.43 examples/s]
+Grouping texts in chunks of 128:  65%|██████▌   | 13000/20000 [00:01<00:00, 9618.79 examples/s]
+Grouping texts in chunks of 128:  75%|███████▌  | 15000/20000 [00:01<00:00, 9967.16 examples/s]
+Grouping texts in chunks of 128:  80%|████████  | 16000/20000 [00:01<00:00, 9735.71 examples/s]
+Grouping texts in chunks of 128:  85%|████████▌ | 17000/20000 [00:01<00:00, 9700.80 examples/s]
+Grouping texts in chunks of 128:  95%|█████████▌| 19000/20000 [00:02<00:00, 9990.81 examples/s]
+Grouping texts in chunks of 128: 100%|██████████| 20000/20000 [00:02<00:00, 9955.98 examples/s]
+Grouping texts in chunks of 128: 100%|██████████| 20000/20000 [00:02<00:00, 9241.56 examples/s]
+
+Grouping texts in chunks of 128:   0%|          | 0/3760 [00:00<?, ? examples/s]Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-6b2405042507d000.arrow
+08/04/2026 07:39:03 - INFO - datasets.arrow_dataset - Caching processed dataset at /huyang2/double-loop/.cache/huggingface/p009/json/default-c0fe4d0d241b235b/0.0.0/f4e89e8750d5d5ffbef2c078bf0ddfedef29dc2faff52a6255cf513c05eb1092/cache-6b2405042507d000.arrow
+
+Grouping texts in chunks of 128:  53%|█████▎    | 2000/3760 [00:00<00:00, 9968.63 examples/s]
+Grouping texts in chunks of 128:  80%|███████▉  | 3000/3760 [00:00<00:00, 9631.65 examples/s]
+Grouping texts in chunks of 128: 100%|██████████| 3760/3760 [00:00<00:00, 9482.36 examples/s]
+Traceback (most recent call last):
+  File "/huyang2/double-loop/runs/established-bert-mlm-bidirectional-20260804T073834Z-97c1af7/upstream/run_mlm.py", line 691, in <module>
+    main()
+  File "/huyang2/double-loop/runs/established-bert-mlm-bidirectional-20260804T073834Z-97c1af7/upstream/run_mlm.py", line 597, in main
+    metric = evaluate.load(os.environ["P009_ACCURACY_METRIC_PATH"], cache_dir=model_args.cache_dir)
+  File "/opt/conda/lib/python3.10/os.py", line 680, in __getitem__
+    raise KeyError(key) from None
+KeyError: 'P009_ACCURACY_METRIC_PATH'

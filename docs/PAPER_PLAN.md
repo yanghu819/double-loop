@@ -435,3 +435,13 @@ scale 0 and native FutureSeed scale 1 with the same data, initialization,
 training tokens, optimizer, width, depth, and metric. Until then, P-CAUSAL-007
 remains the clean cross-task directionality evidence and language transfer is
 an open question.
+
+### P-CAUSAL-009 Established MLM Boundary
+
+The exact Transformers BERT-mini carrier did learn on the fixed WordPiece
+WikiText stream, but it reached only `0.0716` masked accuracy at 20.48M input
+tokens and missed the preregistered `0.10` endpoint. No causal, GDN2, or
+FutureSeed arm was run. This is not a language result for or against
+FutureSeed. The paper should now prioritize the validated directional-MQAR
+scaling and cost frontier; natural-language transfer remains a later gate that
+requires a genuinely opened published recipe.

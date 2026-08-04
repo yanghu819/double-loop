@@ -1,7 +1,7 @@
 # Established BERT MLM Carrier Gate
 
 - Plan: `P-CAUSAL-009`
-- Status: approved; awaiting exact-SHA CUDA preflight
+- Status: discarded by the registered endpoint carrier gate
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -103,3 +103,58 @@ allowed.
   `scientific_failure=false`. The launcher now exports the entire pinned env
   file before materializing and executing `run_mlm.py`; no experimental
   setting changed.
+
+## Result
+
+The corrected exact-upstream bidirectional arm completed on source SHA
+`a86805732a1a238039bcecb8c74224ad15eeaee0`. Preflight established one exact
+GPU1, `4,416,698` parameters in both registered configs, identical
+initialization, zero causal future dependency, bidirectional future dependency
+`0.003185`, finite CUDA backward, and exact Transformers source provenance.
+
+| Step | masked validation CE | masked validation accuracy |
+|---:|---:|---:|
+| 250 | 8.06919 | 0.04586 |
+| 500 | 7.25322 | 0.06869 |
+| 750 | 7.25350 | 0.06934 |
+| 1000 | 7.21631 | 0.06966 |
+| 1250 | 7.19014 | 0.07438 |
+| final independent eval | 7.21371 | 0.07162 |
+
+The step-250 weak opening condition passed, but the preregistered endpoint
+accuracy requirement `>0.10` did not. Accuracy improved only about `+0.0057`
+from step 500 to the independent final evaluation, so the carrier was not
+merely interrupted on a steep slope. The strict-causal control was therefore
+not started, and GDN2/FutureSeed were never introduced.
+
+Training consumed exactly 20.48M registered input tokens, took `72.83` seconds
+at `2,196.9` samples/s (`17.16` optimizer steps/s), and an external training
+sample observed `12,255 MiB` GPU memory. The model checkpoint remains outside
+Git with SHA256
+`11a56b051035d4364b072302be4cba693b6092b5b86cc15ce791367cd4a170c8`.
+
+A deterministic 64-window audit using the same grouping and standard 15%
+corruption produced accuracy `0.05321` and CE `7.39540` over 1,184 masked
+tokens. Its hardest cases show mostly high-frequency generic predictions with
+low target probability, consistent with an undertrained language model rather
+than a directional masking bug.
+
+## Decision
+
+Discard P-CAUSAL-009 as an invalid language carrier at this fixed budget. It is
+neither positive nor negative evidence about FutureSeed. Do not rescue it by
+changing epochs, learning rate, model width/depth, mask rate, tokenizer, or
+seed. The next paper experiment returns to the validated Zoology + official-FLA
+GDN2 shell and tests the already-positive mechanism along a genuine scaling
+axis with an explicit bidirectional-attention ceiling.
+
+## Artifacts
+
+- Completed run:
+  `runs/established-bert-mlm-bidirectional-20260804T074331Z-a868057`
+- Fixed-mask visualization:
+  `runs/established-bert-mlm-bidirectional-20260804T074331Z-a868057/visualizations/index.html`
+- Non-scientific launcher abort:
+  `runs/established-bert-mlm-bidirectional-20260804T073834Z-97c1af7`
+- Source snapshot SHA256:
+  `10d5fe30a15c65626a278ffbc191b2819d9540e10824e7d5e2bef7d88d9093e3`

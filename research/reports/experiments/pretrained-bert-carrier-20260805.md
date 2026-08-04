@@ -1,7 +1,7 @@
 # Official Pretrained BERT-Tiny Carrier Gate
 
 - Plan: `P-CAUSAL-018`
-- Status: preregistered; blocked only on local checkpoint transfer
+- Status: preregistered; official checkpoint transferred and hash-locked
 - Date: 2026-08-05 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -43,10 +43,11 @@ measurable right-context benefit.
 - No training, FutureSeed, GDN2, reverse scan, selector, search, repair, or
   task-specific rule is present.
 
-The checkpoint must be downloaded on the local Mac, SHA256-recorded, and then
-uploaded to `/huyang2/double-loop/data`; server-side Hugging Face fallback is
-forbidden. Formal launch is blocked until the placeholder checkpoint hash in
-`configs/retrieval/pretrained_bert_carrier.env` is replaced and committed.
+The checkpoint was downloaded on the local Mac through Kimi WebBridge from the
+registered Hugging Face revision, then uploaded to `/huyang2/double-loop/data`.
+Its size is `17,743,809` bytes and its SHA256 is
+`dd152f8450c0579bd271ac0ccb4a88fa4f6a67d8035b7799dbf3a0fb7156d9d0`.
+The local and remote hashes match. No server-side Hugging Face fallback was used.
 
 ## Prediction And Kill Criteria
 

@@ -112,7 +112,12 @@ def main() -> None:
     if torch.cuda.device_count() != 1:
         raise RuntimeError(f"Expected one visible GPU, got {torch.cuda.device_count()}")
     device = torch.cuda.get_device_properties(0)
-    device_uuid = str(getattr(device, "uuid", "unavailable"))
+    torch_device_uuid = str(getattr(device, "uuid", "unavailable"))
+    device_uuid = (
+        torch_device_uuid
+        if torch_device_uuid.startswith("GPU-")
+        else f"GPU-{torch_device_uuid}"
+    )
     if device.name != "NVIDIA A100-SXM4-80GB":
         raise RuntimeError(f"Unexpected GPU: {device.name}")
     if device_uuid != EXPECTED_GPU_UUID:
@@ -237,6 +242,7 @@ def main() -> None:
         "cuda_device_count": torch.cuda.device_count(),
         "device": device.name,
         "device_uuid": device_uuid,
+        "torch_device_uuid_raw": torch_device_uuid,
         "fla_sha": PINNED_FLA_SHA,
         "gdn2_source": source,
         "gdn2_class": f"{GatedDeltaNet2.__module__}.{GatedDeltaNet2.__name__}",

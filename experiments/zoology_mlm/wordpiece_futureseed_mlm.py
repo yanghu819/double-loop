@@ -618,7 +618,7 @@ def preflight(
     future_seed = build_model(pretrained, future_seed_scale=1.0)
     source_lexical = pretrained.bert.embeddings.word_embeddings.weight.detach()
     target_lexical = causal.backbone.embeddings.word_embeddings.weight.detach()
-    if not torch.equal(source_lexical, target_lexical):
+    if not torch.equal(source_lexical.cpu(), target_lexical.cpu()):
         raise RuntimeError("Official lexical table was not copied exactly")
     lexical_table_hash = tensor_digest([("word_embeddings", source_lexical)])
     if lexical_table_hash != tensor_digest([("word_embeddings", target_lexical)]):

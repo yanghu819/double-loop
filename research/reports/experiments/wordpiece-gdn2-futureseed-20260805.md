@@ -86,8 +86,25 @@ efficiency claim.
 
 ## Commands
 
-To be filled after the implementation commit and strict GPU preflight.
+Implementation commit: `ebed1755ac24194144c2d5105e3e86a2229e4295`.
+
+The first strict GPU preflight was:
+
+```bash
+PREFLIGHT_ONLY=1 \
+RUN_NAME=wordpiece-gdn2-fs-preflight-20260804T2235Z-ebed175 \
+./scripts/run_wordpiece_gdn2_futureseed.sh
+```
+
+It correctly stopped before training with status 1 and `abort.json`: upstream
+Zoology constructs token embeddings on CUDA by default, while the fixed BERT
+anchor had been returned to CPU. A direct `torch.equal` therefore compared two
+devices before the already device-independent byte hashes ran. The corrective
+commit compares detached CPU tensors and changes no model, data, optimization,
+metric or registered decision gate.
 
 ## Artifacts And Result
 
-Not launched.
+Formal experiment not launched. The first preflight implementation abort is at
+`runs/wordpiece-gdn2-fs-preflight-20260804T2235Z-ebed175`; its prepared schedule
+hash is `99fb776e5703376411b72c861bd368557228e4f40d4369385c6c5223b4231a26`.

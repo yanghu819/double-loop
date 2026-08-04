@@ -1,0 +1,23 @@
+{
+  "batch_size": 32,
+  "candidate_arms": [
+    "causal_gdn2_d256",
+    "future_seed_gdn2_d256"
+  ],
+  "candidate_model": "official-FLA GDN2 D256/L2/H4/D64",
+  "future_seed": "native cross-layer terminal-state seeding; no reverse scan",
+  "git_sha": "87827f0a360c7883a69f882611f89deb1129e5c7",
+  "max_epochs": 10,
+  "num_kv_pairs": 4,
+  "plan": "P-CAUSAL-013",
+  "reference_model": "official-FLA GDN2 D128/L2/H4/D32",
+  "run_name": "zoology-gdn2-state-capacity1024-20260804T102407Z-87827f0",
+  "seed": 123,
+  "sequence_length": 1024,
+  "state_values_per_layer": {
+    "candidate": 16384,
+    "reference": 4096
+  },
+  "train_examples_per_candidate_arm": 10000,
+  "validation_examples_per_arm": 1000
+}

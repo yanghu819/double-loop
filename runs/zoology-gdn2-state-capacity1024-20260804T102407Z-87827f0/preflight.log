@@ -1,0 +1,48 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+Traceback (most recent call last):
+  File "/huyang2/double-loop/worktrees/p-causal-013-87827f0a/scripts/check_zoology_gdn2_state_capacity.py", line 308, in <module>
+    main()
+  File "/huyang2/double-loop/worktrees/p-causal-013-87827f0a/scripts/check_zoology_gdn2_state_capacity.py", line 242, in main
+    loss, gradient_max = finite_backward(model, inputs, targets)
+  File "/huyang2/double-loop/worktrees/p-causal-013-87827f0a/scripts/check_zoology_gdn2_state_capacity.py", line 98, in finite_backward
+    loss.backward()
+  File "/opt/conda/lib/python3.10/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/function.py", line 307, in apply
+    return user_fn(self, *args)
+  File "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/utils/_decorators.py", line 152, in wrapper
+    return fn(*processed_args, **processed_kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/torch/amp/autocast_mode.py", line 556, in decorate_bwd
+    return bwd(*args, **kwargs)
+  File "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/ops/gdn2/chunk.py", line 138, in backward
+    dq, dk, dv, db, dw, dg, dh0, dA_log, dt_bias_grad = chunk_gdn2_bwd(
+  File "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/ops/gdn2/chunk_bwd.py", line 420, in chunk_gdn2_bwd
+    dq, dk, dv, db, dw, dg, dAkk = chunk_gdn2_bwd_wy_dqkg_fused(
+  File "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/ops/gdn2/chunk_bwd.py", line 285, in chunk_gdn2_bwd_wy_dqkg_fused
+    chunk_gdn2_bwd_kernel_wy_dqkg_fused[grid](
+  File "/opt/conda/lib/python3.10/site-packages/triton/runtime/jit.py", line 347, in <lambda>
+    return lambda *args, **kwargs: self.run(grid=grid, warmup=False, *args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/triton/runtime/autotuner.py", line 395, in run
+    return self.fn.run(*args, **kwargs)
+  File "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/ops/utils/cache.py", line 378, in run
+    return super().run(*args, **kwargs)
+  File "/opt/conda/lib/python3.10/site-packages/triton/runtime/autotuner.py", line 192, in run
+    timings = {config: self._bench(*args, config=config, **kwargs) for config in pruned_configs}
+  File "/opt/conda/lib/python3.10/site-packages/triton/runtime/autotuner.py", line 192, in <dictcomp>
+    timings = {config: self._bench(*args, config=config, **kwargs) for config in pruned_configs}
+  File "/opt/conda/lib/python3.10/site-packages/triton/runtime/autotuner.py", line 170, in _bench
+    return self.do_bench(kernel_call, quantiles=(0.5, 0.2, 0.8))
+  File "/opt/conda/lib/python3.10/site-packages/triton/testing.py", line 146, in do_bench
+    di.synchronize()
+  File "/opt/conda/lib/python3.10/site-packages/torch/cuda/__init__.py", line 1040, in synchronize
+    return torch._C._cuda_synchronize()
+RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.

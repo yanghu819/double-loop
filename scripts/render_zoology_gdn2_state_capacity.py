@@ -178,7 +178,7 @@ main {{ width:min(1180px,calc(100% - 30px)); margin:28px auto 64px; }} h1 {{ fon
 .case {{ border-top:1px solid var(--line); padding:15px 0 6px; }} .correct {{ background:#e3f3eb; color:#0c694f; font-weight:700; }} .wrong {{ background:#fde7e1; color:#a3311a; font-weight:700; }}
 @media(max-width:800px) {{ .metrics {{ grid-template-columns:1fr; }} .bar-row {{ grid-template-columns:120px 1fr 50px; }} }}
 </style></head><body><main><h1>FutureSeed state capacity at length 1024</h1>
-<p>The data, seed, optimizer, epochs and FutureSeed rule are fixed. D128/H4/D32 is frozen; D256/H4/D64 increases recurrent state values per layer {capacity['state_value_ratio']:.1f}x.</p>
+<p>The data, seed, optimizer, epochs and FutureSeed rule are fixed. D128/H4/D32 is frozen; D256/H8/D32 increases recurrent state values per layer {capacity['state_value_ratio']:.1f}x.</p>
 <div class="gate">Registered gate: {'PASS' if gate['passed'] else 'MISS'}; balanced accuracy gain {gate['balanced_accuracy_gain']:+.4f}; future binding-error reduction {gate['future_binding_error_rate_reduction']:+.4f}</div>
 <h2>Accuracy</h2><div class="metrics">
 {metric_bars(comparison,'past.accuracy','Past-query accuracy')}

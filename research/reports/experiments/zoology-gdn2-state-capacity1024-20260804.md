@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-013`
-- Status: in progress; strict D256 CUDA preflight precedes training
+- Status: implementation correction pending clean relaunch
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-013-gdn2-capacity1024`
@@ -23,7 +23,7 @@ state.
 Increase only generic model and recurrent address capacity. The reference is
 official-FLA GDN2 D128/L2/H4/D32, whose recurrent state has
 `4 * 32 * 32 = 4,096` values per layer. The candidate is
-D256/L2/H4/D64, with `4 * 64 * 64 = 16,384` values per layer. Depth,
+D256/L2/H8/D32, with `8 * 32 * 32 = 8,192` values per layer. Depth,
 FutureSeed rule, data, task, optimizer, epochs and seed stay fixed. This is a
 plain scaling intervention, not a task-specific mechanism.
 
@@ -48,7 +48,7 @@ sweeps.
 
 - Data: exact frozen directional MQAR L1024 hashes from P-CAUSAL-012, vocab256,
   four unique associations, 10,000 train and 1,000 validation examples.
-- Candidate model: strict official-FLA GDN2 D256/L2/H4/D64, expand-v1,
+- Candidate model: strict official-FLA GDN2 D256/L2/H8/D32, expand-v1,
   short-conv4, chunk recurrence and Triton convolution.
 - Training: batch32, 10 epochs, AdamW LR `1e-3`, weight decay `0.1`, cosine,
   seed123, upstream Zoology positions/MLP/residual/norm and query-only CE.
@@ -68,6 +68,16 @@ sweeps.
 - Low-information stop: if FutureSeed balanced-accuracy gain is below `+0.05`
   or same-case binding-error reduction is below `0.04`, do not scale this
   geometry further.
+
+The first preflight-only launch at source `87827f0a`, run
+`zoology-gdn2-state-capacity1024-20260804T102407Z-87827f0`, stopped before
+training. Official FLA `chunk_gdn2` hit an illegal memory access while
+autotuning the `head_dim=64` backward kernel. `abort.json` records this as
+`scientific_failure=false`, and GPU memory returned to zero. No fallback was
+used. Before observing any model-quality result, the candidate was revised to
+the official already-validated `head_dim=32` geometry: D256/H8/D32. It still
+scales total recurrent state 2x and model width 2x while preserving the
+scientific question and all quality gates.
 
 ## 6. Required Readouts
 

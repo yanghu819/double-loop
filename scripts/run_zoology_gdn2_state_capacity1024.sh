@@ -78,9 +78,9 @@ Path("$RUN_DIR/config.json").write_text(json.dumps({
     "validation_examples_per_arm": 1000,
     "seed": 123,
     "reference_model": "official-FLA GDN2 D128/L2/H4/D32",
-    "candidate_model": "official-FLA GDN2 D256/L2/H4/D64",
+    "candidate_model": "official-FLA GDN2 D256/L2/H8/D32",
     "candidate_arms": ["causal_gdn2_d256", "future_seed_gdn2_d256"],
-    "state_values_per_layer": {"reference": 4096, "candidate": 16384},
+    "state_values_per_layer": {"reference": 4096, "candidate": 8192},
     "future_seed": "native cross-layer terminal-state seeding; no reverse scan",
 }, indent=2, sort_keys=True) + "\n")
 PY

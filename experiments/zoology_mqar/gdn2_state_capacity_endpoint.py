@@ -14,8 +14,8 @@ NUM_KV_PAIRS = 4
 MAX_EPOCHS = 10
 BATCH_SIZE = 32
 CANDIDATE_WIDTH = 256
-CANDIDATE_HEADS = 4
-CANDIDATE_HEAD_DIM = 64
+CANDIDATE_HEADS = 8
+CANDIDATE_HEAD_DIM = 32
 EXPECTED_REFERENCE_SHA = "77e5539fc0ef74231cab658bd610b24254fdcfa7"
 ARMS = ("causal_gdn2_d256", "future_seed_gdn2_d256")
 
@@ -176,7 +176,7 @@ def summarize(
             "batch_size": BATCH_SIZE,
             "seed": 123,
             "reference_model": "official-FLA GDN2 D128/L2/H4/D32",
-            "candidate_model": "official-FLA GDN2 D256/L2/H4/D64",
+            "candidate_model": "official-FLA GDN2 D256/L2/H8/D32",
             "future_seed": "native cross-layer terminal-state seeding",
         },
         "reference_d128": reference,

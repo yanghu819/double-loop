@@ -36,8 +36,8 @@ EXPECTED_ZOOLOGY_SHA = "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
 EXPECTED_TRAIN_HASH = "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
 EXPECTED_TEST_HASH = "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f"
 WIDTH = 256
-HEADS = 4
-HEAD_DIM = 64
+HEADS = 8
+HEAD_DIM = 32
 
 
 def git_head(path: Path) -> str:
@@ -267,7 +267,7 @@ def main() -> None:
         name: [mixer.state_size() for mixer in arm_mixers]
         for name, arm_mixers in mixers.items()
     }
-    if any(value != 16_384 for values in state_values.values() for value in values):
+    if any(value != 8_192 for values in state_values.values() for value in values):
         raise RuntimeError(f"Candidate recurrent state size is wrong: {state_values}")
     modes = [mixer.layer.mode for values in mixers.values() for mixer in values]
     conv_backends = [
@@ -289,7 +289,7 @@ def main() -> None:
         "data_hashes": data_hashes,
         "parameter_counts": parameter_counts,
         "state_values_per_layer": state_values,
-        "state_value_ratio_vs_d128": 4.0,
+        "state_value_ratio_vs_d128": 2.0,
         "shared_init_max_diff": shared_init_max_diff,
         "scale0_output_max_diff": scale0_output_max_diff,
         "future_dependencies": dependencies,

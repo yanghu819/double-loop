@@ -167,19 +167,11 @@ def masked_metrics(
     batch_size: int,
 ) -> tuple[dict[str, float | int], torch.Tensor, torch.Tensor]:
     model.eval()
-    warmup_input = input_ids[:batch_size].cuda()
-    warmup_attention = attention_mask[:batch_size].cuda()
-    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-        model(input_ids=warmup_input, attention_mask=warmup_attention)
-    torch.cuda.synchronize()
-    torch.cuda.reset_peak_memory_stats()
-
     target_log_probs_cpu = []
     predictions_cpu = []
     loss_sum = 0.0
     correct = 0
     count = 0
-    started = time.perf_counter()
     for start in range(0, input_ids.shape[0], batch_size):
         batch_input = input_ids[start : start + batch_size].cuda()
         batch_attention = attention_mask[start : start + batch_size].cuda()
@@ -206,20 +198,50 @@ def masked_metrics(
         count += int(mask.sum().item())
         target_log_probs_cpu.append(target_log_probs.cpu())
         predictions_cpu.append(predictions.cpu())
-    torch.cuda.synchronize()
-    elapsed = time.perf_counter() - started
     return (
         {
             "masked_accuracy": correct / count,
             "masked_ce": loss_sum / count,
             "masked_tokens": count,
-            "eval_seconds": elapsed,
-            "input_tokens_per_second": input_ids.numel() / elapsed,
-            "peak_cuda_memory_bytes": torch.cuda.max_memory_allocated(),
         },
         torch.cat(target_log_probs_cpu),
         torch.cat(predictions_cpu),
     )
+
+
+def benchmark_forward(
+    model: BertForMaskedLM,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+    batch_size: int,
+    warmup_steps: int = 5,
+    measured_steps: int = 50,
+) -> dict[str, float | int]:
+    model.eval()
+    batch_input = input_ids[:batch_size].cuda()
+    batch_attention = attention_mask[:batch_size].cuda()
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        for _ in range(warmup_steps):
+            model(input_ids=batch_input, attention_mask=batch_attention)
+    torch.cuda.synchronize()
+    torch.cuda.reset_peak_memory_stats()
+    started = time.perf_counter()
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        for _ in range(measured_steps):
+            model(input_ids=batch_input, attention_mask=batch_attention)
+    torch.cuda.synchronize()
+    elapsed = time.perf_counter() - started
+    return {
+        "warmup_steps": warmup_steps,
+        "measured_steps": measured_steps,
+        "batch_size": int(batch_input.shape[0]),
+        "sequence_length": int(batch_input.shape[1]),
+        "elapsed_seconds": elapsed,
+        "input_tokens_per_second": (
+            batch_input.numel() * measured_steps / elapsed
+        ),
+        "peak_cuda_memory_bytes": torch.cuda.max_memory_allocated(),
+    }
 
 
 def future_dependency(
@@ -503,6 +525,12 @@ def main() -> None:
         labels,
         args.batch_size,
     )
+    bidirectional_performance = benchmark_forward(
+        bidirectional, input_ids, attention_mask, args.batch_size
+    )
+    causal_performance = benchmark_forward(
+        causal, input_ids, attention_mask, args.batch_size
+    )
     accuracy_delta = (
         float(bidir_metrics["masked_accuracy"])
         - float(causal_metrics["masked_accuracy"])
@@ -562,7 +590,10 @@ def main() -> None:
             "causal_future_dependency": causal_dependency,
             "bidirectional_backward": bidir_backward,
             "causal_backward": causal_backward,
-            "peak_cuda_memory_bytes": torch.cuda.max_memory_allocated(),
+            "performance": {
+                "bidirectional": bidirectional_performance,
+                "causal": causal_performance,
+            },
         },
         "gate": {"passed": passed, "checks": checks},
         "data_manifest": json.loads(args.data_manifest.read_text(encoding="utf-8")),

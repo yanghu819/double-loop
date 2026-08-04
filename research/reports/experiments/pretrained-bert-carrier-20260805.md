@@ -38,8 +38,8 @@ measurable right-context benefit.
 - Arms: byte-identical checkpoint tensors; only full versus strict-causal
   attention masking differs.
 - Evaluation: GPU1 BF16, masked-token CE and top-1 accuracy, future-perturbation
-  dependency, finite backward, independently warmed inference throughput and
-  peak allocated memory, and 12 same-window cases.
+  dependency, finite backward, five warmup plus 50 measured inference steps per
+  arm, peak allocated memory, and 12 same-window cases.
 - No training, FutureSeed, GDN2, reverse scan, selector, search, repair, or
   task-specific rule is present.
 

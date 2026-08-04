@@ -3,10 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-012`
-- Status: approved; not yet launched
+- Status: in progress; full-L1024 CUDA preflight precedes the matched pair
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-012-gdn2-length1024`
+- Source SHA: `77e5539fc0ef74231cab658bd610b24254fdcfa7`
+- Run: `zoology-gdn2-fs-length1024-20260804T095300Z-77e5539`
+- Exact launcher PID/PGID: `47365/47365`
 
 ## 2. Hypothesis
 

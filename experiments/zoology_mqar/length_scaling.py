@@ -57,6 +57,7 @@ def build_config(
     model_width: int = MODEL_WIDTH,
     model_heads: int = MODEL_HEADS,
     gdn2_head_dim: int = GDN2_HEAD_DIM,
+    gdn2_expand_v: float = 1.0,
 ) -> TrainConfig:
     data = DataConfig(
         train_configs=[
@@ -95,7 +96,7 @@ def build_config(
             kwargs={
                 "num_heads": model_heads,
                 "head_dim": gdn2_head_dim,
-                "expand_v": 1.0,
+                "expand_v": gdn2_expand_v,
                 "conv_size": 4,
                 "future_seed_scale": (
                     0.0 if arm == "causal_gdn2" else 1.0
@@ -364,6 +365,7 @@ def run_arm(
     model_width: int = MODEL_WIDTH,
     model_heads: int = MODEL_HEADS,
     gdn2_head_dim: int = GDN2_HEAD_DIM,
+    gdn2_expand_v: float = 1.0,
     output_arm_name: str | None = None,
 ) -> dict[str, Any]:
     run_arm_name = output_arm_name or arm
@@ -378,6 +380,7 @@ def run_arm(
         model_width=model_width,
         model_heads=model_heads,
         gdn2_head_dim=gdn2_head_dim,
+        gdn2_expand_v=gdn2_expand_v,
     )
     set_determinism(config.seed)
     model = make_model(config, arm)
@@ -432,8 +435,9 @@ def run_arm(
         "model_width": model_width,
         "model_heads": model_heads,
         "gdn2_head_dim": gdn2_head_dim,
+        "gdn2_expand_v": gdn2_expand_v,
         "recurrent_state_values_per_layer": (
-            model_heads * gdn2_head_dim * gdn2_head_dim
+            int(model_heads * gdn2_head_dim * gdn2_head_dim * gdn2_expand_v)
         ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
@@ -591,6 +595,7 @@ def main() -> None:
         "model_layers": MODEL_LAYERS,
         "gdn2_heads": MODEL_HEADS,
         "gdn2_head_dim": GDN2_HEAD_DIM,
+        "gdn2_expand_v": 1.0,
         "attention_heads": MODEL_HEADS,
         "attention_head_dim": ATTENTION_HEAD_DIM,
         "loops": "not used; this experiment isolates cross-layer state seeding",

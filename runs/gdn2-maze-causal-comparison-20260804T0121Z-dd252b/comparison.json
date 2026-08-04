@@ -1,0 +1,46 @@
+{
+  "plan": "P-CAUSAL-002",
+  "git_sha": "dd252b71b530ea4a0b34d215fb852adbd08c279b",
+  "decision": "invalid_carrier_stop",
+  "reason": "Both arms converged to an almost all-non-PATH classifier, so the matched carrier did not open and cannot test the FutureSeed mechanism.",
+  "no_futureseed": {
+    "run_name": "gdn2-maze-causal-nofs-s300-20260804T0128Z-dd252b",
+    "train_ce": 0.26409709453582764,
+    "loop1_path_f1": 0.000919318525120616,
+    "loop5_path_f1": 0.0017142425058409572,
+    "loop5_exact": 0.0,
+    "loop5_token_acc": 0.8701475262641907,
+    "loop5_precision": 0.1015625,
+    "loop5_recall": 0.0008644627523608506,
+    "loop5_pred_path_frac": 0.00017361111531499773,
+    "loop5_fp": 0.0546875,
+    "loop5_fn": 116.8125,
+    "elapsed_sec": 166.16913485527039,
+    "peak_cuda_mem_gb": 14.172853248
+  },
+  "futureseed": {
+    "run_name": "gdn2-maze-causal-fs-s300-20260804T0128Z-dd252b",
+    "train_ce": 0.26494264602661133,
+    "loop1_path_f1": 0.0009113776031881571,
+    "loop5_path_f1": 0.0011736599262803793,
+    "loop5_exact": 0.0,
+    "loop5_token_acc": 0.8701214790344238,
+    "loop5_precision": 0.0703125,
+    "loop5_recall": 0.0005917895468883216,
+    "loop5_pred_path_frac": 0.0001302083401242271,
+    "loop5_fp": 0.046875,
+    "loop5_fn": 116.84375,
+    "elapsed_sec": 199.29545879364014,
+    "peak_cuda_mem_gb": 14.226656256
+  },
+  "futureseed_minus_control": {
+    "train_ce": 0.0008455514907836914,
+    "loop5_path_f1": -0.0005405825795605779,
+    "loop5_exact": 0.0,
+    "loop5_token_acc": -0.000026047229766845703,
+    "loop5_pred_path_frac": -0.000043402775190770626,
+    "elapsed_fraction": 0.19935305053626262,
+    "peak_cuda_mem_gb": 0.05380300800000026
+  },
+  "hard_case_indices": [5, 9, 11, 3, 4, 7, 8, 2]
+}

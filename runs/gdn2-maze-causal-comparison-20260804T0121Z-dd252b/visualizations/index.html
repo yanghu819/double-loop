@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDN2 Maze causal gate</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #171a1f; background: #f5f6f7; }
+    header { padding: 24px 28px 18px; border-bottom: 1px solid #cbd0d6; background: #fff; }
+    h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: 0; }
+    p { margin: 4px 0; max-width: 1100px; line-height: 1.45; }
+    .verdict { color: #8a341d; font-weight: 700; }
+    table { margin-top: 16px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 7px 12px; border: 1px solid #cbd0d6; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #eef0f2; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 1200px; }
+    section { min-width: 0; border-right: 1px solid #b8bec5; background: #fff; }
+    section:last-child { border-right: 0; }
+    h2 { margin: 0; padding: 14px 18px; font-size: 17px; border-bottom: 1px solid #d5d9de; }
+    iframe { display: block; width: 100%; height: 1200px; border: 0; }
+    @media (max-width: 1050px) {
+      main { grid-template-columns: 1fr; }
+      section { border-right: 0; border-bottom: 1px solid #b8bec5; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Official Maze30, matched GDN2 causal gate</h1>
+    <p class="verdict">Invalid mechanism comparison: both models learned an almost empty PATH mask.</p>
+    <p>The same eight hard boards appear in the same order below. On representative case 5, both arms keep all 135 true PATH cells as false negatives from loop 1 through loop 5.</p>
+    <table>
+      <thead><tr><th>Arm</th><th>CE</th><th>Loop 5 F1</th><th>Recall</th><th>Predicted PATH</th><th>Exact</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>No FutureSeed</td><td>0.26410</td><td>0.00171</td><td>0.00086</td><td>0.00017</td><td>0</td><td>166.2 s</td></tr>
+        <tr><td>Native FutureSeed</td><td>0.26494</td><td>0.00117</td><td>0.00059</td><td>0.00013</td><td>0</td><td>199.3 s</td></tr>
+      </tbody>
+    </table>
+  </header>
+  <main>
+    <section>
+      <h2>No FutureSeed, scale 0</h2>
+      <iframe title="No FutureSeed hard cases" src="../../gdn2-maze-causal-nofs-s300-20260804T0128Z-dd252b/output/visualizations/index.html"></iframe>
+    </section>
+    <section>
+      <h2>Native FutureSeed, scale 1</h2>
+      <iframe title="FutureSeed hard cases" src="../../gdn2-maze-causal-fs-s300-20260804T0128Z-dd252b/output/visualizations/index.html"></iframe>
+    </section>
+  </main>
+</body>
+</html>

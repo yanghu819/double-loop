@@ -3,10 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-013`
-- Status: preregistered, not launched
+- Status: in progress; strict D256 CUDA preflight precedes training
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-013-gdn2-capacity1024`
+- Source SHA: `87827f0a360c7883a69f882611f89deb1129e5c7`
+- Run: `zoology-gdn2-state-capacity1024-20260804T102407Z-87827f0`
+- Exact launcher PID/PGID: `48673/48673`
 - Parent result: `P-CAUSAL-012`
 
 ## 2. Mechanism Hypothesis

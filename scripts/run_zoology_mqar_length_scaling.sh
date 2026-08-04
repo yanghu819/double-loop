@@ -28,11 +28,28 @@ if [[ "$ACTUAL_ZOOLOGY_SHA" != "$ZOOLOGY_SHA" ]]; then
   printf 'Unexpected Zoology SHA: %s != %s\n' "$ACTUAL_ZOOLOGY_SHA" "$ZOOLOGY_SHA" >&2
   exit 4
 fi
-ACTUAL_FLA_SHA="$(git -C "$FLA_SOURCE_ROOT" rev-parse HEAD)"
-if [[ "$ACTUAL_FLA_SHA" != "$FLA_EXPECTED_SOURCE_SHA" ]]; then
-  printf 'Unexpected FLA SHA: %s != %s\n' "$ACTUAL_FLA_SHA" "$FLA_EXPECTED_SOURCE_SHA" >&2
-  exit 4
-fi
+"$PYTHON_BIN" - "$FLA_SOURCE_ROOT" "$FLA_EXPECTED_SOURCE_SHA" \
+  "$FLA_WHEEL_SHA256" "$FLA_GDN2_SOURCE_SHA256" <<'PY'
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+expected_commit, expected_wheel_hash, expected_source_hash = sys.argv[2:]
+direct_url_path = root / "flash_linear_attention-0.5.2.dist-info/direct_url.json"
+direct_url = json.loads(direct_url_path.read_text())
+actual_wheel_hash = direct_url["archive_info"]["hashes"]["sha256"]
+wheel_name = Path(direct_url["url"]).name
+source_path = root / "fla/layers/gdn2.py"
+actual_source_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
+if expected_commit[:8] not in wheel_name:
+    raise SystemExit(f"FLA wheel provenance lacks commit {expected_commit}: {wheel_name}")
+if actual_wheel_hash != expected_wheel_hash:
+    raise SystemExit(f"Unexpected FLA wheel hash: {actual_wheel_hash}")
+if actual_source_hash != expected_source_hash:
+    raise SystemExit(f"Unexpected GDN2 source hash: {actual_source_hash}")
+PY
 
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 SOURCE_STATUS="$(git -C "$REPO_ROOT" status --short -- . \

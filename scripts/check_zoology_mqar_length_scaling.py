@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import inspect
 import json
 import os
@@ -124,6 +125,26 @@ def main() -> None:
         raise RuntimeError("FLA backend dispatch must be disabled")
     if os.environ.get("FLA_CONV_BACKEND") != "triton":
         raise RuntimeError("Short convolution must use Triton")
+
+    fla_root = Path(os.environ["FLA_SOURCE_ROOT"]).resolve()
+    direct_url = json.loads(
+        (
+            fla_root
+            / "flash_linear_attention-0.5.2.dist-info/direct_url.json"
+        ).read_text()
+    )
+    wheel_name = Path(direct_url["url"]).name
+    wheel_hash = direct_url["archive_info"]["hashes"]["sha256"]
+    expected_wheel_hash = os.environ["FLA_WHEEL_SHA256"]
+    if PINNED_FLA_SHA[:8] not in wheel_name:
+        raise RuntimeError(f"FLA wheel provenance lacks pinned SHA: {wheel_name}")
+    if wheel_hash != expected_wheel_hash:
+        raise RuntimeError(f"Unexpected FLA wheel hash: {wheel_hash}")
+    source_hash = hashlib.sha256(
+        (fla_root / "fla/layers/gdn2.py").read_bytes()
+    ).hexdigest()
+    if source_hash != os.environ["FLA_GDN2_SOURCE_SHA256"]:
+        raise RuntimeError(f"Unexpected GDN2 source hash: {source_hash}")
 
     zoology_root = Path(os.environ["ZOOLOGY_ROOT"]).resolve()
     actual_zoology_sha = git_head(zoology_root)
@@ -298,6 +319,8 @@ def main() -> None:
         "device_uuid": device_uuid,
         "zoology_sha": actual_zoology_sha,
         "fla_sha": PINNED_FLA_SHA,
+        "fla_wheel_sha256": wheel_hash,
+        "fla_gdn2_source_sha256": source_hash,
         "gdn2_source": gdn2_source,
         "gdn2_class": f"{GatedDeltaNet2.__module__}.{GatedDeltaNet2.__name__}",
         "gdn2_modes": [mixer.layer.mode for mixer in mixers],

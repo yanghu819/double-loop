@@ -59,6 +59,10 @@ concatenation, extra layer, outer loop, oracle, selector, search or repair.
   `GPU-53e9f3b4-2966-65d3-6614-09c540921519`
 - Zoology: `1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb`
 - official FLA: `9c8e42e762fce087c27b673af4922795d9edb85e`
+- installed wheel SHA256:
+  `0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a`;
+  the launcher checks wheel provenance and the exact `gdn2.py` content hash,
+  rather than asking Git for the parent repository HEAD of the target install.
 
 ## 5. Commands
 

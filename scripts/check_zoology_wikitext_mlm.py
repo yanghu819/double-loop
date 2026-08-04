@@ -35,14 +35,6 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _shared_state(model: torch.nn.Module) -> dict[str, torch.Tensor]:
-    return {
-        name: tensor.detach()
-        for name, tensor in model.state_dict().items()
-        if not name.endswith("future_seed_logit")
-    }
-
-
 def _model(
     arm: str,
     prepared_path: Path,
@@ -171,7 +163,7 @@ def main() -> None:
     if model_hash(no_fs) != model_hash(fs):
         raise RuntimeError("Matched GDN2 initialization hashes differ")
     reference_state = reference.state_dict()
-    shared_state = _shared_state(no_fs)
+    shared_state = no_fs.state_dict()
     if set(reference_state) != set(shared_state):
         raise RuntimeError("Scale-0 shared state keys differ from upstream LanguageModel")
     shared_init_max_diff = max(

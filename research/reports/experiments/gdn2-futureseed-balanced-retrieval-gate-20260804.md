@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-003`
-- Status: preregistered; strict CUDA preflight pending
+- Status: discarded; no-FutureSeed carrier failed the preregistered validity gate
 - Date: 2026-08-04
 - Machine: AIStation task-mode GPU1 only
 - Seed: 52 only
@@ -70,3 +70,53 @@ causal linear-attention recurrence a cheap route to future key-value evidence.
 It does not establish language-model quality; that would require a later
 natural-language benchmark. A failed or invalid carrier ends this proxy without
 rescue tuning.
+
+## Execution
+
+- Clean detached GitHub truth:
+  `1260e0934d933999ea2fda817edf7f2e3e90a270`.
+- The full-size FutureSeed CUDA preflight completed forward, backward, four-loop
+  evaluation, and visualization on exactly one A100 80GB GPU. It used 1,026,208
+  parameters and `2.01 GiB` peak allocated memory.
+- Runtime provenance was strict official FLA `GatedDeltaNet2` SHA `9c8e42e`,
+  exact official classes in all four layers, chunk recurrence, Triton short
+  convolutions, backend dispatch disabled, and no fallback.
+- Preflight initialization SHA256 was
+  `7615a9e693b432fb0d54b835f118debda92f59b7a3e5ef18be4c67ac2f407a7b`.
+  The formal no-FutureSeed arm reproduced the same initialization hash.
+- Formal fixed-eval SHA256 was
+  `6d0dcd5c3422fbf2e3cc121b6c3b1b970235a647d084a32fc19774455fdf26af`.
+
+## Step-200 Carrier Gate
+
+| Readout | Step 1 | Step 100 | Step 200 |
+|---|---:|---:|---:|
+| Train query CE | 3.6128 | 3.4718 | 3.4721 |
+| Loop-4 eval CE | 3.6237 | 3.4687 | 3.4699 |
+| Loop-4 past accuracy | 0.0327 | 0.0347 | 0.0286 |
+| Loop-4 future accuracy | 0.0334 | 0.0317 | 0.0273 |
+| Loop-4 past exact | 0 | 0 | 0 |
+| Loop-4 future exact | 0 | 0 | 0 |
+
+Chance is `1/32 = 0.03125`. The no-FutureSeed model never learned even the
+causally available write-before-query half. Loop 1 to loop 4 changed past and
+future accuracy by only `+0.00049` and `+0.00024` at step200. The registered
+past-accuracy threshold was `0.50`, so the carrier gate failed by a wide margin.
+
+The event visualization is archived under
+`runs/gdn2-future-retrieval-nofs-s300-20260804T0151Z-1260e09/output/visualizations/`.
+It shows both past and future query predictions remaining random across loops.
+
+## Decision And Lesson
+
+The exact launcher PGID `23494` was stopped before the formal FutureSeed arm
+entered model execution; GPU memory returned to zero. This is not evidence
+against FutureSeed. As with the Maze carrier, the control behavior was not
+established, so a scale-0/scale-1 delta would not identify the mechanism.
+
+Do not rescue this custom proxy with more steps, a second seed, easier length,
+fewer pairs, larger width, or a changed loss. The next cross-task attempt must
+first reproduce an upstream, established GDN2 associative-recall or language
+baseline using its official training/evaluation semantics. FutureSeed may be
+added only after that no-FutureSeed baseline is verified. Until then, leaving
+GPU1 idle is higher ROI than running another invented proxy.

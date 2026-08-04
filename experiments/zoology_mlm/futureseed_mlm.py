@@ -156,6 +156,7 @@ def evaluate(
     correct = 0
     masked = 0
     exact = 0
+    examples = 0
     cases: list[dict[str, Any]] = []
     case_index = 0
     for inputs, labels, _slices in dataloader:
@@ -173,6 +174,7 @@ def evaluate(
         correct += int(correct_mask.sum().item())
         masked += int(mask.sum().item())
         exact += int((correct_mask.sum(dim=1) == mask.sum(dim=1)).sum().item())
+        examples += int(inputs.shape[0])
 
         inputs_cpu = inputs.cpu()
         labels_cpu = labels.cpu()
@@ -199,13 +201,20 @@ def evaluate(
             )
             case_index += 1
     cases.sort(key=lambda row: (-row["errors"], row["case_index"]))
+    if examples != VALID_EXAMPLES:
+        raise RuntimeError(f"Evaluated {examples} examples, expected {VALID_EXAMPLES}")
+    if masked != examples * MASKED_TOKENS_PER_EXAMPLE:
+        raise RuntimeError(
+            f"Evaluated {masked} masked tokens, expected "
+            f"{examples * MASKED_TOKENS_PER_EXAMPLE}"
+        )
     return (
         {
             "masked_ce": loss_sum / masked,
             "masked_accuracy": correct / masked,
-            "masked_exact": exact / len(dataloader.dataset),
+            "masked_exact": exact / examples,
             "masked_tokens": masked,
-            "examples": len(dataloader.dataset),
+            "examples": examples,
         },
         cases,
     )

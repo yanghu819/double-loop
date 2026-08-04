@@ -26,23 +26,21 @@ def build_config(*, future_seed_scale: float, max_epochs: int) -> TrainConfig:
     data = DataConfig(
         train_configs=[
             DirectionalMQARConfig(
-                num_examples=5_000,
+                num_examples=10_000,
                 vocab_size=256,
                 input_seq_len=64,
                 num_kv_pairs=4,
-                direction=direction,
+                direction="mixed",
             )
-            for direction in ("past", "future")
         ],
         test_configs=[
             DirectionalMQARConfig(
-                num_examples=500,
+                num_examples=1_000,
                 vocab_size=256,
                 input_seq_len=64,
                 num_kv_pairs=4,
-                direction=direction,
+                direction="mixed",
             )
-            for direction in ("past", "future")
         ],
         batch_size=32,
         seed=123,
@@ -76,7 +74,7 @@ def build_config(*, future_seed_scale: float, max_epochs: int) -> TrainConfig:
         learning_rate=1e-3,
         weight_decay=0.1,
         seed=123,
-        slice_keys=["direction"],
+        slice_keys=[],
         run_id=f"gdn2-fs{int(future_seed_scale)}-directionality",
     )
 
@@ -152,56 +150,71 @@ def evaluate(model, dataloader, device: str) -> tuple[dict[str, Any], list[dict[
     cases: list[dict[str, Any]] = []
     future_case_index = 0
     for inputs, targets, slices in dataloader:
-        direction = str(slices[0]["direction"])
+        del slices
         inputs_gpu = inputs.to(device)
         targets_gpu = targets.to(device)
         logits = model(inputs_gpu)
         mask = targets_gpu != -100
-        loss_sum = F.cross_entropy(
-            logits[mask],
-            targets_gpu[mask],
-            reduction="sum",
-        )
         preds = logits.argmax(dim=-1)
-        correct = (preds == targets_gpu) & mask
-        query_count = mask.sum(dim=1)
-        example_correct = correct.sum(dim=1)
-        exact = example_correct == query_count
-        bucket = totals.setdefault(
-            direction,
-            {"correct": 0.0, "queries": 0.0, "exact": 0.0, "examples": 0.0, "loss": 0.0},
-        )
-        bucket["correct"] += float(correct.sum().item())
-        bucket["queries"] += float(mask.sum().item())
-        bucket["exact"] += float(exact.sum().item())
-        bucket["examples"] += float(inputs.shape[0])
-        bucket["loss"] += float(loss_sum.item())
+        positions = torch.arange(targets_gpu.shape[1], device=targets_gpu.device)
+        direction_masks = {
+            "future": mask & (positions[None, :] < 16),
+            "past": mask & (positions[None, :] >= 32) & (positions[None, :] < 48),
+        }
+        for direction, direction_mask in direction_masks.items():
+            loss_sum = F.cross_entropy(
+                logits[direction_mask],
+                targets_gpu[direction_mask],
+                reduction="sum",
+            )
+            correct = (preds == targets_gpu) & direction_mask
+            query_count = direction_mask.sum(dim=1)
+            example_correct = correct.sum(dim=1)
+            exact = example_correct == query_count
+            bucket = totals.setdefault(
+                direction,
+                {
+                    "correct": 0.0,
+                    "queries": 0.0,
+                    "exact": 0.0,
+                    "examples": 0.0,
+                    "loss": 0.0,
+                },
+            )
+            bucket["correct"] += float(correct.sum().item())
+            bucket["queries"] += float(direction_mask.sum().item())
+            bucket["exact"] += float(exact.sum().item())
+            bucket["examples"] += float(inputs.shape[0])
+            bucket["loss"] += float(loss_sum.item())
 
-        if direction == "future":
-            inputs_cpu = inputs.cpu()
-            targets_cpu = targets.cpu()
-            preds_cpu = preds.cpu()
-            for index in range(inputs.shape[0]):
-                positions = torch.nonzero(targets_cpu[index] != -100).flatten()
-                errors = int(
-                    (preds_cpu[index, positions] != targets_cpu[index, positions])
-                    .sum()
-                    .item()
+        inputs_cpu = inputs.cpu()
+        targets_cpu = targets.cpu()
+        preds_cpu = preds.cpu()
+        future_mask_cpu = direction_masks["future"].cpu()
+        for index in range(inputs.shape[0]):
+            query_positions = torch.nonzero(future_mask_cpu[index]).flatten()
+            errors = int(
+                (
+                    preds_cpu[index, query_positions]
+                    != targets_cpu[index, query_positions]
                 )
-                cases.append(
-                    {
-                        "case_index": future_case_index,
-                        "case_id": hashlib.sha256(
-                            inputs_cpu[index].contiguous().numpy().tobytes()
-                        ).hexdigest()[:16],
-                        "errors": errors,
-                        "input": inputs_cpu[index].tolist(),
-                        "query_positions": positions.tolist(),
-                        "targets": targets_cpu[index, positions].tolist(),
-                        "predictions": preds_cpu[index, positions].tolist(),
-                    }
-                )
-                future_case_index += 1
+                .sum()
+                .item()
+            )
+            cases.append(
+                {
+                    "case_index": future_case_index,
+                    "case_id": hashlib.sha256(
+                        inputs_cpu[index].contiguous().numpy().tobytes()
+                    ).hexdigest()[:16],
+                    "errors": errors,
+                    "input": inputs_cpu[index].tolist(),
+                    "query_positions": query_positions.tolist(),
+                    "targets": targets_cpu[index, query_positions].tolist(),
+                    "predictions": preds_cpu[index, query_positions].tolist(),
+                }
+            )
+            future_case_index += 1
 
     metrics: dict[str, Any] = {}
     for direction, bucket in totals.items():

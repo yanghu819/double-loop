@@ -43,8 +43,8 @@ with one deterministic directional MQAR generator:
 
 - vocabulary 256, sequence length 64, four unique key/value associations;
 - 10,000 train examples and 1,000 fixed validation examples;
-- half of each split is `past`: all writes precede their queries;
-- half is `future`: all queries precede their random writes;
+- every example has two `past` associations whose writes precede their queries
+  and two `future` associations whose queries precede their random writes;
 - key, value, and filler vocabularies are disjoint, preventing accidental
   value leakage through filler tokens;
 - query-only cross entropy and per-example accuracy, with a `direction` slice.
@@ -90,3 +90,19 @@ Partial support is FutureSeed future accuracy at least 0.50 with delta at least
 +0.40 and preserved past accuracy. Anything weaker is not sufficient for a
 cheap-bidirectionality claim. This experiment can establish a cross-task causal
 mechanism result; it cannot by itself establish language-model quality.
+
+## Pre-Run Harness Correction
+
+The first attempted pair used separate past and future Zoology DataSegments.
+Zoology iterates segments sequentially, so each epoch trained all past batches
+and then all impossible-future batches. The no-FutureSeed arm ended at chance on
+both past (`0.012`) and future (`0.0105`), violating the carrier gate. Its exact
+PGID was terminated before interpreting the FutureSeed arm, and `abort.json`
+records the failure.
+
+This is a batching bug, not a model result. Before the rerun, the generator was
+changed to put two past and two future associations in every example. Every
+batch is therefore balanced while the total examples, four associations,
+vocabulary, sequence length, loss, model, optimizer, and ten-epoch budget stay
+fixed. Directional metrics are now computed from disjoint preregistered query
+position bands. No model or loss hyperparameter changed.

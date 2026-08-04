@@ -12,7 +12,7 @@ from zoology.data.utils import DataSegment
 class DirectionalMQARConfig(DataSegmentConfig):
     name: str = "directional_mqar"
     num_kv_pairs: int = 4
-    direction: Literal["past", "future"]
+    direction: Literal["past", "future", "mixed"]
 
     def build(self, seed: int) -> DataSegment:
         return directional_mqar(
@@ -41,8 +41,8 @@ def directional_mqar(
         raise ValueError("The preregistered split requires input_seq_len=64")
     if num_kv_pairs != 4:
         raise ValueError("The preregistered split requires num_kv_pairs=4")
-    if direction not in {"past", "future"}:
-        raise ValueError("direction must be past or future")
+    if direction not in {"past", "future", "mixed"}:
+        raise ValueError("direction must be past, future, or mixed")
 
     rng = np.random.default_rng(seed)
     filler_vocab = np.arange(0, 64, dtype=np.int64)
@@ -59,20 +59,47 @@ def directional_mqar(
     if direction == "past":
         pair_slots = np.arange(0, 16, 2, dtype=np.int64)
         query_slots = np.arange(32, 64, 2, dtype=np.int64)
-    else:
+    elif direction == "future":
         query_slots = np.arange(0, 32, 2, dtype=np.int64)
         pair_slots = np.arange(48, 64, 2, dtype=np.int64)
+    else:
+        future_query_slots = np.arange(0, 16, 2, dtype=np.int64)
+        past_pair_slots = np.arange(16, 32, 2, dtype=np.int64)
+        past_query_slots = np.arange(32, 48, 2, dtype=np.int64)
+        future_pair_slots = np.arange(48, 64, 2, dtype=np.int64)
 
     for example_idx in range(num_examples):
         keys = rng.choice(key_vocab, size=num_kv_pairs, replace=False)
         values = rng.choice(value_vocab, size=num_kv_pairs, replace=False)
-        writes = rng.choice(pair_slots, size=num_kv_pairs, replace=False)
-        queries = rng.choice(query_slots, size=num_kv_pairs, replace=False)
         association_order = rng.permutation(num_kv_pairs)
 
-        for query_idx, association_idx in enumerate(association_order):
-            write_pos = int(writes[association_idx])
-            query_pos = int(queries[query_idx])
+        if direction == "mixed":
+            future_ids = association_order[: num_kv_pairs // 2]
+            past_ids = association_order[num_kv_pairs // 2 :]
+            assignments = []
+            for association_idx, query_pos, write_pos in zip(
+                future_ids,
+                rng.choice(future_query_slots, size=2, replace=False),
+                rng.choice(future_pair_slots, size=2, replace=False),
+            ):
+                assignments.append((association_idx, query_pos, write_pos))
+            for association_idx, query_pos, write_pos in zip(
+                past_ids,
+                rng.choice(past_query_slots, size=2, replace=False),
+                rng.choice(past_pair_slots, size=2, replace=False),
+            ):
+                assignments.append((association_idx, query_pos, write_pos))
+        else:
+            writes = rng.choice(pair_slots, size=num_kv_pairs, replace=False)
+            queries = rng.choice(query_slots, size=num_kv_pairs, replace=False)
+            assignments = [
+                (association_idx, queries[query_idx], writes[association_idx])
+                for query_idx, association_idx in enumerate(association_order)
+            ]
+
+        for association_idx, query_pos, write_pos in assignments:
+            write_pos = int(write_pos)
+            query_pos = int(query_pos)
             key = int(keys[association_idx])
             value = int(values[association_idx])
             inputs[example_idx, write_pos] = key

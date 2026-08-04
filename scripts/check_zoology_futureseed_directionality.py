@@ -38,9 +38,9 @@ def _shared_state(model: torch.nn.Module) -> dict[str, torch.Tensor]:
 
 
 def _future_batch(test_dataloader) -> tuple[torch.Tensor, torch.Tensor]:
-    segment = test_dataloader.dataset.segments[1]
-    if segment.slices["direction"] != "future":
-        raise RuntimeError("Expected future segment at index 1")
+    segment = test_dataloader.dataset.segments[0]
+    if segment.slices["direction"] != "mixed":
+        raise RuntimeError("Expected one mixed-direction segment")
     return segment.inputs[:32], segment.labels[:32]
 
 
@@ -112,7 +112,8 @@ def main() -> None:
     future_inputs = future_inputs.cuda()
     future_targets = future_targets.cuda()
     altered_inputs = _alter_future_values(future_inputs).cuda()
-    query_mask = future_targets != -100
+    positions = torch.arange(future_targets.shape[1], device="cuda")
+    query_mask = (future_targets != -100) & (positions[None, :] < 16)
 
     no_fs.eval()
     fs.eval()

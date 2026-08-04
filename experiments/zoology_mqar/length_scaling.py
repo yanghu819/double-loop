@@ -54,6 +54,9 @@ def build_config(
     num_kv_pairs: int,
     max_epochs: int,
     batch_size: int,
+    model_width: int = MODEL_WIDTH,
+    model_heads: int = MODEL_HEADS,
+    gdn2_head_dim: int = GDN2_HEAD_DIM,
 ) -> TrainConfig:
     data = DataConfig(
         train_configs=[
@@ -82,14 +85,16 @@ def build_config(
         ),
     )
     if arm in {"causal_gdn2", "future_seed_gdn2"}:
+        if model_width != model_heads * gdn2_head_dim:
+            raise ValueError("model_width must equal model_heads * gdn2_head_dim")
         sequence_mixer = ModuleConfig(
             name=(
                 "experiments.zoology_mqar.gdn2_futureseed."
                 "ZoologyGDN2FutureSeedMixer"
             ),
             kwargs={
-                "num_heads": MODEL_HEADS,
-                "head_dim": GDN2_HEAD_DIM,
+                "num_heads": model_heads,
+                "head_dim": gdn2_head_dim,
                 "expand_v": 1.0,
                 "conv_size": 4,
                 "future_seed_scale": (
@@ -114,7 +119,7 @@ def build_config(
     model = ModelConfig(
         vocab_size=VOCAB_SIZE,
         max_position_embeddings=sequence_length,
-        d_model=MODEL_WIDTH,
+        d_model=model_width,
         n_layers=MODEL_LAYERS,
         sequence_mixer=sequence_mixer,
     )
@@ -356,8 +361,13 @@ def run_arm(
     output_dir: Path,
     max_epochs: int,
     batch_size: int,
+    model_width: int = MODEL_WIDTH,
+    model_heads: int = MODEL_HEADS,
+    gdn2_head_dim: int = GDN2_HEAD_DIM,
+    output_arm_name: str | None = None,
 ) -> dict[str, Any]:
-    arm_dir = output_dir / f"length_{sequence_length}" / arm
+    run_arm_name = output_arm_name or arm
+    arm_dir = output_dir / f"length_{sequence_length}" / run_arm_name
     arm_dir.mkdir(parents=True, exist_ok=True)
     config = build_config(
         arm=arm,
@@ -365,6 +375,9 @@ def run_arm(
         num_kv_pairs=num_kv_pairs,
         max_epochs=max_epochs,
         batch_size=batch_size,
+        model_width=model_width,
+        model_heads=model_heads,
+        gdn2_head_dim=gdn2_head_dim,
     )
     set_determinism(config.seed)
     model = make_model(config, arm)
@@ -379,7 +392,7 @@ def run_arm(
     warm_model(model, fixed_batch)
     set_determinism(config.seed)
 
-    logger = CaptureLogger(arm_dir / "metrics.jsonl", arm)
+    logger = CaptureLogger(arm_dir / "metrics.jsonl", run_arm_name)
     logger.log_config(config)
     logger.log_model(model, config)
     trainer = Trainer(
@@ -412,9 +425,16 @@ def run_arm(
     )
     benchmark = benchmark_training_step(model, fixed_batch)
     score: dict[str, Any] = {
-        "arm": arm,
+        "arm": run_arm_name,
+        "carrier_arm": arm,
         "sequence_length": sequence_length,
         "num_kv_pairs": num_kv_pairs,
+        "model_width": model_width,
+        "model_heads": model_heads,
+        "gdn2_head_dim": gdn2_head_dim,
+        "recurrent_state_values_per_layer": (
+            model_heads * gdn2_head_dim * gdn2_head_dim
+        ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
         "data_hashes": data_hashes,

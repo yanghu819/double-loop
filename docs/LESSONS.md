@@ -1855,3 +1855,16 @@
   finished at chance, repeated throughput measurements became irrelevant;
   stop their exact process groups and report cost as not measured rather than
   manufacturing a cheapness result against a broken model.
+- P-CAUSAL-018 separates task validity from model comparison. Under one official
+  pretrained BERT-Tiny checkpoint, changing only full attention to strict causal
+  drops masked accuracy from `0.355546` to `0.215732` and raises CE from
+  `4.033269` to `5.453952`; causal future dependency remains exactly zero. The
+  fixed WikiText carrier therefore has a strong right-context signal.
+- Never present an inference-time mask intervention on a bidirectionally trained
+  checkpoint as a fair causal baseline. P-CAUSAL-018 authorizes the carrier, not
+  a FutureSeed win. The actual paper comparison must train matched GDN2 scale 0
+  and scale 1 with the same initialization, data, optimizer, tokens, and kernel.
+- Asset provenance is part of experiment validity. The official checkpoint was
+  downloaded locally through Kimi WebBridge, hashed before upload, and matched
+  remotely at `dd152f84...6d9d0`; the formal launcher stayed blocked until that
+  hash was committed and pushed.

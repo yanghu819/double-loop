@@ -1,7 +1,7 @@
 # Official Pretrained BERT-Tiny Carrier Gate
 
 - Plan: `P-CAUSAL-018`
-- Status: preregistered; official checkpoint transferred and hash-locked
+- Status: done; carrier opened
 - Date: 2026-08-05 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -95,3 +95,28 @@ checkpoint.
 - Scratch-checkpoint accuracy was `0.0559` for both masks, so the scientific
   quality gate correctly returned exit status 2. It is deliberately excluded
   from the paper result and does not alter the formal preregistration.
+
+## Formal Result
+
+Run `pretrained-bert-carrier-20260804T2129Z-4bfd24c` evaluated the registered
+official checkpoint on detached source `4bfd24cffdf3c4539c54fb76455e053f248d050f`.
+All asset, source, GPU, tensor, dependency, and finite-backward gates passed.
+
+| metric | native bidirectional | strict causal | bidirectional gain |
+|---|---:|---:|---:|
+| masked accuracy | 0.355546 | 0.215732 | +0.139814 |
+| masked CE | 4.033269 | 5.453952 | 1.420684 lower |
+| future dependency | 3.567824 | 0.000000 | nonzero vs exact zero |
+| input tokens/s | 2,462,778 | 2,519,247 | diagnostic only |
+| peak allocated bytes | 353,021,952 | 353,021,952 | 0 |
+
+The evaluation contains 4,742 fixed masked targets. Shared checkpoint tensors
+have maximum difference `0.0` and identical state hashes. Bidirectional accuracy
+exceeds the registered `0.10` floor; both the `+0.03` accuracy and `+0.20` CE
+right-context gates pass by wide margins. The carrier is therefore open.
+
+This does not compare a trained causal model with a trained bidirectional model:
+it compares attention semantics at evaluation under one bidirectionally
+pretrained checkpoint. Its only valid claim is that this fixed real-text task,
+tokenizer, corruption, and checkpoint expose a substantial right-context signal.
+That result authorizes a separate matched GDN2 scale-0/scale-1 training test.

@@ -1,0 +1,27 @@
+{
+  "plan": "P-CAUSAL-018",
+  "run_name": "pretrained-bert-carrier-20260804T2129Z-4bfd24c",
+  "git_sha": "4bfd24cffdf3c4539c54fb76455e053f248d050f",
+  "model": {
+    "name": "google/bert_uncased_L-2_H-128_A-2",
+    "revision": "12e6feda7b005864b03bd5f7f5b6a7d00f24c82e",
+    "checkpoint_sha256": "dd152f8450c0579bd271ac0ccb4a88fa4f6a67d8035b7799dbf3a0fb7156d9d0",
+    "parameters": 4416698
+  },
+  "data": {
+    "corpus": "WikiText-103-raw-v1",
+    "validation_sha256": "7f24169df1b7683363682a3d90f0a4c513b941eabaa2c121843b322f29b77658",
+    "manifest_sha256": "e6fc677fa5c663f79e4c44d2d15be0e1255f7d5379ef8afe8af1d76b30157b9b"
+  },
+  "evaluation": {
+    "sequence_length": 128,
+    "windows": 256,
+    "mask_probability": 0.15,
+    "seed": 123,
+    "batch_size": 32,
+    "attention_arms": ["native_bidirectional", "strict_causal"],
+    "warmup_steps": 5,
+    "measured_steps": 50,
+    "device": "GPU1"
+  }
+}

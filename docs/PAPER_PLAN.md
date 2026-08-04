@@ -607,3 +607,22 @@ retain random associations over long distances. FutureSeed supplies a
 trainable cross-layer memory route that helps both formally future and already
 causally available long-range bindings. The paper still needs an independently
 opened published bidirectional carrier before making a quality-cost claim.
+
+### P-CAUSAL-018 Established Real-Text Carrier
+
+The fixed WikiText masked-token carrier is now independently validated with the
+official pretrained Google BERT-Tiny checkpoint. The same 4,416,698 checkpoint
+parameters were evaluated with native bidirectional attention and with only the
+attention semantics changed to strict causal. On 4,742 deterministic masked
+targets, accuracy was `0.355546` versus `0.215732`, a `+0.139814` bidirectional
+gain; CE was `4.033269` versus `5.453952`, a `1.420684` improvement. Strict
+causal future dependency was exactly zero while native bidirectional dependency
+was `3.567824`. Every preregistered carrier check passed.
+
+This is carrier evidence, not a FutureSeed result and not a fair trained-model
+quality comparison. It proves that the fixed text task exposes useful right
+context under an established checkpoint, removing the invalid-carrier problem
+that killed P-CAUSAL-008/009. The next paper experiment is one separately
+preregistered, matched official-FLA GDN2 scale-0/scale-1 replacement with common
+lexical initialization. Do not add a model-size, tokenizer, mask, seed, or
+training-budget table before that causal gate.

@@ -1,0 +1,136 @@
+{
+  "assets": {
+    "bert_source_sha256": "3493bff5da90fdcce98dad5c84aafe4d3ce1c550dcd93bc99289309953559eca",
+    "checkpoint_file": "/huyang2/double-loop/data/bert_uncased_L-2_H-128_A-2-12e6fed/pytorch_model.bin",
+    "checkpoint_sha256": "dd152f8450c0579bd271ac0ccb4a88fa4f6a67d8035b7799dbf3a0fb7156d9d0",
+    "data_manifest_sha256": "e6fc677fa5c663f79e4c44d2d15be0e1255f7d5379ef8afe8af1d76b30157b9b",
+    "validation_sha256": "7f24169df1b7683363682a3d90f0a4c513b941eabaa2c121843b322f29b77658"
+  },
+  "claim_boundary": "Carrier validity only; no GDN2 or FutureSeed model is evaluated.",
+  "data_manifest": {
+    "corpus": "WikiText-103-raw-v1",
+    "license": [
+      "CC BY-SA 3.0",
+      "GFDL"
+    ],
+    "mirror": {
+      "commit": "430edf94f37286d0",
+      "provider": "Oxen.ai",
+      "repository": "Salesforce/wikitext",
+      "schema_hash": "d930b7eee9d7f11db9ee0fa4ba45117d"
+    },
+    "prepared": {
+      "train": {
+        "nonempty_rows": 12894,
+        "path": "train.json",
+        "rows": 20000,
+        "sha256": "6e22a5a233e6f7901db6714ceabfc71f4e9e99aa4769f0c9bb8d7c3fd5fdd0cd",
+        "utf8_bytes": 5880678
+      },
+      "validation": {
+        "nonempty_rows": 2461,
+        "path": "validation.json",
+        "rows": 3760,
+        "sha256": "7f24169df1b7683363682a3d90f0a4c513b941eabaa2c121843b322f29b77658",
+        "utf8_bytes": 1144248
+      }
+    },
+    "protocol": {
+      "format": "JSON Lines with one text field per original row",
+      "text_transform": "none",
+      "tokenization_and_masking": "delegated to pinned Transformers run_mlm.py"
+    },
+    "sources": {
+      "train": {
+        "path": "train-rows000000-019999.json",
+        "sha256": "ef7ee3e125df2f9beea8ea566650bbd8082dc7a0baa105adddf789737e6ba1ab"
+      },
+      "validation": {
+        "path": "validation.parquet",
+        "sha256": "4bf7077b7e8b0bcf98ba9ad4058019e5dda719f8932ac7f323865bd9a52389db"
+      }
+    }
+  },
+  "diagnostics": {
+    "bidirectional_backward": {
+      "loss": 4.024505615234375,
+      "max_gradient": 4.32957124710083
+    },
+    "bidirectional_future_dependency": 3.567823886871338,
+    "causal_backward": {
+      "loss": 6.0163493156433105,
+      "max_gradient": 4.291796684265137
+    },
+    "causal_future_dependency": 0.0,
+    "performance": {
+      "bidirectional": {
+        "batch_size": 32,
+        "elapsed_seconds": 0.08315810933709145,
+        "input_tokens_per_second": 2462778.4545920645,
+        "measured_steps": 50,
+        "peak_cuda_memory_bytes": 353021952,
+        "sequence_length": 128,
+        "warmup_steps": 5
+      },
+      "causal": {
+        "batch_size": 32,
+        "elapsed_seconds": 0.08129413053393364,
+        "input_tokens_per_second": 2519247.0680833813,
+        "measured_steps": 50,
+        "peak_cuda_memory_bytes": 353021952,
+        "sequence_length": 128,
+        "warmup_steps": 5
+      }
+    }
+  },
+  "gate": {
+    "checks": {
+      "bidirectional_accuracy_at_least_0.10": true,
+      "bidirectional_future_dependency_nonzero": true,
+      "right_context_quality_delta": true,
+      "shared_pretrained_weights_exact": true,
+      "strict_causal_future_dependency_zero": true
+    },
+    "passed": true
+  },
+  "metrics": {
+    "bidirectional": {
+      "masked_accuracy": 0.35554618304512864,
+      "masked_ce": 4.033268768040252,
+      "masked_tokens": 4742
+    },
+    "causal": {
+      "masked_accuracy": 0.2157317587515816,
+      "masked_ce": 5.453952308246125,
+      "masked_tokens": 4742
+    },
+    "delta": {
+      "causal_minus_bidirectional_ce": 1.4206835402058724,
+      "masked_accuracy": 0.13981442429354704
+    }
+  },
+  "model": {
+    "architecture": {
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "num_attention_heads": 2,
+      "num_hidden_layers": 2,
+      "vocab_size": 30522
+    },
+    "bidirectional_state_hash": "6b6cd090d174f68597cb9886b1807b0f0487c4d7bf7b7f8fcf22a3c87c715ea3",
+    "causal_state_hash": "6b6cd090d174f68597cb9886b1807b0f0487c4d7bf7b7f8fcf22a3c87c715ea3",
+    "parameters": 4416698,
+    "shared_weight_max_diff": 0.0,
+    "state_keys": 44
+  },
+  "plan": "P-CAUSAL-018",
+  "protocol": {
+    "candidate_windows": 256,
+    "mask_probability": 0.15,
+    "only_difference": "full bidirectional versus strict causal attention mask",
+    "same_checkpoint_both_arms": true,
+    "seed": 123,
+    "sequence_length": 128
+  },
+  "status": "carrier_opened"
+}

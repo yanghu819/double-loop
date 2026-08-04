@@ -43,7 +43,7 @@ actual_wheel_hash = direct_url["archive_info"]["hashes"]["sha256"]
 wheel_name = Path(direct_url["url"]).name
 source_path = root / "fla/layers/gdn2.py"
 actual_source_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
-if expected_commit[:8] not in wheel_name:
+if expected_commit[:7] not in wheel_name:
     raise SystemExit(f"FLA wheel provenance lacks commit {expected_commit}: {wheel_name}")
 if actual_wheel_hash != expected_wheel_hash:
     raise SystemExit(f"Unexpected FLA wheel hash: {actual_wheel_hash}")

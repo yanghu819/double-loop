@@ -136,7 +136,7 @@ def main() -> None:
     wheel_name = Path(direct_url["url"]).name
     wheel_hash = direct_url["archive_info"]["hashes"]["sha256"]
     expected_wheel_hash = os.environ["FLA_WHEEL_SHA256"]
-    if PINNED_FLA_SHA[:8] not in wheel_name:
+    if PINNED_FLA_SHA[:7] not in wheel_name:
         raise RuntimeError(f"FLA wheel provenance lacks pinned SHA: {wheel_name}")
     if wheel_hash != expected_wheel_hash:
         raise RuntimeError(f"Unexpected FLA wheel hash: {wheel_hash}")

@@ -1868,3 +1868,24 @@
   downloaded locally through Kimi WebBridge, hashed before upload, and matched
   remotely at `dd152f84...6d9d0`; the formal launcher stayed blocked until that
   hash was committed and pushed.
+- P-CAUSAL-019 is the first valid matched real-text FutureSeed comparison. The
+  causal GDN2 carrier opened to `0.2765` masked accuracy, so the result is not
+  hidden behind another failed baseline. FutureSeed improves CE by `0.08735`
+  with a positive paired interval but changes accuracy by only `+0.00253`.
+  Report it as a weak mechanism signal, not a language-quality win.
+- Future dependency and task benefit are different quantities. Suffix removal
+  has exactly zero effect on causal GDN2 but raises FutureSeed CE by `0.4392`
+  with a `0.3246` lower confidence bound. The route carries useful right
+  context even though the current readout converts little of it into top-1
+  gains.
+- Always count repairs and regressions together. FutureSeed repairs 119 masked
+  tokens and regresses 107, leaving only 12 net. A few clean visual examples
+  would badly overstate the aggregate result without regression coverage.
+- A fixed token budget still needs an exact sample ledger. The corpus has
+  10,003 grouped windows, not 20,000. Using the first 10,000 under 16 fixed
+  corruptions gives exactly 160,000 unique pairs; batches must cross corruption
+  boundaries instead of wrapping partial batches and silently repeating data.
+- Fail-closed auditors need their own tests. Two preflight attempts stopped on
+  a cross-device equality check and Python object-ID reuse during autograd graph
+  traversal. Both were implementation-only aborts archived before training;
+  neither can be counted as a scientific failure.

@@ -626,3 +626,30 @@ that killed P-CAUSAL-008/009. The next paper experiment is one separately
 preregistered, matched official-FLA GDN2 scale-0/scale-1 replacement with common
 lexical initialization. Do not add a model-size, tokenizer, mask, seed, or
 training-budget table before that causal gate.
+
+### P-CAUSAL-019 Matched Real-Text FutureSeed Gate
+
+The first fair real-text replacement is valid but weak. Two official-FLA GDN2
+arms used identical D128/L2/H4/D32 parameters, frozen tied BERT-Tiny word
+embeddings, fresh contextual modules, 160,000 identical corruption/window
+pairs, 20.48M input tokens and the same optimizer. The only difference was
+native terminal-state FutureSeed scale 0 versus 1. Strict preflight proved
+scale-0 identity, exact causal non-leakage, active FutureSeed dependency,
+official chunk/Triton execution and byte-identical provenance.
+
+Causal/FutureSeed masked accuracy is `0.276466/0.278996`; CE is
+`5.350222/5.262873`. The `0.087349` CE gain has paired-window 95% interval
+`[0.06723,0.10778]` and the same sign at steps 1000 and 1250, but it misses the
+registered `0.20` strong threshold. Accuracy gains only 12/4,742 targets and
+its interval crosses zero. The correct paper wording is therefore not that
+FutureSeed improves language-model accuracy.
+
+The mechanism itself transfers: removing the suffix changes causal CE by
+exactly zero but worsens FutureSeed CE by `0.439155`, with 95% interval
+`[0.32460,0.56772]`. FutureSeed repairs 119 top-1 predictions while regressing
+107. It has learned to use right context, but the one available L1-to-L2 state
+transfer mostly improves probabilities rather than decisions. Retain this as
+real-text directionality evidence and a scaling motivation. Do not tune or
+extend the exact L2 endpoint; a future language test must change one meaningful
+scaling axis, preferably depth/multiple transfer opportunities, under a new
+preregistration.

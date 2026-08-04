@@ -1,7 +1,7 @@
 # WordPiece GDN2 FutureSeed Real-Text Gate
 
 - Plan: `P-CAUSAL-019`
-- Status: approved; not launched
+- Status: completed; valid weak signal, strong gate missed
 - Date: 2026-08-05 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -110,11 +110,87 @@ released node wrappers allowed ID reuse, so it incorrectly stopped after
 was absent. The follow-up keeps node wrappers alive during traversal. This
 changes only the fail-closed auditor, not model execution or the protocol.
 
+The corrected preflight and formal run used detached source
+`4296f20ed37e19dbe5b14d5c17deca3cdaf611cf`:
+
+```bash
+PREFLIGHT_ONLY=1 \
+RUN_NAME=wordpiece-gdn2-fs-preflight3-20260804T2245Z-4296f20 \
+./scripts/run_wordpiece_gdn2_futureseed.sh
+
+RUN_NAME=wordpiece-gdn2-fs-formal-20260804T2251Z-4296f20 \
+./scripts/run_wordpiece_gdn2_futureseed.sh
+```
+
 ## Artifacts And Result
 
-Formal experiment not launched. The first preflight implementation abort is at
+The first preflight implementation abort is at
 `runs/wordpiece-gdn2-fs-preflight-20260804T2235Z-ebed175`; its prepared schedule
 hash is `99fb776e5703376411b72c861bd368557228e4f40d4369385c6c5223b4231a26`.
 The second implementation abort is at
 `runs/wordpiece-gdn2-fs-preflight2-20260804T2240Z-d0c030e` and has the same
 prepared schedule hash.
+
+The passing preflight is
+`runs/wordpiece-gdn2-fs-preflight3-20260804T2245Z-4296f20`. It verified one
+GPU1, the exact BERT carrier anchor, 463 byte-identical FLA wheel/install files,
+Triton Q/K/V convolutions, `ChunkGDN2FunctionBackward`, scale-0 output identity,
+zero causal future dependency, nonzero FutureSeed dependency and gate gradient,
+equal parameters/init, and frozen tied lexical tensors.
+
+The formal run is
+`runs/wordpiece-gdn2-fs-formal-20260804T2251Z-4296f20`. It exited with status 2
+only because the preregistered strong scientific gate missed; all integrity and
+carrier gates passed.
+
+## Results
+
+| Readout | Causal GDN2 | GDN2 + FutureSeed | FS - causal |
+|---|---:|---:|---:|
+| masked accuracy | 0.276466 | 0.278996 | +0.002531 |
+| masked CE | 5.350222 | 5.262873 | -0.087349 |
+| exact 128-token windows | 0 | 0 | 0 |
+| future dependency | 0 | 0.406000 | +0.406000 |
+| suffix removal CE cost | 0 | 0.439155 | +0.439155 |
+| trainable / total parameters | 561,418 / 4,468,234 | same | 0 |
+| input tokens | 20.48M | 20.48M | 0 |
+| peak training allocation | 1.666 GB | 1.672 GB | +6.30 MB |
+
+The causal carrier opened at step 250 and lowered CE by `5.1556`, so this is a
+valid model comparison. The FutureSeed CE advantage was `0.08620` at step 1000
+and `0.08735` at step 1250. Its paired-window CE 95% interval is
+`[0.06723, 0.10778]`, so the small probability-quality gain is statistically
+stable. It misses the registered `0.20` strong threshold. Accuracy improved by
+only 12 of 4,742 masked targets; its interval `[-0.00335, 0.00851]` crosses
+zero and misses the `+0.03` threshold.
+
+The mechanism diagnostic is much stronger than the endpoint gain. Replacing
+the suffix changes causal CE by exactly zero, but worsens FutureSeed CE by
+`0.43915`, with bootstrap interval `[0.32460, 0.56772]`. The trained seed gate
+is `0.4823`. FutureSeed therefore genuinely reads useful right context on real
+text; the present two-layer shell does not convert most of that information
+into better top-1 token choices.
+
+## Visual Audit
+
+The matched visualization is at
+`runs/wordpiece-gdn2-fs-formal-20260804T2251Z-4296f20/visualizations/index.html`.
+Across all 256 windows, FutureSeed repairs 119 masked tokens and regresses 107,
+for only +12 net. There are 53 repair-only, 51 regression-only, 38 mixed, 111
+changed-but-still-wrong and 3 stable windows. The effect is not confined to one
+sequence side: left/right repairs are 60/59 and regressions are 50/57. Selected
+cases include clean three-token repairs and a four-token regression, preventing
+the aggregate CE gain from hiding unstable top-1 behavior.
+
+## Decision
+
+Classify P-CAUSAL-019 as a valid weak mechanism transfer, not a paper headline
+pass. It supports the narrow statement that native terminal-state FutureSeed
+delivers useful right-context information in a matched real-text causal GDN2.
+It does not support language-model superiority, BERT parity, or a cost claim.
+
+Do not rescue this exact L2 run with more steps, LR, mask, tokenizer, freeze
+policy or seed. The next high-information language experiment, if pursued,
+should test one preregistered depth scale: more recurrent layers create more
+cross-layer state-transfer opportunities. That asks whether the observed
+right-context CE signal scales into decisions, rather than tuning this endpoint.

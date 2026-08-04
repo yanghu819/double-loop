@@ -1,0 +1,108 @@
+{
+  "arm": "causal_gdn2",
+  "elapsed_seconds_including_validation": 42.348413322120905,
+  "future_dependency_mean_abs": 0.0,
+  "future_seed": {
+    "future_seed_gate": null,
+    "future_seed_norm": null,
+    "future_seed_raw_rms": null,
+    "future_seed_scale": 0.0
+  },
+  "future_seed_scale": 0.0,
+  "initial_state_hash": "91dfc3cd43d25824a7c74649655a127e21aff57d4734e818e02f9cce698bafbe",
+  "input_tokens": 20480000,
+  "last_train_loss": 5.35811185836792,
+  "lexical_integrity": {
+    "checkpoint_lexical_sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d",
+    "checkpoint_sha256": "594b2b2e6966844c211c0a8dc30072b37e6903f7cfff4efb35fd905f09a5a4a9",
+    "final": {
+      "frozen": true,
+      "input_output_tied": true,
+      "pretrained_bert_module_present": false,
+      "sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d"
+    },
+    "initial": {
+      "frozen": true,
+      "input_output_tied": true,
+      "pretrained_bert_module_present": false,
+      "sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d"
+    }
+  },
+  "metrics": {
+    "examples": 256,
+    "masked_accuracy": 0.2764656263180093,
+    "masked_ce": 5.350222249314635,
+    "masked_exact": 0.0,
+    "masked_tokens": 4742
+  },
+  "opening_step_at_0.10_accuracy": 250,
+  "parameters": 4468234,
+  "peak_training_cuda_memory_bytes": 1666070016,
+  "steps": 1250,
+  "suffix_utility": {
+    "bootstrap_95_lower": 0.0,
+    "bootstrap_95_upper": 0.0,
+    "ce_degradation_when_suffix_removed": 0.0,
+    "max_abs_change": 0.0,
+    "original_ce": 5.366334631777136,
+    "probe_windows": 256,
+    "suffix_replaced_ce": 5.366334631777136
+  },
+  "validation_curve": [
+    {
+      "examples": 256,
+      "masked_accuracy": 0.00021088148460565162,
+      "masked_ce": 10.505802741788802,
+      "masked_exact": 0.0,
+      "masked_tokens": 4742,
+      "step": 0
+    },
+    {
+      "examples": 256,
+      "masked_accuracy": 0.22458878110501898,
+      "masked_ce": 6.336556964361029,
+      "masked_exact": 0.0,
+      "masked_tokens": 4742,
+      "step": 250
+    },
+    {
+      "examples": 256,
+      "masked_accuracy": 0.25748629270350065,
+      "masked_ce": 5.714255794298292,
+      "masked_exact": 0.0,
+      "masked_tokens": 4742,
+      "step": 500
+    },
+    {
+      "examples": 256,
+      "masked_accuracy": 0.27161535217207927,
+      "masked_ce": 5.473888691645139,
+      "masked_exact": 0.0,
+      "masked_tokens": 4742,
+      "step": 750
+    },
+    {
+      "examples": 256,
+      "masked_accuracy": 0.27498945592576973,
+      "masked_ce": 5.374280140400939,
+      "masked_exact": 0.0,
+      "masked_tokens": 4742,
+      "step": 1000
+    },
+    {
+      "examples": 256,
+      "masked_accuracy": 0.2764656263180093,
+      "masked_ce": 5.350222249314635,
+      "masked_exact": 0.0,
+      "masked_tokens": 4742,
+      "step": 1250
+    }
+  ],
+  "warmed_train_step_benchmark": {
+    "elapsed_seconds": 0.4617164842784405,
+    "input_tokens_per_second": 709699.5908909133,
+    "measured_steps": 20,
+    "peak_cuda_memory_bytes": 1949349888,
+    "warmup_steps": 5
+  }
+}

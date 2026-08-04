@@ -1,0 +1,19 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+BertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly overwritten. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/opt/conda/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/huyang2/double-loop/worktrees/p-causal-019-ebed175/experiments/zoology_mlm/wordpiece_futureseed_mlm.py", line 1515, in <module>
+    main()
+  File "/huyang2/double-loop/worktrees/p-causal-019-ebed175/experiments/zoology_mlm/wordpiece_futureseed_mlm.py", line 1354, in main
+    preflight_result, initial_state = preflight(pretrained, validation, tokenizer)
+  File "/huyang2/double-loop/worktrees/p-causal-019-ebed175/experiments/zoology_mlm/wordpiece_futureseed_mlm.py", line 688, in preflight
+    "causal_gdn2": finite_backward(causal, validation[0][:2], validation[1][:2]),
+  File "/huyang2/double-loop/worktrees/p-causal-019-ebed175/experiments/zoology_mlm/wordpiece_futureseed_mlm.py", line 536, in finite_backward
+    raise RuntimeError(
+RuntimeError: Masked-token loss did not traverse the official FLA GDN2 chunk autograd node ChunkGDN2FunctionBackward: ['LogSoftmaxBackward0', 'NllLossBackward0']

@@ -73,3 +73,24 @@ not itself support a FutureSeed quality or efficiency claim.
 
 A miss ends this BERT-Tiny carrier. It does not justify another BERT size,
 checkpoint, tokenizer, corpus, mask, or budget table.
+
+## GPU Implementation Preflight
+
+The detached GPU1 worktree at `1b2db2af1dd6293a1bc5c4edceccc60fcdb314f4`
+ran the complete evaluation path on 2026-08-05 CST using the already archived
+P-CAUSAL-009 scratch checkpoint and 16 windows. This is an implementation smoke,
+not P-CAUSAL-018 evidence, because it is not the registered official pretrained
+checkpoint.
+
+- Artifact: `/huyang2/double-loop/artifacts/p018-implementation-smoke-20260804T173405Z-1b2db2a`
+- Exact shared tensor difference: `0.0`.
+- Strict-causal future dependency: `0.0`.
+- Bidirectional future dependency: `0.0285289`.
+- Finite CUDA forward/backward, metric serialization, case JSON, and HTML all
+  completed on the single registered GPU1.
+- Five-warmup/50-step throughput was `795,299` input tokens/s bidirectional and
+  `780,691` input tokens/s causal; each arm peaked at `161,513,472` allocated
+  bytes. These measurements validate stable instrumentation only.
+- Scratch-checkpoint accuracy was `0.0559` for both masks, so the scientific
+  quality gate correctly returned exit status 2. It is deliberately excluded
+  from the paper result and does not alter the formal preregistration.

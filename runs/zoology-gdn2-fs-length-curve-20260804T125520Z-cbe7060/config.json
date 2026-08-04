@@ -1,0 +1,42 @@
+{
+  "arms": [
+    "causal_gdn2",
+    "future_seed_gdn2"
+  ],
+  "budget_seconds": 7200,
+  "cost_measurement": "every arm and length reconstructed, warmed, and measured in its own fresh Python process",
+  "forbidden": [
+    "attention rescue",
+    "reverse scan",
+    "selector",
+    "search",
+    "repair",
+    "task rule",
+    "seed/LR/width/depth/loss sweep"
+  ],
+  "frozen_sequence_lengths": [
+    64,
+    1024
+  ],
+  "git_sha": "cbe7060d1962ef4fd6f9c7df6e9556b34ec9779b",
+  "hypothesis": "With four associations fixed, FutureSeed quality should degrade smoothly as irrelevant context dilutes one terminal recurrent state, while the causal future direction stays at chance.",
+  "kill": "stop if L128 FutureSeed future accuracy <0.80 or on source/data/kernel/identity/dependency/finite-backward failure; no rescue",
+  "model": "strict official-FLA GDN2 D128/L2/H4/D32 chunk/Triton",
+  "new_sequence_lengths": [
+    128,
+    256,
+    512
+  ],
+  "num_kv_pairs": 4,
+  "plan": "P-CAUSAL-016",
+  "process_isolation": "one fresh Python process per newly trained arm",
+  "registered_delta": "FutureSeed future accuracy minus causal >= 0.70 at every length",
+  "registered_floors": {
+    "L128": 0.95,
+    "L256": 0.9,
+    "L512": 0.8
+  },
+  "run_name": "zoology-gdn2-fs-length-curve-20260804T125520Z-cbe7060",
+  "success_claim": "native terminal-state seeding remains an effective future-context route through 512 tokens and degrades gradually through the frozen 1024-token endpoint",
+  "training": "10k/1k per new length, batch32, ten epochs, AdamW1e-3, WD0.1, cosine, seed123"
+}

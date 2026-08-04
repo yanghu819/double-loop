@@ -554,3 +554,32 @@ attention quality/cost claim and do not rescue it with RoPE, optimizer, model,
 epoch or seed tuning. The paper can retain the matched causal-versus-FutureSeed
 directionality and long-context results, but any Transformer ceiling must be
 established on a separate carrier that independently opens.
+
+### P-CAUSAL-016 FutureSeed Context-Length Curve
+
+The matched five-point curve is now strong paper evidence. Causal/FutureSeed
+future-query accuracy at lengths `64/128/256/512/1024` is respectively
+`0.0100/0.9920`, `0.0085/0.9810`, `0.0090/0.9780`, `0.0105/0.9850`, and
+`0.0085/0.7415`. FutureSeed joint exact is
+`0.981/0.955/0.932/0.942/0.339`; causal joint exact is zero throughout. All
+arms use the same official-FLA GDN2 D128/L2/H4/D32 architecture, parameters,
+data recipe, optimizer, training-token budget and CUDA kernels at each length.
+All preregistered absolute and matched-delta gates pass.
+
+The result changes the scaling diagnosis. There is no gradual quality dilution
+through 512 tokens: FutureSeed future accuracy stays in `0.978--0.992`. The
+single large drop is `0.2435` from L512 to L1024. At L1024, `82.4%` of wrong
+future predictions select another key's valid value from the same sequence,
+so the remaining boundary is address binding/compression rather than absence
+of future content. Wider whole models and wider V state already failed; do not
+reopen those axes or fill additional middle lengths.
+
+The paper may now claim that native terminal-state seeding provides a compact
+future-context route that scales cleanly through 512 tokens and remains highly
+consequential at 1024. It still may not claim superiority to bidirectional
+Transformers: all attempted attention carriers on this proxy failed their own
+binding gate. The final cost-quality figure requires an independently opened
+published bidirectional carrier. P-CAUSAL-016 peak-memory differences are
+consistently about `1.50 MiB`, but its 20-step timing samples are too short and
+variable for a precise throughput claim; rerun only a robust repeated timing
+protocol when the valid comparison carrier exists.

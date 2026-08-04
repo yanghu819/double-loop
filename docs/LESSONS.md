@@ -1815,3 +1815,26 @@
   ceiling. Use the validated causal-GDN2/FutureSeed pair for the length and
   memory scaling mechanism figure, and require a separately opened published
   bidirectional task before making a Transformer cost-quality comparison.
+- P-CAUSAL-016 gives the first complete FutureSeed context-length curve under
+  fixed memory load. Future-query accuracy is `0.992/0.981/0.978/0.985/0.7415`
+  at L64/128/256/512/1024, while matched causal GDN2 remains near `0.01` at
+  every length. This is a strong directionality-scaling result, not a marginal
+  ablation.
+- Do not infer smooth information dilution from two endpoints. The intermediate
+  curve stays essentially flat through L512 and then drops sharply at L1024.
+  The mechanism boundary is localized to that transition under the fixed
+  training recipe; extra L192/L384 points would be table filling, not insight.
+- FutureSeed can rescue both directions after long irrelevant context. The
+  causal stack retains past retrieval at L64 but loses it by L128, whereas the
+  matched FutureSeed stack keeps past accuracy above `0.984` through L512.
+  Terminal-state transfer is therefore doing more than exposing formally
+  inaccessible future tokens; it also improves optimization of long-range
+  bindings already available to a causal scan.
+- Constant extra state does not mean zero compute overhead. Peak allocated
+  memory differs by only about `1.50 MiB` between matched arms, but FutureSeed
+  adds state normalization and cross-layer transfer. Measure that cost with
+  long repeated trials before making a speed claim.
+- A fresh process is necessary but not sufficient for trustworthy timing.
+  P-CAUSAL-016 used only 20 measured steps, producing 0.30--1.01 second samples
+  and inconsistent arm ratios. Preserve these as diagnostics; do not place
+  them in a paper cost frontier until longer repeated timing is available.

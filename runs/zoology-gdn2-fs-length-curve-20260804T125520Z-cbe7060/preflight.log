@@ -1,0 +1,79 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l128-k4/data_b0c49ed4ed4636a10d1a7c3ec7c7689b.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l128-k4/data_06419b2801cf5b3d8f0b22f5323ac2b8.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l256-k4/data_e5adbfddae2f4a978147a19b916760b5.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l256-k4/data_168eea1cf456af9cfa60bd6e5ed70f65.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l512-k4/data_16ffe326f014f6136dde7c65d9d56670.pt...
+Generating dataset...
+Saving dataset to on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l512-k4/data_3a5bb1c6a84e6d5786392993d6bd7d25.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l512-k4/data_16ffe326f014f6136dde7c65d9d56670.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l512-k4/data_3a5bb1c6a84e6d5786392993d6bd7d25.pt...
+{
+  "conv_backends": [
+    "triton",
+    "triton",
+    "triton",
+    "triton"
+  ],
+  "cuda_device_count": 1,
+  "data_hashes": {
+    "1024": {
+      "test": "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f",
+      "train": "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
+    },
+    "128": {
+      "test": "15c12f4661cd1a28f3feab7f50e277e96bfe3631c4874a532437727c1cfa058e",
+      "train": "c9a2dd6ec32975659b7599a75fcc30df96061399957f597a8447e404873eb3ab"
+    },
+    "256": {
+      "test": "6caedef41f708996451272f2cddf2a2c63637640d3849690af4bf72b3e5c4b4d",
+      "train": "46405ffa30a9f90b06e2f41ad5d0634db8ed8eebf75490129162ce544c20a967"
+    },
+    "512": {
+      "test": "67101e7e04f9bfaac441f426d85a43ea11067ceecdc4fb5197b9ece8ed38b077",
+      "train": "0bc802f155f02849f9220f5a3432115093b5a863da20df76db769889d2699eda"
+    }
+  },
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_uuid": "53e9f3b4-2966-65d3-6614-09c540921519",
+  "fla_gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "fla_wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+  "full_size_preflight_length": 512,
+  "future_dependencies": {
+    "causal_gdn2_max": 0.0,
+    "future_seed_gdn2_mean": 0.015573441982269287
+  },
+  "future_seed_gate_gradient_max": 0.002193816937506199,
+  "gdn2_modes": [
+    "chunk",
+    "chunk",
+    "chunk",
+    "chunk"
+  ],
+  "losses_and_gradients": {
+    "causal_gdn2": {
+      "gradient_max": 0.1142955869436264,
+      "loss": 5.559391498565674
+    },
+    "future_seed_gdn2": {
+      "gradient_max": 0.09620162844657898,
+      "loss": 5.593854904174805
+    }
+  },
+  "parameter_counts": {
+    "causal_gdn2": 596048,
+    "future_seed_gdn2": 596048
+  },
+  "peak_cuda_mem_bytes": 888391680,
+  "scale0_output_max_diff": 0.0,
+  "shared_init_max_diff": 0.0,
+  "zoology_sha": "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+}

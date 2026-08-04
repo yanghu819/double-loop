@@ -1,0 +1,71 @@
+{
+  "data": {
+    "batch_size": 32,
+    "cache_dir": "/huyang2/double-loop/.cache/zoology-directional-scaling-l64-k4",
+    "force_cache": false,
+    "num_passes": 1,
+    "seed": 123,
+    "test_configs": [
+      {
+        "input_seq_len": 64,
+        "num_examples": 1000,
+        "vocab_size": 256
+      }
+    ],
+    "train_configs": [
+      {
+        "input_seq_len": 64,
+        "num_examples": 10000,
+        "vocab_size": 256
+      }
+    ]
+  },
+  "early_stopping_metric": "valid/accuracy",
+  "early_stopping_threshold": 1.1,
+  "input_type": "discrete",
+  "launch_id": null,
+  "learning_rate": 0.001,
+  "logger": {
+    "entity": null,
+    "project_name": null
+  },
+  "loss_type": "ce",
+  "max_epochs": 10,
+  "model": {
+    "block_type": "TransformerBlock",
+    "d_model": 128,
+    "drop_path": 0.0,
+    "embed_dropout": 0.1,
+    "embedding_init_type": "default",
+    "layer_norm_epsilon": 1e-05,
+    "learnable_word_embeddings": true,
+    "max_position_embeddings": 64,
+    "multiplier": 1,
+    "n_layers": 2,
+    "name": "default",
+    "pad_vocab_size_multiple": 1,
+    "resid_dropout": 0.0,
+    "sequence_mixer": {
+      "kwargs": {
+        "conv_size": 4,
+        "expand_v": 1.0,
+        "future_seed_scale": 1.0,
+        "head_dim": 32,
+        "num_heads": 4
+      },
+      "name": "experiments.zoology_mqar.gdn2_futureseed.ZoologyGDN2FutureSeedMixer"
+    },
+    "state_mixer": {
+      "kwargs": {
+        "hidden_mult": 4
+      },
+      "name": "zoology.mixers.mlp.MLP"
+    },
+    "vocab_size": 256
+  },
+  "run_id": "directional-scaling-future_seed_gdn2-l64-k4",
+  "seed": 123,
+  "slice_keys": [],
+  "sweep_id": null,
+  "weight_decay": 0.1
+}

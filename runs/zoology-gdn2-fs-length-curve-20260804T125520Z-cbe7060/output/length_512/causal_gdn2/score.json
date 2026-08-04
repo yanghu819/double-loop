@@ -1,0 +1,106 @@
+{
+  "arm": "causal_gdn2",
+  "carrier_arm": "causal_gdn2",
+  "data_hashes": {
+    "test": "67101e7e04f9bfaac441f426d85a43ea11067ceecdc4fb5197b9ece8ed38b077",
+    "train": "0bc802f155f02849f9220f5a3432115093b5a863da20df76db769889d2699eda"
+  },
+  "elapsed_sec_including_validation": 88.04752166569233,
+  "epochs": 10,
+  "future_seed": {
+    "future_seed_gate": null,
+    "future_seed_norm": null,
+    "future_seed_raw_rms": null,
+    "future_seed_scale": 0.0
+  },
+  "gdn2_expand_v": 1.0,
+  "gdn2_head_dim": 32,
+  "init_hash": "82867bf858578fb57e2df8e28222c30d125d852fa1511657559d92178c502bfc",
+  "init_parameter_hash": "16d5e6edd1dc96ffcbc7ab6cd3b6c021ffb799bf011c6797aa0b62fbd30b68db",
+  "metrics": {
+    "balanced_accuracy": 0.022500000000000003,
+    "future": {
+      "accuracy": 0.0105,
+      "ce": 4.596134880065918,
+      "exact": 0.0,
+      "examples": 1000,
+      "queries": 2000
+    },
+    "joint_exact": 0.0,
+    "past": {
+      "accuracy": 0.0345,
+      "ce": 4.199102188110351,
+      "exact": 0.0,
+      "examples": 1000,
+      "queries": 2000
+    }
+  },
+  "model_heads": 4,
+  "model_width": 128,
+  "num_kv_pairs": 4,
+  "parameters": 596048,
+  "peak_training_cuda_mem_bytes": 536893440,
+  "recurrent_state_values_per_layer": 4096,
+  "sequence_length": 512,
+  "train_examples": 10000,
+  "train_tokens": 51200000,
+  "valid_curve": [
+    {
+      "epoch": 0,
+      "valid/accuracy": 0.01425,
+      "valid/loss": 4.59246301651001
+    },
+    {
+      "epoch": 1,
+      "valid/accuracy": 0.01425,
+      "valid/loss": 4.583744049072266
+    },
+    {
+      "epoch": 2,
+      "valid/accuracy": 0.013,
+      "valid/loss": 4.578775405883789
+    },
+    {
+      "epoch": 3,
+      "valid/accuracy": 0.01075,
+      "valid/loss": 4.577634811401367
+    },
+    {
+      "epoch": 4,
+      "valid/accuracy": 0.0125,
+      "valid/loss": 4.579450607299805
+    },
+    {
+      "epoch": 5,
+      "valid/accuracy": 0.0095,
+      "valid/loss": 4.580066680908203
+    },
+    {
+      "epoch": 6,
+      "valid/accuracy": 0.01725,
+      "valid/loss": 4.451792240142822
+    },
+    {
+      "epoch": 7,
+      "valid/accuracy": 0.01675,
+      "valid/loss": 4.435201644897461
+    },
+    {
+      "epoch": 8,
+      "valid/accuracy": 0.01925,
+      "valid/loss": 4.411922931671143
+    },
+    {
+      "epoch": 9,
+      "valid/accuracy": 0.0225,
+      "valid/loss": 4.396356105804443
+    }
+  ],
+  "warmed_step_benchmark": {
+    "elapsed_sec": 0.32740601152181625,
+    "examples_per_sec": 1954.7594652438277,
+    "measured_steps": 20.0,
+    "peak_cuda_mem_bytes": 553539584.0,
+    "tokens_per_sec": 1000836.8462048398
+  }
+}

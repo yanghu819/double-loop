@@ -44,9 +44,14 @@ TOKEN_GLYPH = {
 
 def import_rwkv(repo_root: Path):
     sys.path.insert(0, str(repo_root / "experiments" / "rwkv_fs_sudoku"))
-    from study_rwkv_futureseed_loop import FutureSeedRWKV, forward_autocast, statepassing_available
+    from study_rwkv_futureseed_loop import (
+        FutureSeedRWKV,
+        forward_autocast,
+        statepassing_available,
+        strict_fla_runtime_summary,
+    )
 
-    return FutureSeedRWKV, forward_autocast, statepassing_available
+    return FutureSeedRWKV, forward_autocast, statepassing_available, strict_fla_runtime_summary
 
 
 class FutureSeedLoopMaze(nn.Module):
@@ -66,6 +71,11 @@ class FutureSeedLoopMaze(nn.Module):
         future_seed_update: str,
         activation_checkpoint: bool,
         rwkv_kernel: str,
+        backbone: str,
+        gdn_mode: str,
+        gdn_expand_v: float,
+        gdn_use_short_conv: bool,
+        gdn_conv_size: int,
         rwkv_cls: type[nn.Module],
         feedback_mode: str,
         feedback_scale: float,
@@ -91,6 +101,11 @@ class FutureSeedLoopMaze(nn.Module):
             future_seed_update=future_seed_update,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
+            backbone=backbone,
+            gdn_mode=gdn_mode,
+            gdn_expand_v=gdn_expand_v,
+            gdn_use_short_conv=gdn_use_short_conv,
+            gdn_conv_size=gdn_conv_size,
         )
         self.h_init = nn.Parameter(torch.zeros(1, 1, d_model))
         self.l_init = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -545,6 +560,7 @@ def write_visuals(
     device: torch.device,
     forward_dtype: str,
     budget_decoder: bool,
+    backbone: str,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     n = min(int(cases), inputs.shape[0])
@@ -657,7 +673,8 @@ table.maze{border-collapse:collapse}.maze td{width:7px;height:7px;min-width:7px;
 .tp{box-shadow:inset 0 0 0 1px #22c55e}.fp{background:#f97316!important;color:#111}.fn{background:#fee2e2!important;box-shadow:inset 0 0 0 1px #dc2626}
 h1{font-size:24px}h2{font-size:15px}h3{font-size:13px;margin:8px 0}
 """
-    html_doc = f"<!doctype html><html><head><meta charset='utf-8'><style>{css}</style></head><body><main><h1>RWKV Maze hard cases</h1>{''.join(html_cases)}</main></body></html>"
+    carrier = html.escape(backbone.upper())
+    html_doc = f"<!doctype html><html><head><meta charset='utf-8'><style>{css}</style></head><body><main><h1>{carrier} Maze hard cases</h1>{''.join(html_cases)}</main></body></html>"
     (out_dir / "index.html").write_text(html_doc, encoding="utf-8")
 
 
@@ -672,6 +689,7 @@ def write_probe_summary(
     t0: float,
     device: torch.device,
     aborted: bool,
+    fla_runtime: Dict[str, Any],
     abort_info: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     write_visuals(
@@ -684,6 +702,7 @@ def write_probe_summary(
         device=device,
         forward_dtype=args.forward_dtype,
         budget_decoder=args.budget_decoder,
+        backbone=args.backbone,
     )
     final = final_metrics[f"loop{args.eval_loops}"]
     loop1 = final_metrics["loop1"]
@@ -692,7 +711,8 @@ def write_probe_summary(
     payload = {
         "run_name": args.run_name,
         "condition": args.condition,
-        "task": "official_maze30_rwkv_path",
+        "task": f"official_maze30_{args.backbone}_futureseed_path",
+        "backbone": args.backbone,
         "data_dir": args.data_dir,
         "config": vars(args),
         "train_history": history,
@@ -700,8 +720,10 @@ def write_probe_summary(
         "score": score_metric.path_f1,
         "score_key": f"final_metrics.{'budget_' if args.budget_decoder else ''}loop{args.eval_loops}.path_f1",
         "loop_gain": score_metric.path_f1 - score_loop1.path_f1,
+        "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "peak_cuda_mem_gb": torch.cuda.max_memory_allocated(device) / 1e9,
         "elapsed_sec": time.time() - t0,
+        "fla_runtime": fla_runtime,
         "aborted": bool(aborted),
         "abort": abort_info or None,
         "decision": "aborted" if aborted else (
@@ -715,7 +737,7 @@ def write_probe_summary(
     readme = [
         f"# {args.run_name}",
         "",
-        "Official Maze30 path recovery with a causal RWKV7 state-passing backbone.",
+        f"Official Maze30 path recovery with a causal {args.backbone.upper()} backbone.",
         "",
         f"- status: `{'aborted' if aborted else 'completed'}`",
         f"- condition: `{args.condition}`",
@@ -822,7 +844,13 @@ def main() -> None:
     p.add_argument("--feedback-mode", choices=("none", "pred"), default="none")
     p.add_argument("--feedback-scale", type=float, default=1.0)
     p.add_argument("--activation-checkpoint", action="store_true")
+    p.add_argument("--backbone", choices=("rwkv", "gdn2"), default="rwkv")
     p.add_argument("--rwkv-kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="statepassing")
+    p.add_argument("--gdn-mode", choices=("chunk", "recurrent"), default="chunk")
+    p.add_argument("--gdn-expand-v", type=float, default=1.0)
+    p.add_argument("--gdn-use-short-conv", type=int, choices=(0, 1), default=1)
+    p.add_argument("--gdn-conv-size", type=int, default=4)
+    p.add_argument("--fla-strict-official", action="store_true")
     p.add_argument("--forward-dtype", choices=("float32", "bfloat16"), default="bfloat16")
     p.add_argument("--path-weight", type=float, default=8.0)
     p.add_argument("--path-binary-weight", type=float, default=0.0)
@@ -860,9 +888,15 @@ def main() -> None:
         raise RuntimeError("rwkv_maze_probe is CUDA-only; CPU smoke/training is intentionally disabled")
     device = torch.device("cuda")
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    FutureSeedRWKV, forward_autocast, statepassing_available = import_rwkv(args.repo_root.resolve())
+    FutureSeedRWKV, forward_autocast, statepassing_available, strict_fla_runtime_summary = import_rwkv(
+        args.repo_root.resolve()
+    )
     globals()["forward_autocast"] = forward_autocast
-    if args.rwkv_kernel in {"cuda", "statepassing"}:
+    if args.backbone == "gdn2" and not args.fla_strict_official:
+        raise RuntimeError("GDN2 Maze runs require --fla-strict-official; silent fallback is forbidden")
+    if args.backbone != "gdn2" and args.fla_strict_official:
+        raise ValueError("--fla-strict-official is currently restricted to the GDN2 Maze carrier")
+    if args.backbone == "rwkv" and args.rwkv_kernel in {"cuda", "statepassing"}:
         ok, reason = statepassing_available(args.head_dim)
         if not ok:
             raise RuntimeError(f"RWKV statepassing unavailable: {reason}")
@@ -888,10 +922,20 @@ def main() -> None:
         future_seed_update=args.future_seed_update,
         activation_checkpoint=args.activation_checkpoint,
         rwkv_kernel=args.rwkv_kernel,
+        backbone=args.backbone,
+        gdn_mode=args.gdn_mode,
+        gdn_expand_v=args.gdn_expand_v,
+        gdn_use_short_conv=bool(args.gdn_use_short_conv),
+        gdn_conv_size=args.gdn_conv_size,
         rwkv_cls=FutureSeedRWKV,
         feedback_mode=args.feedback_mode,
         feedback_scale=args.feedback_scale,
     ).to(device)
+    fla_runtime = (
+        strict_fla_runtime_summary(model, "gdn2")
+        if args.fla_strict_official
+        else {"strict": False}
+    )
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     history: List[Dict[str, Any]] = []
     t0 = time.time()
@@ -1042,6 +1086,7 @@ def main() -> None:
                     t0=t0,
                     device=device,
                     aborted=True,
+                    fla_runtime=fla_runtime,
                     abort_info=abort_info,
                 )
                 print(
@@ -1079,6 +1124,7 @@ def main() -> None:
         t0=t0,
         device=device,
         aborted=False,
+        fla_runtime=fla_runtime,
     )
     print(json.dumps({"run_name": args.run_name, "score": payload["score"], "loop_gain": payload["loop_gain"]}, indent=2))
 

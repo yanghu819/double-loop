@@ -257,7 +257,12 @@ if [[ "$MODE" == "rwkv_maze_probe" ]]; then
     --future-seed-scale "${FUTURE_SEED_SCALE:-1.0}"
     --future-seed-decay "${FUTURE_SEED_DECAY:-0.0}"
     --future-seed-update "${FUTURE_SEED_UPDATE:-fixed}"
+    --backbone "${BACKBONE:-rwkv}"
     --rwkv-kernel "${RWKV_KERNEL:-statepassing}"
+    --gdn-mode "${GDN_MODE:-chunk}"
+    --gdn-expand-v "${GDN_EXPAND_V:-1.0}"
+    --gdn-use-short-conv "${GDN_USE_SHORT_CONV:-1}"
+    --gdn-conv-size "${GDN_CONV_SIZE:-4}"
     --forward-dtype "${FORWARD_DTYPE:-bfloat16}"
     --path-weight "${RWKV_MAZE_PATH_WEIGHT:-8.0}"
     --path-binary-weight "${RWKV_MAZE_PATH_BINARY_WEIGHT:-0.0}"
@@ -273,6 +278,9 @@ if [[ "$MODE" == "rwkv_maze_probe" ]]; then
   )
   if [[ "${ACTIVATION_CHECKPOINT:-0}" == "1" ]]; then
     RWKV_MAZE_ARGS+=(--activation-checkpoint)
+  fi
+  if [[ "${FLA_STRICT_OFFICIAL:-0}" == "1" ]]; then
+    RWKV_MAZE_ARGS+=(--fla-strict-official)
   fi
   if [[ "${RWKV_MAZE_BUDGET_DECODER:-0}" == "1" ]]; then
     RWKV_MAZE_ARGS+=(--budget-decoder)

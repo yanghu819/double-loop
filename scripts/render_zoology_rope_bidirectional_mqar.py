@@ -90,6 +90,31 @@ def error_count(case: dict[str, Any]) -> int:
     return int(case["future_errors"]) + int(case["past_errors"])
 
 
+def binding_diagnostics(cases: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    by_direction: dict[str, dict[str, int]] = {
+        "past": {"errors": 0, "other_sample_value": 0},
+        "future": {"errors": 0, "other_sample_value": 0},
+    }
+    for case in cases.values():
+        valid_targets = {int(event["target"]) for event in case["events"]}
+        for event in case["events"]:
+            if event["correct"]:
+                continue
+            direction = str(event["direction"])
+            row = by_direction[direction]
+            row["errors"] += 1
+            if int(event["prediction"]) in valid_targets:
+                row["other_sample_value"] += 1
+    total_errors = sum(row["errors"] for row in by_direction.values())
+    total_swaps = sum(row["other_sample_value"] for row in by_direction.values())
+    return {
+        "by_direction": by_direction,
+        "errors": total_errors,
+        "other_sample_value": total_swaps,
+        "other_sample_value_fraction": total_swaps / max(1, total_errors),
+    }
+
+
 def select_cases(
     case_maps: dict[str, dict[str, dict[str, Any]]],
 ) -> list[str]:
@@ -184,6 +209,9 @@ def main() -> None:
         arm: {row["case_id"]: row for row in json.loads(path.read_text())}
         for arm, path in case_paths.items()
     }
+    binding = {
+        arm: binding_diagnostics(cases) for arm, cases in case_maps.items()
+    }
     selected = select_cases(case_maps)
     args.visual_dir.mkdir(parents=True, exist_ok=True)
     (args.visual_dir / "selected_cases.json").write_text(
@@ -213,6 +241,9 @@ def main() -> None:
     (args.visual_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n"
     )
+    (args.visual_dir / "binding_diagnostics.json").write_text(
+        json.dumps(binding, indent=2, sort_keys=True) + "\n"
+    )
 
     metric_rows = []
     for arm in ARM_LABELS:
@@ -239,6 +270,19 @@ def main() -> None:
     gate = comparison["registered_gate"]
     gate_word = "PASS" if gate["passed"] else "STOP"
     gate_class = "pass" if gate["passed"] else "stop"
+    binding_rows = []
+    for arm in ARM_LABELS:
+        diagnostic = binding[arm]
+        past = diagnostic["by_direction"]["past"]
+        future = diagnostic["by_direction"]["future"]
+        binding_rows.append(
+            "<tr>"
+            f"<td>{html.escape(ARM_LABELS[arm])}</td>"
+            f"<td>{future['other_sample_value']:,} / {future['errors']:,}</td>"
+            f"<td>{past['other_sample_value']:,} / {past['errors']:,}</td>"
+            f"<td>{diagnostic['other_sample_value_fraction']:.1%}</td>"
+            "</tr>"
+        )
     cases = "".join(case_html(case_id, case_maps) for case_id in selected)
     document = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -269,6 +313,9 @@ h1 {{ font-size:28px; margin:0 0 8px; }} h2 {{ font-size:20px; margin:34px 0 12p
 <div class="table-wrap"><table><thead><tr><th>Model</th><th>Past acc</th><th>Future acc</th><th>Balanced</th><th>Joint exact</th><th>Parameters</th><th>Warm train tok/s</th><th>Warm peak</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table></div>
 <p>Throughput and memory are fixed-order diagnostics after independent warmup, not the final paper cost curve.</p>
 <h2>Validation opening</h2><div class="chart">{curve_svg(scores)}</div><div class="legend">{legend}</div>
+<h2>Binding failure</h2>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Future wrong-key / errors</th><th>Past wrong-key / errors</th><th>All errors that select another valid value</th></tr></thead><tbody>{''.join(binding_rows)}</tbody></table></div>
+<p>An error counts as a wrong-key selection when its prediction is a valid value attached to another key in the same sequence. The failed attention arms recover the value set, but do not bind each value to its own key.</p>
 <h2>What changed</h2><div class="notes"><p><code>rope_scale=0</code> is checked bit-exact against the frozen plain SDPA output. RoPE adds no trainable parameter and the attention remains fully noncausal. This experiment tests whether the failed Transformer ceiling lacked a translation-invariant relative address for the adjacent key/value relation.</p></div>
 <h2>Same-sequence decisions</h2><p>Green predictions equal the target; red predictions do not. Cases prioritize candidate repairs over plain SDPA, then the candidate's hardest remaining examples.</p>{cases}
 </main></body></html>"""

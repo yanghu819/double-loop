@@ -1,0 +1,23 @@
+{
+  "budget_seconds": 1800,
+  "data": "fixed mixed-direction MQAR, length64, four associations, exact P-CAUSAL-007 hashes",
+  "forbidden": [
+    "FutureSeed change",
+    "reverse scan",
+    "selector",
+    "search",
+    "repair",
+    "task rule",
+    "sweep"
+  ],
+  "git_sha": "cc4c80c5285d92b8e9db3ffb04d8f191ab9eedf0",
+  "hypothesis": "Full attention had visibility but lacked a translation-invariant relative address for adjacent key/value binding.",
+  "intervention": "parameter-free standard RoPE on Q/K of the frozen parameter-matched full noncausal SDPA",
+  "kill": "one arm only; no RoPE base/scale, LR, width, depth, epoch, loss, or seed rescue",
+  "model": "D128/L2/H4/head57, same tensors and initialization as frozen plain SDPA",
+  "plan": "P-CAUSAL-015",
+  "registered_pass": "past>=0.90, future>=0.90, joint_exact>=0.80",
+  "run_name": "zoology-rope-bidir-mqar-20260804T121135Z-cc4c80c",
+  "success_claim": "relative-address attention is a valid bidirectional ceiling for the formal FutureSeed length/cost comparison",
+  "training": "batch32, 10k/1k, 30 epochs, AdamW1e-3, WD0.1, seed123"
+}

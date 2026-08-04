@@ -1799,3 +1799,19 @@
   observed failure points toward address separability or state compression,
   not more value width. Future state scaling must say which mathematical
   capacity it increases; total state elements alone are not a mechanism.
+- P-CAUSAL-015 rules out missing relative position as the simple explanation
+  for the failed bidirectional MQAR ceilings. Parameter-free RoPE preserved the
+  exact tensors and added future-aware relative phases, but finished at
+  `0.4955/0.4820` past/future accuracy and `0.046` joint exact after 30 epochs.
+  Do not sweep RoPE theta, scale, epochs or optimizer settings on this proxy.
+- Visibility, relative position and binding are separate capabilities. Every
+  wrong prediction from plain SDPA, mask-removed official MHA and RoPE SDPA is
+  another valid value from the same sample. These models recover the candidate
+  set but cannot associate each random key with its own value in the fixed
+  two-layer shell. FutureSeed makes only `16/3` future/past errors versus
+  RoPE's `1036/1009` on the same 2,000 queries per direction.
+- Three failed attention controls do not establish that FutureSeed beats
+  Transformers in general. They close this particular carrier for a quality
+  ceiling. Use the validated causal-GDN2/FutureSeed pair for the length and
+  memory scaling mechanism figure, and require a separately opened published
+  bidirectional task before making a Transformer cost-quality comparison.

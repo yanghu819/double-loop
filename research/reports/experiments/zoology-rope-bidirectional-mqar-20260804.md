@@ -3,10 +3,10 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-015`
-- Run: assigned by `scripts/run_zoology_rope_bidirectional_mqar.sh`
+- Run: `zoology-rope-bidir-mqar-20260804T121135Z-cc4c80c`
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1, one A100-SXM4-80GB
-- Status: approved; implementation and strict preflight pending
+- Status: discarded by the registered carrier gate
 
 ## 2. Hypothesis
 
@@ -61,20 +61,67 @@ future dependency and finite CUDA backward all pass.
 
 ## 6. Artifacts
 
-Pending. The run will archive `config.json`, `preflight.json`, logs,
-`score.json`, source SHA/snapshot, all per-arm reference/candidate scores and
-cases, selected same-sequence cases, and HTML/screenshots.
+The completed run used exact PID/PGID `58288/58288` and detached source
+`cc4c80c5285d92b8e9db3ffb04d8f191ab9eedf0`. It archives `config.json`,
+`preflight.json`, full logs, `score.json`, source SHA/snapshot hash, all per-arm
+reference/candidate scores and cases, selected same-sequence cases, HTML, and
+desktop/mobile screenshots. `visualizations/binding_diagnostics.json` records
+the exact wrong-key counts used by the failure analysis. The remote source
+snapshot SHA256 is
+`9d4f94ebb50597213deba3f6c256f7904c8968f205964c8cba205b6ba1549aa6`.
+The scientific stop is recorded in `abort.json`; exit status 2 is deliberate,
+not an infrastructure failure. GPU memory returned to zero.
 
 ## 7. Results
 
-Pending.
+The strict CUDA preflight passed before formal training. It verified one A100
+GPU1, exact Zoology source and fixed data hashes, identical 539,136 parameters
+and initialized tensors across plain SDPA and both RoPE scale settings,
+`rope_scale=0` output max difference exactly zero, nonzero future dependency,
+and finite backward gradients for scale 0 and scale 1.
+
+| Arm | Past acc | Future acc | Balanced acc | Joint exact |
+|---|---:|---:|---:|---:|
+| Causal GDN2, frozen | 0.9965 | 0.0100 | 0.50325 | 0.000 |
+| GDN2 + FutureSeed, frozen | 0.9985 | 0.9920 | 0.99525 | 0.981 |
+| Plain full SDPA, frozen | 0.4980 | 0.4995 | 0.49875 | 0.040 |
+| Official MHA, mask removed, frozen | 0.4850 | 0.4845 | 0.48475 | 0.048 |
+| Full SDPA + RoPE | 0.4955 | 0.4820 | 0.48875 | 0.046 |
+
+RoPE misses all three registered thresholds. Its balanced accuracy is `-0.0100`
+below plain SDPA and `-0.5065` below FutureSeed. Best aggregate validation
+accuracy is only `0.5030` at epoch 2; it ends at `0.48875`. The sampled train
+loss falls to `0.3158`, while validation CE rises from `1.1805` to `1.6443`,
+so the extra relative feature is overfit rather than converted into a
+general key/value algorithm.
+
+The failure shape is exact. For plain SDPA, official mask-removed MHA, and
+RoPE SDPA, 100% of wrong query predictions are another association's valid
+value from the same sample. RoPE future/past wrong-key selections are
+`1036/1009` out of `2000/2000` queries. The model sees the value set but does
+not bind each key to its own value. By comparison, FutureSeed has only `16/3`
+wrong future/past predictions, all remaining within-sample swaps.
+
+The independently warmed RoPE diagnostic is `200.7k` tokens/s and `66.8 MiB`
+peak allocated memory. It is not a final efficiency claim because this direct
+implementation recomputes RoPE trigonometry and no quality gate was passed.
 
 ## 8. Conclusions
 
-Pending. Success validates a relative-position Transformer ceiling and
-authorizes the formal 64-to-1024 quality/cost experiment. Failure closes this
-MQAR proxy for a Transformer-quality claim; it must not be reinterpreted as
-evidence that FutureSeed beats Transformers.
+Discard the RoPE carrier and stop attention rescue on this proxy. Relative
+addressing alone did not break the same two-candidate binding ambiguity seen
+in both previous bidirectional controls. Do not sweep RoPE theta/scale, epochs,
+LR, width, depth, loss, or seed.
+
+This result strengthens the task-level mechanism diagnosis but still does not
+show that FutureSeed beats Transformers in general. It says that, in this
+fixed two-layer Zoology shell, recurrent state updates provide the useful
+key/value binding bias while plain full attention, mask-removed upstream MHA,
+and RoPE full attention do not. The requested paper scaling figure should now
+measure the already validated causal-GDN2/FutureSeed pair across sequence
+length and memory load. A Transformer quality ceiling must come from a
+different established task where its bidirectional carrier independently
+opens.
 
 ## 9. Publication Record
 

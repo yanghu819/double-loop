@@ -1,0 +1,94 @@
+{
+  "arm": "bidirectional_attention",
+  "data_hashes": {
+    "test": "3fa26a5a04b8302001231451bce23c4f5372648d8cdd9fe6116d8e418f470209",
+    "train": "31bac228c46a1c85b0b0e164675c7f65e9bb0a3d4b733d4c42d7c057bd6d5bf9"
+  },
+  "elapsed_sec_including_validation": 22.882953848689795,
+  "epochs": 10,
+  "init_hash": "5e679ccd198047f77d5f15695a49e8968a1a0c2fa4cc8d4c64bcd6a6c05b3a21",
+  "init_parameter_hash": "1da2029805ef8d5992bf169b762cf6035b5b20da47445bb269d87abbf7329e2b",
+  "metrics": {
+    "balanced_accuracy": 0.49875,
+    "future": {
+      "accuracy": 0.4995,
+      "ce": 0.8125328273773194,
+      "exact": 0.214,
+      "examples": 1000,
+      "queries": 2000
+    },
+    "joint_exact": 0.04,
+    "past": {
+      "accuracy": 0.498,
+      "ce": 0.8068331937789917,
+      "exact": 0.196,
+      "examples": 1000,
+      "queries": 2000
+    }
+  },
+  "num_kv_pairs": 4,
+  "parameters": 539136,
+  "peak_training_cuda_mem_bytes": 67200512,
+  "sequence_length": 64,
+  "train_examples": 10000,
+  "train_tokens": 6400000,
+  "valid_curve": [
+    {
+      "epoch": 0,
+      "valid/accuracy": 0.30025,
+      "valid/loss": 3.3920342922210693
+    },
+    {
+      "epoch": 1,
+      "valid/accuracy": 0.49225,
+      "valid/loss": 1.023657202720642
+    },
+    {
+      "epoch": 2,
+      "valid/accuracy": 0.49675,
+      "valid/loss": 0.9355901479721069
+    },
+    {
+      "epoch": 3,
+      "valid/accuracy": 0.4975,
+      "valid/loss": 0.8634738326072693
+    },
+    {
+      "epoch": 4,
+      "valid/accuracy": 0.49875,
+      "valid/loss": 0.8409538269042969
+    },
+    {
+      "epoch": 5,
+      "valid/accuracy": 0.4935,
+      "valid/loss": 0.8247614502906799
+    },
+    {
+      "epoch": 6,
+      "valid/accuracy": 0.495,
+      "valid/loss": 0.816692590713501
+    },
+    {
+      "epoch": 7,
+      "valid/accuracy": 0.49975,
+      "valid/loss": 0.8146653771400452
+    },
+    {
+      "epoch": 8,
+      "valid/accuracy": 0.49625,
+      "valid/loss": 0.8141934871673584
+    },
+    {
+      "epoch": 9,
+      "valid/accuracy": 0.49875,
+      "valid/loss": 0.8102598786354065
+    }
+  ],
+  "warmed_step_benchmark": {
+    "elapsed_sec": 0.10971986129879951,
+    "examples_per_sec": 5833.03690347449,
+    "measured_steps": 20.0,
+    "peak_cuda_mem_bytes": 69281280.0,
+    "tokens_per_sec": 373314.36182236735
+  }
+}

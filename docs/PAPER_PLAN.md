@@ -535,3 +535,22 @@ question is whether generic address separability or FutureSeed compression can
 scale without changing the already-open D128 residual backbone. Do not present
 state-element count as address capacity, and do not continue expand-v, epochs,
 LR, or seeds.
+
+### P-CAUSAL-015 Relative-Address Attention Boundary
+
+Adding parameter-free standard RoPE to the frozen near-parameter-matched full
+SDPA carrier did not open it. Strict preflight proved identical 539,136
+parameters and initialized tensors, bit-exact `rope_scale=0`, exact data,
+nonzero future dependency and finite CUDA backward. After 30 epochs, RoPE SDPA
+reached past/future accuracy `0.4955/0.4820` and joint exact `0.046`, versus
+plain SDPA `0.4980/0.4995` and FutureSeed `0.9985/0.9920` with joint exact
+`0.981`. Its best aggregate validation accuracy was only `0.5030` at epoch 2.
+
+All wrong predictions from all three bidirectional attention controls are
+another valid value from the same sample. They learn the candidate value set
+but not the key/value binding. Relative position alone does not repair that
+algorithmic ambiguity in this two-layer shell. Close this MQAR proxy for an
+attention quality/cost claim and do not rescue it with RoPE, optimizer, model,
+epoch or seed tuning. The paper can retain the matched causal-versus-FutureSeed
+directionality and long-context results, but any Transformer ceiling must be
+established on a separate carrier that independently opens.

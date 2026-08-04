@@ -155,7 +155,7 @@ def main() -> None:
     result = {
         "cuda_device_count": torch.cuda.device_count(),
         "device": device.name,
-        "device_uuid": getattr(device, "uuid", "unavailable"),
+        "device_uuid": str(getattr(device, "uuid", "unavailable")),
         "fla_sha": PINNED_FLA_SHA,
         "gdn2_source": source,
         "gdn2_class": f"{GatedDeltaNet2.__module__}.{GatedDeltaNet2.__name__}",

@@ -26,6 +26,9 @@ case "$MODE" in
   established_mlm)
     exec "$REPO_ROOT/scripts/run_established_bert_mlm.sh" "${2:?Usage: ./run.sh established_mlm <bidirectional|causal>}"
     ;;
+  mqar_length_scaling)
+    exec "$REPO_ROOT/scripts/run_zoology_mqar_length_scaling.sh"
+    ;;
 esac
 
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PERSIST_ROOT/.cache}"
@@ -43,7 +46,7 @@ mkdir -p "$PERSIST_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$PERSIST_ROOT/artifacts
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe) ;;
   *)
-    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
+    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|established_mlm|mqar_length_scaling|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
     exit 2
     ;;
 esac

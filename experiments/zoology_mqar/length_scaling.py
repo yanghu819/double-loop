@@ -1,0 +1,586 @@
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+import time
+from pathlib import Path
+from typing import Any
+
+import torch
+import torch.nn.functional as F
+
+from zoology.config import DataConfig, ModelConfig, ModuleConfig, TrainConfig
+from zoology.data.utils import prepare_data
+from zoology.model import LanguageModel
+from zoology.train import Trainer
+from zoology.utils import set_determinism
+
+from experiments.zoology_mqar.directional_mqar import DirectionalMQARConfig
+from experiments.zoology_mqar.futureseed_directionality import (
+    CaptureLogger,
+    dataset_hash,
+    model_hash,
+)
+from experiments.zoology_mqar.gdn2_futureseed import (
+    FutureSeedLanguageModel,
+    futureseed_diagnostics,
+)
+
+
+VOCAB_SIZE = 256
+TRAIN_EXAMPLES = 10_000
+VALID_EXAMPLES = 1_000
+SEED = 123
+MODEL_WIDTH = 128
+MODEL_LAYERS = 2
+MODEL_HEADS = 4
+GDN2_HEAD_DIM = 32
+ATTENTION_HEAD_DIM = 57
+ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
+P007_LENGTH64_TRAIN_HASH = (
+    "31bac228c46a1c85b0b0e164675c7f65e9bb0a3d4b733d4c42d7c057bd6d5bf9"
+)
+P007_LENGTH64_TEST_HASH = (
+    "3fa26a5a04b8302001231451bce23c4f5372648d8cdd9fe6116d8e418f470209"
+)
+
+
+def build_config(
+    *,
+    arm: str,
+    sequence_length: int,
+    num_kv_pairs: int,
+    max_epochs: int,
+    batch_size: int,
+) -> TrainConfig:
+    data = DataConfig(
+        train_configs=[
+            DirectionalMQARConfig(
+                num_examples=TRAIN_EXAMPLES,
+                vocab_size=VOCAB_SIZE,
+                input_seq_len=sequence_length,
+                num_kv_pairs=num_kv_pairs,
+                direction="mixed",
+            )
+        ],
+        test_configs=[
+            DirectionalMQARConfig(
+                num_examples=VALID_EXAMPLES,
+                vocab_size=VOCAB_SIZE,
+                input_seq_len=sequence_length,
+                num_kv_pairs=num_kv_pairs,
+                direction="mixed",
+            )
+        ],
+        batch_size=batch_size,
+        seed=SEED,
+        cache_dir=(
+            "/huyang2/double-loop/.cache/"
+            f"zoology-directional-scaling-l{sequence_length}-k{num_kv_pairs}"
+        ),
+    )
+    if arm in {"causal_gdn2", "future_seed_gdn2"}:
+        sequence_mixer = ModuleConfig(
+            name=(
+                "experiments.zoology_mqar.gdn2_futureseed."
+                "ZoologyGDN2FutureSeedMixer"
+            ),
+            kwargs={
+                "num_heads": MODEL_HEADS,
+                "head_dim": GDN2_HEAD_DIM,
+                "expand_v": 1.0,
+                "conv_size": 4,
+                "future_seed_scale": (
+                    0.0 if arm == "causal_gdn2" else 1.0
+                ),
+            },
+        )
+    elif arm == "bidirectional_attention":
+        sequence_mixer = ModuleConfig(
+            name=(
+                "experiments.zoology_mqar.bidirectional_attention."
+                "ParamMatchedBidirectionalAttention"
+            ),
+            kwargs={
+                "num_heads": MODEL_HEADS,
+                "head_dim": ATTENTION_HEAD_DIM,
+            },
+        )
+    else:
+        raise ValueError(f"Unknown arm: {arm}")
+
+    model = ModelConfig(
+        vocab_size=VOCAB_SIZE,
+        max_position_embeddings=sequence_length,
+        d_model=MODEL_WIDTH,
+        n_layers=MODEL_LAYERS,
+        sequence_mixer=sequence_mixer,
+    )
+    return TrainConfig(
+        data=data,
+        model=model,
+        max_epochs=max_epochs,
+        early_stopping_metric="valid/accuracy",
+        early_stopping_threshold=1.1,
+        learning_rate=1e-3,
+        weight_decay=0.1,
+        seed=SEED,
+        slice_keys=[],
+        run_id=f"directional-scaling-{arm}-l{sequence_length}-k{num_kv_pairs}",
+    )
+
+
+def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm in {"causal_gdn2", "future_seed_gdn2"}:
+        return FutureSeedLanguageModel(copy.deepcopy(config.model))
+    return LanguageModel(copy.deepcopy(config.model))
+
+
+def parameter_hash(model: torch.nn.Module) -> str:
+    digest = hashlib.sha256()
+    for name, parameter in sorted(model.named_parameters()):
+        digest.update(name.encode())
+        digest.update(parameter.detach().cpu().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
+def warm_model(
+    model: torch.nn.Module,
+    batch: tuple[torch.Tensor, torch.Tensor, Any],
+) -> None:
+    model.train().cuda()
+    inputs, labels, _slices = batch
+    inputs = inputs.cuda()
+    labels = labels.cuda()
+    for _ in range(3):
+        model.zero_grad(set_to_none=True)
+        logits = model(inputs)
+        loss = F.cross_entropy(logits.flatten(0, 1), labels.flatten())
+        loss.backward()
+    model.zero_grad(set_to_none=True)
+    torch.cuda.synchronize()
+
+
+def benchmark_training_step(
+    model: torch.nn.Module,
+    batch: tuple[torch.Tensor, torch.Tensor, Any],
+    *,
+    warmup_steps: int = 5,
+    measured_steps: int = 20,
+) -> dict[str, float]:
+    model.train()
+    inputs, labels, _slices = batch
+    inputs = inputs.cuda()
+    labels = labels.cuda()
+
+    def one_step() -> None:
+        model.zero_grad(set_to_none=True)
+        logits = model(inputs)
+        loss = F.cross_entropy(logits.flatten(0, 1), labels.flatten())
+        loss.backward()
+
+    for _ in range(warmup_steps):
+        one_step()
+    torch.cuda.synchronize()
+    torch.cuda.reset_peak_memory_stats()
+    started = time.perf_counter()
+    for _ in range(measured_steps):
+        one_step()
+    torch.cuda.synchronize()
+    elapsed = time.perf_counter() - started
+    model.zero_grad(set_to_none=True)
+    return {
+        "measured_steps": float(measured_steps),
+        "elapsed_sec": elapsed,
+        "tokens_per_sec": inputs.numel() * measured_steps / elapsed,
+        "examples_per_sec": inputs.shape[0] * measured_steps / elapsed,
+        "peak_cuda_mem_bytes": float(torch.cuda.max_memory_allocated()),
+    }
+
+
+def _query_event(
+    inputs: torch.Tensor,
+    targets: torch.Tensor,
+    predictions: torch.Tensor,
+    query_position: int,
+    quarter: int,
+) -> dict[str, Any]:
+    key = int(inputs[query_position].item())
+    target = int(targets[query_position].item())
+    candidate_positions = torch.nonzero(inputs == key).flatten().tolist()
+    write_position = None
+    for candidate in candidate_positions:
+        if candidate == query_position or candidate + 1 >= inputs.numel():
+            continue
+        if int(inputs[candidate + 1].item()) == target:
+            write_position = int(candidate)
+            break
+    if write_position is None:
+        raise RuntimeError("Could not recover the write position for a query")
+    direction = "future" if query_position < quarter else "past"
+    return {
+        "direction": direction,
+        "query_position": query_position,
+        "write_position": write_position,
+        "distance": write_position - query_position,
+        "key": key,
+        "target": target,
+        "prediction": int(predictions[query_position].item()),
+        "correct": bool(predictions[query_position].item() == target),
+    }
+
+
+@torch.no_grad()
+def evaluate(
+    model: torch.nn.Module,
+    dataloader,
+    *,
+    sequence_length: int,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    model.eval()
+    quarter = sequence_length // 4
+    totals: dict[str, dict[str, float]] = {}
+    cases: list[dict[str, Any]] = []
+    case_index = 0
+    for inputs, targets, _slices in dataloader:
+        inputs_gpu = inputs.cuda()
+        targets_gpu = targets.cuda()
+        logits = model(inputs_gpu)
+        predictions = logits.argmax(dim=-1)
+        label_mask = targets_gpu != -100
+        positions = torch.arange(sequence_length, device="cuda")
+        direction_masks = {
+            "future": label_mask & (positions[None, :] < quarter),
+            "past": (
+                label_mask
+                & (positions[None, :] >= 2 * quarter)
+                & (positions[None, :] < 3 * quarter)
+            ),
+        }
+        for direction, direction_mask in direction_masks.items():
+            loss_sum = F.cross_entropy(
+                logits[direction_mask],
+                targets_gpu[direction_mask],
+                reduction="sum",
+            )
+            correct = (predictions == targets_gpu) & direction_mask
+            query_count = direction_mask.sum(dim=1)
+            exact = correct.sum(dim=1) == query_count
+            bucket = totals.setdefault(
+                direction,
+                {
+                    "correct": 0.0,
+                    "queries": 0.0,
+                    "exact": 0.0,
+                    "examples": 0.0,
+                    "loss": 0.0,
+                },
+            )
+            bucket["correct"] += float(correct.sum().item())
+            bucket["queries"] += float(direction_mask.sum().item())
+            bucket["exact"] += float(exact.sum().item())
+            bucket["examples"] += float(inputs.shape[0])
+            bucket["loss"] += float(loss_sum.item())
+
+        inputs_cpu = inputs.cpu()
+        targets_cpu = targets.cpu()
+        predictions_cpu = predictions.cpu()
+        for row in range(inputs.shape[0]):
+            query_positions = torch.nonzero(targets_cpu[row] != -100).flatten()
+            events = [
+                _query_event(
+                    inputs_cpu[row],
+                    targets_cpu[row],
+                    predictions_cpu[row],
+                    int(position.item()),
+                    quarter,
+                )
+                for position in query_positions
+            ]
+            future_errors = sum(
+                int(not event["correct"])
+                for event in events
+                if event["direction"] == "future"
+            )
+            past_errors = sum(
+                int(not event["correct"])
+                for event in events
+                if event["direction"] == "past"
+            )
+            cases.append(
+                {
+                    "case_index": case_index,
+                    "case_id": hashlib.sha256(
+                        inputs_cpu[row].contiguous().numpy().tobytes()
+                    ).hexdigest()[:16],
+                    "sequence_length": sequence_length,
+                    "future_errors": future_errors,
+                    "past_errors": past_errors,
+                    "events": events,
+                }
+            )
+            case_index += 1
+
+    metrics: dict[str, Any] = {}
+    for direction, bucket in totals.items():
+        metrics[direction] = {
+            "accuracy": bucket["correct"] / bucket["queries"],
+            "exact": bucket["exact"] / bucket["examples"],
+            "ce": bucket["loss"] / bucket["queries"],
+            "queries": int(bucket["queries"]),
+            "examples": int(bucket["examples"]),
+        }
+    metrics["balanced_accuracy"] = sum(
+        metrics[direction]["accuracy"] for direction in ("past", "future")
+    ) / 2.0
+    metrics["joint_exact"] = sum(
+        int(case["future_errors"] + case["past_errors"] == 0) for case in cases
+    ) / len(cases)
+    cases.sort(
+        key=lambda case: (
+            -case["future_errors"],
+            -case["past_errors"],
+            case["case_index"],
+        )
+    )
+    return metrics, cases
+
+
+def run_arm(
+    *,
+    arm: str,
+    sequence_length: int,
+    num_kv_pairs: int,
+    output_dir: Path,
+    max_epochs: int,
+    batch_size: int,
+) -> dict[str, Any]:
+    arm_dir = output_dir / f"length_{sequence_length}" / arm
+    arm_dir.mkdir(parents=True, exist_ok=True)
+    config = build_config(
+        arm=arm,
+        sequence_length=sequence_length,
+        num_kv_pairs=num_kv_pairs,
+        max_epochs=max_epochs,
+        batch_size=batch_size,
+    )
+    set_determinism(config.seed)
+    model = make_model(config, arm)
+    init_hash = model_hash(model)
+    init_parameter_hash = parameter_hash(model)
+    train_dataloader, test_dataloader = prepare_data(config.data)
+    data_hashes = {
+        "train": dataset_hash(train_dataloader),
+        "test": dataset_hash(test_dataloader),
+    }
+    fixed_batch = next(iter(train_dataloader))
+    warm_model(model, fixed_batch)
+    set_determinism(config.seed)
+
+    logger = CaptureLogger(arm_dir / "metrics.jsonl", arm)
+    logger.log_config(config)
+    logger.log_model(model, config)
+    trainer = Trainer(
+        model=model,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        input_type=config.input_type,
+        max_epochs=config.max_epochs,
+        learning_rate=config.learning_rate,
+        weight_decay=config.weight_decay,
+        early_stopping_metric=config.early_stopping_metric,
+        early_stopping_threshold=config.early_stopping_threshold,
+        slice_keys=config.slice_keys,
+        loss_type=config.loss_type,
+        device="cuda",
+        logger=logger,
+    )
+
+    torch.cuda.reset_peak_memory_stats()
+    torch.cuda.synchronize()
+    started = time.perf_counter()
+    trainer.fit()
+    torch.cuda.synchronize()
+    elapsed = time.perf_counter() - started
+    training_peak = torch.cuda.max_memory_allocated()
+    metrics, cases = evaluate(
+        model,
+        test_dataloader,
+        sequence_length=sequence_length,
+    )
+    benchmark = benchmark_training_step(model, fixed_batch)
+    score: dict[str, Any] = {
+        "arm": arm,
+        "sequence_length": sequence_length,
+        "num_kv_pairs": num_kv_pairs,
+        "init_hash": init_hash,
+        "init_parameter_hash": init_parameter_hash,
+        "data_hashes": data_hashes,
+        "parameters": sum(parameter.numel() for parameter in model.parameters()),
+        "epochs": max_epochs,
+        "train_examples": TRAIN_EXAMPLES,
+        "train_tokens": TRAIN_EXAMPLES * sequence_length * max_epochs,
+        "elapsed_sec_including_validation": elapsed,
+        "peak_training_cuda_mem_bytes": training_peak,
+        "metrics": metrics,
+        "valid_curve": logger.rows,
+        "warmed_step_benchmark": benchmark,
+    }
+    if arm in {"causal_gdn2", "future_seed_gdn2"}:
+        score["future_seed"] = futureseed_diagnostics(model)
+    logger.finish()
+    (arm_dir / "config.json").write_text(
+        json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"
+    )
+    (arm_dir / "score.json").write_text(
+        json.dumps(score, indent=2, sort_keys=True) + "\n"
+    )
+    (arm_dir / "cases.json").write_text(
+        json.dumps(cases, separators=(",", ":")) + "\n"
+    )
+    del trainer, model
+    torch.cuda.empty_cache()
+    return score
+
+
+def _safe_ratio(numerator: float, denominator: float) -> float | None:
+    if abs(denominator) < 1e-12:
+        return None
+    return numerator / denominator
+
+
+def summarize_length(scores: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    causal = scores["causal_gdn2"]
+    future_seed = scores["future_seed_gdn2"]
+    attention = scores["bidirectional_attention"]
+    if causal["init_hash"] != future_seed["init_hash"]:
+        raise RuntimeError("Matched GDN2 arms did not start identically")
+    if causal["init_parameter_hash"] != future_seed["init_parameter_hash"]:
+        raise RuntimeError("Matched GDN2 parameter hashes differ")
+    if len({score["data_hashes"]["train"] for score in scores.values()}) != 1:
+        raise RuntimeError("The three arms did not use identical training data")
+    if len({score["data_hashes"]["test"] for score in scores.values()}) != 1:
+        raise RuntimeError("The three arms did not use identical test data")
+
+    causal_future = causal["metrics"]["future"]["accuracy"]
+    fs_future = future_seed["metrics"]["future"]["accuracy"]
+    attention_future = attention["metrics"]["future"]["accuracy"]
+    return {
+        "arms": scores,
+        "future_seed_vs_causal": {
+            "future_accuracy_delta": fs_future - causal_future,
+            "past_accuracy_delta": (
+                future_seed["metrics"]["past"]["accuracy"]
+                - causal["metrics"]["past"]["accuracy"]
+            ),
+            "joint_exact_delta": (
+                future_seed["metrics"]["joint_exact"]
+                - causal["metrics"]["joint_exact"]
+            ),
+        },
+        "future_seed_gap_closure_vs_attention": _safe_ratio(
+            fs_future - causal_future,
+            attention_future - causal_future,
+        ),
+        "attention_parameter_delta_fraction_vs_gdn2": (
+            attention["parameters"] - causal["parameters"]
+        )
+        / causal["parameters"],
+    }
+
+
+def length64_carrier_gate(summary: dict[str, Any]) -> dict[str, Any]:
+    arms = summary["arms"]
+    causal = arms["causal_gdn2"]["metrics"]
+    future_seed = arms["future_seed_gdn2"]["metrics"]
+    attention = arms["bidirectional_attention"]["metrics"]
+    checks = {
+        "causal_past_at_least_0.90": causal["past"]["accuracy"] >= 0.90,
+        "causal_future_at_most_0.10": causal["future"]["accuracy"] <= 0.10,
+        "future_seed_past_at_least_0.90": future_seed["past"]["accuracy"] >= 0.90,
+        "future_seed_future_at_least_0.90": (
+            future_seed["future"]["accuracy"] >= 0.90
+        ),
+        "attention_past_at_least_0.90": attention["past"]["accuracy"] >= 0.90,
+        "attention_future_at_least_0.90": (
+            attention["future"]["accuracy"] >= 0.90
+        ),
+    }
+    return {"passed": all(checks.values()), "checks": checks}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--sequence-lengths",
+        type=int,
+        nargs="+",
+        default=[64, 1024],
+    )
+    parser.add_argument("--num-kv-pairs", type=int, default=4)
+    parser.add_argument("--max-epochs", type=int, default=10)
+    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--enforce-length64-gate", action="store_true")
+    args = parser.parse_args()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    summaries: dict[str, Any] = {}
+    for sequence_length in args.sequence_lengths:
+        scores = {
+            arm: run_arm(
+                arm=arm,
+                sequence_length=sequence_length,
+                num_kv_pairs=args.num_kv_pairs,
+                output_dir=args.output_dir,
+                max_epochs=args.max_epochs,
+                batch_size=args.batch_size,
+            )
+            for arm in ARMS
+        }
+        summary = summarize_length(scores)
+        summaries[str(sequence_length)] = summary
+        (args.output_dir / f"length_{sequence_length}" / "comparison.json").write_text(
+            json.dumps(summary, indent=2, sort_keys=True) + "\n"
+        )
+        if sequence_length == 64:
+            train_hash = scores["causal_gdn2"]["data_hashes"]["train"]
+            test_hash = scores["causal_gdn2"]["data_hashes"]["test"]
+            if train_hash != P007_LENGTH64_TRAIN_HASH:
+                raise RuntimeError("Length-64 training data drifted from P-CAUSAL-007")
+            if test_hash != P007_LENGTH64_TEST_HASH:
+                raise RuntimeError("Length-64 test data drifted from P-CAUSAL-007")
+            gate = length64_carrier_gate(summary)
+            (args.output_dir / "length_64" / "carrier_gate.json").write_text(
+                json.dumps(gate, indent=2, sort_keys=True) + "\n"
+            )
+            if args.enforce_length64_gate and not gate["passed"]:
+                raise RuntimeError(f"Length-64 carrier gate failed: {gate['checks']}")
+
+    protocol = {
+        "sequence_lengths": args.sequence_lengths,
+        "num_kv_pairs": args.num_kv_pairs,
+        "train_examples_per_arm": TRAIN_EXAMPLES,
+        "validation_examples_per_arm": VALID_EXAMPLES,
+        "epochs": args.max_epochs,
+        "batch_size": args.batch_size,
+        "seed": SEED,
+        "model_width": MODEL_WIDTH,
+        "model_layers": MODEL_LAYERS,
+        "gdn2_heads": MODEL_HEADS,
+        "gdn2_head_dim": GDN2_HEAD_DIM,
+        "attention_heads": MODEL_HEADS,
+        "attention_head_dim": ATTENTION_HEAD_DIM,
+        "loops": "not used; this experiment isolates cross-layer state seeding",
+    }
+    comparison = {"protocol": protocol, "lengths": summaries}
+    (args.output_dir / "comparison.json").write_text(
+        json.dumps(comparison, indent=2, sort_keys=True) + "\n"
+    )
+    print(json.dumps(comparison, indent=2, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

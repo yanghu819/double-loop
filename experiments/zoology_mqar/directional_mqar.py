@@ -37,12 +37,22 @@ def directional_mqar(
     """Generate write-before-query or query-before-write associative recall."""
     if vocab_size != 256:
         raise ValueError("The preregistered split requires vocab_size=256")
-    if input_seq_len != 64:
-        raise ValueError("The preregistered split requires input_seq_len=64")
-    if num_kv_pairs != 4:
-        raise ValueError("The preregistered split requires num_kv_pairs=4")
+    if input_seq_len < 64 or input_seq_len % 8:
+        raise ValueError("input_seq_len must be a multiple of 8 and at least 64")
+    if num_kv_pairs < 2 or num_kv_pairs % 2:
+        raise ValueError("num_kv_pairs must be a positive even number")
+    if num_kv_pairs > 64:
+        raise ValueError("num_kv_pairs exceeds the disjoint key/value capacity")
     if direction not in {"past", "future", "mixed"}:
         raise ValueError("direction must be past, future, or mixed")
+
+    quarter = input_seq_len // 4
+    pairs_per_direction = num_kv_pairs // 2
+    slots_per_quarter = quarter // 2
+    if pairs_per_direction > slots_per_quarter:
+        raise ValueError(
+            "Each directional half must fit in one normalized sequence quarter"
+        )
 
     rng = np.random.default_rng(seed)
     filler_vocab = np.arange(0, 64, dtype=np.int64)
@@ -57,16 +67,21 @@ def directional_mqar(
     labels = np.full_like(inputs, -100)
 
     if direction == "past":
-        pair_slots = np.arange(0, 16, 2, dtype=np.int64)
-        query_slots = np.arange(32, 64, 2, dtype=np.int64)
+        pair_slots = np.arange(0, quarter, 2, dtype=np.int64)
+        query_slots = np.arange(2 * quarter, input_seq_len, 2, dtype=np.int64)
     elif direction == "future":
-        query_slots = np.arange(0, 32, 2, dtype=np.int64)
-        pair_slots = np.arange(48, 64, 2, dtype=np.int64)
+        query_slots = np.arange(0, 2 * quarter, 2, dtype=np.int64)
+        pair_slots = np.arange(3 * quarter, input_seq_len, 2, dtype=np.int64)
     else:
-        future_query_slots = np.arange(0, 16, 2, dtype=np.int64)
-        past_pair_slots = np.arange(16, 32, 2, dtype=np.int64)
-        past_query_slots = np.arange(32, 48, 2, dtype=np.int64)
-        future_pair_slots = np.arange(48, 64, 2, dtype=np.int64)
+        future_query_slots = np.arange(0, quarter, 2, dtype=np.int64)
+        past_pair_slots = np.arange(quarter, 2 * quarter, 2, dtype=np.int64)
+        past_query_slots = np.arange(2 * quarter, 3 * quarter, 2, dtype=np.int64)
+        future_pair_slots = np.arange(
+            3 * quarter,
+            input_seq_len,
+            2,
+            dtype=np.int64,
+        )
 
     for example_idx in range(num_examples):
         keys = rng.choice(key_vocab, size=num_kv_pairs, replace=False)
@@ -79,14 +94,30 @@ def directional_mqar(
             assignments = []
             for association_idx, query_pos, write_pos in zip(
                 future_ids,
-                rng.choice(future_query_slots, size=2, replace=False),
-                rng.choice(future_pair_slots, size=2, replace=False),
+                rng.choice(
+                    future_query_slots,
+                    size=pairs_per_direction,
+                    replace=False,
+                ),
+                rng.choice(
+                    future_pair_slots,
+                    size=pairs_per_direction,
+                    replace=False,
+                ),
             ):
                 assignments.append((association_idx, query_pos, write_pos))
             for association_idx, query_pos, write_pos in zip(
                 past_ids,
-                rng.choice(past_query_slots, size=2, replace=False),
-                rng.choice(past_pair_slots, size=2, replace=False),
+                rng.choice(
+                    past_query_slots,
+                    size=pairs_per_direction,
+                    replace=False,
+                ),
+                rng.choice(
+                    past_pair_slots,
+                    size=pairs_per_direction,
+                    replace=False,
+                ),
             ):
                 assignments.append((association_idx, query_pos, write_pos))
         else:

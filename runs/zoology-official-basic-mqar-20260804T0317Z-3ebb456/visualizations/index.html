@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P-CAUSAL-005 Zoology MQAR opening</title>
+<style>
+  :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+  body { margin: 0; color: #17202a; background: #f5f7f8; }
+  header { padding: 24px max(20px, 5vw) 14px; background: #fff; border-bottom: 1px solid #d9e0e4; }
+  h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
+  p { margin: 8px 0 0; color: #56636b; }
+  main { max-width: 1100px; margin: 0 auto; padding: 22px 20px 36px; }
+  canvas { display: block; width: 100%; height: 430px; background: #fff; border: 1px solid #d9e0e4; }
+  .legend { display: flex; gap: 22px; margin: 14px 0 22px; font-size: 14px; }
+  .key::before { content: ""; display: inline-block; width: 18px; height: 3px; margin: 0 8px 3px 0; background: var(--c); }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-variant-numeric: tabular-nums; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #e3e8eb; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  .jump { background: #fff3cd; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Official Zoology MQAR baseline opening</h1>
+  <p>Exact upstream config, one GPU1, seed 123. Accuracy jumps after epoch 22 and early-stops at 0.99775.</p>
+</header>
+<main>
+  <canvas id="chart" width="1100" height="430" aria-label="Validation accuracy and loss by epoch"></canvas>
+  <div class="legend"><span class="key" style="--c:#006d77">Validation accuracy</span><span class="key" style="--c:#c2410c">Validation loss divided by 2.6</span></div>
+  <table>
+    <thead><tr><th>Epoch</th><th>Validation loss</th><th>Validation accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>20</td><td>1.8800</td><td>0.279</td></tr>
+      <tr><td>21</td><td>1.8500</td><td>0.292</td></tr>
+      <tr><td>22</td><td>1.6900</td><td>0.368</td></tr>
+      <tr class="jump"><td>23</td><td>0.1530</td><td>0.965</td></tr>
+      <tr><td>24</td><td>0.0438</td><td>0.990</td></tr>
+      <tr><td>25</td><td>0.0153</td><td>0.99775</td></tr>
+    </tbody>
+  </table>
+</main>
+<script>
+const rows=[[0,2.6,.246],[1,2.35,.25],[2,2.26,.259],[3,2.2,.258],[4,2.13,.257],[5,2.08,.265],[6,2.05,.256],[7,2.02,.255],[8,1.98,.265],[9,1.95,.258],[10,1.94,.259],[11,1.94,.259],[12,1.91,.267],[13,1.93,.259],[14,1.9,.266],[15,1.91,.256],[16,1.9,.258],[17,1.89,.262],[18,1.89,.272],[19,1.9,.268],[20,1.88,.279],[21,1.85,.292],[22,1.69,.368],[23,.153,.965],[24,.0438,.99],[25,.0153,.99775]];
+const c=document.querySelector('#chart'),x=c.getContext('2d'),m={l:58,r:25,t:24,b:44},w=c.width-m.l-m.r,h=c.height-m.t-m.b;
+x.font='13px system-ui'; x.fillStyle='#647078'; x.strokeStyle='#dfe5e8'; x.lineWidth=1;
+for(let i=0;i<=5;i++){const y=m.t+h-i*h/5;x.beginPath();x.moveTo(m.l,y);x.lineTo(m.l+w,y);x.stroke();x.fillText((i/5).toFixed(1),16,y+4)}
+for(let i=0;i<=25;i+=5){const px=m.l+i*w/25;x.fillText(String(i),px-6,m.t+h+28)}
+x.fillText('epoch',m.l+w/2,m.t+h+40);x.save();x.translate(14,m.t+h/2);x.rotate(-Math.PI/2);x.fillText('normalized value',-44,0);x.restore();
+function line(color,fn){x.strokeStyle=color;x.lineWidth=3;x.beginPath();rows.forEach((r,i)=>{const px=m.l+r[0]*w/25,py=m.t+(1-fn(r))*h;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}
+line('#c2410c',r=>1-r[1]/2.6);line('#006d77',r=>r[2]);
+const j=rows[23],px=m.l+j[0]*w/25,py=m.t+(1-j[2])*h;x.fillStyle='#006d77';x.beginPath();x.arc(px,py,6,0,Math.PI*2);x.fill();x.fillStyle='#17202a';x.fillText('retrieval opens',px-106,py-14);
+</script>
+</body>
+</html>

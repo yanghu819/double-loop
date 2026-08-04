@@ -1,7 +1,7 @@
 # Zoology Official Basic MQAR Reproduction Gate
 
 - Plan: `P-CAUSAL-005`
-- Status: in progress
+- Status: done
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -60,3 +60,51 @@ FutureSeed result.
 
 Success proves only that the official Zoology benchmark pipeline is correctly
 reproduced on GPU1. It does not support GDN2 or FutureSeed by itself.
+
+## Result
+
+The exact upstream run passed. It reached validation accuracy `0.99775` at
+epoch 25 and triggered Zoology's own `>0.99` early stopping condition.
+
+| Epoch | Validation loss | Validation accuracy |
+| ---: | ---: | ---: |
+| 0 | 2.6000 | 0.246 |
+| 20 | 1.8800 | 0.279 |
+| 21 | 1.8500 | 0.292 |
+| 22 | 1.6900 | 0.368 |
+| 23 | 0.1530 | 0.965 |
+| 24 | 0.0438 | 0.990 |
+| 25 | 0.0153 | 0.99775 |
+
+The key behavior is not gradual token-frequency fitting. The model remains
+near 25-29% through epoch 21, then undergoes a sharp retrieval transition:
+`0.368 -> 0.965 -> 0.990 -> 0.99775` over epochs 22-25. This is the opening
+shape that the custom P-CAUSAL-004 shell never reached.
+
+The run completed in approximately 99 seconds from file timestamps. It used
+one visible A100-SXM4-80GB; the observed memory readout during training was
+603 MiB. The GPU returned to 0 MiB afterward.
+
+## Integrity And Infrastructure Note
+
+- Project tracking SHA:
+  `3ebb45656e7f9667526bb068e27174f383600f1d`.
+- Zoology SHA:
+  `1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb`.
+- Source snapshot SHA256:
+  `8c4e2cc67c34eff547ba87b2495d6faa52d40f35e941f601b786140314925444`.
+- The first process exited before model construction because Python selected
+  the system `libstdc++`, which lacked `GLIBCXX_3.4.29` for protobuf. Prepending
+  `/opt/conda/lib` fixed the linker path. No package, model, data, optimizer, or
+  training setting changed; this attempt is recorded as infrastructure-only.
+- No CPU model smoke, second seed, LR sweep, or rescue tuning ran.
+
+## Conclusion
+
+The official Zoology carrier is reproducible. Therefore P-CAUSAL-004 failed
+because our custom recurrent shell did not preserve the upstream optimization
+recipe, not because standard MQAR is intrinsically unavailable.
+
+The next experiment is now authorized: place strict official FLA GDN2 inside
+this same upstream model/trainer/data/metric shell and require ordinary causal
+MQAR to open before introducing FutureSeed or future-query examples.

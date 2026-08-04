@@ -86,3 +86,23 @@ if [[ "${REQUIRE_RAVEN_FLA:-0}" == "1" || "${DOWNLOAD_RAVEN_FLA:-0}" == "1" ]]; 
   fi
   printf 'Pinned Raven FLA source ready: %s @ %s\n' "$RAVEN_FLA_ROOT" "$RAVEN_FLA_ACTUAL"
 fi
+
+ZOOLOGY_COMMIT="1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+ZOOLOGY_ROOT="${ZOOLOGY_ROOT:-$PERSIST_ROOT/repos/zoology-official}"
+if [[ "${DOWNLOAD_ZOOLOGY:-0}" == "1" && ! -d "$ZOOLOGY_ROOT/.git" ]]; then
+  mkdir -p "$(dirname "$ZOOLOGY_ROOT")"
+  git clone --filter=blob:none https://github.com/HazyResearch/zoology.git "$ZOOLOGY_ROOT"
+  git -C "$ZOOLOGY_ROOT" checkout --detach "$ZOOLOGY_COMMIT"
+fi
+if [[ "${REQUIRE_ZOOLOGY:-0}" == "1" || "${DOWNLOAD_ZOOLOGY:-0}" == "1" ]]; then
+  if [[ ! -d "$ZOOLOGY_ROOT/.git" ]]; then
+    printf 'Pinned Zoology checkout is missing: %s\n' "$ZOOLOGY_ROOT" >&2
+    exit 6
+  fi
+  ZOOLOGY_ACTUAL="$(git -C "$ZOOLOGY_ROOT" rev-parse HEAD)"
+  if [[ "$ZOOLOGY_ACTUAL" != "$ZOOLOGY_COMMIT" ]]; then
+    printf 'Pinned Zoology SHA mismatch: %s != %s\n' "$ZOOLOGY_ACTUAL" "$ZOOLOGY_COMMIT" >&2
+    exit 6
+  fi
+  printf 'Pinned Zoology source ready: %s @ %s\n' "$ZOOLOGY_ROOT" "$ZOOLOGY_ACTUAL"
+fi

@@ -38,9 +38,9 @@ export PATH="$PERSIST_ROOT/.cache/bin:$PATH"
 mkdir -p "$PERSIST_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$PERSIST_ROOT/artifacts" "$PERSIST_ROOT/models" "$RUNS_ROOT"
 
 case "$MODE" in
-  smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe) ;;
+  smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe) ;;
   *)
-    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe]\n' "$0" >&2
+    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -343,6 +343,57 @@ if [[ "$MODE" == "gdn2_retrieval_probe" ]]; then
       "$PYTHON_BIN" scripts/gdn2_future_retrieval_probe.py "${RETRIEVAL_ARGS[@]}"
     else
       UV_PROJECT_ENVIRONMENT="$PERSIST_ROOT/.venv" "$UV_BIN" run python scripts/gdn2_future_retrieval_probe.py "${RETRIEVAL_ARGS[@]}"
+    fi
+  ) 2>&1 | tee -a "$LOG_DIR/run.log"
+
+  printf 'completed run_dir=%s\n' "$RUN_DIR"
+  exit 0
+fi
+
+if [[ "$MODE" == "gdn2_zoology_mqar_probe" ]]; then
+  ZOOLOGY_MQAR_ARGS=(
+    --out-dir "$OUT_DIR"
+    --run-name "$RUN_NAME"
+    --condition "${MQAR_CONDITION:-}"
+    --zoology-root "${ZOOLOGY_ROOT:-$PERSIST_ROOT/repos/zoology-official}"
+    --zoology-sha "${ZOOLOGY_SHA:?Set ZOOLOGY_SHA to the pinned upstream commit}"
+    --steps "${MQAR_STEPS:-1000}"
+    --batch "${MQAR_BATCH:-128}"
+    --eval-n "${MQAR_EVAL_N:-1024}"
+    --eval-batch "${MQAR_EVAL_BATCH:-128}"
+    --seq-len "${MQAR_SEQ_LEN:-128}"
+    --pairs "${MQAR_PAIRS:-8}"
+    --vocab-size "${MQAR_VOCAB_SIZE:-8192}"
+    --d-model "${D_MODEL:-128}"
+    --layers "${LAYERS:-4}"
+    --heads "${HEADS:-4}"
+    --head-dim "${HEAD_DIM:-32}"
+    --channel-mult "${CHANNEL_MULT:-4}"
+    --train-loops "${MAX_LOOPS:-2}"
+    --eval-loops "${EVAL_LOOPS:-4}"
+    --loop-lambda "${LAMBDA:-0.95}"
+    --future-seed-scale "${FUTURE_SEED_SCALE:?Set FUTURE_SEED_SCALE=0 or 1}"
+    --gdn-mode "${GDN_MODE:-chunk}"
+    --gdn-expand-v "${GDN_EXPAND_V:-1.0}"
+    --gdn-conv-size "${GDN_CONV_SIZE:-4}"
+    --forward-dtype "${FORWARD_DTYPE:-bfloat16}"
+    --lr "${LR:-1e-3}"
+    --weight-decay "${WEIGHT_DECAY:-0.1}"
+    --grad-clip "${GRAD_CLIP:-0.0}"
+    --seed "${SEED:-52}"
+    --log-every "${LOG_EVERY:-100}"
+    --viz-cases "${MQAR_VIZ_CASES:-8}"
+    --carrier-kill-step "${MQAR_CARRIER_KILL_STEP:-500}"
+    --carrier-min-past-acc "${MQAR_CARRIER_MIN_PAST_ACC:-0.5}"
+  )
+
+  printf 'mode=%s\nrun_dir=%s\ngit_sha=%s\ngit_dirty=%s\n' "$MODE" "$RUN_DIR" "$GIT_SHA" "$GIT_DIRTY" | tee "$LOG_DIR/run.log"
+  (
+    cd "$REPO_ROOT"
+    if [[ -n "$PYTHON_BIN" ]]; then
+      "$PYTHON_BIN" scripts/gdn2_zoology_mqar_probe.py "${ZOOLOGY_MQAR_ARGS[@]}"
+    else
+      UV_PROJECT_ENVIRONMENT="$PERSIST_ROOT/.venv" "$UV_BIN" run python scripts/gdn2_zoology_mqar_probe.py "${ZOOLOGY_MQAR_ARGS[@]}"
     fi
   ) 2>&1 | tee -a "$LOG_DIR/run.log"
 

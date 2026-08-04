@@ -1,0 +1,57 @@
+{
+  "attention_is_causal": false,
+  "attention_parameter_delta_fraction": 0.0006529783066095916,
+  "conv_backends": [
+    "triton",
+    "triton"
+  ],
+  "cuda_device_count": 1,
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_uuid": "53e9f3b4-2966-65d3-6614-09c540921519",
+  "fla_gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "fla_wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+  "future_dependencies": {
+    "bidirectional_attention_mean": 0.0006046153721399605,
+    "causal_gdn2_max": 0.0,
+    "future_seed_gdn2_mean": 0.006396790035068989
+  },
+  "future_seed_gate_gradient_max": 0.0013918892946094275,
+  "gdn2_class": "fla.layers.gdn2.GatedDeltaNet2",
+  "gdn2_modes": [
+    "chunk",
+    "chunk"
+  ],
+  "gdn2_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+  "length1024_data_hashes": {
+    "test": "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f",
+    "train": "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
+  },
+  "length64_data_hashes": {
+    "test": "3fa26a5a04b8302001231451bce23c4f5372648d8cdd9fe6116d8e418f470209",
+    "train": "31bac228c46a1c85b0b0e164675c7f65e9bb0a3d4b733d4c42d7c057bd6d5bf9"
+  },
+  "losses_and_gradients": {
+    "bidirectional_attention": {
+      "gradient_max": 0.20090782642364502,
+      "loss": 5.5611958503723145
+    },
+    "causal_gdn2": {
+      "gradient_max": 0.10376379638910294,
+      "loss": 5.563224792480469
+    },
+    "future_seed_gdn2": {
+      "gradient_max": 0.10075308382511139,
+      "loss": 5.563974857330322
+    }
+  },
+  "parameter_counts": {
+    "bidirectional_attention": 662016,
+    "causal_gdn2": 661584,
+    "future_seed_gdn2": 661584
+  },
+  "peak_cuda_mem_bytes": 1553518592,
+  "scale0_output_max_diff": 0.0,
+  "shared_init_max_diff": 0.0,
+  "zoology_sha": "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+}

@@ -1,0 +1,138 @@
+{
+  "length1024_binding_diagnostics": {
+    "causal_gdn2": {
+      "future": {
+        "errors": 1983,
+        "wrong_value_from_same_case": 51,
+        "wrong_value_from_same_case_fraction": 0.025718608169440244
+      },
+      "past": {
+        "errors": 1978,
+        "wrong_value_from_same_case": 70,
+        "wrong_value_from_same_case_fraction": 0.03538928210313448
+      }
+    },
+    "future_seed_gdn2": {
+      "future": {
+        "errors": 517,
+        "wrong_value_from_same_case": 426,
+        "wrong_value_from_same_case_fraction": 0.8239845261121856
+      },
+      "past": {
+        "errors": 493,
+        "wrong_value_from_same_case": 389,
+        "wrong_value_from_same_case_fraction": 0.7890466531440162
+      }
+    }
+  },
+  "metrics": {
+    "1024": {
+      "causal_gdn2": {
+        "balanced_accuracy": 0.00975,
+        "future": {
+          "accuracy": 0.0085,
+          "ce": 4.818102352142334,
+          "exact": 0.0,
+          "examples": 1000,
+          "queries": 2000
+        },
+        "joint_exact": 0.0,
+        "past": {
+          "accuracy": 0.011,
+          "ce": 4.80558016204834,
+          "exact": 0.0,
+          "examples": 1000,
+          "queries": 2000
+        }
+      },
+      "future_seed_gdn2": {
+        "balanced_accuracy": 0.7475,
+        "future": {
+          "accuracy": 0.7415,
+          "ce": 0.6166690120697021,
+          "exact": 0.572,
+          "examples": 1000,
+          "queries": 2000
+        },
+        "joint_exact": 0.339,
+        "past": {
+          "accuracy": 0.7535,
+          "ce": 0.6143441157341003,
+          "exact": 0.59,
+          "examples": 1000,
+          "queries": 2000
+        }
+      }
+    },
+    "64": {
+      "causal_gdn2": {
+        "balanced_accuracy": 0.50325,
+        "future": {
+          "accuracy": 0.01,
+          "ce": 4.708498973846435,
+          "exact": 0.0,
+          "examples": 1000,
+          "queries": 2000
+        },
+        "joint_exact": 0.0,
+        "past": {
+          "accuracy": 0.9965,
+          "ce": 0.023552810192108153,
+          "exact": 0.993,
+          "examples": 1000,
+          "queries": 2000
+        }
+      },
+      "future_seed_gdn2": {
+        "balanced_accuracy": 0.99525,
+        "future": {
+          "accuracy": 0.992,
+          "ce": 0.027999633844941856,
+          "exact": 0.984,
+          "examples": 1000,
+          "queries": 2000
+        },
+        "joint_exact": 0.981,
+        "past": {
+          "accuracy": 0.9985,
+          "ce": 0.008305604297667742,
+          "exact": 0.997,
+          "examples": 1000,
+          "queries": 2000
+        }
+      }
+    }
+  },
+  "registered_endpoint_gate": {
+    "checks": {
+      "causal_future_at_most_0.10": true,
+      "causal_past_at_least_0.90": false,
+      "future_seed_delta_at_least_0.70": true,
+      "future_seed_future_at_least_0.80": false,
+      "future_seed_past_at_least_0.90": false,
+      "future_seed_retention_at_least_0.80": false
+    },
+    "future_seed_future_accuracy_retention_64_to_1024": 0.7474798387096775,
+    "length1024_future_accuracy_delta": 0.7330000000000001,
+    "partial_signal": false,
+    "passed": false
+  },
+  "systems_scaling": {
+    "causal_gdn2": {
+      "peak_memory_length1024_bytes": 1083205632.0,
+      "peak_memory_length64_bytes": 90081792.0,
+      "peak_memory_ratio_1024_over_64": 12.02469009497502,
+      "throughput_ratio_1024_over_64": 7.130070810357937,
+      "tokens_per_sec_length1024": 727371.1888497524,
+      "tokens_per_sec_length64": 102014.58136896646
+    },
+    "future_seed_gdn2": {
+      "peak_memory_length1024_bytes": 1084782080.0,
+      "peak_memory_length64_bytes": 91658240.0,
+      "peak_memory_ratio_1024_over_64": 11.835074293375042,
+      "throughput_ratio_1024_over_64": 12.129589212398534,
+      "tokens_per_sec_length1024": 1422128.63764573,
+      "tokens_per_sec_length64": 117244.58369885017
+    }
+  }
+}

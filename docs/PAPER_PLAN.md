@@ -469,3 +469,30 @@ attention quality win from P-CAUSAL-010/011. The next core figure should first
 establish causal GDN2 versus native FutureSeed length scaling at L64/L1024;
 an attention quality/cost frontier remains conditional on a separate task and
 published bidirectional recipe that independently opens.
+
+### P-CAUSAL-012 Long-Context FutureSeed Boundary
+
+The direct GDN2 endpoint gives strong but bounded evidence. At length64,
+causal/FutureSeed past accuracy is `0.9965/0.9985` and future accuracy is
+`0.0100/0.9920`. At length1024 under the same ten-epoch, four-association
+protocol, causal GDN2 does not open either direction (`0.0110/0.0085`), while
+FutureSeed reaches past/future accuracy `0.7535/0.7415`, directional exact
+`0.590/0.572`, and joint exact `0.339`. The future delta is `+0.733`, but the
+registered `0.80` future and `0.90` past thresholds and 80% L64-retention gate
+are missed. The paper may claim a large long-context optimization and
+information-routing benefit, not length-invariant quality.
+
+The error structure gives the next mechanism question. At L1024, `82.4%` of
+wrong future predictions and `78.9%` of wrong past predictions are valid
+values belonging to another key in the same sample. FutureSeed transports the
+value set but increasingly confuses bindings. Test one generic recurrent
+address/state-capacity increase at L1024 before filling middle lengths. If it
+reduces these swaps and opens the registered endpoint, then measure the full
+length curve; otherwise treat terminal-state compression/update quality as the
+limit. Do not rescue P-CAUSAL-012 with epochs, seed, LR, loss, or task rules.
+
+Do not use the archived sequential throughput difference as a cost claim. The
+two arms shared one Triton process and likely inherited different autotuning
+cache state. The final cost-quality figure requires independent fresh-process
+warmup and alternating execution order, plus a separately validated
+bidirectional attention or bidirectional recurrent baseline.

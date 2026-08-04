@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-012`
-- Status: in progress; full-L1024 CUDA preflight precedes the matched pair
+- Status: completed; registered strong and partial endpoint gates missed
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-012-gdn2-length1024`
@@ -62,8 +62,14 @@ The launcher first repeats the strict full-batch L1024 CUDA/provenance test.
 
 ## 6. Artifacts
 
-Pending. The run will archive config, scores, logs, source hash, GPU/PID
-metadata, endpoint gate and same-sequence L64/L1024 HTML visualization.
+- Run directory:
+  `runs/zoology-gdn2-fs-length1024-20260804T095300Z-77e5539`
+- Main metrics: `score.json` and `output/comparison.json`
+- Registered scientific stop: `abort.json`
+- Same-sequence visualization: `visualizations/index.html`
+- Source snapshot hash, config, logs, GPU metadata, per-arm cases and
+  preflight results are archived with the run. The 66 MB source tar remains
+  on persistent remote storage and is represented in Git by its SHA256.
 
 ## 7. Registered Readouts
 
@@ -94,4 +100,64 @@ hacks.
 
 ## 9. Result And Submission
 
-Pending. No tag before a completed strong endpoint.
+The strict CUDA and provenance preflight passed. Exactly one A100 GPU was
+visible; the official FLA GDN2 source and Triton convolution were used; the two
+arms had `661,584` parameters, identical initial tensors and identical train
+and validation data. The no-FutureSeed path had zero future dependency, the
+FutureSeed path had nonzero future dependency and gate gradient, and the
+scale-zero output difference was exactly zero.
+
+### Quality
+
+| Length | Model | Past acc | Future acc | Past exact | Future exact | Joint exact | Past CE | Future CE |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| 64 | causal GDN2 | 0.9965 | 0.0100 | 0.9930 | 0 | 0 | 0.0236 | 4.7085 |
+| 64 | GDN2 + FutureSeed | 0.9985 | 0.9920 | 0.9970 | 0.9840 | 0.9810 | 0.0083 | 0.0280 |
+| 1024 | causal GDN2 | 0.0110 | 0.0085 | 0 | 0 | 0 | 4.8056 | 4.8181 |
+| 1024 | GDN2 + FutureSeed | 0.7535 | 0.7415 | 0.5900 | 0.5720 | 0.3390 | 0.6143 | 0.6167 |
+
+At length1024, FutureSeed improves future accuracy by `+0.7330`, past accuracy
+by `+0.7425`, and joint exact by `+0.339`. This is a large long-context
+optimization and information-routing effect. It is not a strong scaling pass:
+FutureSeed future accuracy is below the registered `0.80`, past accuracy is
+below `0.90`, and future-accuracy retention from L64 is `0.7475`, below
+`0.80`. The causal past carrier also failed to open, so this endpoint cannot
+support the narrower claim that only future directionality fails at L1024.
+
+The learning curves separate the arms sharply. Causal validation accuracy
+stays around chance for all ten epochs. FutureSeed is also near chance through
+epoch2, then moves `0.0588 -> 0.1965 -> 0.3450 -> 0.7158` at epochs3-6 and
+ends at `0.7475`. The last two epochs are nearly flat, so extending this exact
+run would be an unregistered rescue rather than evidence-based scaling.
+
+### Error mechanism
+
+FutureSeed usually retains the possible values but confuses which key owns
+which value. Among its 517 wrong future-query predictions, 426 (`82.4%`) are
+the correct value for another key in the same sequence. The same is true for
+389 of 493 (`78.9%`) wrong past-query predictions. Hardest-case visualization
+shows direct value swaps between the two future associations. Error distance
+is not strongly separated: mean absolute distance is about 518 for errors and
+509 for correct predictions. This points to address/binding capacity or
+interference, not simple inability to transport any value across 1024 tokens.
+
+### Systems boundary
+
+Peak allocated memory in the warmed L1024 step is nearly identical:
+`1033.0/1034.5 MiB` for causal/FutureSeed. The archived raw throughput is
+`0.727/1.422M tokens/s`, but the faster FutureSeed number is not accepted as a
+paper speed claim: the arms ran sequentially in one process and likely shared
+Triton compilation/autotuning cache. A separate fresh-process, alternating-
+order systems benchmark is required before quoting runtime.
+
+### Decision
+
+The launcher wrote `abort.json` with `scientific_failure=true` because the
+registered endpoint gate missed; the process itself completed normally and
+GPU memory returned to zero. Do not run middle lengths, another seed, more
+epochs, or tune LR/loss. The next high-information test should change exactly
+one general scaling axis: recurrent address/state capacity at L1024. If a
+larger state specifically reduces same-case value swaps while preserving the
+FutureSeed gain, the limiting factor is state interference. If it does not,
+the bottleneck is the terminal-state compression/update mechanism rather than
+raw capacity. No experiment tag is created for this boundary result.

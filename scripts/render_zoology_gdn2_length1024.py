@@ -114,6 +114,52 @@ def merge_cases(output_dir: Path, length: int, limit: int = 8) -> list[dict[str,
     return merged[:limit]
 
 
+def binding_diagnostics(output_dir: Path, length: int) -> dict[str, Any]:
+    diagnostics: dict[str, Any] = {}
+    for arm in ARMS:
+        cases = json.loads(
+            (output_dir / f"length_{length}" / arm / "cases.json").read_text()
+        )
+        by_direction = {}
+        for direction in ("past", "future"):
+            errors = 0
+            wrong_value_from_same_case = 0
+            for case in cases:
+                targets = {event["target"] for event in case["events"]}
+                for event in case["events"]:
+                    if event["direction"] != direction or event["correct"]:
+                        continue
+                    errors += 1
+                    if event["prediction"] in targets:
+                        wrong_value_from_same_case += 1
+            by_direction[direction] = {
+                "errors": errors,
+                "wrong_value_from_same_case": wrong_value_from_same_case,
+                "wrong_value_from_same_case_fraction": (
+                    wrong_value_from_same_case / errors if errors else 0.0
+                ),
+            }
+        diagnostics[arm] = by_direction
+    return diagnostics
+
+
+def binding_rows(diagnostics: dict[str, Any]) -> str:
+    rows = []
+    for arm in ARMS:
+        for direction in ("past", "future"):
+            row = diagnostics[arm][direction]
+            rows.append(
+                "<tr>"
+                f"<td>{html.escape(LABELS[arm])}</td>"
+                f"<td>{direction}</td>"
+                f"<td>{row['errors']}</td>"
+                f"<td>{row['wrong_value_from_same_case']}</td>"
+                f"<td>{row['wrong_value_from_same_case_fraction']:.1%}</td>"
+                "</tr>"
+            )
+    return "".join(rows)
+
+
 def metric_rows(comparison: dict[str, Any]) -> str:
     rows = []
     for length in (64, 1024):
@@ -178,6 +224,7 @@ def main() -> None:
     args = parser.parse_args()
     comparison = json.loads((args.output_dir / "comparison.json").read_text())
     hardest = {str(length): merge_cases(args.output_dir, length) for length in (64, 1024)}
+    binding = binding_diagnostics(args.output_dir, 1024)
     args.visual_dir.mkdir(parents=True, exist_ok=True)
     (args.visual_dir / "hardest_cases.json").write_text(
         json.dumps(hardest, indent=2, sort_keys=True) + "\n"
@@ -187,6 +234,7 @@ def main() -> None:
             {
                 "registered_endpoint_gate": comparison["registered_endpoint_gate"],
                 "systems_scaling": comparison["systems_scaling"],
+                "length1024_binding_diagnostics": binding,
                 "metrics": {
                     length: {
                         arm: comparison["lengths"][length]["arms"][arm]["metrics"]
@@ -226,6 +274,9 @@ main {{ width:min(1180px,calc(100% - 30px)); margin:28px auto 64px; }} h1 {{ fon
 <div class="chart">{line_chart(comparison,value_getter=lambda s:s['metrics']['future']['accuracy'],title='Future-query accuracy',percent=True)}</div>
 <div class="chart">{line_chart(comparison,value_getter=lambda s:s['warmed_step_benchmark']['tokens_per_sec'],title='Warmed training throughput (tokens/s)',percent=False)}</div>
 </div><h2>Quality and systems metrics</h2><div class="table-wrap"><table><thead><tr><th>Length</th><th>Model</th><th>Past acc</th><th>Future acc</th><th>Joint exact</th><th>Future CE</th><th>Tokens/s</th><th>Peak memory</th></tr></thead><tbody>{metric_rows(comparison)}</tbody></table></div>
+<h2>What the length-1024 errors mean</h2>
+<p>"Another value from the same case" means the model predicted a value that is correct for a different key in that sequence. A high fraction means values survive, but their key-value binding is confused.</p>
+<div class="table-wrap"><table><thead><tr><th>Model</th><th>Direction</th><th>Errors</th><th>Another case value</th><th>Fraction</th></tr></thead><tbody>{binding_rows(binding)}</tbody></table></div>
 {''.join(case_sections)}</main></body></html>"""
     (args.visual_dir / "index.html").write_text(document)
     print(json.dumps({"visualized_lengths": [64, 1024]}, sort_keys=True))

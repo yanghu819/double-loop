@@ -1757,3 +1757,20 @@
   bias can remain ambiguous. Do not rescue this mask-removal baseline and do
   not use it to claim a Transformer loss; test FutureSeed length scaling
   directly, and calibrate attention later on an independently opened task.
+- P-CAUSAL-012 shows that FutureSeed remains highly consequential after a 16x
+  context increase, but it is not length invariant. At L1024, causal GDN2 is
+  near chance on both past and future queries, while the matched FutureSeed arm
+  reaches `0.7535/0.7415`; its `+0.733` future delta is real, but its `0.7475`
+  retention from L64 misses the registered scaling gate.
+- Long-context FutureSeed errors are predominantly binding errors, not missing
+  values. `82.4%` of wrong future predictions and `78.9%` of wrong past
+  predictions select another key's correct value from the same sample. This
+  supports one state/address-capacity test and rejects blind epoch, seed, LR,
+  loss, or middle-length sweeps.
+- A failed absolute gate and a large matched delta can both be true. Archive
+  the endpoint as a scaling boundary while retaining the mechanism evidence;
+  do not turn either fact into a universal success or failure statement.
+- A nominally warmed sequential benchmark can still inherit Triton autotuning
+  order effects. The implausibly faster FutureSeed L1024 timing is diagnostic,
+  not a paper efficiency result. Cost claims require fresh processes and
+  alternating order.

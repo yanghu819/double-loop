@@ -3,7 +3,7 @@
 ## Metainfo
 
 - Plan: `P-CAUSAL-001`
-- Status: running; step6000 science gate archived, continuing unchanged
+- Status: complete; preregistered step12000 endpoint archived
 - Preregistered: 2026-08-03 02:45 CST / 2026-08-02 18:45 UTC
 - Machine: AIStation GPU1 only; A800 prior legs, A100-SXM4-80GB task-mode current leg
 - GPU2: forbidden
@@ -335,3 +335,67 @@ compression lower bound for reaching the FutureSeed step6000 hard level.
 It remains an intermediate finite-compute result, not the registered 12k
 frontier decision or a universal task claim. Continue unchanged to step12000;
 do not rescue the control, add a seed, or tag this sub-0.50 gate.
+
+## Step 12000 Endpoint
+
+The unchanged no-FutureSeed control completed its exact step12000 checkpoint
+on one visible GPU1. The 72,411,027-byte checkpoint has SHA256
+`bab94971cd59ee3f46de487a7a73e75d21f8322170f8323613d3fa81eca25a89`.
+The frozen FutureSeed checkpoint has SHA256
+`66b805cf163a6b0eaae1ec6ed74f9f7a8b3cc6e21919b58268b8150ae5ae3b37`.
+Both are seed52, official GDN2 D192/L10/H6/D32, loop5 with every-loop CE,
+effective batch128, the same official data and curriculum, and exactly 12,000
+optimizer steps. Native FutureSeed is the only scientific difference.
+
+The fixed 512-board-per-hole endpoint is:
+
+| Holes | no-FS loop1 exact/blank | no-FS loop5 exact/blank | FS loop1 exact/blank | FS loop5 exact/blank |
+|---:|---:|---:|---:|---:|
+| 50 | `0.0000/0.4119` | `0.0000/0.4127` | `0.9899/0.9998` | `1.0000/1.0000` |
+| 53 | `0.0000/0.3111` | `0.0000/0.3133` | `0.0000/0.6673` | `0.5781/0.8894` |
+| 58 | `0.0000/0.2785` | `0.0000/0.2785` | `0.0000/0.4855` | `0.0645/0.5873` |
+| 64 | `0.0000/0.2770` | `0.0000/0.2773` | `0.0000/0.5722` | `0.2363/0.8456` |
+
+Over holes53/58/64, FutureSeed/no-FutureSeed loop5 exact mean is
+`0.29297/0.00000`, blank mean is `0.77412/0.28971`, and loop1-to-loop5 blank
+gain is `+0.19911/+0.00083`. Train CE is `0.59694/1.58121`, a FutureSeed
+advantage of `0.98427`. No-FutureSeed still cannot solve even holes50 after
+12,000 steps; its extra loops continue to reproduce almost the same wrong
+board.
+
+A separate strict-CUDA paired diagnostic evaluated the same 128 boards per
+official 51-55/56-60/61-64 range. It verified official
+`fla.layers.gdn2.GatedDeltaNet2`, source `9c8e42e`, official layer forward,
+chunk/Triton execution, backend dispatch disabled, one CUDA device, and exact
+checkpoint hashes. Paired FutureSeed/no-FutureSeed loop5 exact is
+`0.27865/0.00000`, and blank accuracy is `0.77248/0.28330`. Across the three
+ranges, no-FutureSeed removes only `0.16/0.02/0.21` mean wrong cells from
+loop1 to loop5; FutureSeed removes `10.34/6.93/19.32`.
+
+The clearest 64-blank solved case changes
+`39 -> 14 -> 2 -> 0 -> 0` wrong cells with FutureSeed while the matched causal
+control changes `50 -> 51 -> 51 -> 51 -> 51`. The hardest shared 64-blank
+failure remains useful negative evidence: FutureSeed changes
+`28 -> 31 -> 28 -> 28 -> 28`, showing that FutureSeed is not an oracle and
+that some boards remain outside the learned attractor. Same-board HTML and all
+case JSON are archived under
+`runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/`.
+
+Observed no-FutureSeed throughput from checkpoint mtimes over steps11100-12000
+is `4.537` seconds/step (`793.5` steps/hour) with 11,597 MiB steady training
+memory. The corresponding FutureSeed checkpoint interval is `5.766`
+seconds/step (`624.3` steps/hour). These numbers are process records, not a
+matched speed comparison: the arms crossed different physical GPUs and lease
+segments. Optimizer steps and fixed paired data are the valid causal evidence.
+
+The preregistered persistent-frontier criterion passes decisively: fixed hard
+exact delta is `+0.29297` and paired hard exact delta is `+0.27865`, both far
+above `+0.03`. FutureSeed is not merely shifting an early learning curve. In
+this official GDN2 proxy it is necessary for opening the hard regime, and it
+creates a recurrent state on which later loops perform real correction.
+
+Stop the no-FutureSeed trajectory. Do not add more steps, a second seed, or a
+rescue loss. No tag is created because the primary score is below `0.50` and
+one task cannot support a universal claim. The next high-information gate is
+the same strict native-FutureSeed versus causal comparison on a non-Sudoku
+task such as Maze or language/retrieval.

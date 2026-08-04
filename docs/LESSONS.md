@@ -1686,3 +1686,18 @@
   about 4.583 seconds/step with 11,597 MiB steady VRAM, but raw elapsed fields
   across the two arms are not speed evidence because physical GPUs and lease
   histories differ.
+- The preregistered step12000 endpoint makes the causal result persistent, not
+  merely early. No-FutureSeed still has train CE `1.5812`, zero fixed hard
+  exact, hard blank accuracy `0.2897`, and only `+0.00083` loop1-to-loop5 blank
+  gain. FutureSeed has CE `0.5969`, hard exact `0.2930`, blank accuracy
+  `0.7741`, and `+0.1991` loop gain under the same architecture, data, seed,
+  supervision, and optimizer-step budget.
+- Same-board evidence confirms real correction rather than calibration. On the
+  paired 384-board hard pool, FutureSeed adds `+0.2786` exact and `+0.4892`
+  blank accuracy; a 64-blank board goes `39 -> 14 -> 2 -> 0 -> 0` wrong while
+  no-FutureSeed stays near 51 wrong. FutureSeed supplies information that makes
+  loop computation useful; loops alone do not synthesize it.
+- This closes the no-FutureSeed duration question on Sudoku. Do not run it
+  longer, repeat another seed, or tune a rescue. The next decision-changing
+  test is cross-task generalization of the same causal mechanism. Maze or
+  language/retrieval evidence is required before making a universal claim.

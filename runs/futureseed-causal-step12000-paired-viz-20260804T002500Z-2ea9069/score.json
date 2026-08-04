@@ -1,0 +1,28 @@
+{
+  "claim": "At fixed official GDN2 architecture, data, seed, every-loop supervision, and 12000 optimizer steps, native FutureSeed is necessary for opening this hard Sudoku regime and for turning later loops into effective correction.",
+  "decision": "Persistent FutureSeed frontier value supported; stop the no-FutureSeed trajectory and move the next causal test to a non-Sudoku task.",
+  "fixed_gate": {
+    "future_seed_hard_mean_loop1_to_loop5_blank_gain": 0.1991141438484192,
+    "future_seed_hard_mean_loop5_blank_acc": 0.7741241256395975,
+    "future_seed_hard_mean_loop5_exact": 0.29296875,
+    "future_seed_train_ce": 0.5969431102275848,
+    "no_future_seed_hard_mean_loop1_to_loop5_blank_gain": 0.0008275310198465983,
+    "no_future_seed_hard_mean_loop5_blank_acc": 0.28970632950464886,
+    "no_future_seed_hard_mean_loop5_exact": 0.0,
+    "no_future_seed_train_ce": 1.581212192773819
+  },
+  "paired_gate": {
+    "future_seed_loop5_blank_acc": 0.7724838931009211,
+    "future_seed_loop5_exact": 0.2786458333333333,
+    "future_seed_wrong_cell_reduction_by_range": [10.3359375, 6.9296875, 19.3203125],
+    "no_future_seed_loop5_blank_acc": 0.2832993666218939,
+    "no_future_seed_loop5_exact": 0.0,
+    "no_future_seed_wrong_cell_reduction_by_range": [0.1640625, 0.015625, 0.2109375]
+  },
+  "run_name": "futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069",
+  "schema_version": "futureseed_causal_gate.v1",
+  "score": 0.2786458333333333,
+  "score_name": "mean_paired_official_51_64_loop5_exact_delta",
+  "tag_eligible": false,
+  "tag_reason": "Primary score is below 0.50; one-task evidence also does not justify a broad mechanism tag."
+}

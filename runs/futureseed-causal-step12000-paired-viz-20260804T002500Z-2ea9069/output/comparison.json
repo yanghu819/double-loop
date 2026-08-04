@@ -1,0 +1,802 @@
+{
+  "aggregate": {
+    "blank_acc_delta": 0.4891845264790272,
+    "exact_delta": 0.2786458333333333,
+    "future_seed_loop5_blank_acc": 0.7724838931009211,
+    "future_seed_loop5_exact": 0.2786458333333333,
+    "no_future_seed_loop5_blank_acc": 0.2832993666218939,
+    "no_future_seed_loop5_exact": 0.0
+  },
+  "arms": {
+    "future_seed": {
+      "case_bank": {
+        "case_bank_root": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank",
+        "holes": {
+          "official_51_55": {
+            "all_cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_51_55/all_cases.json",
+            "cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_51_55/cases.json",
+            "data_hash": "sha256:322d3f8f5eb5303ef410c9bc59a3d792726a3fe2f97ad6e8ee5c2dd5362fdfc4",
+            "index_html": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_51_55/index.html",
+            "summary": {
+              "blank_count_max": 55,
+              "blank_count_mean": 54.65625,
+              "blank_count_min": 52,
+              "eval_n": 128,
+              "final_blank_acc": 0.7908805012702942,
+              "final_exact": 0.453125,
+              "final_loop": 5,
+              "group": "official_51_55",
+              "holes": 55,
+              "loop_values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "selected_counts": {
+                "almost_solved": 3,
+                "hard_failure": 3,
+                "solved_by_loop": 3
+              }
+            }
+          },
+          "official_56_60": {
+            "all_cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_56_60/all_cases.json",
+            "cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_56_60/cases.json",
+            "data_hash": "sha256:55ea13d385be014f4e2001ad9ff9997db5e9defb8a051dc367dd9e9d1ca684be",
+            "index_html": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_56_60/index.html",
+            "summary": {
+              "blank_count_max": 59,
+              "blank_count_mean": 56.9296875,
+              "blank_count_min": 56,
+              "eval_n": 128,
+              "final_blank_acc": 0.6517085433006287,
+              "final_exact": 0.125,
+              "final_loop": 5,
+              "group": "official_56_60",
+              "holes": 60,
+              "loop_values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "selected_counts": {
+                "almost_solved": 3,
+                "hard_failure": 3,
+                "solved_by_loop": 3
+              }
+            }
+          },
+          "official_61_64": {
+            "all_cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_61_64/all_cases.json",
+            "cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_61_64/cases.json",
+            "data_hash": "sha256:f6565c1bd0922f6331276c8bdad17538f8a6de3051888704b7541cd8d9d81008",
+            "index_html": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/future_seed/case_bank/official_61_64/index.html",
+            "summary": {
+              "blank_count_max": 64,
+              "blank_count_mean": 63.9921875,
+              "blank_count_min": 63,
+              "eval_n": 128,
+              "final_blank_acc": 0.8748626708984375,
+              "final_exact": 0.2578125,
+              "final_loop": 5,
+              "group": "official_61_64",
+              "holes": 64,
+              "loop_values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "selected_counts": {
+                "almost_solved": 3,
+                "hard_failure": 3,
+                "solved_by_loop": 3
+              }
+            }
+          }
+        }
+      },
+      "checkpoint": "/huyang2/double-loop/models/gdn2-futureseed-clean-scale-s12000-final-20260802T163724Z-5889462/checkpoints/train_state_step012000.pt",
+      "checkpoint_sha256": "66b805cf163a6b0eaae1ec6ed74f9f7a8b3cc6e21919b58268b8150ae5ae3b37",
+      "future_seed_scale": 1.0,
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_module": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+        "fla_source_root": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla",
+        "fla_source_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+        "gain_budget_contract": null,
+        "layers": [
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 0,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 1,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 2,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 3,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 4,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 5,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 6,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 7,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 8,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 9,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          }
+        ],
+        "strict": true
+      }
+    },
+    "no_future_seed": {
+      "case_bank": {
+        "case_bank_root": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank",
+        "holes": {
+          "official_51_55": {
+            "all_cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_51_55/all_cases.json",
+            "cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_51_55/cases.json",
+            "data_hash": "sha256:322d3f8f5eb5303ef410c9bc59a3d792726a3fe2f97ad6e8ee5c2dd5362fdfc4",
+            "index_html": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_51_55/index.html",
+            "summary": {
+              "blank_count_max": 55,
+              "blank_count_mean": 54.65625,
+              "blank_count_min": 52,
+              "eval_n": 128,
+              "final_blank_acc": 0.29574042558670044,
+              "final_exact": 0.0,
+              "final_loop": 5,
+              "group": "official_51_55",
+              "holes": 55,
+              "loop_values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "selected_counts": {
+                "almost_solved": 0,
+                "hard_failure": 3,
+                "solved_by_loop": 0
+              }
+            }
+          },
+          "official_56_60": {
+            "all_cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_56_60/all_cases.json",
+            "cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_56_60/cases.json",
+            "data_hash": "sha256:55ea13d385be014f4e2001ad9ff9997db5e9defb8a051dc367dd9e9d1ca684be",
+            "index_html": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_56_60/index.html",
+            "summary": {
+              "blank_count_max": 59,
+              "blank_count_mean": 56.9296875,
+              "blank_count_min": 56,
+              "eval_n": 128,
+              "final_blank_acc": 0.2755592167377472,
+              "final_exact": 0.0,
+              "final_loop": 5,
+              "group": "official_56_60",
+              "holes": 60,
+              "loop_values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "selected_counts": {
+                "almost_solved": 0,
+                "hard_failure": 3,
+                "solved_by_loop": 0
+              }
+            }
+          },
+          "official_61_64": {
+            "all_cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_61_64/all_cases.json",
+            "cases_json": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_61_64/cases.json",
+            "data_hash": "sha256:f6565c1bd0922f6331276c8bdad17538f8a6de3051888704b7541cd8d9d81008",
+            "index_html": "/huyang2/double-loop/runs/futureseed-causal-step12000-paired-viz-20260804T002500Z-2ea9069/output/arms/no_future_seed/case_bank/official_61_64/index.html",
+            "summary": {
+              "blank_count_max": 64,
+              "blank_count_mean": 63.9921875,
+              "blank_count_min": 63,
+              "eval_n": 128,
+              "final_blank_acc": 0.27859845757484436,
+              "final_exact": 0.0,
+              "final_loop": 5,
+              "group": "official_61_64",
+              "holes": 64,
+              "loop_values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "selected_counts": {
+                "almost_solved": 0,
+                "hard_failure": 3,
+                "solved_by_loop": 0
+              }
+            }
+          }
+        }
+      },
+      "checkpoint": "/huyang2/double-loop/models/gdn2-nofs-taskmode-s12000-from4500-20260803T141650Z-b312b02/checkpoints/train_state_step012000.pt",
+      "checkpoint_sha256": "bab94971cd59ee3f46de487a7a73e75d21f8322170f8323613d3fa81eca25a89",
+      "future_seed_scale": 0.0,
+      "runtime": {
+        "backend_dispatch_disabled": true,
+        "conv_backend": "triton",
+        "fla_source_module": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+        "fla_source_root": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla",
+        "fla_source_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+        "gain_budget_contract": null,
+        "layers": [
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 0,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 1,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 2,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 3,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 4,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 5,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 6,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 7,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 8,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          },
+          {
+            "address_mode": "none",
+            "class": "fla.layers.gdn2.GatedDeltaNet2",
+            "conv_backends": {
+              "k_conv1d": "triton",
+              "q_conv1d": "triton",
+              "v_conv1d": "triton"
+            },
+            "execution_path": "official_layer_forward",
+            "fast_slow_decay_mode": "none",
+            "gain_budget_mode": "none",
+            "layer": 9,
+            "num_slots": null,
+            "precondition_mode": "none",
+            "state_elements_per_head": 1024,
+            "topk": null
+          }
+        ],
+        "strict": true
+      }
+    }
+  },
+  "checkpoint_step": 12000,
+  "decision": {
+    "label": "FutureSeed separates from the matched causal control at step 12000.",
+    "reason": "The paired hard-case pool shows both an exact and a large blank-accuracy advantage without changing the data, backbone width/depth, optimizer-step budget, or loop supervision.",
+    "supported": true
+  },
+  "hypothesis": "Native FutureSeed changes the finite-compute optimization and information path, rather than merely changing the final readout operating point.",
+  "matched_fields": {
+    "backbone": "gdn2",
+    "batch": 32,
+    "channel_mult": 4,
+    "d_model": 192,
+    "gdn_conv_size": 4,
+    "gdn_expand_v": 1.0,
+    "gdn_mode": "chunk",
+    "gdn_use_short_conv": 1,
+    "grad_accum_steps": 4,
+    "head_dim": 32,
+    "heads": 6,
+    "l_cycles": 2,
+    "lambda_": 0.95,
+    "layers": 10,
+    "loop_loss": "all",
+    "loop_update_gate_init": 0.95,
+    "loop_update_mode": "fixed",
+    "max_loops": 5,
+    "official_sudoku_data_dir": "/huyang2/double-loop/data/sudoku-extreme-full",
+    "seed": 52,
+    "size": 9
+  },
+  "ranges": {
+    "51-55": {
+      "data_hash": "sha256:322d3f8f5eb5303ef410c9bc59a3d792726a3fe2f97ad6e8ee5c2dd5362fdfc4",
+      "future_seed": {
+        "eval_n": 128,
+        "loop1_to_loop5_exact_gain": 0.453125,
+        "loop1_to_loop5_wrong_blank_reduction": 10.3359375,
+        "loops": {
+          "loop1": {
+            "blank_acc": 0.6017724413950829,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 21.765625
+          },
+          "loop2": {
+            "blank_acc": 0.7251286449399656,
+            "label_exact": 0.0234375,
+            "wrong_blank_mean": 15.0234375
+          },
+          "loop3": {
+            "blank_acc": 0.7838765008576329,
+            "label_exact": 0.3203125,
+            "wrong_blank_mean": 11.8125
+          },
+          "loop4": {
+            "blank_acc": 0.7904516866781017,
+            "label_exact": 0.4453125,
+            "wrong_blank_mean": 11.453125
+          },
+          "loop5": {
+            "blank_acc": 0.7908805031446541,
+            "label_exact": 0.453125,
+            "wrong_blank_mean": 11.4296875
+          }
+        }
+      },
+      "no_future_seed": {
+        "eval_n": 128,
+        "loop1_to_loop5_exact_gain": 0.0,
+        "loop1_to_loop5_wrong_blank_reduction": 0.1640625,
+        "loops": {
+          "loop1": {
+            "blank_acc": 0.29273870783304745,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 38.65625
+          },
+          "loop2": {
+            "blank_acc": 0.29531160663236133,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 38.515625
+          },
+          "loop3": {
+            "blank_acc": 0.2965980560320183,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 38.4453125
+          },
+          "loop4": {
+            "blank_acc": 0.2954545454545454,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 38.5078125
+          },
+          "loop5": {
+            "blank_acc": 0.2957404230989137,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 38.4921875
+          }
+        }
+      }
+    },
+    "56-60": {
+      "data_hash": "sha256:55ea13d385be014f4e2001ad9ff9997db5e9defb8a051dc367dd9e9d1ca684be",
+      "future_seed": {
+        "eval_n": 128,
+        "loop1_to_loop5_exact_gain": 0.125,
+        "loop1_to_loop5_wrong_blank_reduction": 6.9296875,
+        "loops": {
+          "loop1": {
+            "blank_acc": 0.5299849046246741,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 26.7578125
+          },
+          "loop2": {
+            "blank_acc": 0.6071085494716619,
+            "label_exact": 0.03125,
+            "wrong_blank_mean": 22.3671875
+          },
+          "loop3": {
+            "blank_acc": 0.6399066831343488,
+            "label_exact": 0.109375,
+            "wrong_blank_mean": 20.5
+          },
+          "loop4": {
+            "blank_acc": 0.6497872924385892,
+            "label_exact": 0.125,
+            "wrong_blank_mean": 19.9375
+          },
+          "loop5": {
+            "blank_acc": 0.651708522025525,
+            "label_exact": 0.125,
+            "wrong_blank_mean": 19.828125
+          }
+        }
+      },
+      "no_future_seed": {
+        "eval_n": 128,
+        "loop1_to_loop5_exact_gain": 0.0,
+        "loop1_to_loop5_wrong_blank_reduction": 0.015625,
+        "loops": {
+          "loop1": {
+            "blank_acc": 0.27528475367092087,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 41.2578125
+          },
+          "loop2": {
+            "blank_acc": 0.2745986002470152,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 41.296875
+          },
+          "loop3": {
+            "blank_acc": 0.2756964457252642,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 41.234375
+          },
+          "loop4": {
+            "blank_acc": 0.2761081377796075,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 41.2109375
+          },
+          "loop5": {
+            "blank_acc": 0.2755592150404831,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 41.2421875
+          }
+        }
+      }
+    },
+    "61-64": {
+      "data_hash": "sha256:f6565c1bd0922f6331276c8bdad17538f8a6de3051888704b7541cd8d9d81008",
+      "future_seed": {
+        "eval_n": 128,
+        "loop1_to_loop5_exact_gain": 0.2578125,
+        "loop1_to_loop5_wrong_blank_reduction": 19.3203125,
+        "loops": {
+          "loop1": {
+            "blank_acc": 0.5729459162495422,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 27.328125
+          },
+          "loop2": {
+            "blank_acc": 0.7284824807715786,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 17.375
+          },
+          "loop3": {
+            "blank_acc": 0.830423635697717,
+            "label_exact": 0.078125,
+            "wrong_blank_mean": 10.8515625
+          },
+          "loop4": {
+            "blank_acc": 0.8674154559882798,
+            "label_exact": 0.203125,
+            "wrong_blank_mean": 8.484375
+          },
+          "loop5": {
+            "blank_acc": 0.8748626541325846,
+            "label_exact": 0.2578125,
+            "wrong_blank_mean": 8.0078125
+          }
+        }
+      },
+      "no_future_seed": {
+        "eval_n": 128,
+        "loop1_to_loop5_exact_gain": 0.0,
+        "loop1_to_loop5_wrong_blank_reduction": 0.2109375,
+        "loops": {
+          "loop1": {
+            "blank_acc": 0.27530216090831405,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 46.375
+          },
+          "loop2": {
+            "blank_acc": 0.2788426321572458,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 46.1484375
+          },
+          "loop3": {
+            "blank_acc": 0.2789647173727262,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 46.140625
+          },
+          "loop4": {
+            "blank_acc": 0.2787205469417654,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 46.15625
+          },
+          "loop5": {
+            "blank_acc": 0.278598461726285,
+            "label_exact": 0.0,
+            "wrong_blank_mean": 46.1640625
+          }
+        }
+      }
+    }
+  },
+  "schema_version": "futureseed_paired_checkpoint_comparison.v1"
+}

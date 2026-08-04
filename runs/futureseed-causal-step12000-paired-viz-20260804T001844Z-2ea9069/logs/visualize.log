@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/scripts/compare_futureseed_checkpoints.py", line 423, in <module>
+    main()
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/scripts/compare_futureseed_checkpoints.py", line 311, in main
+    model = build_model(saved_args).to(device)
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/scripts/probe_gdn2_cell_order.py", line 32, in build_model
+    return runner.FutureSeedLoopSudoku(
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 4969, in __init__
+    self.reasoner = FutureSeedRWKV(
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 3849, in __init__
+    FLADeltaBlock(
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 3616, in __init__
+    self.time_mix = FLADeltaTimeMix(
+  File "/huyang2/double-loop/worktrees/gdn2-step9000-viz-d246/experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py", line 2037, in __init__
+    raise RuntimeError(f"BACKBONE={backbone} requires current flash-linear-attention: {reason}")
+RuntimeError: BACKBONE=gdn2 requires current flash-linear-attention: flash-linear-attention import failed: No module named 'fla'

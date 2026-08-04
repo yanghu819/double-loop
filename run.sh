@@ -32,6 +32,9 @@ case "$MODE" in
   official_bidir_mqar)
     exec "$REPO_ROOT/scripts/run_zoology_official_bidirectional_mqar.sh"
     ;;
+  gdn2_length1024)
+    exec "$REPO_ROOT/scripts/run_zoology_gdn2_length1024.sh"
+    ;;
 esac
 
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PERSIST_ROOT/.cache}"
@@ -49,7 +52,7 @@ mkdir -p "$PERSIST_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$PERSIST_ROOT/artifacts
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe) ;;
   *)
-    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|established_mlm|mqar_length_scaling|official_bidir_mqar|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
+    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|established_mlm|mqar_length_scaling|official_bidir_mqar|gdn2_length1024|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
     exit 2
     ;;
 esac

@@ -26,6 +26,9 @@ case "$MODE" in
   established_mlm)
     exec "$REPO_ROOT/scripts/run_established_bert_mlm.sh" "${2:?Usage: ./run.sh established_mlm <bidirectional|causal>}"
     ;;
+  pretrained_bert_carrier)
+    exec "$REPO_ROOT/scripts/run_pretrained_bert_carrier.sh"
+    ;;
   mqar_length_scaling)
     exec "$REPO_ROOT/scripts/run_zoology_mqar_length_scaling.sh"
     ;;
@@ -67,7 +70,7 @@ mkdir -p "$PERSIST_ROOT/.cache" "$TORCH_EXTENSIONS_DIR" "$PERSIST_ROOT/artifacts
 case "$MODE" in
   smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe) ;;
   *)
-    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|established_mlm|mqar_length_scaling|official_bidir_mqar|gdn2_length1024|gdn2_capacity1024|gdn2_value_capacity1024|rope_bidirectional_mqar|gdn2_length_curve|bidirectional_gdn2_ceiling|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
+    printf 'Usage: %s [baseline|gdn_legacy|benchmark|benchmark_suite|baseline_preflight|established_mlm|pretrained_bert_carrier|mqar_length_scaling|official_bidir_mqar|gdn2_length1024|gdn2_capacity1024|gdn2_value_capacity1024|rope_bidirectional_mqar|gdn2_length_curve|bidirectional_gdn2_ceiling|smoke|full|eqr_probe|eqr_maze_probe|rwkv_maze_probe|gdn2_retrieval_probe|gdn2_zoology_mqar_probe]\n' "$0" >&2
     exit 2
     ;;
 esac

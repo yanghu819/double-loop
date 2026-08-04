@@ -5,15 +5,21 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORDPIECE_CONFIG="${WORDPIECE_CONFIG:-$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env}"
 P019_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env"
 P020_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_depth_futureseed.env"
+P021_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_data_diversity.env"
 RESOLVED_CONFIG="$(readlink -f "$WORDPIECE_CONFIG")"
 if [[ "$RESOLVED_CONFIG" != "$(readlink -f "$P019_CONFIG")" && \
-      "$RESOLVED_CONFIG" != "$(readlink -f "$P020_CONFIG")" ]]; then
+      "$RESOLVED_CONFIG" != "$(readlink -f "$P020_CONFIG")" && \
+      "$RESOLVED_CONFIG" != "$(readlink -f "$P021_CONFIG")" ]]; then
   printf 'WordPiece FutureSeed forbids an unregistered launch config: %s\n' "$WORDPIECE_CONFIG" >&2
   exit 4
 fi
 set -a
 source "$WORDPIECE_CONFIG"
 set +a
+
+TRAIN_SOURCE="${TRAIN_SOURCE:-$DATA_DIR/train.json}"
+VALIDATION_SOURCE="${VALIDATION_SOURCE:-$DATA_DIR/validation.json}"
+DATA_MANIFEST="${DATA_MANIFEST:-$DATA_DIR/manifest.json}"
 
 export CUDA_VISIBLE_DEVICES=0
 export XDG_CACHE_HOME="$PERSIST_ROOT/.cache"
@@ -61,9 +67,9 @@ assert_sha256 "$CHECKPOINT_FILE" "$CHECKPOINT_SHA256"
 assert_sha256 "$MODEL_DIR/config.json" "$MODEL_CONFIG_SHA256"
 assert_sha256 "$MODEL_DIR/vocab.txt" "$VOCAB_SHA256"
 assert_sha256 "$FLA_WHEEL" "$FLA_WHEEL_SHA256"
-assert_sha256 "$DATA_DIR/train.json" "$TRAIN_SHA256"
-assert_sha256 "$DATA_DIR/validation.json" "$VALIDATION_SHA256"
-assert_sha256 "$DATA_DIR/manifest.json" "$DATA_MANIFEST_SHA256"
+assert_sha256 "$TRAIN_SOURCE" "$TRAIN_SHA256"
+assert_sha256 "$VALIDATION_SOURCE" "$VALIDATION_SHA256"
+assert_sha256 "$DATA_MANIFEST" "$DATA_MANIFEST_SHA256"
 
 ACTUAL_ZOOLOGY_SHA="$(git -C "$ZOOLOGY_ROOT" rev-parse HEAD)"
 ZOOLOGY_STATUS="$(git -C "$ZOOLOGY_ROOT" status --short)"
@@ -140,9 +146,9 @@ sha256sum \
   "$CHECKPOINT_FILE" \
   "$MODEL_DIR/config.json" \
   "$MODEL_DIR/vocab.txt" \
-  "$DATA_DIR/train.json" \
-  "$DATA_DIR/validation.json" \
-  "$DATA_DIR/manifest.json" \
+  "$TRAIN_SOURCE" \
+  "$VALIDATION_SOURCE" \
+  "$DATA_MANIFEST" \
   > "$RUN_DIR/input_assets.sha256"
 git -C "$REPO_ROOT" ls-files -z -- . \
   ':(exclude).cache/**' ':(exclude).venv/**' ':(exclude)artifacts/**' \
@@ -174,6 +180,9 @@ Path("$RUN_DIR/config.json").write_text(json.dumps({
     "learning_rate": float("$CORE_LR"),
     "weight_decay": float("$WEIGHT_DECAY"),
     "seed": int("$SEED"),
+    "train_source": "$TRAIN_SOURCE",
+    "validation_source": "$VALIDATION_SOURCE",
+    "data_manifest": "$DATA_MANIFEST",
     "wall_budget_sec": int("$WALL_BUDGET_SEC"),
     "preflight_only": bool(int("$PREFLIGHT_ONLY")),
     "train_input_tokens_per_arm": (
@@ -199,8 +208,8 @@ timeout --signal=TERM --kill-after=30 "$WALL_BUDGET_SEC" \
   --checkpoint-dir "$CHECKPOINT_DIR" \
   --model-dir "$MODEL_DIR" \
   --checkpoint-file "$CHECKPOINT_FILE" \
-  --train-json "$DATA_DIR/train.json" \
-  --validation-json "$DATA_DIR/validation.json" \
+  --train-json "$TRAIN_SOURCE" \
+  --validation-json "$VALIDATION_SOURCE" \
   --sequence-length "$SEQUENCE_LENGTH" \
   --train-windows "$TRAIN_WINDOWS" \
   --validation-windows "$VALIDATION_WINDOWS" \

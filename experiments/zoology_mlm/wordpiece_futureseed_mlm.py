@@ -43,6 +43,7 @@ from experiments.zoology_mqar.gdn2_futureseed import (
 EXPECTED_GPU_UUID = "GPU-53e9f3b4-2966-65d3-6614-09c540921519"
 EXPECTED_GPU_NAME = "NVIDIA A100-SXM4-80GB"
 EXPECTED_TRANSFORMERS_VERSION = "4.46.3"
+EXPECTED_PYARROW_VERSION = "19.0.1"
 EXPECTED_BERT_SOURCE_SHA256 = (
     "3493bff5da90fdcce98dad5c84aafe4d3ce1c550dcd93bc99289309953559eca"
 )
@@ -52,12 +53,16 @@ EXPECTED_FLA_WHEEL_SHA256 = (
 EXPECTED_GDN2_SOURCE_SHA256 = (
     "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910"
 )
+EXPECTED_FULL_TRAIN_PARQUET_SHA256 = (
+    "3136309f1626dd348aaa0b8ab9e4c8a319d175c0a6223e392d60575083603a42"
+)
 VOCAB_SIZE = 30_522
 HIDDEN_SIZE = 128
 PLAN_ID = os.environ.get("WORDPIECE_EXPERIMENT_PLAN", "P-CAUSAL-019")
 REGISTERED_LAYERS = {
     "P-CAUSAL-019": 2,
     "P-CAUSAL-020": 4,
+    "P-CAUSAL-021": 4,
 }
 if PLAN_ID not in REGISTERED_LAYERS:
     raise RuntimeError(f"Unregistered WordPiece experiment plan: {PLAN_ID}")
@@ -71,6 +76,8 @@ HEAD_DIM = 32
 EVAL_STEPS = (0, 250, 500, 750, 1000, 1250)
 P019_L2_ACCURACY_DELTA = 0.002530577815267776
 P019_L2_CE_ADVANTAGE = 0.08734900556199943
+P020_L4_ACCURACY_DELTA = 0.007591733445807603
+P020_L4_CE_ADVANTAGE = 0.0994835947040742
 
 
 def sha256(path: Path) -> str:
@@ -192,6 +199,76 @@ def load_grouped_examples(
     return windows
 
 
+def load_grouped_parquet_tensors(
+    parquet_path: Path,
+    tokenizer: Any,
+    sequence_length: int,
+    limit: int,
+) -> tuple[torch.Tensor, torch.Tensor, dict[str, int | str]]:
+    import pyarrow
+    import pyarrow.parquet as pq
+
+    if pyarrow.__version__ != EXPECTED_PYARROW_VERSION:
+        raise RuntimeError(
+            f"Unexpected PyArrow version: {pyarrow.__version__}"
+        )
+    if sha256(parquet_path) != EXPECTED_FULL_TRAIN_PARQUET_SHA256:
+        raise RuntimeError("Full WikiText train parquet hash drifted")
+    parquet = pq.ParquetFile(parquet_path)
+    if parquet.schema_arrow.names != ["text"]:
+        raise RuntimeError(f"Unexpected parquet schema: {parquet.schema_arrow}")
+
+    grouped_ids = torch.empty((limit, sequence_length), dtype=torch.long)
+    grouped_special = torch.empty((limit, sequence_length), dtype=torch.bool)
+    carry_ids: list[int] = []
+    carry_special: list[int] = []
+    written = 0
+    rows_read = 0
+    utf8_bytes_read = 0
+
+    for record_batch in parquet.iter_batches(columns=["text"], batch_size=4096):
+        texts = [text or "" for text in record_batch.column(0).to_pylist()]
+        rows_read += len(texts)
+        utf8_bytes_read += sum(len(text.encode("utf-8")) for text in texts)
+        for start in range(0, len(texts), 256):
+            encoded = tokenizer(
+                texts[start : start + 256],
+                return_special_tokens_mask=True,
+            )
+            batch_ids = carry_ids + list(chain.from_iterable(encoded["input_ids"]))
+            batch_special = carry_special + list(
+                chain.from_iterable(encoded["special_tokens_mask"])
+            )
+            if len(batch_ids) != len(batch_special):
+                raise RuntimeError("Token ids and special-token mask differ in length")
+            available = len(batch_ids) // sequence_length
+            take = min(available, limit - written)
+            if take:
+                used = take * sequence_length
+                grouped_ids[written : written + take] = torch.tensor(
+                    batch_ids[:used], dtype=torch.long
+                ).reshape(take, sequence_length)
+                grouped_special[written : written + take] = torch.tensor(
+                    batch_special[:used], dtype=torch.bool
+                ).reshape(take, sequence_length)
+                written += take
+            if written == limit:
+                return grouped_ids, grouped_special, {
+                    "format": "parquet",
+                    "path": str(parquet_path),
+                    "sha256": EXPECTED_FULL_TRAIN_PARQUET_SHA256,
+                    "pyarrow_version": pyarrow.__version__,
+                    "source_rows": parquet.metadata.num_rows,
+                    "rows_read": rows_read,
+                    "utf8_bytes_read": utf8_bytes_read,
+                    "grouped_windows": written,
+                }
+            consumed = available * sequence_length
+            carry_ids = batch_ids[consumed:]
+            carry_special = batch_special[consumed:]
+    raise RuntimeError(f"Only {written} grouped parquet windows are available, need {limit}")
+
+
 def corruption(
     examples: list[dict[str, list[int]]],
     tokenizer: Any,
@@ -206,6 +283,26 @@ def corruption(
     )
     batch = collator(examples)
     return batch["input_ids"].long().contiguous(), batch["labels"].long().contiguous()
+
+
+def tensor_corruption(
+    input_ids: torch.Tensor,
+    special_tokens_mask: torch.Tensor,
+    tokenizer: Any,
+    probability: float,
+    seed: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    set_seed(seed)
+    collator = DataCollatorForLanguageModeling(
+        tokenizer=tokenizer,
+        mlm_probability=probability,
+        return_tensors="pt",
+    )
+    masked, labels = collator.torch_mask_tokens(
+        input_ids.clone(),
+        special_tokens_mask=special_tokens_mask.clone(),
+    )
+    return masked.long().contiguous(), labels.long().contiguous()
 
 
 def data_hash(
@@ -1265,10 +1362,10 @@ def main() -> None:
 
     registered = {
         "sequence_length": 128,
-        "train_windows": 10_000,
+        "train_windows": 160_000 if PLAN_ID == "P-CAUSAL-021" else 10_000,
         "validation_windows": 256,
         "mask_probability": 0.15,
-        "train_epochs": 16,
+        "train_epochs": 1 if PLAN_ID == "P-CAUSAL-021" else 16,
         "max_steps": 1_250,
         "train_batch": 128,
         "eval_batch": 64,
@@ -1315,9 +1412,27 @@ def main() -> None:
     if sum(p.numel() for p in pretrained.parameters()) != 4_416_698:
         raise RuntimeError("Unexpected official BERT-Tiny parameter count")
 
-    train_examples = load_grouped_examples(
-        args.train_json, tokenizer, args.sequence_length, args.train_windows
-    )
+    train_source: dict[str, Any]
+    if PLAN_ID == "P-CAUSAL-021":
+        if args.train_json.suffix != ".parquet":
+            raise RuntimeError("P-CAUSAL-021 requires the pinned parquet source")
+        train_ids, train_special, train_source = load_grouped_parquet_tensors(
+            args.train_json, tokenizer, args.sequence_length, args.train_windows
+        )
+        train_examples = None
+    else:
+        if args.train_json.suffix != ".json":
+            raise RuntimeError(f"{PLAN_ID} requires the pinned JSONL source")
+        train_examples = load_grouped_examples(
+            args.train_json, tokenizer, args.sequence_length, args.train_windows
+        )
+        train_ids = train_special = None
+        train_source = {
+            "format": "jsonl",
+            "path": str(args.train_json),
+            "sha256": sha256(args.train_json),
+            "grouped_windows": len(train_examples),
+        }
     validation_examples = load_grouped_examples(
         args.validation_json,
         tokenizer,
@@ -1333,15 +1448,31 @@ def main() -> None:
     if int((validation[1] != -100).sum().item()) != 4_742:
         raise RuntimeError("Validation corruption no longer matches P-CAUSAL-018")
 
-    train_epochs = [
-        corruption(
-            train_examples,
-            tokenizer,
-            args.mask_probability,
-            args.seed + 10_000 + epoch,
-        )
-        for epoch in range(args.train_epochs)
-    ]
+    if PLAN_ID == "P-CAUSAL-021":
+        if train_ids is None or train_special is None:
+            raise RuntimeError("Parquet tensors were not prepared")
+        train_epochs = [
+            tensor_corruption(
+                train_ids,
+                train_special,
+                tokenizer,
+                args.mask_probability,
+                args.seed + 10_000,
+            )
+        ]
+        del train_ids, train_special
+    else:
+        if train_examples is None:
+            raise RuntimeError("JSONL training examples were not prepared")
+        train_epochs = [
+            corruption(
+                train_examples,
+                tokenizer,
+                args.mask_probability,
+                args.seed + 10_000 + epoch,
+            )
+            for epoch in range(args.train_epochs)
+        ]
     orders = [
         torch.randperm(
             args.train_windows,
@@ -1367,6 +1498,8 @@ def main() -> None:
         "registered_sample_pairs": registered_pairs,
         "full_batch_wrap": False,
         "every_registered_pair_consumed_once": True,
+        "train_source": train_source,
+        "independent_windows_per_corruption": args.train_windows,
     }
     (args.output_dir / "prepared_data.json").write_text(
         json.dumps(prepared, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -1479,6 +1612,19 @@ def main() -> None:
         and bootstrap["ce_improvement_95_lower"] > 0.0
         and advantage_1000 > 0.0
     )
+    diversity_ce_gain = ce_improvement - P020_L4_CE_ADVANTAGE
+    diversity_accuracy_gain = accuracy_delta - P020_L4_ACCURACY_DELTA
+    data_diversity_amplified = (
+        PLAN_ID == "P-CAUSAL-021"
+        and opened
+        and suffix_supported
+        and bootstrap["ce_improvement_95_lower"] > 0.0
+        and advantage_1000 > 0.0
+        and (
+            diversity_ce_gain >= 0.05
+            or diversity_accuracy_gain >= 0.01
+        )
+    )
     status = (
         "supported"
         if supported
@@ -1486,9 +1632,13 @@ def main() -> None:
             "unopened"
             if not opened
             else (
-                "depth_amplified_below_strong_gate"
-                if depth_route_amplified
-                else ("weak_signal" if weak_signal else "no_support")
+                "data_diversity_amplified_below_strong_gate"
+                if data_diversity_amplified
+                else (
+                    "depth_amplified_below_strong_gate"
+                    if depth_route_amplified
+                    else ("weak_signal" if weak_signal else "no_support")
+                )
             )
         )
     )
@@ -1513,6 +1663,10 @@ def main() -> None:
             "p019_l2_reference_ce_advantage": P019_L2_CE_ADVANTAGE,
             "depth_accuracy_advantage_gain": depth_accuracy_gain,
             "depth_ce_advantage_gain": depth_ce_gain,
+            "p020_l4_reference_accuracy_delta": P020_L4_ACCURACY_DELTA,
+            "p020_l4_reference_ce_advantage": P020_L4_CE_ADVANTAGE,
+            "data_diversity_accuracy_advantage_gain": diversity_accuracy_gain,
+            "data_diversity_ce_advantage_gain": diversity_ce_gain,
             "paired_window_bootstrap": bootstrap,
         },
         "registered_gates": {
@@ -1526,6 +1680,13 @@ def main() -> None:
             "depth_ce_advantage_at_least_0.15": ce_improvement >= 0.15,
             "depth_ce_gain_over_l2_at_least_0.05": depth_ce_gain >= 0.05,
             "depth_route_amplified": depth_route_amplified,
+            "data_diversity_accuracy_gain_over_p020_at_least_0.01": (
+                diversity_accuracy_gain >= 0.01
+            ),
+            "data_diversity_ce_gain_over_p020_at_least_0.05": (
+                diversity_ce_gain >= 0.05
+            ),
+            "data_diversity_amplified": data_diversity_amplified,
             "scientific_support": supported,
         },
         "preflight": preflight_result,

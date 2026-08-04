@@ -1774,3 +1774,17 @@
   order effects. The implausibly faster FutureSeed L1024 timing is diagnostic,
   not a paper efficiency result. Cost claims require fresh processes and
   alternating order.
+- P-CAUSAL-013 shows that model width and recurrent-state capacity are not the
+  same scaling axis. D256/H8/D32 doubled state values but increased parameters
+  `3.39x`; both causal and FutureSeed arms stayed near 1% accuracy while the
+  frozen D128 FutureSeed arm reached `0.7475` balanced accuracy under the same
+  data and ten epochs. A larger model can miss a sharp algorithmic opening even
+  when its training loss falls.
+- Never treat a conditional error subtype as improved when total accuracy has
+  collapsed. D256's same-case value-swap rate fell only because near-random
+  predictions almost never selected any of the four values in the sequence.
+  Binding diagnostics are meaningful only at a comparable quality level.
+- When whole-model scaling changes optimization behavior, isolate state
+  capacity before tuning. Keep the proven D128 width/head geometry and enlarge
+  only official GDN2 value state; do not rescue D256 with epochs, LR, seed or a
+  geometry table.

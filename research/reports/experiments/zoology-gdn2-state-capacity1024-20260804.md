@@ -3,13 +3,13 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-013`
-- Status: second infrastructure-only preflight stop; audit fix pending relaunch
+- Status: discarded after fixed endpoint; raw width/state scaling failed
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1 only
 - Branch: `codex/p-causal-013-gdn2-capacity1024`
-- Last source SHA: `9bdae8f4df62230c27940e5e681cd7e8d14c9bbe`
-- Last run: `zoology-gdn2-state-capacity1024-20260804T103146Z-9bdae8f`
-- Last exact launcher PID/PGID: `50697/50697`
+- Source SHA: `d0a2cf69fa30105205e4d8487e622015953d450f`
+- Run: `zoology-gdn2-state-capacity1024-20260804T105038Z-d0a2cf6`
+- Exact launcher PID/PGID: `53624/53624`
 - Parent result: `P-CAUSAL-012`
 
 ## 2. Mechanism Hypothesis
@@ -111,3 +111,67 @@ both past and future associations at length1024. It authorizes the full
 A miss supports only: FutureSeed still provides a strong route at L1024, but
 raw model/state scaling does not remove its binding limit under the fixed
 budget. It does not authorize duration or hyperparameter rescue.
+
+## 8. Result
+
+The final detached-SHA launch passed every integrity gate before training:
+
+- one visible A100 GPU, expected UUID, official FLA SHA/source and Triton
+  convolution;
+- exact frozen train/test hashes;
+- `2,240,608` parameters in each D256 arm, identical initialization and
+  parameter hashes;
+- scale-0 output difference exactly zero, causal future dependency exactly
+  zero, FutureSeed dependency `0.007921`, nonzero FutureSeed gate gradient and
+  finite CUDA backward;
+- `8,192` recurrent-state values per layer, exactly 2x the D128 reference.
+
+The registered quality gate then failed decisively:
+
+| model | past accuracy | future accuracy | past/future CE | joint exact |
+|---|---:|---:|---:|---:|
+| frozen D128 FutureSeed | 0.7535 | 0.7415 | 0.6143 / 0.6167 | 0.339 |
+| D256 causal | 0.0145 | 0.0120 | 5.1385 / 5.1279 | 0 |
+| D256 FutureSeed | 0.0090 | 0.0115 | 5.4761 / 5.4032 | 0 |
+
+D256 FutureSeed balanced accuracy is `0.01025`, a `-0.73725` change from the
+frozen D128 FutureSeed endpoint. Its learned seed gate remained active at
+`0.5106`; this is not a dead or bypassed FutureSeed path.
+
+The learning curves distinguish failure to generalize from a merely delayed
+opening. D128 FutureSeed starts opening at epoch3 (`0.0588` validation
+accuracy), reaches `0.7158` by epoch6 and ends at `0.7475` with CE `0.6179`.
+Both D256 arms remain near 1% accuracy for all ten epochs, while validation CE
+turns upward after epoch5 and finishes at `5.1341/5.4374`. Training loss falls
+below validation loss, so the larger model is fitting the finite train set
+without learning the transferable key-value rule.
+
+The reported raw same-case swap reductions (`0.182` future, `0.165` past) are
+not evidence of improved binding. A random prediction rarely equals any of the
+four values in its sequence, so the swap fraction necessarily falls when total
+accuracy collapses. The hardest-case view confirms this: D128 often solves two
+of four queries, while both D256 arms usually miss all four with unrelated
+values.
+
+Warmed diagnostic throughput is about `1.05M` tokens/s for both D256 arms and
+peak allocated memory is about `2.09GB`. These numbers show matched systems
+cost between scale0/1, but are not used as a paper speed claim.
+
+## 9. Decision And Lesson
+
+Reject whole-model D128-to-D256 width scaling under this fixed recipe. Doubling
+state values by tripling total parameters changed the optimization regime and
+destroyed the sharp FutureSeed opening; it did not test state capacity in
+isolation. Do not extend epochs, tune LR, change seed or sweep width/head
+geometry to rescue this endpoint.
+
+The next single decision-changing probe should preserve the D128/L2/H4/D32
+geometry that demonstrably opens, and increase only generic recurrent value
+state through official GDN2 `expand_v=2`. That separates address/state
+capacity from whole-network width. A pass would support state interference as
+the L1024 limit; a miss would redirect work to state compression/update rather
+than more raw capacity.
+
+Artifacts include `score.json`, full logs, preflight/source hashes, output
+cases, an HTML report with validation curves and twelve hardest same-sequence
+cases, plus `overview.png` and `overview-full.png` screenshots.

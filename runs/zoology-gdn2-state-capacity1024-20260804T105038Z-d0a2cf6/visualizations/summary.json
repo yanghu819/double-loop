@@ -1,0 +1,134 @@
+{
+  "binding_diagnostic_interpretable": false,
+  "binding_diagnostics": {
+    "candidate_d256_causal": {
+      "future": {
+        "errors": 1976,
+        "queries": 2000,
+        "wrong_value_from_same_case": 58,
+        "wrong_value_from_same_case_fraction_of_errors": 0.029352226720647773,
+        "wrong_value_from_same_case_fraction_of_queries": 0.029
+      },
+      "past": {
+        "errors": 1971,
+        "queries": 2000,
+        "wrong_value_from_same_case": 48,
+        "wrong_value_from_same_case_fraction_of_errors": 0.0243531202435312,
+        "wrong_value_from_same_case_fraction_of_queries": 0.024
+      }
+    },
+    "candidate_d256_future_seed": {
+      "future": {
+        "errors": 1977,
+        "queries": 2000,
+        "wrong_value_from_same_case": 62,
+        "wrong_value_from_same_case_fraction_of_errors": 0.03136064744562468,
+        "wrong_value_from_same_case_fraction_of_queries": 0.031
+      },
+      "past": {
+        "errors": 1982,
+        "queries": 2000,
+        "wrong_value_from_same_case": 59,
+        "wrong_value_from_same_case_fraction_of_errors": 0.029767911200807264,
+        "wrong_value_from_same_case_fraction_of_queries": 0.0295
+      }
+    },
+    "reference_d128_future_seed": {
+      "future": {
+        "errors": 517,
+        "queries": 2000,
+        "wrong_value_from_same_case": 426,
+        "wrong_value_from_same_case_fraction_of_errors": 0.8239845261121856,
+        "wrong_value_from_same_case_fraction_of_queries": 0.213
+      },
+      "past": {
+        "errors": 493,
+        "queries": 2000,
+        "wrong_value_from_same_case": 389,
+        "wrong_value_from_same_case_fraction_of_errors": 0.7890466531440162,
+        "wrong_value_from_same_case_fraction_of_queries": 0.1945
+      }
+    }
+  },
+  "capacity_scaling": {
+    "candidate_parameters": 2240608,
+    "candidate_state_values_per_layer": 8192,
+    "parameter_ratio": 3.3867324481849623,
+    "reference_parameters": 661584,
+    "reference_state_values_per_layer": 4096,
+    "state_value_ratio": 2.0
+  },
+  "metrics": {
+    "candidate_d256_causal": {
+      "balanced_accuracy": 0.013250000000000001,
+      "future": {
+        "accuracy": 0.012,
+        "ce": 5.127860084533691,
+        "exact": 0.0,
+        "examples": 1000,
+        "queries": 2000
+      },
+      "joint_exact": 0.0,
+      "past": {
+        "accuracy": 0.0145,
+        "ce": 5.138498413085937,
+        "exact": 0.0,
+        "examples": 1000,
+        "queries": 2000
+      }
+    },
+    "candidate_d256_future_seed": {
+      "balanced_accuracy": 0.010249999999999999,
+      "future": {
+        "accuracy": 0.0115,
+        "ce": 5.4032436447143555,
+        "exact": 0.0,
+        "examples": 1000,
+        "queries": 2000
+      },
+      "joint_exact": 0.0,
+      "past": {
+        "accuracy": 0.009,
+        "ce": 5.47612837600708,
+        "exact": 0.0,
+        "examples": 1000,
+        "queries": 2000
+      }
+    },
+    "reference_d128_future_seed": {
+      "balanced_accuracy": 0.7475,
+      "future": {
+        "accuracy": 0.7415,
+        "ce": 0.6166690120697021,
+        "exact": 0.572,
+        "examples": 1000,
+        "queries": 2000
+      },
+      "joint_exact": 0.339,
+      "past": {
+        "accuracy": 0.7535,
+        "ce": 0.6143441157341003,
+        "exact": 0.59,
+        "examples": 1000,
+        "queries": 2000
+      }
+    }
+  },
+  "registered_gate": {
+    "balanced_accuracy_gain": -0.7372500000000001,
+    "checks": {
+      "balanced_accuracy_gain_at_least_0.10": false,
+      "candidate_causal_future_at_most_0.10": true,
+      "candidate_causal_past_at_least_0.80": false,
+      "candidate_future_seed_future_at_least_0.90": false,
+      "candidate_future_seed_joint_exact_at_least_0.70": false,
+      "candidate_future_seed_past_at_least_0.90": false,
+      "future_binding_error_rate_reduction_at_least_0.08": true,
+      "past_binding_error_rate_reduction_at_least_0.07": true
+    },
+    "future_binding_error_rate_reduction": 0.182,
+    "partial_signal": false,
+    "passed": false,
+    "past_binding_error_rate_reduction": 0.165
+  }
+}

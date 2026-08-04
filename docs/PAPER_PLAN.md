@@ -496,3 +496,22 @@ two arms shared one Triton process and likely inherited different autotuning
 cache state. The final cost-quality figure requires independent fresh-process
 warmup and alternating execution order, plus a separately validated
 bidirectional attention or bidirectional recurrent baseline.
+
+### P-CAUSAL-013 Whole-Model Capacity Boundary
+
+The first capacity intervention failed cleanly. At the exact L1024/K4 endpoint,
+official-FLA GDN2 D256/L2/H8/D32 doubled recurrent-state values per layer but
+increased total parameters `3.39x`. Both matched D256 arms stayed near chance:
+causal past/future accuracy was `0.0145/0.0120`, and FutureSeed was
+`0.0090/0.0115`, versus frozen D128 FutureSeed `0.7535/0.7415`. Validation CE
+rose after epoch5 in both larger arms, while D128 FutureSeed had opened sharply
+from epoch3. The FutureSeed path itself remained active and all official
+FLA/Triton, data, initialization and dependency checks passed.
+
+This result rejects the claim that undifferentiated width scaling is sufficient
+under matched optimization compute. It does not show that larger recurrent
+state is intrinsically harmful: width, parameter count and state capacity moved
+together, and the larger model failed before binding diagnostics became
+meaningful. The next high-information test is state-only scaling at the proven
+D128 geometry through official GDN2 value expansion. Do not run middle lengths
+or a D256 epoch/LR/seed rescue before that isolation test.

@@ -50,6 +50,27 @@ def metric_bars(comparison: dict[str, Any], key: str, title: str) -> str:
     return f'<section class="metric"><h3>{html.escape(title)}</h3>{"".join(rows)}</section>'
 
 
+def scalar_bars(
+    values: dict[str, float],
+    title: str,
+    formatter,
+) -> str:
+    maximum = max(values.values())
+    rows = []
+    for model in MODELS:
+        value = values[model]
+        width = 100.0 * value / maximum if maximum else 0.0
+        rows.append(
+            '<div class="bar-row">'
+            f'<span>{html.escape(LABELS[model])}</span>'
+            '<div class="bar-track">'
+            f'<i style="width:{width:.2f}%;background:{COLORS[model]}"></i>'
+            "</div>"
+            f"<strong>{html.escape(formatter(value))}</strong></div>"
+        )
+    return f'<section class="metric"><h3>{html.escape(title)}</h3>{"".join(rows)}</section>'
+
+
 def learning_curve(
     comparison: dict[str, Any],
     metric: str,
@@ -220,6 +241,18 @@ def main() -> None:
         "registered_gate": gate,
         "binding_diagnostics": comparison["binding_diagnostics"],
         "metrics": {model: score_for(comparison, model)["metrics"] for model in MODELS},
+        "costs": {
+            model: {
+                "parameters": score_for(comparison, model)["parameters"],
+                "tokens_per_sec": score_for(comparison, model)[
+                    "warmed_step_benchmark"
+                ]["tokens_per_sec"],
+                "peak_training_cuda_mem_bytes": score_for(comparison, model)[
+                    "peak_training_cuda_mem_bytes"
+                ],
+            }
+            for model in MODELS
+        },
     }
     (args.visual_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n"
@@ -228,6 +261,28 @@ def main() -> None:
         json.dumps(cases, indent=2, sort_keys=True) + "\n"
     )
     capacity = comparison["capacity_scaling"]
+    state_values = {
+        "reference_expandv1_future_seed": capacity[
+            "reference_state_values_per_layer"
+        ],
+        "candidate_expandv2_causal": capacity["candidate_state_values_per_layer"],
+        "candidate_expandv2_future_seed": capacity[
+            "candidate_state_values_per_layer"
+        ],
+    }
+    parameters = {
+        model: float(score_for(comparison, model)["parameters"]) for model in MODELS
+    }
+    throughput = {
+        model: float(
+            score_for(comparison, model)["warmed_step_benchmark"]["tokens_per_sec"]
+        )
+        for model in MODELS
+    }
+    peak_memory = {
+        model: float(score_for(comparison, model)["peak_training_cuda_mem_bytes"])
+        for model in MODELS
+    }
     binding_note = (
         "Binding deltas are comparable because expand-v2 FutureSeed did not fall "
         "below the frozen expand-v1 quality."
@@ -241,11 +296,11 @@ def main() -> None:
 :root {{ --ink:#17201c; --muted:#5d6862; --line:#d8dfdb; --soft:#f5f7f6; }}
 * {{ box-sizing:border-box; }} body {{ margin:0; color:var(--ink); background:#fff; font-family:Inter,ui-sans-serif,system-ui,sans-serif; letter-spacing:0; }}
 main {{ width:min(1180px,calc(100% - 30px)); margin:28px auto 64px; }} h1 {{ font-size:29px; margin:0 0 8px; }} h2 {{ font-size:20px; margin:32px 0 12px; }} h3 {{ font-size:14px; margin:0 0 8px; }} p {{ color:var(--muted); margin:0 0 12px; }}
-.gate {{ border-block:1px solid var(--line); padding:14px 0; font-weight:700; }} .note {{ border-left:4px solid #326aa8; padding:10px 12px; color:var(--ink); background:#f4f8fc; }} .metrics {{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }} .metric,.curve {{ border:1px solid var(--line); border-radius:6px; padding:12px; }} .curves {{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }} .curve svg {{ display:block; width:100%; height:auto; }}
+.gate {{ border-block:1px solid var(--line); padding:14px 0; font-weight:700; }} .note {{ border-left:4px solid #326aa8; padding:10px 12px; color:var(--ink); background:#f4f8fc; }} .metrics {{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }} .costs {{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }} .metric,.curve {{ border:1px solid var(--line); border-radius:6px; padding:12px; }} .curves {{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }} .curve svg {{ display:block; width:100%; height:auto; }}
 .bar-row {{ display:grid; grid-template-columns:155px 1fr 54px; gap:8px; align-items:center; font-size:12px; margin:11px 0; }} .bar-track {{ height:12px; background:var(--soft); }} .bar-track i {{ display:block; height:100%; }}
 .table-wrap {{ overflow-x:auto; }} table {{ width:100%; border-collapse:collapse; font-size:12px; }} th,td {{ border-bottom:1px solid var(--line); padding:8px; text-align:right; white-space:nowrap; }} th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) {{ text-align:left; }}
 .case {{ border-top:1px solid var(--line); padding:15px 0 6px; }} .correct {{ background:#e3f3eb; color:#0c694f; font-weight:700; }} .wrong {{ background:#fde7e1; color:#a3311a; font-weight:700; }}
-@media(max-width:800px) {{ .metrics,.curves {{ grid-template-columns:1fr; }} .bar-row {{ grid-template-columns:135px 1fr 50px; }} }}
+@media(max-width:800px) {{ .metrics,.costs,.curves {{ grid-template-columns:1fr; }} .bar-row {{ grid-template-columns:135px 1fr 62px; }} }}
 </style></head><body><main><h1>FutureSeed value-state capacity at length 1024</h1>
 <p>Width, depth, head count, key dimension, data, seed, optimizer and epochs are fixed. Only official GDN2 value expansion changes from 1 to 2, increasing recurrent state values {capacity['state_value_ratio']:.1f}x at width ratio {capacity['model_width_ratio']:.1f}x.</p>
 <div class="gate">Registered gate: {'PASS' if gate['passed'] else 'MISS'}; balanced accuracy gain {gate['balanced_accuracy_gain']:+.4f}; joint paper candidate: {'yes' if gate['paper_candidate'] else 'no'}</div>
@@ -256,7 +311,13 @@ main {{ width:min(1180px,calc(100% - 30px)); margin:28px auto 64px; }} h1 {{ fon
 </div><h2>Training dynamics</h2><div class="curves">
 {learning_curve(comparison,'valid/accuracy','Validation accuracy by epoch',fixed_range=(0.0,1.0))}
 {learning_curve(comparison,'valid/loss','Validation cross-entropy by epoch')}
-</div><h2>Binding errors</h2>
+</div><h2>Compute and capacity</h2><div class="costs">
+{scalar_bars(parameters,'Parameters',lambda value: f'{value/1e6:.3f}M')}
+{scalar_bars(state_values,'Recurrent state values / layer',lambda value: f'{value:,.0f}')}
+{scalar_bars(throughput,'Warmed training throughput',lambda value: f'{value/1e6:.2f}M tok/s')}
+{scalar_bars(peak_memory,'Peak training CUDA memory',lambda value: f'{value/2**30:.2f} GiB')}
+</div><p class="note">The state is a K x V matrix. This experiment kept K=32 and doubled only V=32 to 64. It doubled stored feature width but did not increase key-address rank; therefore the miss rejects value-axis expansion, not every form of recurrent-state scaling. Timings are diagnostics from the fixed arm order, not an independent speed benchmark.</p>
+<h2>Binding errors</h2>
 <p class="note">{html.escape(binding_note)}</p>
 <div class="table-wrap"><table><thead><tr><th>Model</th><th>Direction</th><th>Errors</th><th>Another case value</th><th>Per query</th><th>Among errors</th></tr></thead><tbody>{binding_rows(comparison)}</tbody></table></div>
 <h2>Hardest same-sequence cases</h2>{''.join(case_html(case) for case in cases)}

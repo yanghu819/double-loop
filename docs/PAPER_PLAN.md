@@ -515,3 +515,23 @@ together, and the larger model failed before binding diagnostics became
 meaningful. The next high-information test is state-only scaling at the proven
 D128 geometry through official GDN2 value expansion. Do not run middle lengths
 or a D256 epoch/LR/seed rescue before that isolation test.
+
+### P-CAUSAL-014 Value-State Axis Boundary
+
+The isolation test also failed, but it makes the next question more precise.
+With D128/L2/H4 and key dimension32 fixed, official GDN2 `expand_v=2` doubled
+value-state scalars per layer from4,096 to8,192. It added22.49% parameters,
+reduced warmed diagnostic throughput15.48%, and increased peak training memory
+10.72%. Native FutureSeed balanced accuracy fell from the frozen `0.7475` to
+`0.27675`; past/future accuracy was `0.2555/0.2980`, and joint exact was zero.
+The matched causal arm stayed directionally valid with future accuracy0.0125.
+
+This is not evidence that FutureSeed stops working: within the expand-v2
+carrier it still adds `+0.25025` balanced accuracy over scale0. It is evidence
+that widening the V/payload axis is a poor way to repair long-context binding.
+The recurrent matrix remained K32 x V64, so the number of independent key
+address directions did not increase. The main remaining paper mechanism
+question is whether generic address separability or FutureSeed compression can
+scale without changing the already-open D128 residual backbone. Do not present
+state-element count as address capacity, and do not continue expand-v, epochs,
+LR, or seeds.

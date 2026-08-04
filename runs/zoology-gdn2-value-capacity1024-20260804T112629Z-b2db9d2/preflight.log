@@ -1,0 +1,88 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+{
+  "conv_backends": [
+    "triton",
+    "triton",
+    "triton",
+    "triton"
+  ],
+  "cuda_device_count": 1,
+  "data_hashes": {
+    "test": "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f",
+    "train": "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
+  },
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_uuid": "53e9f3b4-2966-65d3-6614-09c540921519",
+  "fla_gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "fla_wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+  "future_dependencies": {
+    "causal_gdn2_max": 0.0,
+    "future_seed_gdn2_mean": 0.005460782907903194
+  },
+  "future_seed_gate_gradient_max": 0.0010775848058983684,
+  "gdn2_geometries": {
+    "causal": [
+      {
+        "head_k_dim": 32,
+        "head_v_dim": 64,
+        "num_v_heads": 4
+      },
+      {
+        "head_k_dim": 32,
+        "head_v_dim": 64,
+        "num_v_heads": 4
+      }
+    ],
+    "future_seed": [
+      {
+        "head_k_dim": 32,
+        "head_v_dim": 64,
+        "num_v_heads": 4
+      },
+      {
+        "head_k_dim": 32,
+        "head_v_dim": 64,
+        "num_v_heads": 4
+      }
+    ]
+  },
+  "gdn2_modes": [
+    "chunk",
+    "chunk",
+    "chunk",
+    "chunk"
+  ],
+  "losses_and_gradients": {
+    "causal_gdn2_expandv2": {
+      "gradient_max": 0.0888671875,
+      "loss": 5.552290439605713
+    },
+    "future_seed_gdn2_expandv2": {
+      "gradient_max": 0.0841284841299057,
+      "loss": 5.574197769165039
+    }
+  },
+  "model_width_ratio_vs_expandv1": 1.0,
+  "parameter_counts": {
+    "causal_gdn2_expandv2": 810384,
+    "future_seed_gdn2_expandv2": 810384
+  },
+  "peak_cuda_mem_bytes": 1626416640,
+  "scale0_output_max_diff": 0.0,
+  "shared_init_max_diff": 0.0,
+  "state_value_ratio_vs_expandv1": 2.0,
+  "state_values_per_layer": {
+    "causal": [
+      8192,
+      8192
+    ],
+    "future_seed": [
+      8192,
+      8192
+    ]
+  },
+  "zoology_sha": "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+}

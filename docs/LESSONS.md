@@ -1788,3 +1788,14 @@
   capacity before tuning. Keep the proven D128 width/head geometry and enlarge
   only official GDN2 value state; do not rescue D256 with epochs, LR, seed or a
   geometry table.
+- P-CAUSAL-014 shows that state scalar count is not the same as address
+  capacity. Official GDN2 `expand_v=2` kept D128 and K32 fixed while changing
+  V32 to V64, doubling state values with only `+22.49%` parameters. FutureSeed
+  still beat its matched causal arm, but balanced accuracy fell from `0.7475`
+  to `0.27675` and joint exact from `0.339` to zero. Do not rescue this axis.
+- Interpret a `K x V` fast-weight matrix by axis. Increasing V widens the
+  payload stored per address but leaves key-address rank bounded by the same K.
+  The dominant L1024 error was choosing another key's valid value, so the
+  observed failure points toward address separability or state compression,
+  not more value width. Future state scaling must say which mathematical
+  capacity it increases; total state elements alone are not a mechanism.

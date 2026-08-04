@@ -2,14 +2,17 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-P019_CONFIG="${P019_CONFIG:-$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env}"
-EXPECTED_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env"
-if [[ "$(readlink -f "$P019_CONFIG")" != "$(readlink -f "$EXPECTED_CONFIG")" ]]; then
-  printf 'P-CAUSAL-019 forbids an external launch config: %s\n' "$P019_CONFIG" >&2
+WORDPIECE_CONFIG="${WORDPIECE_CONFIG:-$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env}"
+P019_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env"
+P020_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_depth_futureseed.env"
+RESOLVED_CONFIG="$(readlink -f "$WORDPIECE_CONFIG")"
+if [[ "$RESOLVED_CONFIG" != "$(readlink -f "$P019_CONFIG")" && \
+      "$RESOLVED_CONFIG" != "$(readlink -f "$P020_CONFIG")" ]]; then
+  printf 'WordPiece FutureSeed forbids an unregistered launch config: %s\n' "$WORDPIECE_CONFIG" >&2
   exit 4
 fi
 set -a
-source "$P019_CONFIG"
+source "$WORDPIECE_CONFIG"
 set +a
 
 export CUDA_VISIBLE_DEVICES=0
@@ -123,7 +126,7 @@ mkdir -p "$PERSIST_ROOT/.cache" "$PERSIST_ROOT/artifacts" \
   "$PERSIST_ROOT/models" "$PERSIST_ROOT/runs" "$OUT_DIR" \
   "$CHECKPOINT_DIR" "$VISUAL_DIR"
 
-cp "$P019_CONFIG" "$RUN_DIR/launch.env"
+cp "$WORDPIECE_CONFIG" "$RUN_DIR/launch.env"
 sha256sum "$RUN_DIR/launch.env" > "$RUN_DIR/launch.env.sha256"
 git -C "$REPO_ROOT" rev-parse HEAD > "$RUN_DIR/git_sha.txt"
 git -C "$REPO_ROOT" status --short > "$RUN_DIR/git_status.txt"
@@ -153,10 +156,12 @@ import json
 from pathlib import Path
 
 Path("$RUN_DIR/config.json").write_text(json.dumps({
-    "plan": "P-CAUSAL-019",
+    "plan": "$WORDPIECE_EXPERIMENT_PLAN",
     "git_sha": "$GIT_SHA",
     "run_name": "$RUN_NAME",
-    "model": "official-FLA GDN2 D128/L2/H4/D32 with common BERT lexical endpoints",
+    "model": "official-FLA GDN2 D128/L${WORDPIECE_MODEL_LAYERS}/H4/D32 with common BERT lexical endpoints",
+    "model_layers": int("$WORDPIECE_MODEL_LAYERS"),
+    "active_future_seed_routes": int("$WORDPIECE_MODEL_LAYERS") - 1,
     "arms": ["causal_gdn2", "future_seed_gdn2"],
     "sequence_length": int("$SEQUENCE_LENGTH"),
     "train_windows": int("$TRAIN_WINDOWS"),

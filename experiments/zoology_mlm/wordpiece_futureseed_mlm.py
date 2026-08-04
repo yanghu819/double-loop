@@ -54,10 +54,23 @@ EXPECTED_GDN2_SOURCE_SHA256 = (
 )
 VOCAB_SIZE = 30_522
 HIDDEN_SIZE = 128
-LAYERS = 2
+PLAN_ID = os.environ.get("WORDPIECE_EXPERIMENT_PLAN", "P-CAUSAL-019")
+REGISTERED_LAYERS = {
+    "P-CAUSAL-019": 2,
+    "P-CAUSAL-020": 4,
+}
+if PLAN_ID not in REGISTERED_LAYERS:
+    raise RuntimeError(f"Unregistered WordPiece experiment plan: {PLAN_ID}")
+LAYERS = int(os.environ.get("WORDPIECE_MODEL_LAYERS", REGISTERED_LAYERS[PLAN_ID]))
+if LAYERS != REGISTERED_LAYERS[PLAN_ID]:
+    raise RuntimeError(
+        f"{PLAN_ID} requires {REGISTERED_LAYERS[PLAN_ID]} layers, got {LAYERS}"
+    )
 HEADS = 4
 HEAD_DIM = 32
 EVAL_STEPS = (0, 250, 500, 750, 1000, 1250)
+P019_L2_ACCURACY_DELTA = 0.002530577815267776
+P019_L2_CE_ADVANTAGE = 0.08734900556199943
 
 
 def sha256(path: Path) -> str:
@@ -693,16 +706,20 @@ def preflight(
         ),
     }
     gate_gradients = [
-        parameter.grad
+        {
+            "name": name,
+            "max_abs_gradient": float(parameter.grad.detach().abs().max().item()),
+        }
         for name, parameter in future_seed.named_parameters()
         if name.endswith("future_seed_logit") and parameter.grad is not None
     ]
-    gate_gradient_max = max(
-        (float(gradient.abs().max().item()) for gradient in gate_gradients),
-        default=0.0,
-    )
-    if gate_gradient_max <= 0.0:
-        raise RuntimeError("FutureSeed gate has zero gradient")
+    if len(gate_gradients) != LAYERS - 1:
+        raise RuntimeError(
+            f"Expected {LAYERS - 1} active FutureSeed gates, got {gate_gradients}"
+        )
+    if any(row["max_abs_gradient"] <= 0.0 for row in gate_gradients):
+        raise RuntimeError(f"A FutureSeed gate has zero gradient: {gate_gradients}")
+    gate_gradient_max = max(row["max_abs_gradient"] for row in gate_gradients)
 
     mixers = [layer.sequence_mixer for layer in future_seed.backbone.layers]
     conv_backends = [
@@ -738,6 +755,8 @@ def preflight(
         "scale0_output_max_diff": scale0_output_max_diff,
         "future_dependency_mean_abs": dependencies,
         "future_seed_gate_gradient_max": gate_gradient_max,
+        "future_seed_gate_gradients": gate_gradients,
+        "expected_active_seed_routes": LAYERS - 1,
         "backward": backward,
         "pretrained_carrier_anchor": carrier_anchor,
         "common_pretrained_modules": ["bert.embeddings.word_embeddings.weight"],
@@ -1263,7 +1282,7 @@ def main() -> None:
         if getattr(args, name) != expected
     }
     if drift:
-        raise RuntimeError(f"P-CAUSAL-019 registered protocol drifted: {drift}")
+        raise RuntimeError(f"{PLAN_ID} registered protocol drifted: {drift}")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
     os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -1449,13 +1468,32 @@ def main() -> None:
         and advantage_1000 > 0.0
         and advantage_1250 > 0.0
     )
+    depth_ce_gain = ce_improvement - P019_L2_CE_ADVANTAGE
+    depth_accuracy_gain = accuracy_delta - P019_L2_ACCURACY_DELTA
+    depth_route_amplified = (
+        PLAN_ID == "P-CAUSAL-020"
+        and opened
+        and suffix_supported
+        and ce_improvement >= 0.15
+        and depth_ce_gain >= 0.05
+        and bootstrap["ce_improvement_95_lower"] > 0.0
+        and advantage_1000 > 0.0
+    )
     status = (
         "supported"
         if supported
-        else ("unopened" if not opened else ("weak_signal" if weak_signal else "no_support"))
+        else (
+            "unopened"
+            if not opened
+            else (
+                "depth_amplified_below_strong_gate"
+                if depth_route_amplified
+                else ("weak_signal" if weak_signal else "no_support")
+            )
+        )
     )
     comparison = {
-        "plan": "P-CAUSAL-019",
+        "plan": PLAN_ID,
         "status": status,
         "arms": scores,
         "future_seed_vs_causal": {
@@ -1471,6 +1509,10 @@ def main() -> None:
             "ce_advantage_step1000": advantage_1000,
             "ce_advantage_step1250": advantage_1250,
             "endpoint_advantage_slope": advantage_1250 - advantage_1000,
+            "p019_l2_reference_accuracy_delta": P019_L2_ACCURACY_DELTA,
+            "p019_l2_reference_ce_advantage": P019_L2_CE_ADVANTAGE,
+            "depth_accuracy_advantage_gain": depth_accuracy_gain,
+            "depth_ce_advantage_gain": depth_ce_gain,
             "paired_window_bootstrap": bootstrap,
         },
         "registered_gates": {
@@ -1481,6 +1523,9 @@ def main() -> None:
             "ce_route_supported": ce_route_supported,
             "positive_suffix_utility_interval": suffix_supported,
             "weak_ce_signal_0.05_to_0.20": weak_signal,
+            "depth_ce_advantage_at_least_0.15": ce_improvement >= 0.15,
+            "depth_ce_gain_over_l2_at_least_0.05": depth_ce_gain >= 0.05,
+            "depth_route_amplified": depth_route_amplified,
             "scientific_support": supported,
         },
         "preflight": preflight_result,
@@ -1495,7 +1540,9 @@ def main() -> None:
                 row["frozen"] and row["input_output_tied"]
                 for row in preflight_result["lexical_contracts"].values()
             ),
-            "model": "official-FLA GDN2 D128/L2/H4/D32 expand-v1",
+            "model": f"official-FLA GDN2 D128/L{LAYERS}/H4/D32 expand-v1",
+            "model_layers": LAYERS,
+            "active_future_seed_routes": LAYERS - 1,
             "intervention": "native FutureSeed scale 0 versus 1",
             "train_input_tokens_per_arm": args.max_steps
             * args.train_batch

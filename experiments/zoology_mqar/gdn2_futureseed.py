@@ -4,7 +4,7 @@ import inspect
 import os
 from functools import partial
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 from torch import nn
@@ -225,13 +225,35 @@ class FutureSeedLanguageModel(nn.Module):
 
 def futureseed_diagnostics(
     model: FutureSeedLanguageModel,
-) -> dict[str, float | None]:
+) -> dict[str, Any]:
     mixers = [
         layer.sequence_mixer
         for layer in model.backbone.layers
         if isinstance(layer.sequence_mixer, ZoologyGDN2FutureSeedMixer)
     ]
     target = mixers[-1]
+    per_layer = [
+        {
+            "layer_idx": mixer.layer_idx,
+            "seed_applied": mixer.last_seed_gate is not None,
+            "future_seed_gate": (
+                None
+                if mixer.last_seed_gate is None
+                else float(mixer.last_seed_gate.item())
+            ),
+            "future_seed_raw_rms": (
+                None
+                if mixer.last_seed_rms is None
+                else float(mixer.last_seed_rms.mean().item())
+            ),
+            "future_seed_norm": (
+                None
+                if mixer.last_seed_norm is None
+                else float(mixer.last_seed_norm.item())
+            ),
+        }
+        for mixer in mixers
+    ]
     return {
         "future_seed_scale": target.future_seed_scale,
         "future_seed_gate": (
@@ -249,4 +271,6 @@ def futureseed_diagnostics(
             if target.last_seed_norm is None
             else float(target.last_seed_norm.item())
         ),
+        "active_seed_routes": sum(row["seed_applied"] for row in per_layer),
+        "per_layer": per_layer,
     }

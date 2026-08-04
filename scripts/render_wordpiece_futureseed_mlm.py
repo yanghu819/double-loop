@@ -560,7 +560,7 @@ def render_html(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>P-CAUSAL-019: WordPiece FutureSeed MLM</title>
+<title>{html.escape(str(comparison['plan']))}: WordPiece FutureSeed MLM</title>
 <style>
 :root {{ --ink:#1d2421; --muted:#626c67; --line:#d7ddda; --soft:#f4f6f5; --paper:#fff; --good:#126448; --good-bg:#e3f2eb; --bad:#a23828; --bad-bg:#fae8e4; --warn:#8a5b12; --warn-bg:#fbf0d8; --focus:#285f9c; }}
 * {{ box-sizing:border-box; }}
@@ -600,7 +600,7 @@ p {{ margin:0; }} code {{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas
 @media (max-width:850px) {{ main {{ width:min(100% - 18px,1480px); padding-top:18px; }} h1 {{ font-size:23px; }} .summary {{ grid-template-columns:1fr; }} .case-header {{ align-items:flex-start; flex-direction:column; }} .case-counts {{ justify-content:flex-start; }} }}
 @media (max-width:560px) {{ .summary {{ grid-template-columns:minmax(0,1fr); }} .summary-panel {{ overflow-x:auto; }} .summary table {{ min-width:510px; }} .selection-facts {{ grid-template-columns:1fr; }} .selection-facts div,.selection-facts div:nth-child(odd),.selection-facts div:nth-last-child(-n+2) {{ border-right:0; border-bottom:1px solid var(--line); }} .selection-facts div:last-child {{ border-bottom:0; }} }}
 </style></head><body><main>
-<header><h1>WordPiece masked-token recovery</h1><p class="lede">P-CAUSAL-019 compares matched official-FLA causal GDN2 and native FutureSeed on identical validation windows, masks, and targets.</p></header>
+<header><h1>WordPiece masked-token recovery</h1><p class="lede">{html.escape(str(comparison['plan']))} compares matched official-FLA causal GDN2 and native FutureSeed on identical validation windows, masks, and targets.</p></header>
 <section class="summary">
   <div class="summary-panel"><h2>Registered endpoint metrics</h2><table>
     <thead><tr><th>Metric</th><th>{ARM_LABELS[CAUSAL_ARM]}</th><th>{ARM_LABELS[FUTURE_SEED_ARM]}</th><th>FS - causal</th></tr></thead>

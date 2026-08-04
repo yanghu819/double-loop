@@ -1838,3 +1838,20 @@
   P-CAUSAL-016 used only 20 measured steps, producing 0.30--1.01 second samples
   and inconsistent arm ratios. Preserve these as diagnostics; do not place
   them in a paper cost frontier until longer repeated timing is available.
+- P-CAUSAL-017 shows that an explicit reverse scan is not automatically a
+  useful quality ceiling. Two independent forward/reverse official-GDN2
+  streams with learned fusion had nonzero future dependency and healthy
+  gradients, yet stayed near chance at L512. Visibility and long-range
+  association retention are separate requirements.
+- Do not claim that FutureSeed beats bidirectional recurrence from an invalid
+  carrier. FutureSeed exceeded this baseline by about `0.9623` balanced
+  accuracy, but the baseline missed its own `0.95/0.95` past/future gate.
+  Archive the boundary and require an independently opened baseline/task pair.
+- FutureSeed is not accurately described as only a cheap reverse scan. At
+  L512, plain causal GDN2 also loses past retrieval, while FutureSeed restores
+  both past and future accuracy to about `0.986`. Terminal-state transfer acts
+  as a cross-layer long-range memory route in addition to changing direction.
+- Apply quality gates before systems gates. Once the bidirectional carrier
+  finished at chance, repeated throughput measurements became irrelevant;
+  stop their exact process groups and report cost as not measured rather than
+  manufacturing a cheapness result against a broken model.

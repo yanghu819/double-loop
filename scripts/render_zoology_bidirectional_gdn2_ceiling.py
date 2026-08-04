@@ -92,15 +92,26 @@ def main() -> None:
     metric_rows = []
     for arm in ARMS:
         metrics = score["arms"][arm]["metrics"]
-        system = score["systems"][arm]
+        system = score.get("systems", {}).get(arm)
+        throughput = (
+            f"{system['tokens_per_sec_median']:,.0f}" if system else "not measured"
+        )
+        peak_memory = (
+            f"{system['peak_cuda_mem_bytes_median']/2**20:.1f} MiB"
+            if system
+            else "not measured"
+        )
+        timing_range = (
+            f"{system['tokens_per_sec_relative_range']:.1%}"
+            if system
+            else "not measured"
+        )
         metric_rows.append(
             "<tr>"
             f"<td>{LABELS[arm]}</td><td>{score['arms'][arm]['parameters']:,}</td>"
             f"<td>{metrics['past']['accuracy']:.4f}</td><td>{metrics['future']['accuracy']:.4f}</td>"
             f"<td>{metrics['joint_exact']:.4f}</td>"
-            f"<td>{system['tokens_per_sec_median']:,.0f}</td>"
-            f"<td>{system['peak_cuda_mem_bytes_median']/2**20:.1f} MiB</td>"
-            f"<td>{system['tokens_per_sec_relative_range']:.1%}</td>"
+            f"<td>{throughput}</td><td>{peak_memory}</td><td>{timing_range}</td>"
             "</tr>"
         )
     case_articles = []
@@ -118,6 +129,13 @@ def main() -> None:
             + "</tbody></table></div></article>"
         )
     gate = "PASS" if score["registered_gate"]["passed"] else "FAIL"
+    gate_class = "pass" if gate == "PASS" else "fail"
+    cost_note = (
+        "Robust cost benchmarks were not run because the explicit bidirectional "
+        "carrier missed its preregistered quality gate."
+        if not score.get("systems")
+        else "Robust cost uses three independent fresh-process measurements."
+    )
     document = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>P-CAUSAL-017 explicit bidirectional GDN2 ceiling</title>
@@ -125,14 +143,14 @@ def main() -> None:
 :root{{--ink:#17201c;--muted:#5c6661;--line:#d8dedb;--good:#14745a;--bad:#a43a22;}}
 *{{box-sizing:border-box}}body{{margin:0;background:#fff;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:0}}
 main{{width:min(1160px,calc(100% - 30px));margin:28px auto 64px}}h1{{font-size:28px;margin:0 0 8px}}h2{{font-size:19px;margin:30px 0 12px}}h3{{font-size:14px;margin:0 0 4px}}p{{color:var(--muted);margin:0 0 12px;line-height:1.45}}
-.gate{{display:grid;grid-template-columns:120px 1fr;gap:18px;border-block:1px solid var(--line);padding:16px 0;align-items:center}}.badge{{border:2px solid var(--good);color:var(--good);font-weight:800;text-align:center;padding:14px}}
+.gate{{display:grid;grid-template-columns:120px 1fr;gap:18px;border-block:1px solid var(--line);padding:16px 0;align-items:center}}.badge{{border:2px solid var(--good);color:var(--good);font-weight:800;text-align:center;padding:14px}}.badge.fail{{border-color:var(--bad);color:var(--bad)}}
 .legend{{display:flex;gap:18px;flex-wrap:wrap;margin:18px 0}}.swatch{{width:11px;height:11px;display:inline-block;margin-right:6px}}.chart{{border:1px solid var(--line);border-radius:6px;padding:8px}}svg{{width:100%;height:auto}}.grid{{stroke:#e5eae7}}.axis{{font-size:11px;fill:#68726d}}
 .table-wrap{{overflow-x:auto}}table{{width:100%;min-width:900px;border-collapse:collapse;font-size:12px}}th,td{{border-bottom:1px solid var(--line);padding:8px;text-align:right}}th:first-child,td:first-child{{text-align:left}}.case{{border-top:1px solid var(--line);padding:14px 0}}.correct{{background:#e4f4ed;color:var(--good);font-weight:700}}.wrong{{background:#fde8e2;color:var(--bad);font-weight:700}}
 @media(max-width:680px){{h1{{font-size:24px}}.gate{{grid-template-columns:1fr}}}}
 </style></head><body><main>
 <h1>FutureSeed versus explicit bidirectional recurrence</h1>
 <p>L512 directional MQAR with four associations. The baseline runs independent official-FLA GDN2 streams forward and backward at every layer, then learns a generic linear fusion. FutureSeed never reverses the sequence.</p>
-<section class="gate"><div class="badge">{gate}</div><div><strong>Registered carrier and efficiency gate</strong><p>Bidirectional past/future at least 0.95, joint exact at least 0.90; FutureSeed stays within 0.03 future and 0.05 joint exact while using at least 1.25x throughput and at most 0.80x peak memory.</p></div></section>
+<section class="gate"><div class="badge {gate_class}">{gate}</div><div><strong>Registered carrier and efficiency gate</strong><p>Bidirectional past/future at least 0.95, joint exact at least 0.90; FutureSeed stays within 0.03 future and 0.05 joint exact while using at least 1.25x throughput and at most 0.80x peak memory. {cost_note}</p></div></section>
 <div class="legend"><span><i class="swatch" style="background:#59635e"></i>Causal GDN2</span><span><i class="swatch" style="background:#14745a"></i>GDN2 + FutureSeed</span><span><i class="swatch" style="background:#b45f18"></i>Forward + reverse GDN2</span></div>
 <div class="chart">{quality_svg(score)}</div>
 <h2>Quality and robust cost</h2><div class="table-wrap"><table><thead><tr><th>Model</th><th>Parameters</th><th>Past acc</th><th>Future acc</th><th>Joint exact</th><th>Median tokens/s</th><th>Peak memory</th><th>Timing range</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table></div>

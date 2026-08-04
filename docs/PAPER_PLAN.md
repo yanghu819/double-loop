@@ -583,3 +583,27 @@ published bidirectional carrier. P-CAUSAL-016 peak-memory differences are
 consistently about `1.50 MiB`, but its 20-step timing samples are too short and
 variable for a precise throughput claim; rerun only a robust repeated timing
 protocol when the valid comparison carrier exists.
+
+### P-CAUSAL-017 Explicit Bidirectional Recurrent Boundary
+
+A conventional two-pass recurrent ceiling was tested at L512: every layer ran
+independent official-FLA GDN2 streams in forward and reversed order, flipped
+the reverse output back, concatenated both streams and learned a linear fusion.
+This baseline had 894,608 parameters versus 596,048 for causal and FutureSeed
+GDN2. Strict preflight proved active future dependency, four official
+chunk/Triton streams and nonzero reverse/fusion gradients.
+
+The carrier nevertheless failed. Its past/future accuracy was
+`0.0345/0.0120`, joint exact was zero and best aggregate validation accuracy
+was only `0.02525`; frozen FutureSeed reached `0.9860/0.9850` and `0.942`
+joint exact on the same L512 data. Robust cost measurement was stopped because
+comparing speed against a chance-level ceiling would not answer the paper
+question.
+
+This cannot support a claim that FutureSeed beats bidirectional recurrent
+models in general. It does support a more precise mechanism interpretation:
+reverse visibility alone is insufficient when each causal stream still must
+retain random associations over long distances. FutureSeed supplies a
+trainable cross-layer memory route that helps both formally future and already
+causally available long-range bindings. The paper still needs an independently
+opened published bidirectional carrier before making a quality-cost claim.

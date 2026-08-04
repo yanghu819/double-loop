@@ -4,6 +4,7 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import shutil
 import statistics
 import time
@@ -235,6 +236,7 @@ def copy_reference(reference_run: Path, output_dir: Path) -> dict[str, Any]:
         shutil.copytree(
             reference_run / "output" / "length_512" / arm,
             output_dir / "reference" / arm,
+            dirs_exist_ok=True,
         )
     return result
 
@@ -249,7 +251,11 @@ def aggregate(args: argparse.Namespace) -> None:
     if len(set(train_hashes.values())) != 1 or len(set(test_hashes.values())) != 1:
         raise RuntimeError("Three-way carrier data hashes differ")
 
-    systems = {arm: benchmark_summary(args.output_dir, arm) for arm in ARMS}
+    systems = (
+        {}
+        if args.carrier_failure
+        else {arm: benchmark_summary(args.output_dir, arm) for arm in ARMS}
+    )
     fs = arms["future_seed_gdn2"]["metrics"]
     bidir = arms["explicit_bidirectional_gdn2"]["metrics"]
     quality_checks = {
@@ -261,19 +267,30 @@ def aggregate(args: argparse.Namespace) -> None:
         ),
         "future_seed_joint_within_0.05": fs["joint_exact"] >= bidir["joint_exact"] - 0.05,
     }
-    fs_speed = systems["future_seed_gdn2"]["tokens_per_sec_median"]
-    bidir_speed = systems["explicit_bidirectional_gdn2"]["tokens_per_sec_median"]
-    fs_memory = systems["future_seed_gdn2"]["peak_cuda_mem_bytes_median"]
-    bidir_memory = systems["explicit_bidirectional_gdn2"]["peak_cuda_mem_bytes_median"]
-    efficiency_checks = {
-        "future_seed_throughput_at_least_1.25x": fs_speed >= 1.25 * bidir_speed,
-        "future_seed_peak_memory_at_most_0.80x": fs_memory <= 0.80 * bidir_memory,
-        "all_benchmark_relative_ranges_at_most_0.15": all(
-            systems[arm]["tokens_per_sec_relative_range"] <= 0.15 for arm in ARMS
-        ),
-    }
+    efficiency_checks: dict[str, bool] = {}
+    if not args.carrier_failure:
+        fs_speed = systems["future_seed_gdn2"]["tokens_per_sec_median"]
+        bidir_speed = systems["explicit_bidirectional_gdn2"][
+            "tokens_per_sec_median"
+        ]
+        fs_memory = systems["future_seed_gdn2"]["peak_cuda_mem_bytes_median"]
+        bidir_memory = systems["explicit_bidirectional_gdn2"][
+            "peak_cuda_mem_bytes_median"
+        ]
+        efficiency_checks = {
+            "future_seed_throughput_at_least_1.25x": (
+                fs_speed >= 1.25 * bidir_speed
+            ),
+            "future_seed_peak_memory_at_most_0.80x": (
+                fs_memory <= 0.80 * bidir_memory
+            ),
+            "all_benchmark_relative_ranges_at_most_0.15": all(
+                systems[arm]["tokens_per_sec_relative_range"] <= 0.15
+                for arm in ARMS
+            ),
+        }
     comparison = {
-        "status": "complete",
+        "status": "discarded" if args.carrier_failure else "complete",
         "protocol": {
             "plan": "P-CAUSAL-017",
             "sequence_length": SEQUENCE_LENGTH,
@@ -286,17 +303,28 @@ def aggregate(args: argparse.Namespace) -> None:
                 "5 benchmark warmups and 200 measured forward-backward steps"
             ),
             "future_seed": "native cross-layer terminal-state seeding; no reverse scan",
+            "analysis_git_sha": os.environ.get("ANALYSIS_GIT_SHA"),
         },
         "arms": arms,
         "systems": systems,
         "quality_gate": {"passed": all(quality_checks.values()), "checks": quality_checks},
         "efficiency_gate": {
-            "passed": all(efficiency_checks.values()),
+            "passed": bool(efficiency_checks) and all(efficiency_checks.values()),
             "checks": efficiency_checks,
-            "future_seed_vs_bidirectional_throughput": fs_speed / bidir_speed,
-            "future_seed_vs_bidirectional_peak_memory": fs_memory / bidir_memory,
+            "not_run_reason": (
+                "Preregistered carrier-quality kill fired before robust benchmarks"
+                if args.carrier_failure
+                else None
+            ),
         },
     }
+    if not args.carrier_failure:
+        comparison["efficiency_gate"].update(
+            {
+                "future_seed_vs_bidirectional_throughput": fs_speed / bidir_speed,
+                "future_seed_vs_bidirectional_peak_memory": fs_memory / bidir_memory,
+            }
+        )
     comparison["registered_gate"] = {
         "passed": comparison["quality_gate"]["passed"]
         and comparison["efficiency_gate"]["passed"],
@@ -306,6 +334,11 @@ def aggregate(args: argparse.Namespace) -> None:
         and comparison["quality_gate"]["checks"][
             "bidirectional_past_at_least_0.95"
         ],
+        "stop_reason": (
+            "explicit bidirectional GDN2 missed the registered carrier gate"
+            if args.carrier_failure
+            else None
+        ),
     }
     (args.output_dir / "comparison.json").write_text(
         json.dumps(comparison, indent=2, sort_keys=True) + "\n"
@@ -340,6 +373,7 @@ def main() -> None:
     aggregate_parser = subparsers.add_parser("aggregate")
     aggregate_parser.add_argument("--output-dir", type=Path, required=True)
     aggregate_parser.add_argument("--reference-run", type=Path, required=True)
+    aggregate_parser.add_argument("--carrier-failure", action="store_true")
     aggregate_parser.set_defaults(handler=aggregate)
 
     args = parser.parse_args()

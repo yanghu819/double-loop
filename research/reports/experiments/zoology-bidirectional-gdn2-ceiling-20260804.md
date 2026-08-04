@@ -5,7 +5,7 @@
 - Plan: `P-CAUSAL-017`
 - Date: 2026-08-04 CST
 - Machine: AIStation task-mode GPU1, one A100-SXM4-80GB
-- Status: preregistered
+- Status: discarded by preregistered carrier gate
 - Parent evidence: P-CAUSAL-016 result commit `d6747fbd`
 
 ## 2. Mechanism Question
@@ -80,4 +80,74 @@ as FutureSeed, multi-seed runs, and post-hoc optimization rescue.
 
 ## 6. Results
 
-Pending formal GPU1 run.
+The first detached launch at `75567b1b` stopped before model execution because
+the runner imported an undefined constant. It is archived as an engineering
+failure with `scientific_failure=false`. Commit `6a39f0f6` fixed only that
+import and preserved every scientific setting.
+
+The formal run was
+`zoology-bidirectional-gdn2-ceiling-20260804T140052Z-6a39f0f`, source SHA
+`6a39f0f6b9da32401abdbc4eb225c2c01ef46dde`, launcher PID/PGID
+`67585/67585`. The strict preflight passed:
+
+- exactly one visible A100 80GB with the registered GPU1 UUID;
+- exact Zoology, FLA, P-CAUSAL-016 score and L512 train/test hashes;
+- four official-FLA GDN2 streams, all `chunk` mode with Triton convolution;
+- causal future dependency exactly `0`; bidirectional future dependency
+  `0.123501`;
+- finite loss, reverse-stream gradient `0.185547`, fusion gradient `0.089844`;
+- no FutureSeed module inside the explicit bidirectional baseline.
+
+| arm | parameters | past acc | future acc | joint exact | past CE | future CE |
+|---|---:|---:|---:|---:|---:|---:|
+| causal GDN2 | 596,048 | 0.0345 | 0.0105 | 0.0000 | 4.1991 | 4.5961 |
+| GDN2 + FutureSeed | 596,048 | 0.9860 | 0.9850 | 0.9420 | 0.0481 | 0.0461 |
+| explicit forward + reverse GDN2 | 894,608 | 0.0345 | 0.0120 | 0.0000 | 4.0001 | 4.6667 |
+
+The explicit bidirectional model's aggregate validation accuracy was
+`0.01425/0.01425/0.01375/0.01100/0.01075/0.01075/0.01900/0.02500/0.02525/0.02325`
+across epochs 0--9. Its best value was only `0.02525`; it never opened. The
+registered `0.95/0.95/0.90` past/future/joint carrier gate therefore failed by
+a large margin.
+
+## 7. Kill And Cost Accounting
+
+Training completed in `126.48` seconds with peak allocated CUDA memory
+`815,277,056` bytes. The runner had entered its first fresh-process benchmark,
+but this was stopped by exact process groups after the carrier failure became
+known. Robust throughput and memory ratios are intentionally not reported:
+cost comparisons against a chance-level quality baseline do not answer the
+paper question.
+
+The final `abort.json` records `scientific_failure=true`,
+`training_completed=true`, and
+`benchmarks_skipped_after_carrier_failure=true`. GPU1 returned to zero memory
+and utilization; GPU2 and CPU model execution were never used.
+
+## 8. Decision And Lesson
+
+Discard this explicit per-layer forward/reverse fusion as a paper ceiling. Do
+not tune its fusion, LR, epochs, width, depth, seed or loss. FutureSeed is about
+`+0.9623` balanced accuracy above it at L512, but this is not evidence that
+FutureSeed beats bidirectional recurrent models in general because the
+baseline did not solve the carrier.
+
+The mechanistic lesson is sharper: making information visible from both
+directions is not sufficient for long-range random key/value binding. At L512,
+each plain directional GDN2 stream still has to preserve associations over a
+long causal distance, and both streams remain near chance. FutureSeed's
+terminal-state transfer is doing more than replacing a reverse scan; it also
+creates a trainable cross-layer long-range memory route. A future cost-quality
+claim still requires an independently established bidirectional model/task
+pair that opens before comparison.
+
+## 9. Artifacts
+
+- Remote run: `/huyang2/double-loop/runs/zoology-bidirectional-gdn2-ceiling-20260804T140052Z-6a39f0f`
+- Frozen P-CAUSAL-016 reference:
+  `/huyang2/double-loop/runs/zoology-gdn2-fs-length-curve-20260804T125520Z-cbe7060`
+- Formal outputs: `config.json`, `preflight.json`, `abort.json`, model
+  `score.json`, `metrics.jsonl`, `cases.json`, logs and source snapshot.
+- Visualization: `visualizations/index.html` with the quality table and 12
+  hardest matched cases. Cost cells are explicitly marked not measured.
+- No experiment tag: the carrier failed and no new positive score is claimed.

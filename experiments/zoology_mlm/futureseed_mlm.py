@@ -68,7 +68,6 @@ def build_config(
         ],
         batch_size=batch_size,
         seed=SEED,
-        cache_dir=None,
     )
     if arm in {"causal_gdn2", "future_seed_gdn2"}:
         future_seed_scale = 0.0 if arm == "causal_gdn2" else 1.0

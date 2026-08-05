@@ -60,6 +60,7 @@ EXPECTED_PARAMETERS = {
     "causal_gdn2": 4_965_722,
     "future_seed_gdn2": 4_965_722,
 }
+QUALITY_CORRECT_TOLERANCE = 1
 QUALITY_CE_TOLERANCE = 1e-3
 
 
@@ -271,9 +272,14 @@ def quality_metrics(
         "examples": int(inputs.shape[0]),
     }
     expected = EXPECTED_QUALITY[adapter.arm]
-    if metrics["masked_accuracy"] != expected["masked_accuracy"]:
+    expected_correct = round(expected["masked_accuracy"] * masked)
+    if (
+        abs(int(metrics["masked_correct"]) - expected_correct)
+        > QUALITY_CORRECT_TOLERANCE
+    ):
         raise RuntimeError(
-            f"{adapter.arm} accuracy did not reproduce: {metrics['masked_accuracy']}"
+            f"{adapter.arm} accuracy did not reproduce: {metrics['masked_accuracy']} "
+            f"({metrics['masked_correct']}/{masked}, expected {expected_correct}/{masked})"
         )
     if (
         abs(float(metrics["masked_ce"]) - expected["masked_ce"])

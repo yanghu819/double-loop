@@ -9,17 +9,22 @@ Primary evidence target: show whether FutureSeed supplies cheap future context
 for recurrent reasoners under matched compute, without solver-specific repair or
 selector tricks.
 
-Current update (2026-08-05 CST): `P-CAUSAL-023` is approved as the one next
-paper gate. It freezes the successful P022 FutureSeed/causal checkpoints and
-the independently opened official BERT-Tiny checkpoint, reproduces all three
-on the exact 4,742-target length-128 validation tensor, then measures batch-1
-latency and batch-64 throughput in five fresh processes per arm with rotated
-order. This is deliberately not a length curve: P022 learned absolute position
-embeddings only through position 127, so extending that frozen checkpoint would
-change the model rather than measure its scaling. Success requires FutureSeed
-quality within 0.02 accuracy and 0.10 CE of BERT plus either 1.20x batch-64
-masked-recovery throughput or a real memory tradeoff; otherwise the result will
-be recorded as "quality works, cheapness not established" with no rescue.
+Current update (2026-08-05 CST): `P-CAUSAL-023` passed its full three-arm CUDA
+preflight on the exact 4,742-target length-128 tensor. BERT/causal/FutureSeed
+accuracy is `0.35555/0.30936/0.37389`, CE is
+`4.03327/4.61836/3.90512`, causal future dependency is exactly zero, and
+FutureSeed uses three native seed routes. The first formal attempt was aborted
+before a complete timing population because a fresh official-FLA BF16 process
+flipped one FutureSeed boundary token (`1773 -> 1774` correct) and the worker
+incorrectly required integer identity. The guard now allows at most one of
+4,742 token predictions to differ while retaining the registered `1e-3` CE
+tolerance; model, data, metric, quality/cost gates, five fresh processes and
+rotated timing order are unchanged. Partial attempt-1 timings are discarded.
+The exact-protocol formal rerun remains the only active paper gate. It is not a
+length curve because P022 position embeddings stop at 127. Success still
+requires FutureSeed quality within 0.02 accuracy and 0.10 CE of BERT plus
+either 1.20x batch-64 masked-recovery throughput or a real memory tradeoff;
+otherwise record "quality works, cheapness not established" with no rescue.
 
 Previous update: `P-CAUSAL-022` is complete and strongly positive. At the exact
 P021 D128/L4 official-FLA GDN2 architecture, 4x

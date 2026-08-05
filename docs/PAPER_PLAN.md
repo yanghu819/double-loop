@@ -25,16 +25,19 @@ majority of fixed hard boards. Full-board exact remains zero. The paper claim
 therefore stays bounded until one clean D256/L12 full-diversity trajectory
 shows that this generic compatibility mechanism scales into exact closure.
 
-That full-diversity trajectory, P-GDN3-002, has now passed its step500,
-step3000, and step6000 gates. At step6000, representative h58 full-board exact
-is zero at loops1/2 and opens to `0.0059` only at loops3-5, while mean wrong
-cells fall `31.68 -> 30.46`. The h53 probe reaches loop5 exact/blank
-`0.0293/0.6946`, up from `0.0156/0.5907` at step3000. The h64 fixed probe still
-has zero exact despite removing `5.06` wrong cells across loops. This is
-from-scratch evidence that the scaled shared namespace supports harder-range
-recurrent correction, but not yet reliable global closure. The main claim
-remains conditional on full official-range evaluation and the step12000
-endpoint.
+That full-diversity trajectory, P-GDN3-002, has passed its step500, step3000,
+and step6000 gates, and the step9000 fixed-probe curve remains strongly
+positive. From step6000 to9000, h53 loop5 exact/blank rises
+`0.0293/0.6946 -> 0.2148/0.7896`, h58 rises
+`0.0059/0.4747 -> 0.0117/0.5005`, and h64 rises
+`0/0.6093 -> 0.0293/0.7313`. At h64, exact remains zero through loop2 and opens
+at loops3-5 (`0.0137/0.0254/0.0293`) while wrong cells fall
+`28.78 -> 17.20`. This is the first from-scratch evidence that the scaled
+shared namespace turns hardest-condition local correction into complete-board
+closure, and that the closure depends on recurrent computation. The live
+readout is still an aggregate fixed-probe audit, not a full official-range or
+same-board endpoint result. The main claim therefore remains conditional on
+the frozen step12000 evaluation.
 
 ## Working Title
 

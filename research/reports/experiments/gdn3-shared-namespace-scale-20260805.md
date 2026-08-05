@@ -2,7 +2,7 @@
 
 ## Metainfo
 
-- Status: in progress; GPU fit and step500/3000/6000 gates passed
+- Status: in progress; GPU fit and step500/3000/6000 gates passed, step9000 readout healthy
 - Preregistered: 2026-08-05 12:17 CST
 - Resource: AIStation task-mode GPU1 A100 80GB only
 - Seed: 52 only
@@ -248,3 +248,62 @@ Artifact hashes:
   `71c6bd997679162379f30f780b477fada2ae072a090d19dd1b326cb0dd4db3a4`;
 - exact step6000 train-state checkpoint:
   `8d36c7c37d6eb394b6a02bf0ce1979153aa979e759cb9868386a78d835114d1e`.
+
+## Step9000 Science Readout
+
+The registered trajectory remains healthy and every hard fixed probe improves
+from step6000. The live evaluator still reports aggregate h50/h53/h58/h64
+conditions rather than full official ranges or per-board predictions.
+
+| Fixed probe | Metric | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---|---:|---:|---:|---:|---:|
+| h50 | exact | 0.9798 | 1.0000 | 1.0000 | 1.0000 | **1.0000** |
+| h50 | blank accuracy | 0.9996 | 1.0000 | 1.0000 | 1.0000 | **1.0000** |
+| h53 | exact | 0.0000 | 0.0059 | 0.1250 | 0.2012 | **0.2148** |
+| h53 | blank accuracy | 0.6078 | 0.7264 | 0.7787 | 0.7875 | **0.7896** |
+| h58 | exact | 0.0000 | 0.0000 | 0.0098 | 0.0117 | **0.0117** |
+| h58 | blank accuracy | 0.4579 | 0.4882 | 0.5001 | 0.5007 | **0.5005** |
+| h64 | exact | 0.0000 | 0.0000 | 0.0137 | 0.0254 | **0.0293** |
+| h64 | blank accuracy | 0.5504 | 0.6474 | 0.7171 | 0.7295 | **0.7313** |
+
+- Step6000-to9000 loop5 slopes are positive across all hard probes. h53 exact
+  and blank accuracy gain `+0.1855/+0.0950`; h58 gains `+0.0059/+0.0257`; h64
+  gains `+0.0293/+0.1221`.
+- The hardest fixed condition now reaches global closure. h64 exact remains
+  zero through loop2 and opens at loop3, then rises
+  `0.0137 -> 0.0254 -> 0.0293`. Mean wrong cells fall
+  `28.78 -> 22.56 -> 18.11 -> 17.31 -> 17.20` across loops1-5. This is genuine
+  recurrent correction, not a copied one-pass prediction.
+- h53 is the strongest opening: exact rises `0 -> 0.2148` across loops and mean
+  wrong cells fall `20.79 -> 11.15`. h58 remains the bottleneck, but it still
+  removes `2.47` wrong cells per board and preserves nonzero loop3-5 exact.
+- Train CE is finite at `0.7786`, down from `0.8711` at step6000. The
+  step6000-to9000 interval takes `22,189.1 s`, or `7.396 s/optimizer-step`,
+  `17.31` effective boards/s, and `1.402k` cells/s. Live NVML occupancy remains
+  about `17,687 MiB`; the runner does not emit a formal allocator peak.
+- The exact PID/PGID, source SHA, one-visible-GPU UUID, official-FLA GDN2/Triton
+  implementation, and native FutureSeed route remain unchanged. No NaN, OOM,
+  fallback, source drift, or GPU drift is present.
+
+The curve is healthy, so the sole registered trajectory continues unchanged to
+step12000. The endpoint still requires full official 51-55/56-60/61-64 metrics
+and same-board hardest-case loop exports. No LR, address scale, rank, seed,
+loss, batch, width, or mechanism rescue is authorized.
+
+- aggregate dashboard:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/visualizations/index.html`;
+- step9000 fixed-probe loop audit:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-case-buckets-step9000.html`;
+- rendered step9000 audit:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-case-buckets-step9000.png`.
+
+Artifact hashes:
+
+- step9000 checkpoint-eval JSON:
+  `80d62a33057b892590694b3cbdf5c356d619b18d1caf1949a324137d8b1bd3df`;
+- exact step9000 train-state checkpoint:
+  `21e3840973e4c0cc8d4c45b32106cec76424e57ff1dc5f6ac03a3a51d10e4e2b`;
+- archived run-through-step9000 log:
+  `46479b4d87b83c0a8120d7fb3aeb075eec975782967af1c9fd29019ebb0306db`;
+- immutable source snapshot retained remotely:
+  `f1cc2c269d12b109f99b8dea7e064aa4a3a50db62e5791012f5d629c8223d004`.

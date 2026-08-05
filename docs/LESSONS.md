@@ -41,6 +41,16 @@
   the registered trajectory to step9000/12000 and require full official-range
   endpoint metrics; do not convert this pass into an address/LR/loss/seed or
   nearby-scale sweep.
+- The step9000 readout changes the hardest-tail diagnosis: h64 loop5 exact opens
+  from `0` to `0.0293`, blank accuracy rises `0.6093 -> 0.7313`, and loops
+  remove `11.58` wrong cells per board (`28.78 -> 17.20`). Exact is zero through
+  loop2 and appears only at loop3, so the gain is recurrent global correction,
+  not just a better one-pass operating point.
+- Fixed buckets can move unevenly even when the mechanism scales: h53 exact
+  jumps `+0.1855`, h64 opens `+0.0293`, but h58 gains only `+0.0059`. Do not
+  select the favorable buckets as the endpoint claim. Freeze step12000 and
+  require full official 51-55/56-60/61-64 ranges plus same-board loop exports
+  before authorizing a matched D256 normal-GDN2 control.
 
 ## 2026-06-03 GPU1 bootstrap
 

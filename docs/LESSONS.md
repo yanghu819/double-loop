@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-05 research scope lock
+
+- The fixed research program is: use hard Sudoku scaling as the scaffold for
+  jointly iterating native FutureSeed and the next official-FLA linear recurrent
+  mechanism, GDN3. A generic idea should plausibly transfer to language or other
+  sequence tasks, but those tasks must not silently replace the benchmark.
+- P-CAUSAL-024 is the concrete scope-drift lesson. Its ModernBERT audit was
+  careful, but it answered a different question. It was discarded before assets,
+  model execution, or GPU use and must not enter the evidence chain.
+- FutureSeed/GDN co-design should start from state semantics, not another small
+  gate. A transported KxV state is only useful if the receiving layer interprets
+  its K axis consistently. Cross-layer address compatibility is therefore a
+  higher-information GDN3 hypothesis than scalar seed-selection variants.
+- Scaling remains mandatory after a mechanism passes a cheap falsifier: expand
+  independent Sudoku data, model/state capacity, and training compute. The
+  falsifier prevents hours of blind scaling; it is not a substitute for the
+  full-budget result.
+
 ## 2026-06-03 GPU1 bootstrap
 
 - AIStation development work for this repository is GPU1-only. GPU2 can be visible

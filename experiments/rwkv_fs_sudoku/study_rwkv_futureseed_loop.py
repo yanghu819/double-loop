@@ -290,6 +290,9 @@ ADDRESS_TRAIN_KEYS = (
     "gdn2_address_carrier_write_norm_ratio",
     "gdn2_address_carrier_b_input_relative_change",
     "gdn2_address_carrier_w_input_relative_change",
+    "gdn3_shared_address_weight_rms",
+    "gdn3_shared_address_residual_rms",
+    "gdn3_shared_address_token_std",
 )
 PRECONDITION_TRAIN_KEYS = (
     "gdn2_precondition_enabled",
@@ -334,6 +337,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_rotary",
     "anchor_phase",
     "anchor_residual",
+    "shared_namespace",
     "anchor_qk_residual",
     "anchor_carrier",
 )
@@ -718,6 +722,10 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = "content_qk_learned_address_phase_then_official_gdn2_chunk"
         elif address_mode == "anchor_residual":
             execution_path = "content_qk_shared_address_residual_then_official_gdn2_chunk"
+        elif address_mode == "shared_namespace":
+            execution_path = (
+                "cross_layer_shared_address_namespace_then_official_gdn2_chunk"
+            )
         elif address_mode == "anchor_qk_residual":
             execution_path = "content_qk_decoupled_address_residual_then_official_gdn2_chunk"
         elif address_mode == "anchor_carrier":
@@ -2944,6 +2952,8 @@ class FLADeltaTimeMix(nn.Module):
                 raise RuntimeError(
                     "anchor_carrier requires address-conditioned carrier parameters"
                 )
+        elif self.address_mode == "shared_namespace":
+            pass
         elif self.address_mode == "anchor_qk_residual":
             if (
                 self.address_q_residual_proj is None
@@ -3034,6 +3044,28 @@ class FLADeltaTimeMix(nn.Module):
             )
             assert self.address_residual_proj is not None
             q_address_vector = self.address_residual_proj(address_ordered).view(
+                batch_size,
+                seq_len,
+                core.num_heads,
+                core.head_k_dim,
+            )
+            k_address_vector = q_address_vector
+            q = q + q_address_vector.to(dtype=q.dtype)
+            k = k + k_address_vector.to(dtype=k.dtype)
+            phase = q.new_zeros(
+                batch_size,
+                seq_len,
+                core.num_heads,
+                1,
+                dtype=torch.float32,
+            )
+        elif self.address_mode == "shared_namespace":
+            address_ordered = (
+                address
+                if cell_order is None
+                else address.index_select(1, cell_order)
+            )
+            q_address_vector = address_ordered.view(
                 batch_size,
                 seq_len,
                 core.num_heads,
@@ -3503,6 +3535,7 @@ class FLADeltaTimeMix(nn.Module):
             "anchor_rotary",
             "anchor_phase",
             "anchor_residual",
+            "shared_namespace",
             "anchor_qk_residual",
             "anchor_carrier",
         }:
@@ -3650,7 +3683,14 @@ class FLADeltaBlock(nn.Module):
         address: Optional[torch.Tensor] = None,
         cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        normalized_address = self.ln_time(address) if address is not None else None
+        normalized_address = (
+            address
+            if address is not None
+            and self.time_mix.address_mode == "shared_namespace"
+            else self.ln_time(address)
+            if address is not None
+            else None
+        )
         time_out, terminal_state = self.time_mix(
             self.ln_time(x),
             initial_state=initial_state,
@@ -3752,6 +3792,13 @@ class FutureSeedRWKV(nn.Module):
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
+        self.shared_address_proj = (
+            nn.Linear(d_model, d_model, bias=False)
+            if gdn2_address_mode == "shared_namespace"
+            else None
+        )
+        if self.shared_address_proj is not None:
+            nn.init.zeros_(self.shared_address_proj.weight)
         self.gdn_progressive_base_head_v_dim = int(head_dim * float(gdn_progressive_base_expand_v))
         if future_seed_update in {"learned", "loop_residual"}:
             update_init = min(max(1.0 - self.future_seed_decay, 1e-4), 1.0 - 1e-4)
@@ -3888,6 +3935,19 @@ class FutureSeedRWKV(nn.Module):
         address: Optional[torch.Tensor] = None,
         cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], Optional[List[torch.Tensor]]]:
+        shared_address_residual: Optional[torch.Tensor] = None
+        if self.gdn2_address_mode == "shared_namespace":
+            if address is None or self.shared_address_proj is None:
+                raise ValueError(
+                    "shared_namespace requires a canonical anchor and shared projection"
+                )
+            address_rms = address.float().square().mean(
+                dim=-1,
+                keepdim=True,
+            ).add(1e-6).sqrt()
+            normalized_address = address / address_rms.to(dtype=address.dtype)
+            shared_address_residual = self.shared_address_proj(normalized_address)
+            address = shared_address_residual
         expected_seed_count = (
             len(self.blocks) if self.future_seed_scope == "block" else len(self.blocks) - 1
         )
@@ -4281,6 +4341,17 @@ class FutureSeedRWKV(nn.Module):
                     if key.endswith("_min")
                     else stacked.mean()
                 )
+            if self.shared_address_proj is not None:
+                assert shared_address_residual is not None
+                out["gdn3_shared_address_weight_rms"] = (
+                    self.shared_address_proj.weight.float().square().mean().sqrt()
+                ).to(dtype=x.dtype)
+                out["gdn3_shared_address_residual_rms"] = (
+                    shared_address_residual.float().square().mean().sqrt()
+                ).detach().to(dtype=x.dtype)
+                out["gdn3_shared_address_token_std"] = (
+                    shared_address_residual.float().std(dim=1, unbiased=False).mean()
+                ).detach().to(dtype=x.dtype)
             return x, out, next_seed_memory
         zero = x.new_zeros(())
         zero_out = {
@@ -4764,6 +4835,7 @@ def load_training_checkpoint(
         "reasoner.future_seed_selector.gate_delta",
         "reasoner.future_seed_selector.content_weight",
         "reasoner.future_seed_readout_scale",
+        "reasoner.shared_address_proj.weight",
     }
     progressive_suffixes = (
         ".time_mix.o_norm_weight_extra",
@@ -5370,6 +5442,7 @@ class FutureSeedLoopSudoku(nn.Module):
             "anchor_rotary",
             "anchor_phase",
             "anchor_residual",
+            "shared_namespace",
             "anchor_qk_residual",
             "anchor_carrier",
         }:
@@ -5791,6 +5864,13 @@ def fs_line(m: Dict[str, float]) -> str:
                 f"{m.get('gdn2_address_carrier_b_input_relative_change', 0.0):.4f}/"
                 f"{m.get('gdn2_address_carrier_w_input_relative_change', 0.0):.4f}"
             )
+    if "gdn3_shared_address_weight_rms" in m:
+        parts.append(
+            "gdn3_shared_addr="
+            f"{m.get('gdn3_shared_address_weight_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_shared_address_residual_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_shared_address_token_std', 0.0):.4f}"
+        )
     if "loop_feedback_in_norm" in m:
         parts.append(f"fb_in={m['loop_feedback_in_norm']:.3f}")
     if "loop_feedback_next_norm" in m:

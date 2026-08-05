@@ -7,8 +7,8 @@ PHASE="${2:-formal}"
 if [[ "$ARM" != "control" && "$ARM" != "position_qk" && \
       "$ARM" != "anchor_rotary" && "$ARM" != "anchor_phase" && \
       "$ARM" != "anchor_residual" && "$ARM" != "anchor_qk_residual" && \
-      "$ARM" != "anchor_carrier" ]]; then
-  printf 'usage: %s control|position_qk|anchor_rotary|anchor_phase|anchor_residual|anchor_qk_residual|anchor_carrier [smoke|formal]\n' "$0" >&2
+      "$ARM" != "anchor_carrier" && "$ARM" != "shared_namespace" ]]; then
+  printf 'usage: %s control|position_qk|anchor_rotary|anchor_phase|anchor_residual|shared_namespace|anchor_qk_residual|anchor_carrier [smoke|formal]\n' "$0" >&2
   exit 2
 fi
 if [[ "$PHASE" != "smoke" && "$PHASE" != "formal" ]]; then
@@ -70,7 +70,8 @@ if [[ "$PHASE" == "formal" && "$P_ADDR_TARGET_STEP" != "9100" ]]; then
     fi
   elif [[ "$ARM" != "position_qk" && "$ARM" != "anchor_rotary" && \
           "$ARM" != "anchor_phase" && "$ARM" != "anchor_residual" && \
-          "$ARM" != "anchor_qk_residual" && "$ARM" != "anchor_carrier" ]]; then
+          "$ARM" != "anchor_qk_residual" && "$ARM" != "anchor_carrier" && \
+          "$ARM" != "shared_namespace" ]]; then
     printf 'Unsupported continuation arm: %s.\n' "$ARM" >&2
     exit 6
   fi

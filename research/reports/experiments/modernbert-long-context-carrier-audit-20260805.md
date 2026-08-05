@@ -3,8 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-024`
-- Status: approved; read-only audit complete, GPU launch blocked on the offline
-  asset bundle
+- Status: discarded by scope correction; read-only audit only, no assets or GPU
 - Audit time: 2026-08-05 10:47 CST
 - Resource for the conditional run: AIStation task-mode GPU1 only
 - Audit source: `f255601753a8660a71b9079262b72c29329ee22d`
@@ -178,8 +177,9 @@ The conditional run must archive:
 
 ## 9. Current Decision
 
-The read-only audit passes and selects ModernBERT as the sole carrier candidate.
-The GPU run is intentionally not launched yet because the current remote
-Transformers/tokenizers versions are incompatible and the pinned assets have
-not been locally downloaded, hashed and uploaded. GPU1 remains idle rather than
-running an unregistered or silently downloaded experiment.
+Discarded at 2026-08-05 11:12 CST before any asset download, model load, CUDA
+preflight, or GPU run. The audit itself was reproducible, but it moved the active
+program away from the user-locked objective: use hard Sudoku scaling to jointly
+iterate native FutureSeed and the next GDN generation. It therefore contributes
+no positive or negative model evidence. Preserve this report as a scope-control
+lesson; do not resume it unless the user explicitly changes the research goal.

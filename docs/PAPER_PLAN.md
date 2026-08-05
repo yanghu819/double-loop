@@ -1,5 +1,22 @@
 # FutureSeed + Loop Paper Plan
 
+## Fixed Research Scope
+
+As of 2026-08-05, the primary experimental scaffold is hard 9x9 Sudoku scaling.
+The method program has two coupled targets: improve native FutureSeed state
+transfer and derive a stronger, general official-FLA linear recurrent mechanism,
+GDN3. Language and Maze results are supporting or historical evidence; they do
+not replace Sudoku as the benchmark and cannot redirect the active experiment
+queue. Every new mechanism must remain generic enough to transfer beyond Sudoku,
+but it is selected and falsified on the fixed Sudoku scaling cliff.
+
+The current GDN3 hypothesis is cross-layer address compatibility. FutureSeed
+passes a terminal KxV state from a shallow layer into a deeper layer, while
+ordinary GDN2 gives each layer an independently learned Q/K address basis. A
+single shared address namespace across layers can make that transported state
+readable without changing the official recurrence: shared stable address drives
+Q/K, while payload V and decay/erase/write remain layer-specific.
+
 ## Working Title
 
 Future Seeds for Cheap Bidirectional Computation in Recurrent Reasoners
@@ -9,12 +26,11 @@ Future Seeds for Cheap Bidirectional Computation in Recurrent Reasoners
 FutureSeed is a small, generic state-conditioning mechanism that lets a causal or
 recurrent backbone receive a learned summary of future context without full
 bidirectional mixing at every layer. Looping then turns that initial direction
-into extra computation. Current evidence establishes future-context access and
-matched quality gains, not practical inference cheapness at length 128. Any
-"cheap" headline remains conditional on a quality-preserving long-context
-hardware crossover. The mechanism should be judged under the same code path,
-compute budget, and task metric, not by solver-specific repair or selector
-tricks.
+into extra computation. The current paper target is stronger than showing the
+route exists: hard Sudoku scaling must reveal how FutureSeed and GDN3 memory
+dynamics co-improve global convergence. The mechanism is judged under the same
+code path, compute budget, and task metric, never by solver-specific repair,
+search, rules, or selector tricks.
 
 ## Draft Abstract
 

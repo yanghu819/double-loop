@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P-GDN3-002 Step6000 Loop Audit</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #5c6875;
+      --line: #d8dee5;
+      --surface: #f5f7f9;
+      --blue: #1665a7;
+      --green: #18794e;
+      --amber: #9a6700;
+      --red: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+    main { width: min(1180px, calc(100% - 40px)); margin: 32px auto 48px; }
+    header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; }
+    h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.15; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 19px; letter-spacing: 0; }
+    p { margin: 0; }
+    .subtitle { color: var(--muted); max-width: 880px; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 6px 10px;
+      border: 1px solid #8bc9aa;
+      border-radius: 6px;
+      color: #0f5f3c;
+      background: #edf8f2;
+      font-weight: 700;
+    }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+    .metric { border: 1px solid var(--line); border-radius: 6px; padding: 14px; background: var(--surface); }
+    .metric strong { display: block; font-size: 24px; line-height: 1.15; margin-top: 5px; }
+    .metric span { color: var(--muted); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    section { border-top: 1px solid var(--line); padding-top: 18px; }
+    .probe { min-width: 0; }
+    .probe-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .probe-head h2 { margin: 0; }
+    .probe-head span { color: var(--muted); font-size: 13px; }
+    .bar-row { display: grid; grid-template-columns: 42px 1fr 76px; align-items: center; gap: 9px; margin: 9px 0; }
+    .track { height: 14px; background: #e6ebf0; border-radius: 3px; overflow: hidden; }
+    .fill { height: 100%; background: var(--blue); }
+    .fill.green { background: var(--green); }
+    .fill.amber { background: var(--amber); }
+    .value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; font-variant-numeric: tabular-nums; }
+    th, td { padding: 10px 9px; text-align: right; border-bottom: 1px solid var(--line); }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: var(--surface); font-size: 13px; color: var(--muted); }
+    .gate { margin-top: 22px; border-left: 4px solid var(--green); padding: 12px 14px; background: #f3faf6; }
+    .boundary { margin-top: 12px; border-left: 4px solid var(--red); padding: 12px 14px; background: #fff5f3; }
+    .note { margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line); color: var(--muted); background: var(--surface); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+    footer { color: var(--muted); font-size: 12px; margin-top: 22px; }
+    @media (max-width: 820px) {
+      .summary, .grid { grid-template-columns: 1fr; }
+      main { width: min(100% - 24px, 1180px); margin-top: 20px; }
+      h1 { font-size: 25px; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 4px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>P-GDN3-002: Step6000 Fixed-Probe Loop Audit</h1>
+    <p class="subtitle">D256/L12 shared-address GDN3 + native FutureSeed on full-diversity 9x9 Sudoku. This page reports aggregate fixed-condition probes because the live evaluator does not export per-board predictions.</p>
+    <div class="status">STEP6000 GATE PASSED</div>
+  </header>
+
+  <div class="summary">
+    <div class="metric"><span>h53 loop5 exact</span><strong>2.93%</strong></div>
+    <div class="metric"><span>h58 loop5 exact</span><strong>0.59%</strong></div>
+    <div class="metric"><span>h64 loop5 exact</span><strong>0.00%</strong></div>
+    <div class="metric"><span>train CE</span><strong>0.8711</strong></div>
+  </div>
+
+  <div class="grid">
+    <section class="probe">
+      <div class="probe-head"><h2>h53 correction</h2><span>wrong cells, lower is better</span></div>
+      <div class="bar-row"><b>L1</b><div class="track"><div class="fill" style="width:100%"></div></div><div class="value">22.30</div></div>
+      <div class="bar-row"><b>L2</b><div class="track"><div class="fill" style="width:79.5%"></div></div><div class="value">17.73</div></div>
+      <div class="bar-row"><b>L3</b><div class="track"><div class="fill green" style="width:73.8%"></div></div><div class="value">16.47</div></div>
+      <div class="bar-row"><b>L4</b><div class="track"><div class="fill green" style="width:72.8%"></div></div><div class="value">16.24</div></div>
+      <div class="bar-row"><b>L5</b><div class="track"><div class="fill green" style="width:72.6%"></div></div><div class="value">16.19</div></div>
+    </section>
+
+    <section class="probe">
+      <div class="probe-head"><h2>h58 gate probe</h2><span>wrong cells, lower is better</span></div>
+      <div class="bar-row"><b>L1</b><div class="track"><div class="fill" style="width:100%"></div></div><div class="value">31.68</div></div>
+      <div class="bar-row"><b>L2</b><div class="track"><div class="fill" style="width:97.1%"></div></div><div class="value">30.76</div></div>
+      <div class="bar-row"><b>L3</b><div class="track"><div class="fill green" style="width:96.4%"></div></div><div class="value">30.53</div></div>
+      <div class="bar-row"><b>L4</b><div class="track"><div class="fill green" style="width:96.2%"></div></div><div class="value">30.48</div></div>
+      <div class="bar-row"><b>L5</b><div class="track"><div class="fill green" style="width:96.2%"></div></div><div class="value">30.46</div></div>
+    </section>
+
+    <section class="probe">
+      <div class="probe-head"><h2>h64 hardest tail</h2><span>wrong cells, lower is better</span></div>
+      <div class="bar-row"><b>L1</b><div class="track"><div class="fill amber" style="width:100%"></div></div><div class="value">30.07</div></div>
+      <div class="bar-row"><b>L2</b><div class="track"><div class="fill amber" style="width:88.8%"></div></div><div class="value">26.70</div></div>
+      <div class="bar-row"><b>L3</b><div class="track"><div class="fill amber" style="width:84.8%"></div></div><div class="value">25.50</div></div>
+      <div class="bar-row"><b>L4</b><div class="track"><div class="fill amber" style="width:83.5%"></div></div><div class="value">25.10</div></div>
+      <div class="bar-row"><b>L5</b><div class="track"><div class="fill amber" style="width:83.2%"></div></div><div class="value">25.01</div></div>
+    </section>
+  </div>
+
+  <table aria-label="Loop metrics by fixed blank count">
+    <thead><tr><th>Probe / metric</th><th>Loop1</th><th>Loop2</th><th>Loop3</th><th>Loop4</th><th>Loop5</th></tr></thead>
+    <tbody>
+      <tr><td>h53 exact</td><td>0.0000</td><td>0.0039</td><td>0.0234</td><td>0.0293</td><td><b>0.0293</b></td></tr>
+      <tr><td>h53 blank accuracy</td><td>0.5792</td><td>0.6655</td><td>0.6893</td><td>0.6935</td><td><b>0.6946</b></td></tr>
+      <tr><td>h58 exact</td><td>0.0000</td><td>0.0000</td><td>0.0059</td><td>0.0059</td><td><b>0.0059</b></td></tr>
+      <tr><td>h58 blank accuracy</td><td>0.4537</td><td>0.4696</td><td>0.4736</td><td>0.4744</td><td><b>0.4747</b></td></tr>
+      <tr><td>h64 exact</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td><b>0.0000</b></td></tr>
+      <tr><td>h64 blank accuracy</td><td>0.5301</td><td>0.5828</td><td>0.6015</td><td>0.6078</td><td><b>0.6093</b></td></tr>
+    </tbody>
+  </table>
+
+  <div class="gate"><b>Why the gate passes:</b> h58 full-board exact is nonzero only after loop3, while loop1-to-loop5 error count decreases. This satisfies the preregistered 56-60 exact-plus-correction route.</div>
+  <div class="boundary"><b>What remains unsolved:</b> h64 still has zero full-board exact despite removing about 5.06 wrong cells per board. Local progress has not yet become hardest-tail global closure.</div>
+  <div class="note"><b>Scope note:</b> h50/h53/h58/h64 are deterministic aggregate probes from <code>checkpoint_eval_step006000.json</code>. They are not full official blank-range metrics and not selected board trajectories. Those require a frozen evaluator window or endpoint export.</div>
+
+  <footer>Source SHA a68c683d0a7eee9b9b67da16ebdbd355ff4aed94 · one AIStation GPU1 · pinned official FLA GDN2/Triton · seed 52 · no fallback</footer>
+</main>
+</body>
+</html>

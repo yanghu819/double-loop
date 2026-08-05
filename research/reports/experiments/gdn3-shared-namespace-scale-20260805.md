@@ -2,7 +2,7 @@
 
 ## Metainfo
 
-- Status: in progress; GPU fit, step500, and step3000 gates passed
+- Status: in progress; GPU fit and step500/3000/6000 gates passed
 - Preregistered: 2026-08-05 12:17 CST
 - Resource: AIStation task-mode GPU1 A100 80GB only
 - Seed: 52 only
@@ -185,3 +185,66 @@ Artifact hashes:
   `5e679626d9a160d01c3defa27b8e50b39345d6d843b8694c766f823b63556dec`;
 - exact step3000 train-state checkpoint:
   `f1870347deabaef0e45a8464edc475bcc0df9892ba7dfd34c9beaa20743c1958`.
+
+## Step6000 Science Gate
+
+The second hard-stage gate passes through its registered 56-60 route. The
+checkpoint evaluator still emits representative fixed probes, so h58 is the
+registered readout for that range:
+
+| Fixed probe | Metric | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---|---:|---:|---:|---:|---:|
+| h50 | exact | 0.9495 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| h53 | exact | 0.0000 | 0.0039 | 0.0234 | 0.0293 | **0.0293** |
+| h53 | blank accuracy | 0.5792 | 0.6655 | 0.6893 | 0.6935 | **0.6946** |
+| h58 | exact | 0.0000 | 0.0000 | 0.0059 | 0.0059 | **0.0059** |
+| h58 | blank accuracy | 0.4537 | 0.4696 | 0.4736 | 0.4744 | **0.4747** |
+| h64 | blank accuracy | 0.5301 | 0.5828 | 0.6015 | 0.6078 | **0.6093** |
+
+- The alternative h53 `0.10` exact route is not met. The registered gate still
+  passes because h58 full-board exact is nonzero and appears only after recurrent
+  computation: `0/0/0.0059/0.0059/0.0059` across loops1-5. At the same time,
+  h58 removes `1.22` wrong cells per board (`31.68 -> 30.46`) from loop1 to
+  loop5. This is positive loop correction on the representative 56-60 probe,
+  not a loop1 operating point copied five times.
+- The easier hard probe strengthens but remains far from solved: h53 loop5
+  exact is `0.0293`, blank accuracy is `0.6946`, and mean wrong cells fall
+  `22.30 -> 16.19` across loops. Compared with step3000, h53 loop5 exact rises
+  `0.0156 -> 0.0293` and blank accuracy rises `0.5907 -> 0.6946`.
+- The unresolved boundary remains global closure at the hardest condition. h64
+  removes `5.06` wrong cells per board (`30.07 -> 25.01`) and gains `+0.0791`
+  blank accuracy across loops, but full-board exact remains zero at every loop.
+- Step6000 train CE is finite at `0.8711`; loop1/loop5 losses are
+  `0.9832/0.8711`. Shared-address weight RMS is `0.07567`, residual RMS is
+  `4.0939`, and Q/K relative changes are `0.9437/0.9737`. The official-FLA
+  GDN2/Triton path, native FutureSeed route, source SHA, and single-GPU
+  identity remain intact with no NaN, OOM, or fallback.
+- From step3000 to step6000, elapsed time is `22,206.4 s`, or about
+  `7.402 s/optimizer-step`, `17.29 effective boards/s`, and `1.40k cells/s`.
+  Live NVML occupancy is about `17,687 MiB`; the runner still does not emit a
+  formal allocator peak, so no stronger peak-memory claim is made.
+
+The evaluator does not expose full official-range aggregates or per-board
+predictions at this live checkpoint. The archived step6000 visualization is
+therefore explicitly an aggregate fixed-probe audit: it shows h58 exact opening
+at loop3 and the unsolved h64 tail without pretending to be a selected-board
+case. Full official 51-55/56-60/61-64 metrics and same-board loop exports remain
+mandatory at a frozen evaluation window or the endpoint.
+
+The sole registered trajectory continues unchanged to the scheduled step9000
+readout and step12000 endpoint. No LR, address scale, seed, loss, batch, width,
+or mechanism rescue is authorized.
+
+- aggregate dashboard:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/visualizations/index.html`;
+- step6000 fixed-probe loop audit:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-case-buckets-step6000.html`;
+- rendered step6000 audit:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-case-buckets-step6000.png`.
+
+Artifact hashes:
+
+- step6000 checkpoint-eval JSON:
+  `71c6bd997679162379f30f780b477fada2ae072a090d19dd1b326cb0dd4db3a4`;
+- exact step6000 train-state checkpoint:
+  `8d36c7c37d6eb394b6a02bf0ce1979153aa979e759cb9868386a78d835114d1e`.

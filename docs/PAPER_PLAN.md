@@ -25,15 +25,16 @@ majority of fixed hard boards. Full-board exact remains zero. The paper claim
 therefore stays bounded until one clean D256/L12 full-diversity trajectory
 shows that this generic compatibility mechanism scales into exact closure.
 
-That full-diversity trajectory, P-GDN3-002, has now passed both its step500
-carrier gate and step3000 hard-stage gate. At step3000, h53 loop5 blank accuracy
-reaches `0.5907` with a positive `0.5090 -> 0.5625 -> 0.5907` checkpoint slope,
-and full-board exact first appears at loop3 before reaching `0.0156` at loop5.
-The h64 fixed probe gains `+0.0841` blank accuracy from loop1 to loop5, but
-still has zero exact. This is the first from-scratch evidence that the scaled
-shared namespace supports hard-regime recurrent correction, while also showing
-that local cell gains have not yet become reliable global closure. The main
-claim remains conditional on step6000 and the official-range endpoint.
+That full-diversity trajectory, P-GDN3-002, has now passed its step500,
+step3000, and step6000 gates. At step6000, representative h58 full-board exact
+is zero at loops1/2 and opens to `0.0059` only at loops3-5, while mean wrong
+cells fall `31.68 -> 30.46`. The h53 probe reaches loop5 exact/blank
+`0.0293/0.6946`, up from `0.0156/0.5907` at step3000. The h64 fixed probe still
+has zero exact despite removing `5.06` wrong cells across loops. This is
+from-scratch evidence that the scaled shared namespace supports harder-range
+recurrent correction, but not yet reliable global closure. The main claim
+remains conditional on full official-range evaluation and the step12000
+endpoint.
 
 ## Working Title
 

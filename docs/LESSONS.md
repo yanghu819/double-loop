@@ -31,6 +31,14 @@
   at this early gate. This clears stability and optimization as immediate
   blockers, but it says nothing yet about the 51-64 blank cliff. Do not use the
   easy gate to claim GDN3 success; let the preregistered hard gates decide.
+- The step3000 hard gate is positive but not yet decisive. Representative h53
+  loop5 blank accuracy climbs `0.5090 -> 0.5625 -> 0.5907` across checkpoints,
+  and exact appears only after recurrent computation (`0` at loops1/2,
+  `0.0117/0.0137/0.0156` at loops3/4/5). Meanwhile h64 blank accuracy improves
+  `0.5267 -> 0.6108` across loops but exact stays zero. Shared address scaling
+  therefore creates genuine hard-regime correction, not global closure yet.
+  Keep scaling the one registered trajectory to step6000; do not turn this
+  intermediate pass into an address/LR/loss/seed sweep.
 
 ## 2026-06-03 GPU1 bootstrap
 

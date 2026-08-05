@@ -2,7 +2,7 @@
 
 ## Metainfo
 
-- Status: in progress; GPU fit and step500 easy-carrier gates passed
+- Status: in progress; GPU fit, step500, and step3000 gates passed
 - Preregistered: 2026-08-05 12:17 CST
 - Resource: AIStation task-mode GPU1 A100 80GB only
 - Seed: 52 only
@@ -130,3 +130,58 @@ dashboard are under
 A board-level hardest-case export is deferred until it can reuse a frozen
 checkpoint without contending with the only formal training process; this
 does not alter or pause the registered trajectory.
+
+## Step3000 Science Gate
+
+The first hard-stage gate passes through its registered blank-accuracy route.
+The h53 fixed probe is the representative checkpoint readout for the 51-55
+range:
+
+| Fixed probe | Metric | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---|---:|---:|---:|---:|---:|
+| h50 | exact | 0.7778 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| h53 | exact | 0.0000 | 0.0000 | 0.0117 | 0.0137 | **0.0156** |
+| h53 | blank accuracy | 0.5583 | 0.5841 | 0.5904 | 0.5909 | **0.5907** |
+| h58 | blank accuracy | 0.4448 | 0.4569 | 0.4580 | 0.4572 | **0.4576** |
+| h64 | blank accuracy | 0.5267 | 0.5859 | 0.6046 | 0.6092 | **0.6108** |
+
+- h53 loop5 blank accuracy rises `0.5090 -> 0.5625 -> 0.5907` across the
+  step500/1000/3000 checkpoints. It clears the registered `0.58` route with a
+  positive slope. Its exact rate also opens from zero to `0.0156`, although it
+  remains below the alternative `0.02` exact route.
+- Later loops now create complete solutions on h53: exact is zero through
+  loop2, then `0.0117/0.0137/0.0156` at loops3/4/5. This is real recurrent
+  correction rather than five copies of one readout.
+- The hardest fixed probe still exposes the unresolved boundary. On h64,
+  loop1-to-loop5 blank accuracy improves by `+0.0841`, equivalent to about
+  `30.29 -> 24.91` wrong blank cells per board, but full-board exact remains
+  zero. More correct cells are not yet enough for global closure.
+- Step3000 train CE is `0.8762`; loop1/loop5 losses are `0.9568/0.8762`.
+  Shared-address weight RMS is `0.04981`, residual RMS is `2.4129`, and all
+  diagnostics remain finite on the pinned official-FLA/Triton path.
+- From step1000 to step3000, elapsed time is `14,688.3 s`, or about
+  `7.344 s/optimizer-step`, `17.43 effective boards/s`, and `1.41k cells/s`.
+  The exact same-shape fit recorded a CUDA allocator peak of `13,014.7 MiB`;
+  the live process currently occupies about `17,687 MiB` by NVML. The runner
+  does not emit a formal-run allocator peak, so no stronger peak claim is made.
+
+The checkpoint evaluator emits representative h50/h53/h58/h64 aggregates, not
+the full official blank ranges or per-board predictions. The archived
+dashboard therefore provides a loop1-to-loop5 visualization of the hardest
+h64 fixed condition without inventing a board-level case. Full official-range
+metrics and same-board hardest-case exports remain mandatory at the next
+frozen evaluation window. The formal process continues unchanged to step6000;
+there is no LR, address, loss, seed, batch, or width rescue.
+
+- aggregate dashboard: `../visualizations/gdn3-shared-namespace-scale-20260805/visualizations/index.html`;
+- hardest h64 fixed-condition page: `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-case-bucket-h64-step3000.html`;
+- rendered h64 image: `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-case-bucket-h64-step3000.png`.
+
+Artifact hashes:
+
+- step1000 checkpoint-eval JSON:
+  `45e3be544c94d7f2ef8f91ef2f757d2024bb5e13a496f31413d2b59d82bacb5a`;
+- step3000 checkpoint-eval JSON:
+  `5e679626d9a160d01c3defa27b8e50b39345d6d843b8694c766f823b63556dec`;
+- exact step3000 train-state checkpoint:
+  `f1870347deabaef0e45a8464edc475bcc0df9892ba7dfd34c9beaa20743c1958`.

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P-GDN3-002 Step3000 Hardest Fixed Probe</title>
+<style>
+body{margin:0;background:#f5f5f2;color:#202124;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:980px;margin:0 auto;padding:24px}.panel{background:#fff;border:1px solid #d7d7d2;border-radius:6px;padding:18px;margin-bottom:16px}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:17px;margin:0 0 12px}p{line-height:1.5}.muted{color:#666}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(90px,1fr));gap:10px;align-items:end;height:300px;padding-top:12px}
+.bar-wrap{display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center}.bar{background:#2f6f5e;border:1px solid #24584b;min-height:4px}.bar-label{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:8px}.value{font-weight:700;margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid #e6e6e1;padding:8px;text-align:right}th:first-child,td:first-child{text-align:left}th{background:#f0f0ec}
+.callout{border-left:4px solid #b4432f;padding-left:12px}.good{color:#176b4d;font-weight:700}.bad{color:#a13b2a;font-weight:700}
+@media(max-width:700px){main{padding:12px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;height:240px}.bar-label{font-size:9px;overflow-wrap:anywhere}.value{font-size:12px}table{display:block;overflow-x:auto;white-space:nowrap}}
+</style>
+</head>
+<body><main>
+<section class="panel">
+<h1>P-GDN3-002, step3000</h1>
+<p><strong>Hardest fixed condition: 64 blanks.</strong> This is the aggregate trajectory on the same frozen h64 evaluation set. The checkpoint evaluator did not save individual board predictions, so this page does not pretend to be a selected board-level case.</p>
+<p class="muted">Model: D256/L12 shared-namespace GDN3 + native FutureSeed. Evaluation: 512 boards, loops 1 through 5.</p>
+</section>
+
+<section class="panel">
+<h2>Correct blank cells by loop</h2>
+<div class="grid" aria-label="Blank accuracy for loops one through five">
+  <div class="bar-wrap"><div class="value">52.67%</div><div class="bar" style="height:52.67%"></div><div class="bar-label">loop1<br>30.29 wrong</div></div>
+  <div class="bar-wrap"><div class="value">58.59%</div><div class="bar" style="height:58.59%"></div><div class="bar-label">loop2<br>26.50 wrong</div></div>
+  <div class="bar-wrap"><div class="value">60.46%</div><div class="bar" style="height:60.46%"></div><div class="bar-label">loop3<br>25.30 wrong</div></div>
+  <div class="bar-wrap"><div class="value">60.92%</div><div class="bar" style="height:60.92%"></div><div class="bar-label">loop4<br>25.01 wrong</div></div>
+  <div class="bar-wrap"><div class="value">61.08%</div><div class="bar" style="height:61.08%"></div><div class="bar-label">loop5<br>24.91 wrong</div></div>
+</div>
+<p class="callout"><span class="good">The loops do useful work:</span> blank accuracy rises by 8.41 percentage points, removing about 5.38 wrong blank cells per board. <span class="bad">The board is still not solved:</span> full-board exact remains 0% at every loop.</p>
+</section>
+
+<section class="panel">
+<h2>Hard-stage comparison</h2>
+<table>
+<thead><tr><th>Probe</th><th>loop1 exact</th><th>loop5 exact</th><th>loop1 blank acc.</th><th>loop5 blank acc.</th><th>wrong blanks removed</th></tr></thead>
+<tbody>
+<tr><td>53 blanks</td><td>0.00%</td><td>1.56%</td><td>55.83%</td><td>59.07%</td><td>1.72</td></tr>
+<tr><td>58 blanks</td><td>0.00%</td><td>0.00%</td><td>44.48%</td><td>45.76%</td><td>0.74</td></tr>
+<tr><td>64 blanks</td><td>0.00%</td><td>0.00%</td><td>52.67%</td><td>61.08%</td><td>5.38</td></tr>
+</tbody>
+</table>
+<p>The important distinction is visible: later loops can fix many cells without reaching one globally consistent board. Step6000 must decide whether continued generic scaling converts this local correction into nonzero exact on the harder range.</p>
+</section>
+</main></body>
+</html>

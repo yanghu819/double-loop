@@ -203,14 +203,37 @@ def check_active_candidate(device: torch.device) -> dict[str, Any]:
     x = torch.randn(2, 81, 64, device=device, requires_grad=True)
     anchor = torch.randn_like(x, requires_grad=True)
     order = torch.randperm(81, device=device)
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        output, diagnostics, _ = candidate(
-            x,
-            address=anchor,
-            cell_order=order,
+    terminal_states: list[torch.Tensor] = []
+    hooks = []
+
+    def capture_terminal(
+        _module: torch.nn.Module,
+        _args: tuple[torch.Tensor, ...],
+        _kwargs: dict[str, Any],
+        module_output: tuple[torch.Tensor, torch.Tensor],
+    ) -> None:
+        terminal_states.append(module_output[1])
+
+    for block in candidate.blocks:
+        hooks.append(
+            block.time_mix.register_forward_hook(capture_terminal, with_kwargs=True)
         )
-        loss = output.float().square().mean()
-    graph = graph_names(output)
+    try:
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            output, diagnostics, _ = candidate(
+                x,
+                address=anchor,
+                cell_order=order,
+            )
+            loss = output.float().square().mean()
+    finally:
+        for hook in hooks:
+            hook.remove()
+    if len(terminal_states) != len(candidate.blocks):
+        raise AssertionError(
+            f"did not capture every recurrent terminal state: {len(terminal_states)}"
+        )
+    graph = graph_names(terminal_states[-1])
     if "ChunkGDN2FunctionBackward" not in graph:
         raise AssertionError(f"candidate bypassed official GDN2 chunk kernel: {graph}")
     loss.backward()

@@ -25,6 +25,12 @@
   loop1 to loop5, with 186/256 cases improving. Exact is still zero, so the
   right next move is one from-scratch full-diversity scale where the shared
   basis and content maps co-adapt, not an address-strength/rank/loss sweep.
+- The from-scratch D256/L12 scale does not inherit the small probe's opening by
+  accident: at step500 it reaches 50-blank loop5 exact `0.7778` with train CE
+  `0.0143`. Loop1 exact is only `0.2121`, so loops contribute real correction
+  at this early gate. This clears stability and optimization as immediate
+  blockers, but it says nothing yet about the 51-64 blank cliff. Do not use the
+  easy gate to claim GDN3 success; let the preregistered hard gates decide.
 
 ## 2026-06-03 GPU1 bootstrap
 

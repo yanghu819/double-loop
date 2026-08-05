@@ -2,7 +2,7 @@
 
 ## Metainfo
 
-- Status: in progress; GPU fit gate passed, formal launch pending
+- Status: in progress; GPU fit and step500 easy-carrier gates passed
 - Preregistered: 2026-08-05 12:17 CST
 - Resource: AIStation task-mode GPU1 A100 80GB only
 - Seed: 52 only
@@ -96,3 +96,37 @@ closes this GDN3 candidate without a sweep.
   active but also exposes a real optimization risk. The formal run keeps the
   registered optimizer unchanged; the step500 easy-carrier gate decides
   whether co-adaptation stabilizes naturally. There is no LR or scale rescue.
+- The formal trajectory
+  `gdn3-shared-namespace-d256l12-s12000-20260805T044918Z-a68c683` launched from
+  clean detached SHA `a68c683d0a7eee9b9b67da16ebdbd355ff4aed94` on the
+  registered GPU1. PID/PGID is `101373`; only CUDA index 0 with UUID
+  `GPU-53e9f3b4-2966-65d3-6614-09c540921519` is visible.
+
+## Step500 Science Gate
+
+The easy carrier opens cleanly and passes the registered gate:
+
+| Metric | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---:|---:|---:|---:|---:|
+| 50-blank full-board exact | 0.2121 | 0.7475 | 0.7677 | 0.7778 | **0.7778** |
+| 50-blank blank accuracy | 0.9436 | 0.9824 | 0.9844 | 0.9848 | **0.9853** |
+
+- train CE is finite and falls from `2.0175` at step100 to `0.0143` at
+  step500;
+- the registered step500 exact threshold is `0.60`; observed loop5 exact is
+  `0.7778`;
+- loop computation is already useful on the carrier: exact gains `+0.5657`
+  from loop1 to loop5, rather than merely copying loop1;
+- harder fixed probes are intentionally not used as a stop at this curriculum
+  boundary: loop5 blank accuracy is `0.5090/0.3878/0.4408` at 53/58/64 blanks
+  and exact remains zero, before any registered hard-stage optimization;
+- shared-address weight RMS is `0.02351`; the path remains active, finite, and
+  on the pinned official-FLA/Triton implementation.
+
+The run therefore continues unchanged into the 51-55 curriculum. The next
+decision gate remains step3000. The archived step500 JSON and static loop/range
+dashboard are under
+`research/reports/visualizations/gdn3-shared-namespace-scale-20260805/`.
+A board-level hardest-case export is deferred until it can reuse a frozen
+checkpoint without contending with the only formal training process; this
+does not alter or pause the registered trajectory.

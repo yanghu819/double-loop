@@ -1923,3 +1923,26 @@
 - P-CAUSAL-021 warmed throughput is effectively equal between arms and the
   FutureSeed peak-allocation increase is about 20 MB. Keep these as system
   diagnostics until a longer repeated benchmark supports a robust cost claim.
+- P-CAUSAL-022 turns the real-text signal into a strong result by jointly
+  scaling independent data and optimization at unchanged model size. At 81.92M
+  tokens, causal/FutureSeed accuracy is `0.30936/0.37389` and CE is
+  `4.61828/3.90513`; both preregistered quality routes pass with positive paired
+  lower bounds.
+- The FutureSeed advantage itself follows the training scale, not just the two
+  arms' absolute quality. From step1000 to5000, accuracy delta grows
+  `0.00569->0.06453` and CE advantage grows `0.15974->0.71315`. This is the
+  strongest evidence that the route was data/compute limited rather than a
+  fixed architectural curiosity.
+- Suffix intervention remains the causal check at scale. Removing right
+  context changes causal CE by exactly zero but costs FutureSeed `2.12152` CE,
+  with lower confidence bound `1.88127`. Better top-line metrics and stronger
+  measured future dependence move together.
+- Selected examples must be backed by population counts. P-CAUSAL-022 has 440
+  repairs and 134 regressions over 4,742 targets, for 306 net repairs; fixes
+  occur on both halves of the sequence. This is qualitatively different from
+  P019's nearly balanced 119/107 behavior.
+- A successful scaling point does not authorize a dense scaling table. P022
+  answers the registered saturation question. The next experiment must change
+  the evidence level, through a materially larger established language regime
+  or a valid bidirectional quality-cost comparison, rather than adding another
+  nearby token budget.

@@ -702,3 +702,35 @@ fixed compute. It may not yet claim competitive masked-language quality. The
 positive endpoint slope and passed mechanism gate authorize one clean joint
 data-and-compute continuation at the same model size; they do not authorize a
 model-size, seed, learning-rate or loss sweep.
+
+### P-CAUSAL-022 Joint Data-and-Compute Language Scale
+
+The preregistered continuation kept P-CAUSAL-021's D128/L4 official-FLA GDN2,
+4,965,722 parameters, initialization, optimizer, seed, tokenizer, validation
+and kernel fixed. It consumed 640,000 independent WikiText windows once over
+5,000 steps, or 81.92M input tokens per arm. The only arm difference remained
+native terminal-state FutureSeed scale 0 versus 1.
+
+Causal/FutureSeed masked accuracy is `0.309363/0.373893`, a `+0.064530`
+difference with paired 95% interval `[0.05492,0.07438]`. CE is
+`4.618276/3.905131`, a `0.713145` advantage with interval
+`[0.66992,0.75717]`. Both strong paper routes pass. The advantage also scales
+smoothly from step1000 to step5000: accuracy delta grows
+`0.00569->0.06453` and CE advantage `0.15974->0.71315`. Suffix removal costs
+FutureSeed `2.12152` CE and causal exactly zero, directly tying the gain to
+right-context use.
+
+The aggregate visual audit contains 440 repairs and 134 regressions, for 306
+net corrected targets across both halves of the text windows. Warmed diagnostic
+throughput is 499k/475k tokens per second for causal/FutureSeed and peak
+training allocation differs by about 19 MB. These support small implementation
+overhead but are not yet a full bidirectional systems frontier.
+
+P-CAUSAL-022 upgrades the real-text result from weak mechanism evidence to a
+strong matched quality result: FutureSeed's benefit grows sharply under
+ordinary independent-data and training-compute scaling. The paper should use
+P019/P020/P021/P022 as a decision sequence, not as an ablation grid. Do not add
+intermediate token budgets, multiple seeds or width/depth tables. The next
+headline experiment must either move to a materially larger established
+language regime or compare quality and robust cost against a valid
+bidirectional carrier.

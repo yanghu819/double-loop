@@ -1,0 +1,31 @@
+{
+  "active_future_seed_routes": 3,
+  "arms": [
+    "causal_gdn2",
+    "future_seed_gdn2"
+  ],
+  "data_manifest": "/huyang2/double-loop/data/source/wikitext-103-raw-v1/manifest.json",
+  "eval_batch": 64,
+  "git_sha": "4fe0193cdc62963b684fc5da6c878f85f828b426",
+  "learning_rate": 0.001,
+  "mask_probability": 0.15,
+  "max_steps": 5000,
+  "model": "official-FLA GDN2 D128/L4/H4/D32 with common BERT lexical endpoints",
+  "model_layers": 4,
+  "offline_only": true,
+  "plan": "P-CAUSAL-022",
+  "preflight_only": true,
+  "reverse_scan": false,
+  "run_name": "wordpiece-gdn2-joint-scale-preflight-20260805T003459Z-4fe0193",
+  "seed": 123,
+  "sequence_length": 128,
+  "train_batch": 128,
+  "train_epochs": 1,
+  "train_input_tokens_per_arm": 81920000,
+  "train_source": "/huyang2/double-loop/data/source/wikitext-103-raw-v1/wikitext_wikitext-103-raw-v1_train.parquet",
+  "train_windows": 640000,
+  "validation_source": "/huyang2/double-loop/data/wikitext-103-wordpiece-v1/validation.json",
+  "validation_windows": 256,
+  "wall_budget_sec": 7200,
+  "weight_decay": 0.1
+}

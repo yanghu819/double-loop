@@ -73,3 +73,14 @@ Success supports:
 The scale run alone does not isolate the mechanism at D256. A strong endpoint
 would authorize one later matched D256 normal-GDN2 control; a weak endpoint
 closes this GDN3 candidate without a sweep.
+
+## Execution Log
+
+- The first fit invocation stopped before model construction because the new
+  wrapper inherited the detached worktree as `PERSIST_ROOT` and therefore did
+  not see the persistent official-FLA Python path. CUDA allocation stayed at
+  zero. This is a launcher preflight failure, not model evidence.
+- The wrapper now fixes persistent storage to `/huyang2/double-loop`, reads the
+  installed Python path marker, and checks both one-visible-GPU and the exact
+  registered GPU1 UUID before invoking the runner. The scientific config and
+  all decision gates are unchanged.

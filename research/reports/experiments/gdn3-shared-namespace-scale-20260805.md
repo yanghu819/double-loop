@@ -2,7 +2,7 @@
 
 ## Metainfo
 
-- Status: approved; GPU fit gate pending
+- Status: in progress; GPU fit gate passed, formal launch pending
 - Preregistered: 2026-08-05 12:17 CST
 - Resource: AIStation task-mode GPU1 A100 80GB only
 - Seed: 52 only
@@ -84,3 +84,15 @@ closes this GDN3 candidate without a sweep.
   installed Python path marker, and checks both one-visible-GPU and the exact
   registered GPU1 UUID before invoking the runner. The scientific config and
   all decision gates are unchanged.
+- The corrected full-shape run
+  `gdn3-shared-namespace-d256l12-fit-20260805T043507Z-185d4f8` passed. It used
+  11,551,296 parameters, all 12 pinned official-FLA GDN2 layers, Triton short
+  convolutions, 1024 recurrent-state values per head, and finite two-step
+  forward/backward on GPU1. Sampled allocation reached about 17.1 GiB with no
+  OOM or fallback. The reported 643 seconds includes first-shape Triton compile
+  and checkpoint evaluation and is not a steady-state speed measurement.
+- At step2 the shared projection has weight RMS `0.00150`, residual RMS
+  `0.1269`, and Q/K relative changes `0.7115/0.7185`. This proves the path is
+  active but also exposes a real optimization risk. The formal run keeps the
+  registered optimizer unchanged; the step500 easy-carrier gate decides
+  whether co-adaptation stabilizes naturally. There is no LR or scale rescue.

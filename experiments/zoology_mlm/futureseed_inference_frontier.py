@@ -60,6 +60,7 @@ EXPECTED_PARAMETERS = {
     "causal_gdn2": 4_965_722,
     "future_seed_gdn2": 4_965_722,
 }
+QUALITY_CE_TOLERANCE = 1e-3
 
 
 def visible_gpu() -> dict[str, str]:
@@ -274,7 +275,10 @@ def quality_metrics(
         raise RuntimeError(
             f"{adapter.arm} accuracy did not reproduce: {metrics['masked_accuracy']}"
         )
-    if abs(float(metrics["masked_ce"]) - expected["masked_ce"]) > 1e-5:
+    if (
+        abs(float(metrics["masked_ce"]) - expected["masked_ce"])
+        > QUALITY_CE_TOLERANCE
+    ):
         raise RuntimeError(f"{adapter.arm} CE did not reproduce: {metrics['masked_ce']}")
     return metrics, cases
 

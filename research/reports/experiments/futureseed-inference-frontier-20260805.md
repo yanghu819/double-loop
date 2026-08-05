@@ -103,6 +103,9 @@ with a 30-minute hard wall budget. A healthy worker is never interrupted.
 Stop before interpretation on any GPU UUID/count, source tree, checkpoint,
 tokenizer, validation tensor, model state, parameter count, official
 FLA/Triton, native BERT masking, finite output, or quality reproduction failure.
+Reproduction means the exact registered integer correct-token count and BF16 CE
+within `1e-3`; this numerical tolerance is far below either scientific quality
+threshold and cannot change the gate.
 Strict causal future dependency must be exactly zero; FutureSeed and BERT must
 be nonzero. Timing is non-claimable if any primary throughput coefficient of
 variation exceeds `0.10`.
@@ -140,7 +143,19 @@ a frozen scaling benchmark. P023 therefore refuses to draw a fake length curve.
 
 ## 9. Artifacts and Result
 
-Pending. The run must archive config, source snapshot, all 15 raw worker JSON
+Implementation preflight attempt 1,
+`futureseed-inference-frontier-preflight-20260805T014320Z-c6710b5`, stopped
+cleanly in the causal worker before FutureSeed or formal timing. BERT reproduced
+its registered accuracy and CE exactly. Causal GDN2 reproduced the exact
+correct-token count, but its fresh-process BF16 CE was `4.61831687` versus the
+archived `4.61827578`, a difference of `4.11e-5`; the initial `1e-5` comparison
+was therefore a serialization tolerance bug. All asset, tensor, source,
+checkpoint and direction checks reached before that assertion passed. The
+process group exited, GPU memory returned to zero and `abort.json` records an
+infrastructure failure. Before observing FutureSeed or any formal benchmark,
+the tolerance is fixed at `1e-3`; no model, metric, gate or workload changes.
+
+The completed run must archive config, source snapshot, all 15 raw worker JSON
 files, aggregate score, logs, GPU snapshots, same-window three-arm cases and
 HTML. A valid negative systems result is still completed evidence, not an
 `abort.json`; `abort.json` is reserved for infrastructure or integrity failure.

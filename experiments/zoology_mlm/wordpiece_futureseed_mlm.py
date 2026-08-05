@@ -63,6 +63,7 @@ REGISTERED_LAYERS = {
     "P-CAUSAL-019": 2,
     "P-CAUSAL-020": 4,
     "P-CAUSAL-021": 4,
+    "P-CAUSAL-022": 4,
 }
 if PLAN_ID not in REGISTERED_LAYERS:
     raise RuntimeError(f"Unregistered WordPiece experiment plan: {PLAN_ID}")
@@ -73,11 +74,18 @@ if LAYERS != REGISTERED_LAYERS[PLAN_ID]:
     )
 HEADS = 4
 HEAD_DIM = 32
-EVAL_STEPS = (0, 250, 500, 750, 1000, 1250)
+EVAL_STEPS = (
+    (0, 1000, 2000, 3000, 4000, 5000)
+    if PLAN_ID == "P-CAUSAL-022"
+    else (0, 250, 500, 750, 1000, 1250)
+)
+REGISTERED_GATE_STEP = 4000 if PLAN_ID == "P-CAUSAL-022" else 1000
 P019_L2_ACCURACY_DELTA = 0.002530577815267776
 P019_L2_CE_ADVANTAGE = 0.08734900556199943
 P020_L4_ACCURACY_DELTA = 0.007591733445807603
 P020_L4_CE_ADVANTAGE = 0.0994835947040742
+P021_DIVERSE_ACCURACY_DELTA = 0.016659637257023234
+P021_DIVERSE_CE_ADVANTAGE = 0.1686740908773865
 
 
 def sha256(path: Path) -> str:
@@ -1362,11 +1370,14 @@ def main() -> None:
 
     registered = {
         "sequence_length": 128,
-        "train_windows": 160_000 if PLAN_ID == "P-CAUSAL-021" else 10_000,
+        "train_windows": {
+            "P-CAUSAL-021": 160_000,
+            "P-CAUSAL-022": 640_000,
+        }.get(PLAN_ID, 10_000),
         "validation_windows": 256,
         "mask_probability": 0.15,
-        "train_epochs": 1 if PLAN_ID == "P-CAUSAL-021" else 16,
-        "max_steps": 1_250,
+        "train_epochs": 1 if PLAN_ID in {"P-CAUSAL-021", "P-CAUSAL-022"} else 16,
+        "max_steps": 5_000 if PLAN_ID == "P-CAUSAL-022" else 1_250,
         "train_batch": 128,
         "eval_batch": 64,
         "learning_rate": 1e-3,
@@ -1413,9 +1424,9 @@ def main() -> None:
         raise RuntimeError("Unexpected official BERT-Tiny parameter count")
 
     train_source: dict[str, Any]
-    if PLAN_ID == "P-CAUSAL-021":
+    if PLAN_ID in {"P-CAUSAL-021", "P-CAUSAL-022"}:
         if args.train_json.suffix != ".parquet":
-            raise RuntimeError("P-CAUSAL-021 requires the pinned parquet source")
+            raise RuntimeError(f"{PLAN_ID} requires the pinned parquet source")
         train_ids, train_special, train_source = load_grouped_parquet_tensors(
             args.train_json, tokenizer, args.sequence_length, args.train_windows
         )
@@ -1448,7 +1459,7 @@ def main() -> None:
     if int((validation[1] != -100).sum().item()) != 4_742:
         raise RuntimeError("Validation corruption no longer matches P-CAUSAL-018")
 
-    if PLAN_ID == "P-CAUSAL-021":
+    if PLAN_ID in {"P-CAUSAL-021", "P-CAUSAL-022"}:
         if train_ids is None or train_special is None:
             raise RuntimeError("Parquet tensors were not prepared")
         train_epochs = [
@@ -1564,24 +1575,32 @@ def main() -> None:
         curve_by_arm["causal_gdn2"][1000]["masked_ce"]
         - curve_by_arm["future_seed_gdn2"][1000]["masked_ce"]
     )
-    advantage_1250 = ce_improvement
+    advantage_gate = (
+        curve_by_arm["causal_gdn2"][REGISTERED_GATE_STEP]["masked_ce"]
+        - curve_by_arm["future_seed_gdn2"][REGISTERED_GATE_STEP]["masked_ce"]
+    )
+    advantage_endpoint = ce_improvement
     accuracy_delta_1000 = (
         curve_by_arm["future_seed_gdn2"][1000]["masked_accuracy"]
         - curve_by_arm["causal_gdn2"][1000]["masked_accuracy"]
     )
-    accuracy_delta_1250 = accuracy_delta
+    accuracy_delta_gate = (
+        curve_by_arm["future_seed_gdn2"][REGISTERED_GATE_STEP]["masked_accuracy"]
+        - curve_by_arm["causal_gdn2"][REGISTERED_GATE_STEP]["masked_accuracy"]
+    )
+    accuracy_delta_endpoint = accuracy_delta
     bootstrap = paired_case_bootstrap(causal.pop("cases"), future_seed.pop("cases"))
     accuracy_route_supported = (
         accuracy_delta >= 0.03
         and bootstrap["accuracy_delta_95_lower"] > 0.0
-        and accuracy_delta_1000 > 0.0
-        and accuracy_delta_1250 > 0.0
+        and accuracy_delta_gate > 0.0
+        and accuracy_delta_endpoint > 0.0
     )
     ce_route_supported = (
         ce_improvement >= 0.20
         and bootstrap["ce_improvement_95_lower"] > 0.0
-        and advantage_1000 > 0.0
-        and advantage_1250 > 0.0
+        and advantage_gate > 0.0
+        and advantage_endpoint > 0.0
     )
     suffix_supported = (
         future_seed["suffix_utility"]["bootstrap_95_lower"] > 0.0
@@ -1598,8 +1617,8 @@ def main() -> None:
         and accuracy_delta < 0.03
         and 0.05 <= ce_improvement < 0.20
         and bootstrap["ce_improvement_95_lower"] > 0.0
-        and advantage_1000 > 0.0
-        and advantage_1250 > 0.0
+        and advantage_gate > 0.0
+        and advantage_endpoint > 0.0
     )
     depth_ce_gain = ce_improvement - P019_L2_CE_ADVANTAGE
     depth_accuracy_gain = accuracy_delta - P019_L2_ACCURACY_DELTA
@@ -1625,6 +1644,19 @@ def main() -> None:
             or diversity_accuracy_gain >= 0.01
         )
     )
+    joint_scale_ce_gain = ce_improvement - P021_DIVERSE_CE_ADVANTAGE
+    joint_scale_accuracy_gain = accuracy_delta - P021_DIVERSE_ACCURACY_DELTA
+    joint_data_compute_amplified = (
+        PLAN_ID == "P-CAUSAL-022"
+        and opened
+        and suffix_supported
+        and bootstrap["ce_improvement_95_lower"] > 0.0
+        and advantage_gate > 0.0
+        and (
+            joint_scale_ce_gain >= 0.05
+            or joint_scale_accuracy_gain >= 0.01
+        )
+    )
     status = (
         "supported"
         if supported
@@ -1632,12 +1664,16 @@ def main() -> None:
             "unopened"
             if not opened
             else (
-                "data_diversity_amplified_below_strong_gate"
-                if data_diversity_amplified
+                "joint_data_compute_amplified_below_strong_gate"
+                if joint_data_compute_amplified
                 else (
-                    "depth_amplified_below_strong_gate"
-                    if depth_route_amplified
-                    else ("weak_signal" if weak_signal else "no_support")
+                    "data_diversity_amplified_below_strong_gate"
+                    if data_diversity_amplified
+                    else (
+                        "depth_amplified_below_strong_gate"
+                        if depth_route_amplified
+                        else ("weak_signal" if weak_signal else "no_support")
+                    )
                 )
             )
         )
@@ -1655,10 +1691,13 @@ def main() -> None:
             ),
             "causal_ce_drop_step0_to_1250": causal_ce_drop,
             "accuracy_delta_step1000": accuracy_delta_1000,
-            "accuracy_delta_step1250": accuracy_delta_1250,
+            "registered_gate_step": REGISTERED_GATE_STEP,
+            "accuracy_delta_registered_gate": accuracy_delta_gate,
+            "accuracy_delta_endpoint": accuracy_delta_endpoint,
             "ce_advantage_step1000": advantage_1000,
-            "ce_advantage_step1250": advantage_1250,
-            "endpoint_advantage_slope": advantage_1250 - advantage_1000,
+            "ce_advantage_registered_gate": advantage_gate,
+            "ce_advantage_endpoint": advantage_endpoint,
+            "endpoint_advantage_slope": advantage_endpoint - advantage_gate,
             "p019_l2_reference_accuracy_delta": P019_L2_ACCURACY_DELTA,
             "p019_l2_reference_ce_advantage": P019_L2_CE_ADVANTAGE,
             "depth_accuracy_advantage_gain": depth_accuracy_gain,
@@ -1667,6 +1706,10 @@ def main() -> None:
             "p020_l4_reference_ce_advantage": P020_L4_CE_ADVANTAGE,
             "data_diversity_accuracy_advantage_gain": diversity_accuracy_gain,
             "data_diversity_ce_advantage_gain": diversity_ce_gain,
+            "p021_diverse_reference_accuracy_delta": P021_DIVERSE_ACCURACY_DELTA,
+            "p021_diverse_reference_ce_advantage": P021_DIVERSE_CE_ADVANTAGE,
+            "joint_scale_accuracy_advantage_gain": joint_scale_accuracy_gain,
+            "joint_scale_ce_advantage_gain": joint_scale_ce_gain,
             "paired_window_bootstrap": bootstrap,
         },
         "registered_gates": {
@@ -1687,6 +1730,13 @@ def main() -> None:
                 diversity_ce_gain >= 0.05
             ),
             "data_diversity_amplified": data_diversity_amplified,
+            "joint_scale_accuracy_gain_over_p021_at_least_0.01": (
+                joint_scale_accuracy_gain >= 0.01
+            ),
+            "joint_scale_ce_gain_over_p021_at_least_0.05": (
+                joint_scale_ce_gain >= 0.05
+            ),
+            "joint_data_compute_amplified": joint_data_compute_amplified,
             "scientific_support": supported,
         },
         "preflight": preflight_result,

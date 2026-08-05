@@ -6,10 +6,12 @@ WORDPIECE_CONFIG="${WORDPIECE_CONFIG:-$REPO_ROOT/configs/retrieval/wordpiece_gdn
 P019_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_futureseed.env"
 P020_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_depth_futureseed.env"
 P021_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_data_diversity.env"
+P022_CONFIG="$REPO_ROOT/configs/retrieval/wordpiece_gdn2_joint_scale.env"
 RESOLVED_CONFIG="$(readlink -f "$WORDPIECE_CONFIG")"
 if [[ "$RESOLVED_CONFIG" != "$(readlink -f "$P019_CONFIG")" && \
       "$RESOLVED_CONFIG" != "$(readlink -f "$P020_CONFIG")" && \
-      "$RESOLVED_CONFIG" != "$(readlink -f "$P021_CONFIG")" ]]; then
+      "$RESOLVED_CONFIG" != "$(readlink -f "$P021_CONFIG")" && \
+      "$RESOLVED_CONFIG" != "$(readlink -f "$P022_CONFIG")" ]]; then
   printf 'WordPiece FutureSeed forbids an unregistered launch config: %s\n' "$WORDPIECE_CONFIG" >&2
   exit 4
 fi

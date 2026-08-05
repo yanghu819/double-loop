@@ -9,22 +9,22 @@ Primary evidence target: show whether FutureSeed supplies cheap future context
 for recurrent reasoners under matched compute, without solver-specific repair or
 selector tricks.
 
-Current update (2026-08-05 CST): `P-CAUSAL-023` passed its full three-arm CUDA
-preflight on the exact 4,742-target length-128 tensor. BERT/causal/FutureSeed
-accuracy is `0.35555/0.30936/0.37389`, CE is
-`4.03327/4.61836/3.90512`, causal future dependency is exactly zero, and
-FutureSeed uses three native seed routes. The first formal attempt was aborted
-before a complete timing population because a fresh official-FLA BF16 process
-flipped one FutureSeed boundary token (`1773 -> 1774` correct) and the worker
-incorrectly required integer identity. The guard now allows at most one of
-4,742 token predictions to differ while retaining the registered `1e-3` CE
-tolerance; model, data, metric, quality/cost gates, five fresh processes and
-rotated timing order are unchanged. Partial attempt-1 timings are discarded.
-The exact-protocol formal rerun remains the only active paper gate. It is not a
-length curve because P022 position embeddings stop at 127. Success still
-requires FutureSeed quality within 0.02 accuracy and 0.10 CE of BERT plus
-either 1.20x batch-64 masked-recovery throughput or a real memory tradeoff;
-otherwise record "quality works, cheapness not established" with no rescue.
+Current update (2026-08-05 CST): `P-CAUSAL-023` is complete with a clean split
+decision. Across five fresh GPU1 processes per arm, frozen
+BERT/causal/FutureSeed accuracy is `0.35555/0.30936/0.37410` and CE is
+`4.03327/4.61832/3.90509`; FutureSeed passes both registered quality routes,
+repairs 441 causal errors versus 134 regressions, and retains nonzero future
+dependency while causal remains exact zero. Practical cheapness fails at L128:
+FutureSeed median batch-1 masked latency is `12.250 ms` versus BERT `1.361 ms`,
+batch-64 throughput is `0.667M` versus `5.888M` tokens/s (`0.113x`), and peak
+allocation is `378.9` versus `177.7 MiB` (`2.13x`). BERT batch-64 timing CV also
+exceeds the preregistered stability limit, but the cost ratios miss by enough
+that this cannot change the decision. Keep the future-context and language
+quality claims; remove "practically cheap at L128" from the paper. Do not
+rescue P023 with batch/compile/kernel/seed/timing changes. A future systems
+claim requires a new long-context carrier trained for lengths beyond 128 and
+an honest quality-preserving crossover curve; the frozen P022 absolute-position
+checkpoint cannot supply it.
 
 Previous update: `P-CAUSAL-022` is complete and strongly positive. At the exact
 P021 D128/L4 official-FLA GDN2 architecture, 4x

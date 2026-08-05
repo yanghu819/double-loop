@@ -3,12 +3,12 @@
 ## 1. Metainfo
 
 - Plan: `P-CAUSAL-023`
-- Status: approved; CUDA preflight passed; formal systems rerun pending
+- Status: complete; quality supported, registered cost gate missed
 - Date: 2026-08-05 CST
 - Resource: AIStation task-mode GPU1 only
 - Source: exact clean detached preregistration commit recorded by the launcher
-- Formal run: first attempt aborted on an over-strict one-token reproducibility
-  assertion; corrected exact-protocol rerun pending
+- Formal run:
+  `futureseed-inference-frontier-formal-20260805T020610Z-617c994`
 
 ## 2. Hypothesis and Decision
 
@@ -182,3 +182,34 @@ The completed run must archive config, source snapshot, all 15 raw worker JSON
 files, aggregate score, logs, GPU snapshots, same-window three-arm cases and
 HTML. A valid negative systems result is still completed evidence, not an
 `abort.json`; `abort.json` is reserved for infrastructure or integrity failure.
+
+The corrected formal run completed all 15 fresh GPU1 workers with exit status
+zero. Frozen BERT/causal/FutureSeed masked accuracy is
+`0.355546/0.309363/0.374104`; CE is `4.033269/4.618317/3.905087`.
+FutureSeed therefore beats the independently opened BERT-Tiny checkpoint by
+`+0.018558` accuracy and `0.128182` CE while improving over its matched causal
+control by `+0.064741` accuracy and `0.713230` CE. The quality gate passes.
+Population accounting supports the aggregate result: FutureSeed repairs 441
+causal errors and introduces 134 regressions, and repairs 412 BERT errors while
+BERT repairs 324 FutureSeed errors. Strict causal future dependency remains
+exactly zero; FutureSeed dependency is `1.57446`.
+
+The practical-cost claim fails decisively for the current length-128
+implementation. Median batch-1 masked-recovery latency is `1.361 ms` for BERT
+and `12.250 ms` for FutureSeed, making FutureSeed about `9.00x` slower. Median
+batch-64 throughput is `5.888M` versus `0.667M` input tokens/s, so FutureSeed
+delivers only `0.113x` BERT throughput. Peak allocation is `177.7 MiB` versus
+`378.9 MiB`, a `2.13x` ratio. FutureSeed is also `16.2%` slower than matched
+causal GDN2 at batch 64, with essentially identical peak allocation. BERT's
+batch-64 masked-recovery throughput CV is `0.138`, above the registered `0.10`
+stability threshold; even ignoring that instability, both preregistered cost
+routes miss by a wide margin.
+
+Decision: retain the future-context, matched-quality and scaling claims. Remove
+practical "cheap at L128" wording from the headline. The recurrent algorithm
+still has linear sequence-length asymptotics, but P023 does not establish a
+hardware crossover, and this frozen absolute-position checkpoint cannot
+support an honest longer-length quality curve. Do not rescue this endpoint via
+batch, compile, CUDA graph, kernel, width, depth, seed or timing-protocol
+changes. Any future cheapness claim needs a separately preregistered
+long-context model and cost curve whose quality remains valid at those lengths.

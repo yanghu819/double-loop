@@ -1,0 +1,176 @@
+{
+  "arm": "causal_gdn2",
+  "benchmarks": {
+    "batch1_encoder": {
+      "baseline_allocated_bytes": 28456448,
+      "baseline_reserved_bytes": 329252864,
+      "elapsed_seconds": 6.592330679297447,
+      "examples_per_second": 91.0148518314228,
+      "input_tokens_per_second": 11649.901034422119,
+      "latency_ms": 10.987217798829079,
+      "measured_steps": 600,
+      "peak_allocated_bytes": 32077312,
+      "peak_increment_bytes": 3620864,
+      "peak_reserved_bytes": 329252864,
+      "warmup_steps": 30
+    },
+    "batch1_masked_recovery": {
+      "baseline_allocated_bytes": 30466560,
+      "baseline_reserved_bytes": 329252864,
+      "elapsed_seconds": 6.787721533328295,
+      "examples_per_second": 88.39490498452957,
+      "input_tokens_per_second": 11314.547838019786,
+      "latency_ms": 11.312869222213825,
+      "measured_steps": 600,
+      "peak_allocated_bytes": 41900032,
+      "peak_increment_bytes": 11433472,
+      "peak_reserved_bytes": 329252864,
+      "warmup_steps": 30
+    },
+    "batch64_encoder": {
+      "baseline_allocated_bytes": 32721920,
+      "baseline_reserved_bytes": 597688320,
+      "elapsed_seconds": 2.327752783894539,
+      "examples_per_second": 5498.865725158517,
+      "input_tokens_per_second": 703854.8128202902,
+      "latency_ms": 11.638763919472694,
+      "measured_steps": 200,
+      "peak_allocated_bytes": 96824320,
+      "peak_increment_bytes": 64102400,
+      "peak_reserved_bytes": 597688320,
+      "warmup_steps": 30
+    },
+    "batch64_masked_recovery": {
+      "baseline_allocated_bytes": 173080064,
+      "baseline_reserved_bytes": 597688320,
+      "elapsed_seconds": 2.5481619611382484,
+      "examples_per_second": 5023.228584058416,
+      "input_tokens_per_second": 642973.2587594773,
+      "latency_ms": 12.740809805691242,
+      "measured_steps": 200,
+      "peak_allocated_bytes": 397323264,
+      "peak_increment_bytes": 224243200,
+      "peak_reserved_bytes": 597688320,
+      "warmup_steps": 30
+    }
+  },
+  "cases": null,
+  "future_dependency_mean_abs": 0.0,
+  "gpu": {
+    "index": "0",
+    "memory_total_mib": "81920",
+    "name": "NVIDIA A100-SXM4-80GB",
+    "uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519"
+  },
+  "model": {
+    "checkpoint_sha256": "f268e86cd9e2f74e447d1e5eae73d36db03f77e1888b94b88d14b962cff27b6b",
+    "checkpoint_state_sha256": "9315a038a63a73019010cb53bce62490946832f32db61e945e1f1c5142e08a0c",
+    "fla": {
+      "gdn2_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+      "gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+      "installed_tree_sha256": "dd792d8b5ff490996df04532c9588a69844b1430124dcdf59e47e42a8e45d3d8",
+      "package_root": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla",
+      "verified_files": 463,
+      "wheel_path": "/huyang2/double-loop/wheelhouse/flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl",
+      "wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+      "wheel_tree_sha256": "dd792d8b5ff490996df04532c9588a69844b1430124dcdf59e47e42a8e45d3d8"
+    },
+    "future_seed": {
+      "active_seed_routes": 0,
+      "future_seed_gate": null,
+      "future_seed_norm": null,
+      "future_seed_raw_rms": null,
+      "future_seed_scale": 0.0,
+      "per_layer": [
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 0,
+          "seed_applied": false
+        },
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 1,
+          "seed_applied": false
+        },
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 2,
+          "seed_applied": false
+        },
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 3,
+          "seed_applied": false
+        }
+      ]
+    },
+    "future_seed_after_forward": {
+      "active_seed_routes": 0,
+      "future_seed_gate": null,
+      "future_seed_norm": null,
+      "future_seed_raw_rms": null,
+      "future_seed_scale": 0.0,
+      "per_layer": [
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 0,
+          "seed_applied": false
+        },
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 1,
+          "seed_applied": false
+        },
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 2,
+          "seed_applied": false
+        },
+        {
+          "future_seed_gate": null,
+          "future_seed_norm": null,
+          "future_seed_raw_rms": null,
+          "layer_idx": 3,
+          "seed_applied": false
+        }
+      ]
+    },
+    "implementation": "pinned official-FLA GDN2 chunk/Triton",
+    "lexical_integrity": {
+      "frozen": true,
+      "input_output_tied": true,
+      "pretrained_bert_module_present": false,
+      "sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d"
+    },
+    "model_state_sha256": "9315a038a63a73019010cb53bce62490946832f32db61e945e1f1c5142e08a0c",
+    "parameters": 4965722
+  },
+  "plan": "P-CAUSAL-023",
+  "protocol": {
+    "fresh_process": true,
+    "masked_tokens": 4742,
+    "measured_steps_batch1": 600,
+    "measured_steps_batch64": 200,
+    "quality_evaluated": false,
+    "sequence_length": 128,
+    "validation_tensor_sha256": "26d57156e43b4d7c21036b1340f23b0e418bf4aed32366bccc4ec252685b0ada",
+    "validation_windows": 256,
+    "warmup_steps": 30
+  },
+  "quality": null,
+  "repetition": 2
+}

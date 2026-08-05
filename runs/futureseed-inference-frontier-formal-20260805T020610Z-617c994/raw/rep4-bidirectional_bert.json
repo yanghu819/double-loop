@@ -1,0 +1,87 @@
+{
+  "arm": "bidirectional_bert",
+  "benchmarks": {
+    "batch1_encoder": {
+      "baseline_allocated_bytes": 26263040,
+      "baseline_reserved_bytes": 48234496,
+      "elapsed_seconds": 0.7035725191235542,
+      "examples_per_second": 852.7905563273345,
+      "input_tokens_per_second": 109157.19120989881,
+      "latency_ms": 1.1726208652059238,
+      "measured_steps": 600,
+      "peak_allocated_bytes": 28466688,
+      "peak_increment_bytes": 2203648,
+      "peak_reserved_bytes": 48234496,
+      "warmup_steps": 30
+    },
+    "batch1_masked_recovery": {
+      "baseline_allocated_bytes": 27235328,
+      "baseline_reserved_bytes": 48234496,
+      "elapsed_seconds": 0.7903217300772667,
+      "examples_per_second": 759.1844905255741,
+      "input_tokens_per_second": 97175.61478727349,
+      "latency_ms": 1.3172028834621112,
+      "measured_steps": 600,
+      "peak_allocated_bytes": 38111232,
+      "peak_increment_bytes": 10875904,
+      "peak_reserved_bytes": 48234496,
+      "warmup_steps": 30
+    },
+    "batch64_encoder": {
+      "baseline_allocated_bytes": 30528512,
+      "baseline_reserved_bytes": 90177536,
+      "elapsed_seconds": 0.21686113625764847,
+      "examples_per_second": 59023.94601858293,
+      "input_tokens_per_second": 7555065.090378615,
+      "latency_ms": 1.0843056812882423,
+      "measured_steps": 200,
+      "peak_allocated_bytes": 62910464,
+      "peak_increment_bytes": 32381952,
+      "peak_reserved_bytes": 90177536,
+      "warmup_steps": 30
+    },
+    "batch64_masked_recovery": {
+      "baseline_allocated_bytes": 98610688,
+      "baseline_reserved_bytes": 350224384,
+      "elapsed_seconds": 0.32890618592500687,
+      "examples_per_second": 38916.872189562586,
+      "input_tokens_per_second": 4981359.640264011,
+      "latency_ms": 1.6445309296250343,
+      "measured_steps": 200,
+      "peak_allocated_bytes": 186347520,
+      "peak_increment_bytes": 87736832,
+      "peak_reserved_bytes": 350224384,
+      "warmup_steps": 30
+    }
+  },
+  "cases": null,
+  "future_dependency_mean_abs": 3.567823886871338,
+  "gpu": {
+    "index": "0",
+    "memory_total_mib": "81920",
+    "name": "NVIDIA A100-SXM4-80GB",
+    "uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519"
+  },
+  "model": {
+    "bert_source": "/opt/conda/lib/python3.10/site-packages/transformers/models/bert/modeling_bert.py",
+    "bert_source_sha256": "3493bff5da90fdcce98dad5c84aafe4d3ce1c550dcd93bc99289309953559eca",
+    "checkpoint_sha256": "dd152f8450c0579bd271ac0ccb4a88fa4f6a67d8035b7799dbf3a0fb7156d9d0",
+    "implementation": "transformers.BertForMaskedLM native bidirectional SDPA",
+    "model_state_sha256": "6b6cd090d174f68597cb9886b1807b0f0487c4d7bf7b7f8fcf22a3c87c715ea3",
+    "parameters": 4416698
+  },
+  "plan": "P-CAUSAL-023",
+  "protocol": {
+    "fresh_process": true,
+    "masked_tokens": 4742,
+    "measured_steps_batch1": 600,
+    "measured_steps_batch64": 200,
+    "quality_evaluated": false,
+    "sequence_length": 128,
+    "validation_tensor_sha256": "26d57156e43b4d7c21036b1340f23b0e418bf4aed32366bccc4ec252685b0ada",
+    "validation_windows": 256,
+    "warmup_steps": 30
+  },
+  "quality": null,
+  "repetition": 4
+}

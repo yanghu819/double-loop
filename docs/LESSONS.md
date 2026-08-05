@@ -1946,3 +1946,29 @@
   the evidence level, through a materially larger established language regime
   or a valid bidirectional quality-cost comparison, rather than adding another
   nearby token budget.
+- P-CAUSAL-023 separates mechanism quality from practical systems cost. Frozen
+  FutureSeed beats BERT-Tiny by `+0.01856` masked accuracy and `0.12818` CE on
+  the fixed L128 carrier, while preserving the matched causal advantage. This
+  strengthens the future-context claim without proving equal training
+  provenance or general model superiority.
+- Linear asymptotic complexity is not the same as being faster on real
+  hardware. At L128, the current official-FLA GDN2+FutureSeed path reaches only
+  `0.113x` BERT batch-64 throughput and uses `2.13x` peak allocation; batch-1
+  latency is about `9x` larger. Remove practical cheapness from the current
+  claim even though the recurrent route is linear in sequence length.
+- FutureSeed itself has measurable runtime overhead on this implementation.
+  Relative to matched causal GDN2, batch-64 throughput falls to `0.838x` while
+  peak allocation is effectively unchanged. State transfer is parameter-free,
+  but it is not execution-free.
+- A timing stability miss cannot be used selectively. BERT batch-64
+  masked-recovery CV is `0.138`, above the registered `0.10`, so the formal
+  speed claim is non-claimable. The robust medians still miss both cost routes
+  by a wide margin, making the scientific decision unchanged.
+- Fresh-process BF16 Triton inference can move a single argmax boundary token.
+  Keep model/data/source/state hashes exact, but specify a bounded numerical
+  replay tolerance far below the scientific gate. Never discard or promote an
+  architecture based on an unregistered serialization-level equality check.
+- Do not fabricate a long-context cost curve from a checkpoint whose learned
+  absolute position table ends at 128. A future crossover experiment must
+  train or adopt a carrier with valid long-context positional semantics and
+  preserve task quality at every reported length.

@@ -7,11 +7,14 @@ Future Seeds for Cheap Bidirectional Computation in Recurrent Reasoners
 ## Core Claim
 
 FutureSeed is a small, generic state-conditioning mechanism that lets a causal or
-recurrent backbone receive a learned summary of future context without paying for
-full bidirectional mixing at every layer. Looping then turns that initial
-direction into extra computation. The mechanism should be judged by whether it
-improves reasoning under the same code path, compute budget, and path-aware task
-metric, not by solver-specific repair or selector tricks.
+recurrent backbone receive a learned summary of future context without full
+bidirectional mixing at every layer. Looping then turns that initial direction
+into extra computation. Current evidence establishes future-context access and
+matched quality gains, not practical inference cheapness at length 128. Any
+"cheap" headline remains conditional on a quality-preserving long-context
+hardware crossover. The mechanism should be judged under the same code path,
+compute budget, and task metric, not by solver-specific repair or selector
+tricks.
 
 ## Draft Abstract
 
@@ -734,3 +737,29 @@ intermediate token budgets, multiple seeds or width/depth tables. The next
 headline experiment must either move to a materially larger established
 language regime or compare quality and robust cost against a valid
 bidirectional carrier.
+
+### P-CAUSAL-023 Frozen L128 Quality-Cost Frontier
+
+Five fresh GPU1 processes per arm compared frozen P022 causal/FutureSeed GDN2
+against the independently opened official BERT-Tiny checkpoint on the exact
+same 4,742 masked targets. FutureSeed passes the registered quality frontier:
+BERT/causal/FutureSeed accuracy is `0.355546/0.309363/0.374104`, and CE is
+`4.033269/4.618317/3.905087`. It makes 441 repairs versus 134 regressions over
+causal and has a net 88 correct-token advantage over BERT. Causal future
+dependency remains exactly zero; FutureSeed dependency is `1.57446`.
+
+The registered practical-cost route fails. Median batch-1 masked-recovery
+latency is `1.361 ms` for BERT and `12.250 ms` for FutureSeed. Median batch-64
+throughput is `5.888M` versus `0.667M` input tokens/s, and peak allocation is
+`177.7` versus `378.9 MiB`. FutureSeed is therefore about `9x` slower and uses
+`2.13x` the allocated memory at this short length. One BERT workload also has
+CV `0.138`, so timing is formally non-claimable; the median cost miss is too
+large for that caveat to reverse the decision.
+
+Paper boundary: FutureSeed is a strong future-context and real-text quality
+mechanism, but the current official-FLA implementation is not a cheaper BERT
+replacement at length 128. Linear recurrent asymptotics remain a motivation,
+not an empirical systems result. A credible cheapness claim now requires a new
+long-context model with valid positional support and a quality-preserving
+crossover curve. Do not rescue this frozen endpoint with systems or hyperparameter
+tuning.

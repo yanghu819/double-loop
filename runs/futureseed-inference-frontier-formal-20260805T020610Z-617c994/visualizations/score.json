@@ -1,0 +1,652 @@
+{
+  "benchmarks": {
+    "bidirectional_bert": {
+      "batch1_encoder": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.024518870205985078,
+          "count": 5,
+          "maximum": 905.4280850204078,
+          "mean": 886.9843003880426,
+          "median": 891.5504519324065,
+          "minimum": 852.7905563273345,
+          "relative_range": 0.059344374720099576
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.024518870205985078,
+          "count": 5,
+          "maximum": 115894.7948826122,
+          "mean": 113533.99044966945,
+          "median": 114118.45784734804,
+          "minimum": 109157.19120989881,
+          "relative_range": 0.059344374720099576
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.024950079378474058,
+          "count": 5,
+          "maximum": 1.1726208652059238,
+          "mean": 1.127967612197002,
+          "median": 1.1216415154437225,
+          "minimum": 1.1044499464333057,
+          "relative_range": 0.060436946979211544
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 28466688.0,
+          "mean": 28466688.0,
+          "median": 28466688.0,
+          "minimum": 28466688.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 2203648.0,
+          "mean": 2203648.0,
+          "median": 2203648.0,
+          "minimum": 2203648.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch1_masked_recovery": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.05890997386829879,
+          "count": 5,
+          "maximum": 760.5821128151391,
+          "mean": 721.6125718205109,
+          "median": 734.550028499732,
+          "minimum": 668.886542871667,
+          "relative_range": 0.12707036091699342
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.05890997386829879,
+          "count": 5,
+          "maximum": 97354.5104403378,
+          "mean": 92366.40919302539,
+          "median": 94022.4036479657,
+          "minimum": 85617.47748757337,
+          "relative_range": 0.12707036091699342
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.05990977992558229,
+          "count": 5,
+          "maximum": 1.4950218548377354,
+          "mean": 1.3897075889011226,
+          "median": 1.361377661426862,
+          "minimum": 1.31478243197004,
+          "relative_range": 0.12969593337992438
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 38111232.0,
+          "mean": 38111232.0,
+          "median": 38111232.0,
+          "minimum": 38111232.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 10875904.0,
+          "mean": 10875904.0,
+          "median": 10875904.0,
+          "minimum": 10875904.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch64_encoder": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.02537196345904576,
+          "count": 5,
+          "maximum": 59023.94601858293,
+          "mean": 57422.09667936788,
+          "median": 57292.24893331558,
+          "minimum": 55393.15984383846,
+          "relative_range": 0.0632297736360615
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.02537196345904576,
+          "count": 5,
+          "maximum": 7555065.090378615,
+          "mean": 7350028.374959089,
+          "median": 7333407.863464395,
+          "minimum": 7090324.460011323,
+          "relative_range": 0.0632297736360615
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.02553460529327826,
+          "count": 5,
+          "maximum": 1.155377309769392,
+          "mean": 1.1151313744485378,
+          "median": 1.1170795559883118,
+          "minimum": 1.0843056812882423,
+          "relative_range": 0.06373386141726708
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 62910464.0,
+          "mean": 62910464.0,
+          "median": 62910464.0,
+          "minimum": 62910464.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 32381952.0,
+          "mean": 32381952.0,
+          "median": 32381952.0,
+          "minimum": 32381952.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch64_masked_recovery": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.1384195608690281,
+          "count": 5,
+          "maximum": 48206.908725556204,
+          "mean": 42896.42150155521,
+          "median": 45997.83938096183,
+          "minimum": 34453.4652302778,
+          "relative_range": 0.3206198329336114
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.1384195608690281,
+          "count": 5,
+          "maximum": 6170484.316871194,
+          "mean": 5490741.952199067,
+          "median": 5887723.440763114,
+          "minimum": 4410043.549475558,
+          "relative_range": 0.3206198329336114
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.15001897222693322,
+          "count": 5,
+          "maximum": 1.8575780279934406,
+          "mean": 1.5170980915427208,
+          "median": 1.3913697004318237,
+          "minimum": 1.3276105374097824,
+          "relative_range": 0.34932974574158215
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 186347520.0,
+          "mean": 186347520.0,
+          "median": 186347520.0,
+          "minimum": 186347520.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 87736832.0,
+          "mean": 87736832.0,
+          "median": 87736832.0,
+          "minimum": 87736832.0,
+          "relative_range": 0.0
+        }
+      }
+    },
+    "causal_gdn2": {
+      "batch1_encoder": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.04332301271088806,
+          "count": 5,
+          "maximum": 96.99712751957163,
+          "mean": 93.24355473623312,
+          "median": 95.35123010343236,
+          "minimum": 87.23342998041397,
+          "relative_range": 0.10471176873058044
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.04332301271088806,
+          "count": 5,
+          "maximum": 12415.63232250517,
+          "mean": 11935.17500623784,
+          "median": 12204.957453239342,
+          "minimum": 11165.879037492989,
+          "relative_range": 0.10471176873058044
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.044481541176213404,
+          "count": 5,
+          "maximum": 11.463495132823786,
+          "mean": 10.741155475378036,
+          "median": 10.487541680534681,
+          "minimum": 10.309583650281033,
+          "relative_range": 0.10742898985010187
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 32077312.0,
+          "mean": 32077312.0,
+          "median": 32077312.0,
+          "minimum": 32077312.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 3620864.0,
+          "mean": 3620864.0,
+          "median": 3620864.0,
+          "minimum": 3620864.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch1_masked_recovery": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.03780663761909597,
+          "count": 5,
+          "maximum": 97.21701984766524,
+          "mean": 94.6769347600623,
+          "median": 95.95363440756546,
+          "minimum": 88.39490498452957,
+          "relative_range": 0.09318124721183002
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.03780663761909597,
+          "count": 5,
+          "maximum": 12443.778540501151,
+          "mean": 12118.647649287974,
+          "median": 12282.065204168379,
+          "minimum": 11314.547838019786,
+          "relative_range": 0.09318124721183002
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.039645043497093996,
+          "count": 5,
+          "maximum": 11.312869222213825,
+          "mean": 10.574913232276838,
+          "median": 10.421700086444616,
+          "minimum": 10.286264705161253,
+          "relative_range": 0.09707923786260121
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 41900032.0,
+          "mean": 41900032.0,
+          "median": 41900032.0,
+          "minimum": 41900032.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 11433472.0,
+          "mean": 11433472.0,
+          "median": 11433472.0,
+          "minimum": 11433472.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch64_encoder": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.05891320981079997,
+          "count": 5,
+          "maximum": 6350.993004817758,
+          "mean": 6056.534502632682,
+          "median": 6188.764345702361,
+          "minimum": 5498.865725158517,
+          "relative_range": 0.14069552138914335
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.05891320981079997,
+          "count": 5,
+          "maximum": 812927.1046166731,
+          "mean": 775236.4163369833,
+          "median": 792161.8362499023,
+          "minimum": 703854.8128202902,
+          "relative_range": 0.14069552138914335
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.061605679600938025,
+          "count": 5,
+          "maximum": 11.638763919472694,
+          "mean": 10.59784758836031,
+          "median": 10.341321211308241,
+          "minimum": 10.077164303511381,
+          "relative_range": 0.14735063916907326
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 96824320.0,
+          "mean": 96824320.0,
+          "median": 96824320.0,
+          "minimum": 96824320.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 64102400.0,
+          "mean": 64102400.0,
+          "median": 64102400.0,
+          "minimum": 64102400.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch64_masked_recovery": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.0895915565963985,
+          "count": 5,
+          "maximum": 6262.889395743664,
+          "mean": 5972.821164210682,
+          "median": 6217.796654101778,
+          "minimum": 5023.228584058416,
+          "relative_range": 0.2075502978581263
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.0895915565963985,
+          "count": 5,
+          "maximum": 801649.842655189,
+          "mean": 764521.1090189673,
+          "median": 795877.9717250275,
+          "minimum": 642973.2587594773,
+          "relative_range": 0.2075502978581263
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.10139139543836148,
+          "count": 5,
+          "maximum": 12.740809805691242,
+          "mean": 10.793621692806482,
+          "median": 10.293035227805376,
+          "minimum": 10.218925476074219,
+          "relative_range": 0.2336457957663792
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 397323264.0,
+          "mean": 397323264.0,
+          "median": 397323264.0,
+          "minimum": 397323264.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 224243200.0,
+          "mean": 224243200.0,
+          "median": 224243200.0,
+          "minimum": 224243200.0,
+          "relative_range": 0.0
+        }
+      }
+    },
+    "future_seed_gdn2": {
+      "batch1_encoder": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.03099330342122638,
+          "count": 5,
+          "maximum": 83.16303085299211,
+          "mean": 80.94774641107774,
+          "median": 81.89530415546042,
+          "minimum": 76.90048389984528,
+          "relative_range": 0.0773653033074407
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.03099330342122638,
+          "count": 5,
+          "maximum": 10644.86794918299,
+          "mean": 10361.311540617951,
+          "median": 10482.598931898934,
+          "minimum": 9843.261939180196,
+          "relative_range": 0.0773653033074407
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.03180863037738377,
+          "count": 5,
+          "maximum": 13.003819342702627,
+          "mean": 12.363397157440584,
+          "median": 12.210712327311436,
+          "minimum": 12.024573776870966,
+          "relative_range": 0.07920521789938036
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 32068608.0,
+          "mean": 32068608.0,
+          "median": 32068608.0,
+          "minimum": 32068608.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 3607552.0,
+          "mean": 3607552.0,
+          "median": 3607552.0,
+          "minimum": 3607552.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch1_masked_recovery": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.02837555156761637,
+          "count": 5,
+          "maximum": 82.24907587183773,
+          "mean": 80.60794024750503,
+          "median": 81.63282168901294,
+          "minimum": 76.82067802689718,
+          "relative_range": 0.0673432149273727
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.02837555156761637,
+          "count": 5,
+          "maximum": 10527.88171159523,
+          "mean": 10317.816351680643,
+          "median": 10449.001176193657,
+          "minimum": 9833.04678744284,
+          "relative_range": 0.0673432149273727
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.029161292647969236,
+          "count": 5,
+          "maximum": 13.017328480879465,
+          "mean": 12.413942312200863,
+          "median": 12.249974695344767,
+          "minimum": 12.158191315829754,
+          "relative_range": 0.06920743978367942
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 41904640.0,
+          "mean": 41904640.0,
+          "median": 41904640.0,
+          "minimum": 41904640.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 11433472.0,
+          "mean": 11433472.0,
+          "median": 11433472.0,
+          "minimum": 11433472.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch64_encoder": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.09259376304585745,
+          "count": 5,
+          "maximum": 5449.283891955134,
+          "mean": 4943.457935704089,
+          "median": 5083.580141179108,
+          "minimum": 4409.712292791499,
+          "relative_range": 0.21029239303430436
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.09259376304585745,
+          "count": 5,
+          "maximum": 697508.3381702572,
+          "mean": 632762.6157701234,
+          "median": 650698.2580709258,
+          "minimum": 564443.1734773119,
+          "relative_range": 0.21029239303430436
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.09437936580872078,
+          "count": 5,
+          "maximum": 14.51341850683093,
+          "mean": 13.037460282444954,
+          "median": 12.58955268189311,
+          "minimum": 11.744662467390299,
+          "relative_range": 0.21236927894375138
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 95978496.0,
+          "mean": 95978496.0,
+          "median": 95978496.0,
+          "minimum": 95978496.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 63250432.0,
+          "mean": 63250432.0,
+          "median": 63250432.0,
+          "minimum": 63250432.0,
+          "relative_range": 0.0
+        }
+      },
+      "batch64_masked_recovery": {
+        "examples_per_second": {
+          "coefficient_of_variation": 0.06300488506862097,
+          "count": 5,
+          "maximum": 5462.2372850126285,
+          "mean": 5102.801409578009,
+          "median": 5207.443330653859,
+          "minimum": 4597.172018198742,
+          "relative_range": 0.16952751976397715
+        },
+        "input_tokens_per_second": {
+          "coefficient_of_variation": 0.06300488506862097,
+          "count": 5,
+          "maximum": 699166.3724816164,
+          "mean": 653158.5804259852,
+          "median": 666552.746323694,
+          "minimum": 588438.018329439,
+          "relative_range": 0.16952751976397715
+        },
+        "latency_ms": {
+          "coefficient_of_variation": 0.06580856744492443,
+          "count": 5,
+          "maximum": 13.921602182090282,
+          "mean": 12.583809494972229,
+          "median": 12.290100138634443,
+          "minimum": 11.716810651123524,
+          "relative_range": 0.17520859099525207
+        },
+        "peak_allocated_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 397329408.0,
+          "mean": 397329408.0,
+          "median": 397329408.0,
+          "minimum": 397329408.0,
+          "relative_range": 0.0
+        },
+        "peak_increment_bytes": {
+          "coefficient_of_variation": 0.0,
+          "count": 5,
+          "maximum": 224243200.0,
+          "mean": 224243200.0,
+          "median": 224243200.0,
+          "minimum": 224243200.0,
+          "relative_range": 0.0
+        }
+      }
+    }
+  },
+  "claim_boundary": "Frozen length-128 inference quality and systems cost only. The BERT and GDN2 checkpoints have different pretraining provenance; this is not a training-efficiency, equal-data, or length-scaling claim.",
+  "comparison": {
+    "future_seed_vs_bert": {
+      "batch1_masked_recovery_latency_speedup": 0.11113309988666446,
+      "batch64_encoder_throughput_ratio": 0.08873067885842746,
+      "batch64_masked_recovery_peak_memory_ratio": 2.1321958456973293,
+      "batch64_masked_recovery_throughput_ratio": 0.1132106072966806
+    }
+  },
+  "gate": {
+    "checks": {
+      "all_primary_throughput_cv_at_most_0.10": false,
+      "batch64_end_to_end_speed_at_least_1.20x": false,
+      "memory_at_most_0.80x_with_throughput_at_least_0.90x": false,
+      "quality_accuracy_within_0.02": true,
+      "quality_ce_within_0.10": true
+    },
+    "cost_passed": false,
+    "quality_passed": true,
+    "timing_stable": false
+  },
+  "plan": "P-CAUSAL-023",
+  "population": {
+    "bert_repairs_future_seed": 324,
+    "future_seed_regressions_causal": 134,
+    "future_seed_repairs_bert": 412,
+    "future_seed_repairs_causal": 441
+  },
+  "protocol": {
+    "fresh_process_per_repetition": true,
+    "length_extrapolation": false,
+    "length_extrapolation_reason": "The frozen P022 GDN2 checkpoint has learned absolute position embeddings registered only through position 127.",
+    "quality_masked_tokens": 4742,
+    "quality_windows": 256,
+    "repetitions_per_arm": 5,
+    "sequence_length": 128
+  },
+  "quality": {
+    "bidirectional_bert": {
+      "examples": 256,
+      "masked_accuracy": 0.35554618304512864,
+      "masked_ce": 4.033268768040252,
+      "masked_correct": 1686,
+      "masked_tokens": 4742
+    },
+    "causal_gdn2": {
+      "examples": 256,
+      "masked_accuracy": 0.30936313791649095,
+      "masked_ce": 4.6183168692007595,
+      "masked_correct": 1467,
+      "masked_tokens": 4742
+    },
+    "future_seed_gdn2": {
+      "examples": 256,
+      "masked_accuracy": 0.374103753690426,
+      "masked_ce": 3.905086753841997,
+      "masked_correct": 1774,
+      "masked_tokens": 4742
+    }
+  },
+  "raw_files": [
+    "rep0-bidirectional_bert.json",
+    "rep0-causal_gdn2.json",
+    "rep0-future_seed_gdn2.json",
+    "rep1-bidirectional_bert.json",
+    "rep1-causal_gdn2.json",
+    "rep1-future_seed_gdn2.json",
+    "rep2-bidirectional_bert.json",
+    "rep2-causal_gdn2.json",
+    "rep2-future_seed_gdn2.json",
+    "rep3-bidirectional_bert.json",
+    "rep3-causal_gdn2.json",
+    "rep3-future_seed_gdn2.json",
+    "rep4-bidirectional_bert.json",
+    "rep4-causal_gdn2.json",
+    "rep4-future_seed_gdn2.json"
+  ],
+  "status": "quality_supported_cost_missed"
+}

@@ -1,7 +1,7 @@
 # WordPiece GDN2 FutureSeed Data-Diversity Gate
 
 - Plan: `P-CAUSAL-021`
-- Status: preregistered
+- Status: completed; data-diversity mechanism signal passed, strong gate missed
 - Date: 2026-08-05 CST
 - Machine: AIStation task-mode GPU1 only
 
@@ -93,4 +93,68 @@ attention parity, language-model superiority or asymptotic speed.
 
 ## Results
 
-Pending the preregistered GPU1 run.
+The preregistered preflight and formal run used detached GitHub SHA
+`916197899e4405764636ced8406e1dc34db902cf`. The source parquet produced the
+registered 160,000 windows after 319,488 rows and 94,986,651 UTF-8 bytes. The
+prepared training tensor hash was
+`74efb7e6bef6e05cd284f985249e55e81736c89ae3a3f8715faea924982c8562` in
+both preflight and formal execution.
+
+Preflight verified one A100 GPU1, 463 byte-identical official FLA files, four
+`ChunkGDN2FunctionBackward` layers, Triton Q/K/V convolutions, identical
+parameters and initialization, scale-zero hidden/output difference exactly
+zero, causal future dependency exactly zero, FutureSeed dependency `0.65193`,
+and finite nonzero gradients for all three seed routes.
+
+| Readout | Causal L4 | FutureSeed L4 | FS - causal |
+|---|---:|---:|---:|
+| masked accuracy | 0.275833 | 0.292493 | +0.016660 |
+| masked CE | 5.300604 | 5.131930 | -0.168674 |
+| exact 128-token windows | 0 | 0 | 0 |
+| suffix-removal CE cost | 0 | 0.689943 | +0.689943 |
+| input tokens | 20.48M | 20.48M | 0 |
+| parameters | 4,965,722 | 4,965,722 | 0 |
+| warmed train throughput | 455,073 tok/s | 455,140 tok/s | +0.01% |
+| peak training allocation | 2.042 GB | 2.062 GB | +19.7 MB |
+
+The masked-accuracy delta has paired-window 95% interval
+`[0.00973, 0.02364]`; the CE advantage interval is
+`[0.14567, 0.19203]`. The same sign is already present at step 1000, where
+accuracy delta is `+0.01371` and CE advantage is `0.16003`.
+
+Relative to P020's repeated-window protocol, causal accuracy changes by
+`-0.00084` while FutureSeed accuracy changes by `+0.00822`. The matched
+accuracy gap therefore grows by `+0.00907`, narrowly below its `+0.01`
+diagnostic. More importantly, the CE gap grows from `0.09948` to `0.16867`, a
+`+0.06919` gain that passes the preregistered `+0.05` data-diversity gate.
+The FutureSeed suffix-removal cost also grows from `0.58652` to `0.68994`.
+
+## Visual Audit
+
+Across all 4,742 masked targets, FutureSeed repairs 182 causal errors and
+regresses 103 causal-correct targets, producing 79 net repairs. P020 produced
+147 repairs, 111 regressions and only 36 net repairs. The new data regime thus
+more than doubles net hard decisions rather than merely lowering probability
+loss.
+
+Repairs are balanced across the sequence (`84` left half, `98` right half), as
+are regressions (`56/47`). At window level there are 84 repair-only, 39
+regression-only, 42 mixed and 91 changed-but-still-wrong cases. The strongest
+windows remove three errors with no regression; the worst window adds three.
+The archived same-window HTML includes 12 repair, regression and hard-error
+cases, while `diagnostics.json` records all aggregate and hardest-case counts.
+
+## Decision
+
+P021 supports the narrow data-scaling mechanism: repeated exposure to a tiny
+independent corpus was materially suppressing FutureSeed's real-text value.
+At identical 20.48M-token compute, 16x more independent windows increases CE
+advantage by `0.06919`, gives a fully positive accuracy interval and more than
+doubles net repairs.
+
+It still misses the paper headline gate: accuracy delta is below `0.03`, CE
+advantage is below `0.20`, and exact remains zero. Therefore do not claim a
+competitive masked-language model yet. The registered positive endpoint slope
+and data-diversity pass authorize one clean next experiment that scales both
+independent data and total training tokens. Do not run a data-size table,
+second seed, or rescue the current endpoint with a few extra steps.

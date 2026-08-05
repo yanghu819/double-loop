@@ -1904,3 +1904,22 @@
   throughput relative to L2, while gaining only `+0.01213` additional CE
   advantage. Stop L6/L8 table filling; the next credible language test needs a
   larger training regime or a different established carrier.
+- Training-token count is not independent-data count. P-CAUSAL-020 reported
+  20.48M input tokens but obtained them by remasking the same roughly 1.28M
+  independent WordPiece tokens 16 times. Future scaling ledgers must report
+  both optimization tokens and unique source windows/tokens.
+- P-CAUSAL-021 isolates data diversity at fixed model and compute. Replacing
+  10,000 windows times 16 corruptions with 160,000 independent windows times
+  one corruption raises the FutureSeed CE advantage `0.09948->0.16867` and
+  the accuracy advantage `0.00759->0.01666`.
+- Aggregate behavior moved with the metric: repairs/regressions change from
+  `147/111` in P-CAUSAL-020 to `182/103` in P-CAUSAL-021, so net repairs more
+  than double from 36 to 79. This is stronger evidence than selected examples,
+  while still falling short of the registered language-quality threshold.
+- The fixed-compute result identifies independent data as a genuine scaling
+  axis for FutureSeed, not a complete solution. It authorizes one joint
+  data-and-compute continuation because the endpoint slope remains positive;
+  it does not authorize a width, depth, seed, learning-rate or loss table.
+- P-CAUSAL-021 warmed throughput is effectively equal between arms and the
+  FutureSeed peak-allocation increase is about 20 MB. Keep these as system
+  diagnostics until a longer repeated benchmark supports a robust cost claim.

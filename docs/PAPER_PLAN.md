@@ -675,3 +675,30 @@ statistically visible in top-1 accuracy. It may not state that depth scaling
 solves masked language modeling or yields competitive quality. Close small
 depth sweeps; a future language headline requires a materially larger
 pretraining regime or another independently validated carrier.
+
+### P-CAUSAL-021 Real-Text Data-Diversity Scaling
+
+The previous fixed-token runs repeatedly remasked only 10,000 grouped text
+windows. P-CAUSAL-021 replaced that schedule with 160,000 independent windows
+from the full, hash-pinned WikiText-103 raw training split while holding the
+official-FLA GDN2 D128/L4 architecture, initialization, optimizer, batch size,
+1,250 steps and 20.48M input tokens fixed. This isolates data diversity from
+model and compute scaling.
+
+Causal/FutureSeed masked accuracy is `0.275833/0.292493`, a `+0.016660`
+difference with paired 95% interval `[0.00973,0.02364]`. CE is
+`5.300604/5.131930`, a `0.168674` FutureSeed advantage with interval
+`[0.14567,0.19203]`. Relative to P-CAUSAL-020, the CE advantage grows by
+`0.069190`, passing the preregistered data-diversity mechanism gate; the
+accuracy advantage grows by `0.009068`, narrowly missing its separate `0.01`
+gate. FutureSeed makes 182 repairs and 103 regressions, for 79 net repairs
+versus P-CAUSAL-020's 36. Suffix removal costs FutureSeed `0.689943` CE and
+causal GDN2 exactly zero, so the gain still comes from usable right context.
+
+This is the clearest real-text scaling result so far, but it remains below the
+strong paper gate of `+0.03` accuracy or `0.20` CE. The paper may claim that
+independent language-data diversity amplifies the FutureSeed advantage at
+fixed compute. It may not yet claim competitive masked-language quality. The
+positive endpoint slope and passed mechanism gate authorize one clean joint
+data-and-compute continuation at the same model size; they do not authorize a
+model-size, seed, learning-rate or loss sweep.

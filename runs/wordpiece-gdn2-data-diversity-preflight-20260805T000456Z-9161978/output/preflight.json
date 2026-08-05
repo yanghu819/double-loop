@@ -1,0 +1,146 @@
+{
+  "backward": {
+    "causal_gdn2": {
+      "loss": 10.579032897949219,
+      "max_gradient": 1.1875,
+      "official_chunk_autograd_node": "ChunkGDN2FunctionBackward"
+    },
+    "future_seed_gdn2": {
+      "loss": 10.506895065307617,
+      "max_gradient": 2.03125,
+      "official_chunk_autograd_node": "ChunkGDN2FunctionBackward"
+    }
+  },
+  "bert_source": "/opt/conda/lib/python3.10/site-packages/transformers/models/bert/modeling_bert.py",
+  "bert_source_sha256": "3493bff5da90fdcce98dad5c84aafe4d3ce1c550dcd93bc99289309953559eca",
+  "common_pretrained_modules": [
+    "bert.embeddings.word_embeddings.weight"
+  ],
+  "expected_active_seed_routes": 3,
+  "fla_provenance": {
+    "gdn2_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+    "gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+    "installed_tree_sha256": "dd792d8b5ff490996df04532c9588a69844b1430124dcdf59e47e42a8e45d3d8",
+    "package_root": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla",
+    "verified_files": 463,
+    "wheel_path": "/huyang2/double-loop/wheelhouse/flash_linear_attention-0.5.2-9c8e42e-py3-none-any.whl",
+    "wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+    "wheel_tree_sha256": "dd792d8b5ff490996df04532c9588a69844b1430124dcdf59e47e42a8e45d3d8"
+  },
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "frozen_parameters": 3906816,
+  "future_dependency_mean_abs": {
+    "causal_gdn2": 0.0,
+    "future_seed_gdn2": 0.6513981223106384
+  },
+  "future_seed_gate_gradient_max": 0.009679939597845078,
+  "future_seed_gate_gradients": [
+    {
+      "max_abs_gradient": 0.009679939597845078,
+      "name": "backbone.layers.1.sequence_mixer.future_seed_logit"
+    },
+    {
+      "max_abs_gradient": 0.006598459556698799,
+      "name": "backbone.layers.2.sequence_mixer.future_seed_logit"
+    },
+    {
+      "max_abs_gradient": 0.004822494462132454,
+      "name": "backbone.layers.3.sequence_mixer.future_seed_logit"
+    }
+  ],
+  "gdn2_class": "fla.layers.gdn2.GatedDeltaNet2",
+  "gdn2_conv_backend": [
+    {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    },
+    {
+      "k_conv1d": "triton",
+      "q_conv1d": "triton",
+      "v_conv1d": "triton"
+    }
+  ],
+  "gdn2_mode": [
+    "chunk",
+    "chunk",
+    "chunk",
+    "chunk"
+  ],
+  "gdn2_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+  "gpu": {
+    "index": 0,
+    "memory_mib": 81920,
+    "name": "NVIDIA A100-SXM4-80GB",
+    "uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519"
+  },
+  "initial_state_hash": "30de83e8b11fbfd19a4223af207d66c56f72de6593f62bade189b21947cf41f8",
+  "lexical_contracts": {
+    "causal_gdn2": {
+      "frozen": true,
+      "input_output_tied": true,
+      "pretrained_bert_module_present": false,
+      "sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d"
+    },
+    "direct_gdn2": {
+      "frozen": true,
+      "input_output_tied": true,
+      "pretrained_bert_module_present": false,
+      "sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d"
+    },
+    "future_seed_gdn2": {
+      "frozen": true,
+      "input_output_tied": true,
+      "pretrained_bert_module_present": false,
+      "sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d"
+    }
+  },
+  "lexical_table_sha256": "c21163c6a84ae83c3ce10f4a7db66f5e63d2468e09330a5794c68ac67c17682d",
+  "parameter_hash": "dd43a07cc4066220b4714d9a119af7f0441cd8d6e0cfac700ca59e1665e5f3d7",
+  "parameters": 4965722,
+  "prepared_data": {
+    "every_registered_pair_consumed_once": true,
+    "full_batch_wrap": false,
+    "independent_windows_per_corruption": 160000,
+    "mask_probability": 0.15,
+    "prepared_tensor_sha256": "74efb7e6bef6e05cd284f985249e55e81736c89ae3a3f8715faea924982c8562",
+    "registered_sample_pairs": 160000,
+    "sequence_length": 128,
+    "train_corruptions": 1,
+    "train_source": {
+      "format": "parquet",
+      "grouped_windows": 160000,
+      "path": "/huyang2/double-loop/data/source/wikitext-103-raw-v1/wikitext_wikitext-103-raw-v1_train.parquet",
+      "pyarrow_version": "19.0.1",
+      "rows_read": 319488,
+      "sha256": "3136309f1626dd348aaa0b8ab9e4c8a319d175c0a6223e392d60575083603a42",
+      "source_rows": 1801350,
+      "utf8_bytes_read": 94986651
+    },
+    "train_windows": 160000,
+    "validation_masked_tokens": 4742,
+    "validation_windows": 256
+  },
+  "pretrained_carrier_anchor": {
+    "masked_accuracy": 0.35554618304512864,
+    "masked_ce": 4.033268768040252,
+    "masked_correct": 1686,
+    "masked_tokens": 4742
+  },
+  "pretrained_encoder_reused": false,
+  "scale0_hidden_max_diff": 0.0,
+  "scale0_output_max_diff": 0.0,
+  "shared_init_max_diff": 0.0,
+  "trainable_parameters": 1058906,
+  "transformers_version": "4.46.3"
+}

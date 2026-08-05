@@ -17,6 +17,14 @@
   independent Sudoku data, model/state capacity, and training compute. The
   falsifier prevents hours of blind scaling; it is not a substitute for the
   full-budget result.
+- A single shared address namespace across all GDN2 layers is the strongest
+  generic FutureSeed/GDN2 quick mechanism result so far. At matched step9100 it
+  raises mean official 51-64 blank accuracy `0.2037 -> 0.4479`, lowers CE
+  `1.9370 -> 1.1634`, and costs only `+6.9%` elapsed time. This is not a
+  blank-only illusion: 61-64-blank mean wrong cells fall `39.91 -> 36.99` from
+  loop1 to loop5, with 186/256 cases improving. Exact is still zero, so the
+  right next move is one from-scratch full-diversity scale where the shared
+  basis and content maps co-adapt, not an address-strength/rank/loss sweep.
 
 ## 2026-06-03 GPU1 bootstrap
 

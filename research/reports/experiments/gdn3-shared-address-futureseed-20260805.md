@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved, implementation pending
+- Status: completed; quick falsifier passed and clean scale authorized
 - Preregistered: 2026-08-05 11:12 CST
 - Benchmark: hard 9x9 Sudoku, official 51-64 blank evaluation
 - Resource: AIStation task-mode GPU1 only
@@ -119,3 +119,74 @@ A successful falsifier supports only:
 
 A scalable GDN3 claim requires the subsequent clean full-budget run and must
 report full-board exact, not just blank accuracy.
+
+## 10. CUDA Contract Result
+
+The GPU1-only contract passed on A100 UUID
+`GPU-53e9f3b4-2966-65d3-6614-09c540921519` with pinned FLA source
+`9c8e42e762fce087c27b673af4922795d9edb85e`.
+
+- zero initialization is an exact identity for output, terminal state, initial
+  state gradient, and all pre-existing model gradients;
+- the single shared projection receives a finite nonzero first-step gradient;
+- all ten recurrent layers consume the same shared address tensor;
+- the active graph contains `ChunkGDN2FunctionBackward` and Triton Q/K/V short
+  convolutions;
+- there is no reverse scan, fallback, search, repair, selector, or task rule.
+
+## 11. Formal Result
+
+Run `gdn3-shared-namespace-s9100-20260805T035329Z-ea6887a` resumed the exact
+canonical step9000 FutureSeed checkpoint and trained for the registered 100
+steps. The run stayed on GPU1 and clean source SHA
+`ea6887aaf08ef1a14ea2cd4f5d9196f45d201f68`.
+
+| Step9100 metric | normal GDN2 | per-layer shared address | GDN3 shared namespace |
+|---|---:|---:|---:|
+| train CE | 1.9370 | 1.6845 | **1.1634** |
+| official 51-55 loop5 blank | 0.2120 | 0.3106 | **0.4816** |
+| official 56-60 loop5 blank | 0.2119 | 0.2860 | **0.4361** |
+| official 61-64 loop5 blank | 0.1871 | 0.2565 | **0.4260** |
+| mean official 51-64 blank | 0.2037 | 0.2844 | **0.4479** |
+| train elapsed, 100 steps | 649.9 s | 776.9 s | 694.8 s |
+| full-board exact | 0 | 0 | 0 |
+
+Relative to normal GDN2, mean hard blank accuracy improves `+0.2442`, train CE
+improves `-0.7736`, and elapsed time increases only `+6.9%`. It also exceeds
+the old per-layer shared-address result by `+0.1635` mean hard blank accuracy.
+The shared residual learned a substantial but bounded signal: weight RMS
+`0.0170`, residual RMS `0.6890`, and relative Q/K changes `0.3056/0.4003`.
+
+## 12. Loop Correction And Visualization
+
+This is not only a better loop1 operating point. Across the 256 fixed boards in
+each official hard bucket, mean wrong blank cells evolve as follows:
+
+| Bucket | loop1 | loop2 | loop3 | loop4 | loop5 | improved / same / regressed |
+|---|---:|---:|---:|---:|---:|---:|
+| 51-55 | 30.027 | 28.406 | 28.234 | 28.148 | 28.109 | 169 / 27 / 60 |
+| 56-60 | 33.441 | 32.355 | 32.289 | 32.270 | 32.266 | 140 / 28 / 88 |
+| 61-64 | 39.910 | 37.250 | 37.020 | 36.992 | 36.992 | 186 / 28 / 42 |
+
+One mechanically selected 64-blank case changes
+`37 -> 31 -> 29 -> 28 -> 27` wrong cells. Another changes
+`43 -> 32 -> 29 -> 29 -> 28`. The archived case bank contains input, target,
+and loop1-5 predictions for all selected hard failures. No selected case is
+solved or almost solved, so this remains a mechanism result rather than a
+Sudoku frontier result.
+
+## 13. Decision
+
+P-GDN3-001 passes every registered scale condition: CE, hard blank accuracy,
+real recurrent correction, runtime overhead, kernel provenance, and exact
+identity at initialization. The result supports the bounded claim that a
+single cross-layer address namespace makes FutureSeed-transported GDN2 state
+easier for later layers and loops to use.
+
+It does not support a solved-Sudoku or final GDN3 claim because every official
+51-64 full-board exact rate is still zero. The only authorized next experiment
+is one clean from-scratch D256/L12 full-diversity scale run. Training from
+scratch is important: the quick continuation had to rotate a mature stack of
+independent layer address bases abruptly, whereas the scale run lets content
+addresses, the shared namespace, and FutureSeed co-adapt from initialization.
+No address strength, rank, loss, seed, or duration table is authorized.

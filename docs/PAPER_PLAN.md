@@ -17,6 +17,14 @@ single shared address namespace across layers can make that transported state
 readable without changing the official recurrence: shared stable address drives
 Q/K, while payload V and decay/erase/write remain layer-specific.
 
+P-GDN3-001 passes the registered quick falsifier. At matched step9100, mean
+official 51-64 blank accuracy is `0.4479` versus normal GDN2 `0.2037` and the
+older per-layer shared-address candidate `0.2844`; train CE is `1.1634` versus
+`1.9370`, elapsed overhead is `6.9%`, and later loops reduce wrong cells on a
+majority of fixed hard boards. Full-board exact remains zero. The paper claim
+therefore stays bounded until one clean D256/L12 full-diversity trajectory
+shows that this generic compatibility mechanism scales into exact closure.
+
 ## Working Title
 
 Future Seeds for Cheap Bidirectional Computation in Recurrent Reasoners

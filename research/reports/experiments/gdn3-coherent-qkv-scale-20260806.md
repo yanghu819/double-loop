@@ -2,7 +2,8 @@
 
 ## Status
 
-- Status: preregistered; CUDA contract pending
+- Status: CUDA contract and two-step full-runner fit passed; sole formal
+  trajectory in progress
 - Date: 2026-08-06
 - Benchmark: official/full-diversity 9x9 Sudoku, 51-64 blank scaling cliff
 - Compute: AIStation task-mode GPU1 only
@@ -105,6 +106,59 @@ The full-size experiment is authorized only if GPU1 validation proves:
 - finite forward/backward and nonzero coordinate gradients;
 - coordinate modules diverge after one optimizer step;
 - finite D256/L12 forward/backward without fallback or OOM.
+
+### Contract Result
+
+Passed on task-mode GPU1 from clean detached source
+`ccd889798ecdfc9e114014699087de7bcc9ac7af`:
+
+- visible CUDA device: `NVIDIA A100-SXM4-80GB`, index0, UUID
+  `GPU-53e9f3b4-2966-65d3-6614-09c540921519`;
+- pinned FLA source SHA:
+  `9c8e42e762fce087c27b673af4922795d9edb85e`;
+- initial coordinate max-absolute error: `0.0`;
+- parameter-count delta versus independent initialization: `0`;
+- private output-projection difference: `0.246773`, so non-coordinate
+  modules were not accidentally copied;
+- official backward graph contains `ChunkGDN2FunctionBackward` and
+  `CausalConv1dFunctionBackward`;
+- one optimizer step changes coordinate parameters by `1.904e-5` and creates
+  cross-layer divergence `1.809e-5`, with finite nonzero Q gradients in every
+  sampled layer;
+- full D256/L12 contract forward/backward is finite with `11,459,136`
+  reasoner parameters and sampled batch1 peak allocation/reservation
+  `365.35/376.00 MiB`.
+
+The separate two-step batch32 run through the production runner also passed:
+the complete Sudoku model has `11,485,760` parameters, wrote a valid checkpoint
+and evaluator bundle, and used peak allocation/reservation
+`12,832.52/13,568 MiB`. Its zero exact score is expected at step2 and is not a
+science result.
+
+Archived engineering evidence is under
+`research/reports/visualizations/gdn3-coherent-qkv-scale-20260806/`. The remote
+source snapshot is retained at the fit run directory with SHA256
+`d62a371c6432fedbc937743b231ea5752d1c15442e63a49d94c8d7a4884e6af4`.
+
+## Formal Trajectory
+
+The sole registered trajectory launched at `2026-08-06T11:10:38Z`:
+
+- run: `gdn3-coherent-qkv-d256l12-s12000-20260806T111038Z-ccd8897`;
+- run directory:
+  `/huyang2/double-loop/runs/gdn3-coherent-qkv-d256l12-s12000-20260806T111038Z-ccd8897`;
+- source: clean detached SHA
+  `ccd889798ecdfc9e114014699087de7bcc9ac7af`;
+- process group: `125922`; Python child: `125990`;
+- launch log:
+  `/huyang2/double-loop/artifacts/launch/p-gdn3-003/formal-ccd8897.log`.
+
+The run has cleared first-shape compilation and reached step100 with train CE
+`2.0159`; `train_state_step000100.pt` was written successfully. The health
+sample sees only the registered CUDA UUID, about `16.8 GiB` in use, a live
+high-load Python process, and no NaN, OOM, fallback, traceback, or source drift.
+No concurrent GPU evaluator or second experiment is running. Step100 is an
+engineering-health observation, not a science gate or quality claim.
 
 ## Science Gates
 

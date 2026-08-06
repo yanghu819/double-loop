@@ -52,6 +52,14 @@ tests whether compatibility is most useful as an optimization scaffold rather
 than a permanent mature constraint, with zero added parameters or inference
 operations.
 
+The engineering gate is now passed. Exact initialization equality, distinct
+parameter storage, unchanged parameter count, private output projections,
+official FLA/Triton backward, finite gradients, and measurable specialization
+after one optimizer step were all verified on the registered GPU1. A separate
+two-step D256/L12 production-runner fit also completed without fallback or OOM.
+The sole 12k seed52 formal trajectory is active from clean pushed SHA `ccd8897`;
+no quality claim is made before its registered step500 science gate.
+
 ## Working Title
 
 Future Seeds for Cheap Bidirectional Computation in Recurrent Reasoners

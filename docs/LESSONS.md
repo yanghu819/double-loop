@@ -79,6 +79,12 @@
   distinct parameters, and require measurable specialization after one step.
   This preserves zero inference overhead and layer-private capacity while
   testing whether FutureSeed compatibility can emerge through co-adaptation.
+- Coordinate coherence at birth is mechanically viable at full size. The CUDA
+  contract gives exact initial equality with zero parameter-count increase,
+  retains official FLA/Triton backward, and produces `1.809e-5` cross-layer
+  divergence after one optimizer step. This is evidence that the intervention
+  is a temporary optimization scaffold rather than hidden weight tying; it is
+  not yet evidence of better Sudoku quality, which remains gated at step500.
 
 ## 2026-06-03 GPU1 bootstrap
 

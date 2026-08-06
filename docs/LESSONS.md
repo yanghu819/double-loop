@@ -2097,3 +2097,17 @@
   FutureSeed, checkpoint, and position-address paths compose. Easy-Sudoku
   opening at the frozen step500 gate still decides whether the trajectory is
   worth continuing.
+- Easy-stage optimization and hard global closure are distinct gates.
+  P-GDN3-004 reaches perfect h50 exact by loop2 at step3000, yet h53 loop5
+  exact/blank is only `0.003906/0.582658`. Position-address/payload
+  factorization is useful without being a scalable hard-Sudoku solution.
+- A positive slope cannot rescue a frozen threshold. From step1000 to step3000,
+  h53/h58/h64 loop5 blank rises by
+  `+0.028486/+0.015255/+0.061829`, and h53 gains a late-loop solve, but
+  both registered h53 alternatives `0.02/0.60` are still missed. Stop the
+  trajectory and preserve the learning signal without changing the decision.
+- Late-loop residual structure should determine the next mechanism, not a
+  nearby hyperparameter. P-GDN3-004 creates h53 exact only from loop3 and
+  reduces h64 wrong cells `31.74->26.28`. This makes the frozen checkpoint
+  a valid parent for innovation-residual FutureSeed, whose hypothesis is about
+  newly written state content rather than address strength or more training.

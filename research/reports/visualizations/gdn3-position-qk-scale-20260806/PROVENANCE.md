@@ -1,4 +1,4 @@
-# P-GDN3-004 Step500 Provenance
+# P-GDN3-004 Provenance
 
 - Source commit: `9f2ee8d1738032bc5f09b55db0b81d507780b376`
 - Source branch: `codex/gdn3-coherent-init-20260806`
@@ -35,3 +35,34 @@ The evaluator JSON and HTML summarize aggregate fixed probes only. They are not
 full official blank ranges and do not contain per-board predictions. The live
 launch log continues to grow remotely; `formal-through-step500.log` is the
 frozen local snapshot used by the hash above.
+
+## Step1000 Diagnostic And Step3000 Stop
+
+- Formal step1000 evaluator SHA256:
+  `ffc8d9261f4329d161131d3a3fe10cc65ae5f86e3bb142197bcc2600140e5761`
+- Formal step3000 evaluator SHA256:
+  `d71520ed1dc00abe14d6b52adae96f2eb58b8c212b818393912e9beced666217`
+- Formal step3000 checkpoint SHA256:
+  `6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`
+- Formal abort record SHA256:
+  `94d34ea215bfed053f424719891dc750f302ff91dc4f3f146b3c342aa318ddb8`
+- Stopped launch-log SHA256:
+  `675be197346a46bbe67ec1e874c3c8ea654ec58f419c956b879ac01b08cb06c3`
+- Stop time: `2026-08-06T19:32:13Z`
+- Stop identity: exact PGID/leader `128112`, Python child `128187`,
+  SIGTERM, no escalation
+- Registered decision: fail because h53 loop5 exact/blank
+  `0.003906/0.582658` is below both `0.02/0.60` alternatives
+- Integrity before stop: no NaN, OOM, fallback, source, data, SHA, or GPU drift
+
+Nineteen non-evaluation checkpoint intervals from step1100 through step3000
+average `735.785` seconds per 100 steps, equivalent to `17.396`
+effective boards/second, with `0.479%` interval CV. Training exposure at
+the stop is 384,000 effective boards, 31.104M board input cell tokens, and
+155.52M loop-cell evaluations.
+
+The step3000 HTML and summary again contain aggregate fixed probes only. They
+are not official blank-range evaluations and contain no per-board
+trajectories. The checkpoint remains eligible only as the preregistered
+P-FS3-001 parent because h53 exact is nonzero from loop3 onward and h64 has
+genuine loop-wise wrong-cell reduction.

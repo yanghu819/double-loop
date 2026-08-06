@@ -1,0 +1,43 @@
+{
+  "artifacts": {
+    "checkpoint_path": "/huyang2/double-loop/models/gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d/checkpoints/train_state_step003000.pt",
+    "checkpoint_sha256": "6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da",
+    "evaluation_path": "/huyang2/double-loop/runs/gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d/output/checkpoint_eval_step003000.json",
+    "evaluation_sha256": "d71520ed1dc00abe14d6b52adae96f2eb58b8c212b818393912e9beced666217",
+    "launch_log_path": "/huyang2/double-loop/artifacts/launch/p-gdn3-004/formal-9f2ee8d.log",
+    "launch_log_sha256_after_stop": "675be197346a46bbe67ec1e874c3c8ea654ec58f419c956b879ac01b08cb06c3"
+  },
+  "experiment_id": "P-GDN3-004",
+  "gate": {
+    "decision": "fail",
+    "holes53_loop5_blank": 0.5826578140258789,
+    "holes53_loop5_exact": 0.00390625,
+    "holes53_step1000_to_step3000_blank_delta": 0.028485894203186035,
+    "holes53_step1000_to_step3000_exact_delta": 0.00390625,
+    "holes53_wrong_cells_loop1": 23.925781726837158,
+    "holes53_wrong_cells_loop5": 22.119135856628418,
+    "loop_correction_met": true,
+    "positive_slope_met": true,
+    "primary_threshold_met": false,
+    "registered_rule": "holes53 loop5 exact >= 0.02 or blank >= 0.60, with positive step1000->3000 slope and loop-wise wrong-cell reduction",
+    "step": 3000
+  },
+  "integrity": {
+    "cuda_index": 0,
+    "gpu_uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519",
+    "nan_oom_fallback_scan": "clean_before_stop",
+    "source_sha": "9f2ee8d1738032bc5f09b55db0b81d507780b376"
+  },
+  "next_action": "archive P-GDN3-004 without rescue; P-FS3-001 may use step3000 as parent because hard exact is nonzero and appears only from loop3 onward",
+  "run": "gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d",
+  "schema_version": 1,
+  "status": "aborted_registered_gate_failure",
+  "stop": {
+    "leader_pid": 128112,
+    "pgid": 128112,
+    "python_child_pid": 128187,
+    "reason": "step3000 science gate miss; no rescue authorized",
+    "signal": "SIGTERM"
+  },
+  "stopped_at_utc": "2026-08-06T19:32:13Z"
+}

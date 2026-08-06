@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: step500 gate passed; formal trajectory continues unchanged
+- Status: stopped at the registered step3000 gate; archived without rescue
 - Date: 2026-08-06
 - Benchmark: official/full-diversity hard 9x9 Sudoku
 - Compute: AIStation task-mode GPU1 only
@@ -134,6 +134,61 @@ Decision: pass and continue the exact trajectory without intervention. Step1000
 is a scheduled diagnostic; step3000 is the next decision gate. No concurrent
 FutureSeed experiment or rescue variant is authorized while this run owns GPU1.
 
+## Step1000 Diagnostic And Step3000 Decision
+
+The scheduled step1000 diagnostic supplied the preregistered slope anchor.
+Holes53/58/64 loop5 exact remained zero, while loop5 blank accuracy was
+`0.554172/0.443730/0.527618`. On h64, blank accuracy rose
+`0.489899 -> 0.527618` across loops, reducing mean wrong cells
+`32.65 -> 30.23`. This was diagnostic evidence only and did not alter the
+trajectory.
+
+At step3000 the fixed probes continued to improve, but the registered hard
+opening threshold was not met:
+
+- h50 exact across loops1-5 is `0.464646/1/1/1/1`;
+- h53 exact is `0/0/0.003906/0.003906/0.003906`, blank accuracy is
+  `0.548570/0.576946/0.581073/0.583063/0.582658`, and mean wrong cells fall
+  `23.93 -> 22.12`;
+- h58 exact remains zero, blank accuracy changes
+  `0.441238 -> 0.458984`, and wrong cells fall `32.41 -> 31.38`;
+- h64 exact remains zero, blank accuracy changes
+  `0.504028 -> 0.589447`, and wrong cells fall `31.74 -> 26.28`.
+
+Relative to step1000, loop5 blank accuracy rises by
+`+0.028486/+0.015255/+0.061829` on h53/h58/h64, and h53 exact rises by
+`+0.003906`. The positive slope and loop-wise correction clauses therefore
+pass. The primary alternative does not: h53 loop5 exact/blank is
+`0.003906/0.582658`, below both registered floors `0.02/0.60`. A positive
+trajectory cannot substitute for the frozen threshold.
+
+Train CE/total/loop1 loss is `0.877711/0.901098/0.970328`, finite throughout.
+Training exposure is 384,000 effective boards, 31.104M board input cell
+tokens, and 155.52M loop-cell evaluations at 11,485,760 parameters. Nineteen
+independent non-evaluation checkpoint intervals from step1100 through step3000
+average `735.785` seconds per 100 steps, or `17.396` effective boards/second,
+with `0.479%` interval CV. The exact full-shape fit peak allocation remains
+`13,045.7 MiB`; formal live NVML sampled `17,491 MiB`. No endpoint allocator
+peak is inferred from NVML.
+
+The evaluator, checkpoint, abort record, and stopped launch-log SHA256 values
+are respectively `d71520ed1dc00abe14d6b52adae96f2eb58b8c212b818393912e9beced666217`,
+`6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`,
+`94d34ea215bfed053f424719891dc750f302ff91dc4f3f146b3c342aa318ddb8`,
+and `675be197346a46bbe67ec1e874c3c8ea654ec58f419c956b879ac01b08cb06c3`.
+There was no NaN, OOM, fallback, source, data, or GPU drift. Exact PGID
+`128112` was terminated with SIGTERM, `abort.json` was written, and no rescue
+was launched.
+
+Decision: fail P-GDN3-004 at step3000. Position-address/payload factorization
+is a strong optimizer and recurrent-correction carrier, but this full-size
+from-scratch realization does not open hard closure fast enough. The h53 solve
+appears first at loop3 and h64 removes 5.47 wrong cells by loop5, so the frozen
+step3000 checkpoint satisfies the preregistered parent requirement for
+P-FS3-001: nonzero hard exact plus genuine late-loop correction. The next test
+changes FutureSeed content representation, not address strength or training
+hyperparameters.
+
 ## Predictions And Gates
 
 - **Step500:** holes50 loop5 exact `>=0.60`, finite CE, and positive loop
@@ -153,10 +208,11 @@ position mechanism.
 
 ## Allowed Claim
 
-The step500 pass establishes position-address/payload factorization as the first
-full-size GDN3 candidate to combine private layer dynamics with faster easy-stage
-optimization and genuine loop correction. It does not establish hard scaling.
-That claim still requires the registered step3000/6000 gates and frozen endpoint
-official ranges. A later miss closes this mechanism at scale and moves the next
-test to the preregistered FutureSeed innovation representation rather than
-another address variant.
+The step500 pass establishes position-address/payload factorization as the
+first full-size GDN3 candidate to combine private layer dynamics with faster
+easy-stage optimization and genuine loop correction. The step3000 miss closes
+the scalable-hard-closure claim for this realization: it cannot be presented
+as a successful GDN3 scale result, despite positive blank slope and late-loop
+correction. Those residual signals authorize only the preregistered
+innovation-residual FutureSeed comparison from the frozen parent, not another
+position-address variant or a training rescue.

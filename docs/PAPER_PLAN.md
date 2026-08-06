@@ -43,7 +43,7 @@ from identity is about `1.41`, and some cross-basis singular values are below
 `0.01`. A free learned bridge would therefore be large and ill-conditioned,
 matching the failure mode already observed for arbitrary FS2 basis transport.
 
-P-GDN3-003 is the active architectural hypothesis: make Q/K/V coordinates
+P-GDN3-003 tested the architectural hypothesis of making Q/K/V coordinates
 exactly coherent at initialization, then let every layer specialize through
 independent parameters. Only Q/K/V projections and their short convolutions are
 copied from layer0 at construction; no parameters are tied or frozen, and the
@@ -61,23 +61,28 @@ is `0/0.1321`, with CE `2.0089`, versus P-GDN3-002 `0.7778/0.9853` and CE
 `0.0143`. Coordinate equality at birth therefore causes destructive deep-stack
 symmetry rather than useful co-adaptation. P-GDN3-003 is closed without rescue.
 
-P-GDN3-004 is the active scale test. It removes all cross-layer copying and uses
-the previously validated position-address/payload separation: canonical
-position drives Q/K while hidden content drives V and every state-edit/output
-gate. Every layer remains private, the official GDN2 recurrence and native
-FutureSeed are unchanged, and one D256/L12 full-diversity trajectory decides
-whether this stronger D192 mechanism scales to hard full-board exact. Its sole
-two-step fit passed at `11.486M` parameters with twelve pinned official-FLA
-GDN2/Triton layers, finite update/checkpoint, and active nonzero position-Q/K
-diagnostics. The formal SHA `9f2ee8d` trajectory passes its first claim-bearing
-step500 gate: h50 exact rises `0.3838 -> 0.8990` from loop1 to loop5, versus
-P-GDN3-002 loop5 `0.7778`, while train CE is `0.002967`. This establishes that
-stable addresses plus private payload dynamics avoid the shared/copy symmetry
-failures and improve iterative easy-stage optimization. It does not establish
-hard scaling: h53/h58/h64 exact is still zero, although h64 mean wrong cells
-fall `36.16 -> 34.04`. The trajectory therefore continues unchanged; step3000
-is the next claim-bearing hard gate and endpoint official ranges remain the
-only basis for a scalable-GDN3 claim.
+P-GDN3-004 closes the full-size position-address scaling hypothesis. It removes
+all cross-layer copying and uses the previously validated
+position-address/payload separation: canonical position drives Q/K while
+hidden content drives V and every state-edit/output gate. The formal SHA
+`9f2ee8d` trajectory strongly passes the easy step500 gate, with h50 exact
+`0.3838 -> 0.8990` across loops versus P-GDN3-002 loop5 `0.7778`. At
+step3000, however, h53 loop5 exact/blank is only
+`0.003906/0.582658`, missing both registered `0.02/0.60` alternatives.
+The miss is informative rather than flat: h53 exact first appears at loop3,
+h64 wrong cells fall `31.74 -> 26.28`, and step1000-to-step3000 hard blank
+slopes are positive. Stable position addresses therefore improve optimization
+and recurrent correction but do not solve hard global closure at this scale.
+The exact process group was stopped and archived without rescue.
+
+The sole next mechanism test is P-FS3-001. From the frozen P004 step3000 parent,
+it keeps the position-address GDN3 carrier fixed and changes only what native
+FutureSeed transports: an initially zero-weighted, RMS-bounded producer
+innovation orthogonal to the producer input seed. A strict identity, gradient,
+official-kernel and CUDA contract precedes one matched terminal/innovation
+100-step pair. The experiment asks whether inherited seed direction is
+crowding out newly written late-loop evidence; it is not an address-strength,
+duration, seed, loss, or width rescue.
 
 ## Working Title
 

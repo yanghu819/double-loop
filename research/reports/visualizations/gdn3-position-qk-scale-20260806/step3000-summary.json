@@ -1,0 +1,209 @@
+{
+  "decision": "fail_registered_step3000_gate",
+  "effective_batch": 128,
+  "experiment_id": "P-GDN3-004",
+  "fixed_probes": {
+    "50": {
+      "eval_n": 99,
+      "loops": [
+        {
+          "blank": 0.9818181991577148,
+          "exact": 0.46464645862579346,
+          "loop": 1,
+          "wrong_cells": 0.9090900421142578
+        },
+        {
+          "blank": 1.0,
+          "exact": 1.0,
+          "loop": 2,
+          "wrong_cells": 0.0
+        },
+        {
+          "blank": 1.0,
+          "exact": 1.0,
+          "loop": 3,
+          "wrong_cells": 0.0
+        },
+        {
+          "blank": 1.0,
+          "exact": 1.0,
+          "loop": 4,
+          "wrong_cells": 0.0
+        },
+        {
+          "blank": 1.0,
+          "exact": 1.0,
+          "loop": 5,
+          "wrong_cells": 0.0
+        }
+      ]
+    },
+    "53": {
+      "eval_n": 512,
+      "loops": [
+        {
+          "blank": 0.5485701560974121,
+          "exact": 0.0,
+          "loop": 1,
+          "wrong_cells": 23.925781726837158
+        },
+        {
+          "blank": 0.5769457817077637,
+          "exact": 0.0,
+          "loop": 2,
+          "wrong_cells": 22.421873569488525
+        },
+        {
+          "blank": 0.5810731053352356,
+          "exact": 0.00390625,
+          "loop": 3,
+          "wrong_cells": 22.203125417232513
+        },
+        {
+          "blank": 0.5830630660057068,
+          "exact": 0.00390625,
+          "loop": 4,
+          "wrong_cells": 22.09765750169754
+        },
+        {
+          "blank": 0.5826576948165894,
+          "exact": 0.00390625,
+          "loop": 5,
+          "wrong_cells": 22.119142174720764
+        }
+      ]
+    },
+    "58": {
+      "eval_n": 512,
+      "loops": [
+        {
+          "blank": 0.4412378668785095,
+          "exact": 0.0,
+          "loop": 1,
+          "wrong_cells": 32.40820372104645
+        },
+        {
+          "blank": 0.45750269293785095,
+          "exact": 0.0,
+          "loop": 2,
+          "wrong_cells": 31.464843809604645
+        },
+        {
+          "blank": 0.45922011137008667,
+          "exact": 0.0,
+          "loop": 3,
+          "wrong_cells": 31.365233540534973
+        },
+        {
+          "blank": 0.4589506983757019,
+          "exact": 0.0,
+          "loop": 4,
+          "wrong_cells": 31.38085949420929
+        },
+        {
+          "blank": 0.458984375,
+          "exact": 0.0,
+          "loop": 5,
+          "wrong_cells": 31.37890625
+        }
+      ]
+    },
+    "64": {
+      "eval_n": 512,
+      "loops": [
+        {
+          "blank": 0.5040283203125,
+          "exact": 0.0,
+          "loop": 1,
+          "wrong_cells": 31.7421875
+        },
+        {
+          "blank": 0.579437255859375,
+          "exact": 0.0,
+          "loop": 2,
+          "wrong_cells": 26.916015625
+        },
+        {
+          "blank": 0.587860107421875,
+          "exact": 0.0,
+          "loop": 3,
+          "wrong_cells": 26.376953125
+        },
+        {
+          "blank": 0.58929443359375,
+          "exact": 0.0,
+          "loop": 4,
+          "wrong_cells": 26.28515625
+        },
+        {
+          "blank": 0.589447021484375,
+          "exact": 0.0,
+          "loop": 5,
+          "wrong_cells": 26.275390625
+        }
+      ]
+    }
+  },
+  "gate": {
+    "action": "stopped exact PGID 128112; archived abort; no rescue",
+    "holes53_loop5_blank": 0.5826576948165894,
+    "holes53_loop5_exact": 0.00390625,
+    "loop_wise_wrong_cell_reduction_met": true,
+    "positive_slope_met": true,
+    "primary_threshold_met": false,
+    "registered": "holes53 loop5 exact >= 0.02 or blank >= 0.60, with positive step1000-to-step3000 slope and loop-wise wrong-cell reduction"
+  },
+  "hashes": {
+    "abort_sha256": "94d34ea215bfed053f424719891dc750f302ff91dc4f3f146b3c342aa318ddb8",
+    "step1000_evaluator_sha256": "ffc8d9261f4329d161131d3a3fe10cc65ae5f86e3bb142197bcc2600140e5761",
+    "step3000_checkpoint_sha256": "6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da",
+    "step3000_evaluator_sha256": "d71520ed1dc00abe14d6b52adae96f2eb58b8c212b818393912e9beced666217",
+    "stopped_launch_log_sha256": "675be197346a46bbe67ec1e874c3c8ea654ec58f419c956b879ac01b08cb06c3"
+  },
+  "independent_checkpoint_timing": {
+    "effective_boards_per_sec": 17.396383,
+    "interval_cv": 0.00479,
+    "mean_sec_per_100_steps": 735.785132,
+    "median_sec_per_100_steps": 735.194539,
+    "window": "step1100_to_step3000, 19 non-eval 100-step intervals"
+  },
+  "integrity": {
+    "cuda_index": 0,
+    "gpu_uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519",
+    "nan_oom_fallback": "none",
+    "pinned_fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+    "source_data_gpu_drift": "none"
+  },
+  "memory": {
+    "formal_endpoint_peak_allocated_mib": null,
+    "formal_live_nvml_sample_mib": 17491,
+    "full_shape_fit_peak_allocated_mib": 13045.7
+  },
+  "parameters": 11485760,
+  "run": "gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d",
+  "schema_version": 1,
+  "scope_note": "Aggregate fixed-condition probes only; not full official ranges and no same-board trajectories.",
+  "source_sha": "9f2ee8d1738032bc5f09b55db0b81d507780b376",
+  "step": 3000,
+  "step1000_to_step3000": {
+    "effective_boards_per_sec": 17.401233654268964,
+    "elapsed_sec": 14711.600630521774,
+    "holes53_blank_delta": 0.028486132621765137,
+    "holes53_exact_delta": 0.00390625,
+    "holes58_blank_delta": 0.015254586935043335,
+    "holes64_blank_delta": 0.06182861328125
+  },
+  "train": {
+    "ce_loss": 0.8777111321687698,
+    "finite": true,
+    "loop1_loss": 0.9703278839588165,
+    "loop_last_loss": 0.8777111321687698,
+    "total_loss": 0.9010982066392899
+  },
+  "training_exposure": {
+    "board_input_cell_tokens": 31104000,
+    "effective_boards": 384000,
+    "loop_cell_evaluations": 155520000,
+    "optimizer_steps": 3000
+  }
+}

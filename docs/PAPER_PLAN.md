@@ -846,3 +846,27 @@ not an empirical systems result. A credible cheapness claim now requires a new
 long-context model with valid positional support and a quality-preserving
 crossover curve. Do not rescue this frozen endpoint with systems or hyperparameter
 tuning.
+
+### P-FS3-001 Orthogonal Innovation Boundary
+
+The exact matched step3000-to3100 test separates implementation activity from
+architectural value. The candidate adds only 80 zero-initialized layer/head
+scalars and preserves exact native FutureSeed output at initialization. Its
+strict CUDA contract, position-QK path, pinned official-FLA/Triton backward,
+checkpoint migration, and both arm exits all pass.
+
+The mechanism activates by step3100: loop5 mean `abs(tanh(alpha))` is
+`0.010348`, the orthogonal component carries `0.866` of terminal RMS, and
+the injected residual is `0.010348` of terminal RMS. Nevertheless, official
+51-64 macro loop5 exact remains `0.000651` in both arms, mixed exact remains
+`0.025391`, and all three hard-range blank accuracies move slightly down.
+Same selected-board correction is not consistently stronger. The small CE
+change `0.858617->0.857070` is not a solve signal.
+
+The paper must not claim that separating state innovation orthogonal to the
+inherited seed improves FutureSeed. The useful negative result is narrower:
+analytic direction separation is insufficient even when active and exact at
+initialization. Close scale/floor/rank/seed/LR/loss/duration rescue. A future
+content mechanism must learn a shared producer compression/update code and
+earn a new board-level gate; it cannot be presented as a tuned P-FS3-001
+variant.

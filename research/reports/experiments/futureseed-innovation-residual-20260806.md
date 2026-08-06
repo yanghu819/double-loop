@@ -2,8 +2,13 @@
 
 ## 1. Metainfo
 
-- Status: approved successor; implementation prepared, no GPU run launched
+- Status: discarded after the registered matched-pair decision
 - Date: 2026-08-06
+- Source SHA:
+  `3e167b6f779065fee50b2b19107c3c5baa7088ee`
+- Branch: `codex/fs3-producer-codec-20260807`
+- Control/candidate endpoint: exact resume from step3000 to step3100
+- Decision time: 2026-08-07 05:01 CST
 - Benchmark: official/full-diversity hard 9x9 Sudoku
 - Compute: AIStation task-mode GPU1 only
 - Seed: 52 only
@@ -72,26 +77,54 @@ closed. The control never sets this authorization flag.
 
 ## 5. Commands
 
-Commands and immutable source/checkpoint hashes remain intentionally blank
-until P-GDN3-004 resolves. Before either continuation arm, run exactly one CUDA
-contract using `check_futureseed_innovation_cuda.py`. It must verify:
+The exact launch commands and environment are frozen in:
 
-- one visible target UUID;
-- exact zero-init model-output and every-layer terminal-state identity;
-- parameter delta exactly `(L-2)*H`;
-- nonzero finite innovation-scale gradient;
-- bounded orthogonal residual formula;
-- active position-QK path when composed with P004;
-- `ChunkGDN2FunctionBackward`, pinned FLA/Triton, and no fallback.
+- `/huyang2/double-loop/artifacts/launch/p-fs3-001/contract-3e167b6.log`
+- `/huyang2/double-loop/artifacts/launch/p-fs3-001/matched-pair-20260806T200859Z-3e167b6.log`
+- `/huyang2/double-loop/runs/p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6/config.json`
+- `/huyang2/double-loop/runs/p-fs3-001-innovation-s3100-20260806T200859Z-3e167b6/config.json`
 
-No model process starts while P-GDN3-004 is healthy.
+Both arms used `--resume_require_exact_state` from:
+
+`/huyang2/double-loop/models/gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d/checkpoints/train_state_step003000.pt`
+
+with SHA256
+`6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`
+and parent source
+`9f2ee8d1738032bc5f09b55db0b81d507780b376`. Only the candidate
+set `future_seed_content_mode=innovation_residual` and
+`--resume_allow_future_seed_content_upgrade`.
+
+The original sequence wrapper checked the nonexistent output name
+`futureseed_loop_metrics_seed52.json` after the control completed. The actual
+registered output is `futureseed_loop_seed52.json`, so the wrapper exited
+status1 before launching the candidate. This was an orchestration postcondition
+bug, not a model or integrity failure. The candidate was immediately launched
+with the exact registered command and unchanged parent/configuration.
 
 ## 6. Artifacts
 
 - Implementation: `experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py`
 - CUDA contract: `experiments/rwkv_fs_sudoku/check_futureseed_innovation_cuda.py`
-- Run config, logs, score JSON, checkpoints, source snapshot, and loop
-  visualization: pending the registered launch
+- Control run:
+  `/huyang2/double-loop/runs/p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
+- Candidate run:
+  `/huyang2/double-loop/runs/p-fs3-001-innovation-s3100-20260806T200859Z-3e167b6`
+- Matched decision and same-board visualization:
+  `/huyang2/double-loop/runs/p-fs3-001-comparison-20260806T210100Z-3e167b6/comparison.json`
+  and `comparison.html`
+- Decision JSON SHA256:
+  `53979f922f5ed7cd9f633ba61074f45eef2188c3ac4a39216d7d843658623b8b`
+- Control metric/checkpoint SHA256:
+  `7c0bbc1a97485748d2788cf119e744de5c13bf6d6aa3c58faed227a7c4b606b8` /
+  `2b9046fa54e4f094eeadee2f88556bc920743ad3e4f9e160d3084d6658fbe294`
+- Candidate metric/checkpoint SHA256:
+  `88c6ee0b1258527be7c9ef4fa4c30360c277dac862ff2f8d6bcae4da8a4a461f` /
+  `35aa4b94e976f91cf53b31d7379fc10589532dcfb043f3500d84046fc3d74c9e`
+- Source snapshot SHA256 (both arms):
+  `318110ff394c2547e9b4a13a5f17fede7a5bfcf3705f53466aa3374a595ad230`
+- Full path/hash manifest:
+  `/huyang2/double-loop/runs/p-fs3-001-comparison-20260806T210100Z-3e167b6/manifest.sha256`
 
 ## 7. Predictions And Gates
 
@@ -116,13 +149,64 @@ blank-only gain without stronger exact/loop correction, NaN/OOM/fallback, or
 cost miss. Do not rescue with innovation scale initialization, floor, seed, LR,
 loss, batch, width, duration, or another projection variant.
 
+### 7.1 Matched result
+
+Integrity and activation pass. The contract verified exact zero-init identity,
+the pinned FLA/Triton path, active position-QK, finite backward, and the exact
+80-parameter delta. Both arms completed with status0 and no
+NaN/OOM/fallback/SHA/data/GPU drift. At loop5 the candidate has mean
+`abs(tanh(alpha))=0.010348`, innovation fraction `0.866`, and residual
+relative RMS `0.010348`.
+
+The quality gates fail:
+
+| Metric | Terminal control | Innovation candidate | Delta |
+|---|---:|---:|---:|
+| hard 51-64 macro loop5 exact | 0.000651 | 0.000651 | +0.000000 |
+| mixed loop5 exact | 0.025391 | 0.025391 | +0.000000 |
+| 51-55 loop5 blank | 0.573766 | 0.573623 | -0.000143 |
+| 56-60 loop5 blank | 0.503861 | 0.502316 | -0.001544 |
+| 61-64 loop5 blank | 0.591923 | 0.591404 | -0.000519 |
+| train CE | 0.858617 | 0.857070 | -0.001547 |
+
+Official exact across loops1-5 is identical between arms:
+
+- 51-55: `0/0/0.001953/0.001953/0.001953`
+- 56-60: `0/0/0/0/0`
+- 61-64: `0/0/0/0/0`
+
+The candidate therefore does not convert its small CE change into an additional
+board solve. Same selected-board evidence also rejects the alternate route:
+
+| Range | Shared boards | Control wrong cells loops1-5 | Candidate wrong cells loops1-5 |
+|---|---:|---|---|
+| 51-55 | 11 | 15.27 / 8.73 / 6.45 / 5.27 / 5.27 | 15.45 / 9.09 / 6.36 / 5.73 / 5.27 |
+| 56-60 | 10 | 17.50 / 8.90 / 5.80 / 5.40 / 5.20 | 17.20 / 9.10 / 6.20 / 5.60 / 5.50 |
+| 61-64 | 7 | 28.43 / 18.71 / 16.29 / 16.14 / 15.71 | 28.14 / 18.29 / 16.14 / 15.43 / 15.57 |
+
+Only 51-55 has a slightly larger loop1-to-loop5 reduction, while 56-60 and
+61-64 do not. That cannot satisfy the all-range same-board clause.
+
+The fresh-process 100-step continuation averages are `15.497` versus
+`13.963` effective boards/s: candidate elapsed time is `+10.98%`, just
+outside the registered `<10%` cost gate. Peak allocated memory is
+`13,186.4 -> 13,875.6 MiB` (`+5.23%`), so memory remains acceptable.
+These 100-step averages amortize first-shape compilation but are not a separate
+standalone timing benchmark; quality already makes the decision invariant.
+
 ## 8. Conclusions
 
-Pending. A pass would support a specific FutureSeed3 claim: separating newly
-written recurrent evidence from inherited state direction improves cross-layer
-future-information transfer while preserving the native state coordinates. A
-miss closes orthogonal innovation emphasis and redirects to a learned producer
-compression formulation, not another scalar/content gate or basis adapter.
+Discard P-FS3-001. The candidate is alive and numerically well behaved, but
+emphasizing the component orthogonal to the inherited seed does not improve
+hard exact, mixed exact, or broad same-board correction. The negative result is
+therefore about the content hypothesis, not dead gradients or a broken kernel.
+
+Do not rescue with alpha initialization, scale, floor, rank, seed, LR, loss,
+batch, width, duration, or another analytic residual. The next mechanism must
+learn a shared producer compression/update code with materially more expressive
+content selection while preserving exact zero-init identity and official
+recurrence. It must be preregistered as a new mechanism question, not a
+continuation of this scalar gate.
 
 ## 9. Submission Record
 

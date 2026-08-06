@@ -2111,3 +2111,19 @@
   reduces h64 wrong cells `31.74->26.28`. This makes the frozen checkpoint
   a valid parent for innovation-residual FutureSeed, whose hypothesis is about
   newly written state content rather than address strength or more training.
+- Exact zero-init identity and nonzero gradients separate implementation
+  validity from scientific value. P-FS3-001 activates to
+  `abs(tanh(alpha))=0.010348` with innovation fraction `0.866`, yet hard
+  macro and mixed exact both move by exactly zero. A live mechanism can still
+  test the wrong decomposition.
+- Orthogonality to the inherited state is not a useful enough proxy for
+  producer-written evidence on this carrier. It slightly regresses all three
+  official hard-range blank accuracies and does not improve same-board
+  loop correction consistently. Do not tune the scale, floor, or projection.
+- Small CE movement is not closure. Candidate CE improves by only `0.00155`
+  while every hard exact count is unchanged. Require board-level decisions and
+  same-board loop evidence before promoting a FutureSeed content mechanism.
+- Keep orchestration failures separate from science failures. The first wrapper
+  stopped after a successful control because it checked the wrong JSON
+  filename; exact recovery preserved the preregistered candidate. Archive the
+  incident, but do not contaminate the mechanism decision or rerun the control.

@@ -2,8 +2,7 @@
 
 ## Status
 
-- Status: CUDA contract and two-step full-runner fit passed; sole formal
-  trajectory in progress
+- Status: discarded at preregistered step500 carrier gate
 - Date: 2026-08-06
 - Benchmark: official/full-diversity 9x9 Sudoku, 51-64 blank scaling cliff
 - Compute: AIStation task-mode GPU1 only
@@ -153,12 +152,21 @@ The sole registered trajectory launched at `2026-08-06T11:10:38Z`:
 - launch log:
   `/huyang2/double-loop/artifacts/launch/p-gdn3-003/formal-ccd8897.log`.
 
-The run has cleared first-shape compilation and reached step100 with train CE
-`2.0159`; `train_state_step000100.pt` was written successfully. The health
-sample sees only the registered CUDA UUID, about `16.8 GiB` in use, a live
-high-load Python process, and no NaN, OOM, fallback, traceback, or source drift.
-No concurrent GPU evaluator or second experiment is running. Step100 is an
-engineering-health observation, not a science gate or quality claim.
+The run cleared first-shape compilation and remained finite, but failed the
+first registered science gate. At frozen step500, holes50 loop5 exact/blank is
+`0/0.1321`; loops1-5 exact are all zero and blank accuracy remains
+`0.1319/0.1305/0.1317/0.1325/0.1321`. Train CE is `2.0089`. The matched
+P-GDN3-002 readout at the same step is exact/blank `0.7778/0.9853` and CE
+`0.0143`.
+
+The completed gate was detected after the process had reached step800. The
+supervisor wrote `abort.json` and sent SIGTERM only to formal PGID `125922`;
+the process group exited and GPU allocation returned to zero. There was no
+NaN, OOM, fallback, source drift, or infrastructure fault. This is a clean
+mechanism failure: exact coordinate equality at birth creates a symmetric deep
+stack that does not specialize quickly enough to open even the easy carrier.
+No seed, LR, loss, width, initialization-strength, or partial-sharing rescue is
+authorized.
 
 ## Science Gates
 

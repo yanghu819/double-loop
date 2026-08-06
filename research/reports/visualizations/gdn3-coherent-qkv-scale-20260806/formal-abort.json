@@ -1,0 +1,37 @@
+{
+  "decision": "discard coherent_qkv initialization; no seed/LR/loss/batch/width/init-strength/partial-sharing rescue",
+  "experiment_id": "P-GDN3-003",
+  "matched_reference": {
+    "checkpoint_step": 500,
+    "experiment_id": "P-GDN3-002",
+    "holes50_loop5_blank_accuracy": 0.9852524995803833,
+    "holes50_loop5_exact": 0.7777777910232544,
+    "train_ce": 0.014289866317994893
+  },
+  "observed": {
+    "checkpoint_step": 500,
+    "elapsed_sec_at_gate": 3507.5366790294647,
+    "holes50_loop1_blank_accuracy": 0.13191919028759003,
+    "holes50_loop1_exact": 0.0,
+    "holes50_loop5_blank_accuracy": 0.13212120532989502,
+    "holes50_loop5_exact": 0.0,
+    "latest_training_step_before_stop": 800,
+    "nan_oom_fallback": false,
+    "train_ce": 2.0088679790496826
+  },
+  "reason": "preregistered_step500_science_gate_failed",
+  "registered_gate": {
+    "finite_ce_required": true,
+    "holes": 50,
+    "label_exact_min": 0.6,
+    "loop": 5
+  },
+  "run_name": "gdn3-coherent-qkv-d256l12-s12000-20260806T111038Z-ccd8897",
+  "source_sha": "ccd889798ecdfc9e114014699087de7bcc9ac7af",
+  "termination": {
+    "python_pid": 125990,
+    "signal": "SIGTERM",
+    "target_pgid": 125922
+  },
+  "timestamp_utc": "2026-08-06T12:56:30.452589+00:00"
+}

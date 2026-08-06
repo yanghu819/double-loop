@@ -52,13 +52,21 @@ tests whether compatibility is most useful as an optimization scaffold rather
 than a permanent mature constraint, with zero added parameters or inference
 operations.
 
-The engineering gate is now passed. Exact initialization equality, distinct
+The engineering gate passed. Exact initialization equality, distinct
 parameter storage, unchanged parameter count, private output projections,
 official FLA/Triton backward, finite gradients, and measurable specialization
-after one optimizer step were all verified on the registered GPU1. A separate
-two-step D256/L12 production-runner fit also completed without fallback or OOM.
-The sole 12k seed52 formal trajectory is active from clean pushed SHA `ccd8897`;
-no quality claim is made before its registered step500 science gate.
+after one optimizer step were all verified on the registered GPU1. However,
+the full trajectory fails its step500 carrier gate: holes50 loop5 exact/blank
+is `0/0.1321`, with CE `2.0089`, versus P-GDN3-002 `0.7778/0.9853` and CE
+`0.0143`. Coordinate equality at birth therefore causes destructive deep-stack
+symmetry rather than useful co-adaptation. P-GDN3-003 is closed without rescue.
+
+P-GDN3-004 is the next scale test. It removes all cross-layer copying and uses
+the previously validated position-address/payload separation: canonical
+position drives Q/K while hidden content drives V and every state-edit/output
+gate. Every layer remains private, the official GDN2 recurrence and native
+FutureSeed are unchanged, and one D256/L12 full-diversity trajectory decides
+whether this stronger D192 mechanism scales to hard full-board exact.
 
 ## Working Title
 

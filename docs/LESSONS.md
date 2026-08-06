@@ -85,6 +85,17 @@
   divergence after one optimizer step. This is evidence that the intervention
   is a temporary optimization scaffold rather than hidden weight tying; it is
   not yet evidence of better Sudoku quality, which remains gated at step500.
+- Mechanical viability was misleading in P-GDN3-003. Despite exact equality,
+  distinct storage, finite gradients, and measurable one-step divergence, the
+  full model remains near chance at step500: holes50 loop5 exact/blank
+  `0/0.1321` and CE `2.0089`. Deep layers initialized as identical Q/K/V and
+  convolution operators form a harmful optimization symmetry; tiny early
+  divergence is not enough for functional specialization. Do not rescue with
+  partial copying or initialization strength.
+- The next scale candidate must preserve private layer diversity from step0.
+  Position-address/payload separation already has a strong matched D192 signal
+  (`+0.2296` mean hard blank), so its one D256/L12 full-budget test has higher
+  decision value than another cross-layer-sharing variant.
 
 ## 2026-06-03 GPU1 bootstrap
 

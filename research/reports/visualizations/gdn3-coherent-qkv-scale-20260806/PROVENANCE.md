@@ -16,8 +16,15 @@
 - Formal run:
   `gdn3-coherent-qkv-d256l12-s12000-20260806T111038Z-ccd8897`
 - Formal process group/Python at launch: `125922/125990`
+- Formal step500 evaluator SHA256:
+  `4927b43cfef78ac762bbdfb43413aacc50d5eb1b70e7880bc99bbd1a597755e9`
+- Formal abort record SHA256:
+  `3716e0d092b74cdc88808a6a4646c45a57361c138b759a2fe4644bc79b40ff1b`
+- Final formal launch-log SHA256:
+  `3f9095a17292c61208323fd77064e3775b6266be73cd12c9645da25959cb84e8`
 
 The 67 MiB source snapshot remains in the remote fit run directory. Git stores
 the exact source commit, source HEAD, contract, configuration, score, logs, and
 evaluator/visualization outputs rather than duplicating the generated archive.
-The formal log is intentionally not copied while it is still being written.
+The stopped formal log, frozen step500 evaluator JSON, exact abort record,
+configuration, and source HEAD are included in this directory.

@@ -2160,6 +2160,29 @@
   gives exact terminal identity, independent K/V permutation tests rule out a
   hidden fixed basis, and `abs(residual)<=abs(T-I)` prevents the router from
   manufacturing an unbounded update under a new name.
+- Address-conditioned structure does matter locally. P-FS3-003 grows a live
+  loop5 residual to `0.012122` relative RMS, improves official61-64 blank by
+  `+0.005464`, and reduces mean loop5 wrong cells `26.43->26.06`; 121/256
+  hardest-range boards improve versus 78 regress. This is materially better
+  than pooling all K rows to one payload, even though it is not a solve result.
+- Local wrong-cell gains still cannot substitute for full-board closure.
+  P-FS3-003 leaves hard51-64 macro exact at `0.000651` and mixed exact at
+  `0.025391`, while 51-55 and 56-60 blank accuracy regress. Report the
+  61-64 signal as a structural diagnostic, not a promoted FutureSeed method.
+- Three active transfer-side content variants now share the same failure:
+  orthogonal innovation, one-payload learned compression, and address-local
+  routing all leave hard exact unchanged. Stop adding nearby FutureSeed
+  residuals or gates; the next falsifier must change the generic GDN recurrent
+  memory/state update itself.
+- Tiny modules can remain expensive when inserted at every recurrent state
+  handoff. P-FS3-003 adds only 35 parameters and keeps peak allocation overhead
+  to `+5.86%`, yet elapsed overhead is `+15.66%`. A low parameter count is not
+  a systems argument.
+- Pre-model orchestration errors are recoverable only when provenance proves
+  that no model path ran. The missing FLA PYTHONPATH and nested-quote wrapper
+  failures both occurred before model construction, were recorded as
+  non-science aborts, and did not justify changing or rerunning the registered
+  experiment.
 - The global endpoint is the sum of explicit curriculum stages. The first
   P-FS3-002 full-stack probe used `--steps=3001` but inherited a longer
   `HOLE_STAGES` sum and therefore continued to3006. Stop it exactly, record a

@@ -75,16 +75,18 @@ slopes are positive. Stable position addresses therefore improve optimization
 and recurrent correction but do not solve hard global closure at this scale.
 The exact process group was stopped and archived without rescue.
 
-P-FS3-001 and P-FS3-002 close two candidate content interfaces. An active
-orthogonal innovation residual leaves hard exact unchanged, and a live learned
-producer codec also leaves exact unchanged while collapsing 32 K address rows
-to one nearly uniform payload and exceeding the cost gates. The sole next
-mechanism test is P-FS3-003: preserve every K row and full V payload, and learn
-only a bounded row-local gain on the actual producer update. Its zero-init,
-permutation, update-bound, exact-resume, official-kernel, and CUDA contracts
-must pass before one candidate-only 100-step continuation. This is a direct
-address-preservation falsifier, not a payload-count, router-width, scale,
-duration, seed, loss, or model-size rescue.
+P-FS3-001 through P-FS3-003 close three candidate FutureSeed content
+interfaces. Orthogonal innovation and single-payload producer compression are
+active but leave hard exact unchanged. Address-local routing then preserves
+all K rows and full V payloads and learns a substantially larger live residual
+(`0.012122` relative RMS). It improves official61-64 blank accuracy by
+`+0.005464` and reduces same-board wrong cells broadly, but hard macro and
+mixed exact remain unchanged while 51-60 blank accuracy regresses and elapsed
+overhead reaches `+15.66%`. This isolates a useful paper boundary: preserving
+address-conditioned producer structure helps local hardest-tail correction,
+but another FutureSeed-side residual/router is not the missing global-closure
+mechanism. The next experiment should change the generic GDN recurrent
+memory/state update itself, not tune these interfaces.
 
 ## Working Title
 
@@ -902,7 +904,7 @@ to one nearly uniform message. A successor must preserve address-conditioned
 multi-part state or change the generic recurrent memory/update, and cannot be
 presented as a payload-count or decoder-width sweep.
 
-### P-FS3-003 Address-Local Update Preregistration
+### P-FS3-003 Address-Local Update Boundary
 
 P-FS3-003 isolates the structural prediction left by the failed single-payload
 codec. For every producer address row, it observes generic terminal/update
@@ -910,11 +912,24 @@ statistics and applies one shared bounded scalar to that row's full V update.
 It never pools K rows, invents a payload basis, or adds a cell-wise decoder.
 The 35-parameter feature-sized router is shared across all layers and heads;
 its final projection is zero initialized, and its residual is elementwise
-bounded by the actual producer update.
+bounded by the actual producer update. Identity, migration, gradient,
+permutation, exact-resume, official-FLA/Triton, source, data, and GPU contracts
+all pass.
 
-The paper may use this experiment only as a clean test of whether preserving
-address-conditioned update structure improves FutureSeed. Promotion requires
-nonuniform per-board/per-row activation, a preregistered board-level exact or
-mixed-exact gain with stronger late-loop correction, and less than 10 percent
-time and allocated-memory overhead. Any miss closes the exact router without a
-feature, width, scale, seed, optimizer, loss, duration, or model-size table.
+The router activates strongly. At loop5, mean row gain is `0.014254`, row and
+board standard deviations are `0.003989/0.001069`, and update/residual relative
+RMS is `0.898864/0.012122`. Compared with the frozen terminal control,
+official61-64 blank improves `0.591923->0.597387`; its mean wrong cells fall
+`26.43->26.06`, and 121/256 boards improve versus 78 regress. This confirms
+the prediction that keeping address-local producer structure is better than
+collapsing it to one payload on the hardest tail.
+
+It still fails the registered claim. Hard51-64 macro loop5 exact remains
+`0.000651`, mixed exact remains `0.025391`, and 51-55/56-60 blank changes
+`-0.000895/-0.001888`. Elapsed overhead is `+15.66%`, despite only
+`+5.86%` peak-allocation overhead. The paper may report the address-local
+blank/wrong-cell signal only as a negative mechanism boundary, not as improved
+FutureSeed closure. Close feature, router-width, gain, layer/head-specific,
+seed, optimizer, loss, duration, and model-size rescue. A successor must alter
+generic GDN memory/state dynamics rather than add a fourth transfer-side
+content transform.

@@ -2,9 +2,10 @@
 
 ## 1. Metainfo
 
-- Status: approved; CUDA contract and one-step full-stack probe pending
+- Status: discarded; strict matched decision complete
 - Date: 2026-08-07
 - Branch: `codex/fs3-address-local-update-20260807`
+- Formal source SHA: `8372387d2cc352f65b6b6649d963d71999e32ec3`
 - Benchmark: official/full-diversity hard 9x9 Sudoku
 - Compute: AIStation task-mode GPU1 only
 - GPU UUID: `GPU-53e9f3b4-2966-65d3-6614-09c540921519`
@@ -16,6 +17,8 @@
   `6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`
 - Frozen matched control:
   `p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
+- Formal candidate:
+  `p-fs3-003-address-local-s3100-20260806T231831Z-8372387`
 
 The formal source SHA is the pushed commit used to build the clean detached
 AIStation worktree. It must be recorded in the run-local config and may not be
@@ -109,38 +112,143 @@ checkpoint and metrics JSON, exercise the official CUDA path, and show finite
 nonzero router/output gradients. The formal command is the same launcher
 without `FS3_FULL_STACK_PROBE=1`.
 
-## 6. Artifacts
+## 6. Artifacts And Integrity
 
-Pending contract/probe/formal execution. Every log, status, resolved config,
-source snapshot, checkpoint, metrics JSON, same-board export, and SHA256 must
-remain below `/huyang2/double-loop` and be recorded here after completion.
+The pushed source was checked out as clean detached SHA `8372387` at
+`/huyang2/double-loop/worktrees/p-fs3-003-8372387`. CUDA index0 exposed only
+the registered UUID. The strict contract proved:
 
-## 7. Registered Decision Gates
+- 12/12 pinned official-FLA `GatedDeltaNet2` layers and
+  `ChunkGDN2FunctionBackward` with Triton convolution;
+- bit-exact output and all 12 terminal states at zero initialization;
+- exactly three migrated router tensors and a 35-parameter delta;
+- finite nonzero gradients for every router tensor after opening the output;
+- independent K-row/V-column permutation error `2.3842e-07`;
+- zero elementwise update-bound error.
 
-Activation at step3100 requires all of:
+The corrected step3001 full-stack probe exited0, accepted the exact parent,
+saved exactly step3001, and activated the official CUDA path. Its metrics and
+checkpoint SHA256 are
+`9fa6f8d1c2fbad7b8b184182182faab95c00a22dd37953f54347bd22d3d4d7bb`
+and `2212c6a2f5a906ea7e2de2cb7660100680aae055e4e0bebd96b10df00c26d2d6`.
+The earlier contract PYTHONPATH miss and probe-wrapper quoting miss both
+occurred before model construction; each has a non-science abort record and
+neither contributed data.
 
-- mean absolute row gain at least `1e-4`;
-- finite nonzero within-state K-row gain standard deviation;
-- finite nonzero between-board gain standard deviation;
-- finite nonzero residual relative RMS and between-board residual variation.
+The formal run exited0. There was no NaN, OOM, fallback, source drift, data
+drift, second compute app, or GPU UUID drift. Primary candidate artifacts are:
 
-Primary quality passes only if hard official51-64 macro loop5 exact improves
-by at least `+0.02` over the frozen control and no official 51-55, 56-60, or
-61-64 loop5 blank accuracy regresses by more than `0.01`.
+- metrics SHA256:
+  `2c6cad78427a40af7730a7f5653ccd78edd41884168c0f864d12cdb0b5fccdb7`;
+- step3100 checkpoint SHA256:
+  `a5fb6f355d562089758be988956f9d412d0f4f729955b7eb68f69877f3a5b281`;
+- resolved config SHA256:
+  `f3fad3c25345cd662073038987e5f0a6ecb222264b3e62c7ee2fcc6ac99e8cc3`;
+- run log SHA256:
+  `7108d0a8164765160304d179678dfe7efdadf14fda4f9e114df0b16b7af54d6c`;
+- source snapshot SHA256:
+  `46fdf59912b540f75b802da037e6f88f3372508500d13792a1706d52d6ecfb80`.
 
-The alternate route requires mixed loop5 exact at least `+0.03`, non-regressive
-official61-64 exact, and stronger same-board loop3-to5 wrong-cell correction.
-Fresh-process elapsed overhead and peak allocated-memory overhead must both be
+The machine-readable matched comparison and hardest same-board HTML are under
+`/huyang2/double-loop/runs/p-fs3-003-comparison-20260806T234200Z-8372387`.
+Their SHA256 values are
+`e4b80fb3287d18e36769c05bb258d34743f9a2466e81ddbe3fc352fff34a5aaf`
+and `3d0d97012ae7b2609cb5c087659e46af6a3c8ac0e85bdeb64157c8714ebd9c56`.
+The manifest validates the JSON, HTML, and archived builder.
+
+## 7. Formal Results
+
+### 7.1 Registered Decision Gates
+
+Activation requires mean absolute row gain at least `1e-4`, nonzero row and
+board variation, and finite nonzero residual relative RMS. Primary quality
+requires hard official51-64 macro loop5 exact `+0.02`, with no hard-range
+blank regression over `0.01`. The alternate route requires mixed exact
+`+0.03`, non-regressive official61-64 exact, and stronger same-board loop3-to5
+correction. Fresh-process elapsed and peak-allocation overhead must both remain
 below 10 percent. Integrity, activation, quality, and cost are conjunctive.
 
-## 8. Decision Boundary
+### 7.2 Optimization And Activation
 
-Any contract, integrity, activation, quality, or cost miss discards this exact
-address-local router. Do not rescue it with row features, hidden width, bias,
-gain scale, normalization, layer/head-specific parameters, extra steps, seed,
-LR, loss, batch, model width/depth, payload count, or a nearby address variant.
-The next decision would instead move to a stronger generic recurrent
-memory/address/state update mechanism.
+Control/candidate train CE is `0.858617/0.854757`. Parameter count changes
+`11,485,760 -> 11,485,795`, exactly the registered 35 parameters.
+
+The router is clearly active at loop5:
+
+- mean absolute row gain: `0.014254`;
+- within-state row-gain standard deviation: `0.003989`;
+- between-board gain standard deviation: `0.001069`;
+- producer-update relative RMS: `0.898864`;
+- residual relative RMS: `0.012122`;
+- residual between-board standard deviation: `0.000421`.
+
+Activation passes by a wide margin. This is stronger content modulation than
+the single-payload codec (`0.002382` residual relative RMS), so a zero or dead
+route cannot explain the quality result.
+
+### 7.3 Mixed And Official Quality
+
+Mixed exact is identical across all five loops. Control/candidate loop5 exact
+is `0.025391/0.025391`; mixed loop5 blank changes
+`0.545610 -> 0.542324`.
+
+Official 512-board metrics are:
+
+| Range | Arm | exact loops1-5 | blank loops1-5 |
+| --- | --- | --- | --- |
+| 51-55 | control | 0/0/0.001953/0.001953/0.001953 | 0.532345/0.566677/0.573945/0.573623/0.573766 |
+| 51-55 | address-local | 0/0/0.001953/0.001953/0.001953 | 0.533920/0.566463/0.572728/0.572513/0.572871 |
+| 56-60 | control | 0/0/0/0/0 | 0.473182/0.498061/0.501699/0.503140/0.503861 |
+| 56-60 | address-local | 0/0/0/0/0 | 0.473937/0.494458/0.500635/0.501733/0.501973 |
+| 61-64 | control | 0/0/0/0/0 | 0.504319/0.578523/0.589207/0.591954/0.591923 |
+| 61-64 | address-local | 0/0/0/0/0 | 0.503495/0.578706/0.593846/0.596746/0.597387 |
+
+Hard51-64 macro loop5 exact is unchanged
+`0.000651 -> 0.000651`; mixed exact delta is also zero. Loop5 blank deltas for
+51-55/56-60/61-64 are `-0.000895/-0.001888/+0.005464`. Preserving address
+rows creates a real hardest-tail blank gain, but it does not convert any hard
+range into more full-board solutions. Neither quality route passes.
+
+### 7.4 Same-Board Loop Dynamics
+
+All 256 case IDs, labels, and data hashes match independently in each hard
+range. Mean wrong-cell trajectories are:
+
+| Range | control loops1-5 | address-local loops1-5 | control L3-to5 | candidate L3-to5 | candidate L5 better/equal/worse |
+| --- | --- | --- | ---: | ---: | --- |
+| 51-55 | 25.74/24.35/23.92/23.86/23.93 | 25.65/24.25/23.98/23.87/23.88 | -0.016 | 0.109 | 102/57/97 |
+| 56-60 | 29.70/28.20/28.08/28.04/28.02 | 29.76/28.40/28.04/28.02/27.96 | 0.066 | 0.086 | 98/69/89 |
+| 61-64 | 31.86/27.20/26.61/26.51/26.43 | 31.65/27.21/26.23/26.08/26.06 | 0.184 | 0.168 | 121/57/78 |
+
+The candidate finishes with fewer mean wrong cells in all three ranges, and
+its 61-64 gain is broad: 121 boards improve versus 78 regress. However, its
+loop3-to5 correction is slightly weaker on 61-64 and the registered alternate
+route also requires mixed exact `+0.03`; the mixed delta is zero. The paired
+dynamics are useful mechanism evidence, not a gate pass.
+
+### 7.5 Cost
+
+Fresh-process continuation time is `825.97s -> 955.36s`, so effective
+throughput falls `15.497 -> 13.398` boards/s and elapsed overhead is `+15.66%`.
+Peak allocated memory is `13,186.4 -> 13,958.9 MiB` (`+5.86%`); peak reserved
+memory is `14,288 -> 15,060 MiB` (`+5.40%`). Memory passes, but elapsed cost
+misses the registered 10-percent ceiling.
+
+## 8. Decision
+
+P-FS3-003 is discarded. Identity, gradient, activation, official-kernel,
+exact-resume, data, source, and single-GPU integrity gates pass. Both exact
+quality routes fail and elapsed overhead exceeds 10 percent. Do not rescue it
+with row features, hidden width, bias, gain scale, normalization,
+layer/head-specific parameters, extra steps, seed, LR, loss, batch, model
+width/depth, payload count, or a nearby address variant.
+
+The result closes a specific boundary: preserving address-local producer
+updates is better than compressing them to one payload for hardest-tail blank
+accuracy, but FutureSeed-side content modulation still does not create new
+global solutions under matched compute. The next high-information move should
+change the generic GDN recurrent memory/state update itself, rather than add a
+fourth FutureSeed residual/router variant.
 
 ## 9. Submission Record
 

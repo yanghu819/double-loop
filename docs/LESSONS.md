@@ -2127,3 +2127,29 @@
   stopped after a successful control because it checked the wrong JSON
   filename; exact recovery preserved the preregistered candidate. Archive the
   incident, but do not contaminate the mechanism decision or rerun the control.
+- Exact identity and nonzero gradients still do not guarantee that a learned
+  content bottleneck preserves useful structure. P-FS3-002 reaches loop5
+  payload/update/residual relative RMS `0.3362/0.8955/0.002382`, yet hard macro
+  and mixed exact remain exactly unchanged.
+- Compressing all 32 K address rows to one V payload is too lossy on this
+  carrier. The learned row attention remains nearly uniform (`max=0.0339`
+  versus `1/32=0.03125`), and official hard blank accuracy falls in every
+  range. Preserve address-conditioned multi-part information before adding
+  more decoder capacity.
+- Same-board population evidence prevents a few attractive trajectories from
+  becoming a false mechanism claim. The codec improves 98/90/94 boards at
+  loop5 in the 51-55/56-60/61-64 banks, but worsens 86/78/98 and does not
+  strengthen loop3-to5 correction across all ranges.
+- Small parameter count is not a reliable cost proxy. Only 59 new shared
+  parameters increase matched continuation time by `21.31%` and peak allocated
+  memory by `14.55%` because they operate on every layer, head, token, loop,
+  and KxV state. Measure execution, not parameter count.
+- A failed one-payload codec does not authorize a payload-count table. The next
+  valid experiment must make a structural prediction: preserve
+  address-conditioned producer state or change the generic GDN recurrent
+  memory/update, with a new zero-init contract and board-level gate.
+- The global endpoint is the sum of explicit curriculum stages. The first
+  P-FS3-002 full-stack probe used `--steps=3001` but inherited a longer
+  `HOLE_STAGES` sum and therefore continued to3006. Stop it exactly, record a
+  non-science abort, fix the launcher before formal work, and never use that
+  output for model selection.

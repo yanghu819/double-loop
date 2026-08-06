@@ -870,3 +870,32 @@ initialization. Close scale/floor/rank/seed/LR/loss/duration rescue. A future
 content mechanism must learn a shared producer compression/update code and
 earn a new board-level gate; it cannot be presented as a tuned P-FS3-001
 variant.
+
+### P-FS3-002 Single-Payload Producer Codec Boundary
+
+P-FS3-002 tested a learned content interface rather than another analytic
+direction or scalar gate. The shared 59-parameter codec observes the real
+producer update `T-I`, softmax-pools all K address rows into one V payload, and
+decodes a bounded KxV residual before unchanged native FutureSeed
+normalization and gating. Zero initialization is bit-exact to the frozen
+terminal control. Independent K/V permutation, gradient, exact-resume,
+position-QK, and pinned official-FLA/Triton contracts all pass.
+
+The mechanism activates cleanly. At loop5 the payload/update/residual relative
+RMS is `0.3362/0.8955/0.002382`, with nonzero residual variation across
+boards. It does not improve board closure: hard51-64 macro loop5 exact remains
+`0.000651`, mixed exact remains `0.025391`, and all three hard-range blank
+accuracies move slightly down. Across all 256 shared boards per range, the
+codec changes individual trajectories but does not strengthen loop3-to5
+correction consistently. The scorer is also nearly uniform over 32 K rows:
+attention max is `0.0339` versus uniform `0.03125`.
+
+The cost boundary is decisive as well. Matched 100-step throughput falls
+`15.497->12.774` effective boards/s; elapsed, allocated-memory, and
+reserved-memory overhead are `+21.31/+14.55/+12.56%`. The paper must not claim
+that one shared producer payload improves FutureSeed. The narrower reusable
+negative result is that a live learned codec can still erase the address
+structure needed for global closure when it compresses the entire KxV update
+to one nearly uniform message. A successor must preserve address-conditioned
+multi-part state or change the generic recurrent memory/update, and cannot be
+presented as a payload-count or decoder-width sweep.

@@ -12,33 +12,30 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-07 05:01 CST): `P-FS3-001` completed its exact
-step3000-to3100 matched pair and is discarded. The orthogonal innovation path
-activates (`abs(tanh(alpha))=0.010348`, innovation fraction `0.866`) and
-both arms preserve pinned official-FLA/Triton integrity, but hard51-64 macro
-loop5 exact is unchanged `0.000651->0.000651`; mixed exact is unchanged
-`0.025391->0.025391`. Candidate loop5 blank regresses by
-`-0.000143/-0.001544/-0.000519` on official51-55/56-60/61-64. Shared-board
-wrong-cell correction is not stronger across all ranges. Train CE changes only
-`0.858617->0.857070`, while fresh-process 100-step elapsed overhead is
-`+10.98%`; peak allocation rises `+5.23%`. Thus activation passes but both
-quality routes and the cost route fail. Do not rescue the scalar/orthogonal
-formulation. The next authorized work is one new, preregistered learned
-producer-compression mechanism with exact zero-init identity; no model run may
-start until its code is pushed, a clean detached worktree exists, and its CUDA
-contract plus parent/gate provenance pass.
+Current update (2026-08-07 06:30 CST): `P-FS3-002` completed its exact
+step3000-to3100 matched candidate and is discarded. The 59-parameter shared
+producer-update codec passes zero-init identity, six-tensor migration,
+gradient, independent K/V permutation, official-FLA/Triton, source, data, and
+single-GPU contracts. It is active at loop5: payload/update/residual relative
+RMS is `0.3362/0.8955/0.002382` and residual board variation is nonzero.
+Nevertheless, hard51-64 macro loop5 exact is unchanged
+`0.000651->0.000651`, mixed exact is unchanged `0.025391->0.025391`, and
+official51-55/56-60/61-64 blank changes
+`-0.000752/-0.002333/-0.002625`. Full 256-board paired dynamics change some
+wrong-cell trajectories but do not strengthen loop3-to5 correction across all
+ranges. Time overhead is `+21.31%`, peak allocated memory `+14.55%`, and peak
+reserved memory `+12.56%`; both cost limits fail. Do not rescue scorer
+features, payload count, rank, decoder scale, seed, LR, loss, batch, width,
+depth, or duration.
 
-`P-FS3-002` is that successor. It compresses the producer's actual update
-`T-I` from KxV to one V payload code with a shared learned row scorer, then
-decodes a bounded content residual with a shared elementwise network. The
-codec is equivariant to independent K/V permutations, has no rank or width
-knob, adds exactly59 parameters, and is bit-exact to terminal FutureSeed while
-its final decoder is zero. Reuse the frozen P-FS3-001 terminal control; run one
-candidate-only step3000-to3100 continuation only after pushed-source, clean
-detached-worktree, exact parent/migration, official-kernel, identity, gradient,
-permutation, bound, and single-GPU contracts pass. The quality gates remain
-hard macro `+0.02` or mixed `+0.03` with hard-tail/loop safeguards and cost
-below10 percent. No feature/rank/decoder-scale/seed/LR/loss/duration rescue.
+The mechanism boundary is now sharper: a learned message from the real
+producer update is insufficient when all 32 K address rows collapse into one
+nearly uniform V payload (row-attention max `0.0339`, versus uniform
+`0.03125`). The next authorized design must preserve address-conditioned
+multi-part producer information or change generic GDN recurrent memory/update;
+it must not be a nearby payload-count table. No GPU model run may start until
+that distinct mechanism is preregistered on a pushed SHA, clean detached
+worktree, exact parent, and strict CUDA contract.
 
 Previous update (2026-08-05 CST): `P-CAUSAL-023` is complete with a clean split
 decision. Across five fresh GPU1 processes per arm, frozen
@@ -507,7 +504,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-FS3-002 | approved | P-FS3-001 proves that an active analytic orthogonal residual is insufficient, while earlier FS2 results close raw carry, static masks, scalar trust, and fixed-radius reuse. The missing interface may be a learned compact message formed from what the producer actually writes, rather than another gate or basis map. | For receiver layers2+, normalize terminal state `T` and update `T-I`; use one layer/head-shared row scorer to softmax-compress KxV update into a V payload code, then a shared coordinate-equivariant cell decoder to add a tanh-bounded KxV residual before unchanged unit normalization/head gating. Final decoder zero init gives exact terminal identity. Bottleneck equals V, no tunable rank/width, +59 params. Reuse the frozen terminal step3100 control and run one exact candidate-only100-step continuation after strict CUDA/full-resume contract. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2 or CPU model smoke | one strict contract plus one100-step candidate, about20m | Activate with codec residual RMS>=1e-4 and board variation. Pass hard51-64 macro exact `>=+0.02` with each blank-range regression<=0.01, or mixed exact `>=+0.03` with non-regressive61-64 and stronger same-board loop3-5 correction. Elapsed/memory overhead<10%. Kill on any miss; no feature/bottleneck/rank/scale/seed/LR/loss/batch/width/depth/duration rescue. | Implementation and preregistration prepared on `codex/fs3-producer-codec-20260807`; no GPU model process may start before pushed SHA, clean detached worktree, exact parent/migration, identity/gradient/permutation/bound, official-FLA/Triton and single-UUID contracts all pass. |
+| P-FS3-002 | discarded | P-FS3-001 proves that an active analytic orthogonal residual is insufficient, while earlier FS2 results close raw carry, static masks, scalar trust, and fixed-radius reuse. The missing interface may be a learned compact message formed from what the producer actually writes, rather than another gate or basis map. | For receiver layers2+, normalize terminal state `T` and update `T-I`; use one layer/head-shared row scorer to softmax-compress KxV update into a V payload code, then a shared coordinate-equivariant cell decoder to add a tanh-bounded KxV residual before unchanged unit normalization/head gating. Final decoder zero init gives exact terminal identity. Bottleneck equals V, no tunable rank/width, +59 params. Reuse the frozen terminal step3100 control and run one exact candidate-only100-step continuation after strict CUDA/full-resume contract. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2 or CPU model smoke | completed one strict contract, corrected one-step full-stack probe, and one100-step candidate | Activate with codec residual RMS>=1e-4 and board variation. Pass hard51-64 macro exact `>=+0.02` with each blank-range regression<=0.01, or mixed exact `>=+0.03` with non-regressive61-64 and stronger same-board loop3-5 correction. Elapsed/memory overhead<10%. Kill on any miss; no feature/bottleneck/rank/scale/seed/LR/loss/batch/width/depth/duration rescue. | Identity, migration, gradients, independent K/V permutation, official-FLA/Triton and activation gates pass. Loop5 code/update/residual RMS=`0.3362/0.8955/0.002382`, but hard macro and mixed exact deltas are both0; official hard blank deltas are `-0.000752/-0.002333/-0.002625`. Same-board late correction is not stronger across all ranges. Time/allocated/reserved overhead is `+21.31/+14.55/+12.56%`. Discard the single-payload codec without rescue; the next mechanism must preserve address-conditioned multi-part state or change generic recurrent memory/update, not sweep payload count. |
 | P-FS3-001 | discarded | Native unit-normalized FutureSeed mixes inherited seed direction with evidence newly written by the producer layer. If inherited direction dominates late hard-Sudoku refinement, explicitly emphasizing only the producer innovation orthogonal to its input seed should improve loop3-5 closure without changing state coordinates or transfer radius. | For receiver layers2+, compute the producer terminal state's component orthogonal to the exact initial state consumed by that producer; RMS-bound it and add `tanh(alpha[layer,head])` times that residual before the unchanged unit normalization and head gate. `alpha=0` is exact native FutureSeed and adds only `(L-2)*H` scalars (80 at D256/L12/H8). Require one strict CUDA identity/gradient/kernel contract and one matched 100-step terminal/innovation continuation pair from the same frozen P004 step3000 parent. No extra scan/layer/step, basis map, trust gate, task rule, or second seed. | AIStation task-mode GPU1 A100 80GB only; exact UUID; no GPU2 or CPU model smoke | completed contract plus two matched100-step arms | Candidate must activate, improve hard51-64 macro exact by `>=+0.02` with each range regression `<=0.01`, or improve mixed exact by `>=+0.03` with non-regressive61-64 and stronger same-board late-loop correction; warmed step overhead `<10%`. Kill on any miss; no scale/floor/seed/LR/loss/batch/width/duration/projection rescue. | Activation passes, but quality and cost do not. Hard macro and mixed loop5 exact deltas are both0; official hard blank deltas are negative in all three ranges. Same-board correction is not stronger across all ranges. CE improves only0.00155, elapsed overhead is10.98%, and peak allocation is+5.23%. Both arms exit cleanly on exact source/checkpoint/GPU contracts. Discard orthogonal innovation and do not rescue; redirect to a learned shared producer compression/update code. |
 | P-GDN3-004 | failed | P-ADDR-002 already showed a matched `+0.2296` mean hard-blank gain from separating stable position Q/K addresses from content V/state edits, while P-GDN3-003 shows that cross-layer Q/K/V cloning destroys early optimization. If address/payload factorization is the scalable GDN3 abstraction, it should retain private layer diversity and convert the proven D192 signal into hard exact closure at D256/L12. | One from-scratch D256/L12/H8/K32/V32 position-Q/K official-FLA GDN2 with native FutureSeed, full-diversity 12k curriculum, random traversal, loop5 all-loop CE, effective batch128 and seed52. Canonical position drives Q/K; hidden content drives V, decay, erase, write and output. No sharing, copied initialization, extra recurrence, task rule, or second arm. | AIStation task-mode GPU1 A100 80GB only; exact visible UUID `GPU-53e9f3b4-2966-65d3-6614-09c540921519`; no GPU2 or CPU model smoke | stopped at registered step3000 gate | Step500 holes50 loop5 exact `>=0.60`; step3000 h53 exact `>=0.02` or blank `>=0.60` with slope/correction; later gates only if step3000 passes. Kill on any integrity or science-gate miss; no seed/LR/loss/batch/width/address variant rescue. | Step500 strongly passed, but step3000 failed cleanly. H53 loop5 exact/blank is `0.003906/0.582658`, below both `0.02/0.60` alternatives, despite positive step1000->3000 blank slope `+0.028486` and wrong-cell reduction `23.93->22.12`. H64 wrong cells fall `31.74->26.28`; CE is `0.877711`, throughput `17.396` boards/s, and integrity is clean. Exact PGID `128112` stopped via SIGTERM and abort was frozen. Close scalable position-address claim; no rescue. |
 | P-GDN3-003 | discarded | Cross-layer coordinate mismatch is real, but exact Q/K/V plus short-convolution equality at initialization may create a deep optimization symmetry instead of a useful shared language. | One clean D256/L12 coherent-QKV initialization trajectory after strict CUDA equality, storage, gradient, official-kernel, specialization and full-size fit contracts. Native FutureSeed and every other training variable remain fixed. | AIStation task-mode GPU1 A100 80GB only; exact UUID; no GPU2 or CPU model smoke | stopped at registered step500 gate | holes50 loop5 exact must be at least `0.60`; finite CE and integrity required; no partial-copy/init-strength/seed/LR/loss/width rescue. | Failed cleanly. holes50 loop1-5 exact is all `0`; loop5 blank is `0.1321`; train CE is `2.0089`, versus P-GDN3-002 exact/blank `0.7778/0.9853` and CE `0.0143`. Contract integrity passed and no NaN/OOM/fallback occurred, so identical deep coordinates create harmful symmetry despite measurable one-step divergence. Detected after step800, wrote `abort.json`, and terminated only PGID `125922`. |

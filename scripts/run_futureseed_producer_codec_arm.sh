@@ -56,6 +56,7 @@ fi
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 if [[ "${FS3_FULL_STACK_PROBE:-0}" == "1" ]]; then
+  export HOLE_STAGES=46-50:500,51-55:2501
   export FULL_STEPS=3001
   export FULL_EVAL_N=8
   export EVAL_HOLES_LIST=53

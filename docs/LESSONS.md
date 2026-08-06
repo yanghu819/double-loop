@@ -68,10 +68,17 @@
   compatibility hypothesis and reject this implementation.
 - A matched D256 normal-GDN2 control is not authorized after the registered
   endpoint miss; it would quantify a failed candidate rather than change the
-  next decision. The next high-information mechanism to audit is an
-  identity-initialized state-coordinate transport into each receiving layer's
-  private K/V basis. Do not run it before its own identity, budget, prediction,
-  and kill criteria are preregistered.
+  next decision.
+- Frozen checkpoint geometry rules out an easy post-hoc fix. Adjacent mature
+  Q/K bases have identity residual near `1.42`; even optimal joint-Q/K
+  Procrustes leaves about `1.11` residual, while fitted rotations are about
+  `1.41` from identity and contain nearly null directions. Do not retry a free
+  K/V transport matrix under a different name.
+- The next falsifier is coordinate coherence at birth, not permanent sharing:
+  clone Q/K/V projections and short convolutions at initialization, keep
+  distinct parameters, and require measurable specialization after one step.
+  This preserves zero inference overhead and layer-private capacity while
+  testing whether FutureSeed compatibility can emerge through co-adaptation.
 
 ## 2026-06-03 GPU1 bootstrap
 

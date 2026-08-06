@@ -35,11 +35,22 @@ same-board 64-blank failure reduces wrong cells `22 -> 16 -> 7 -> 6 -> 6`.
 The paper can therefore claim a state-compatibility mechanism signal, but not
 that forcing all layers into one Q/K basis is a scalable GDN3 design.
 
-The next architectural hypothesis is identity-initialized cross-layer
-state-coordinate transport: map the terminal KxV state into each receiving
-layer's private K/V basis while preserving layer-private address dynamics.
-This is not yet evidence or an active experiment. It requires a read-only
-mechanism audit and a separate preregistration before compute.
+The read-only follow-up audit rejects post-hoc state rotation as the next move.
+Across canonical step9000/12000 and P-GDN3-002 step12000, adjacent Q/K bases are
+close to random orthogonal frames: normalized identity residual is about `1.42`,
+optimal joint-Q/K Procrustes residual remains about `1.11`, rotation distance
+from identity is about `1.41`, and some cross-basis singular values are below
+`0.01`. A free learned bridge would therefore be large and ill-conditioned,
+matching the failure mode already observed for arbitrary FS2 basis transport.
+
+P-GDN3-003 is the active architectural hypothesis: make Q/K/V coordinates
+exactly coherent at initialization, then let every layer specialize through
+independent parameters. Only Q/K/V projections and their short convolutions are
+copied from layer0 at construction; no parameters are tied or frozen, and the
+native FutureSeed equation and official GDN2 recurrence are unchanged. This
+tests whether compatibility is most useful as an optimization scaffold rather
+than a permanent mature constraint, with zero added parameters or inference
+operations.
 
 ## Working Title
 

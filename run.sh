@@ -571,6 +571,7 @@ COMMON_ARGS=(
   --gdn2_fast_slow_decay_current_weight_init "${GDN2_FAST_SLOW_DECAY_CURRENT_WEIGHT_INIT:-0.85}"
   --gdn2_precondition_mode "${GDN2_PRECONDITION_MODE:-none}"
   --gdn2_address_mode "${GDN2_ADDRESS_MODE:-none}"
+  --gdn2_cross_layer_init "${GDN2_CROSS_LAYER_INIT:-independent}"
   --raven_num_slots "${RAVEN_NUM_SLOTS:-0}"
   --raven_topk "${RAVEN_TOPK:-0}"
   --lambda_ "${LAMBDA:-0.95}"

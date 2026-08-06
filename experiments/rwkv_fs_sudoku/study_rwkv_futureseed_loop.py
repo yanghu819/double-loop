@@ -341,6 +341,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_qk_residual",
     "anchor_carrier",
 )
+GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
@@ -3745,6 +3746,7 @@ class FutureSeedRWKV(nn.Module):
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
+        gdn2_cross_layer_init: str = "independent",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
     ) -> None:
@@ -3781,6 +3783,17 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError(
                 "backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda, raven."
             )
+        if gdn2_cross_layer_init not in GDN2_CROSS_LAYER_INIT_MODES:
+            raise ValueError(
+                "gdn2_cross_layer_init must be one of: "
+                f"{', '.join(GDN2_CROSS_LAYER_INIT_MODES)}."
+            )
+        if gdn2_cross_layer_init != "independent" and backbone != "gdn2":
+            raise ValueError("Cross-layer coordinate initialization is restricted to GDN2.")
+        if gdn2_cross_layer_init != "independent" and gdn2_address_mode != "none":
+            raise ValueError(
+                "Cross-layer coordinate initialization cannot be mixed with GDN2 addressing."
+            )
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -3792,6 +3805,7 @@ class FutureSeedRWKV(nn.Module):
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
+        self.gdn2_cross_layer_init = gdn2_cross_layer_init
         self.shared_address_proj = (
             nn.Linear(d_model, d_model, bias=False)
             if gdn2_address_mode == "shared_namespace"
@@ -3926,6 +3940,36 @@ class FutureSeedRWKV(nn.Module):
                     )
                 )
         self.blocks = nn.ModuleList(blocks)
+        self._initialize_gdn2_cross_layer_coordinates()
+
+    def _initialize_gdn2_cross_layer_coordinates(self) -> None:
+        if self.gdn2_cross_layer_init == "independent":
+            return
+        if self.gdn2_cross_layer_init != "coherent_qkv":
+            raise AssertionError(
+                f"unhandled cross-layer initialization: {self.gdn2_cross_layer_init}"
+            )
+        source_core = self.blocks[0].time_mix.core
+        coordinate_modules = (
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "q_conv1d",
+            "k_conv1d",
+            "v_conv1d",
+        )
+        for block in self.blocks[1:]:
+            target_core = block.time_mix.core
+            for module_name in coordinate_modules:
+                source_module = getattr(source_core, module_name, None)
+                target_module = getattr(target_core, module_name, None)
+                if source_module is None or target_module is None:
+                    if source_module is not target_module:
+                        raise RuntimeError(
+                            f"GDN2 coordinate module mismatch for {module_name}."
+                        )
+                    continue
+                target_module.load_state_dict(source_module.state_dict())
 
     def forward(
         self,
@@ -4650,6 +4694,7 @@ def load_training_checkpoint(
             "gdn_allow_neg_eigval",
             "gdn2_precondition_mode",
             "gdn2_address_mode",
+            "gdn2_cross_layer_init",
             "raven_num_slots",
             "raven_topk",
             "cell_order_train",
@@ -4715,6 +4760,7 @@ def load_training_checkpoint(
             "future_seed_readout_hop": 0,
             "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
+            "gdn2_cross_layer_init": "independent",
             "raven_num_slots": 0,
             "raven_topk": 0,
             "cell_order_train": "row_major",
@@ -5001,6 +5047,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
+        gdn2_cross_layer_init: str = "independent",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
         future_seed_scope: str = "layer",
@@ -5036,6 +5083,7 @@ class FutureSeedLoopSudoku(nn.Module):
         self.hidden_agg_noise_max_norm = float(hidden_agg_noise_max_norm)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
+        self.gdn2_cross_layer_init = gdn2_cross_layer_init
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
         self.reasoner = FutureSeedRWKV(
@@ -5073,6 +5121,7 @@ class FutureSeedLoopSudoku(nn.Module):
             ),
             gdn2_precondition_mode=gdn2_precondition_mode,
             gdn2_address_mode=gdn2_address_mode,
+            gdn2_cross_layer_init=gdn2_cross_layer_init,
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
         )
@@ -6046,6 +6095,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         gdn2_precondition_mode=args.gdn2_precondition_mode,
         gdn2_address_mode=args.gdn2_address_mode,
+        gdn2_cross_layer_init=args.gdn2_cross_layer_init,
         raven_num_slots=args.raven_num_slots,
         raven_topk=args.raven_topk,
     )
@@ -6978,6 +7028,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
+        "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
         "cell_order_train": args.cell_order_train,
@@ -8360,6 +8411,14 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError(
             "--gdn2_address_mode currently forbids compatible FutureSeed readout"
         )
+    if args.gdn2_cross_layer_init != "independent" and args.backbone != "gdn2":
+        raise ValueError("--gdn2_cross_layer_init requires --backbone gdn2")
+    if args.gdn2_cross_layer_init != "independent" and not args.fla_strict_official:
+        raise ValueError("--gdn2_cross_layer_init requires --fla_strict_official")
+    if args.gdn2_cross_layer_init != "independent" and args.gdn2_address_mode != "none":
+        raise ValueError(
+            "--gdn2_cross_layer_init cannot be mixed with --gdn2_address_mode"
+        )
     if args.raven_num_slots < 0 or args.raven_topk < 0:
         raise ValueError("--raven_num_slots and --raven_topk must be non-negative")
     if args.backbone == "raven":
@@ -8456,6 +8515,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
         f"gdn2_precondition={args.gdn2_precondition_mode} "
         f"gdn2_address={args.gdn2_address_mode} "
+        f"gdn2_cross_layer_init={args.gdn2_cross_layer_init} "
         f"raven_slots/topk={args.raven_num_slots}/{args.raven_topk} "
         f"cell_order_train={args.cell_order_train} "
         f"forward_dtype={args.forward_dtype}",
@@ -8672,6 +8732,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         ),
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
+        "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
         "cell_order_train": args.cell_order_train,
@@ -8914,6 +8975,11 @@ def parse_args() -> argparse.Namespace:
         "--gdn2_address_mode",
         choices=GDN2_ADDRESS_MODES,
         default="none",
+    )
+    p.add_argument(
+        "--gdn2_cross_layer_init",
+        choices=GDN2_CROSS_LAYER_INIT_MODES,
+        default="independent",
     )
     p.add_argument(
         "--raven_num_slots",

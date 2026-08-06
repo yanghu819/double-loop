@@ -75,14 +75,16 @@ slopes are positive. Stable position addresses therefore improve optimization
 and recurrent correction but do not solve hard global closure at this scale.
 The exact process group was stopped and archived without rescue.
 
-The sole next mechanism test is P-FS3-001. From the frozen P004 step3000 parent,
-it keeps the position-address GDN3 carrier fixed and changes only what native
-FutureSeed transports: an initially zero-weighted, RMS-bounded producer
-innovation orthogonal to the producer input seed. A strict identity, gradient,
-official-kernel and CUDA contract precedes one matched terminal/innovation
-100-step pair. The experiment asks whether inherited seed direction is
-crowding out newly written late-loop evidence; it is not an address-strength,
-duration, seed, loss, or width rescue.
+P-FS3-001 and P-FS3-002 close two candidate content interfaces. An active
+orthogonal innovation residual leaves hard exact unchanged, and a live learned
+producer codec also leaves exact unchanged while collapsing 32 K address rows
+to one nearly uniform payload and exceeding the cost gates. The sole next
+mechanism test is P-FS3-003: preserve every K row and full V payload, and learn
+only a bounded row-local gain on the actual producer update. Its zero-init,
+permutation, update-bound, exact-resume, official-kernel, and CUDA contracts
+must pass before one candidate-only 100-step continuation. This is a direct
+address-preservation falsifier, not a payload-count, router-width, scale,
+duration, seed, loss, or model-size rescue.
 
 ## Working Title
 
@@ -899,3 +901,20 @@ structure needed for global closure when it compresses the entire KxV update
 to one nearly uniform message. A successor must preserve address-conditioned
 multi-part state or change the generic recurrent memory/update, and cannot be
 presented as a payload-count or decoder-width sweep.
+
+### P-FS3-003 Address-Local Update Preregistration
+
+P-FS3-003 isolates the structural prediction left by the failed single-payload
+codec. For every producer address row, it observes generic terminal/update
+statistics and applies one shared bounded scalar to that row's full V update.
+It never pools K rows, invents a payload basis, or adds a cell-wise decoder.
+The 35-parameter feature-sized router is shared across all layers and heads;
+its final projection is zero initialized, and its residual is elementwise
+bounded by the actual producer update.
+
+The paper may use this experiment only as a clean test of whether preserving
+address-conditioned update structure improves FutureSeed. Promotion requires
+nonuniform per-board/per-row activation, a preregistered board-level exact or
+mixed-exact gain with stronger late-loop correction, and less than 10 percent
+time and allocated-memory overhead. Any miss closes the exact router without a
+feature, width, scale, seed, optimizer, loss, duration, or model-size table.

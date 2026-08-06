@@ -26,6 +26,7 @@ from futureseed2_selective import (
     FUTURE_SEED_GATE_MODES,
     FutureSeedSelectiveGate,
 )
+from futureseed3_address_local_update import FutureSeedAddressLocalUpdate
 from futureseed3_producer_codec import FutureSeedProducerCodec
 from fast_slow_decay_gdn2 import (
     FAST_SLOW_DECAY_MODES,
@@ -343,7 +344,12 @@ GDN2_ADDRESS_MODES = (
     "anchor_carrier",
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
-FUTURE_SEED_CONTENT_MODES = ("terminal", "innovation_residual", "producer_codec")
+FUTURE_SEED_CONTENT_MODES = (
+    "terminal",
+    "innovation_residual",
+    "producer_codec",
+    "address_local_update",
+)
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
@@ -3787,7 +3793,11 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("compatible FutureSeed readout requires future_seed_update=fixed.")
         if future_seed_readout_hop > 0 and future_seed_gate_mode != "head":
             raise ValueError("compatible FutureSeed readout requires the canonical head gate.")
-        if future_seed_content_mode in {"innovation_residual", "producer_codec"}:
+        if future_seed_content_mode in {
+            "innovation_residual",
+            "producer_codec",
+            "address_local_update",
+        }:
             if layers < 3:
                 raise ValueError(
                     f"{future_seed_content_mode} FutureSeed needs at least three layers."
@@ -3907,6 +3917,14 @@ class FutureSeedRWKV(nn.Module):
                 col_dim=state_col_dim,
             )
             if self.future_seed_content_mode == "producer_codec"
+            else None
+        )
+        self.future_seed_address_local_update = (
+            FutureSeedAddressLocalUpdate(
+                row_dim=state_row_dim,
+                col_dim=state_col_dim,
+            )
+            if self.future_seed_content_mode == "address_local_update"
             else None
         )
         self.future_seed_selector = FutureSeedSelectiveGate(
@@ -4044,6 +4062,13 @@ class FutureSeedRWKV(nn.Module):
             "fs3_codec_update_relative_rms": zero,
             "fs3_codec_residual_relative_rms": zero,
             "fs3_codec_residual_batch_std": zero,
+            "fs3_address_local_enabled": zero,
+            "fs3_address_local_gain_abs": zero,
+            "fs3_address_local_gain_row_std": zero,
+            "fs3_address_local_gain_batch_std": zero,
+            "fs3_address_local_update_relative_rms": zero,
+            "fs3_address_local_residual_relative_rms": zero,
+            "fs3_address_local_residual_batch_std": zero,
         }
         if self.future_seed_content_mode == "terminal" or receiver_layer_idx < 2:
             return terminal_state, zero_diag
@@ -4065,6 +4090,14 @@ class FutureSeedRWKV(nn.Module):
                 producer_initial_state,
             )
             return candidate, {**zero_diag, **codec_diag}
+        if self.future_seed_content_mode == "address_local_update":
+            if self.future_seed_address_local_update is None:
+                raise RuntimeError("address-local FutureSeed module is missing")
+            candidate, address_local_diag = self.future_seed_address_local_update(
+                terminal_state,
+                producer_initial_state,
+            )
+            return candidate, {**zero_diag, **address_local_diag}
         if self.future_seed_content_mode != "innovation_residual":
             raise AssertionError(
                 f"unhandled FutureSeed content mode: {self.future_seed_content_mode}"
@@ -4186,6 +4219,13 @@ class FutureSeedRWKV(nn.Module):
         codec_update_relative_rms = []
         codec_residual_relative_rms = []
         codec_residual_batch_std = []
+        address_local_enabled = []
+        address_local_gain_abs = []
+        address_local_gain_row_std = []
+        address_local_gain_batch_std = []
+        address_local_update_relative_rms = []
+        address_local_residual_relative_rms = []
+        address_local_residual_batch_std = []
         state_history: List[torch.Tensor] = []
         gain_budget_values: Dict[str, List[torch.Tensor]] = {}
         for layer_idx, block in enumerate(self.blocks):
@@ -4314,6 +4354,27 @@ class FutureSeedRWKV(nn.Module):
                 )
                 codec_residual_batch_std.append(
                     innovation_diag["fs3_codec_residual_batch_std"]
+                )
+                address_local_enabled.append(
+                    innovation_diag["fs3_address_local_enabled"]
+                )
+                address_local_gain_abs.append(
+                    innovation_diag["fs3_address_local_gain_abs"]
+                )
+                address_local_gain_row_std.append(
+                    innovation_diag["fs3_address_local_gain_row_std"]
+                )
+                address_local_gain_batch_std.append(
+                    innovation_diag["fs3_address_local_gain_batch_std"]
+                )
+                address_local_update_relative_rms.append(
+                    innovation_diag["fs3_address_local_update_relative_rms"]
+                )
+                address_local_residual_relative_rms.append(
+                    innovation_diag["fs3_address_local_residual_relative_rms"]
+                )
+                address_local_residual_batch_std.append(
+                    innovation_diag["fs3_address_local_residual_batch_std"]
                 )
                 if layer_idx == 0:
                     gate = torch.sigmoid(block.future_seed_logit)
@@ -4627,6 +4688,41 @@ class FutureSeedRWKV(nn.Module):
                 if codec_residual_batch_std
                 else x.new_zeros(())
             )
+            out["fs3_address_local_enabled"] = (
+                torch.stack(address_local_enabled).max()
+                if address_local_enabled
+                else x.new_zeros(())
+            )
+            out["fs3_address_local_gain_abs"] = (
+                torch.stack(address_local_gain_abs).mean()
+                if address_local_gain_abs
+                else x.new_zeros(())
+            )
+            out["fs3_address_local_gain_row_std"] = (
+                torch.stack(address_local_gain_row_std).mean()
+                if address_local_gain_row_std
+                else x.new_zeros(())
+            )
+            out["fs3_address_local_gain_batch_std"] = (
+                torch.stack(address_local_gain_batch_std).mean()
+                if address_local_gain_batch_std
+                else x.new_zeros(())
+            )
+            out["fs3_address_local_update_relative_rms"] = (
+                torch.stack(address_local_update_relative_rms).mean()
+                if address_local_update_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_address_local_residual_relative_rms"] = (
+                torch.stack(address_local_residual_relative_rms).mean()
+                if address_local_residual_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_address_local_residual_batch_std"] = (
+                torch.stack(address_local_residual_batch_std).mean()
+                if address_local_residual_batch_std
+                else x.new_zeros(())
+            )
             for key, values in gain_budget_values.items():
                 stacked = torch.stack([value.float() for value in values])
                 out[key] = (
@@ -4683,6 +4779,13 @@ class FutureSeedRWKV(nn.Module):
             "fs3_codec_update_relative_rms": zero,
             "fs3_codec_residual_relative_rms": zero,
             "fs3_codec_residual_batch_std": zero,
+            "fs3_address_local_enabled": zero,
+            "fs3_address_local_gain_abs": zero,
+            "fs3_address_local_gain_row_std": zero,
+            "fs3_address_local_gain_batch_std": zero,
+            "fs3_address_local_update_relative_rms": zero,
+            "fs3_address_local_residual_relative_rms": zero,
+            "fs3_address_local_residual_batch_std": zero,
         }
         for key, values in gain_budget_values.items():
             stacked = torch.stack([value.float() for value in values])
@@ -5042,7 +5145,11 @@ def load_training_checkpoint(
                 if (
                     field == "future_seed_content_mode"
                     and bool(expected_args.resume_allow_future_seed_content_upgrade)
-                    and current_value in {"innovation_residual", "producer_codec"}
+                    and current_value in {
+                        "innovation_residual",
+                        "producer_codec",
+                        "address_local_update",
+                    }
                 ):
                     accepted_future_seed_content_upgrade = True
                     continue
@@ -5072,7 +5179,11 @@ def load_training_checkpoint(
                 and field == "future_seed_content_mode"
                 and bool(expected_args.resume_allow_future_seed_content_upgrade)
                 and saved_value == "terminal"
-                and current_value in {"innovation_residual", "producer_codec"}
+                and current_value in {
+                    "innovation_residual",
+                    "producer_codec",
+                    "address_local_update",
+                }
             ):
                 accepted_future_seed_content_upgrade = True
                 matches = True
@@ -5173,6 +5284,9 @@ def load_training_checkpoint(
         "reasoner.future_seed_producer_codec.cell_decode_in.weight",
         "reasoner.future_seed_producer_codec.cell_decode_in.bias",
         "reasoner.future_seed_producer_codec.cell_decode_out.weight",
+        "reasoner.future_seed_address_local_update.row_gate_in.weight",
+        "reasoner.future_seed_address_local_update.row_gate_in.bias",
+        "reasoner.future_seed_address_local_update.row_gate_out.weight",
         "reasoner.shared_address_proj.weight",
     }
     progressive_suffixes = (
@@ -6145,6 +6259,22 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('fs3_codec_residual_relative_rms', 0.0):.4f}/"
             f"{m.get('fs3_codec_residual_batch_std', 0.0):.4f}"
         )
+    if m.get("fs3_address_local_enabled", 0.0) > 0:
+        parts.append(
+            "fs3_addr_gain="
+            f"{m.get('fs3_address_local_gain_abs', 0.0):.4f}/"
+            f"{m.get('fs3_address_local_gain_row_std', 0.0):.4f}/"
+            f"{m.get('fs3_address_local_gain_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_addr_update="
+            f"{m.get('fs3_address_local_update_relative_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_addr_resid="
+            f"{m.get('fs3_address_local_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('fs3_address_local_residual_batch_std', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -6602,6 +6732,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 if name.startswith("reasoner.future_seed_producer_codec.")
             }
             if args.future_seed_content_mode == "producer_codec"
+            else {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.startswith("reasoner.future_seed_address_local_update.")
+            }
+            if args.future_seed_content_mode == "address_local_update"
             else set()
         )
         declared_future_seed_content_upgrade = (
@@ -8647,6 +8783,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         if args.future_seed_content_mode not in {
             "innovation_residual",
             "producer_codec",
+            "address_local_update",
         }:
             raise ValueError(
                 "--resume_allow_future_seed_content_upgrade requires a nonterminal "

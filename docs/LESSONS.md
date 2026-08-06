@@ -2148,6 +2148,18 @@
   valid experiment must make a structural prediction: preserve
   address-conditioned producer state or change the generic GDN recurrent
   memory/update, with a new zero-init contract and board-level gate.
+- Preserve information before adding decoder capacity. P-FS3-003 keeps every
+  K address row and its full V payload, changing only a bounded scalar on that
+  row's actual producer update. This directly tests the address-structure
+  diagnosis left by P-FS3-002 without creating a payload-count sweep.
+- Dynamic routing needs nonuniformity evidence. A nonzero mean residual alone
+  can hide a global rescale, so the P-FS3-003 activation gate separately
+  requires within-state K-row gain variation and between-board gain variation,
+  plus same-board late-loop correction.
+- Structural bounds make a content intervention auditable. Zero initialization
+  gives exact terminal identity, independent K/V permutation tests rule out a
+  hidden fixed basis, and `abs(residual)<=abs(T-I)` prevents the router from
+  manufacturing an unbounded update under a new name.
 - The global endpoint is the sum of explicit curriculum stages. The first
   P-FS3-002 full-stack probe used `--steps=3001` but inherited a longer
   `HOLE_STAGES` sum and therefore continued to3006. Stop it exactly, record a

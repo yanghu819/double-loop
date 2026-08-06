@@ -10,34 +10,36 @@ not replace Sudoku as the benchmark and cannot redirect the active experiment
 queue. Every new mechanism must remain generic enough to transfer beyond Sudoku,
 but it is selected and falsified on the fixed Sudoku scaling cliff.
 
-The current GDN3 hypothesis is cross-layer address compatibility. FutureSeed
+The established GDN3 question is cross-layer state compatibility. FutureSeed
 passes a terminal KxV state from a shallow layer into a deeper layer, while
 ordinary GDN2 gives each layer an independently learned Q/K address basis. A
-single shared address namespace across layers can make that transported state
-readable without changing the official recurrence: shared stable address drives
-Q/K, while payload V and decay/erase/write remain layer-specific.
+single address namespace shared by all layers was the first falsifiable
+candidate for making that transported state readable without changing the
+official recurrence.
 
 P-GDN3-001 passes the registered quick falsifier. At matched step9100, mean
 official 51-64 blank accuracy is `0.4479` versus normal GDN2 `0.2037` and the
 older per-layer shared-address candidate `0.2844`; train CE is `1.1634` versus
 `1.9370`, elapsed overhead is `6.9%`, and later loops reduce wrong cells on a
-majority of fixed hard boards. Full-board exact remains zero. The paper claim
-therefore stays bounded until one clean D256/L12 full-diversity trajectory
-shows that this generic compatibility mechanism scales into exact closure.
+majority of fixed hard boards. Full-board exact remains zero. This remains
+evidence that address compatibility matters, not that a globally shared basis
+is the final architecture.
 
-That full-diversity trajectory, P-GDN3-002, has passed its step500, step3000,
-and step6000 gates, and the step9000 fixed-probe curve remains strongly
-positive. From step6000 to9000, h53 loop5 exact/blank rises
-`0.0293/0.6946 -> 0.2148/0.7896`, h58 rises
-`0.0059/0.4747 -> 0.0117/0.5005`, and h64 rises
-`0/0.6093 -> 0.0293/0.7313`. At h64, exact remains zero through loop2 and opens
-at loops3-5 (`0.0137/0.0254/0.0293`) while wrong cells fall
-`28.78 -> 17.20`. This is the first from-scratch evidence that the scaled
-shared namespace turns hardest-condition local correction into complete-board
-closure, and that the closure depends on recurrent computation. The live
-readout is still an aggregate fixed-probe audit, not a full official-range or
-same-board endpoint result. The main claim therefore remains conditional on
-the frozen step12000 evaluation.
+The full-diversity P-GDN3-002 trajectory closes the globally shared namespace
+candidate. At step12000, full official 51-55/56-60/61-64 loop5 exact is
+`0.3008/0.0996/0.0762`; hard-range macro exact is `0.1589` and mixed exact is
+`0.2168`. These miss the registered `0.3191/0.40` routes and trail the sealed
+D192/L10 canonical model in every hard range. Recurrent correction is still
+real: official hard exact is zero at loop1 and opens in later loops, and one
+same-board 64-blank failure reduces wrong cells `22 -> 16 -> 7 -> 6 -> 6`.
+The paper can therefore claim a state-compatibility mechanism signal, but not
+that forcing all layers into one Q/K basis is a scalable GDN3 design.
+
+The next architectural hypothesis is identity-initialized cross-layer
+state-coordinate transport: map the terminal KxV state into each receiving
+layer's private K/V basis while preserving layer-private address dynamics.
+This is not yet evidence or an active experiment. It requires a read-only
+mechanism audit and a separate preregistration before compute.
 
 ## Working Title
 

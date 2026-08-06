@@ -2,7 +2,7 @@
 
 ## Metainfo
 
-- Status: in progress; GPU fit and step500/3000/6000 gates passed, step9000 readout healthy
+- Status: complete; endpoint gate failed, shared-namespace scale candidate closed
 - Preregistered: 2026-08-05 12:17 CST
 - Resource: AIStation task-mode GPU1 A100 80GB only
 - Seed: 52 only
@@ -99,7 +99,7 @@ closes this GDN3 candidate without a sweep.
 - The formal trajectory
   `gdn3-shared-namespace-d256l12-s12000-20260805T044918Z-a68c683` launched from
   clean detached SHA `a68c683d0a7eee9b9b67da16ebdbd355ff4aed94` on the
-  registered GPU1. PID/PGID is `101373`; only CUDA index 0 with UUID
+  registered GPU1. PID/PGID was `101373`; only CUDA index 0 with UUID
   `GPU-53e9f3b4-2966-65d3-6614-09c540921519` is visible.
 
 ## Step500 Science Gate
@@ -306,4 +306,122 @@ Artifact hashes:
 - archived run-through-step9000 log:
   `46479b4d87b83c0a8120d7fb3aeb075eec975782967af1c9fd29019ebb0306db`;
 - immutable source snapshot retained remotely:
+  `f1cc2c269d12b109f99b8dea7e064aa4a3a50db62e5791012f5d629c8223d004`.
+
+## Step12000 Endpoint
+
+The sole registered trajectory reached step12000 and exited cleanly. The
+checkpoint, full official-range evaluation, per-board case bank, and source
+provenance were frozen before making the endpoint decision.
+
+### Fixed-probe readout
+
+Each entry is `full-board exact / blank accuracy` on the same aggregate fixed
+probe used at earlier gates.
+
+| Probe | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---:|---:|---:|---:|---:|
+| h50 | 0.9798 / 0.9994 | 1.0000 / 1.0000 | 1.0000 / 1.0000 | 1.0000 / 1.0000 | **1.0000 / 1.0000** |
+| h53 | 0 / 0.6213 | 0.0059 / 0.7475 | 0.2539 / 0.8083 | 0.3301 / 0.8166 | **0.3418 / 0.8177** |
+| h58 | 0 / 0.4636 | 0.0020 / 0.5058 | 0.0117 / 0.5236 | 0.0156 / 0.5261 | **0.0156 / 0.5261** |
+| h64 | 0 / 0.5630 | 0 / 0.6749 | 0.0293 / 0.7451 | 0.0625 / 0.7614 | **0.0840 / 0.7652** |
+
+The step9000-to12000 loop5 slopes remain positive: h53 exact/blank gains
+`+0.1270/+0.0282`, h58 gains `+0.0039/+0.0257`, and h64 gains
+`+0.0547/+0.0338`. This confirms that training did not collapse after the
+step9000 opening. It does not by itself satisfy the full official endpoint.
+
+### Full official ranges
+
+The frozen full evaluation uses 512 boards per range. Each table entry is
+again `full-board exact / blank accuracy`.
+
+| Official range | loop1 | loop2 | loop3 | loop4 | loop5 |
+|---|---:|---:|---:|---:|---:|
+| 51-55 blanks | 0 / 0.5834 | 0.0156 / 0.6843 | 0.2207 / 0.7327 | 0.2852 / 0.7421 | **0.3008 / 0.7432** |
+| 56-60 blanks | 0 / 0.4987 | 0.0117 / 0.5521 | 0.0801 / 0.5766 | 0.0957 / 0.5815 | **0.0996 / 0.5831** |
+| 61-64 blanks | 0 / 0.5587 | 0 / 0.6679 | 0.0332 / 0.7349 | 0.0586 / 0.7524 | **0.0762 / 0.7562** |
+
+The hard-range macro loop5 exact is `0.1589`, and macro blank accuracy is
+`0.6942`. Mixed exact rises `0.0234 -> 0.0352 -> 0.1562 -> 0.2051 ->
+0.2168` over loops1-5, while mixed blank accuracy rises `0.5482 -> 0.6210 ->
+0.6569 -> 0.6643 -> 0.6658`. Therefore genuine recurrent correction passes,
+but neither registered quality route passes:
+
+- hard-range macro exact `0.1589 < 0.3191`;
+- mixed loop5 exact `0.2168 < 0.40`.
+
+The scaled candidate also trails the sealed D192/L10 canonical model in every
+hard range: `0.3008/0.0996/0.0762` versus
+`0.4492/0.1543/0.2637`, and mixed exact is `0.2168` versus `0.3379`.
+
+### Loop behavior on the same boards
+
+The archived 61-64 hard-failure case-bank export for batch 6 reduces wrong
+cells `22 -> 16 -> 7 -> 6 -> 6` and conflict units
+`23 -> 17 -> 13 -> 8 -> 8`, but remains unsolved. The prediction freezes from
+loop4 to loop5, exposing a residual global-consistency stall rather than lack
+of early correction. A contrasting batch-15 board reduces wrong cells
+`29 -> 13 -> 1 -> 0 -> 0` and becomes exact at loop4. Both are direct
+same-board trajectories, not aggregate bucket proxies.
+
+- hard-failure HTML:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/output/case_bank/official_b61_64/official_b61_64_hard_failure_08_b0006.html`;
+- rendered hard-failure image:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/hardest-same-board-b61-64-step12000.png`;
+- solved-by-loop contrast:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/output/case_bank/official_b61_64/official_b61_64_solved_by_loop_01_b0015.html`;
+- endpoint dashboard:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/endpoint-dashboard-step12000.png`.
+
+### Cost and integrity
+
+- train CE/total loss is `0.7102/0.7778`; loop1/loop5 loss is
+  `0.9450/0.7102`;
+- 12,000 optimizer steps at effective batch128 take `88,991.9 s`, or
+  `17.26 effective boards/s`; the step9000-to12000 interval is independently
+  consistent at `17.31 boards/s` after earlier compilation;
+- the model has `11,551,296` trainable parameters;
+- CUDA peak allocation/reservation is `13,016.8/14,428.0 MiB`; live sampled
+  NVML occupancy during training was about `17,687 MiB`;
+- all 12 layers use pinned official-FLA GDN2 source
+  `9c8e42e762fce087c27b673af4922795d9edb85e` with Triton short convolutions;
+- the process exited normally, GPU1 is idle, source SHA is unchanged, and the
+  complete log has no NaN, OOM, fallback, CUDA error, or traceback.
+
+### Decision
+
+`P-GDN3-002` fails its preregistered endpoint and is closed without a matched
+D256 normal-GDN2 control, second seed, or tuning rescue. The result separates
+two claims:
+
+1. Cross-layer address compatibility remains a real local mechanism signal:
+   P-GDN3-001 and the loop trajectories here both show substantial correction.
+2. Forcing one shared Q/K namespace across all 12 layers is not a
+   quality-preserving scalable GDN3 design under the registered full-diversity
+   budget.
+
+The next high-information hypothesis is not a shared-namespace strength/rank
+variant. It is an identity-initialized cross-layer state-coordinate transport
+that maps the terminal KxV state into each receiving layer's private K/V basis,
+preserving layer-private address dynamics while making transported state
+readable. This is analysis only: no compute is authorized until a read-only
+mechanism audit and a fresh preregistration fix identity behavior, prediction,
+budget, and kill criteria.
+
+Endpoint hashes:
+
+- endpoint manifest:
+  `../visualizations/gdn3-shared-namespace-scale-20260805/endpoint_manifest.json`;
+- step12000 checkpoint-eval JSON:
+  `369fecf8f8af8f11b8e9f5e28e7fc71d2582d395ee7dc0f76cb906c63f4e6b6a`;
+- full final JSON:
+  `6a844540af049802263ab267d6076548e60e5eb62f50e4a541ef59301f330b4e`;
+- exact step12000 train-state checkpoint:
+  `e44887754d23aa38174c34f7fda51645f0497125caff4ee89356877936f32f52`;
+- complete launch log:
+  `648cd6cc3f89f64cd924ca8a379318d99c574abc1fbf45ea48c07d4fd32eb5c7`;
+- config:
+  `4cb98ffb912c8079adc9290eee0190f6108428913b7280de011d886d65d3ad2e`;
+- immutable source snapshot:
   `f1cc2c269d12b109f99b8dea7e064aa4a3a50db62e5791012f5d629c8223d004`.

@@ -51,6 +51,27 @@
   select the favorable buckets as the endpoint claim. Freeze step12000 and
   require full official 51-55/56-60/61-64 ranges plus same-board loop exports
   before authorizing a matched D256 normal-GDN2 control.
+- The frozen endpoint reverses the favorable fixed-probe impression. Full
+  official 51-55/56-60/61-64 loop5 exact is
+  `0.3008/0.0996/0.0762`; macro exact `0.1589` and mixed exact `0.2168` miss
+  the registered `0.3191/0.40` routes. Every hard range is also below the
+  sealed D192/L10 canonical model. Endpoint ranges, not selected fixed buckets,
+  decide whether a mechanism scales.
+- Genuine loop correction is necessary but not sufficient. Official hard
+  exact is zero at loop1 and opens in later loops; a same-board 64-blank case
+  removes `16` wrong cells across loops but stalls at six errors. Recurrent
+  computation is active, yet the representation still fails to close enough
+  global constraints.
+- P-GDN3-001 and P-GDN3-002 together localize the lesson: cross-layer state
+  compatibility matters, but forcing every layer into one shared Q/K namespace
+  sacrifices useful layer-private address dynamics at scale. Preserve the
+  compatibility hypothesis and reject this implementation.
+- A matched D256 normal-GDN2 control is not authorized after the registered
+  endpoint miss; it would quantify a failed candidate rather than change the
+  next decision. The next high-information mechanism to audit is an
+  identity-initialized state-coordinate transport into each receiving layer's
+  private K/V basis. Do not run it before its own identity, budget, prediction,
+  and kill criteria are preregistered.
 
 ## 2026-06-03 GPU1 bootstrap
 

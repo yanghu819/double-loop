@@ -61,12 +61,16 @@ is `0/0.1321`, with CE `2.0089`, versus P-GDN3-002 `0.7778/0.9853` and CE
 `0.0143`. Coordinate equality at birth therefore causes destructive deep-stack
 symmetry rather than useful co-adaptation. P-GDN3-003 is closed without rescue.
 
-P-GDN3-004 is the next scale test. It removes all cross-layer copying and uses
+P-GDN3-004 is the active scale test. It removes all cross-layer copying and uses
 the previously validated position-address/payload separation: canonical
 position drives Q/K while hidden content drives V and every state-edit/output
 gate. Every layer remains private, the official GDN2 recurrence and native
 FutureSeed are unchanged, and one D256/L12 full-diversity trajectory decides
-whether this stronger D192 mechanism scales to hard full-board exact.
+whether this stronger D192 mechanism scales to hard full-board exact. Its sole
+two-step fit passed at `11.486M` parameters with twelve pinned official-FLA
+GDN2/Triton layers, finite update/checkpoint, and active nonzero position-Q/K
+diagnostics. The formal SHA `9f2ee8d` trajectory is running unchanged; the
+first claim-bearing readout is the preregistered step500 gate.
 
 ## Working Title
 

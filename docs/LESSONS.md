@@ -2069,3 +2069,15 @@
   absolute position table ends at 128. A future crossover experiment must
   train or adopt a carrier with valid long-context positional semantics and
   preserve task quality at every reported length.
+- Mode-specific mechanisms require mode-specific activation evidence. In the
+  P-GDN3-004 fit, generic residual-address fields such as `addr_scale` and
+  `qchg/kchg` remain zero by construction because position-Q/K replaces the
+  projection input rather than perturbing content Q/K. The decisive checks are
+  `gdn2_address_enabled=1`, nonzero Q/K cosine diagnostics, strict execution-path
+  provenance, and source inspection. Treating unrelated zero fields as a
+  fallback would incorrectly discard an active mechanism.
+- A mechanical fit is not a science result. P-GDN3-004's two finite optimizer
+  steps establish only that the full D256/L12 CUDA, official-FLA/Triton,
+  FutureSeed, checkpoint, and position-address paths compose. Easy-Sudoku
+  opening at the frozen step500 gate still decides whether the trajectory is
+  worth continuing.

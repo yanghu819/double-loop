@@ -69,8 +69,15 @@ FutureSeed are unchanged, and one D256/L12 full-diversity trajectory decides
 whether this stronger D192 mechanism scales to hard full-board exact. Its sole
 two-step fit passed at `11.486M` parameters with twelve pinned official-FLA
 GDN2/Triton layers, finite update/checkpoint, and active nonzero position-Q/K
-diagnostics. The formal SHA `9f2ee8d` trajectory is running unchanged; the
-first claim-bearing readout is the preregistered step500 gate.
+diagnostics. The formal SHA `9f2ee8d` trajectory passes its first claim-bearing
+step500 gate: h50 exact rises `0.3838 -> 0.8990` from loop1 to loop5, versus
+P-GDN3-002 loop5 `0.7778`, while train CE is `0.002967`. This establishes that
+stable addresses plus private payload dynamics avoid the shared/copy symmetry
+failures and improve iterative easy-stage optimization. It does not establish
+hard scaling: h53/h58/h64 exact is still zero, although h64 mean wrong cells
+fall `36.16 -> 34.04`. The trajectory therefore continues unchanged; step3000
+is the next claim-bearing hard gate and endpoint official ranges remain the
+only basis for a scalable-GDN3 claim.
 
 ## Working Title
 

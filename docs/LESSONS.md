@@ -96,6 +96,22 @@
   Position-address/payload separation already has a strong matched D192 signal
   (`+0.2296` mean hard blank), so its one D256/L12 full-budget test has higher
   decision value than another cross-layer-sharing variant.
+- P-GDN3-004 confirms that the combination matters: canonical position Q/K
+  keeps a readable address system while private per-layer V and state-edit
+  dynamics preserve specialization. At step500 it reaches h50 loop5 exact
+  `0.8990`, versus `0.7778` for the permanently shared namespace and `0` for
+  coherent copied initialization, with CE `0.002967`. The useful abstraction
+  is stable address semantics, not parameter equality across depth.
+- Faster easy-stage optimization is necessary but still not the research
+  endpoint. At the same P-GDN3-004 gate, h53/h58/h64 exact remains zero;
+  h64 removes `2.12` wrong cells across loops, but h58 is flat to slightly
+  worse. Preserve the trajectory to its registered hard gates and do not turn
+  the h50 win into a nearby address, width, loss, or seed table.
+- The orthogonal-innovation FutureSeed successor should remain independent of
+  this result. Position Q/K changes how state is addressed; P-FS3-001 changes
+  which newly written component of the producer terminal state is transported.
+  That separation creates a clean next causal test if P-GDN3-004 later closes
+  or completes, instead of stacking two unmeasured mechanisms in one run.
 
 ## 2026-06-03 GPU1 bootstrap
 

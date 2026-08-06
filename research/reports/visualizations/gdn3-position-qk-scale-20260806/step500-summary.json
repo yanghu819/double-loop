@@ -1,0 +1,76 @@
+{
+  "experiment_id": "P-GDN3-004",
+  "gate": "step500",
+  "decision": "pass_continue_unchanged",
+  "source_sha": "9f2ee8d1738032bc5f09b55db0b81d507780b376",
+  "run": "gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d",
+  "step": 500,
+  "train": {
+    "ce": 0.0029669745854334906,
+    "total_loss": 0.008743817918002605,
+    "loop1_loss": 0.02928549377247691,
+    "loop5_loss": 0.0029669745854334906,
+    "effective_boards_seen": 64000,
+    "board_input_cell_tokens": 5184000,
+    "loop_cell_token_evaluations": 25920000
+  },
+  "fixed_probes": {
+    "holes50": {
+      "n": 99,
+      "exact_by_loop": [0.3838383853, 0.8383838534, 0.8686868548, 0.8787878752, 0.8989899158],
+      "blank_accuracy_by_loop": [0.9668686986, 0.9901010394, 0.9923232198, 0.9927272797, 0.9931313396],
+      "mean_wrong_cells_by_loop": [1.6565650702, 0.4949480295, 0.3838390112, 0.3636360168, 0.3434330225]
+    },
+    "holes53": {
+      "n": 512,
+      "exact_by_loop": [0, 0, 0, 0, 0],
+      "blank_accuracy_by_loop": [0.5128611326, 0.5263856053, 0.5243588090, 0.5235480666, 0.5227004886],
+      "mean_wrong_cells_by_loop": [25.8183599710, 25.1015629172, 25.2089831233, 25.2519524693, 25.2968741059]
+    },
+    "holes58": {
+      "n": 512,
+      "exact_by_loop": [0, 0, 0, 0, 0],
+      "blank_accuracy_by_loop": [0.3905913234, 0.3938240707, 0.3909954131, 0.3899514973, 0.3895810843],
+      "mean_wrong_cells_by_loop": [35.3457032442, 35.1582038999, 35.3222660422, 35.3828131557, 35.4042971134]
+    },
+    "holes64": {
+      "n": 512,
+      "exact_by_loop": [0, 0, 0, 0, 0],
+      "blank_accuracy_by_loop": [0.4349670410, 0.4663696289, 0.4679870605, 0.4680786133, 0.4680480957],
+      "mean_wrong_cells_by_loop": [36.162109375, 34.15234375, 34.048828125, 34.04296875, 34.044921875]
+    }
+  },
+  "gate_contract": {
+    "required_holes50_loop5_exact": 0.6,
+    "observed_holes50_loop5_exact": 0.8989899158,
+    "margin": 0.2989899158,
+    "positive_loop_correction": true,
+    "finite_ce": true
+  },
+  "comparisons": {
+    "p_gdn3_002_step500_holes50_loop5_exact": 0.7777777910,
+    "delta_vs_p_gdn3_002": 0.1212121248,
+    "p_gdn3_003_step500_holes50_loop5_exact": 0.0
+  },
+  "systems": {
+    "parameter_count": 11485760,
+    "stable_checkpoint_interval_seconds": [716, 723, 725],
+    "stable_seconds_per_step_mean": 7.2133333333,
+    "stable_interval_cv": 0.00535,
+    "effective_boards_per_second": 17.745,
+    "fit_peak_allocated_mib": 13045.7,
+    "formal_live_nvml_sample_mib": 17491,
+    "formal_peak_allocated_mib": null
+  },
+  "integrity": {
+    "visible_cuda_index": 0,
+    "gpu_uuid": "GPU-53e9f3b4-2966-65d3-6614-09c540921519",
+    "official_fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+    "official_fla_gdn2_layers": 12,
+    "address_enabled": true,
+    "fallback": false,
+    "nan": false,
+    "oom": false
+  },
+  "metric_boundary": "Fixed aggregate probes only. They are not full official ranges and do not contain per-board trajectories."
+}

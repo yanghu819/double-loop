@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: formal trajectory active; production-runner fit passed
+- Status: step500 gate passed; formal trajectory continues unchanged
 - Date: 2026-08-06
 - Benchmark: official/full-diversity hard 9x9 Sudoku
 - Compute: AIStation task-mode GPU1 only
@@ -85,9 +85,54 @@ The formal 12k trajectory started without changing the registered contract:
 - worktree: `/huyang2/double-loop/worktrees/p-gdn3-004-9f2ee8d`;
 - launch log: `/huyang2/double-loop/artifacts/launch/p-gdn3-004/formal-9f2ee8d.log`.
 
-The process is healthy and compiling/training on the sole registered GPU. The
-first scientific decision remains the frozen step500 gate below; no result is
-claimed from the two-step fit.
+The process remains healthy on the sole registered GPU. The two-step fit is
+engineering evidence only; the first claim-bearing result is the independently
+evaluated step500 gate below.
+
+## Step500 Science Gate
+
+The frozen step500 evaluator passes the registered easy-carrier gate by a wide
+margin. On the 99-board holes50 fixed probe, exact accuracy across loops1-5 is
+`0.3838/0.8384/0.8687/0.8788/0.8990`, and blank accuracy is
+`0.9669/0.9901/0.9923/0.9927/0.9931`. Mean wrong cells therefore fall
+`1.66 -> 0.49 -> 0.38 -> 0.36 -> 0.34`. Loop5 exact exceeds the `0.60`
+floor by `+0.2990` and exceeds P-GDN3-002 at the same gate (`0.7778`) by
+`+0.1212`. P-GDN3-003 remained at exact zero under the same gate.
+
+This pass is not yet a hard-Sudoku result. The 512-board holes53/58/64 fixed
+probes all remain at exact zero. Loop behavior is also heterogeneous:
+holes53 wrong cells change `25.82 -> 25.30`, holes58 slightly regresses
+`35.35 -> 35.40`, while holes64 improves materially `36.16 -> 34.04`.
+Stable position addressing has solved the deep-stack optimization failure and
+creates genuine late correction on the hardest probe, but it has not yet
+opened full-board closure beyond the easy curriculum.
+
+Train CE/total/loop1 loss at the gate is
+`0.002967/0.008744/0.029285`, all finite. The address path remains active with
+Q/K diagonal/off-diagonal cosine `0.04836/0.03296` and contrast `0.01540`.
+No NaN, OOM, fallback, source drift, data drift, or GPU drift is present.
+Training exposure is 64,000 effective boards, 5.184M board input cell tokens,
+and 25.92M loop-cell evaluations.
+
+The independent stable step100-to-step400 checkpoint intervals are
+`716/723/725` seconds per 100 steps: `7.2133` seconds/step, `17.745` effective
+boards/second, and `0.535%` interval CV. Exact full-shape fit peak allocation
+is `13,045.7 MiB`; formal live NVML sampled `17,491 MiB`. Formal endpoint peak
+allocation has not yet been emitted and is not inferred from NVML.
+
+The evaluator JSON SHA256 is
+`58356e226d798e6a761bc945ad90d50b4eea3f903c233b9b551419e18d369369`;
+the step500 checkpoint SHA256 is
+`522a0a96950b7d9ef30bd65c7b93cae98265fbd3a7fef7e21a3663d92d4fd602`.
+Config, source HEAD, log snapshot, evaluator, summary, provenance, and an
+aggregate loop visualization are archived under
+`research/reports/visualizations/gdn3-position-qk-scale-20260806/`.
+These fixed probes are not full official ranges and contain no same-board
+trajectories.
+
+Decision: pass and continue the exact trajectory without intervention. Step1000
+is a scheduled diagnostic; step3000 is the next decision gate. No concurrent
+FutureSeed experiment or rescue variant is authorized while this run owns GPU1.
 
 ## Predictions And Gates
 
@@ -108,9 +153,10 @@ position mechanism.
 
 ## Allowed Claim
 
-A pass would establish address/payload factorization as the first scalable
-GDN3 candidate: stable locations for recurrent writes and reads, private
-content dynamics in every layer, and native FutureSeed under a full hard-Sudoku
-scaling budget. A miss closes this mechanism at scale and moves the next test
-to a genuinely new FutureSeed state representation rather than another address
-variant.
+The step500 pass establishes position-address/payload factorization as the first
+full-size GDN3 candidate to combine private layer dynamics with faster easy-stage
+optimization and genuine loop correction. It does not establish hard scaling.
+That claim still requires the registered step3000/6000 gates and frozen endpoint
+official ranges. A later miss closes this mechanism at scale and moves the next
+test to the preregistered FutureSeed innovation representation rather than
+another address variant.

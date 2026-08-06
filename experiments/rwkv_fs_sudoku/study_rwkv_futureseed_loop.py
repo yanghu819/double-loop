@@ -342,6 +342,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_carrier",
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
+FUTURE_SEED_CONTENT_MODES = ("terminal", "innovation_residual")
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
@@ -3726,6 +3727,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_gate_mode: str = "head",
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
+        future_seed_content_mode: str = "terminal",
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
         backbone: str = "rwkv",
@@ -3763,6 +3765,11 @@ class FutureSeedRWKV(nn.Module):
             )
         if future_seed_scope not in {"layer", "block"}:
             raise ValueError("future_seed_scope must be one of: layer, block.")
+        if future_seed_content_mode not in FUTURE_SEED_CONTENT_MODES:
+            raise ValueError(
+                "future_seed_content_mode must be one of: "
+                f"{', '.join(FUTURE_SEED_CONTENT_MODES)}."
+            )
         if future_seed_scope == "block" and future_seed_update != "fixed":
             raise ValueError("block FutureSeed currently requires future_seed_update=fixed.")
         if future_seed_scope == "block" and future_seed_gate_mode != "head":
@@ -3779,6 +3786,25 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("compatible FutureSeed readout requires future_seed_update=fixed.")
         if future_seed_readout_hop > 0 and future_seed_gate_mode != "head":
             raise ValueError("compatible FutureSeed readout requires the canonical head gate.")
+        if future_seed_content_mode == "innovation_residual":
+            if layers < 3:
+                raise ValueError("innovation-residual FutureSeed needs at least three layers.")
+            if backbone != "gdn2":
+                raise ValueError("innovation-residual FutureSeed is restricted to GDN2.")
+            if future_seed_scope != "layer":
+                raise ValueError("innovation-residual FutureSeed requires layer scope.")
+            if future_seed_update != "fixed" or future_seed_decay != 0:
+                raise ValueError(
+                    "innovation-residual FutureSeed requires fixed, zero-decay updates."
+                )
+            if future_seed_norm_mode != "unit" or future_seed_gate_mode != "head":
+                raise ValueError(
+                    "innovation-residual FutureSeed requires unit normalization and head gates."
+                )
+            if future_seed_readout_hop != 0:
+                raise ValueError(
+                    "innovation-residual FutureSeed cannot be mixed with multihop readout."
+                )
         if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"}:
             raise ValueError(
                 "backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda, raven."
@@ -3802,6 +3828,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_gate_mode = future_seed_gate_mode
         self.future_seed_scope = future_seed_scope
         self.future_seed_readout_hop = int(future_seed_readout_hop)
+        self.future_seed_content_mode = future_seed_content_mode
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
@@ -3836,6 +3863,13 @@ class FutureSeedRWKV(nn.Module):
             self.future_seed_readout_scale._no_weight_decay = True
         else:
             self.register_parameter("future_seed_readout_scale", None)
+        if self.future_seed_content_mode == "innovation_residual":
+            self.future_seed_innovation_scale = nn.Parameter(
+                torch.zeros(layers - 2, 1, heads, 1, 1)
+            )
+            self.future_seed_innovation_scale._no_weight_decay = True
+        else:
+            self.register_parameter("future_seed_innovation_scale", None)
         expanded_head_dim = int(head_dim * float(gdn_expand_v))
         if backbone in {"gdn", "fla_gdn", "kda"}:
             state_row_dim = expanded_head_dim
@@ -3971,6 +4005,75 @@ class FutureSeedRWKV(nn.Module):
                     continue
                 target_module.load_state_dict(source_module.state_dict())
 
+    def _compose_future_seed_content(
+        self,
+        terminal_state: torch.Tensor,
+        producer_initial_state: Optional[torch.Tensor],
+        *,
+        receiver_layer_idx: int,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        zero = terminal_state.new_zeros(())
+        if self.future_seed_content_mode == "terminal" or receiver_layer_idx < 2:
+            return terminal_state, {
+                "fs3_innovation_enabled": zero,
+                "fs3_innovation_scale_abs": zero,
+                "fs3_innovation_fraction": zero,
+                "fs3_innovation_residual_relative_rms": zero,
+            }
+        if producer_initial_state is None:
+            raise RuntimeError(
+                "innovation-residual FutureSeed is missing the producer initial state"
+            )
+        if producer_initial_state.shape != terminal_state.shape:
+            raise ValueError(
+                "producer initial-state shape does not match its terminal state: "
+                f"{tuple(producer_initial_state.shape)} != {tuple(terminal_state.shape)}"
+            )
+        assert self.future_seed_innovation_scale is not None
+
+        terminal = terminal_state.float()
+        incoming = producer_initial_state.float()
+        incoming_energy = incoming.square().sum(
+            dim=(-1, -2), keepdim=True
+        ).clamp_min(1e-12)
+        projection = (
+            (terminal * incoming).sum(dim=(-1, -2), keepdim=True)
+            / incoming_energy
+        ) * incoming
+        innovation = terminal - projection
+        terminal_rms = terminal.square().mean(
+            dim=(-1, -2), keepdim=True
+        ).sqrt().clamp_min(1e-6)
+        innovation_rms = innovation.square().mean(
+            dim=(-1, -2), keepdim=True
+        ).sqrt()
+        innovation_floor = 0.1 * terminal_rms
+        bounded_innovation = (
+            innovation
+            / torch.maximum(innovation_rms, innovation_floor)
+            * terminal_rms
+        )
+        scale = torch.tanh(
+            self.future_seed_innovation_scale[receiver_layer_idx - 2]
+        ).to(device=terminal.device, dtype=terminal.dtype)
+        residual = scale * bounded_innovation
+        candidate = terminal_state + residual.to(dtype=terminal_state.dtype)
+        residual_rms = residual.square().mean(
+            dim=(-1, -2), keepdim=True
+        ).sqrt()
+        return candidate, {
+            "fs3_innovation_enabled": terminal_state.new_ones(()),
+            "fs3_innovation_scale_abs": scale.detach().abs().mean().to(
+                dtype=terminal_state.dtype
+            ),
+            "fs3_innovation_fraction": (
+                innovation_rms / terminal_rms
+            ).detach().mean().to(dtype=terminal_state.dtype),
+            "fs3_innovation_residual_relative_rms": (
+                residual_rms / terminal_rms
+            ).detach().mean().to(dtype=terminal_state.dtype),
+        }
+
     def forward(
         self,
         x: torch.Tensor,
@@ -4000,6 +4103,7 @@ class FutureSeedRWKV(nn.Module):
                 f"seed_memory has {len(seed_memory)} entries, expected {expected_seed_count}"
             )
         previous_state: Optional[torch.Tensor] = None
+        previous_initial_state: Optional[torch.Tensor] = None
         seed_state: Optional[torch.Tensor] = None
         v_first: Optional[torch.Tensor] = None
         next_seed_memory: Optional[List[torch.Tensor]] = (
@@ -4029,6 +4133,10 @@ class FutureSeedRWKV(nn.Module):
         readout_scales = []
         readout_raw_norms = []
         readout_residual_norms = []
+        innovation_enabled = []
+        innovation_scales = []
+        innovation_fractions = []
+        innovation_residual_relative_rms = []
         state_history: List[torch.Tensor] = []
         gain_budget_values: Dict[str, List[torch.Tensor]] = {}
         for layer_idx, block in enumerate(self.blocks):
@@ -4125,6 +4233,17 @@ class FutureSeedRWKV(nn.Module):
                         update_gates.append(x.new_tensor(1.0 - keep))
                     candidate_seed_state = seed_state
             if candidate_seed_state is not None and self.future_seed_scale > 0:
+                candidate_seed_state, innovation_diag = self._compose_future_seed_content(
+                    candidate_seed_state,
+                    previous_initial_state,
+                    receiver_layer_idx=layer_idx,
+                )
+                innovation_enabled.append(innovation_diag["fs3_innovation_enabled"])
+                innovation_scales.append(innovation_diag["fs3_innovation_scale_abs"])
+                innovation_fractions.append(innovation_diag["fs3_innovation_fraction"])
+                innovation_residual_relative_rms.append(
+                    innovation_diag["fs3_innovation_residual_relative_rms"]
+                )
                 if layer_idx == 0:
                     gate = torch.sigmoid(block.future_seed_logit)
                     selective_zero = x.new_zeros(())
@@ -4308,6 +4427,7 @@ class FutureSeedRWKV(nn.Module):
             else:
                 x, previous_state = block(x, initial_state=initial_state)
             assert previous_state is not None
+            previous_initial_state = initial_state
             state_history.append(previous_state)
             if isinstance(block, FLADeltaBlock):
                 for key, value in block.time_mix.last_gain_budget_diag.items():
@@ -4376,6 +4496,26 @@ class FutureSeedRWKV(nn.Module):
                 if readout_residual_norms
                 else x.new_zeros(())
             )
+            out["fs3_innovation_enabled"] = (
+                torch.stack(innovation_enabled).max()
+                if innovation_enabled
+                else x.new_zeros(())
+            )
+            out["fs3_innovation_scale_abs"] = (
+                torch.stack(innovation_scales).mean()
+                if innovation_scales
+                else x.new_zeros(())
+            )
+            out["fs3_innovation_fraction"] = (
+                torch.stack(innovation_fractions).mean()
+                if innovation_fractions
+                else x.new_zeros(())
+            )
+            out["fs3_innovation_residual_relative_rms"] = (
+                torch.stack(innovation_residual_relative_rms).mean()
+                if innovation_residual_relative_rms
+                else x.new_zeros(())
+            )
             for key, values in gain_budget_values.items():
                 stacked = torch.stack([value.float() for value in values])
                 out[key] = (
@@ -4420,6 +4560,10 @@ class FutureSeedRWKV(nn.Module):
             "fs2_readout_scale_abs": zero,
             "fs2_readout_raw_norm": zero,
             "fs2_readout_residual_norm": zero,
+            "fs3_innovation_enabled": zero,
+            "fs3_innovation_scale_abs": zero,
+            "fs3_innovation_fraction": zero,
+            "fs3_innovation_residual_relative_rms": zero,
         }
         for key, values in gain_budget_values.items():
             stacked = torch.stack([value.float() for value in values])
@@ -4705,6 +4849,7 @@ def load_training_checkpoint(
             "future_seed_gate_mode",
             "future_seed_scope",
             "future_seed_readout_hop",
+            "future_seed_content_mode",
             "lambda_",
             "loop_update_mode",
             "loop_update_gate_init",
@@ -4758,6 +4903,7 @@ def load_training_checkpoint(
             "future_seed_gate_mode": "head",
             "future_seed_scope": "layer",
             "future_seed_readout_hop": 0,
+            "future_seed_content_mode": "terminal",
             "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
             "gdn2_cross_layer_init": "independent",
@@ -4770,9 +4916,17 @@ def load_training_checkpoint(
             raise RuntimeError("Exact checkpoint resume requires saved args")
         mismatches = {}
         accepted_legacy_defaults = {}
+        accepted_future_seed_content_upgrade = False
         for field in contract_fields:
             current_value = getattr(expected_args, field)
             if field not in saved_args:
+                if (
+                    field == "future_seed_content_mode"
+                    and bool(expected_args.resume_allow_future_seed_content_upgrade)
+                    and current_value == "innovation_residual"
+                ):
+                    accepted_future_seed_content_upgrade = True
+                    continue
                 if (
                     field in legacy_missing_defaults
                     and current_value == legacy_missing_defaults[field]
@@ -4794,6 +4948,15 @@ def load_training_checkpoint(
                 )
             else:
                 matches = saved_value == current_value
+            if (
+                not matches
+                and field == "future_seed_content_mode"
+                and bool(expected_args.resume_allow_future_seed_content_upgrade)
+                and saved_value == "terminal"
+                and current_value == "innovation_residual"
+            ):
+                accepted_future_seed_content_upgrade = True
+                matches = True
             if not matches:
                 mismatches[field] = {
                     "saved": saved_value,
@@ -4869,6 +5032,9 @@ def load_training_checkpoint(
             "checkpoint_source_config": str(source_config_path),
             "checkpoint_source_patch": str(source_patch_path),
             "accepted_legacy_defaults": accepted_legacy_defaults,
+            "accepted_future_seed_content_upgrade": (
+                accepted_future_seed_content_upgrade
+            ),
             "curriculum_prefix": stage_context,
             "saved_at_step": saved_at_step,
             "matched": True,
@@ -4881,6 +5047,7 @@ def load_training_checkpoint(
         "reasoner.future_seed_selector.gate_delta",
         "reasoner.future_seed_selector.content_weight",
         "reasoner.future_seed_readout_scale",
+        "reasoner.future_seed_innovation_scale",
         "reasoner.shared_address_proj.weight",
     }
     progressive_suffixes = (
@@ -5052,6 +5219,7 @@ class FutureSeedLoopSudoku(nn.Module):
         raven_topk: int = 0,
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
+        future_seed_content_mode: str = "terminal",
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -5099,6 +5267,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_gate_mode=future_seed_gate_mode,
             future_seed_scope=future_seed_scope,
             future_seed_readout_hop=future_seed_readout_hop,
+            future_seed_content_mode=future_seed_content_mode,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
             backbone=backbone,
@@ -5822,6 +5991,17 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(
             f"fs2_readout_resid={m.get('fs2_readout_residual_norm', 0.0):.3f}"
         )
+    if m.get("fs3_innovation_enabled", 0.0) > 0:
+        parts.append(
+            f"fs3_innov_scale={m.get('fs3_innovation_scale_abs', 0.0):.4f}"
+        )
+        parts.append(
+            f"fs3_innov_frac={m.get('fs3_innovation_fraction', 0.0):.3f}"
+        )
+        parts.append(
+            "fs3_innov_resid="
+            f"{m.get('fs3_innovation_residual_relative_rms', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -6055,6 +6235,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_gate_mode=args.future_seed_gate_mode,
         future_seed_scope=args.future_seed_scope,
         future_seed_readout_hop=args.future_seed_readout_hop,
+        future_seed_content_mode=args.future_seed_content_mode,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_feedback_detach=bool(args.loop_feedback_detach),
         loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
@@ -6269,6 +6450,17 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             and not migration.get("unexpected_parameters")
             and migration.get("optimizer_groups_expanded") is True
         )
+        declared_future_seed_content_upgrade = (
+            bool(args.resume_allow_future_seed_content_upgrade)
+            and args.future_seed_content_mode == "innovation_residual"
+            and migrated_missing == {"reasoner.future_seed_innovation_scale"}
+            and not migration.get("unexpected_parameters")
+            and migration.get("optimizer_groups_expanded") is True
+            and checkpoint.get("_resume_contract", {}).get(
+                "accepted_future_seed_content_upgrade"
+            )
+            is True
+        )
         if args.resume_require_exact_state and (
             (
                 migration.get("missing_parameters")
@@ -6276,6 +6468,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 or migration.get("optimizer_groups_expanded")
             )
             and not declared_fast_slow_migration
+            and not declared_future_seed_content_upgrade
         ):
             raise RuntimeError(
                 "Exact checkpoint resume required, but migration was needed: "
@@ -7036,6 +7229,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "activation_checkpoint": bool(args.activation_checkpoint),
         "resume_train_checkpoint": resume_info,
         "resume_require_exact_state": bool(args.resume_require_exact_state),
+        "resume_allow_future_seed_content_upgrade": bool(
+            args.resume_allow_future_seed_content_upgrade
+        ),
         "save_train_checkpoint_every": args.save_train_checkpoint_every,
         "saved_train_checkpoints": saved_train_checkpoints,
         "cuda_max_memory_allocated_mb": (
@@ -7049,6 +7245,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_gate_mode": args.future_seed_gate_mode,
         "future_seed_scope": args.future_seed_scope,
         "future_seed_readout_hop": args.future_seed_readout_hop,
+        "future_seed_content_mode": args.future_seed_content_mode,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
         "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
@@ -8021,6 +8218,9 @@ def export_case_bank(
                     "future_seed_scale": float(
                         model.reasoner.future_seed_scale
                     ),
+                    "future_seed_content_mode": (
+                        model.reasoner.future_seed_content_mode
+                    ),
                 },
                 "cases": all_cases,
                 "data_hash": data_hash,
@@ -8285,6 +8485,15 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         )
     if args.future_seed_readout_hop > 0 and args.backbone != "gdn2":
         raise ValueError("--future_seed_readout_hop is initially restricted to GDN2")
+    if args.resume_allow_future_seed_content_upgrade:
+        if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
+            raise ValueError(
+                "--resume_allow_future_seed_content_upgrade requires an exact checkpoint resume"
+            )
+        if args.future_seed_content_mode != "innovation_residual":
+            raise ValueError(
+                "--resume_allow_future_seed_content_upgrade requires innovation_residual mode"
+            )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")
     if not (0.0 <= args.future_seed_decay < 1.0):
@@ -8510,6 +8719,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"mainline=future_seed_loop backbone={args.backbone} rwkv_kernel={args.rwkv_kernel} "
         f"future_seed_gate_mode={args.future_seed_gate_mode} future_seed_scope={args.future_seed_scope} "
         f"future_seed_readout_hop={args.future_seed_readout_hop} "
+        f"future_seed_content_mode={args.future_seed_content_mode} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
@@ -8690,6 +8900,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_gate_mode": args.future_seed_gate_mode,
         "future_seed_scope": args.future_seed_scope,
         "future_seed_readout_hop": args.future_seed_readout_hop,
+        "future_seed_content_mode": args.future_seed_content_mode,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
@@ -8893,6 +9104,11 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--future_seed_scope", choices=("layer", "block"), default="layer")
     p.add_argument("--future_seed_readout_hop", type=int, default=0)
+    p.add_argument(
+        "--future_seed_content_mode",
+        choices=FUTURE_SEED_CONTENT_MODES,
+        default="terminal",
+    )
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
     p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)
@@ -8921,6 +9137,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--resume_train_checkpoint_sha256", default="")
     p.add_argument("--resume_train_source_sha", default="")
     p.add_argument("--resume_require_exact_state", action="store_true")
+    p.add_argument(
+        "--resume_allow_future_seed_content_upgrade",
+        action="store_true",
+    )
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")

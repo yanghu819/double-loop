@@ -26,6 +26,7 @@ from futureseed2_selective import (
     FUTURE_SEED_GATE_MODES,
     FutureSeedSelectiveGate,
 )
+from futureseed3_producer_codec import FutureSeedProducerCodec
 from fast_slow_decay_gdn2 import (
     FAST_SLOW_DECAY_MODES,
     FastSlowDecayController,
@@ -342,7 +343,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_carrier",
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
-FUTURE_SEED_CONTENT_MODES = ("terminal", "innovation_residual")
+FUTURE_SEED_CONTENT_MODES = ("terminal", "innovation_residual", "producer_codec")
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
 
@@ -3786,24 +3787,33 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError("compatible FutureSeed readout requires future_seed_update=fixed.")
         if future_seed_readout_hop > 0 and future_seed_gate_mode != "head":
             raise ValueError("compatible FutureSeed readout requires the canonical head gate.")
-        if future_seed_content_mode == "innovation_residual":
+        if future_seed_content_mode in {"innovation_residual", "producer_codec"}:
             if layers < 3:
-                raise ValueError("innovation-residual FutureSeed needs at least three layers.")
+                raise ValueError(
+                    f"{future_seed_content_mode} FutureSeed needs at least three layers."
+                )
             if backbone != "gdn2":
-                raise ValueError("innovation-residual FutureSeed is restricted to GDN2.")
+                raise ValueError(
+                    f"{future_seed_content_mode} FutureSeed is restricted to GDN2."
+                )
             if future_seed_scope != "layer":
-                raise ValueError("innovation-residual FutureSeed requires layer scope.")
+                raise ValueError(
+                    f"{future_seed_content_mode} FutureSeed requires layer scope."
+                )
             if future_seed_update != "fixed" or future_seed_decay != 0:
                 raise ValueError(
-                    "innovation-residual FutureSeed requires fixed, zero-decay updates."
+                    f"{future_seed_content_mode} FutureSeed requires fixed, "
+                    "zero-decay updates."
                 )
             if future_seed_norm_mode != "unit" or future_seed_gate_mode != "head":
                 raise ValueError(
-                    "innovation-residual FutureSeed requires unit normalization and head gates."
+                    f"{future_seed_content_mode} FutureSeed requires unit normalization "
+                    "and head gates."
                 )
             if future_seed_readout_hop != 0:
                 raise ValueError(
-                    "innovation-residual FutureSeed cannot be mixed with multihop readout."
+                    f"{future_seed_content_mode} FutureSeed cannot be mixed with "
+                    "multihop readout."
                 )
         if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"}:
             raise ValueError(
@@ -3891,6 +3901,14 @@ class FutureSeedRWKV(nn.Module):
         else:
             state_row_dim = head_dim
             state_col_dim = head_dim
+        self.future_seed_producer_codec = (
+            FutureSeedProducerCodec(
+                row_dim=state_row_dim,
+                col_dim=state_col_dim,
+            )
+            if self.future_seed_content_mode == "producer_codec"
+            else None
+        )
         self.future_seed_selector = FutureSeedSelectiveGate(
             mode=future_seed_gate_mode,
             layers=layers,
@@ -4013,21 +4031,43 @@ class FutureSeedRWKV(nn.Module):
         receiver_layer_idx: int,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         zero = terminal_state.new_zeros(())
+        zero_diag = {
+            "fs3_innovation_enabled": zero,
+            "fs3_innovation_scale_abs": zero,
+            "fs3_innovation_fraction": zero,
+            "fs3_innovation_residual_relative_rms": zero,
+            "fs3_codec_enabled": zero,
+            "fs3_codec_code_relative_rms": zero,
+            "fs3_codec_row_attention_entropy": zero,
+            "fs3_codec_row_attention_max": zero,
+            "fs3_codec_row_attention_batch_std": zero,
+            "fs3_codec_update_relative_rms": zero,
+            "fs3_codec_residual_relative_rms": zero,
+            "fs3_codec_residual_batch_std": zero,
+        }
         if self.future_seed_content_mode == "terminal" or receiver_layer_idx < 2:
-            return terminal_state, {
-                "fs3_innovation_enabled": zero,
-                "fs3_innovation_scale_abs": zero,
-                "fs3_innovation_fraction": zero,
-                "fs3_innovation_residual_relative_rms": zero,
-            }
+            return terminal_state, zero_diag
         if producer_initial_state is None:
             raise RuntimeError(
-                "innovation-residual FutureSeed is missing the producer initial state"
+                f"{self.future_seed_content_mode} FutureSeed is missing the "
+                "producer initial state"
             )
         if producer_initial_state.shape != terminal_state.shape:
             raise ValueError(
                 "producer initial-state shape does not match its terminal state: "
                 f"{tuple(producer_initial_state.shape)} != {tuple(terminal_state.shape)}"
+            )
+        if self.future_seed_content_mode == "producer_codec":
+            if self.future_seed_producer_codec is None:
+                raise RuntimeError("producer-codec FutureSeed module is missing")
+            candidate, codec_diag = self.future_seed_producer_codec(
+                terminal_state,
+                producer_initial_state,
+            )
+            return candidate, {**zero_diag, **codec_diag}
+        if self.future_seed_content_mode != "innovation_residual":
+            raise AssertionError(
+                f"unhandled FutureSeed content mode: {self.future_seed_content_mode}"
             )
         assert self.future_seed_innovation_scale is not None
 
@@ -4062,6 +4102,7 @@ class FutureSeedRWKV(nn.Module):
             dim=(-1, -2), keepdim=True
         ).sqrt()
         return candidate, {
+            **zero_diag,
             "fs3_innovation_enabled": terminal_state.new_ones(()),
             "fs3_innovation_scale_abs": scale.detach().abs().mean().to(
                 dtype=terminal_state.dtype
@@ -4137,6 +4178,14 @@ class FutureSeedRWKV(nn.Module):
         innovation_scales = []
         innovation_fractions = []
         innovation_residual_relative_rms = []
+        codec_enabled = []
+        codec_code_relative_rms = []
+        codec_row_attention_entropy = []
+        codec_row_attention_max = []
+        codec_row_attention_batch_std = []
+        codec_update_relative_rms = []
+        codec_residual_relative_rms = []
+        codec_residual_batch_std = []
         state_history: List[torch.Tensor] = []
         gain_budget_values: Dict[str, List[torch.Tensor]] = {}
         for layer_idx, block in enumerate(self.blocks):
@@ -4243,6 +4292,28 @@ class FutureSeedRWKV(nn.Module):
                 innovation_fractions.append(innovation_diag["fs3_innovation_fraction"])
                 innovation_residual_relative_rms.append(
                     innovation_diag["fs3_innovation_residual_relative_rms"]
+                )
+                codec_enabled.append(innovation_diag["fs3_codec_enabled"])
+                codec_code_relative_rms.append(
+                    innovation_diag["fs3_codec_code_relative_rms"]
+                )
+                codec_row_attention_entropy.append(
+                    innovation_diag["fs3_codec_row_attention_entropy"]
+                )
+                codec_row_attention_max.append(
+                    innovation_diag["fs3_codec_row_attention_max"]
+                )
+                codec_row_attention_batch_std.append(
+                    innovation_diag["fs3_codec_row_attention_batch_std"]
+                )
+                codec_update_relative_rms.append(
+                    innovation_diag["fs3_codec_update_relative_rms"]
+                )
+                codec_residual_relative_rms.append(
+                    innovation_diag["fs3_codec_residual_relative_rms"]
+                )
+                codec_residual_batch_std.append(
+                    innovation_diag["fs3_codec_residual_batch_std"]
                 )
                 if layer_idx == 0:
                     gate = torch.sigmoid(block.future_seed_logit)
@@ -4516,6 +4587,46 @@ class FutureSeedRWKV(nn.Module):
                 if innovation_residual_relative_rms
                 else x.new_zeros(())
             )
+            out["fs3_codec_enabled"] = (
+                torch.stack(codec_enabled).max()
+                if codec_enabled
+                else x.new_zeros(())
+            )
+            out["fs3_codec_code_relative_rms"] = (
+                torch.stack(codec_code_relative_rms).mean()
+                if codec_code_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_codec_row_attention_entropy"] = (
+                torch.stack(codec_row_attention_entropy).mean()
+                if codec_row_attention_entropy
+                else x.new_zeros(())
+            )
+            out["fs3_codec_row_attention_max"] = (
+                torch.stack(codec_row_attention_max).mean()
+                if codec_row_attention_max
+                else x.new_zeros(())
+            )
+            out["fs3_codec_row_attention_batch_std"] = (
+                torch.stack(codec_row_attention_batch_std).mean()
+                if codec_row_attention_batch_std
+                else x.new_zeros(())
+            )
+            out["fs3_codec_update_relative_rms"] = (
+                torch.stack(codec_update_relative_rms).mean()
+                if codec_update_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_codec_residual_relative_rms"] = (
+                torch.stack(codec_residual_relative_rms).mean()
+                if codec_residual_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_codec_residual_batch_std"] = (
+                torch.stack(codec_residual_batch_std).mean()
+                if codec_residual_batch_std
+                else x.new_zeros(())
+            )
             for key, values in gain_budget_values.items():
                 stacked = torch.stack([value.float() for value in values])
                 out[key] = (
@@ -4564,6 +4675,14 @@ class FutureSeedRWKV(nn.Module):
             "fs3_innovation_scale_abs": zero,
             "fs3_innovation_fraction": zero,
             "fs3_innovation_residual_relative_rms": zero,
+            "fs3_codec_enabled": zero,
+            "fs3_codec_code_relative_rms": zero,
+            "fs3_codec_row_attention_entropy": zero,
+            "fs3_codec_row_attention_max": zero,
+            "fs3_codec_row_attention_batch_std": zero,
+            "fs3_codec_update_relative_rms": zero,
+            "fs3_codec_residual_relative_rms": zero,
+            "fs3_codec_residual_batch_std": zero,
         }
         for key, values in gain_budget_values.items():
             stacked = torch.stack([value.float() for value in values])
@@ -4923,7 +5042,7 @@ def load_training_checkpoint(
                 if (
                     field == "future_seed_content_mode"
                     and bool(expected_args.resume_allow_future_seed_content_upgrade)
-                    and current_value == "innovation_residual"
+                    and current_value in {"innovation_residual", "producer_codec"}
                 ):
                     accepted_future_seed_content_upgrade = True
                     continue
@@ -4953,7 +5072,7 @@ def load_training_checkpoint(
                 and field == "future_seed_content_mode"
                 and bool(expected_args.resume_allow_future_seed_content_upgrade)
                 and saved_value == "terminal"
-                and current_value == "innovation_residual"
+                and current_value in {"innovation_residual", "producer_codec"}
             ):
                 accepted_future_seed_content_upgrade = True
                 matches = True
@@ -5048,6 +5167,12 @@ def load_training_checkpoint(
         "reasoner.future_seed_selector.content_weight",
         "reasoner.future_seed_readout_scale",
         "reasoner.future_seed_innovation_scale",
+        "reasoner.future_seed_producer_codec.row_score_in.weight",
+        "reasoner.future_seed_producer_codec.row_score_in.bias",
+        "reasoner.future_seed_producer_codec.row_score_out.weight",
+        "reasoner.future_seed_producer_codec.cell_decode_in.weight",
+        "reasoner.future_seed_producer_codec.cell_decode_in.bias",
+        "reasoner.future_seed_producer_codec.cell_decode_out.weight",
         "reasoner.shared_address_proj.weight",
     }
     progressive_suffixes = (
@@ -6002,6 +6127,24 @@ def fs_line(m: Dict[str, float]) -> str:
             "fs3_innov_resid="
             f"{m.get('fs3_innovation_residual_relative_rms', 0.0):.4f}"
         )
+    if m.get("fs3_codec_enabled", 0.0) > 0:
+        parts.append(
+            f"fs3_codec_code={m.get('fs3_codec_code_relative_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_codec_attn="
+            f"{m.get('fs3_codec_row_attention_entropy', 0.0):.4f}/"
+            f"{m.get('fs3_codec_row_attention_max', 0.0):.4f}/"
+            f"{m.get('fs3_codec_row_attention_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            f"fs3_codec_update={m.get('fs3_codec_update_relative_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_codec_resid="
+            f"{m.get('fs3_codec_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('fs3_codec_residual_batch_std', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -6450,10 +6593,21 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             and not migration.get("unexpected_parameters")
             and migration.get("optimizer_groups_expanded") is True
         )
+        expected_content_upgrade_parameters = (
+            {"reasoner.future_seed_innovation_scale"}
+            if args.future_seed_content_mode == "innovation_residual"
+            else {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.startswith("reasoner.future_seed_producer_codec.")
+            }
+            if args.future_seed_content_mode == "producer_codec"
+            else set()
+        )
         declared_future_seed_content_upgrade = (
             bool(args.resume_allow_future_seed_content_upgrade)
-            and args.future_seed_content_mode == "innovation_residual"
-            and migrated_missing == {"reasoner.future_seed_innovation_scale"}
+            and bool(expected_content_upgrade_parameters)
+            and migrated_missing == expected_content_upgrade_parameters
             and not migration.get("unexpected_parameters")
             and migration.get("optimizer_groups_expanded") is True
             and checkpoint.get("_resume_contract", {}).get(
@@ -8490,9 +8644,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError(
                 "--resume_allow_future_seed_content_upgrade requires an exact checkpoint resume"
             )
-        if args.future_seed_content_mode != "innovation_residual":
+        if args.future_seed_content_mode not in {
+            "innovation_residual",
+            "producer_codec",
+        }:
             raise ValueError(
-                "--resume_allow_future_seed_content_upgrade requires innovation_residual mode"
+                "--resume_allow_future_seed_content_upgrade requires a nonterminal "
+                "FutureSeed content mode"
             )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")

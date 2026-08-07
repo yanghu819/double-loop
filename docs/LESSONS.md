@@ -2335,3 +2335,19 @@
 - Contract-first evaluation again saves compute. P010 used no continuation,
   benchmark evaluation or control rerun, and its failure should not be rescued
   with gate/decay/order/count/rank/scale/tolerance or duration changes.
+- Explicit `.float()` conversion does not create an FP32 island under CUDA
+  autocast. P-GDN3-011's direct synthetic route preserves norm to `5.96e-8`,
+  while the same route in the production autocast context reaches FP32 norm
+  max error `5.1444e-4` after one optimizer step.
+- Precision contracts must exercise the actual nested autocast context and an
+  activated parameter regime. Zero-angle identity and an outside-autocast
+  geometry test both passed, yet neither covered the numerical behavior used
+  by the trained route.
+- A stable algebraic parameterization is not automatically a stable deployed
+  operator. Plane orthogonality remained excellent (`1.40e-6` dot,
+  `2.38e-7` norm error), but lower-precision contractions broke the registered
+  Frobenius invariant. Record both geometric and execution-precision checks.
+- Fail-close before formal continuation. The P011 probe consumed one exact
+  resumed training step, produced no NaN/OOM/fallback, and returned GPU1 to
+  0 MiB. Fixing autocast after seeing the registered miss would be a precision
+  rescue, so the orthogonal head-write family is closed without a Sudoku score.

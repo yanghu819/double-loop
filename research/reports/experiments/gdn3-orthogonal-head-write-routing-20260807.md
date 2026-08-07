@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: static implementation complete; exact pushed-source CUDA gates pending
+- Status: discarded at exact step3001 production stability gate
 - Date: 2026-08-07
 - Planned branch: `codex/gdn3-orthogonal-head-write-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -175,15 +175,30 @@ checkpoint/metrics/log hashes; and same-board loop1-5 visualization.
 
 ## 9. Decision
 
-The candidate path, diagnostics, exact-resume migration, strict CUDA checker,
-frozen config, and detached-worktree launcher are implemented in:
+Discard before formal continuation. Exact source
+`d093d21a3947e4ae891f63f9469ce7a841ba37d0` was pushed/read back and used from
+a clean detached worktree. The strict R1 GPU1 CUDA contract passed: all 12
+zero-angle outputs and terminal states were parent-exact, including nonzero
+incoming states; all 12 official-GDN2 backward paths and two-stage angle/plane
+gradients were present; parameter delta was exactly 1,152; and the opened
+synthetic route passed head permutation, plane, FP32 and BF16 norm checks.
 
-- `experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py`;
-- `experiments/rwkv_fs_sudoku/check_gdn3_orthogonal_head_write_cuda.py`;
-- `configs/sudoku/gdn3_orthogonal_head_write_probe.env`;
-- `scripts/run_gdn3_orthogonal_head_write_arm.sh`.
+The exact-resume step3001 production probe completed status0 and activated all
+12 routes. At loop5, angle abs/batch std/token std was
+`0.059469/0.001724/0.006410`, routed-V relative RMS was `0.037769`, plane dot
+and norm errors were only `1.40e-6/2.38e-7`, and terminal RMS was `6.545335`.
+The production path nevertheless violated the preregistered FP32 norm gate:
+loop5 routed/base max error was `5.1444e-4`, versus the fixed maximum `1e-4`
+(worst loop `5.1445e-4`). Inspection shows that `.float()` tensors still pass
+through `F.linear` and rotation operations inside an active CUDA autocast
+region. The synthetic direct-route checker ran outside that region and did not
+exercise this precision boundary.
 
-Static Python compilation, shell syntax, and `git diff --check` pass. No CPU
-model smoke was run. The next decision is the strict CUDA contract from the
-exact pushed implementation SHA in a clean detached worktree. No GPU model run
-is authorized before source push/readback and the registered preflight.
+The probe has no NaN, OOM or fallback, its process exited naturally, and GPU1
+returned to 0 MiB. Contract/probe/metrics/checkpoint/abort SHA256 are
+`da071473...d6a`, `598ba3be...3e6`, `290b4ca4...ef8`,
+`5998f1b...fbd`, and `5c470fea...de1`. Because the preregistration states that
+any production-probe miss closes the implementation, changing autocast scope,
+precision, plane, angle, target, tolerance or training settings is not
+authorized. No step3000-to3100 formal continuation, matched score or
+visualization exists.

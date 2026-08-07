@@ -1108,3 +1108,32 @@ in-token rank mechanism must either preserve the original 81-step geometry or
 provide an explicitly audited kernel-level transition and migration contract.
 Do not present P010 as a Sudoku score or tune auxiliary gates, order, count,
 rank, scale, tolerance or duration.
+
+### P-GDN3-011 Production-Precision Boundary
+
+P-GDN3-011 tests token-dependent cross-head write routing while preserving the
+original 81-token single official-GDN2 call. A shared V32-to3 descriptor
+defines a two-dimensional head plane and a zero-initialized invariant angle;
+the intended operation is an orthogonal rotation of V across the eight live
+recurrent heads. It adds 1,152 parameters and no state, token or scan.
+
+The pushed clean implementation passes its strict CUDA contract. Zero-angle
+full output and all 12 terminal states are parent-exact, including synthetic
+nonzero incoming states. All 12 official backward paths and two-stage
+angle/plane gradients are present. Direct synthetic routing is
+head-permutation equivariant and preserves FP32/BF16 payload norm inside the
+registered tolerances.
+
+The exact step3001 production probe exposes a different systems boundary. All
+12 routes activate, with loop5 angle abs `0.059469` and routed-V relative RMS
+`0.037769`, while plane errors remain below `1.5e-6`. But production FP32 norm
+max error is `5.1444e-4`, above the fixed `1e-4` gate. Explicit FP32 tensors
+were passed through operations still governed by the surrounding CUDA
+autocast context; the direct checker ran outside that context. This is not a
+Sudoku result and no formal continuation exists.
+
+The paper should retain the methodological boundary: exact migration,
+gradients and algebraic invariants must be tested under the same precision
+context that training uses, after the mechanism activates. Do not present P011
+as evidence against cross-head memory routing, and do not repair autocast,
+plane, angle, target or tolerance within this registered experiment.

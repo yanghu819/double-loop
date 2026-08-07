@@ -337,6 +337,17 @@ STATE_FEEDBACK_TRAIN_KEYS = (
     "gdn3_state_feedback_in_weight_rms",
     "gdn3_state_feedback_out_weight_rms",
 )
+TERMINAL_CONSOLIDATION_TRAIN_KEYS = (
+    "gdn3_terminal_consolidation_enabled",
+    "gdn3_terminal_consolidation_k_relative_rms",
+    "gdn3_terminal_consolidation_k_batch_std",
+    "gdn3_terminal_consolidation_k_token_std",
+    "gdn3_terminal_consolidation_state_residual_relative_rms",
+    "gdn3_terminal_consolidation_state_residual_batch_std",
+    "gdn3_terminal_consolidation_output_rms",
+    "gdn3_terminal_consolidation_output_token_std",
+    "gdn3_terminal_consolidation_weight_rms",
+)
 STATE_EXPERT_TRAIN_KEYS = (
     "gdn3_state_expert_enabled",
     "gdn3_state_expert_residual_relative_rms",
@@ -383,7 +394,12 @@ GDN2_ADDRESS_MODES = (
     "anchor_carrier",
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
-GDN2_UPDATE_MODES = ("none", "coherent_delta", "state_feedback")
+GDN2_UPDATE_MODES = (
+    "none",
+    "coherent_delta",
+    "state_feedback",
+    "terminal_consolidation",
+)
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
 FUTURE_SEED_CONTENT_MODES = (
     "terminal",
@@ -756,7 +772,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "state_feedback" and address_mode == "position_qk":
+        if update_mode == "terminal_consolidation" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_then_official_gdn2_chunk_plus_"
+                "terminal_consolidation_official_gdn2_chunk"
+            )
+        elif update_mode == "state_feedback" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_closed_loop_state_feedback_"
                 "then_official_gdn2_chunk"
@@ -2093,6 +2114,7 @@ class FLADeltaTimeMix(nn.Module):
         precondition_mode: str = "none",
         address_mode: str = "none",
         update_mode: str = "none",
+        terminal_consolidation_enabled: bool = True,
         raven_num_slots: int = 0,
         raven_topk: int = 0,
     ) -> None:
@@ -2202,6 +2224,9 @@ class FLADeltaTimeMix(nn.Module):
         self.precondition_mode = precondition_mode
         self.address_mode = address_mode
         self.update_mode = update_mode
+        self.terminal_consolidation_enabled = bool(
+            terminal_consolidation_enabled
+        )
         if backbone == "raven":
             matched_state_elements = self.head_dim * self.head_v_dim
             slot_width = self.head_dim + self.head_v_dim
@@ -2287,6 +2312,14 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.state_feedback_out is not None:
             nn.init.zeros_(self.state_feedback_out.weight)
+        self.terminal_consolidation_k_proj = (
+            nn.Linear(self.head_v_dim, self.head_dim, bias=False)
+            if update_mode == "terminal_consolidation"
+            and self.terminal_consolidation_enabled
+            else None
+        )
+        if self.terminal_consolidation_k_proj is not None:
+            nn.init.zeros_(self.terminal_consolidation_k_proj.weight)
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -2404,6 +2437,106 @@ class FLADeltaTimeMix(nn.Module):
     def _zero_state_feedback_diag(x: torch.Tensor) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in STATE_FEEDBACK_TRAIN_KEYS}
+
+    @staticmethod
+    def _zero_terminal_consolidation_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS}
+
+    def _terminal_consolidation_transition(
+        self,
+        q: torch.Tensor,
+        main_k: torch.Tensor,
+        first_output: torch.Tensor,
+        v: torch.Tensor,
+        b: torch.Tensor,
+        w: torch.Tensor,
+        terminal_state: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.terminal_consolidation_k_proj
+        if self.update_mode != "terminal_consolidation" or projection is None:
+            return terminal_state, self._zero_terminal_consolidation_diag(q)
+        if chunk_gdn2 is None:
+            raise RuntimeError(
+                "Terminal consolidation requires the official GDN2 chunk op"
+            )
+
+        correction_k = projection(first_output.to(dtype=q.dtype))
+        correction_q = F.normalize(q.float(), dim=-1).to(dtype=q.dtype)
+        correction_g = torch.zeros_like(q, dtype=torch.float32)
+        correction_output, consolidated_state = chunk_gdn2(
+            q=correction_q,
+            k=correction_k,
+            v=v,
+            g=correction_g,
+            b=b,
+            w=w,
+            initial_state=terminal_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=False,
+        )
+
+        with torch.no_grad():
+            correction_k_float = correction_k.float()
+            main_k_rms = main_k.float().square().mean().sqrt().clamp_min(1e-6)
+            board_k_rms = correction_k_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            token_k_rms = correction_k_float.square().mean(
+                dim=(-1, -2)
+            ).sqrt()
+            state_before = terminal_state.float()
+            state_residual = consolidated_state.float() - state_before
+            board_state_rms = state_before.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-6)
+            board_residual_relative = state_residual.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt() / board_state_rms
+            correction_output_float = correction_output.float()
+            correction_output_token_rms = correction_output_float.square().mean(
+                dim=(-1, -2)
+            ).sqrt()
+            diagnostics = {
+                "gdn3_terminal_consolidation_enabled": q.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_terminal_consolidation_k_relative_rms": (
+                    correction_k_float.square().mean().sqrt() / main_k_rms
+                ).to(dtype=torch.float32),
+                "gdn3_terminal_consolidation_k_batch_std": board_k_rms.std(
+                    unbiased=False
+                ).to(dtype=torch.float32),
+                "gdn3_terminal_consolidation_k_token_std": token_k_rms.std(
+                    dim=1, unbiased=False
+                ).mean().to(dtype=torch.float32),
+                "gdn3_terminal_consolidation_state_residual_relative_rms": (
+                    board_residual_relative.mean().to(dtype=torch.float32)
+                ),
+                "gdn3_terminal_consolidation_state_residual_batch_std": (
+                    board_residual_relative.std(unbiased=False).to(
+                        dtype=torch.float32
+                    )
+                ),
+                "gdn3_terminal_consolidation_output_rms": (
+                    correction_output_float.square().mean().sqrt().to(
+                        dtype=torch.float32
+                    )
+                ),
+                "gdn3_terminal_consolidation_output_token_std": (
+                    correction_output_token_rms.std(
+                        dim=1, unbiased=False
+                    ).mean().to(dtype=torch.float32)
+                ),
+                "gdn3_terminal_consolidation_weight_rms": (
+                    projection.weight.float().square().mean().sqrt().to(
+                        dtype=torch.float32
+                    )
+                ),
+            }
+        return consolidated_state, diagnostics
 
     def _coherent_delta_gates(
         self,
@@ -3049,6 +3182,17 @@ class FLADeltaTimeMix(nn.Module):
             output_final_state=True,
             use_qk_l2norm_in_kernel=True,
         )
+        terminal_state, terminal_consolidation_diag = (
+            self._terminal_consolidation_transition(
+                q,
+                k,
+                o,
+                v,
+                b,
+                w,
+                terminal_state,
+            )
+        )
 
         zero = x.new_zeros(())
         self.last_gain_budget_diag = {
@@ -3221,6 +3365,7 @@ class FLADeltaTimeMix(nn.Module):
             **self._zero_address_diag(x),
             **coherent_delta_diag,
             **state_feedback_diag,
+            **terminal_consolidation_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -4083,6 +4228,7 @@ class FLADeltaBlock(nn.Module):
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         gdn2_update_mode: str = "none",
+        gdn2_terminal_consolidation_enabled: bool = True,
         gdn2_state_expert_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -4114,6 +4260,9 @@ class FLADeltaBlock(nn.Module):
             precondition_mode=gdn2_precondition_mode,
             address_mode=gdn2_address_mode,
             update_mode=gdn2_update_mode,
+            terminal_consolidation_enabled=(
+                gdn2_terminal_consolidation_enabled
+            ),
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
         )
@@ -4525,6 +4674,9 @@ class FutureSeedRWKV(nn.Module):
                         gdn2_precondition_mode=gdn2_precondition_mode,
                         gdn2_address_mode=gdn2_address_mode,
                         gdn2_update_mode=gdn2_update_mode,
+                        gdn2_terminal_consolidation_enabled=(
+                            layer_id < layers - 1
+                        ),
                         gdn2_state_expert_mode=gdn2_state_expert_mode,
                         raven_num_slots=raven_num_slots,
                         raven_topk=raven_topk,
@@ -5697,7 +5849,11 @@ def load_training_checkpoint(
                 if (
                     field == "gdn2_update_mode"
                     and bool(expected_args.resume_allow_gdn2_update_upgrade)
-                    and current_value in {"coherent_delta", "state_feedback"}
+                    and current_value in {
+                        "coherent_delta",
+                        "state_feedback",
+                        "terminal_consolidation",
+                    }
                 ):
                     accepted_gdn2_update_upgrade = True
                     continue
@@ -5747,7 +5903,11 @@ def load_training_checkpoint(
                 and field == "gdn2_update_mode"
                 and bool(expected_args.resume_allow_gdn2_update_upgrade)
                 and saved_value == "none"
-                and current_value in {"coherent_delta", "state_feedback"}
+                and current_value in {
+                    "coherent_delta",
+                    "state_feedback",
+                    "terminal_consolidation",
+                }
             ):
                 accepted_gdn2_update_upgrade = True
                 matches = True
@@ -5889,6 +6049,7 @@ def load_training_checkpoint(
         ".time_mix.coherent_delta_mix",
         ".time_mix.state_feedback_in.weight",
         ".time_mix.state_feedback_out.weight",
+        ".time_mix.terminal_consolidation_k_proj.weight",
     )
     state_expert_marker = ".state_expert."
     allowed_unexpected = {"loop_update_logit"}
@@ -6901,6 +7062,23 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_state_feedback_b_relative_change', 0.0):.4f}/"
             f"{m.get('gdn3_state_feedback_w_relative_change', 0.0):.4f}"
         )
+    if m.get("gdn3_terminal_consolidation_enabled", 0.0) > 0:
+        parts.append(
+            "term_cons_k="
+            f"{m.get('gdn3_terminal_consolidation_k_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_terminal_consolidation_k_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_terminal_consolidation_k_token_std', 0.0):.4f}"
+        )
+        parts.append(
+            "term_cons_state="
+            f"{m.get('gdn3_terminal_consolidation_state_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_terminal_consolidation_state_residual_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            "term_cons_out="
+            f"{m.get('gdn3_terminal_consolidation_output_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_terminal_consolidation_output_token_std', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -7295,6 +7473,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_state_feedback_diag = {
         key: 0.0 for key in STATE_FEEDBACK_TRAIN_KEYS
     }
+    last_terminal_consolidation_diag = {
+        key: 0.0 for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS
+    }
     last_state_expert_diag = {
         key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
     }
@@ -7401,11 +7582,20 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 for name, _parameter in model.named_parameters()
                 if ".time_mix.state_feedback_" in name
             }
+        elif args.gdn2_update_mode == "terminal_consolidation":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(
+                    ".time_mix.terminal_consolidation_k_proj.weight"
+                )
+            }
         else:
             expected_gdn2_update_insertions = set()
         declared_gdn2_update_upgrade = (
             bool(args.resume_allow_gdn2_update_upgrade)
-            and args.gdn2_update_mode in {"coherent_delta", "state_feedback"}
+            and args.gdn2_update_mode
+            in {"coherent_delta", "state_feedback", "terminal_consolidation"}
             and bool(expected_gdn2_update_insertions)
             and migrated_missing == expected_gdn2_update_insertions
             and not migration.get("unexpected_parameters")
@@ -7523,6 +7713,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_state_feedback_diag.get(key, 0.0))
                 for key in STATE_FEEDBACK_TRAIN_KEYS
             }
+        saved_terminal_consolidation_diag = last_metrics.get(
+            "terminal_consolidation", {}
+        )
+        if isinstance(saved_terminal_consolidation_diag, dict):
+            last_terminal_consolidation_diag = {
+                key: float(saved_terminal_consolidation_diag.get(key, 0.0))
+                for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS
+            }
         saved_state_expert_diag = last_metrics.get("state_expert", {})
         if isinstance(saved_state_expert_diag, dict):
             last_state_expert_diag = {
@@ -7607,6 +7805,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_state_feedback_diag = {
                 key: 0.0 for key in STATE_FEEDBACK_TRAIN_KEYS
+            }
+            accum_terminal_consolidation_diag = {
+                key: 0.0 for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS
             }
             accum_state_expert_diag = {
                 key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
@@ -7832,6 +8033,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS:
+                        accum_terminal_consolidation_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in STATE_EXPERT_TRAIN_KEYS:
                         accum_state_expert_diag[key] += float(
                             trace_last.get(
@@ -7912,6 +8122,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_state_feedback_diag.items()
             }
+            last_terminal_consolidation_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_terminal_consolidation_diag.items()
+            }
             last_state_expert_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_state_expert_diag.items()
@@ -7962,6 +8176,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_state_feedback_diag['gdn3_state_feedback_v_relative_change']:.4f} "
                     f"state_fb_bw={last_state_feedback_diag['gdn3_state_feedback_b_relative_change']:.4f}/"
                     f"{last_state_feedback_diag['gdn3_state_feedback_w_relative_change']:.4f} "
+                    f"term_cons_k={last_terminal_consolidation_diag['gdn3_terminal_consolidation_k_relative_rms']:.4f}/"
+                    f"{last_terminal_consolidation_diag['gdn3_terminal_consolidation_k_batch_std']:.4f}/"
+                    f"{last_terminal_consolidation_diag['gdn3_terminal_consolidation_k_token_std']:.4f} "
+                    f"term_cons_state={last_terminal_consolidation_diag['gdn3_terminal_consolidation_state_residual_relative_rms']:.4f}/"
+                    f"{last_terminal_consolidation_diag['gdn3_terminal_consolidation_state_residual_batch_std']:.4f} "
                     f"expert_resid={last_state_expert_diag['gdn3_state_expert_residual_relative_rms']:.4f}/"
                     f"{last_state_expert_diag['gdn3_state_expert_residual_batch_std']:.4f} "
                     f"expert_state={last_state_expert_diag['gdn3_state_expert_terminal_rms']:.4f}/"
@@ -8033,6 +8252,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "precondition": dict(last_precondition_diag),
                         "coherent_delta": dict(last_coherent_delta_diag),
                         "state_feedback": dict(last_state_feedback_diag),
+                        "terminal_consolidation": dict(
+                            last_terminal_consolidation_diag
+                        ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
                     },
@@ -8118,6 +8340,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "precondition": dict(last_precondition_diag),
                             "coherent_delta": dict(last_coherent_delta_diag),
                             "state_feedback": dict(last_state_feedback_diag),
+                            "terminal_consolidation": dict(
+                                last_terminal_consolidation_diag
+                            ),
                             "state_expert": dict(last_state_expert_diag),
                             "address_operator": dict(last_address_diag),
                         },
@@ -8182,6 +8407,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "precondition": dict(last_precondition_diag),
                         "coherent_delta": dict(last_coherent_delta_diag),
                         "state_feedback": dict(last_state_feedback_diag),
+                        "terminal_consolidation": dict(
+                            last_terminal_consolidation_diag
+                        ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
                     },
@@ -8264,6 +8492,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "precondition": dict(last_precondition_diag),
         "coherent_delta": dict(last_coherent_delta_diag),
         "state_feedback": dict(last_state_feedback_diag),
+        "terminal_consolidation": dict(last_terminal_consolidation_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
@@ -9588,7 +9817,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError(
                 "--resume_allow_gdn2_update_upgrade requires an exact checkpoint resume"
             )
-        if args.gdn2_update_mode not in {"coherent_delta", "state_feedback"}:
+        if args.gdn2_update_mode not in {
+            "coherent_delta",
+            "state_feedback",
+            "terminal_consolidation",
+        }:
             raise ValueError(
                 "--resume_allow_gdn2_update_upgrade requires "
                 "a non-default --gdn2_update_mode"

@@ -323,6 +323,20 @@ COHERENT_DELTA_TRAIN_KEYS = (
     "gdn2_coherent_delta_b_relative_change",
     "gdn2_coherent_delta_w_relative_change",
 )
+STATE_FEEDBACK_TRAIN_KEYS = (
+    "gdn3_state_feedback_enabled",
+    "gdn3_state_feedback_read_rms",
+    "gdn3_state_feedback_read_batch_std",
+    "gdn3_state_feedback_hidden_rms",
+    "gdn3_state_feedback_residual_relative_rms",
+    "gdn3_state_feedback_residual_token_std",
+    "gdn3_state_feedback_k_relative_change",
+    "gdn3_state_feedback_v_relative_change",
+    "gdn3_state_feedback_b_relative_change",
+    "gdn3_state_feedback_w_relative_change",
+    "gdn3_state_feedback_in_weight_rms",
+    "gdn3_state_feedback_out_weight_rms",
+)
 STATE_EXPERT_TRAIN_KEYS = (
     "gdn3_state_expert_enabled",
     "gdn3_state_expert_residual_relative_rms",
@@ -369,7 +383,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_carrier",
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
-GDN2_UPDATE_MODES = ("none", "coherent_delta")
+GDN2_UPDATE_MODES = ("none", "coherent_delta", "state_feedback")
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
 FUTURE_SEED_CONTENT_MODES = (
     "terminal",
@@ -742,7 +756,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "coherent_delta" and address_mode == "position_qk":
+        if update_mode == "state_feedback" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_closed_loop_state_feedback_"
+                "then_official_gdn2_chunk"
+            )
+        elif update_mode == "coherent_delta" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_coherent_delta_gates_"
                 "then_official_gdn2_chunk"
@@ -2152,10 +2171,10 @@ class FLADeltaTimeMix(nn.Module):
                 f"update_mode must be one of: {', '.join(GDN2_UPDATE_MODES)}"
             )
         if update_mode != "none" and backbone != "gdn2":
-            raise ValueError("Coherent delta updates are restricted to GDN2")
+            raise ValueError("GDN2 update extensions are restricted to GDN2")
         if update_mode != "none" and address_mode != "position_qk":
             raise ValueError(
-                "The first coherent-delta contract composes only with position_qk"
+                "GDN2 update extensions compose only with position_qk"
             )
         if update_mode != "none" and (
             gain_budget_mode != "none"
@@ -2163,7 +2182,7 @@ class FLADeltaTimeMix(nn.Module):
             or precondition_mode != "none"
         ):
             raise ValueError(
-                "Coherent delta updates cannot be mixed with Gain-Budget, "
+                "GDN2 update extensions cannot be mixed with Gain-Budget, "
                 "Fast-Slow decay, or tied preconditioning"
             )
 
@@ -2251,6 +2270,23 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.coherent_delta_mix is not None:
             self.coherent_delta_mix._no_weight_decay = True
+        feedback_hidden = max(8, self.head_v_dim // 2)
+        self.state_feedback_in = (
+            nn.Linear(self.head_v_dim, feedback_hidden, bias=False)
+            if update_mode == "state_feedback"
+            else None
+        )
+        self.state_feedback_out = (
+            nn.Linear(
+                feedback_hidden,
+                2 * self.head_dim + 2 * self.head_v_dim,
+                bias=False,
+            )
+            if update_mode == "state_feedback"
+            else None
+        )
+        if self.state_feedback_out is not None:
+            nn.init.zeros_(self.state_feedback_out.weight)
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -2364,6 +2400,11 @@ class FLADeltaTimeMix(nn.Module):
         )
         return values
 
+    @staticmethod
+    def _zero_state_feedback_diag(x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in STATE_FEEDBACK_TRAIN_KEYS}
+
     def _coherent_delta_gates(
         self,
         b_raw: torch.Tensor,
@@ -2425,6 +2466,122 @@ class FLADeltaTimeMix(nn.Module):
                 ),
             }
         return b_effective, w_effective, diag
+
+    def _state_feedback_update(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        b_raw: torch.Tensor,
+        w_raw: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        Dict[str, torch.Tensor],
+    ]:
+        if (
+            self.update_mode != "state_feedback"
+            or self.state_feedback_in is None
+            or self.state_feedback_out is None
+        ):
+            raise RuntimeError("State-feedback update selected without its controller")
+        b_base = b_raw.sigmoid()
+        w_base = w_raw.sigmoid()
+        if initial_state is None:
+            return k, v, b_base, w_base, self._zero_state_feedback_diag(q)
+        expected_state = (
+            q.shape[0],
+            self.heads,
+            self.head_dim,
+            self.head_v_dim,
+        )
+        if tuple(initial_state.shape) != expected_state:
+            raise ValueError(
+                "State-feedback initial state shape mismatch: "
+                f"{tuple(initial_state.shape)} != {expected_state}"
+            )
+        if q.shape[:-1] != k.shape[:-1] or q.shape[:-1] != v.shape[:-1]:
+            raise ValueError(
+                "State-feedback requires aligned batch/time/head axes: "
+                f"q={tuple(q.shape)} k={tuple(k.shape)} v={tuple(v.shape)}"
+            )
+
+        q_unit = F.normalize(q.float(), dim=-1)
+        state_read = torch.einsum(
+            "bthk,bhkv->bthv",
+            q_unit,
+            initial_state.float(),
+        )
+        hidden = F.silu(self.state_feedback_in(state_read.to(dtype=q.dtype)))
+        residual = self.state_feedback_out(hidden).float()
+        delta_k, delta_v, delta_b, delta_w = residual.split(
+            (self.head_dim, self.head_v_dim, self.head_dim, self.head_v_dim),
+            dim=-1,
+        )
+        # Preserve the parent's exact dtype path when the zero-initialized
+        # controller emits zero. The strict CUDA contract checks bit identity.
+        k_effective = k + delta_k.to(dtype=k.dtype)
+        v_effective = v + delta_v.to(dtype=v.dtype)
+        b_effective = (b_raw + delta_b.to(dtype=b_raw.dtype)).sigmoid()
+        w_effective = (w_raw + delta_w.to(dtype=w_raw.dtype)).sigmoid()
+
+        with torch.no_grad():
+            base = torch.cat(
+                (k.float(), v.float(), b_base.float(), w_base.float()),
+                dim=-1,
+            )
+            board_read_rms = state_read.square().mean(dim=(1, 2, 3)).sqrt()
+            token_residual_rms = residual.square().mean(dim=(2, 3)).sqrt()
+            diag = {
+                "gdn3_state_feedback_enabled": q.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_state_feedback_read_rms": state_read.square()
+                .mean()
+                .sqrt(),
+                "gdn3_state_feedback_read_batch_std": board_read_rms.std(
+                    unbiased=False
+                ),
+                "gdn3_state_feedback_hidden_rms": hidden.float()
+                .square()
+                .mean()
+                .sqrt(),
+                "gdn3_state_feedback_residual_relative_rms": (
+                    residual.square().mean().sqrt()
+                    / base.square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_state_feedback_residual_token_std": token_residual_rms.std(
+                    dim=1, unbiased=False
+                ).mean(),
+                "gdn3_state_feedback_k_relative_change": (
+                    delta_k.square().mean().sqrt()
+                    / k.float().square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_state_feedback_v_relative_change": (
+                    delta_v.square().mean().sqrt()
+                    / v.float().square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_state_feedback_b_relative_change": (
+                    (b_effective.float() - b_base.float()).square().mean().sqrt()
+                    / b_base.float().square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_state_feedback_w_relative_change": (
+                    (w_effective.float() - w_base.float()).square().mean().sqrt()
+                    / w_base.float().square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_state_feedback_in_weight_rms": self.state_feedback_in.weight.float()
+                .square()
+                .mean()
+                .sqrt(),
+                "gdn3_state_feedback_out_weight_rms": self.state_feedback_out.weight.float()
+                .square()
+                .mean()
+                .sqrt(),
+            }
+        return k_effective, v_effective, b_effective, w_effective, diag
 
     def _forward_preconditioned_gdn2(
         self,
@@ -2994,10 +3151,22 @@ class FLADeltaTimeMix(nn.Module):
         v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
         if self.update_mode == "coherent_delta":
             b, w, coherent_delta_diag = self._coherent_delta_gates(b_raw, w_raw)
+            state_feedback_diag = self._zero_state_feedback_diag(x)
+        elif self.update_mode == "state_feedback":
+            k, v, b, w, state_feedback_diag = self._state_feedback_update(
+                q,
+                k,
+                v,
+                b_raw,
+                w_raw,
+                initial_state,
+            )
+            coherent_delta_diag = self._zero_coherent_delta_diag(x)
         else:
             b = b_raw.sigmoid()
             w = w_raw.sigmoid()
             coherent_delta_diag = self._zero_coherent_delta_diag(x)
+            state_feedback_diag = self._zero_state_feedback_diag(x)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
         if core.num_v_heads > core.num_heads:
@@ -3051,6 +3220,7 @@ class FLADeltaTimeMix(nn.Module):
         self.last_gain_budget_diag = {
             **self._zero_address_diag(x),
             **coherent_delta_diag,
+            **state_feedback_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -5527,7 +5697,7 @@ def load_training_checkpoint(
                 if (
                     field == "gdn2_update_mode"
                     and bool(expected_args.resume_allow_gdn2_update_upgrade)
-                    and current_value == "coherent_delta"
+                    and current_value in {"coherent_delta", "state_feedback"}
                 ):
                     accepted_gdn2_update_upgrade = True
                     continue
@@ -5577,7 +5747,7 @@ def load_training_checkpoint(
                 and field == "gdn2_update_mode"
                 and bool(expected_args.resume_allow_gdn2_update_upgrade)
                 and saved_value == "none"
-                and current_value == "coherent_delta"
+                and current_value in {"coherent_delta", "state_feedback"}
             ):
                 accepted_gdn2_update_upgrade = True
                 matches = True
@@ -5715,7 +5885,11 @@ def load_training_checkpoint(
         ".time_mix.address_carrier_scale",
         ".time_mix.address_carrier_bias_delta",
     )
-    coherent_delta_suffixes = (".time_mix.coherent_delta_mix",)
+    gdn2_update_suffixes = (
+        ".time_mix.coherent_delta_mix",
+        ".time_mix.state_feedback_in.weight",
+        ".time_mix.state_feedback_out.weight",
+    )
     state_expert_marker = ".state_expert."
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
@@ -5725,7 +5899,7 @@ def load_training_checkpoint(
         and not key.endswith(progressive_suffixes)
         and not key.endswith(fast_slow_suffixes)
         and not key.endswith(address_operator_suffixes)
-        and not key.endswith(coherent_delta_suffixes)
+        and not key.endswith(gdn2_update_suffixes)
         and state_expert_marker not in key
     ]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
@@ -6709,6 +6883,24 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_state_expert_address_contrast', 0.0):.4f}/"
             f"{m.get('gdn3_state_expert_output_cosine', 0.0):.4f}"
         )
+    if m.get("gdn3_state_feedback_enabled", 0.0) > 0:
+        parts.append(
+            "state_fb_read="
+            f"{m.get('gdn3_state_feedback_read_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_state_feedback_read_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            "state_fb_resid="
+            f"{m.get('gdn3_state_feedback_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_state_feedback_residual_token_std', 0.0):.4f}"
+        )
+        parts.append(
+            "state_fb_kv/bw="
+            f"{m.get('gdn3_state_feedback_k_relative_change', 0.0):.4f}/"
+            f"{m.get('gdn3_state_feedback_v_relative_change', 0.0):.4f}/"
+            f"{m.get('gdn3_state_feedback_b_relative_change', 0.0):.4f}/"
+            f"{m.get('gdn3_state_feedback_w_relative_change', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -7100,6 +7292,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         key: 0.0 for key in COHERENT_DELTA_TRAIN_KEYS
     }
     last_coherent_delta_diag["gdn2_coherent_delta_gap_ratio"] = 1.0
+    last_state_feedback_diag = {
+        key: 0.0 for key in STATE_FEEDBACK_TRAIN_KEYS
+    }
     last_state_expert_diag = {
         key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
     }
@@ -7194,14 +7389,23 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             is True
         )
-        expected_gdn2_update_insertions = {
-            name
-            for name, _parameter in model.named_parameters()
-            if name.endswith(".time_mix.coherent_delta_mix")
-        }
+        if args.gdn2_update_mode == "coherent_delta":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(".time_mix.coherent_delta_mix")
+            }
+        elif args.gdn2_update_mode == "state_feedback":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if ".time_mix.state_feedback_" in name
+            }
+        else:
+            expected_gdn2_update_insertions = set()
         declared_gdn2_update_upgrade = (
             bool(args.resume_allow_gdn2_update_upgrade)
-            and args.gdn2_update_mode == "coherent_delta"
+            and args.gdn2_update_mode in {"coherent_delta", "state_feedback"}
             and bool(expected_gdn2_update_insertions)
             and migrated_missing == expected_gdn2_update_insertions
             and not migration.get("unexpected_parameters")
@@ -7313,6 +7517,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 )
                 for key in COHERENT_DELTA_TRAIN_KEYS
             }
+        saved_state_feedback_diag = last_metrics.get("state_feedback", {})
+        if isinstance(saved_state_feedback_diag, dict):
+            last_state_feedback_diag = {
+                key: float(saved_state_feedback_diag.get(key, 0.0))
+                for key in STATE_FEEDBACK_TRAIN_KEYS
+            }
         saved_state_expert_diag = last_metrics.get("state_expert", {})
         if isinstance(saved_state_expert_diag, dict):
             last_state_expert_diag = {
@@ -7394,6 +7604,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_coherent_delta_diag = {
                 key: 0.0 for key in COHERENT_DELTA_TRAIN_KEYS
+            }
+            accum_state_feedback_diag = {
+                key: 0.0 for key in STATE_FEEDBACK_TRAIN_KEYS
             }
             accum_state_expert_diag = {
                 key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
@@ -7610,6 +7823,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in STATE_FEEDBACK_TRAIN_KEYS:
+                        accum_state_feedback_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in STATE_EXPERT_TRAIN_KEYS:
                         accum_state_expert_diag[key] += float(
                             trace_last.get(
@@ -7686,6 +7908,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_coherent_delta_diag.items()
             }
+            last_state_feedback_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_state_feedback_diag.items()
+            }
             last_state_expert_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_state_expert_diag.items()
@@ -7730,6 +7956,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"coh_gap={last_coherent_delta_diag['gdn2_coherent_delta_gap_ratio']:.4f} "
                     f"coh_b={last_coherent_delta_diag['gdn2_coherent_delta_b_relative_change']:.4f} "
                     f"coh_w={last_coherent_delta_diag['gdn2_coherent_delta_w_relative_change']:.4f} "
+                    f"state_fb={last_state_feedback_diag['gdn3_state_feedback_read_rms']:.4f}/"
+                    f"{last_state_feedback_diag['gdn3_state_feedback_residual_relative_rms']:.4f} "
+                    f"state_fb_kv={last_state_feedback_diag['gdn3_state_feedback_k_relative_change']:.4f}/"
+                    f"{last_state_feedback_diag['gdn3_state_feedback_v_relative_change']:.4f} "
+                    f"state_fb_bw={last_state_feedback_diag['gdn3_state_feedback_b_relative_change']:.4f}/"
+                    f"{last_state_feedback_diag['gdn3_state_feedback_w_relative_change']:.4f} "
                     f"expert_resid={last_state_expert_diag['gdn3_state_expert_residual_relative_rms']:.4f}/"
                     f"{last_state_expert_diag['gdn3_state_expert_residual_batch_std']:.4f} "
                     f"expert_state={last_state_expert_diag['gdn3_state_expert_terminal_rms']:.4f}/"
@@ -7800,6 +8032,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "fast_slow_decay": dict(last_fast_slow_diag),
                         "precondition": dict(last_precondition_diag),
                         "coherent_delta": dict(last_coherent_delta_diag),
+                        "state_feedback": dict(last_state_feedback_diag),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
                     },
@@ -7884,6 +8117,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "fast_slow_decay": dict(last_fast_slow_diag),
                             "precondition": dict(last_precondition_diag),
                             "coherent_delta": dict(last_coherent_delta_diag),
+                            "state_feedback": dict(last_state_feedback_diag),
                             "state_expert": dict(last_state_expert_diag),
                             "address_operator": dict(last_address_diag),
                         },
@@ -7947,6 +8181,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "fast_slow_decay": dict(last_fast_slow_diag),
                         "precondition": dict(last_precondition_diag),
                         "coherent_delta": dict(last_coherent_delta_diag),
+                        "state_feedback": dict(last_state_feedback_diag),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
                     },
@@ -8028,6 +8263,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "fast_slow_decay": dict(last_fast_slow_diag),
         "precondition": dict(last_precondition_diag),
         "coherent_delta": dict(last_coherent_delta_diag),
+        "state_feedback": dict(last_state_feedback_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
@@ -9352,10 +9588,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError(
                 "--resume_allow_gdn2_update_upgrade requires an exact checkpoint resume"
             )
-        if args.gdn2_update_mode != "coherent_delta":
+        if args.gdn2_update_mode not in {"coherent_delta", "state_feedback"}:
             raise ValueError(
                 "--resume_allow_gdn2_update_upgrade requires "
-                "--gdn2_update_mode coherent_delta"
+                "a non-default --gdn2_update_mode"
             )
     if args.resume_allow_gdn2_state_expert_upgrade:
         if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
@@ -9482,11 +9718,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn2_update_mode requires --fla_strict_official")
         if args.gdn2_address_mode != "position_qk":
             raise ValueError(
-                "The first coherent-delta contract requires --gdn2_address_mode position_qk"
+                "GDN2 update extensions require --gdn2_address_mode position_qk"
             )
         if args.future_seed_content_mode != "terminal":
             raise ValueError(
-                "The first coherent-delta contract requires terminal FutureSeed content"
+                "GDN2 update extensions require terminal FutureSeed content"
             )
         if (
             args.gdn2_gain_budget_mode != "none"
@@ -9494,7 +9730,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             or args.gdn2_precondition_mode != "none"
         ):
             raise ValueError(
-                "Coherent delta updates cannot be mixed with Gain-Budget, "
+                "GDN2 update extensions cannot be mixed with Gain-Budget, "
                 "Fast-Slow decay, or tied preconditioning"
             )
     if args.gdn2_state_expert_mode != "none":

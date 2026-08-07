@@ -1,0 +1,130 @@
+# P-FS3-004: Orthogonal State-Basis Transport
+
+## 1. Metainfo
+
+- Status: approved, not launched
+- Date: 2026-08-07
+- Branch: `codex/fs3-orthogonal-basis-transport-20260807`
+- Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
+- Compute: AIStation task-mode GPU1 only
+- GPU UUID: `GPU-53e9f3b4-2966-65d3-6614-09c540921519`
+- Seed: 52 only
+- Parent: D256/L12/H8/K32/V32 position-QK GDN3 plus native terminal
+  FutureSeed
+- Parent checkpoint:
+  `/huyang2/double-loop/models/gdn3-position-qk-d256l12-s12000-20260806T131527Z-9f2ee8d/checkpoints/train_state_step003000.pt`
+- Parent checkpoint SHA256:
+  `6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`
+- Parent source SHA: `9f2ee8d1738032bc5f09b55db0b81d507780b376`
+- Frozen control: `p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
+
+## 2. Evidence Boundary
+
+Native FutureSeed transfers producer terminal KxV state directly into the next
+layer, but the producer and receiver own independently learned recurrent K and
+V coordinates. The existing scalar head gate and unit-RMS normalization can
+control transfer strength and magnitude, but cannot align those coordinate
+bases.
+
+P-FS3-001/002/003 changed the transferred content, update magnitude, or
+address-local residual. P-FS2-005 learned a downstream hidden-state readout.
+P-GDN3-009/P-GDN3-011 rotated state or payload inside one recurrent layer.
+None learned an invertible coordinate map on the actual cross-layer
+FutureSeed edge. P-GDN3-014 instead changed physical state width and failed
+parent identity. P-FS3-004 keeps the physical K32xV32 state unchanged.
+
+## 3. Mechanism
+
+For every adjacent producer-to-receiver edge and head, learn independent
+skew-symmetric generators `A_K` and `A_V`. Convert them to orthogonal maps with
+the Cayley transform:
+
+`R(A) = (I - A/2)^-1 (I + A/2)`
+
+and transport the producer state as:
+
+`S_receiver = R_K S_producer R_V^T`.
+
+The implementation applies `(R-I)` residuals around the original tensor so
+zero generators preserve the parent state bit-exactly while retaining a direct
+first-order gradient. Orthogonal transport preserves Frobenius geometry and
+does not add state, tokens, scans, recurrent cores, task logic, or a reverse
+pass.
+
+Each K32 or V32 generator has `32*31/2 = 496` packed parameters. Across 11
+edges and 8 heads the exact parameter delta is
+`11*8*(496+496) = 87,296`; persistent recurrent-state delta is zero.
+
+## 4. Falsifiable Prediction
+
+If cross-layer coordinate mismatch limits FutureSeed, one exact resumed step
+should activate both K and V rotations on all 11 edges, with nonzero board and
+head variation while preserving state norm. A 100-step continuation should
+then improve hard-board closure or mixed exactness without degrading 61-64
+late-loop correction. If rotations activate but exact remains flat, basis
+misalignment is not the current bottleneck. If the production path violates
+identity, orthogonality, bounded state geometry, or direct-gradient access,
+the implementation claim is false before any science run.
+
+## 5. Strict CUDA Contract
+
+Before any continuation, exact pushed source in a clean detached worktree must
+prove all of:
+
+1. CUDA index0 and the registered UUID are the only visible GPU and compute app;
+2. pinned FLA source SHA is `9c8e42e762fce087c27b673af4922795d9edb85e`;
+3. all 12 recurrent layers are official `GatedDeltaNet2`, with
+   `ChunkGDN2FunctionBackward` in every terminal-state graph and no fallback;
+4. zero-init full output and all 12 terminal states are bit-exact to the frozen
+   parent function;
+5. every edge preserves arbitrary finite nonzero incoming state bit-exactly at
+   zero initialization;
+6. parameter delta is exactly 87,296 and state/token/scan/core deltas are zero;
+7. every one of the 11x8 K and V generators receives a finite nonzero direct
+   first-order task gradient;
+8. opened K/V maps change full-model output, retain finite states, and keep
+   every layer's terminal RMS within `4x` its matched control;
+9. FP32 orthogonality and norm max error are each `<=3e-5`, BF16 storage norm
+   max error is `<=5e-3`, and head permutation error is `<=3e-6`;
+10. no NaN, OOM, source/data drift, CPU model path, concurrent GPU process,
+    task dependency, or silent fallback occurs.
+
+## 6. Step3001 Production Gate
+
+The exact-resume one-step probe is migration and production-fit evidence only.
+It must preserve optimizer/RNG/data order and write complete source/config/log,
+metrics, and checkpoint hashes. All 11 edges must have K rotation, V rotation,
+and transported-state residual relative RMS `>=1e-4`; board and head variation
+must be finite and nonzero. Production FP32 norm/orthogonality max error must be
+`<=3e-5`, BF16 storage norm error `<=5e-3`, and terminal RMS `<=4x` control.
+Any miss closes P-FS3-004 before formal training. The probe score is not a
+science result.
+
+## 7. Matched Science And Cost Gates
+
+Only after contract and production probe pass may one candidate-only exact
+step3000->3100 continuation run. Do not repeat the frozen control.
+
+- Primary: hard51-64 macro loop5 exact improves by at least `+0.02`, and each
+  official hard range blank accuracy regresses by no more than `0.01`.
+- Alternate: mixed loop5 exact improves by at least `+0.03`, 61-64 does not
+  regress, and same-board loop3->5 wrong-cell correction is stronger.
+- Stability: every rotation/state remains finite, FP32 geometry stays within
+  `3e-5`, BF16 norm error within `5e-3`, and terminal RMS within `4x` control.
+- Cost: independent warmed elapsed overhead `<35%` and peak allocated-memory
+  overhead `<15%` versus the frozen control.
+
+Any activation, stability, quality, integrity, or cost miss discards P-FS3-004.
+There is no rank, sharing, axis, map, angle, normalization, precision, seed,
+LR, loss, batch, width/depth, or duration rescue.
+
+## 8. Results
+
+Pending exact pushed source, strict GPU1 CUDA contract, and exact-resume
+step3001 production gate. No benchmark score exists at preregistration time.
+
+## 9. Decision
+
+Approved for contract-first evaluation. Formal continuation remains blocked
+until the pushed-SHA, clean-worktree, identity, direct-gradient, geometry, and
+step3001 production gates all pass exactly as registered above.

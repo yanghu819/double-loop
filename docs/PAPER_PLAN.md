@@ -1222,3 +1222,26 @@ and incoming state are zero. Future scalable-memory candidates must prove the
 full parent function under their actual physical state geometry; normalization
 and scale arguments at the equation level are insufficient. The registered
 normalization/map/scale/row-count family is closed without rescue.
+
+### P-FS3-004 Cross-Layer Basis-Alignment Test
+
+P-FS3-004 tests a missing FutureSeed mechanism boundary rather than another
+content or strength residual. Native FutureSeed transfers a producer KxV state
+into a receiver whose recurrent K/V coordinates were initialized and learned
+independently. Existing head gates and unit-RMS normalization regulate transfer
+magnitude but cannot align those bases.
+
+The candidate gives each adjacent layer edge and head independent
+skew-symmetric K32 and V32 generators. Cayley transforms transport state as
+`R_K S R_V^T`, preserving Frobenius geometry without adding state, tokens,
+scans, recurrent cores, or task logic. Applying `(R-I)` residuals makes zero
+generators a bit-exact parent identity with direct first-order gradients. The
+fixed parameter delta is 87,296.
+
+This is distinct from FS3 content/update routers, hidden readouts, within-layer
+state rotations, and physical state-width expansion. Contract and production
+evidence must establish exact migration, direct gradients on all 11x8 K/V
+routes, bounded full-model state geometry, and one-step activation before any
+Sudoku score exists. A clean negative result would show that coordinate
+misalignment is not the current hard-board bottleneck; a positive result would
+identify learned cross-layer state transport as a concrete FutureSeed advance.

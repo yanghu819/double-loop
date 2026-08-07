@@ -27,6 +27,9 @@ from futureseed2_selective import (
     FutureSeedSelectiveGate,
 )
 from futureseed3_address_local_update import FutureSeedAddressLocalUpdate
+from futureseed3_orthogonal_basis_transport import (
+    FutureSeedOrthogonalBasisTransport,
+)
 from futureseed3_producer_codec import FutureSeedProducerCodec
 from fast_slow_decay_gdn2 import (
     FAST_SLOW_DECAY_MODES,
@@ -523,6 +526,7 @@ FUTURE_SEED_CONTENT_MODES = (
     "innovation_residual",
     "producer_codec",
     "address_local_update",
+    "orthogonal_basis_transport",
 )
 CELL_ORDER_TRAIN_MODES = ("row_major", "random")
 
@@ -5818,6 +5822,7 @@ class FutureSeedRWKV(nn.Module):
             "innovation_residual",
             "producer_codec",
             "address_local_update",
+            "orthogonal_basis_transport",
         }:
             if layers < 3:
                 raise ValueError(
@@ -5846,6 +5851,18 @@ class FutureSeedRWKV(nn.Module):
                     f"{future_seed_content_mode} FutureSeed cannot be mixed with "
                     "multihop readout."
                 )
+        if future_seed_content_mode == "orthogonal_basis_transport" and (
+            gdn2_address_mode != "position_qk"
+            or gdn2_update_mode != "none"
+            or gdn2_state_expert_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+            or not math.isclose(gdn_expand_v, 1.0)
+            or not math.isclose(gdn_progressive_base_expand_v, 0.0)
+        ):
+            raise ValueError(
+                "Orthogonal basis transport composes only with matched-width "
+                "independent position-QK GDN2 and the unmodified recurrent update"
+            )
         if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"}:
             raise ValueError(
                 "backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda, raven."
@@ -6023,6 +6040,16 @@ class FutureSeedRWKV(nn.Module):
         future_seed_state_heads = (
             2 * heads if gdn2_update_mode == "paired_address_bank" else heads
         )
+        self.future_seed_basis_transport = (
+            FutureSeedOrthogonalBasisTransport(
+                edges=layers - 1,
+                heads=future_seed_state_heads,
+                row_dim=state_row_dim,
+                col_dim=state_col_dim,
+            )
+            if self.future_seed_content_mode == "orthogonal_basis_transport"
+            else None
+        )
         self.future_seed_row_bank_dim = (
             head_dim if gdn2_update_mode == "coupled_address_rows" else 0
         )
@@ -6173,8 +6200,28 @@ class FutureSeedRWKV(nn.Module):
             "fs3_address_local_update_relative_rms": zero,
             "fs3_address_local_residual_relative_rms": zero,
             "fs3_address_local_residual_batch_std": zero,
+            "fs3_basis_transport_enabled": zero,
+            "fs3_basis_transport_angle_abs": zero,
+            "fs3_basis_transport_row_rotation_relative_rms": zero,
+            "fs3_basis_transport_col_rotation_relative_rms": zero,
+            "fs3_basis_transport_state_residual_relative_rms": zero,
+            "fs3_basis_transport_residual_batch_std": zero,
+            "fs3_basis_transport_residual_head_std": zero,
+            "fs3_basis_transport_fp32_norm_max_error": zero,
+            "fs3_basis_transport_storage_norm_max_error": zero,
+            "fs3_basis_transport_orthogonality_max_error": zero,
         }
-        if self.future_seed_content_mode == "terminal" or receiver_layer_idx < 2:
+        if self.future_seed_content_mode == "terminal":
+            return terminal_state, zero_diag
+        if self.future_seed_content_mode == "orthogonal_basis_transport":
+            if self.future_seed_basis_transport is None:
+                raise RuntimeError("orthogonal-basis FutureSeed module is missing")
+            candidate, basis_diag = self.future_seed_basis_transport(
+                terminal_state,
+                edge_idx=receiver_layer_idx - 1,
+            )
+            return candidate, {**zero_diag, **basis_diag}
+        if receiver_layer_idx < 2:
             return terminal_state, zero_diag
         if producer_initial_state is None:
             raise RuntimeError(
@@ -6331,6 +6378,16 @@ class FutureSeedRWKV(nn.Module):
         address_local_update_relative_rms = []
         address_local_residual_relative_rms = []
         address_local_residual_batch_std = []
+        basis_transport_enabled = []
+        basis_transport_angle_abs = []
+        basis_transport_row_rotation_relative_rms = []
+        basis_transport_col_rotation_relative_rms = []
+        basis_transport_state_residual_relative_rms = []
+        basis_transport_residual_batch_std = []
+        basis_transport_residual_head_std = []
+        basis_transport_fp32_norm_max_error = []
+        basis_transport_storage_norm_max_error = []
+        basis_transport_orthogonality_max_error = []
         state_history: List[torch.Tensor] = []
         gain_budget_values: Dict[str, List[torch.Tensor]] = {}
         for layer_idx, block in enumerate(self.blocks):
@@ -6480,6 +6537,48 @@ class FutureSeedRWKV(nn.Module):
                 )
                 address_local_residual_batch_std.append(
                     innovation_diag["fs3_address_local_residual_batch_std"]
+                )
+                basis_transport_enabled.append(
+                    innovation_diag["fs3_basis_transport_enabled"]
+                )
+                basis_transport_angle_abs.append(
+                    innovation_diag["fs3_basis_transport_angle_abs"]
+                )
+                basis_transport_row_rotation_relative_rms.append(
+                    innovation_diag[
+                        "fs3_basis_transport_row_rotation_relative_rms"
+                    ]
+                )
+                basis_transport_col_rotation_relative_rms.append(
+                    innovation_diag[
+                        "fs3_basis_transport_col_rotation_relative_rms"
+                    ]
+                )
+                basis_transport_state_residual_relative_rms.append(
+                    innovation_diag[
+                        "fs3_basis_transport_state_residual_relative_rms"
+                    ]
+                )
+                basis_transport_residual_batch_std.append(
+                    innovation_diag["fs3_basis_transport_residual_batch_std"]
+                )
+                basis_transport_residual_head_std.append(
+                    innovation_diag["fs3_basis_transport_residual_head_std"]
+                )
+                basis_transport_fp32_norm_max_error.append(
+                    innovation_diag[
+                        "fs3_basis_transport_fp32_norm_max_error"
+                    ]
+                )
+                basis_transport_storage_norm_max_error.append(
+                    innovation_diag[
+                        "fs3_basis_transport_storage_norm_max_error"
+                    ]
+                )
+                basis_transport_orthogonality_max_error.append(
+                    innovation_diag[
+                        "fs3_basis_transport_orthogonality_max_error"
+                    ]
                 )
                 future_seed_base_logit = block.future_seed_logit
                 if self.gdn2_update_mode == "paired_address_bank":
@@ -6884,6 +6983,76 @@ class FutureSeedRWKV(nn.Module):
                 if address_local_residual_batch_std
                 else x.new_zeros(())
             )
+            out["fs3_basis_transport_enabled"] = (
+                torch.stack(basis_transport_enabled).max()
+                if basis_transport_enabled
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_angle_abs"] = (
+                torch.stack(basis_transport_angle_abs).mean()
+                if basis_transport_angle_abs
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_angle_abs_min"] = (
+                torch.stack(basis_transport_angle_abs).min()
+                if basis_transport_angle_abs
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_row_rotation_relative_rms"] = (
+                torch.stack(basis_transport_row_rotation_relative_rms).mean()
+                if basis_transport_row_rotation_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_row_rotation_relative_rms_min"] = (
+                torch.stack(basis_transport_row_rotation_relative_rms).min()
+                if basis_transport_row_rotation_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_col_rotation_relative_rms"] = (
+                torch.stack(basis_transport_col_rotation_relative_rms).mean()
+                if basis_transport_col_rotation_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_col_rotation_relative_rms_min"] = (
+                torch.stack(basis_transport_col_rotation_relative_rms).min()
+                if basis_transport_col_rotation_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_state_residual_relative_rms"] = (
+                torch.stack(basis_transport_state_residual_relative_rms).mean()
+                if basis_transport_state_residual_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_state_residual_relative_rms_min"] = (
+                torch.stack(basis_transport_state_residual_relative_rms).min()
+                if basis_transport_state_residual_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_residual_batch_std"] = (
+                torch.stack(basis_transport_residual_batch_std).mean()
+                if basis_transport_residual_batch_std
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_residual_head_std"] = (
+                torch.stack(basis_transport_residual_head_std).mean()
+                if basis_transport_residual_head_std
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_fp32_norm_max_error"] = (
+                torch.stack(basis_transport_fp32_norm_max_error).max()
+                if basis_transport_fp32_norm_max_error
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_storage_norm_max_error"] = (
+                torch.stack(basis_transport_storage_norm_max_error).max()
+                if basis_transport_storage_norm_max_error
+                else x.new_zeros(())
+            )
+            out["fs3_basis_transport_orthogonality_max_error"] = (
+                torch.stack(basis_transport_orthogonality_max_error).max()
+                if basis_transport_orthogonality_max_error
+                else x.new_zeros(())
+            )
             for key, values in gain_budget_values.items():
                 stacked = torch.stack([value.float() for value in values])
                 out[key] = (
@@ -6947,6 +7116,20 @@ class FutureSeedRWKV(nn.Module):
             "fs3_address_local_update_relative_rms": zero,
             "fs3_address_local_residual_relative_rms": zero,
             "fs3_address_local_residual_batch_std": zero,
+            "fs3_basis_transport_enabled": zero,
+            "fs3_basis_transport_angle_abs": zero,
+            "fs3_basis_transport_angle_abs_min": zero,
+            "fs3_basis_transport_row_rotation_relative_rms": zero,
+            "fs3_basis_transport_row_rotation_relative_rms_min": zero,
+            "fs3_basis_transport_col_rotation_relative_rms": zero,
+            "fs3_basis_transport_col_rotation_relative_rms_min": zero,
+            "fs3_basis_transport_state_residual_relative_rms": zero,
+            "fs3_basis_transport_state_residual_relative_rms_min": zero,
+            "fs3_basis_transport_residual_batch_std": zero,
+            "fs3_basis_transport_residual_head_std": zero,
+            "fs3_basis_transport_fp32_norm_max_error": zero,
+            "fs3_basis_transport_storage_norm_max_error": zero,
+            "fs3_basis_transport_orthogonality_max_error": zero,
         }
         for key, values in gain_budget_values.items():
             stacked = torch.stack([value.float() for value in values])
@@ -7316,6 +7499,7 @@ def load_training_checkpoint(
                         "innovation_residual",
                         "producer_codec",
                         "address_local_update",
+                        "orthogonal_basis_transport",
                     }
                 ):
                     accepted_future_seed_content_upgrade = True
@@ -7374,6 +7558,7 @@ def load_training_checkpoint(
                     "innovation_residual",
                     "producer_codec",
                     "address_local_update",
+                    "orthogonal_basis_transport",
                 }
             ):
                 accepted_future_seed_content_upgrade = True
@@ -8522,6 +8707,28 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('fs3_address_local_residual_relative_rms', 0.0):.4f}/"
             f"{m.get('fs3_address_local_residual_batch_std', 0.0):.4f}"
         )
+    if m.get("fs3_basis_transport_enabled", 0.0) > 0:
+        parts.append(
+            "fs3_basis_angle="
+            f"{m.get('fs3_basis_transport_angle_abs', 0.0):.4f}/"
+            f"{m.get('fs3_basis_transport_angle_abs_min', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_basis_kv="
+            f"{m.get('fs3_basis_transport_row_rotation_relative_rms', 0.0):.4f}/"
+            f"{m.get('fs3_basis_transport_col_rotation_relative_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_basis_resid="
+            f"{m.get('fs3_basis_transport_state_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('fs3_basis_transport_state_residual_relative_rms_min', 0.0):.4f}"
+        )
+        parts.append(
+            "fs3_basis_geom="
+            f"{m.get('fs3_basis_transport_fp32_norm_max_error', 0.0):.2e}/"
+            f"{m.get('fs3_basis_transport_storage_norm_max_error', 0.0):.2e}/"
+            f"{m.get('fs3_basis_transport_orthogonality_max_error', 0.0):.2e}"
+        )
     if m.get("gdn3_state_expert_enabled", 0.0) > 0:
         parts.append(
             "state_expert_resid="
@@ -9176,6 +9383,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 if name.startswith("reasoner.future_seed_address_local_update.")
             }
             if args.future_seed_content_mode == "address_local_update"
+            else {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.startswith("reasoner.future_seed_basis_transport.")
+            }
+            if args.future_seed_content_mode == "orthogonal_basis_transport"
             else set()
         )
         declared_future_seed_content_upgrade = (
@@ -11748,6 +11961,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "innovation_residual",
             "producer_codec",
             "address_local_update",
+            "orthogonal_basis_transport",
         }:
             raise ValueError(
                 "--resume_allow_future_seed_content_upgrade requires a nonterminal "

@@ -2404,3 +2404,13 @@
 - Keep orchestration failures separate from mechanism evidence. P014 R1-R3
   exited before CUDA/model execution on interpreter or environment assertions;
   only R4 reached and falsified the registered model identity claim.
+- Cross-layer state reuse has a coordinate problem that scalar gates cannot
+  express. Producer and receiver GDN2 layers learn independent K/V bases, so
+  direct terminal-state transfer may preserve magnitude while misaligning
+  address and payload semantics.
+- Orthogonal transport is a high-information FutureSeed test because it changes
+  only the cross-layer coordinate map: no new memory, scan, recurrent core or
+  task logic is needed, and Frobenius geometry has an explicit invariant.
+- Zero-init algebra is not enough. P-FS3-004 must prove bit-exact full-model
+  identity, direct gradients on every edge/head, and bounded opened geometry in
+  the production autocast context before an exact-resume step is authorized.

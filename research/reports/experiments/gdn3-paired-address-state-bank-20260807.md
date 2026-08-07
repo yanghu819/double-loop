@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: proposed; static implementation only
+- Status: implementation pushed; strict CUDA contract R2 pending
 - Date: 2026-08-07
 - Planned branch: `codex/gdn3-paired-address-bank-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -129,6 +129,15 @@ mathematically independent. Bit-exact base parity is therefore binding. A
 tolerance relaxation, head-order rewrite or precision workaround is a contract
 failure, not an implementation rescue.
 
+Strict contract R1 on pushed SHA
+`103da5c71cd19938fb6bdba12562e554601f1bea` exited naturally after the
+identity and migration checks because its newly added state-cost assertion
+compared a two-board batch total (`196,608`) with the registered per-board
+delta (`98,304`). This is a checker accounting error, not a model, data,
+identity or mechanism failure. The R1 log and non-science abort remain archived;
+R2 changes only the assertion to count actual state values per board. Mechanism,
+prediction and every registered gate remain unchanged.
+
 ## 6. Step3001 Production Probe
 
 The exact one-step probe is migration and production-fit evidence only. It must
@@ -179,6 +188,6 @@ visualization.
 
 ## 9. Decision
 
-Pending implementation, pushed-source readback, strict CUDA contract and exact
-step3001 probe. No formal GPU continuation is authorized from an unpushed SHA
-or after any contract miss.
+Implementation and preregistration are pushed. Strict CUDA contract R2 and the
+exact step3001 probe remain pending. No formal GPU continuation is authorized
+from an unpushed SHA or after a substantive contract miss.

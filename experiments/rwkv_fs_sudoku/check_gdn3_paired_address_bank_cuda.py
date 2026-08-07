@@ -366,9 +366,13 @@ def check_zero_identity_and_first_stage(device: torch.device) -> dict[str, Any]:
         raise AssertionError(
             f"parameter delta {parameter_delta} != {EXPECTED_PARAMETER_DELTA}"
         )
-    state_value_delta = sum(state.numel() for state in candidate_states) - sum(
-        state.numel() for state in control_states
-    )
+    if any(state.shape[0] != x.shape[0] for state in candidate_states):
+        raise AssertionError("candidate state batch geometry changed")
+    if any(state.shape[0] != x.shape[0] for state in control_states):
+        raise AssertionError("control state batch geometry changed")
+    state_value_delta = sum(
+        state.numel() // state.shape[0] for state in candidate_states
+    ) - sum(state.numel() // state.shape[0] for state in control_states)
     if state_value_delta != EXPECTED_STATE_VALUE_DELTA:
         raise AssertionError(
             "state value delta "

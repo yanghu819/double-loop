@@ -403,6 +403,29 @@ ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS = (
     "gdn3_adaptive_signed_erase_terminal_batch_std",
     "gdn3_adaptive_signed_erase_weight_rms",
 )
+PAIRED_ADDRESS_BANK_TRAIN_KEYS = (
+    "gdn3_paired_address_bank_enabled",
+    "gdn3_paired_address_bank_read_gate_abs",
+    "gdn3_paired_address_bank_read_gate_head_std",
+    "gdn3_paired_address_bank_q_residual_relative_rms",
+    "gdn3_paired_address_bank_q_residual_batch_std",
+    "gdn3_paired_address_bank_q_residual_token_std",
+    "gdn3_paired_address_bank_q_residual_head_std",
+    "gdn3_paired_address_bank_k_residual_relative_rms",
+    "gdn3_paired_address_bank_k_residual_batch_std",
+    "gdn3_paired_address_bank_k_residual_token_std",
+    "gdn3_paired_address_bank_k_residual_head_std",
+    "gdn3_paired_address_bank_state_residual_relative_rms",
+    "gdn3_paired_address_bank_state_residual_batch_std",
+    "gdn3_paired_address_bank_state_residual_head_std",
+    "gdn3_paired_address_bank_base_address_contrast",
+    "gdn3_paired_address_bank_companion_address_contrast",
+    "gdn3_paired_address_bank_output_cosine",
+    "gdn3_paired_address_bank_terminal_rms",
+    "gdn3_paired_address_bank_terminal_batch_std",
+    "gdn3_paired_address_bank_q_weight_rms",
+    "gdn3_paired_address_bank_k_weight_rms",
+)
 INTERLEAVED_WRITE_TRAIN_KEYS = (
     "gdn3_interleaved_write_enabled",
     "gdn3_interleaved_write_k_residual_rms",
@@ -474,6 +497,7 @@ GDN2_UPDATE_MODES = (
     "orthogonal_chunk_state",
     "orthogonal_head_write",
     "adaptive_signed_erase",
+    "paired_address_bank",
     "interleaved_write",
 )
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
@@ -848,7 +872,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "adaptive_signed_erase" and address_mode == "position_qk":
+        if update_mode == "paired_address_bank" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_paired_address_state_bank_in_one_"
+                "official_gdn2_chunk"
+            )
+        elif update_mode == "adaptive_signed_erase" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_adaptive_signed_erase_"
                 "then_one_official_gdn2_chunk"
@@ -2320,6 +2349,7 @@ class FLADeltaTimeMix(nn.Module):
         self.precondition_mode = precondition_mode
         self.address_mode = address_mode
         self.update_mode = update_mode
+        self.state_heads = self.heads * (2 if update_mode == "paired_address_bank" else 1)
         self.terminal_consolidation_enabled = bool(
             terminal_consolidation_enabled
         )
@@ -2443,6 +2473,27 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.adaptive_signed_erase_proj is not None:
             nn.init.zeros_(self.adaptive_signed_erase_proj.weight)
+        self.paired_address_q_proj = (
+            nn.Linear(self.head_v_dim, self.head_dim, bias=False)
+            if update_mode == "paired_address_bank"
+            else None
+        )
+        self.paired_address_k_proj = (
+            nn.Linear(self.head_v_dim, self.head_dim, bias=False)
+            if update_mode == "paired_address_bank"
+            else None
+        )
+        self.paired_address_read_gate = (
+            nn.Parameter(torch.zeros(self.heads))
+            if update_mode == "paired_address_bank"
+            else None
+        )
+        if self.paired_address_q_proj is not None:
+            nn.init.zeros_(self.paired_address_q_proj.weight)
+        if self.paired_address_k_proj is not None:
+            nn.init.zeros_(self.paired_address_k_proj.weight)
+        if self.paired_address_read_gate is not None:
+            self.paired_address_read_gate._no_weight_decay = True
         if update_mode == "interleaved_write" and self.value_dim != d_model:
             raise ValueError(
                 "Interleaved write requires matched K/V width (gdn_expand_v=1)"
@@ -2617,6 +2668,13 @@ class FLADeltaTimeMix(nn.Module):
     ) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS}
+
+    @staticmethod
+    def _zero_paired_address_bank_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS}
 
     @staticmethod
     def _zero_interleaved_write_diag(
@@ -2827,6 +2885,242 @@ class FLADeltaTimeMix(nn.Module):
                 ),
             }
         return effective, diagnostics
+
+    def _paired_address_bank_transition(
+        self,
+        operation: Any,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        g: torch.Tensor,
+        b: torch.Tensor,
+        w: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        q_projection = self.paired_address_q_proj
+        k_projection = self.paired_address_k_proj
+        read_gate_parameter = self.paired_address_read_gate
+        if (
+            self.update_mode != "paired_address_bank"
+            or q_projection is None
+            or k_projection is None
+            or read_gate_parameter is None
+        ):
+            raise RuntimeError("Paired address-state bank parameters are unavailable")
+        if operation is None:
+            raise RuntimeError("Paired address-state bank requires the official GDN2 op")
+        expected_prefix = q.shape[:3]
+        if (
+            q.ndim != 4
+            or k.shape != q.shape
+            or v.ndim != 4
+            or g.shape != q.shape
+            or b.shape != q.shape
+            or v.shape[:3] != expected_prefix
+            or w.shape != v.shape
+        ):
+            raise RuntimeError(
+                "Paired address-state bank requires matched rank-4 Q/K/V/g/b/w tensors"
+            )
+        if q.shape[2] != self.heads or v.shape[2] != self.heads:
+            raise RuntimeError(
+                "Paired address-state bank requires one K/V stream per parent head"
+            )
+        if q.shape[-1] != self.head_dim or v.shape[-1] != self.head_v_dim:
+            raise RuntimeError("Paired address-state bank received unexpected head dimensions")
+
+        batch_size = q.shape[0]
+        base_state_shape = (
+            batch_size,
+            self.heads,
+            self.head_dim,
+            self.head_v_dim,
+        )
+        paired_state_shape = (
+            batch_size,
+            2 * self.heads,
+            self.head_dim,
+            self.head_v_dim,
+        )
+        paired_initial_state: Optional[torch.Tensor]
+        if initial_state is None:
+            paired_initial_state = None
+        elif tuple(initial_state.shape) == base_state_shape:
+            paired_initial_state = torch.cat((initial_state, initial_state), dim=1)
+        elif tuple(initial_state.shape) == paired_state_shape:
+            paired_initial_state = initial_state
+        else:
+            raise RuntimeError(
+                "Paired address-state bank incoming state mismatch: "
+                f"{tuple(initial_state.shape)} not in "
+                f"{{{base_state_shape}, {paired_state_shape}}}"
+            )
+
+        q_residual = q_projection(v)
+        k_residual = k_projection(v)
+        companion_q = q + q_residual.to(dtype=q.dtype)
+        companion_k = k + k_residual.to(dtype=k.dtype)
+        paired_q = torch.cat((q, companion_q), dim=2)
+        paired_k = torch.cat((k, companion_k), dim=2)
+        paired_v = torch.cat((v, v), dim=2)
+        paired_g = torch.cat((g, g), dim=2)
+        paired_b = torch.cat((b, b), dim=2)
+        paired_w = torch.cat((w, w), dim=2)
+        paired_output, terminal_state = operation(
+            q=paired_q,
+            k=paired_k,
+            v=paired_v,
+            g=paired_g,
+            b=paired_b,
+            w=paired_w,
+            initial_state=paired_initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+        if tuple(terminal_state.shape) != paired_state_shape:
+            raise RuntimeError(
+                "Paired address-state bank returned unexpected state shape: "
+                f"{tuple(terminal_state.shape)} != {paired_state_shape}"
+            )
+        if paired_output.shape[2] != 2 * self.heads:
+            raise RuntimeError(
+                "Paired address-state bank returned unexpected output head count"
+            )
+        base_output, companion_output = paired_output.split(self.heads, dim=2)
+        read_gate = torch.tanh(read_gate_parameter).view(1, 1, self.heads, 1)
+        output = base_output + read_gate.to(dtype=base_output.dtype) * companion_output
+
+        with torch.no_grad():
+            q_residual_float = q_residual.float()
+            k_residual_float = k_residual.float()
+            q_float = q.float()
+            k_float = k.float()
+            base_state, companion_state = terminal_state.float().split(
+                self.heads, dim=1
+            )
+            state_residual = companion_state - base_state
+            state_base_rms = base_state.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-8)
+            state_residual_board = state_residual.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt() / state_base_rms
+            state_residual_head = state_residual.square().mean(
+                dim=(2, 3)
+            ).sqrt() / base_state.square().mean(
+                dim=(2, 3)
+            ).sqrt().clamp_min(1e-8)
+
+            def residual_stats(
+                residual: torch.Tensor,
+                base: torch.Tensor,
+            ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                base_board = base.square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt().clamp_min(1e-8)
+                residual_board = residual.square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt() / base_board
+                residual_token = residual.square().mean(
+                    dim=(2, 3)
+                ).sqrt()
+                residual_head = residual.square().mean(
+                    dim=(1, 3)
+                ).sqrt()
+                return (
+                    residual_board.mean(),
+                    residual_board.std(unbiased=False),
+                    residual_token.std(dim=1, unbiased=False).mean(),
+                    residual_head.std(dim=1, unbiased=False).mean(),
+                )
+
+            q_relative, q_batch_std, q_token_std, q_head_std = residual_stats(
+                q_residual_float, q_float
+            )
+            k_relative, k_batch_std, k_token_std, k_head_std = residual_stats(
+                k_residual_float, k_float
+            )
+
+            def address_contrast(
+                query: torch.Tensor,
+                key: torch.Tensor,
+            ) -> torch.Tensor:
+                query_unit = F.normalize(query[:1].float(), dim=-1, eps=1e-6)
+                key_unit = F.normalize(key[:1].float(), dim=-1, eps=1e-6)
+                similarity = torch.einsum(
+                    "bthd,bshd->bhts", query_unit, key_unit
+                )
+                diagonal = similarity.diagonal(dim1=-2, dim2=-1)
+                diagonal_mean = diagonal.mean()
+                if similarity.shape[-1] <= 1:
+                    return diagonal_mean
+                offdiag = (
+                    similarity.sum() - diagonal.sum()
+                ) / float(
+                    similarity.shape[0]
+                    * similarity.shape[1]
+                    * similarity.shape[2]
+                    * (similarity.shape[3] - 1)
+                )
+                return diagonal_mean - offdiag
+
+            base_output_float = base_output.float()
+            companion_output_float = companion_output.float()
+            output_cosine = (
+                (base_output_float * companion_output_float).mean()
+                / (
+                    base_output_float.square().mean().sqrt()
+                    * companion_output_float.square().mean().sqrt()
+                ).clamp_min(1e-8)
+            )
+            terminal_board_rms = terminal_state.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            read_gate_float = torch.tanh(read_gate_parameter.float())
+            diagnostics = {
+                "gdn3_paired_address_bank_enabled": q.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_paired_address_bank_read_gate_abs": read_gate_float.abs().mean(),
+                "gdn3_paired_address_bank_read_gate_head_std": read_gate_float.std(
+                    unbiased=False
+                ),
+                "gdn3_paired_address_bank_q_residual_relative_rms": q_relative,
+                "gdn3_paired_address_bank_q_residual_batch_std": q_batch_std,
+                "gdn3_paired_address_bank_q_residual_token_std": q_token_std,
+                "gdn3_paired_address_bank_q_residual_head_std": q_head_std,
+                "gdn3_paired_address_bank_k_residual_relative_rms": k_relative,
+                "gdn3_paired_address_bank_k_residual_batch_std": k_batch_std,
+                "gdn3_paired_address_bank_k_residual_token_std": k_token_std,
+                "gdn3_paired_address_bank_k_residual_head_std": k_head_std,
+                "gdn3_paired_address_bank_state_residual_relative_rms": (
+                    state_residual_board.mean()
+                ),
+                "gdn3_paired_address_bank_state_residual_batch_std": (
+                    state_residual_board.std(unbiased=False)
+                ),
+                "gdn3_paired_address_bank_state_residual_head_std": (
+                    state_residual_head.std(dim=1, unbiased=False).mean()
+                ),
+                "gdn3_paired_address_bank_base_address_contrast": address_contrast(
+                    q, k
+                ),
+                "gdn3_paired_address_bank_companion_address_contrast": address_contrast(
+                    companion_q, companion_k
+                ),
+                "gdn3_paired_address_bank_output_cosine": output_cosine,
+                "gdn3_paired_address_bank_terminal_rms": terminal_board_rms.mean(),
+                "gdn3_paired_address_bank_terminal_batch_std": terminal_board_rms.std(
+                    unbiased=False
+                ),
+                "gdn3_paired_address_bank_q_weight_rms": (
+                    q_projection.weight.float().square().mean().sqrt()
+                ),
+                "gdn3_paired_address_bank_k_weight_rms": (
+                    k_projection.weight.float().square().mean().sqrt()
+                ),
+            }
+        return output, terminal_state, diagnostics
 
     def _orthogonal_chunk_state_transport(
         self,
@@ -3984,6 +4278,7 @@ class FLADeltaTimeMix(nn.Module):
             adaptive_signed_erase_diag = (
                 self._zero_adaptive_signed_erase_diag(x)
             )
+        paired_address_bank_diag = self._zero_paired_address_bank_diag(x)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
         if core.num_v_heads > core.num_heads:
@@ -3995,7 +4290,32 @@ class FLADeltaTimeMix(nn.Module):
         if core.allow_neg_eigval:
             b = b * 2.0
 
-        if self.update_mode == "interleaved_write":
+        if self.update_mode == "paired_address_bank":
+            operation = (
+                fused_recurrent_gdn2
+                if seq_len <= 64 and not self.training
+                else chunk_gdn2
+            )
+            o, terminal_state, paired_address_bank_diag = (
+                self._paired_address_bank_transition(
+                    operation,
+                    q,
+                    k,
+                    v,
+                    g,
+                    b,
+                    w,
+                    initial_state,
+                )
+            )
+            terminal_consolidation_diag = (
+                self._zero_terminal_consolidation_diag(x)
+            )
+            orthogonal_chunk_state_diag = (
+                self._zero_orthogonal_chunk_state_diag(x)
+            )
+            interleaved_write_diag = self._zero_interleaved_write_diag(x)
+        elif self.update_mode == "interleaved_write":
             o, terminal_state, interleaved_write_diag = (
                 self._interleaved_write_transition(
                     x,
@@ -4157,6 +4477,7 @@ class FLADeltaTimeMix(nn.Module):
             **orthogonal_chunk_state_diag,
             **orthogonal_head_write_diag,
             **adaptive_signed_erase_diag,
+            **paired_address_bank_diag,
             **interleaved_write_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
@@ -4748,14 +5069,23 @@ class FLADeltaTimeMix(nn.Module):
             )
         else:
             expected = (
+                (batch_size, self.state_heads, self.head_v_dim, self.head_dim)
+                if self.state_v_first
+                else (batch_size, self.state_heads, self.head_dim, self.head_v_dim)
+            )
+        if initial_state is not None:
+            base_expected = (
                 (batch_size, self.heads, self.head_v_dim, self.head_dim)
                 if self.state_v_first
                 else (batch_size, self.heads, self.head_dim, self.head_v_dim)
             )
-        if initial_state is not None:
-            if tuple(initial_state.shape) != expected:
+            allowed = {expected}
+            if self.update_mode == "paired_address_bank":
+                allowed.add(base_expected)
+            if tuple(initial_state.shape) not in allowed:
                 raise ValueError(
-                    f"{self.backbone.upper()} initial_state shape {tuple(initial_state.shape)} does not match {expected}"
+                    f"{self.backbone.upper()} initial_state shape {tuple(initial_state.shape)} "
+                    f"does not match one of {sorted(allowed)}"
                 )
             initial_state = initial_state.float()
 
@@ -5298,6 +5628,27 @@ class FutureSeedRWKV(nn.Module):
                 "position-QK GDN2, the unmodified main update, and fixed "
                 "adjacent-layer terminal FutureSeed"
             )
+        if gdn2_update_mode == "paired_address_bank" and (
+            backbone != "gdn2"
+            or gdn2_address_mode != "position_qk"
+            or gdn2_state_expert_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+            or not math.isclose(gdn_expand_v, 1.0)
+            or not math.isclose(gdn_progressive_base_expand_v, 0.0)
+            or not math.isclose(future_seed_scale, 1.0)
+            or not math.isclose(future_seed_decay, 0.0)
+            or future_seed_update != "fixed"
+            or future_seed_norm_mode != "unit"
+            or future_seed_gate_mode != "head"
+            or future_seed_scope != "layer"
+            or future_seed_readout_hop != 0
+            or future_seed_content_mode != "terminal"
+        ):
+            raise ValueError(
+                "The paired address-state bank composes only with matched-width "
+                "independent position-QK GDN2 and fixed adjacent-layer terminal "
+                "FutureSeed"
+            )
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -5387,10 +5738,13 @@ class FutureSeedRWKV(nn.Module):
             if self.future_seed_content_mode == "address_local_update"
             else None
         )
+        future_seed_state_heads = (
+            2 * heads if gdn2_update_mode == "paired_address_bank" else heads
+        )
         self.future_seed_selector = FutureSeedSelectiveGate(
             mode=future_seed_gate_mode,
             layers=layers,
-            heads=heads,
+            heads=future_seed_state_heads,
             row_dim=state_row_dim,
             col_dim=state_col_dim,
         )
@@ -5842,8 +6196,13 @@ class FutureSeedRWKV(nn.Module):
                 address_local_residual_batch_std.append(
                     innovation_diag["fs3_address_local_residual_batch_std"]
                 )
+                future_seed_base_logit = block.future_seed_logit
+                if self.gdn2_update_mode == "paired_address_bank":
+                    future_seed_base_logit = torch.cat(
+                        (future_seed_base_logit, future_seed_base_logit), dim=1
+                    )
                 if layer_idx == 0:
-                    gate = torch.sigmoid(block.future_seed_logit)
+                    gate = torch.sigmoid(future_seed_base_logit)
                     selective_zero = x.new_zeros(())
                     selective_diag = {
                         "fs2_gate_delta_rms": selective_zero,
@@ -5857,7 +6216,7 @@ class FutureSeedRWKV(nn.Module):
                 else:
                     gate, selective_diag = self.future_seed_selector(
                         candidate_seed_state,
-                        base_logit=block.future_seed_logit,
+                        base_logit=future_seed_base_logit,
                         layer_idx=layer_idx,
                     )
                 gate = gate * self.future_seed_scale
@@ -6648,6 +7007,7 @@ def load_training_checkpoint(
                         "orthogonal_chunk_state",
                         "orthogonal_head_write",
                         "adaptive_signed_erase",
+                        "paired_address_bank",
                         "interleaved_write",
                     }
                 ):
@@ -6706,6 +7066,7 @@ def load_training_checkpoint(
                     "orthogonal_chunk_state",
                     "orthogonal_head_write",
                     "adaptive_signed_erase",
+                    "paired_address_bank",
                     "interleaved_write",
                 }
             ):
@@ -6853,6 +7214,9 @@ def load_training_checkpoint(
         ".time_mix.orthogonal_chunk_state_proj.weight",
         ".time_mix.orthogonal_head_write_proj.weight",
         ".time_mix.adaptive_signed_erase_proj.weight",
+        ".time_mix.paired_address_q_proj.weight",
+        ".time_mix.paired_address_k_proj.weight",
+        ".time_mix.paired_address_read_gate",
         ".time_mix.interleaved_write_k_proj.weight",
         ".time_mix.interleaved_write_v_proj.weight",
     )
@@ -7941,6 +8305,23 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_adaptive_signed_erase_terminal_rms', 0.0):.4f}/"
             f"{m.get('gdn3_adaptive_signed_erase_terminal_batch_std', 0.0):.4f}"
         )
+    if m.get("gdn3_paired_address_bank_enabled", 0.0) > 0:
+        parts.append(
+            "paired_bank_gate/q/k="
+            f"{m.get('gdn3_paired_address_bank_read_gate_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_paired_address_bank_q_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_paired_address_bank_k_residual_relative_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "paired_bank_state/terminal="
+            f"{m.get('gdn3_paired_address_bank_state_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_paired_address_bank_terminal_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "paired_bank_contrast="
+            f"{m.get('gdn3_paired_address_bank_base_address_contrast', 0.0):.4f}/"
+            f"{m.get('gdn3_paired_address_bank_companion_address_contrast', 0.0):.4f}"
+        )
     if m.get("gdn3_interleaved_write_enabled", 0.0) > 0:
         parts.append(
             "interleave_k/v="
@@ -8367,6 +8748,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_adaptive_signed_erase_diag = {
         key: 0.0 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
     }
+    last_paired_address_bank_diag = {
+        key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
+    }
     last_interleaved_write_diag = {
         key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
     }
@@ -8508,6 +8892,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.adaptive_signed_erase_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "paired_address_bank":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if ".time_mix.paired_address_" in name
+            }
         elif args.gdn2_update_mode == "interleaved_write":
             expected_gdn2_update_insertions = {
                 name
@@ -8526,6 +8916,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "orthogonal_chunk_state",
                 "orthogonal_head_write",
                 "adaptive_signed_erase",
+                "paired_address_bank",
                 "interleaved_write",
             }
             and bool(expected_gdn2_update_insertions)
@@ -8696,6 +9087,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_adaptive_signed_erase_diag.get(key, 0.0))
                 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
             }
+        saved_paired_address_bank_diag = last_metrics.get(
+            "paired_address_bank", {}
+        )
+        if isinstance(saved_paired_address_bank_diag, dict):
+            last_paired_address_bank_diag = {
+                key: float(saved_paired_address_bank_diag.get(key, 0.0))
+                for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
+            }
         saved_interleaved_write_diag = last_metrics.get(
             "interleaved_write", {}
         )
@@ -8800,6 +9199,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_adaptive_signed_erase_diag = {
                 key: 0.0 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
+            }
+            accum_paired_address_bank_diag = {
+                key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
             }
             accum_interleaved_write_diag = {
                 key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
@@ -9077,6 +9479,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS:
+                        accum_paired_address_bank_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in INTERLEAVED_WRITE_TRAIN_KEYS:
                         accum_interleaved_write_diag[key] += float(
                             trace_last.get(
@@ -9182,6 +9593,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_adaptive_signed_erase_diag.items()
             }
+            last_paired_address_bank_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_paired_address_bank_diag.items()
+            }
             last_interleaved_write_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_interleaved_write_diag.items()
@@ -9260,6 +9675,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_effective_max']:.4f}/"
                     f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_above_one_frac']:.4f} "
                     f"signed_erase_state={last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_terminal_rms']:.4f} "
+                    f"paired_bank_gate={last_paired_address_bank_diag['gdn3_paired_address_bank_read_gate_abs']:.4f} "
+                    f"paired_bank_qk={last_paired_address_bank_diag['gdn3_paired_address_bank_q_residual_relative_rms']:.4f}/"
+                    f"{last_paired_address_bank_diag['gdn3_paired_address_bank_k_residual_relative_rms']:.4f} "
+                    f"paired_bank_state={last_paired_address_bank_diag['gdn3_paired_address_bank_state_residual_relative_rms']:.4f}/"
+                    f"{last_paired_address_bank_diag['gdn3_paired_address_bank_terminal_rms']:.4f} "
                     f"interleave_kv={last_interleaved_write_diag['gdn3_interleaved_write_k_residual_relative_rms']:.4f}/"
                     f"{last_interleaved_write_diag['gdn3_interleaved_write_v_relative_rms']:.4f} "
                     f"interleave_write={last_interleaved_write_diag['gdn3_interleaved_write_state_write_relative_rms']:.4f}/"
@@ -9346,6 +9766,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "adaptive_signed_erase": dict(
                             last_adaptive_signed_erase_diag
+                        ),
+                        "paired_address_bank": dict(
+                            last_paired_address_bank_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -9447,6 +9870,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "adaptive_signed_erase": dict(
                                 last_adaptive_signed_erase_diag
                             ),
+                            "paired_address_bank": dict(
+                                last_paired_address_bank_diag
+                            ),
                             "interleaved_write": dict(
                                 last_interleaved_write_diag
                             ),
@@ -9525,6 +9951,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "adaptive_signed_erase": dict(
                             last_adaptive_signed_erase_diag
+                        ),
+                        "paired_address_bank": dict(
+                            last_paired_address_bank_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -9615,6 +10044,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
+        "paired_address_bank": dict(last_paired_address_bank_diag),
         "interleaved_write": dict(last_interleaved_write_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
@@ -10947,6 +11377,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "orthogonal_chunk_state",
             "orthogonal_head_write",
             "adaptive_signed_erase",
+            "paired_address_bank",
             "interleaved_write",
         }:
             raise ValueError(

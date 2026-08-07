@@ -120,11 +120,27 @@ LR, loss, batch, width/depth, or duration rescue.
 
 ## 8. Results
 
-Pending exact pushed source, strict GPU1 CUDA contract, and exact-resume
-step3001 production gate. No benchmark score exists at preregistration time.
+Initial pushed SHA `6f40c0a2ac7e3a9a055fa5738be88970538db69a`
+reached and passed the registered identity, nonzero-state, parameter,
+direct-gradient, synthetic geometry, opened full-model geometry, and official
+backward assertions. It then exited status1 in the final provenance-summary
+call because the checker passed the `FutureSeedRWKV` reasoner directly to a
+helper that requires an outer object with `.reasoner`. This is a checker
+object-shape error after the mechanism assertions, not a model, data,
+integrity, or science failure. GPU1 released naturally to 0 MiB.
+
+R1 log SHA256 is
+`a8e31b690fdf960acee0366142f8496b29ccbeb1282b8640b42ed61b09707893`;
+its non-science abort JSON SHA256 is
+`a4d7083c114276e037d03c8b1b272945e41a1b876e5e3a6b9a81e76b6e36a454`.
+The correction only supplies the required outer runtime container; it does not
+change mechanism code, parameters, thresholds, data, or training. Strict R2
+and the exact-resume step3001 production gate remain pending on a new pushed
+SHA. No benchmark score exists.
 
 ## 9. Decision
 
-Approved for contract-first evaluation. Formal continuation remains blocked
-until the pushed-SHA, clean-worktree, identity, direct-gradient, geometry, and
-step3001 production gates all pass exactly as registered above.
+Approved for one corrected contract rerun because R1 failed only in a
+post-assertion checker object wrapper. Formal continuation remains blocked
+until the new pushed-SHA, clean-worktree, identity, direct-gradient, geometry,
+provenance, and step3001 production gates all pass exactly as registered.

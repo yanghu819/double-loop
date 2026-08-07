@@ -434,7 +434,9 @@ def main() -> None:
     opened = check_opened_geometry(device)
     opened_full_model = check_opened_full_model(device)
     runtime_model = build(device, content_mode="orthogonal_basis_transport")
-    runtime = study.strict_fla_runtime_summary(runtime_model, "gdn2")
+    runtime_container = torch.nn.Module()
+    runtime_container.reasoner = runtime_model
+    runtime = study.strict_fla_runtime_summary(runtime_container, "gdn2")
     result = {
         "status": "passed",
         "git_sha": git_sha,

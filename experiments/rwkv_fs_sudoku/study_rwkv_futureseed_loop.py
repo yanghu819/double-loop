@@ -323,6 +323,18 @@ COHERENT_DELTA_TRAIN_KEYS = (
     "gdn2_coherent_delta_b_relative_change",
     "gdn2_coherent_delta_w_relative_change",
 )
+STATE_EXPERT_TRAIN_KEYS = (
+    "gdn3_state_expert_enabled",
+    "gdn3_state_expert_residual_relative_rms",
+    "gdn3_state_expert_residual_batch_std",
+    "gdn3_state_expert_terminal_rms",
+    "gdn3_state_expert_terminal_batch_std",
+    "gdn3_state_expert_seed_rms",
+    "gdn3_state_expert_gate_mean",
+    "gdn3_state_expert_up_weight_rms",
+    "gdn3_state_expert_address_contrast",
+    "gdn3_state_expert_output_cosine",
+)
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
@@ -358,6 +370,7 @@ GDN2_ADDRESS_MODES = (
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
 GDN2_UPDATE_MODES = ("none", "coherent_delta")
+GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
 FUTURE_SEED_CONTENT_MODES = (
     "terminal",
     "innovation_residual",
@@ -3753,6 +3766,127 @@ class FLADeltaTimeMix(nn.Module):
         return y, terminal_state
 
 
+class GDN2ResidualStateExpert(nn.Module):
+    """Compact official-GDN2 state expert with a zero-init residual readout."""
+
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        *,
+        expert_width: int,
+        use_short_conv: bool,
+        conv_size: int,
+    ) -> None:
+        super().__init__()
+        if expert_width <= 0 or expert_width % heads:
+            raise ValueError("State-expert width must be positive and divisible by heads")
+        self.d_model = int(d_model)
+        self.heads = int(heads)
+        self.expert_width = int(expert_width)
+        self.head_dim = self.expert_width // self.heads
+        self.content_down = nn.Linear(d_model, expert_width, bias=False)
+        self.address_down = nn.Linear(d_model, expert_width, bias=False)
+        self.time_mix = FLADeltaTimeMix(
+            expert_width,
+            heads,
+            self.head_dim,
+            backbone="gdn2",
+            expand_v=1.0,
+            mode="chunk",
+            use_short_conv=use_short_conv,
+            conv_size=conv_size,
+            allow_neg_eigval=False,
+            address_mode="position_qk",
+            update_mode="none",
+        )
+        self.up_proj = nn.Linear(expert_width, d_model, bias=False)
+        nn.init.zeros_(self.up_proj.weight)
+        self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        address: torch.Tensor,
+        cell_order: Optional[torch.Tensor],
+        incoming_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        if x.shape != address.shape:
+            raise ValueError(
+                "State-expert content/address shape mismatch: "
+                f"{tuple(x.shape)} != {tuple(address.shape)}"
+            )
+        content = self.content_down(x)
+        expert_address = self.address_down(address)
+        zero = x.new_zeros(())
+        initial_state: Optional[torch.Tensor] = None
+        seed_rms = zero
+        gate_mean = zero
+        if incoming_state is not None:
+            expected = (
+                x.shape[0],
+                self.heads,
+                self.head_dim,
+                self.head_dim,
+            )
+            if tuple(incoming_state.shape) != expected:
+                raise ValueError(
+                    "State-expert incoming shape mismatch: "
+                    f"{tuple(incoming_state.shape)} != {expected}"
+                )
+            denom = incoming_state.square().mean(
+                dim=(-1, -2), keepdim=True
+            ).sqrt().clamp_min(1e-6)
+            gate = torch.sigmoid(self.future_seed_logit).to(
+                device=incoming_state.device,
+                dtype=incoming_state.dtype,
+            )
+            initial_state = incoming_state / denom * gate
+            seed_rms = initial_state.float().square().mean().sqrt().to(dtype=x.dtype)
+            gate_mean = gate.mean().to(dtype=x.dtype)
+
+        expert_output, terminal_state = self.time_mix(
+            content,
+            initial_state=initial_state,
+            address=expert_address,
+            cell_order=cell_order,
+        )
+        residual = self.up_proj(expert_output)
+        residual_board_rms = residual.float().square().mean(
+            dim=(-1, -2)
+        ).sqrt()
+        content_rms = x.float().square().mean().sqrt().clamp_min(1e-6)
+        terminal_board_rms = terminal_state.float().square().mean(
+            dim=(-1, -2, -3)
+        ).sqrt()
+        address_diag = self.time_mix.last_gain_budget_diag
+        return residual, terminal_state, {
+            "gdn3_state_expert_enabled": x.new_ones(()),
+            "gdn3_state_expert_residual_relative_rms": (
+                residual_board_rms.mean() / content_rms
+            ).to(dtype=x.dtype),
+            "gdn3_state_expert_residual_batch_std": residual_board_rms.std(
+                unbiased=False
+            ).to(dtype=x.dtype),
+            "gdn3_state_expert_terminal_rms": terminal_board_rms.mean().to(
+                dtype=x.dtype
+            ),
+            "gdn3_state_expert_terminal_batch_std": terminal_board_rms.std(
+                unbiased=False
+            ).to(dtype=x.dtype),
+            "gdn3_state_expert_seed_rms": seed_rms,
+            "gdn3_state_expert_gate_mean": gate_mean,
+            "gdn3_state_expert_up_weight_rms": self.up_proj.weight.float().square().mean().sqrt().to(
+                dtype=x.dtype
+            ),
+            "gdn3_state_expert_address_contrast": address_diag[
+                "gdn2_address_qk_contrast"
+            ].to(dtype=x.dtype),
+            "gdn3_state_expert_output_cosine": zero,
+        }
+
+
 class FLADeltaBlock(nn.Module):
     def __init__(
         self,
@@ -3779,6 +3913,7 @@ class FLADeltaBlock(nn.Module):
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         gdn2_update_mode: str = "none",
+        gdn2_state_expert_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
     ) -> None:
@@ -3814,12 +3949,38 @@ class FLADeltaBlock(nn.Module):
         )
         self.channel_mix = ChannelMix(d_model, channel_mult)
         self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
+        if gdn2_state_expert_mode not in GDN2_STATE_EXPERT_MODES:
+            raise ValueError(
+                "gdn2_state_expert_mode must be one of: "
+                f"{', '.join(GDN2_STATE_EXPERT_MODES)}"
+            )
+        if gdn2_state_expert_mode != "none" and (
+            backbone != "gdn2" or gdn2_address_mode != "position_qk"
+        ):
+            raise ValueError(
+                "The dual-state expert requires position-QK official GDN2"
+            )
+        self.gdn2_state_expert_mode = gdn2_state_expert_mode
+        self.state_expert = (
+            GDN2ResidualStateExpert(
+                d_model,
+                heads,
+                expert_width=d_model // 2,
+                use_short_conv=gdn_use_short_conv,
+                conv_size=gdn_conv_size,
+            )
+            if gdn2_state_expert_mode == "dual_state"
+            else None
+        )
+        self.last_state_expert_terminal: Optional[torch.Tensor] = None
+        self.last_state_expert_diag: Dict[str, torch.Tensor] = {}
 
     def forward(
         self,
         x: torch.Tensor,
         *,
         initial_state: Optional[torch.Tensor] = None,
+        state_expert_initial_state: Optional[torch.Tensor] = None,
         address: Optional[torch.Tensor] = None,
         cell_order: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -3831,12 +3992,41 @@ class FLADeltaBlock(nn.Module):
             if address is not None
             else None
         )
+        normalized_x = self.ln_time(x)
         time_out, terminal_state = self.time_mix(
-            self.ln_time(x),
+            normalized_x,
             initial_state=initial_state,
             address=normalized_address,
             cell_order=cell_order,
         )
+        if self.state_expert is not None:
+            if normalized_address is None:
+                raise ValueError("Dual-state expert requires a canonical address stream")
+            expert_residual, expert_terminal, expert_diag = self.state_expert(
+                normalized_x,
+                address=normalized_address,
+                cell_order=cell_order,
+                incoming_state=state_expert_initial_state,
+            )
+            time_norm = time_out.float().square().mean().sqrt().clamp_min(1e-6)
+            expert_norm = expert_residual.float().square().mean().sqrt()
+            cosine_denom = time_norm * expert_norm
+            expert_diag["gdn3_state_expert_output_cosine"] = torch.where(
+                cosine_denom > 0,
+                (time_out.float() * expert_residual.float()).mean() / cosine_denom,
+                cosine_denom.new_zeros(()),
+            ).to(dtype=x.dtype)
+            time_out = time_out + expert_residual
+            self.last_state_expert_terminal = expert_terminal
+            self.last_state_expert_diag = expert_diag
+        else:
+            if state_expert_initial_state is not None:
+                raise ValueError("State-expert input was provided while the expert is disabled")
+            zero = x.new_zeros(())
+            self.last_state_expert_terminal = None
+            self.last_state_expert_diag = {
+                key: zero for key in STATE_EXPERT_TRAIN_KEYS
+            }
         x = x + time_out
         x = x + self.channel_mix(self.ln_channel(x))
         return x, terminal_state
@@ -3887,6 +4077,7 @@ class FutureSeedRWKV(nn.Module):
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         gdn2_update_mode: str = "none",
+        gdn2_state_expert_mode: str = "none",
         gdn2_cross_layer_init: str = "independent",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -3972,6 +4163,30 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError(
                 "Cross-layer coordinate initialization cannot be mixed with GDN2 addressing."
             )
+        if gdn2_state_expert_mode not in GDN2_STATE_EXPERT_MODES:
+            raise ValueError(
+                "gdn2_state_expert_mode must be one of: "
+                f"{', '.join(GDN2_STATE_EXPERT_MODES)}"
+            )
+        if gdn2_state_expert_mode != "none" and (
+            backbone != "gdn2"
+            or gdn2_address_mode != "position_qk"
+            or gdn2_update_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+            or not math.isclose(future_seed_scale, 1.0)
+            or not math.isclose(future_seed_decay, 0.0)
+            or future_seed_update != "fixed"
+            or future_seed_norm_mode != "unit"
+            or future_seed_gate_mode != "head"
+            or future_seed_scope != "layer"
+            or future_seed_readout_hop != 0
+            or future_seed_content_mode != "terminal"
+        ):
+            raise ValueError(
+                "The first dual-state expert composes only with independent "
+                "position-QK GDN2, the unmodified main update, and fixed "
+                "adjacent-layer terminal FutureSeed"
+            )
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -3985,6 +4200,7 @@ class FutureSeedRWKV(nn.Module):
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
         self.gdn2_update_mode = gdn2_update_mode
+        self.gdn2_state_expert_mode = gdn2_state_expert_mode
         self.gdn2_cross_layer_init = gdn2_cross_layer_init
         self.shared_address_proj = (
             nn.Linear(d_model, d_model, bias=False)
@@ -4139,6 +4355,7 @@ class FutureSeedRWKV(nn.Module):
                         gdn2_precondition_mode=gdn2_precondition_mode,
                         gdn2_address_mode=gdn2_address_mode,
                         gdn2_update_mode=gdn2_update_mode,
+                        gdn2_state_expert_mode=gdn2_state_expert_mode,
                         raven_num_slots=raven_num_slots,
                         raven_topk=raven_topk,
                     )
@@ -4311,6 +4528,7 @@ class FutureSeedRWKV(nn.Module):
                 f"seed_memory has {len(seed_memory)} entries, expected {expected_seed_count}"
             )
         previous_state: Optional[torch.Tensor] = None
+        previous_state_expert: Optional[torch.Tensor] = None
         previous_initial_state: Optional[torch.Tensor] = None
         seed_state: Optional[torch.Tensor] = None
         v_first: Optional[torch.Tensor] = None
@@ -4687,6 +4905,11 @@ class FutureSeedRWKV(nn.Module):
                 x, previous_state = block(
                     x,
                     initial_state=initial_state,
+                    state_expert_initial_state=(
+                        previous_state_expert
+                        if layer_idx > 0 and self.future_seed_scale > 0
+                        else None
+                    ),
                     address=address,
                     cell_order=cell_order,
                 )
@@ -4696,7 +4919,15 @@ class FutureSeedRWKV(nn.Module):
             previous_initial_state = initial_state
             state_history.append(previous_state)
             if isinstance(block, FLADeltaBlock):
+                if block.state_expert is not None:
+                    if block.last_state_expert_terminal is None:
+                        raise RuntimeError("Dual-state expert did not return a terminal state")
+                    previous_state_expert = block.last_state_expert_terminal
+                else:
+                    previous_state_expert = None
                 for key, value in block.time_mix.last_gain_budget_diag.items():
+                    gain_budget_values.setdefault(key, []).append(value)
+                for key, value in block.last_state_expert_diag.items():
                     gain_budget_values.setdefault(key, []).append(value)
             if self.future_seed_scope == "block":
                 assert next_seed_memory is not None
@@ -5195,6 +5426,7 @@ def load_training_checkpoint(
             "gdn2_precondition_mode",
             "gdn2_address_mode",
             "gdn2_update_mode",
+            "gdn2_state_expert_mode",
             "gdn2_cross_layer_init",
             "raven_num_slots",
             "raven_topk",
@@ -5264,6 +5496,7 @@ def load_training_checkpoint(
             "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
             "gdn2_update_mode": "none",
+            "gdn2_state_expert_mode": "none",
             "gdn2_cross_layer_init": "independent",
             "raven_num_slots": 0,
             "raven_topk": 0,
@@ -5276,6 +5509,7 @@ def load_training_checkpoint(
         accepted_legacy_defaults = {}
         accepted_future_seed_content_upgrade = False
         accepted_gdn2_update_upgrade = False
+        accepted_gdn2_state_expert_upgrade = False
         for field in contract_fields:
             current_value = getattr(expected_args, field)
             if field not in saved_args:
@@ -5296,6 +5530,13 @@ def load_training_checkpoint(
                     and current_value == "coherent_delta"
                 ):
                     accepted_gdn2_update_upgrade = True
+                    continue
+                if (
+                    field == "gdn2_state_expert_mode"
+                    and bool(expected_args.resume_allow_gdn2_state_expert_upgrade)
+                    and current_value == "dual_state"
+                ):
+                    accepted_gdn2_state_expert_upgrade = True
                     continue
                 if (
                     field in legacy_missing_defaults
@@ -5339,6 +5580,15 @@ def load_training_checkpoint(
                 and current_value == "coherent_delta"
             ):
                 accepted_gdn2_update_upgrade = True
+                matches = True
+            if (
+                not matches
+                and field == "gdn2_state_expert_mode"
+                and bool(expected_args.resume_allow_gdn2_state_expert_upgrade)
+                and saved_value == "none"
+                and current_value == "dual_state"
+            ):
+                accepted_gdn2_state_expert_upgrade = True
                 matches = True
             if not matches:
                 mismatches[field] = {
@@ -5419,6 +5669,9 @@ def load_training_checkpoint(
                 accepted_future_seed_content_upgrade
             ),
             "accepted_gdn2_update_upgrade": accepted_gdn2_update_upgrade,
+            "accepted_gdn2_state_expert_upgrade": (
+                accepted_gdn2_state_expert_upgrade
+            ),
             "curriculum_prefix": stage_context,
             "saved_at_step": saved_at_step,
             "matched": True,
@@ -5463,6 +5716,7 @@ def load_training_checkpoint(
         ".time_mix.address_carrier_bias_delta",
     )
     coherent_delta_suffixes = (".time_mix.coherent_delta_mix",)
+    state_expert_marker = ".state_expert."
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
         key
@@ -5472,6 +5726,7 @@ def load_training_checkpoint(
         and not key.endswith(fast_slow_suffixes)
         and not key.endswith(address_operator_suffixes)
         and not key.endswith(coherent_delta_suffixes)
+        and state_expert_marker not in key
     ]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
     if bad_missing or bad_unexpected:
@@ -5610,6 +5865,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
         gdn2_update_mode: str = "none",
+        gdn2_state_expert_mode: str = "none",
         gdn2_cross_layer_init: str = "independent",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -5648,6 +5904,7 @@ class FutureSeedLoopSudoku(nn.Module):
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
         self.gdn2_update_mode = gdn2_update_mode
+        self.gdn2_state_expert_mode = gdn2_state_expert_mode
         self.gdn2_cross_layer_init = gdn2_cross_layer_init
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
@@ -5688,6 +5945,7 @@ class FutureSeedLoopSudoku(nn.Module):
             gdn2_precondition_mode=gdn2_precondition_mode,
             gdn2_address_mode=gdn2_address_mode,
             gdn2_update_mode=gdn2_update_mode,
+            gdn2_state_expert_mode=gdn2_state_expert_mode,
             gdn2_cross_layer_init=gdn2_cross_layer_init,
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
@@ -6434,6 +6692,23 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('fs3_address_local_residual_relative_rms', 0.0):.4f}/"
             f"{m.get('fs3_address_local_residual_batch_std', 0.0):.4f}"
         )
+    if m.get("gdn3_state_expert_enabled", 0.0) > 0:
+        parts.append(
+            "state_expert_resid="
+            f"{m.get('gdn3_state_expert_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_state_expert_residual_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            "state_expert_state="
+            f"{m.get('gdn3_state_expert_terminal_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_state_expert_terminal_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_state_expert_seed_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "state_expert_addr/cos="
+            f"{m.get('gdn3_state_expert_address_contrast', 0.0):.4f}/"
+            f"{m.get('gdn3_state_expert_output_cosine', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -6709,6 +6984,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         gdn2_precondition_mode=args.gdn2_precondition_mode,
         gdn2_address_mode=args.gdn2_address_mode,
         gdn2_update_mode=args.gdn2_update_mode,
+        gdn2_state_expert_mode=args.gdn2_state_expert_mode,
         gdn2_cross_layer_init=args.gdn2_cross_layer_init,
         raven_num_slots=args.raven_num_slots,
         raven_topk=args.raven_topk,
@@ -6824,6 +7100,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         key: 0.0 for key in COHERENT_DELTA_TRAIN_KEYS
     }
     last_coherent_delta_diag["gdn2_coherent_delta_gap_ratio"] = 1.0
+    last_state_expert_diag = {
+        key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
+    }
     last_address_diag = {
         key: 0.0 for key in ADDRESS_TRAIN_KEYS
     }
@@ -6932,6 +7211,23 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             is True
         )
+        expected_gdn2_state_expert_insertions = {
+            name
+            for name, _parameter in model.named_parameters()
+            if ".state_expert." in name
+        }
+        declared_gdn2_state_expert_upgrade = (
+            bool(args.resume_allow_gdn2_state_expert_upgrade)
+            and args.gdn2_state_expert_mode == "dual_state"
+            and bool(expected_gdn2_state_expert_insertions)
+            and migrated_missing == expected_gdn2_state_expert_insertions
+            and not migration.get("unexpected_parameters")
+            and migration.get("optimizer_groups_expanded") is True
+            and checkpoint.get("_resume_contract", {}).get(
+                "accepted_gdn2_state_expert_upgrade"
+            )
+            is True
+        )
         if args.resume_require_exact_state and (
             (
                 migration.get("missing_parameters")
@@ -6941,6 +7237,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             and not declared_fast_slow_migration
             and not declared_future_seed_content_upgrade
             and not declared_gdn2_update_upgrade
+            and not declared_gdn2_state_expert_upgrade
         ):
             raise RuntimeError(
                 "Exact checkpoint resume required, but migration was needed: "
@@ -7015,6 +7312,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     )
                 )
                 for key in COHERENT_DELTA_TRAIN_KEYS
+            }
+        saved_state_expert_diag = last_metrics.get("state_expert", {})
+        if isinstance(saved_state_expert_diag, dict):
+            last_state_expert_diag = {
+                key: float(saved_state_expert_diag.get(key, 0.0))
+                for key in STATE_EXPERT_TRAIN_KEYS
             }
         saved_address_diag = last_metrics.get("address_operator", {})
         if isinstance(saved_address_diag, dict):
@@ -7091,6 +7394,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_coherent_delta_diag = {
                 key: 0.0 for key in COHERENT_DELTA_TRAIN_KEYS
+            }
+            accum_state_expert_diag = {
+                key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
             }
             accum_address_diag = {
                 key: 0.0 for key in ADDRESS_TRAIN_KEYS
@@ -7304,6 +7610,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in STATE_EXPERT_TRAIN_KEYS:
+                        accum_state_expert_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in ADDRESS_TRAIN_KEYS:
                         accum_address_diag[key] += float(
                             trace_last.get(
@@ -7371,6 +7686,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_coherent_delta_diag.items()
             }
+            last_state_expert_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_state_expert_diag.items()
+            }
             last_address_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_address_diag.items()
@@ -7411,6 +7730,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"coh_gap={last_coherent_delta_diag['gdn2_coherent_delta_gap_ratio']:.4f} "
                     f"coh_b={last_coherent_delta_diag['gdn2_coherent_delta_b_relative_change']:.4f} "
                     f"coh_w={last_coherent_delta_diag['gdn2_coherent_delta_w_relative_change']:.4f} "
+                    f"expert_resid={last_state_expert_diag['gdn3_state_expert_residual_relative_rms']:.4f}/"
+                    f"{last_state_expert_diag['gdn3_state_expert_residual_batch_std']:.4f} "
+                    f"expert_state={last_state_expert_diag['gdn3_state_expert_terminal_rms']:.4f}/"
+                    f"{last_state_expert_diag['gdn3_state_expert_seed_rms']:.4f} "
+                    f"expert_addr={last_state_expert_diag['gdn3_state_expert_address_contrast']:.4f} "
                     f"addr_scale={last_address_diag['gdn2_address_rotation_scale_abs']:.4f} "
                     f"addr_phase={last_address_diag['gdn2_address_phase_abs']:.4f} "
                     f"addr_qchg={last_address_diag['gdn2_address_q_relative_change']:.4f} "
@@ -7476,6 +7800,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "fast_slow_decay": dict(last_fast_slow_diag),
                         "precondition": dict(last_precondition_diag),
                         "coherent_delta": dict(last_coherent_delta_diag),
+                        "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
                     },
                     "eval_by_holes": {},
@@ -7559,6 +7884,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "fast_slow_decay": dict(last_fast_slow_diag),
                             "precondition": dict(last_precondition_diag),
                             "coherent_delta": dict(last_coherent_delta_diag),
+                            "state_expert": dict(last_state_expert_diag),
                             "address_operator": dict(last_address_diag),
                         },
                         reason="eval_checkpoint",
@@ -7621,6 +7947,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "fast_slow_decay": dict(last_fast_slow_diag),
                         "precondition": dict(last_precondition_diag),
                         "coherent_delta": dict(last_coherent_delta_diag),
+                        "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
                     },
                     reason="periodic",
@@ -7701,6 +8028,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "fast_slow_decay": dict(last_fast_slow_diag),
         "precondition": dict(last_precondition_diag),
         "coherent_delta": dict(last_coherent_delta_diag),
+        "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -7734,6 +8062,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
         "gdn2_update_mode": args.gdn2_update_mode,
+        "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
@@ -7747,6 +8076,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         "resume_allow_gdn2_update_upgrade": bool(
             args.resume_allow_gdn2_update_upgrade
+        ),
+        "resume_allow_gdn2_state_expert_upgrade": bool(
+            args.resume_allow_gdn2_state_expert_upgrade
         ),
         "save_train_checkpoint_every": args.save_train_checkpoint_every,
         "saved_train_checkpoints": saved_train_checkpoints,
@@ -9025,6 +9357,17 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "--resume_allow_gdn2_update_upgrade requires "
                 "--gdn2_update_mode coherent_delta"
             )
+    if args.resume_allow_gdn2_state_expert_upgrade:
+        if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
+            raise ValueError(
+                "--resume_allow_gdn2_state_expert_upgrade requires an exact "
+                "checkpoint resume"
+            )
+        if args.gdn2_state_expert_mode != "dual_state":
+            raise ValueError(
+                "--resume_allow_gdn2_state_expert_upgrade requires "
+                "--gdn2_state_expert_mode dual_state"
+            )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")
     if not (0.0 <= args.future_seed_decay < 1.0):
@@ -9154,6 +9497,57 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "Coherent delta updates cannot be mixed with Gain-Budget, "
                 "Fast-Slow decay, or tied preconditioning"
             )
+    if args.gdn2_state_expert_mode != "none":
+        if args.backbone != "gdn2":
+            raise ValueError("--gdn2_state_expert_mode requires --backbone gdn2")
+        if not args.fla_strict_official:
+            raise ValueError(
+                "--gdn2_state_expert_mode requires --fla_strict_official"
+            )
+        if args.gdn2_address_mode != "position_qk":
+            raise ValueError(
+                "The first dual-state expert requires "
+                "--gdn2_address_mode position_qk"
+            )
+        if args.gdn2_update_mode != "none":
+            raise ValueError(
+                "The first dual-state expert requires an unmodified main GDN2 update"
+            )
+        if args.gdn2_cross_layer_init != "independent":
+            raise ValueError(
+                "The first dual-state expert requires independent main-state coordinates"
+            )
+        if args.future_seed_content_mode != "terminal":
+            raise ValueError(
+                "The first dual-state expert requires terminal FutureSeed content"
+            )
+        if args.future_seed_norm_mode != "unit" or args.future_seed_gate_mode != "head":
+            raise ValueError(
+                "The first dual-state expert requires unit FutureSeed normalization "
+                "and head gates"
+            )
+        if args.future_seed_scope != "layer" or args.future_seed_readout_hop != 0:
+            raise ValueError(
+                "The first dual-state expert requires adjacent-layer FutureSeed routing"
+            )
+        if (
+            not math.isclose(args.future_seed_scale, 1.0)
+            or not math.isclose(args.future_seed_decay, 0.0)
+            or args.future_seed_update != "fixed"
+        ):
+            raise ValueError(
+                "The first dual-state expert requires unit-scale fixed terminal "
+                "FutureSeed without decay"
+            )
+        if (
+            args.gdn2_gain_budget_mode != "none"
+            or args.gdn2_fast_slow_decay_mode != "none"
+            or args.gdn2_precondition_mode != "none"
+        ):
+            raise ValueError(
+                "The first dual-state expert cannot be mixed with Gain-Budget, "
+                "Fast-Slow decay, or tied preconditioning"
+            )
     if args.gdn2_address_mode != "none" and args.backbone != "gdn2":
         raise ValueError("--gdn2_address_mode requires --backbone gdn2")
     if args.gdn2_address_mode != "none" and not args.fla_strict_official:
@@ -9279,6 +9673,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"gdn2_precondition={args.gdn2_precondition_mode} "
         f"gdn2_address={args.gdn2_address_mode} "
         f"gdn2_update={args.gdn2_update_mode} "
+        f"gdn2_state_expert={args.gdn2_state_expert_mode} "
         f"gdn2_cross_layer_init={args.gdn2_cross_layer_init} "
         f"raven_slots/topk={args.raven_num_slots}/{args.raven_topk} "
         f"cell_order_train={args.cell_order_train} "
@@ -9498,6 +9893,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
         "gdn2_update_mode": args.gdn2_update_mode,
+        "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
@@ -9700,6 +10096,10 @@ def parse_args() -> argparse.Namespace:
         "--resume_allow_gdn2_update_upgrade",
         action="store_true",
     )
+    p.add_argument(
+        "--resume_allow_gdn2_state_expert_upgrade",
+        action="store_true",
+    )
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
@@ -9758,6 +10158,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--gdn2_update_mode",
         choices=GDN2_UPDATE_MODES,
+        default="none",
+    )
+    p.add_argument(
+        "--gdn2_state_expert_mode",
+        choices=GDN2_STATE_EXPERT_MODES,
         default="none",
     )
     p.add_argument(

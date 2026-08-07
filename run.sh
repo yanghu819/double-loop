@@ -573,6 +573,7 @@ COMMON_ARGS=(
   --gdn2_precondition_mode "${GDN2_PRECONDITION_MODE:-none}"
   --gdn2_address_mode "${GDN2_ADDRESS_MODE:-none}"
   --gdn2_update_mode "${GDN2_UPDATE_MODE:-none}"
+  --gdn2_state_expert_mode "${GDN2_STATE_EXPERT_MODE:-none}"
   --gdn2_cross_layer_init "${GDN2_CROSS_LAYER_INIT:-independent}"
   --raven_num_slots "${RAVEN_NUM_SLOTS:-0}"
   --raven_topk "${RAVEN_TOPK:-0}"
@@ -609,6 +610,9 @@ if [[ "${RESUME_ALLOW_FUTURE_SEED_CONTENT_UPGRADE:-0}" == "1" ]]; then
 fi
 if [[ "${RESUME_ALLOW_GDN2_UPDATE_UPGRADE:-0}" == "1" ]]; then
   COMMON_ARGS+=(--resume_allow_gdn2_update_upgrade)
+fi
+if [[ "${RESUME_ALLOW_GDN2_STATE_EXPERT_UPGRADE:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--resume_allow_gdn2_state_expert_upgrade)
 fi
 
 if [[ -n "${RESUME_TRAIN_CHECKPOINT:-}" ]]; then

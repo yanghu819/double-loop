@@ -12,8 +12,19 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-07 CST): `P-GDN3-008` is preregistered as a terminal
-state consolidation sweep. The audit after P-GDN3-007 found a stricter
+Current update (2026-08-07 CST): `P-GDN3-008` terminal-state consolidation is
+the sole formal GPU1 candidate in progress on pushed clean SHA `605ae88`.
+Strict CUDA contract R2 passed exact migration identity, 12 parent plus 11
+correction official scans, 23 backward paths, all11 projection gradients,
+equivariance, and state dependence. The exact step3001 probe then passed with
+loop5 correction-K relative RMS/batch std/token std
+`0.019985/0.000842/0.006540` and terminal-state residual relative RMS/batch
+std `0.129669/0.008143`. Formal run
+`p-gdn3-008-terminal-consolidation-s3100-20260807T045713Z-605ae88` started from
+the fixed step3000 parent under wrapper PGID30169; no control rerun or
+concurrent GPU evaluation is active.
+
+The audit after P-GDN3-007 found a stricter
 boundary than its original name implied: P007 reads only the layer's incoming
 state once, before the official token scan, and converts that fixed read into
 precomputed K/V/erase/write residuals. It does not let a layer revise the
@@ -32,10 +43,10 @@ state, reverse scan, task rule, or selector is added. This is one falsifiable
 transition-depth mechanism, not a depth/count sweep. It adds 11,264 parameters
 and one official correction scan in each of the 11 producer paths. The fixed
 cost ceilings are elapsed `<120%` and peak allocation `<80%` overhead versus
-the frozen control. Quality gates remain unchanged. No GPU execution is
-authorized until implementation/preregistration are pushed, a clean detached
-worktree is built, the strict CUDA identity/gradient/two-official-scan contract
-passes, and an exact step3001 probe establishes activation and production fit.
+the frozen control. Quality gates remain unchanged. The implementation and
+preregistration are pushed, the clean detached worktree is exact, and both
+launch gates passed. Keep the formal trajectory unchanged until its endpoint
+artifacts are complete.
 
 Previous update (2026-08-07 CST): `P-GDN3-007` completed its pushed-source
 strict CUDA contract, exact step3001 full-stack probe, and sole exact

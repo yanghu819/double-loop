@@ -2,7 +2,8 @@
 
 ## 1. Metainfo
 
-- Status: approved; implementation and launch gates pending
+- Status: in progress; strict R2 contract and exact step3001 probe passed,
+  formal matched candidate running
 - Date: 2026-08-07
 - Branch: `codex/gdn3-terminal-consolidation-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -134,6 +135,39 @@ call to its registered position immediately after the first position-QK
 official chunk. The mechanism, parameters, parent, configuration, prediction,
 and every gate remain unchanged.
 
+Contract R2 passed on exact pushed SHA
+`605ae881ed87fb1987a0d859f247cb84b93ec4c2`. The clean detached worktree
+reported the registered GPU UUID and pinned FLA source, exact parameter delta
+`11,264`, 12 parent official GDN2 modules, and 23
+`ChunkGDN2FunctionBackward` paths. Full model output and all 12 terminal states
+were exact at zero initialization, including synthetic nonzero incoming state.
+All 11 projections had finite nonzero gradient. The opened synthetic path had
+correction-K relative RMS `0.001966`, terminal-state residual relative RMS
+`0.004743`, finite board/token variation, exact head-permutation equivariance,
+and explicit dependence on shuffled first-pass outputs and terminal state. The
+contract log SHA256 is
+`3421b399696e8ada61eddfa909bec76ac17587d3d3b93e193a17a8b410ace3ee`.
+
+The exact-resume production probe
+`p-gdn3-008-terminal-consolidation-probe-s3001-20260807T045208Z-605ae88`
+completed with status0 from the registered step3000 parent. Optimizer, RNG,
+data-order and source migration were accepted, and the complete step3001
+checkpoint and metrics JSON were written. At loop5, all 11 producer refiners
+were enabled; correction-K relative RMS/batch std/token std was
+`0.019985/0.000842/0.006540`, while terminal residual relative RMS/batch std
+was `0.129669/0.008143`. Metrics/checkpoint SHA256 are
+`2c30576f17804afe3ee7ecf160597dd3c60ab4865b8f1fb0d7172903f573db43` and
+`3714a2648229543c1ae098d0ebb70923644559adbddfdfe050ed1171805603d5`.
+This probe establishes activation and production fit only; its eight-board
+score is not a science readout.
+
+The sole formal candidate
+`p-gdn3-008-terminal-consolidation-s3100-20260807T045713Z-605ae88` started
+immediately from the same parent and exact source after GPU clearance. Its
+wrapper PGID is `30169`, Python child `30250`, and launch log is
+`/huyang2/double-loop/artifacts/launch/p-gdn3-008/formal-20260807T045713Z-605ae88.log`.
+No frozen-control rerun or concurrent evaluation was started.
+
 ## 7. Science And Cost Gates
 
 At step3100, activation requires all of:
@@ -176,4 +210,5 @@ Report and archive:
 
 ## 9. Decision
 
-Pending implementation, pushed-source contract, and exact step3001 probe.
+Formal matched candidate in progress. Apply the registered activation,
+quality, and cost gates after status0 endpoint artifacts are complete.

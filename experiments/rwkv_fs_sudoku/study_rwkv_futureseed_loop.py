@@ -3182,18 +3182,6 @@ class FLADeltaTimeMix(nn.Module):
             output_final_state=True,
             use_qk_l2norm_in_kernel=True,
         )
-        terminal_state, terminal_consolidation_diag = (
-            self._terminal_consolidation_transition(
-                q,
-                k,
-                o,
-                v,
-                b,
-                w,
-                terminal_state,
-            )
-        )
-
         zero = x.new_zeros(())
         self.last_gain_budget_diag = {
             "gdn2_gain_budget_enabled": zero,
@@ -3339,6 +3327,17 @@ class FLADeltaTimeMix(nn.Module):
             initial_state=initial_state,
             output_final_state=True,
             use_qk_l2norm_in_kernel=True,
+        )
+        terminal_state, terminal_consolidation_diag = (
+            self._terminal_consolidation_transition(
+                q,
+                k,
+                o,
+                v,
+                b,
+                w,
+                terminal_state,
+            )
         )
 
         with torch.no_grad():

@@ -120,6 +120,20 @@ Any contract or production-probe miss closes this implementation. It does not
 authorize an output residual, projection-source change, fewer/more sweeps, or
 layer subset.
 
+Contract R1 on pushed SHA
+`6ea0a12c86edf07854416cadda30c6990a336c61` exited before exercising the
+candidate transition. The diagnostics dictionary referenced
+`terminal_consolidation_diag` in the position-QK path, while the call producing
+that value had been inserted by an ambiguous patch anchor into the mutually
+exclusive fast-slow path. The resulting `NameError` occurred on the first
+control forward; no identity, official-kernel, gradient, activation, science,
+or cost assertion ran or failed. PGID28464 exited naturally, allocations
+cleared, and the log plus non-science abort are retained under
+`/huyang2/double-loop/artifacts/launch/p-gdn3-008/`. R2 moves only that existing
+call to its registered position immediately after the first position-QK
+official chunk. The mechanism, parameters, parent, configuration, prediction,
+and every gate remain unchanged.
+
 ## 7. Science And Cost Gates
 
 At step3100, activation requires all of:

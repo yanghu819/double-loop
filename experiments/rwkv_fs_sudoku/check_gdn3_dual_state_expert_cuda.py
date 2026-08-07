@@ -308,9 +308,13 @@ def check_two_stage_learning_path(
                 core.v_proj.weight,
                 f"layer {layer} state_expert.core.v_proj.weight",
             ),
-            "f_proj": finite_nonzero_grad(
-                core.f_proj.weight,
-                f"layer {layer} state_expert.core.f_proj.weight",
+            "f_proj_in": finite_nonzero_grad(
+                core.f_proj[0].weight,
+                f"layer {layer} state_expert.core.f_proj.0.weight",
+            ),
+            "f_proj_out": finite_nonzero_grad(
+                core.f_proj[1].weight,
+                f"layer {layer} state_expert.core.f_proj.1.weight",
             ),
             "b_proj": finite_nonzero_grad(
                 core.b_proj.weight,

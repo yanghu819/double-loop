@@ -182,3 +182,13 @@ single-GPU launcher, and strict two-stage CUDA contract are implemented.
 instantiating a model on CPU. GPU work remains blocked until the complete
 commit is pushed, its remote SHA is read back, and every launch gate above
 passes from a clean detached AIStation worktree.
+
+Contract R1 at source `d1250b6194e043013589636ce684995105c060e4`
+stopped after identity and two-stage backpropagation because the checker
+addressed official FLA's two-layer `f_proj` as a single `Linear.weight`.
+This is a pre-science checker implementation error: no probe or formal run
+started. It is recorded in
+`artifacts/launch/p-gdn3-006/contract-d1250b6.abort.json` (SHA256
+`3b416b5a6167519c71606969e200cb314f3ffe4b3549b0c1620b3525b6036cb1`).
+R2 checks both `f_proj[0]` and `f_proj[1]` explicitly; no model setting or gate
+changed.

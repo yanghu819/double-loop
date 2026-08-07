@@ -348,6 +348,24 @@ TERMINAL_CONSOLIDATION_TRAIN_KEYS = (
     "gdn3_terminal_consolidation_output_token_std",
     "gdn3_terminal_consolidation_weight_rms",
 )
+ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS = (
+    "gdn3_orthogonal_chunk_state_enabled",
+    "gdn3_orthogonal_chunk_state_angle_abs",
+    "gdn3_orthogonal_chunk_state_angle_batch_std",
+    "gdn3_orthogonal_chunk_state_angle_head_std",
+    "gdn3_orthogonal_chunk_state_plane_dot_abs_max",
+    "gdn3_orthogonal_chunk_state_plane_norm_error_max",
+    "gdn3_orthogonal_chunk_state_state_residual_relative_rms",
+    "gdn3_orthogonal_chunk_state_state_residual_batch_std",
+    "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean",
+    "gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error",
+    "gdn3_orthogonal_chunk_state_read_residual_relative_rms",
+    "gdn3_orthogonal_chunk_state_read_residual_batch_std",
+    "gdn3_orthogonal_chunk_state_terminal_rms",
+    "gdn3_orthogonal_chunk_state_terminal_batch_std",
+    "gdn3_orthogonal_chunk_state_angle_weight_rms",
+    "gdn3_orthogonal_chunk_state_plane_weight_rms",
+)
 STATE_EXPERT_TRAIN_KEYS = (
     "gdn3_state_expert_enabled",
     "gdn3_state_expert_residual_relative_rms",
@@ -399,6 +417,7 @@ GDN2_UPDATE_MODES = (
     "coherent_delta",
     "state_feedback",
     "terminal_consolidation",
+    "orthogonal_chunk_state",
 )
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
 FUTURE_SEED_CONTENT_MODES = (
@@ -772,7 +791,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "terminal_consolidation" and address_mode == "position_qk":
+        if update_mode == "orthogonal_chunk_state" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_two_official_gdn2_chunks_with_"
+                "orthogonal_live_state_transport"
+            )
+        elif update_mode == "terminal_consolidation" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_then_official_gdn2_chunk_plus_"
                 "terminal_consolidation_official_gdn2_chunk"
@@ -2320,6 +2344,18 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.terminal_consolidation_k_proj is not None:
             nn.init.zeros_(self.terminal_consolidation_k_proj.weight)
+        self.orthogonal_chunk_state_proj = (
+            nn.Linear(
+                self.head_v_dim,
+                2 * self.head_dim + 1,
+                bias=False,
+            )
+            if update_mode == "orthogonal_chunk_state"
+            else None
+        )
+        if self.orthogonal_chunk_state_proj is not None:
+            with torch.no_grad():
+                self.orthogonal_chunk_state_proj.weight[-1:].zero_()
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -2444,6 +2480,152 @@ class FLADeltaTimeMix(nn.Module):
     ) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS}
+
+    @staticmethod
+    def _zero_orthogonal_chunk_state_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        values = {key: zero for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS}
+        values["gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"] = (
+            x.new_ones((), dtype=torch.float32)
+        )
+        return values
+
+    def _orthogonal_chunk_state_transport(
+        self,
+        first_output: torch.Tensor,
+        boundary_state: torch.Tensor,
+        next_q: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.orthogonal_chunk_state_proj
+        if self.update_mode != "orthogonal_chunk_state" or projection is None:
+            return boundary_state, self._zero_orthogonal_chunk_state_diag(
+                first_output
+            )
+        if boundary_state.ndim != 4 or boundary_state.shape[-2:] != (
+            self.head_dim,
+            self.head_v_dim,
+        ):
+            raise RuntimeError(
+                "Orthogonal chunk-state transport requires K-first GDN2 state "
+                f"[B,H,{self.head_dim},{self.head_v_dim}], got "
+                f"{tuple(boundary_state.shape)}"
+            )
+        if first_output.ndim != 4 or next_q.ndim != 4:
+            raise RuntimeError(
+                "Orthogonal chunk-state transport requires rank-4 chunk tensors"
+            )
+
+        summary = F.normalize(
+            first_output.float().mean(dim=1), dim=-1, eps=1e-6
+        )
+        controls = projection(summary.to(dtype=projection.weight.dtype)).float()
+        u_raw, v_raw, angle_raw = torch.split(
+            controls,
+            (self.head_dim, self.head_dim, 1),
+            dim=-1,
+        )
+        u = F.normalize(u_raw, dim=-1, eps=1e-6)
+        v_residual = v_raw - (u * v_raw).sum(dim=-1, keepdim=True) * u
+        v_plane = F.normalize(v_residual, dim=-1, eps=1e-6)
+        theta = math.pi * torch.tanh(angle_raw.squeeze(-1))
+        cosine = torch.cos(theta).unsqueeze(-1)
+        sine = torch.sin(theta).unsqueeze(-1)
+
+        state_float = boundary_state.float()
+        u_component = torch.einsum("bhk,bhkv->bhv", u, state_float)
+        v_component = torch.einsum("bhk,bhkv->bhv", v_plane, state_float)
+        rotated_u = cosine * u_component - sine * v_component
+        rotated_v = sine * u_component + cosine * v_component
+        rotated_state = (
+            state_float
+            + torch.einsum("bhk,bhv->bhkv", u, rotated_u - u_component)
+            + torch.einsum(
+                "bhk,bhv->bhkv", v_plane, rotated_v - v_component
+            )
+        )
+
+        with torch.no_grad():
+            state_board_rms = state_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-6)
+            state_residual = rotated_state - state_float
+            state_residual_relative = state_residual.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt() / state_board_rms
+            rotated_board_rms = rotated_state.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            norm_ratio = rotated_board_rms / state_board_rms
+            q_unit = F.normalize(next_q.float(), dim=-1, eps=1e-6)
+            base_read = torch.einsum(
+                "bthk,bhkv->bthv", q_unit, state_float
+            )
+            rotated_read = torch.einsum(
+                "bthk,bhkv->bthv", q_unit, rotated_state
+            )
+            read_residual = rotated_read - base_read
+            read_base_board_rms = base_read.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-6)
+            read_residual_relative = read_residual.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt() / read_base_board_rms
+            u_norm_error = (u.square().sum(dim=-1) - 1.0).abs()
+            v_norm_error = (v_plane.square().sum(dim=-1) - 1.0).abs()
+            plane_dot_abs = (u * v_plane).sum(dim=-1).abs()
+            angle_weight = projection.weight[-1:].float()
+            plane_weight = projection.weight[:-1].float()
+            diagnostics = {
+                "gdn3_orthogonal_chunk_state_enabled": first_output.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_orthogonal_chunk_state_angle_abs": theta.abs().mean(),
+                "gdn3_orthogonal_chunk_state_angle_batch_std": theta.abs().mean(
+                    dim=1
+                ).std(unbiased=False),
+                "gdn3_orthogonal_chunk_state_angle_head_std": theta.abs().mean(
+                    dim=0
+                ).std(unbiased=False),
+                "gdn3_orthogonal_chunk_state_plane_dot_abs_max": (
+                    plane_dot_abs.max()
+                ),
+                "gdn3_orthogonal_chunk_state_plane_norm_error_max": torch.maximum(
+                    u_norm_error.max(), v_norm_error.max()
+                ),
+                "gdn3_orthogonal_chunk_state_state_residual_relative_rms": (
+                    state_residual_relative.mean()
+                ),
+                "gdn3_orthogonal_chunk_state_state_residual_batch_std": (
+                    state_residual_relative.std(unbiased=False)
+                ),
+                "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean": (
+                    norm_ratio.mean()
+                ),
+                "gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error": (
+                    (norm_ratio - 1.0).abs().max()
+                ),
+                "gdn3_orthogonal_chunk_state_read_residual_relative_rms": (
+                    read_residual_relative.mean()
+                ),
+                "gdn3_orthogonal_chunk_state_read_residual_batch_std": (
+                    read_residual_relative.std(unbiased=False)
+                ),
+                "gdn3_orthogonal_chunk_state_terminal_rms": (
+                    first_output.new_zeros((), dtype=torch.float32)
+                ),
+                "gdn3_orthogonal_chunk_state_terminal_batch_std": (
+                    first_output.new_zeros((), dtype=torch.float32)
+                ),
+                "gdn3_orthogonal_chunk_state_angle_weight_rms": (
+                    angle_weight.square().mean().sqrt()
+                ),
+                "gdn3_orthogonal_chunk_state_plane_weight_rms": (
+                    plane_weight.square().mean().sqrt()
+                ),
+            }
+        return rotated_state, diagnostics
 
     def _terminal_consolidation_transition(
         self,
@@ -3310,35 +3492,95 @@ class FLADeltaTimeMix(nn.Module):
         if core.allow_neg_eigval:
             b = b * 2.0
 
-        operation = (
-            fused_recurrent_gdn2
-            if seq_len <= 64 and not self.training
-            else chunk_gdn2
-        )
-        if operation is None:
-            raise RuntimeError("The required official GDN2 kernel is unavailable")
-        o, terminal_state = operation(
-            q=q,
-            k=k,
-            v=v,
-            g=g,
-            b=b,
-            w=w,
-            initial_state=initial_state,
-            output_final_state=True,
-            use_qk_l2norm_in_kernel=True,
-        )
-        terminal_state, terminal_consolidation_diag = (
-            self._terminal_consolidation_transition(
-                q,
-                k,
-                o,
-                v,
-                b,
-                w,
-                terminal_state,
+        if self.update_mode == "orthogonal_chunk_state":
+            if chunk_gdn2 is None:
+                raise RuntimeError(
+                    "Orthogonal chunk-state transport requires the official "
+                    "GDN2 chunk op"
+                )
+            chunk_boundary = 64
+            if seq_len <= chunk_boundary:
+                raise RuntimeError(
+                    "Orthogonal chunk-state transport requires a sequence "
+                    f"longer than its registered boundary {chunk_boundary}, "
+                    f"got {seq_len}"
+                )
+            first_output, boundary_state = chunk_gdn2(
+                q=q[:, :chunk_boundary],
+                k=k[:, :chunk_boundary],
+                v=v[:, :chunk_boundary],
+                g=g[:, :chunk_boundary],
+                b=b[:, :chunk_boundary],
+                w=w[:, :chunk_boundary],
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
             )
-        )
+            transported_state, orthogonal_chunk_state_diag = (
+                self._orthogonal_chunk_state_transport(
+                    first_output,
+                    boundary_state,
+                    q[:, chunk_boundary:],
+                )
+            )
+            second_output, terminal_state = chunk_gdn2(
+                q=q[:, chunk_boundary:],
+                k=k[:, chunk_boundary:],
+                v=v[:, chunk_boundary:],
+                g=g[:, chunk_boundary:],
+                b=b[:, chunk_boundary:],
+                w=w[:, chunk_boundary:],
+                initial_state=transported_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
+            )
+            o = torch.cat((first_output, second_output), dim=1)
+            with torch.no_grad():
+                terminal_board_rms = terminal_state.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt()
+                orthogonal_chunk_state_diag[
+                    "gdn3_orthogonal_chunk_state_terminal_rms"
+                ] = terminal_board_rms.mean()
+                orthogonal_chunk_state_diag[
+                    "gdn3_orthogonal_chunk_state_terminal_batch_std"
+                ] = terminal_board_rms.std(unbiased=False)
+            terminal_consolidation_diag = (
+                self._zero_terminal_consolidation_diag(x)
+            )
+        else:
+            operation = (
+                fused_recurrent_gdn2
+                if seq_len <= 64 and not self.training
+                else chunk_gdn2
+            )
+            if operation is None:
+                raise RuntimeError("The required official GDN2 kernel is unavailable")
+            o, terminal_state = operation(
+                q=q,
+                k=k,
+                v=v,
+                g=g,
+                b=b,
+                w=w,
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
+            )
+            terminal_state, terminal_consolidation_diag = (
+                self._terminal_consolidation_transition(
+                    q,
+                    k,
+                    o,
+                    v,
+                    b,
+                    w,
+                    terminal_state,
+                )
+            )
+            orthogonal_chunk_state_diag = (
+                self._zero_orthogonal_chunk_state_diag(x)
+            )
 
         with torch.no_grad():
             q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
@@ -3365,6 +3607,7 @@ class FLADeltaTimeMix(nn.Module):
             **coherent_delta_diag,
             **state_feedback_diag,
             **terminal_consolidation_diag,
+            **orthogonal_chunk_state_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -5852,6 +6095,7 @@ def load_training_checkpoint(
                         "coherent_delta",
                         "state_feedback",
                         "terminal_consolidation",
+                        "orthogonal_chunk_state",
                     }
                 ):
                     accepted_gdn2_update_upgrade = True
@@ -5906,6 +6150,7 @@ def load_training_checkpoint(
                     "coherent_delta",
                     "state_feedback",
                     "terminal_consolidation",
+                    "orthogonal_chunk_state",
                 }
             ):
                 accepted_gdn2_update_upgrade = True
@@ -6049,6 +6294,7 @@ def load_training_checkpoint(
         ".time_mix.state_feedback_in.weight",
         ".time_mix.state_feedback_out.weight",
         ".time_mix.terminal_consolidation_k_proj.weight",
+        ".time_mix.orthogonal_chunk_state_proj.weight",
     )
     state_expert_marker = ".state_expert."
     allowed_unexpected = {"loop_update_logit"}
@@ -7078,6 +7324,25 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_terminal_consolidation_output_rms', 0.0):.4f}/"
             f"{m.get('gdn3_terminal_consolidation_output_token_std', 0.0):.4f}"
         )
+    if m.get("gdn3_orthogonal_chunk_state_enabled", 0.0) > 0:
+        parts.append(
+            "orth_chunk_angle="
+            f"{m.get('gdn3_orthogonal_chunk_state_angle_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_chunk_state_angle_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_chunk_state_angle_head_std', 0.0):.4f}"
+        )
+        parts.append(
+            "orth_chunk_state="
+            f"{m.get('gdn3_orthogonal_chunk_state_state_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_chunk_state_read_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_chunk_state_terminal_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "orth_chunk_geometry="
+            f"{m.get('gdn3_orthogonal_chunk_state_plane_dot_abs_max', 0.0):.2e}/"
+            f"{m.get('gdn3_orthogonal_chunk_state_plane_norm_error_max', 0.0):.2e}/"
+            f"{m.get('gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error', 0.0):.2e}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -7475,6 +7740,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_terminal_consolidation_diag = {
         key: 0.0 for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS
     }
+    last_orthogonal_chunk_state_diag = {
+        key: 0.0 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
+    }
+    last_orthogonal_chunk_state_diag[
+        "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"
+    ] = 1.0
     last_state_expert_diag = {
         key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
     }
@@ -7589,12 +7860,25 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.terminal_consolidation_k_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "orthogonal_chunk_state":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(
+                    ".time_mix.orthogonal_chunk_state_proj.weight"
+                )
+            }
         else:
             expected_gdn2_update_insertions = set()
         declared_gdn2_update_upgrade = (
             bool(args.resume_allow_gdn2_update_upgrade)
             and args.gdn2_update_mode
-            in {"coherent_delta", "state_feedback", "terminal_consolidation"}
+            in {
+                "coherent_delta",
+                "state_feedback",
+                "terminal_consolidation",
+                "orthogonal_chunk_state",
+            }
             and bool(expected_gdn2_update_insertions)
             and migrated_missing == expected_gdn2_update_insertions
             and not migration.get("unexpected_parameters")
@@ -7720,6 +8004,22 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_terminal_consolidation_diag.get(key, 0.0))
                 for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS
             }
+        saved_orthogonal_chunk_state_diag = last_metrics.get(
+            "orthogonal_chunk_state", {}
+        )
+        if isinstance(saved_orthogonal_chunk_state_diag, dict):
+            last_orthogonal_chunk_state_diag = {
+                key: float(
+                    saved_orthogonal_chunk_state_diag.get(
+                        key,
+                        1.0
+                        if key
+                        == "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"
+                        else 0.0,
+                    )
+                )
+                for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
+            }
         saved_state_expert_diag = last_metrics.get("state_expert", {})
         if isinstance(saved_state_expert_diag, dict):
             last_state_expert_diag = {
@@ -7807,6 +8107,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_terminal_consolidation_diag = {
                 key: 0.0 for key in TERMINAL_CONSOLIDATION_TRAIN_KEYS
+            }
+            accum_orthogonal_chunk_state_diag = {
+                key: 0.0 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
             }
             accum_state_expert_diag = {
                 key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
@@ -8041,6 +8344,20 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS:
+                        accum_orthogonal_chunk_state_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_tensor(
+                                    1.0
+                                    if key
+                                    == "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"
+                                    else 0.0
+                                ),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in STATE_EXPERT_TRAIN_KEYS:
                         accum_state_expert_diag[key] += float(
                             trace_last.get(
@@ -8125,6 +8442,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_terminal_consolidation_diag.items()
             }
+            last_orthogonal_chunk_state_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_orthogonal_chunk_state_diag.items()
+            }
             last_state_expert_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_state_expert_diag.items()
@@ -8180,6 +8501,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_terminal_consolidation_diag['gdn3_terminal_consolidation_k_token_std']:.4f} "
                     f"term_cons_state={last_terminal_consolidation_diag['gdn3_terminal_consolidation_state_residual_relative_rms']:.4f}/"
                     f"{last_terminal_consolidation_diag['gdn3_terminal_consolidation_state_residual_batch_std']:.4f} "
+                    f"orth_chunk_angle={last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_angle_abs']:.4f}/"
+                    f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_angle_batch_std']:.4f} "
+                    f"orth_chunk_state={last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_state_residual_relative_rms']:.4f}/"
+                    f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_read_residual_relative_rms']:.4f} "
+                    f"orth_chunk_norm={last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean']:.6f}/"
+                    f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error']:.2e} "
                     f"expert_resid={last_state_expert_diag['gdn3_state_expert_residual_relative_rms']:.4f}/"
                     f"{last_state_expert_diag['gdn3_state_expert_residual_batch_std']:.4f} "
                     f"expert_state={last_state_expert_diag['gdn3_state_expert_terminal_rms']:.4f}/"
@@ -8253,6 +8580,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "state_feedback": dict(last_state_feedback_diag),
                         "terminal_consolidation": dict(
                             last_terminal_consolidation_diag
+                        ),
+                        "orthogonal_chunk_state": dict(
+                            last_orthogonal_chunk_state_diag
                         ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
@@ -8342,6 +8672,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "terminal_consolidation": dict(
                                 last_terminal_consolidation_diag
                             ),
+                            "orthogonal_chunk_state": dict(
+                                last_orthogonal_chunk_state_diag
+                            ),
                             "state_expert": dict(last_state_expert_diag),
                             "address_operator": dict(last_address_diag),
                         },
@@ -8408,6 +8741,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "state_feedback": dict(last_state_feedback_diag),
                         "terminal_consolidation": dict(
                             last_terminal_consolidation_diag
+                        ),
+                        "orthogonal_chunk_state": dict(
+                            last_orthogonal_chunk_state_diag
                         ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
@@ -8492,6 +8828,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "coherent_delta": dict(last_coherent_delta_diag),
         "state_feedback": dict(last_state_feedback_diag),
         "terminal_consolidation": dict(last_terminal_consolidation_diag),
+        "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
@@ -9820,6 +10157,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "coherent_delta",
             "state_feedback",
             "terminal_consolidation",
+            "orthogonal_chunk_state",
         }:
             raise ValueError(
                 "--resume_allow_gdn2_update_upgrade requires "

@@ -256,8 +256,10 @@ def check_two_stage_learning_path(
         parameter.requires_grad_(True)
 
     torch.manual_seed(9609)
-    x = torch.randn(2, 81, 256, device=device)
-    address = torch.randn_like(x)
+    x = torch.randn(
+        2, 81, 256, device=device, requires_grad=True
+    )
+    address = torch.randn_like(x, requires_grad=True)
     cell_order = torch.randperm(81, device=device)
     optimizer = torch.optim.SGD(expert_parameters, lr=0.1)
     candidate.train()
@@ -278,6 +280,8 @@ def check_two_stage_learning_path(
     optimizer.step()
 
     optimizer.zero_grad(set_to_none=True)
+    x.grad = None
+    address.grad = None
     output, diagnostics, main_states, expert_states = capture_states(
         candidate, x, address, cell_order
     )

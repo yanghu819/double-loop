@@ -204,3 +204,15 @@ its log SHA256 is
 `dd5ea5e5fd2946405dc94c2e5d1db694c844e2da04fcafbb67cab8e39c3a651b`.
 R3 checks every main and auxiliary terminal-state graph independently. No
 model, data, optimizer, or registered gate changed.
+
+Contract R3 at source `a25b04f3ec0d08bcf11afb9670545a8d23cba8f2`
+then stopped on the main layer0 graph because the checker intentionally froze
+all main parameters but did not mark its synthetic content/address inputs as
+differentiable. The missing graph was therefore expected test-fixture
+behavior, not a missing kernel. This third pre-science error is recorded in
+`contract-a25b04f-r3.abort.json` (SHA256
+`bf0142838ff274ad5f8aade1e292f229a147cb1bed0c385a7b6c11ace06a8959`);
+its log SHA256 is
+`31e615d0d51308688882cde7a695add055545834d0a5aa6fa8ae0668c184b2ec`.
+R4 marks only the synthetic inputs as requiring gradients, while keeping every
+main parameter frozen and every registered model setting unchanged.

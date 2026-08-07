@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: implemented and statically checked; CUDA contract not yet authorized
+- Status: discarded at strict CUDA contract
 - Date: 2026-08-07
 - Branch: `codex/gdn3-interleaved-write-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -155,8 +155,23 @@ checkpoint/metrics/log hashes; and same-board loop1-5 visualization.
 
 ## 9. Decision
 
-The model path, exact-resume migration, diagnostics, and strict CUDA checker are
-implemented. Local syntax compilation and whitespace validation pass without a
-CPU model smoke. GPU launch remains forbidden until this complete source is
-committed, pushed and read back, a clean detached worktree exists, and the
-strict GPU1 contract plus exact step3001 probe both pass.
+Discard. Complete source SHA
+`1c3c3e7f2ae244f611cc890250721d6115348c08` was pushed and read back, and the
+clean detached worktree passed source, GPU UUID and exclusivity preflight. The
+strict R1 CUDA contract then rejected the candidate before gradients or a
+step3001 probe: with both auxiliary projections exactly zero, the 162-step
+single-call path changed the parent model output by max absolute
+`0.04559326171875` relative to the 81-step official call. This violates the
+registered bit-exact parent migration, even though the added write payload is
+zero.
+
+Contract log:
+`/huyang2/double-loop/artifacts/launch/p-gdn3-010/contract-1c3c3e7-r1.log`
+(`SHA256 840b156267676d0ce6f019bfe51f7fc7d81fab4c8c0ae1ea31ccbe9fe713988b`).
+Abort record:
+`/huyang2/double-loop/artifacts/launch/p-gdn3-010/contract-1c3c3e7-r1.abort.json`
+(`SHA256 fae2959fd0de398ec11c8e5bcb7f62eb34e1635ac43eb2bd76f4c2b2cfe42985`).
+The process exited naturally with status1 and GPU1 returned to 0 MiB with no
+compute application. No exact-resume probe, continuation, score or visualization
+exists. Do not rescue auxiliary gate/decay, order/count, rank, projection,
+scale, tolerance, seed, LR, loss, batch, width/depth, or duration.

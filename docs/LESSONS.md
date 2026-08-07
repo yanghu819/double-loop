@@ -2318,3 +2318,20 @@
   differentiable official GDN2 invocation, for example by changing a general
   address/update parameterization before the single scan. It must not hide a
   second scan, custom solver, or unproven cache-gradient bridge.
+- Staying inside one official autograd function is necessary but not sufficient
+  for exact migration. P-GDN3-010 doubles the physical sequence with
+  mathematically zero auxiliary writes, yet changes full-model output by max
+  absolute `0.04559326171875` relative to the 81-step parent.
+- Chunked recurrent numerics depend on physical sequence geometry. An inserted
+  step with `g=0`, `b=0`, and zero V may be an algebraic state identity while
+  still changing chunk partitioning, reductions, normalization or read timing.
+  Assert end-to-end output and every carried state before treating such a
+  microstep as an exact-resume insertion.
+- P009 and P010 jointly close the easy composition routes around the pinned
+  operator: split calls keep forward parity but lose the required state graph;
+  expanded single calls keep one graph but lose forward parity. The next
+  high-information recurrent transition must preserve the original token
+  geometry or be implemented as an explicitly audited kernel-level update.
+- Contract-first evaluation again saves compute. P010 used no continuation,
+  benchmark evaluation or control rerun, and its failure should not be rescued
+  with gate/decay/order/count/rank/scale/tolerance or duration changes.

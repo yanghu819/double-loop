@@ -1084,3 +1084,27 @@ official call or prove an official-compatible initial-state gradient contract
 before spending continuation compute. Do not present P009 as a Sudoku score or
 rescue it with a custom backward, relaxed graph assertion, or alternate chunk
 boundary.
+
+### P-GDN3-010 Physical-Microstep Identity Boundary
+
+P-GDN3-010 tests whether update rank can be increased inside one official
+autograd function by inserting an auxiliary write before every parent token.
+Both auxiliary K-residual and V projections are zero-initialized; auxiliary
+decay/erase/write are fixed to `0/0/1`, so the intended mathematical update is
+an identity before the unchanged parent update. The design adds no persistent
+state or second recurrent core and keeps one pinned-official call per layer.
+
+The strict contract rejects the migration before training. The 162-physical-
+step path changes full-model output by max absolute `0.04559326171875` versus
+the 81-step parent even with both auxiliary projections exactly zero. Thus a
+mathematically zero write is not a bit-exact no-op after changing the physical
+sequence geometry of the chunked operator. No gradient, step3001 or benchmark
+claim is available.
+
+This is a second systems boundary adjacent to P009. External calls preserve
+forward values but lose the registered cross-call graph; a single expanded
+call preserves the graph count but loses exact parent numerics. A future
+in-token rank mechanism must either preserve the original 81-step geometry or
+provide an explicitly audited kernel-level transition and migration contract.
+Do not present P010 as a Sudoku score or tune auxiliary gates, order, count,
+rank, scale, tolerance or duration.

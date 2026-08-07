@@ -297,16 +297,17 @@ def check_equivariance_and_state_dependence(
         device=device,
         dtype=torch.float32,
     )
-    base = time_mix._state_feedback_update(q, k, v, b_raw, w_raw, state)
     permutation = torch.randperm(HEADS, device=device)
-    permuted = time_mix._state_feedback_update(
-        q[:, :, permutation],
-        k[:, :, permutation],
-        v[:, :, permutation],
-        b_raw[:, :, permutation],
-        w_raw[:, :, permutation],
-        state[:, permutation],
-    )
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        base = time_mix._state_feedback_update(q, k, v, b_raw, w_raw, state)
+        permuted = time_mix._state_feedback_update(
+            q[:, :, permutation],
+            k[:, :, permutation],
+            v[:, :, permutation],
+            b_raw[:, :, permutation],
+            w_raw[:, :, permutation],
+            state[:, permutation],
+        )
     inverse = torch.argsort(permutation)
     errors = []
     for original, transformed in zip(base[:4], permuted[:4]):
@@ -322,14 +323,15 @@ def check_equivariance_and_state_dependence(
     if max_equivariance_error > 2e-6:
         raise AssertionError(f"head permutation error: {max_equivariance_error}")
 
-    shuffled = time_mix._state_feedback_update(
-        q,
-        k,
-        v,
-        b_raw,
-        w_raw,
-        state.roll(1, dims=0),
-    )
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        shuffled = time_mix._state_feedback_update(
+            q,
+            k,
+            v,
+            b_raw,
+            w_raw,
+            state.roll(1, dims=0),
+        )
     state_dependency = float(
         sum((left.float() - right.float()).square().mean() for left, right in zip(base[:4], shuffled[:4]))
         .sqrt()

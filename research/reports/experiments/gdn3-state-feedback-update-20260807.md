@@ -124,6 +124,17 @@ The strict GPU1 CUDA contract must prove:
 A failed contract or production probe closes this implementation. It does not
 authorize a smaller controller or target subset.
 
+Contract R1 on pushed SHA `dc64679987cea801aec6b62760e9f0f4da95dc73`
+reached the final synthetic equivariance check after exercising the model, then
+the checker called the private update helper outside the formal CUDA BF16
+autocast context and raised a BF16-input/FP32-weight dtype error. No registered
+identity, gradient, official-kernel, activation, science, or cost assertion
+failed. The process exited naturally, GPU allocations cleared, and the exact
+log plus non-science abort remain under
+`/huyang2/double-loop/artifacts/launch/p-gdn3-007/`. R2 changes only those three
+synthetic checker calls to use the same autocast context as formal forward; the
+mechanism, parent, configuration, and every gate remain frozen.
+
 ## 7. Science And Cost Gates
 
 At step3100, activation requires all of:

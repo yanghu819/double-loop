@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: static implementation and preregistration; no GPU run authorized yet
+- Status: discarded after clean matched completion; no rescue
 - Date: 2026-08-07
 - Branch: `codex/gdn3-state-feedback-update-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -17,10 +17,16 @@
 - Parent source SHA: `9f2ee8d1738032bc5f09b55db0b81d507780b376`
 - Frozen matched control:
   `p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
+- Formal source SHA:
+  `20322df78757104ee6884ebc460277f9a0a2a935`
+- Formal run:
+  `p-gdn3-007-state-feedback-s3100-20260807T034337Z-20322df`
+- Comparison:
+  `/huyang2/double-loop/runs/p-gdn3-007-comparison-20260807T040800Z-20322df`
 
-No GPU model process may run from a local-only commit. The implementation,
-checker, launcher, configuration, and this preregistration must be pushed
-first. GPU execution must use a clean detached worktree at that exact SHA.
+The implementation, checker fix, launcher, configuration, and preregistration
+were pushed before formal execution. GPU execution used a clean detached
+worktree at the exact source SHA above.
 
 ## 2. Evidence Boundary
 
@@ -135,6 +141,18 @@ log plus non-science abort remain under
 synthetic checker calls to use the same autocast context as formal forward; the
 mechanism, parent, configuration, and every gate remain frozen.
 
+Contract R2 on pushed SHA `20322df` exits status0. Its log SHA256 is
+`6ab99ab9f146d223c71e0eff5c9a562765c00a0296d2970e687b6bdc66f8f514`.
+It verifies the exact 30,720-parameter delta, full output and all 12 terminal
+states at bit identity, 12 official GDN2/`ChunkGDN2FunctionBackward` paths,
+two-stage gradients, zero head-permutation error, state-shuffle dependency,
+and exactly 11 receiving paths. The exact-resume step3001 probe also exits
+status0; its metrics/checkpoint SHA256 values are
+`0a45bd55ed18d858a449c7fc7fb34a6bc9364861e5b37d9eaeb3a7979b1c8186` and
+`bef43f2da7074401cc5df7eb2b88c36f7e1ad5508cec1336b0808bee696e3732`.
+The probe opens finite state reads and all K/V/b/w edits, so the formal
+candidate was authorized without changing the registered mechanism or gate.
+
 ## 7. Science And Cost Gates
 
 At step3100, activation requires all of:
@@ -176,5 +194,87 @@ Report and archive:
 
 ## 9. Decision
 
-Pending pushed-source static checks, strict CUDA contract, and exact-resume
-step3001 probe. No formal run is authorized before every launch gate passes.
+Discarded. The formal candidate exits status0 on the exact pushed SHA with the
+registered GPU, source, parent, optimizer/RNG/data order, and official-FLA
+kernel contract. There is no NaN, OOM, fallback, source drift, or data drift.
+
+### Activation
+
+All 11 receiving paths are active. At loop5, enabled fraction is `11/12`,
+state-read RMS/board std is `0.725926/0.013616`, hidden RMS is `0.233113`, and
+controller residual relative RMS/token std is `0.018716/0.007774`. K/V/erase/
+write relative changes are `0.038044/0.009582/0.005715/0.006785`; controller
+input/output weight RMS is `0.093749/0.013349`. The activation gate passes and
+a dead controller cannot explain the quality result.
+
+### Exact And Blank Metrics
+
+| Range | Arm | Exact loops1-5 | Blank loops1-5 |
+|---|---|---|---|
+| 51-55 | control | 0/0/0.001953/0.001953/0.001953 | 0.532345/0.566677/0.573945/0.573623/0.573766 |
+| 51-55 | candidate | 0/0/0.001953/0.001953/0.001953 | 0.530591/0.566856/0.572334/0.574160/0.573623 |
+| 56-60 | control | 0/0/0/0/0 | 0.473182/0.498061/0.501699/0.503140/0.503861 |
+| 56-60 | candidate | 0/0/0/0/0 | 0.472805/0.498370/0.503140/0.504204/0.504478 |
+| 61-64 | control | 0/0/0/0/0 | 0.504319/0.578523/0.589207/0.591954/0.591923 |
+| 61-64 | candidate | 0/0/0/0/0 | 0.506486/0.577455/0.588444/0.590183/0.590489 |
+| mixed | control | 0.017578/0.023438/0.025391/0.025391/0.025391 | 0.515087/0.536904/0.544841/0.545540/0.545610 |
+| mixed | candidate | 0.017578/0.023438/0.023438/0.023438/0.023438 | 0.508828/0.536939/0.543862/0.544876/0.544456 |
+
+Hard51-64 macro loop5 exact stays `0.000651`; delta is exactly0 versus the
+registered `+0.02` requirement. Mixed loop5 exact regresses
+`0.025391->0.023438`, delta `-0.001953` versus the alternate `+0.03`
+requirement. Official51-55/56-60/61-64 loop5 blank deltas are
+`-0.000143/+0.000618/-0.001435`; therefore the hardest range is also
+regressive. Train CE improves only `0.858617->0.855740`.
+
+### Same-Board Dynamics
+
+Across all 256 matched boards per range, control/candidate mean wrong-cell
+trajectories are:
+
+- 51-55: `25.742/24.348/23.918/23.855/23.934` versus
+  `25.762/24.289/23.922/23.906/23.910`; loop3-to5 correction
+  `-0.0156->+0.0117`;
+- 56-60: `29.695/28.195/28.082/28.043/28.016` versus
+  `29.711/28.219/27.961/27.938/27.898`; loop3-to5 correction
+  `0.0664->0.0625`;
+- 61-64: `31.855/27.203/26.613/26.508/26.430` versus
+  `31.727/27.293/26.668/26.473/26.488`; loop3-to5 correction
+  `0.1836->0.1797`.
+
+The late correction is weaker in both 56-60 and 61-64, so the alternate route
+fails independently of mixed exact.
+
+### Cost
+
+The 100-step continuation takes `825.970s` control versus `995.478s`
+candidate; throughput falls `15.497->12.858` effective boards/s and elapsed
+overhead is `+20.52%`. Peak allocated memory is
+`13186.4->14597.8MiB` (`+10.70%`) and reserved memory is
+`14288->15738MiB` (`+10.15%`). Both registered 25% cost ceilings pass. The
+failure is scientific, not a cost-only rejection.
+
+### Provenance And Artifacts
+
+- formal metrics SHA256:
+  `66084b6fb83dfe0d6dffc2a6828a10564f222535fd009b03a5dd05feb5794329`;
+- formal checkpoint SHA256:
+  `d1fb913a03abf887bc88899c459b0ff6bdb7c9e128195f6de826df8bc0d6ef84`;
+- formal config/log SHA256:
+  `8cebdb1b8bbd441ec92a5b5136dd3e14884a9475914b76b627e84f06eece58b3` /
+  `ba4ccae442582b055600edbd6aabbec6a41e89b02f8f7ef60fedeec7000ca3fb`;
+- source snapshot SHA256:
+  `236bec0a682ba5484201205f867e66993857e06f27287fc45a0e1d95d2606c61`;
+- comparison JSON/HTML SHA256:
+  `90c3bdcd5b077694feb4cf09b674d27a929fb8648f0e2f5036cf7f63da8beaef` /
+  `4f0a06d83e5c3c75fbc83d7ac8361cc462f1569a05ef38df62f368aaa21c82bf`;
+- repository copy:
+  `research/reports/visualizations/gdn3-state-feedback-update-20260807/`.
+
+The visualization contains loop1-5 predictions for the same hardest boards in
+the frozen control and candidate. This closes the exact state-feedback
+controller. Do not rescue controller hidden size, output scale, target subset,
+layer sharing, seed, LR, loss, batch, model width/depth, or duration. The next
+high-information candidate must alter the scalable recurrent state transition
+itself rather than append another zero-init residual around unchanged GDN2
+edits.

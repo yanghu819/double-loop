@@ -2248,3 +2248,29 @@
   or continuation duration. Those would turn one decisive capacity test into
   a nearby compute table. Following the bitter lesson now means a simpler,
   scalable state-conditioned controller around the existing official core.
+- Reading inherited memory before proposing the next write is not enough to
+  close hard boards. P-GDN3-007 activates all 11 receiving paths, with loop5
+  read RMS `0.725926` and residual relative RMS `0.018716`, yet hard macro exact
+  remains `0.000651` and mixed exact regresses by `0.001953`.
+- Strong state dependency does not imply a better state transition. The
+  controller changes K/V/erase/write by
+  `0.038044/0.009582/0.005715/0.006785`, but official61-64 blank and
+  same-board late correction both regress. The issue is not an inactive or
+  overly weak feedback path.
+- A pre-scan controller sees the inherited layer state, not the live state
+  after each token update inside the linear recurrence. Calling it
+  "closed-loop" should therefore be qualified: it closes the layer-level
+  interface while leaving the within-scan transition itself unchanged.
+- Lower CE again fails as a closure proxy. P-GDN3-007 improves train CE
+  `0.858617->0.855740` while losing one mixed exact board and opening no new
+  hard-range exact boards. Use full-board exact and same-board correction for
+  architectural promotion.
+- State feedback is affordable relative to a second recurrent expert but not
+  free. Only 30,720 parameters reduce throughput `15.497->12.858` boards/s and
+  add `20.52%` elapsed time because controller tensors are materialized across
+  every layer, token, head, and loop.
+- Do not rescue state-feedback controller hidden size, output scale, target
+  subset, layer sharing, or duration. Six consecutive matched
+  active-but-nonclosing content/update/state interventions now justify moving
+  below readout-side residuals: the next high-information GDN3 test must change
+  the scalable live recurrent transition itself.

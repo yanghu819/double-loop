@@ -994,3 +994,33 @@ active. Close expert width/count/address/readout-scale and duration rescue. A
 successor must let carried memory condition current addressing and state edits
 directly, so added computation participates in a closed-loop update rather
 than remaining a parallel residual subsystem.
+
+### P-GDN3-007 Closed-Loop State-Feedback Boundary
+
+P-GDN3-007 tests that proposed closed loop without adding another state or
+scan. Each receiving position-QK layer reads its inherited KxV state with the
+normalized query and uses a head-shared V32->16->128 controller to perturb K,
+V, erase, and write inputs before the unchanged pinned official GDN2 chunk.
+The zero-initialized migration is bit-exact and adds only 30,720 parameters.
+The strict contract proves all 11 receiving paths, state dependency, head
+equivariance, official-kernel provenance, and two-stage gradients.
+
+The controller is strongly recruited: loop5 state-read RMS/board std is
+`0.725926/0.013616`, residual relative RMS/token std is
+`0.018716/0.007774`, and K/V/erase/write relative changes are
+`0.038044/0.009582/0.005715/0.006785`. Nevertheless hard51-64 macro loop5
+exact stays `0.000651`; mixed exact regresses `0.025391->0.023438`; and
+official61-64 blank drops `0.001435`. Same-board loop3-to5 correction weakens
+on both 56-60 and 61-64. A lower CE (`0.855740` versus `0.858617`) again does
+not predict global closure.
+
+The cost gate passes but is not free: throughput falls
+`15.497->12.858` effective boards/s, elapsed rises `20.52%`, and peak
+allocation rises `10.70%`. The paper should therefore state a sharper negative
+boundary: conditioning precomputed update tensors on the layer's inherited
+state is insufficient even when the feedback is active and affordable. It
+still wraps the same single-pass linear delta transition and reads only the
+incoming state, not the live state evolving within the token scan. The next
+GDN3 hypothesis must change the scalable recurrent transition itself, with a
+falsifiable advantage over this pre-scan controller; do not tune controller
+hidden size, output scale, target subset, sharing, or continuation duration.

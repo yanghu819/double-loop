@@ -2274,3 +2274,30 @@
   active-but-nonclosing content/update/state interventions now justify moving
   below readout-side residuals: the next high-information GDN3 test must change
   the scalable live recurrent transition itself.
+- A post-scan live-state transition can improve token accuracy without closing
+  boards. P-GDN3-008 improves official51-55/56-60/61-64 blank accuracy by
+  `+0.001325/+0.001853/+0.004609`, but hard macro exact rises only
+  `+0.000651` and mixed exact is unchanged. This is useful directional evidence,
+  not a promotion result.
+- Transition depth alone is not stable memory. Reusing unconstrained
+  erase/write gates in a second official sweep drives terminal residual
+  relative RMS from `1.1981e4` at loop1 to `4.7109e8` at loop5. Unit-normalized
+  FutureSeed can mask enormous state magnitude while preserving finite output;
+  always instrument the carried state before calling a recurrent path healthy.
+- Strong activation plus lower CE still does not identify global closure.
+  P008 activates all 11 correction paths, reaches correction-K relative RMS
+  `0.120164`, and improves CE `0.858617->0.855832`, yet closes only one extra
+  hard-range board-equivalent in the aggregate and misses both quality routes.
+- Same-board late correction must be checked at the hardest range. P008
+  strengthens loop3-to5 correction on 51-55 and 56-60 but weakens it on 61-64;
+  easier-range refinement does not establish scalable hard-board reasoning.
+- Extra scans carry systems cost even with few new parameters. Eleven
+  head-shared projections add only 11,264 parameters, but the 11 extra official
+  transitions reduce throughput `15.497->12.151` boards/s and add `27.54%`
+  elapsed time and `22.95%` peak allocation.
+- Do not rescue consolidation source, scale, decay/gates, scan count, producer
+  subset, or duration. The next general recurrent update should control state
+  geometry by construction, such as a learned normalized or contractive live
+  transition, while preserving scalable capacity. Another fixed sweep,
+  pre-scan residual, parallel expert, scalar prior, or transfer router would
+  repeat a closed boundary rather than test a new mechanism.

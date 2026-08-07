@@ -2,8 +2,8 @@
 
 ## 1. Metainfo
 
-- Status: in progress; strict R2 contract and exact step3001 probe passed,
-  formal matched candidate running
+- Status: discarded; activation and cost gates passed, both registered quality
+  routes failed
 - Date: 2026-08-07
 - Branch: `codex/gdn3-terminal-consolidation-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -162,11 +162,12 @@ This probe establishes activation and production fit only; its eight-board
 score is not a science readout.
 
 The sole formal candidate
-`p-gdn3-008-terminal-consolidation-s3100-20260807T045713Z-605ae88` started
-immediately from the same parent and exact source after GPU clearance. Its
-wrapper PGID is `30169`, Python child `30250`, and launch log is
+`p-gdn3-008-terminal-consolidation-s3100-20260807T045713Z-605ae88` completed
+with status0 from the same parent and exact source after GPU clearance. Its
+wrapper PGID was `30169`, Python child `30250`, and launch log is
 `/huyang2/double-loop/artifacts/launch/p-gdn3-008/formal-20260807T045713Z-605ae88.log`.
-No frozen-control rerun or concurrent evaluation was started.
+No frozen-control rerun or concurrent evaluation was started. The process
+released the registered GPU naturally after endpoint artifact completion.
 
 ## 7. Science And Cost Gates
 
@@ -210,5 +211,92 @@ Report and archive:
 
 ## 9. Decision
 
-Formal matched candidate in progress. Apply the registered activation,
-quality, and cost gates after status0 endpoint artifacts are complete.
+Discard P-GDN3-008. The mechanism and both cost gates pass, but neither
+registered quality route passes. Do not rescue projection source/scale,
+correction decay/gates, scan count, layer subset, seed, LR, loss, batch,
+width/depth, or duration.
+
+### 9.1 Endpoint score
+
+Train CE improves from `0.858618` to `0.855832`, but exact closure does not
+follow. Official loop5 control/candidate exact and blank accuracy are:
+
+| range | control exact / blank | candidate exact / blank | blank delta |
+|---|---:|---:|---:|
+| 51-55 | `0.001953 / 0.573766` | `0.003906 / 0.575090` | `+0.001325` |
+| 56-60 | `0 / 0.503861` | `0 / 0.505714` | `+0.001853` |
+| 61-64 | `0 / 0.591923` | `0 / 0.596532` | `+0.004609` |
+
+The hard51-64 macro loop5 exact score changes only
+`0.000651 -> 0.001302` (`+0.000651`), far below the registered `+0.02`
+primary gate. Mixed loop5 exact is unchanged at `0.025391`, so the `+0.03`
+alternate gate also fails. Mixed loop1-to5 exact is
+`0.015625/0.023438/0.025391/0.025391/0.025391`; blank accuracy is
+`0.511905/0.537324/0.542918/0.544212/0.543373`, versus control
+`0.515087/0.536904/0.544841/0.545540/0.545610`.
+
+Official candidate loop1-to5 exact/blank trajectories are:
+
+| range | exact loops1-5 | blank loops1-5 |
+|---|---|---|
+| 51-55 | `0/0/0/0.003906/0.003906` | `0.531092/0.564601/0.573837/0.574625/0.575090` |
+| 56-60 | `0/0/0/0/0` | `0.474280/0.498988/0.504169/0.505233/0.505714` |
+| 61-64 | `0/0/0/0/0` | `0.501603/0.578951/0.594091/0.595769/0.596532` |
+
+On the same 256 boards per hard range, candidate mean wrong cells across
+loops1-to5 are `25.719/24.254/23.953/23.934/23.863` (51-55),
+`29.645/28.449/28.109/28.027/27.977` (56-60), and
+`31.941/26.922/26.137/26.016/26.039` (61-64). Candidate loop3-to5
+correction is stronger than control on 51-55 (`0.0898` versus `-0.0156`) and
+56-60 (`0.1328` versus `0.0664`), but weaker on 61-64 (`0.0977` versus
+`0.1836`). The alternate same-board requirement therefore also fails.
+
+### 9.2 Activation and stability
+
+All 11 producer paths are active. At loop5, correction-K relative RMS,
+board std, and token std are `0.120164/0.004845/0.036855`, and projection
+weight RMS is `0.013016`. The live correction transition is therefore not a
+silent identity.
+
+However, the unconstrained terminal transition is unstable across loops.
+Terminal residual relative RMS grows from `1.1981e4` at loop1 to
+`4.7109e8` at loop5; loop5 state board std and correction-output RMS reach
+`1.0649e10` and `3.7959e9`. Values remain finite and downstream FutureSeed
+unit normalization prevents a runtime failure, but the state magnitude is not
+a reusable scalable memory representation. This instability is a mechanism
+failure, not grounds for a post-result scale rescue.
+
+### 9.3 Cost and provenance
+
+Fresh-process continuation throughput changes from `15.4969` to `12.1511`
+effective boards/s. Elapsed time is `825.970 -> 1053.403` seconds
+(`+27.54%`); peak allocated memory is `13186.42 -> 16213.28` MiB
+(`+22.95%`), and reserved memory is `14288 -> 17426` MiB (`+21.96%`). These
+are inside the preregistered `+120%` time and `+80%` allocation ceilings.
+
+Endpoint artifact SHA256 values are:
+
+- metrics: `04d680e17bfc96ed26df9a2a8198cd344fd4e480959314aa05b588699e68a21e`;
+- checkpoint: `08894f95282fa96e75a65df6353e158dcfe6313d7f90957811eeae5da882d081`;
+- config: `462895db3a736228b4fbfdfa709c71cd9c0a661b55f8601a81d148c34c477f97`;
+- run log: `db2a361ec0c764ba6e197f00f58d7327161d9af6084826ed6476b82979a4a126`;
+- formal log: `f432ef085523676f573dab7ba91658756ee6f88ac467412d9f90b1d9ea0e8505`;
+- source snapshot: `4ddc57967b02788378c9aedb52f7569a212ca26f39ba4afab6ce95257857f1f0`;
+- comparison JSON/HTML:
+  `22ad476dd23171fd7b6c107ce402a4ee02cacceacdd61621360ca7dd263d7b40` /
+  `05bbf381ab68dfafc717cf49461d57e408fb99171cd05f61ccb63b8ec8afbf27`.
+
+The remote comparison is
+`/huyang2/double-loop/runs/p-gdn3-008-comparison-20260807T051700Z-605ae88`.
+The archived same-board visualization is
+`research/reports/visualizations/gdn3-terminal-consolidation-20260807/comparison.html`.
+
+### 9.4 Mechanism conclusion
+
+P008 provides the first positive evidence that a post-scan transition can
+move all three hard-range blank accuracies in the desired direction. It also
+shows that a fixed second pass with unnormalized repeated writes does not
+convert that movement into exact closure and produces an unusably large state.
+The next candidate must change the live recurrent transition with an explicitly
+stable, scalable state update; another fixed sweep, pre-scan residual, parallel
+expert, scalar prior, or transfer-content router is not justified.

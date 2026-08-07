@@ -1024,3 +1024,39 @@ incoming state, not the live state evolving within the token scan. The next
 GDN3 hypothesis must change the scalable recurrent transition itself, with a
 falsifiable advantage over this pre-scan controller; do not tune controller
 hidden size, output scale, target subset, sharing, or continuation duration.
+
+### P-GDN3-008 Post-Scan Consolidation Boundary
+
+P-GDN3-008 moves beyond P007's fixed pre-scan read by adding a second
+same-order pinned-official transition on producer layers0-10. It starts from
+the first terminal state, reuses first-pass payload/erase/write gates, and uses
+a zero-initialized head-shared V32-to-K32 projection of first-pass token outputs
+as the correction address. The parent output is unchanged, and migration is
+bit-exact for both zero and nonzero incoming states. The strict contract proves
+23 official chunk backward paths and gradients through all 11 consolidation
+projections.
+
+The transition is active and moves local accuracy in the intended direction.
+At loop5, correction-K relative RMS/board std/token std is
+`0.120164/0.004845/0.036855`; official51-55/56-60/61-64 blank accuracy improves
+by `+0.001325/+0.001853/+0.004609`. Hard macro exact, however, changes only
+`0.000651->0.001302`, mixed exact remains `0.025391`, and same-board loop3-to5
+correction weakens on 61-64. The lower CE (`0.855832` versus `0.858617`) again
+does not imply exact closure.
+
+The state dynamics reveal why a fixed extra sweep is not a scalable answer.
+Terminal residual relative RMS rises from `1.1981e4` at loop1 to `4.7109e8` at
+loop5, while loop5 state board std reaches `1.0649e10`. Downstream unit
+normalization keeps inference finite, but it hides an explosively growing
+memory representation. Throughput falls `15.497->12.151` effective boards/s;
+elapsed and peak allocation rise `27.54%` and `22.95%`.
+
+The paper may claim a qualified positive boundary: post-scan state transition
+depth improves blank-token accuracy across every hard range. It must also state
+the decisive negative result: an unconstrained repeated-write sweep neither
+closes boards nor preserves stable state geometry. Close projection source or
+scale, decay/gates, scan count, layer subset, and training rescue. The next
+general GDN3 mechanism should make the live transition contractive or
+normalized by construction while increasing useful state capacity; another
+fixed scan, transfer router, pre-scan residual, scalar prior, or parallel expert
+is not warranted.

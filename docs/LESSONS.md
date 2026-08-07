@@ -2188,3 +2188,12 @@
   `HOLE_STAGES` sum and therefore continued to3006. Stop it exactly, record a
   non-science abort, fix the launcher before formal work, and never use that
   output for model selection.
+- After three active transfer-side mechanisms leave hard exact unchanged, the
+  next experiment must intervene inside the generic recurrent update. More
+  elaborate FutureSeed payload routing would be a nearby table, not a new
+  causal question.
+- GDN2 erase/write coherence is falsifiable without replacing the official
+  kernel. A zero-init per-head coupling can preserve every parent output and
+  state exactly, while a positive learned value must measurably contract the
+  aggregate gate gap. Require both activation and contraction before reading
+  Sudoku metrics as evidence for the mechanism.

@@ -310,6 +310,19 @@ PRECONDITION_TRAIN_KEYS = (
     "gdn2_precondition_erase_error_max",
     "gdn2_precondition_erase_error_rms",
 )
+COHERENT_DELTA_TRAIN_KEYS = (
+    "gdn2_coherent_delta_enabled",
+    "gdn2_coherent_delta_mix_mean",
+    "gdn2_coherent_delta_mix_abs",
+    "gdn2_coherent_delta_mix_min",
+    "gdn2_coherent_delta_mix_max",
+    "gdn2_coherent_delta_target_mean",
+    "gdn2_coherent_delta_pre_gap_rms",
+    "gdn2_coherent_delta_post_gap_rms",
+    "gdn2_coherent_delta_gap_ratio",
+    "gdn2_coherent_delta_b_relative_change",
+    "gdn2_coherent_delta_w_relative_change",
+)
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
 BOXES: List[List[int]] = []
@@ -344,6 +357,7 @@ GDN2_ADDRESS_MODES = (
     "anchor_carrier",
 )
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
+GDN2_UPDATE_MODES = ("none", "coherent_delta")
 FUTURE_SEED_CONTENT_MODES = (
     "terminal",
     "innovation_residual",
@@ -714,7 +728,13 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         fast_slow_mode = getattr(time_mix, "fast_slow_decay_mode", "none")
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
-        if precondition_mode != "none" and address_mode == "position_qk":
+        update_mode = getattr(time_mix, "update_mode", "none")
+        if update_mode == "coherent_delta" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_coherent_delta_gates_"
+                "then_official_gdn2_chunk"
+            )
+        elif precondition_mode != "none" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_futureseed_tied_preconditioner_"
                 "then_official_gdn2_chunk"
@@ -769,6 +789,7 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
                 "gain_budget_mode": gain_budget_mode,
                 "fast_slow_decay_mode": fast_slow_mode,
                 "precondition_mode": precondition_mode,
+                "update_mode": update_mode,
                 "execution_path": execution_path,
                 "state_elements_per_head": (
                     int(core.num_slots) * (int(core.head_k_dim) + int(core.head_v_dim))
@@ -2039,6 +2060,7 @@ class FLADeltaTimeMix(nn.Module):
         fast_slow_decay_current_weight_init: float = 0.85,
         precondition_mode: str = "none",
         address_mode: str = "none",
+        update_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
     ) -> None:
@@ -2112,6 +2134,25 @@ class FLADeltaTimeMix(nn.Module):
             raise ValueError(
                 "Tied preconditioning currently composes only with none or position_qk addressing"
             )
+        if update_mode not in GDN2_UPDATE_MODES:
+            raise ValueError(
+                f"update_mode must be one of: {', '.join(GDN2_UPDATE_MODES)}"
+            )
+        if update_mode != "none" and backbone != "gdn2":
+            raise ValueError("Coherent delta updates are restricted to GDN2")
+        if update_mode != "none" and address_mode != "position_qk":
+            raise ValueError(
+                "The first coherent-delta contract composes only with position_qk"
+            )
+        if update_mode != "none" and (
+            gain_budget_mode != "none"
+            or fast_slow_decay_mode != "none"
+            or precondition_mode != "none"
+        ):
+            raise ValueError(
+                "Coherent delta updates cannot be mixed with Gain-Budget, "
+                "Fast-Slow decay, or tied preconditioning"
+            )
 
         self.backbone = backbone
         self.heads = int(heads)
@@ -2128,6 +2169,7 @@ class FLADeltaTimeMix(nn.Module):
         self.fast_slow_decay_mode = fast_slow_decay_mode
         self.precondition_mode = precondition_mode
         self.address_mode = address_mode
+        self.update_mode = update_mode
         if backbone == "raven":
             matched_state_elements = self.head_dim * self.head_v_dim
             slot_width = self.head_dim + self.head_v_dim
@@ -2189,6 +2231,13 @@ class FLADeltaTimeMix(nn.Module):
             else None
         )
         self.address_carrier_base_logit = 6.0
+        self.coherent_delta_mix = (
+            nn.Parameter(torch.zeros(self.heads))
+            if update_mode == "coherent_delta"
+            else None
+        )
+        if self.coherent_delta_mix is not None:
+            self.coherent_delta_mix._no_weight_decay = True
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -2292,6 +2341,77 @@ class FLADeltaTimeMix(nn.Module):
     def _zero_precondition_diag(x: torch.Tensor) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in PRECONDITION_TRAIN_KEYS}
+
+    @staticmethod
+    def _zero_coherent_delta_diag(x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        values = {key: zero for key in COHERENT_DELTA_TRAIN_KEYS}
+        values["gdn2_coherent_delta_gap_ratio"] = x.new_ones(
+            (), dtype=torch.float32
+        )
+        return values
+
+    def _coherent_delta_gates(
+        self,
+        b_raw: torch.Tensor,
+        w_raw: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        if self.update_mode != "coherent_delta" or self.coherent_delta_mix is None:
+            raise RuntimeError("Coherent delta gates selected without their controller")
+        if b_raw.shape[:-1] != w_raw.shape[:-1]:
+            raise ValueError(
+                "Coherent delta gates require matching batch/time/head axes: "
+                f"b={tuple(b_raw.shape)} w={tuple(w_raw.shape)}"
+            )
+
+        b_base = b_raw.sigmoid()
+        w_base = w_raw.sigmoid()
+        target = 0.5 * (
+            b_base.float().mean(dim=-1, keepdim=True)
+            + w_base.float().mean(dim=-1, keepdim=True)
+        )
+        mix = torch.tanh(self.coherent_delta_mix.float()).view(1, 1, -1, 1)
+        b_effective = (
+            b_base.float() + mix * (target - b_base.float())
+        ).clamp(0.0, 1.0).to(dtype=b_base.dtype)
+        w_effective = (
+            w_base.float() + mix * (target - w_base.float())
+        ).clamp(0.0, 1.0).to(dtype=w_base.dtype)
+
+        with torch.no_grad():
+            pre_gap = torch.cat(
+                (b_base.float() - target, w_base.float() - target), dim=-1
+            )
+            post_gap = torch.cat(
+                (b_effective.float() - target, w_effective.float() - target),
+                dim=-1,
+            )
+            pre_gap_rms = pre_gap.square().mean().sqrt()
+            post_gap_rms = post_gap.square().mean().sqrt()
+            diag = {
+                "gdn2_coherent_delta_enabled": b_raw.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn2_coherent_delta_mix_mean": mix.mean(),
+                "gdn2_coherent_delta_mix_abs": mix.abs().mean(),
+                "gdn2_coherent_delta_mix_min": mix.min(),
+                "gdn2_coherent_delta_mix_max": mix.max(),
+                "gdn2_coherent_delta_target_mean": target.mean(),
+                "gdn2_coherent_delta_pre_gap_rms": pre_gap_rms,
+                "gdn2_coherent_delta_post_gap_rms": post_gap_rms,
+                "gdn2_coherent_delta_gap_ratio": (
+                    post_gap_rms / pre_gap_rms.clamp_min(1e-8)
+                ),
+                "gdn2_coherent_delta_b_relative_change": (
+                    (b_effective.float() - b_base.float()).square().mean().sqrt()
+                    / b_base.float().square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn2_coherent_delta_w_relative_change": (
+                    (w_effective.float() - w_base.float()).square().mean().sqrt()
+                    / w_base.float().square().mean().sqrt().clamp_min(1e-8)
+                ),
+            }
+        return b_effective, w_effective, diag
 
     def _forward_preconditioned_gdn2(
         self,
@@ -2851,12 +2971,20 @@ class FLADeltaTimeMix(nn.Module):
             k = k.index_select(1, cell_order)
 
         g = F.softplus(core.f_proj(x).float() + core.dt_bias)
-        b = core.b_proj(x).sigmoid()
-        w = core.w_proj(x).sigmoid()
+        b_raw = core.b_proj(x).view(
+            batch_size, seq_len, core.num_heads, core.head_k_dim
+        )
+        w_raw = core.w_proj(x).view(
+            batch_size, seq_len, core.num_v_heads, core.head_v_dim
+        )
         g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
-        b = b.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
         v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
-        w = w.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        if self.update_mode == "coherent_delta":
+            b, w, coherent_delta_diag = self._coherent_delta_gates(b_raw, w_raw)
+        else:
+            b = b_raw.sigmoid()
+            w = w_raw.sigmoid()
+            coherent_delta_diag = self._zero_coherent_delta_diag(x)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
         if core.num_v_heads > core.num_heads:
@@ -2909,6 +3037,7 @@ class FLADeltaTimeMix(nn.Module):
             ).to(dtype=x.dtype)
         self.last_gain_budget_diag = {
             **self._zero_address_diag(x),
+            **coherent_delta_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -3649,6 +3778,7 @@ class FLADeltaBlock(nn.Module):
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
+        gdn2_update_mode: str = "none",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
     ) -> None:
@@ -3678,6 +3808,7 @@ class FLADeltaBlock(nn.Module):
             ),
             precondition_mode=gdn2_precondition_mode,
             address_mode=gdn2_address_mode,
+            update_mode=gdn2_update_mode,
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
         )
@@ -3755,6 +3886,7 @@ class FutureSeedRWKV(nn.Module):
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
+        gdn2_update_mode: str = "none",
         gdn2_cross_layer_init: str = "independent",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -3852,6 +3984,7 @@ class FutureSeedRWKV(nn.Module):
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
+        self.gdn2_update_mode = gdn2_update_mode
         self.gdn2_cross_layer_init = gdn2_cross_layer_init
         self.shared_address_proj = (
             nn.Linear(d_model, d_model, bias=False)
@@ -4005,6 +4138,7 @@ class FutureSeedRWKV(nn.Module):
                         ),
                         gdn2_precondition_mode=gdn2_precondition_mode,
                         gdn2_address_mode=gdn2_address_mode,
+                        gdn2_update_mode=gdn2_update_mode,
                         raven_num_slots=raven_num_slots,
                         raven_topk=raven_topk,
                     )
@@ -5060,6 +5194,7 @@ def load_training_checkpoint(
             "gdn_allow_neg_eigval",
             "gdn2_precondition_mode",
             "gdn2_address_mode",
+            "gdn2_update_mode",
             "gdn2_cross_layer_init",
             "raven_num_slots",
             "raven_topk",
@@ -5128,6 +5263,7 @@ def load_training_checkpoint(
             "future_seed_content_mode": "terminal",
             "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
+            "gdn2_update_mode": "none",
             "gdn2_cross_layer_init": "independent",
             "raven_num_slots": 0,
             "raven_topk": 0,
@@ -5139,6 +5275,7 @@ def load_training_checkpoint(
         mismatches = {}
         accepted_legacy_defaults = {}
         accepted_future_seed_content_upgrade = False
+        accepted_gdn2_update_upgrade = False
         for field in contract_fields:
             current_value = getattr(expected_args, field)
             if field not in saved_args:
@@ -5152,6 +5289,13 @@ def load_training_checkpoint(
                     }
                 ):
                     accepted_future_seed_content_upgrade = True
+                    continue
+                if (
+                    field == "gdn2_update_mode"
+                    and bool(expected_args.resume_allow_gdn2_update_upgrade)
+                    and current_value == "coherent_delta"
+                ):
+                    accepted_gdn2_update_upgrade = True
                     continue
                 if (
                     field in legacy_missing_defaults
@@ -5186,6 +5330,15 @@ def load_training_checkpoint(
                 }
             ):
                 accepted_future_seed_content_upgrade = True
+                matches = True
+            if (
+                not matches
+                and field == "gdn2_update_mode"
+                and bool(expected_args.resume_allow_gdn2_update_upgrade)
+                and saved_value == "none"
+                and current_value == "coherent_delta"
+            ):
+                accepted_gdn2_update_upgrade = True
                 matches = True
             if not matches:
                 mismatches[field] = {
@@ -5265,6 +5418,7 @@ def load_training_checkpoint(
             "accepted_future_seed_content_upgrade": (
                 accepted_future_seed_content_upgrade
             ),
+            "accepted_gdn2_update_upgrade": accepted_gdn2_update_upgrade,
             "curriculum_prefix": stage_context,
             "saved_at_step": saved_at_step,
             "matched": True,
@@ -5308,6 +5462,7 @@ def load_training_checkpoint(
         ".time_mix.address_carrier_scale",
         ".time_mix.address_carrier_bias_delta",
     )
+    coherent_delta_suffixes = (".time_mix.coherent_delta_mix",)
     allowed_unexpected = {"loop_update_logit"}
     bad_missing = [
         key
@@ -5316,6 +5471,7 @@ def load_training_checkpoint(
         and not key.endswith(progressive_suffixes)
         and not key.endswith(fast_slow_suffixes)
         and not key.endswith(address_operator_suffixes)
+        and not key.endswith(coherent_delta_suffixes)
     ]
     bad_unexpected = [key for key in unexpected if key not in allowed_unexpected]
     if bad_missing or bad_unexpected:
@@ -5453,6 +5609,7 @@ class FutureSeedLoopSudoku(nn.Module):
         gdn2_fast_slow_decay_current_weight_init: float = 0.85,
         gdn2_precondition_mode: str = "none",
         gdn2_address_mode: str = "none",
+        gdn2_update_mode: str = "none",
         gdn2_cross_layer_init: str = "independent",
         raven_num_slots: int = 0,
         raven_topk: int = 0,
@@ -5490,6 +5647,7 @@ class FutureSeedLoopSudoku(nn.Module):
         self.hidden_agg_noise_max_norm = float(hidden_agg_noise_max_norm)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
+        self.gdn2_update_mode = gdn2_update_mode
         self.gdn2_cross_layer_init = gdn2_cross_layer_init
         self.embed = nn.Embedding(VOCAB, d_model)
         self.position = nn.Embedding(CELLS, d_model)
@@ -5529,6 +5687,7 @@ class FutureSeedLoopSudoku(nn.Module):
             ),
             gdn2_precondition_mode=gdn2_precondition_mode,
             gdn2_address_mode=gdn2_address_mode,
+            gdn2_update_mode=gdn2_update_mode,
             gdn2_cross_layer_init=gdn2_cross_layer_init,
             raven_num_slots=raven_num_slots,
             raven_topk=raven_topk,
@@ -6549,6 +6708,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         gdn2_precondition_mode=args.gdn2_precondition_mode,
         gdn2_address_mode=args.gdn2_address_mode,
+        gdn2_update_mode=args.gdn2_update_mode,
         gdn2_cross_layer_init=args.gdn2_cross_layer_init,
         raven_num_slots=args.raven_num_slots,
         raven_topk=args.raven_topk,
@@ -6660,6 +6820,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_precondition_diag = {
         key: 0.0 for key in PRECONDITION_TRAIN_KEYS
     }
+    last_coherent_delta_diag = {
+        key: 0.0 for key in COHERENT_DELTA_TRAIN_KEYS
+    }
+    last_coherent_delta_diag["gdn2_coherent_delta_gap_ratio"] = 1.0
     last_address_diag = {
         key: 0.0 for key in ADDRESS_TRAIN_KEYS
     }
@@ -6751,6 +6915,23 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             is True
         )
+        expected_gdn2_update_insertions = {
+            name
+            for name, _parameter in model.named_parameters()
+            if name.endswith(".time_mix.coherent_delta_mix")
+        }
+        declared_gdn2_update_upgrade = (
+            bool(args.resume_allow_gdn2_update_upgrade)
+            and args.gdn2_update_mode == "coherent_delta"
+            and bool(expected_gdn2_update_insertions)
+            and migrated_missing == expected_gdn2_update_insertions
+            and not migration.get("unexpected_parameters")
+            and migration.get("optimizer_groups_expanded") is True
+            and checkpoint.get("_resume_contract", {}).get(
+                "accepted_gdn2_update_upgrade"
+            )
+            is True
+        )
         if args.resume_require_exact_state and (
             (
                 migration.get("missing_parameters")
@@ -6759,6 +6940,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             and not declared_fast_slow_migration
             and not declared_future_seed_content_upgrade
+            and not declared_gdn2_update_upgrade
         ):
             raise RuntimeError(
                 "Exact checkpoint resume required, but migration was needed: "
@@ -6822,6 +7004,17 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             last_precondition_diag = {
                 key: float(saved_precondition_diag.get(key, 0.0))
                 for key in PRECONDITION_TRAIN_KEYS
+            }
+        saved_coherent_delta_diag = last_metrics.get("coherent_delta", {})
+        if isinstance(saved_coherent_delta_diag, dict):
+            last_coherent_delta_diag = {
+                key: float(
+                    saved_coherent_delta_diag.get(
+                        key,
+                        1.0 if key == "gdn2_coherent_delta_gap_ratio" else 0.0,
+                    )
+                )
+                for key in COHERENT_DELTA_TRAIN_KEYS
             }
         saved_address_diag = last_metrics.get("address_operator", {})
         if isinstance(saved_address_diag, dict):
@@ -6895,6 +7088,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_precondition_diag = {
                 key: 0.0 for key in PRECONDITION_TRAIN_KEYS
+            }
+            accum_coherent_delta_diag = {
+                key: 0.0 for key in COHERENT_DELTA_TRAIN_KEYS
             }
             accum_address_diag = {
                 key: 0.0 for key in ADDRESS_TRAIN_KEYS
@@ -7095,6 +7291,19 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in COHERENT_DELTA_TRAIN_KEYS:
+                        accum_coherent_delta_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_tensor(
+                                    1.0
+                                    if key == "gdn2_coherent_delta_gap_ratio"
+                                    else 0.0
+                                ),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in ADDRESS_TRAIN_KEYS:
                         accum_address_diag[key] += float(
                             trace_last.get(
@@ -7158,6 +7367,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_precondition_diag.items()
             }
+            last_coherent_delta_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_coherent_delta_diag.items()
+            }
             last_address_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_address_diag.items()
@@ -7193,6 +7406,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"pre_seed={last_precondition_diag['gdn2_precondition_seed_precision_mean']:.4f} "
                     f"pre_write={last_precondition_diag['gdn2_precondition_write_relative_change']:.4f} "
                     f"pre_erase={last_precondition_diag['gdn2_precondition_erase_error_max']:.2e} "
+                    f"coh_mix={last_coherent_delta_diag['gdn2_coherent_delta_mix_mean']:.4f}/"
+                    f"{last_coherent_delta_diag['gdn2_coherent_delta_mix_abs']:.4f} "
+                    f"coh_gap={last_coherent_delta_diag['gdn2_coherent_delta_gap_ratio']:.4f} "
+                    f"coh_b={last_coherent_delta_diag['gdn2_coherent_delta_b_relative_change']:.4f} "
+                    f"coh_w={last_coherent_delta_diag['gdn2_coherent_delta_w_relative_change']:.4f} "
                     f"addr_scale={last_address_diag['gdn2_address_rotation_scale_abs']:.4f} "
                     f"addr_phase={last_address_diag['gdn2_address_phase_abs']:.4f} "
                     f"addr_qchg={last_address_diag['gdn2_address_q_relative_change']:.4f} "
@@ -7257,6 +7475,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         "fast_slow_decay": dict(last_fast_slow_diag),
                         "precondition": dict(last_precondition_diag),
+                        "coherent_delta": dict(last_coherent_delta_diag),
                         "address_operator": dict(last_address_diag),
                     },
                     "eval_by_holes": {},
@@ -7339,6 +7558,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                             "fast_slow_decay": dict(last_fast_slow_diag),
                             "precondition": dict(last_precondition_diag),
+                            "coherent_delta": dict(last_coherent_delta_diag),
                             "address_operator": dict(last_address_diag),
                         },
                         reason="eval_checkpoint",
@@ -7400,6 +7620,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
                         "fast_slow_decay": dict(last_fast_slow_diag),
                         "precondition": dict(last_precondition_diag),
+                        "coherent_delta": dict(last_coherent_delta_diag),
                         "address_operator": dict(last_address_diag),
                     },
                     reason="periodic",
@@ -7479,6 +7700,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gain_budget_gate_relative_change": last_gain_budget_gate_relative_change,
         "fast_slow_decay": dict(last_fast_slow_diag),
         "precondition": dict(last_precondition_diag),
+        "coherent_delta": dict(last_coherent_delta_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
@@ -7511,6 +7733,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         ),
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
+        "gdn2_update_mode": args.gdn2_update_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
@@ -7521,6 +7744,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "resume_require_exact_state": bool(args.resume_require_exact_state),
         "resume_allow_future_seed_content_upgrade": bool(
             args.resume_allow_future_seed_content_upgrade
+        ),
+        "resume_allow_gdn2_update_upgrade": bool(
+            args.resume_allow_gdn2_update_upgrade
         ),
         "save_train_checkpoint_every": args.save_train_checkpoint_every,
         "saved_train_checkpoints": saved_train_checkpoints,
@@ -8789,6 +9015,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "--resume_allow_future_seed_content_upgrade requires a nonterminal "
                 "FutureSeed content mode"
             )
+    if args.resume_allow_gdn2_update_upgrade:
+        if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
+            raise ValueError(
+                "--resume_allow_gdn2_update_upgrade requires an exact checkpoint resume"
+            )
+        if args.gdn2_update_mode != "coherent_delta":
+            raise ValueError(
+                "--resume_allow_gdn2_update_upgrade requires "
+                "--gdn2_update_mode coherent_delta"
+            )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")
     if not (0.0 <= args.future_seed_decay < 1.0):
@@ -8896,6 +9132,28 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError(
             "Tied preconditioning currently composes only with none or position_qk addressing"
         )
+    if args.gdn2_update_mode != "none":
+        if args.backbone != "gdn2":
+            raise ValueError("--gdn2_update_mode requires --backbone gdn2")
+        if not args.fla_strict_official:
+            raise ValueError("--gdn2_update_mode requires --fla_strict_official")
+        if args.gdn2_address_mode != "position_qk":
+            raise ValueError(
+                "The first coherent-delta contract requires --gdn2_address_mode position_qk"
+            )
+        if args.future_seed_content_mode != "terminal":
+            raise ValueError(
+                "The first coherent-delta contract requires terminal FutureSeed content"
+            )
+        if (
+            args.gdn2_gain_budget_mode != "none"
+            or args.gdn2_fast_slow_decay_mode != "none"
+            or args.gdn2_precondition_mode != "none"
+        ):
+            raise ValueError(
+                "Coherent delta updates cannot be mixed with Gain-Budget, "
+                "Fast-Slow decay, or tied preconditioning"
+            )
     if args.gdn2_address_mode != "none" and args.backbone != "gdn2":
         raise ValueError("--gdn2_address_mode requires --backbone gdn2")
     if args.gdn2_address_mode != "none" and not args.fla_strict_official:
@@ -9020,6 +9278,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
         f"gdn2_precondition={args.gdn2_precondition_mode} "
         f"gdn2_address={args.gdn2_address_mode} "
+        f"gdn2_update={args.gdn2_update_mode} "
         f"gdn2_cross_layer_init={args.gdn2_cross_layer_init} "
         f"raven_slots/topk={args.raven_num_slots}/{args.raven_topk} "
         f"cell_order_train={args.cell_order_train} "
@@ -9238,6 +9497,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         ),
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
+        "gdn2_update_mode": args.gdn2_update_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
         "raven_topk": args.raven_topk,
@@ -9436,6 +9696,10 @@ def parse_args() -> argparse.Namespace:
         "--resume_allow_future_seed_content_upgrade",
         action="store_true",
     )
+    p.add_argument(
+        "--resume_allow_gdn2_update_upgrade",
+        action="store_true",
+    )
     p.add_argument("--train_checkpoint_dir", default="")
     p.add_argument("--save_train_checkpoint_every", type=int, default=0)
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
@@ -9489,6 +9753,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--gdn2_address_mode",
         choices=GDN2_ADDRESS_MODES,
+        default="none",
+    )
+    p.add_argument(
+        "--gdn2_update_mode",
+        choices=GDN2_UPDATE_MODES,
         default="none",
     )
     p.add_argument(

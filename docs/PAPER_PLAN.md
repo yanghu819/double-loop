@@ -933,3 +933,19 @@ FutureSeed closure. Close feature, router-width, gain, layer/head-specific,
 seed, optimizer, loss, duration, and model-size rescue. A successor must alter
 generic GDN memory/state dynamics rather than add a fourth transfer-side
 content transform.
+
+### P-GDN3-005 Coherent Delta Update Test
+
+The next registered experiment moves from FutureSeed transfer content to the
+generic recurrent state edit. Official GDN2 predicts K-axis erase and V-axis
+write gates independently even though both participate in one delta update.
+P-GDN3-005 adds one zero-initialized scalar per layer/head and moves both gates
+toward their shared per-token/head strength before invoking the unchanged
+pinned official kernel. At D256/L12/H8 this is 96 parameters, no new state,
+scan, loss, or task logic, and exact parent behavior at initialization.
+
+This experiment can support a paper mechanism only if the learned coupling is
+positive, contracts the erase/write gap, and changes hard or mixed full-board
+exact under strict cost limits. Soft blank or wrong-cell movement alone is not
+sufficient. A miss closes coherent gate coupling without a strength, seed, LR,
+duration, or nearby gate-form sweep.

@@ -134,13 +134,39 @@ R1 log SHA256 is
 its non-science abort JSON SHA256 is
 `a4d7083c114276e037d03c8b1b272945e41a1b876e5e3a6b9a81e76b6e36a454`.
 The correction only supplies the required outer runtime container; it does not
-change mechanism code, parameters, thresholds, data, or training. Strict R2
-and the exact-resume step3001 production gate remain pending on a new pushed
-SHA. No benchmark score exists.
+change mechanism code, parameters, thresholds, data, or training.
+
+Corrected pushed SHA `f5beffffcde7df9c38bc570a40caf17fc0fe52d9`
+passes strict R2 status0 on the only visible GPU1. All 12 official GDN2 layers
+and backward paths are present; zero-init output and all 12 states are exact;
+the parameter delta is 87,296; minimum edge/head direct-gradient maxima are
+`4.11112e-4` for K and `2.39802e-4` for V. In the opened full model, minimum
+K/V rotation relative RMS is `0.054892/0.054574`, transported-state residual
+relative RMS is `0.078920` with minimum `0.076569`, and maximum terminal-state
+RMS ratio is `1.003604`. FP32 norm error is `1.78814e-7`, orthogonality error
+is `1.13249e-6`, BF16 storage norm error is `1.78814e-7`, and head permutation
+error is zero. Contract log SHA256 is
+`5fec22ed10fe0000cf46765a8f3ee85a81aa9bc535b97a964ce6d4c470978101`.
+GPU1 released naturally to 0 MiB.
+
+The first exact-resume probe attempt exited before any training step because
+the generic checkpoint loader's explicit content-upgrade allowlist omitted the
+two new parameters, while reporting exactly
+`future_seed_basis_transport.row_angles/col_angles` as missing and no
+unexpected tensors. No checkpoint or score was produced. This is a migration-
+wiring error rather than parent-state drift: the semantic upgrade flag,
+subsequent exact missing-set assertion, and optimizer-state expansion were
+already present. Probe R1 log/abort SHA256 are
+`c75d622007108525c54913926bc221e98acf162f0cbfa51f6f7be96dc36fff3d` and
+`5d316768a25d15bea224900cb475401b88137679172371696bda3ca36d67a7f4`.
+The only correction adds those two exact names to the allowlist; it does not
+change the model, initialization, optimizer, data, threshold, or run command.
+A new pushed SHA must repeat strict CUDA contract before a corrected probe.
+No benchmark score exists yet.
 
 ## 9. Decision
 
-Approved for one corrected contract rerun because R1 failed only in a
-post-assertion checker object wrapper. Formal continuation remains blocked
-until the new pushed-SHA, clean-worktree, identity, direct-gradient, geometry,
-provenance, and step3001 production gates all pass exactly as registered.
+Strict R2 on `f5befff` passes, but its first probe attempt did not reach a
+training step because of the explicit loader allowlist omission. Permit only
+the exact two-name migration-wiring correction, followed by a new pushed-SHA
+contract and corrected step3001 probe. Formal continuation remains blocked.

@@ -7695,6 +7695,8 @@ def load_training_checkpoint(
         "reasoner.future_seed_address_local_update.row_gate_in.weight",
         "reasoner.future_seed_address_local_update.row_gate_in.bias",
         "reasoner.future_seed_address_local_update.row_gate_out.weight",
+        "reasoner.future_seed_basis_transport.row_angles",
+        "reasoner.future_seed_basis_transport.col_angles",
         "reasoner.shared_address_proj.weight",
     }
     progressive_suffixes = (

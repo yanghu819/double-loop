@@ -1169,3 +1169,32 @@ retention regime does not improve full-board exactness. Do not tune adapter
 source, nonlinear map, bound, scale, sharing or training duration. The next
 general mechanism should increase address-state interaction or memory
 organization rather than revisit transition spectrum strength.
+
+### P-GDN3-013 Paired-Bank Optimization Boundary
+
+P-GDN3-013 tests aligned recurrent address capacity without adding tokens,
+scans or a second core. Each parent H8 position-QK head is duplicated inside
+the same pinned-official call, giving an H16 base/companion state. Two
+head-shared V32-to-K32 projections can differentiate companion Q/K, while a
+per-head read gate returns companion output to the unchanged base path. The
+candidate adds 24,672 parameters and 98,304 recurrent-state values per board.
+
+Strict contract R2 establishes a useful systems result: an H8-to-H16 official
+call preserves full model output, all base states, duplicated companion states
+and nonzero incoming-state behavior bit-exactly. It retains one official
+backward path per layer, and synthetic gate opening gives nonzero Q/K gradients
+and companion-state differentiation while the base path remains exact.
+
+The production optimization route nevertheless fails its registered one-step
+gate. At exact step3001 the read gate reaches `0.001048`, but Q/K projection
+weights, Q/K residuals and paired-state residuals remain exactly zero. With
+both address projections and read gate zero-initialized, the first optimizer
+step can train only the read gate; address learning is second order in this
+composition. No formal Sudoku continuation exists, and the tiny 8-board probe
+must not be interpreted as a score.
+
+The paper should retain this as an optimization-accessibility boundary, not as
+evidence against multibank recurrent memory. Exact migration plus a synthetic
+two-stage gradient demonstration is insufficient when the registered
+production checkpoint has not activated the actual state-diversifying path.
+Do not repair the result with a second probe step or changed initialization.

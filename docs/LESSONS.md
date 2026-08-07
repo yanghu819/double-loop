@@ -2370,3 +2370,24 @@
   state-conditioned gates, an extra post-scan transition and adaptive signed
   erase. The next experiment should target generic memory organization or
   address-state interaction, not erase source, bound, scale or training rescue.
+- Exact multibank migration is feasible inside one pinned-official call.
+  P-GDN3-013 doubles H8 to H16 while preserving full output, every base and
+  companion state, and finite nonzero incoming-state behavior bit-exactly; it
+  also keeps one official backward path per layer.
+- Serial zero initialization can create a production optimization barrier.
+  P013 zero-initializes both its companion Q/K projections and its read gate.
+  At step3001 the gate opens to `0.001048`, but Q/K weights, Q/K residuals and
+  paired-state residuals remain exactly zero because those projections had no
+  first-step loss path.
+- Synthetic two-stage gradients are necessary but not sufficient activation
+  evidence. Opening the gate by hand yields finite nonzero Q/K gradients and a
+  minimum state residual relative RMS of `0.026429`; the real one-step resume
+  still does not reach that stage.
+- Bind production activation to a specific checkpoint before launch. When that
+  checkpoint misses, extending one extra step or changing initialization is a
+  rescue even if the mechanism is mathematically viable. P013 therefore has no
+  formal Sudoku score and does not falsify multibank memory capacity.
+- New recurrent-capacity candidates should expose their differentiating state
+  parameters to first-order gradients while preserving exact parent behavior.
+  Do not repackage P013 through a different read-gate map or initialization;
+  that nearby family is closed for this experiment sequence.

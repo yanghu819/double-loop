@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: implementation pushed; strict CUDA contract R2 pending
+- Status: discarded at exact step3001 production activation gate
 - Date: 2026-08-07
 - Planned branch: `codex/gdn3-paired-address-bank-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -148,6 +148,54 @@ contrast; complete checkpoint/config/source hashes; exactly one official
 backward path per layer; and terminal RMS no more than `4x` the matching parent
 readout. Failure closes P013 before a formal continuation.
 
+Observed result on exact pushed SHA
+`9ca0626b6ba31569ea72cb3af350d3b91e520ee9`:
+
+- strict CUDA contract R2 status is zero;
+- full model output, every base terminal state, every duplicated companion
+  state and finite nonzero parent incoming-state behavior are bit-exact at
+  zero initialization;
+- parameter and per-board state deltas are exactly `24,672` and `98,304`;
+- all 12 layers expose one H16 official `ChunkGDN2FunctionBackward` path;
+- opened synthetic gates give finite nonzero Q/K projection gradients, a
+  minimum paired-state residual relative RMS of `0.026429`, and leave isolated
+  base output/state exact;
+- contract log SHA256 is
+  `09061eed7ca85b6a40955bd37460882466089dee31e6541a2e0250dd9b34c82e`.
+
+The exact-resume step3001 probe also exits status zero and writes complete
+metrics/checkpoint artifacts, but fails the registered production activation
+gate. The read gate opens to `0.0010484613`; Q/K projection weight RMS, Q/K
+residual relative RMS, and paired-state residual relative RMS remain exactly
+zero at every loop. Terminal RMS remains finite (`7.0627` at loop1 and
+`6.5731` at loop5), so this is not instability.
+
+The cause is structural: with both the read gate and address projections
+zero-initialized, the first real optimizer step can update only the read gate.
+The address projections receive their production gradient only after that
+gate has opened. The synthetic two-stage contract proves that later gradient
+exists, but the preregistered production gate requires differentiated Q/K and
+state at step3001. Extending the probe to step3002 or changing gate/projection
+initialization would be a forbidden post-result rescue. The 8-board probe
+score is not science evidence and must not be compared with the 512-board
+frozen control.
+
+Probe artifacts:
+
+- run:
+  `/huyang2/double-loop/runs/p-gdn3-013-paired-address-bank-probe-s3001-20260807T100210Z-9ca0626`;
+- metrics SHA256:
+  `b5c65e675b446c23f075f9bff94ef27e5a406a78fe31937646dc2e42e8adc54b`;
+- checkpoint SHA256:
+  `609d3fd82def05a2f285626421d5f6a91a3b997abb828bde98cf09377043e367`;
+- config/source-snapshot SHA256:
+  `da15a3c05f45a7eb7062742cb4f6cf7ebf2470448814dfce69ba33e4034a4a74` /
+  `4958aa4220250406669523e75de24f060613cce17aed3811750e7d5b69ba7407`;
+- launch log SHA256:
+  `c4e2bafa14ea95695e77cda47c0d26eef8581b29a394956ca7786468083a85ea`;
+- abort:
+  `/huyang2/double-loop/artifacts/launch/p-gdn3-013/abort-probe-p-gdn3-013-paired-address-bank-probe-s3001-20260807T100210Z-9ca0626.json`.
+
 ## 7. Science, Stability, And Cost Gates
 
 At step3100, activation and stability require all of:
@@ -188,6 +236,8 @@ visualization.
 
 ## 9. Decision
 
-Implementation and preregistration are pushed. Strict CUDA contract R2 and the
-exact step3001 probe remain pending. No formal GPU continuation is authorized
-from an unpushed SHA or after a substantive contract miss.
+Discard. Strict CUDA contract R2 passes, but the exact step3001 production
+probe misses the binding Q/K and paired-state activation gate. No formal
+step3100 continuation, benchmark claim, visualization, or bank/head count,
+projection source/rank, gate map/scale/init, state duplication, precision,
+seed/LR/loss/batch/width/depth/duration rescue is authorized.

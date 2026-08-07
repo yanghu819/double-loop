@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved for static implementation; no GPU model run authorized
+- Status: static implementation complete; exact pushed-source CUDA gates pending
 - Date: 2026-08-07
 - Planned branch: `codex/gdn3-orthogonal-head-write-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -175,5 +175,15 @@ checkpoint/metrics/log hashes; and same-board loop1-5 visualization.
 
 ## 9. Decision
 
-Pending complete implementation and pushed-source launch gates. No GPU model
-run is authorized by this preregistration alone.
+The candidate path, diagnostics, exact-resume migration, strict CUDA checker,
+frozen config, and detached-worktree launcher are implemented in:
+
+- `experiments/rwkv_fs_sudoku/study_rwkv_futureseed_loop.py`;
+- `experiments/rwkv_fs_sudoku/check_gdn3_orthogonal_head_write_cuda.py`;
+- `configs/sudoku/gdn3_orthogonal_head_write_probe.env`;
+- `scripts/run_gdn3_orthogonal_head_write_arm.sh`.
+
+Static Python compilation, shell syntax, and `git diff --check` pass. No CPU
+model smoke was run. The next decision is the strict CUDA contract from the
+exact pushed implementation SHA in a clean detached worktree. No GPU model run
+is authorized before source push/readback and the registered preflight.

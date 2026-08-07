@@ -12,8 +12,10 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-07 CST): `P-GDN3-011` orthogonal head-write routing is
-approved for static implementation only. P009 and P010 close the two easy ways
+Current update (2026-08-07 CST): `P-GDN3-011` orthogonal head-write routing has
+complete static implementation, checker, exact-resume config, and fail-closed
+launcher; no GPU model run is authorized until the exact implementation commit
+is pushed/read back and a clean detached worktree is established. P009 and P010 close the two easy ways
 to add recurrent transitions around the pinned operator: split official calls
 preserve zero-transform forward values but do not expose the registered
 cross-call state-gradient chain, while a single expanded physical call keeps
@@ -36,8 +38,9 @@ heads. P005 changes within-head gate coherence, P006 adds a parallel state,
 P007 conditions writes on inherited state, P008 adds a post-scan transition,
 and P009/P010 test transition composition; none allows token-dependent evidence
 routing among the existing live recurrent heads inside the original scan.
-Launch remains forbidden until the preregistration and complete implementation
-are pushed, a clean detached worktree exists, and strict GPU1 identity,
+Static verification is limited to Python bytecode compilation, shell syntax,
+and `git diff --check`; no CPU model smoke was run. Launch remains forbidden
+until the preregistration and complete implementation are pushed, a clean detached worktree exists, and strict GPU1 identity,
 two-stage-gradient, head-permutation, norm-preservation, official-kernel, exact
 resume, and step3001 production gates pass. No angle/plane/descriptor/target,
 seed/LR/loss/batch/width/depth/duration rescue is authorized.

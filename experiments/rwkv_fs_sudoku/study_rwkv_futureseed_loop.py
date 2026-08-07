@@ -366,6 +366,25 @@ ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS = (
     "gdn3_orthogonal_chunk_state_angle_weight_rms",
     "gdn3_orthogonal_chunk_state_plane_weight_rms",
 )
+ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS = (
+    "gdn3_orthogonal_head_write_enabled",
+    "gdn3_orthogonal_head_write_angle_abs",
+    "gdn3_orthogonal_head_write_angle_batch_std",
+    "gdn3_orthogonal_head_write_angle_token_std",
+    "gdn3_orthogonal_head_write_v_residual_relative_rms",
+    "gdn3_orthogonal_head_write_v_residual_batch_std",
+    "gdn3_orthogonal_head_write_v_residual_token_std",
+    "gdn3_orthogonal_head_write_plane_dot_abs_max",
+    "gdn3_orthogonal_head_write_plane_norm_error_max",
+    "gdn3_orthogonal_head_write_fp32_norm_ratio_mean",
+    "gdn3_orthogonal_head_write_fp32_norm_ratio_max_error",
+    "gdn3_orthogonal_head_write_storage_norm_ratio_mean",
+    "gdn3_orthogonal_head_write_storage_norm_ratio_max_error",
+    "gdn3_orthogonal_head_write_terminal_rms",
+    "gdn3_orthogonal_head_write_terminal_batch_std",
+    "gdn3_orthogonal_head_write_angle_weight_rms",
+    "gdn3_orthogonal_head_write_plane_weight_rms",
+)
 INTERLEAVED_WRITE_TRAIN_KEYS = (
     "gdn3_interleaved_write_enabled",
     "gdn3_interleaved_write_k_residual_rms",
@@ -435,6 +454,7 @@ GDN2_UPDATE_MODES = (
     "state_feedback",
     "terminal_consolidation",
     "orthogonal_chunk_state",
+    "orthogonal_head_write",
     "interleaved_write",
 )
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
@@ -809,7 +829,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "interleaved_write" and address_mode == "position_qk":
+        if update_mode == "orthogonal_head_write" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_orthogonal_head_write_routing_"
+                "then_one_official_gdn2_chunk"
+            )
+        elif update_mode == "interleaved_write" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_interleaved_auxiliary_write_then_"
                 "parent_update_in_one_official_gdn2_chunk"
@@ -2379,6 +2404,14 @@ class FLADeltaTimeMix(nn.Module):
         if self.orthogonal_chunk_state_proj is not None:
             with torch.no_grad():
                 self.orthogonal_chunk_state_proj.weight[-1:].zero_()
+        self.orthogonal_head_write_proj = (
+            nn.Linear(self.head_v_dim, 3, bias=False)
+            if update_mode == "orthogonal_head_write"
+            else None
+        )
+        if self.orthogonal_head_write_proj is not None:
+            with torch.no_grad():
+                self.orthogonal_head_write_proj.weight[-1:].zero_()
         if update_mode == "interleaved_write" and self.value_dim != d_model:
             raise ValueError(
                 "Interleaved write requires matched K/V width (gdn_expand_v=1)"
@@ -2534,11 +2567,146 @@ class FLADeltaTimeMix(nn.Module):
         return values
 
     @staticmethod
+    def _zero_orthogonal_head_write_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        values = {key: zero for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS}
+        values["gdn3_orthogonal_head_write_fp32_norm_ratio_mean"] = (
+            x.new_ones((), dtype=torch.float32)
+        )
+        values["gdn3_orthogonal_head_write_storage_norm_ratio_mean"] = (
+            x.new_ones((), dtype=torch.float32)
+        )
+        return values
+
+    @staticmethod
     def _zero_interleaved_write_diag(
         x: torch.Tensor,
     ) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in INTERLEAVED_WRITE_TRAIN_KEYS}
+
+    def _orthogonal_head_write_route(
+        self,
+        value: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.orthogonal_head_write_proj
+        if self.update_mode != "orthogonal_head_write" or projection is None:
+            return value, self._zero_orthogonal_head_write_diag(value)
+        if value.ndim != 4 or value.shape[-2:] != (
+            self.heads,
+            self.head_v_dim,
+        ):
+            raise RuntimeError(
+                "Orthogonal head-write routing requires V shaped "
+                f"[B,T,{self.heads},{self.head_v_dim}], got "
+                f"{tuple(value.shape)}"
+            )
+
+        value_float = value.float()
+        controls = F.linear(
+            value_float,
+            projection.weight.float(),
+        )
+        u_raw, v_raw, angle_raw = controls.unbind(dim=-1)
+        u = F.normalize(u_raw, dim=-1, eps=1e-6)
+        v_residual = v_raw - (u * v_raw).sum(dim=-1, keepdim=True) * u
+        v_plane = F.normalize(v_residual, dim=-1, eps=1e-6)
+        theta = math.pi * torch.tanh(angle_raw.mean(dim=-1))
+
+        u_component = torch.einsum("bth,bthv->btv", u, value_float)
+        v_component = torch.einsum("bth,bthv->btv", v_plane, value_float)
+        cosine_delta = (torch.cos(theta) - 1.0).unsqueeze(-1)
+        sine = torch.sin(theta).unsqueeze(-1)
+        u_delta = cosine_delta * u_component - sine * v_component
+        v_delta = sine * u_component + cosine_delta * v_component
+        routed_float = (
+            value_float
+            + torch.einsum("bth,btv->bthv", u, u_delta)
+            + torch.einsum("bth,btv->bthv", v_plane, v_delta)
+        )
+        routed = routed_float.to(dtype=value.dtype)
+
+        with torch.no_grad():
+            residual = routed_float - value_float
+            value_board_rms = value_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-6)
+            residual_board_relative = residual.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt() / value_board_rms
+            value_token_rms = value_float.square().mean(
+                dim=(0, 2, 3)
+            ).sqrt().clamp_min(1e-6)
+            residual_token_relative = residual.square().mean(
+                dim=(0, 2, 3)
+            ).sqrt() / value_token_rms
+            routed_board_rms = routed_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            storage_board_rms = routed.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            fp32_norm_ratio = routed_board_rms / value_board_rms
+            storage_norm_ratio = storage_board_rms / value_board_rms
+            u_norm_error = (u.square().sum(dim=-1) - 1.0).abs()
+            v_norm_error = (v_plane.square().sum(dim=-1) - 1.0).abs()
+            plane_dot_abs = (u * v_plane).sum(dim=-1).abs()
+            angle_weight = projection.weight[-1:].float()
+            plane_weight = projection.weight[:-1].float()
+            diagnostics = {
+                "gdn3_orthogonal_head_write_enabled": value.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_orthogonal_head_write_angle_abs": theta.abs().mean(),
+                "gdn3_orthogonal_head_write_angle_batch_std": theta.abs().mean(
+                    dim=1
+                ).std(unbiased=False),
+                "gdn3_orthogonal_head_write_angle_token_std": theta.abs().mean(
+                    dim=0
+                ).std(unbiased=False),
+                "gdn3_orthogonal_head_write_v_residual_relative_rms": (
+                    residual_board_relative.mean()
+                ),
+                "gdn3_orthogonal_head_write_v_residual_batch_std": (
+                    residual_board_relative.std(unbiased=False)
+                ),
+                "gdn3_orthogonal_head_write_v_residual_token_std": (
+                    residual_token_relative.std(unbiased=False)
+                ),
+                "gdn3_orthogonal_head_write_plane_dot_abs_max": (
+                    plane_dot_abs.max()
+                ),
+                "gdn3_orthogonal_head_write_plane_norm_error_max": torch.maximum(
+                    u_norm_error.max(), v_norm_error.max()
+                ),
+                "gdn3_orthogonal_head_write_fp32_norm_ratio_mean": (
+                    fp32_norm_ratio.mean()
+                ),
+                "gdn3_orthogonal_head_write_fp32_norm_ratio_max_error": (
+                    (fp32_norm_ratio - 1.0).abs().max()
+                ),
+                "gdn3_orthogonal_head_write_storage_norm_ratio_mean": (
+                    storage_norm_ratio.mean()
+                ),
+                "gdn3_orthogonal_head_write_storage_norm_ratio_max_error": (
+                    (storage_norm_ratio - 1.0).abs().max()
+                ),
+                "gdn3_orthogonal_head_write_terminal_rms": value.new_zeros(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_orthogonal_head_write_terminal_batch_std": value.new_zeros(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_orthogonal_head_write_angle_weight_rms": (
+                    angle_weight.square().mean().sqrt()
+                ),
+                "gdn3_orthogonal_head_write_plane_weight_rms": (
+                    plane_weight.square().mean().sqrt()
+                ),
+            }
+        return routed, diagnostics
 
     def _orthogonal_chunk_state_transport(
         self,
@@ -3668,6 +3836,10 @@ class FLADeltaTimeMix(nn.Module):
         )
         g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
         v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        if self.update_mode == "orthogonal_head_write":
+            v, orthogonal_head_write_diag = self._orthogonal_head_write_route(v)
+        else:
+            orthogonal_head_write_diag = self._zero_orthogonal_head_write_diag(x)
         if self.update_mode == "coherent_delta":
             b, w, coherent_delta_diag = self._coherent_delta_gates(b_raw, w_raw)
             state_feedback_diag = self._zero_state_feedback_diag(x)
@@ -3808,6 +3980,18 @@ class FLADeltaTimeMix(nn.Module):
             )
             interleaved_write_diag = self._zero_interleaved_write_diag(x)
 
+        if self.update_mode == "orthogonal_head_write":
+            with torch.no_grad():
+                terminal_board_rms = terminal_state.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt()
+                orthogonal_head_write_diag[
+                    "gdn3_orthogonal_head_write_terminal_rms"
+                ] = terminal_board_rms.mean()
+                orthogonal_head_write_diag[
+                    "gdn3_orthogonal_head_write_terminal_batch_std"
+                ] = terminal_board_rms.std(unbiased=False)
+
         with torch.no_grad():
             q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
             k_unit = F.normalize(k_canonical[:1].float(), dim=-1)
@@ -3834,6 +4018,7 @@ class FLADeltaTimeMix(nn.Module):
             **state_feedback_diag,
             **terminal_consolidation_diag,
             **orthogonal_chunk_state_diag,
+            **orthogonal_head_write_diag,
             **interleaved_write_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
@@ -6323,6 +6508,7 @@ def load_training_checkpoint(
                         "state_feedback",
                         "terminal_consolidation",
                         "orthogonal_chunk_state",
+                        "orthogonal_head_write",
                         "interleaved_write",
                     }
                 ):
@@ -6379,6 +6565,7 @@ def load_training_checkpoint(
                     "state_feedback",
                     "terminal_consolidation",
                     "orthogonal_chunk_state",
+                    "orthogonal_head_write",
                     "interleaved_write",
                 }
             ):
@@ -6524,6 +6711,7 @@ def load_training_checkpoint(
         ".time_mix.state_feedback_out.weight",
         ".time_mix.terminal_consolidation_k_proj.weight",
         ".time_mix.orthogonal_chunk_state_proj.weight",
+        ".time_mix.orthogonal_head_write_proj.weight",
         ".time_mix.interleaved_write_k_proj.weight",
         ".time_mix.interleaved_write_v_proj.weight",
     )
@@ -7574,6 +7762,25 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_orthogonal_chunk_state_plane_norm_error_max', 0.0):.2e}/"
             f"{m.get('gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error', 0.0):.2e}"
         )
+    if m.get("gdn3_orthogonal_head_write_enabled", 0.0) > 0:
+        parts.append(
+            "orth_head_angle="
+            f"{m.get('gdn3_orthogonal_head_write_angle_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_head_write_angle_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_head_write_angle_token_std', 0.0):.4f}"
+        )
+        parts.append(
+            "orth_head_v/state="
+            f"{m.get('gdn3_orthogonal_head_write_v_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_orthogonal_head_write_terminal_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "orth_head_geometry="
+            f"{m.get('gdn3_orthogonal_head_write_plane_dot_abs_max', 0.0):.2e}/"
+            f"{m.get('gdn3_orthogonal_head_write_plane_norm_error_max', 0.0):.2e}/"
+            f"{m.get('gdn3_orthogonal_head_write_fp32_norm_ratio_max_error', 0.0):.2e}/"
+            f"{m.get('gdn3_orthogonal_head_write_storage_norm_ratio_max_error', 0.0):.2e}"
+        )
     if m.get("gdn3_interleaved_write_enabled", 0.0) > 0:
         parts.append(
             "interleave_k/v="
@@ -7988,6 +8195,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_orthogonal_chunk_state_diag[
         "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"
     ] = 1.0
+    last_orthogonal_head_write_diag = {
+        key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
+    }
+    last_orthogonal_head_write_diag[
+        "gdn3_orthogonal_head_write_fp32_norm_ratio_mean"
+    ] = 1.0
+    last_orthogonal_head_write_diag[
+        "gdn3_orthogonal_head_write_storage_norm_ratio_mean"
+    ] = 1.0
     last_interleaved_write_diag = {
         key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
     }
@@ -8113,6 +8329,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.orthogonal_chunk_state_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "orthogonal_head_write":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(
+                    ".time_mix.orthogonal_head_write_proj.weight"
+                )
+            }
         elif args.gdn2_update_mode == "interleaved_write":
             expected_gdn2_update_insertions = {
                 name
@@ -8129,6 +8353,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "state_feedback",
                 "terminal_consolidation",
                 "orthogonal_chunk_state",
+                "orthogonal_head_write",
                 "interleaved_write",
             }
             and bool(expected_gdn2_update_insertions)
@@ -8272,6 +8497,25 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 )
                 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
             }
+        saved_orthogonal_head_write_diag = last_metrics.get(
+            "orthogonal_head_write", {}
+        )
+        if isinstance(saved_orthogonal_head_write_diag, dict):
+            last_orthogonal_head_write_diag = {
+                key: float(
+                    saved_orthogonal_head_write_diag.get(
+                        key,
+                        1.0
+                        if key
+                        in {
+                            "gdn3_orthogonal_head_write_fp32_norm_ratio_mean",
+                            "gdn3_orthogonal_head_write_storage_norm_ratio_mean",
+                        }
+                        else 0.0,
+                    )
+                )
+                for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
+            }
         saved_interleaved_write_diag = last_metrics.get(
             "interleaved_write", {}
         )
@@ -8370,6 +8614,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_orthogonal_chunk_state_diag = {
                 key: 0.0 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
+            }
+            accum_orthogonal_head_write_diag = {
+                key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
             }
             accum_interleaved_write_diag = {
                 key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
@@ -8621,6 +8868,23 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS:
+                        accum_orthogonal_head_write_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_tensor(
+                                    1.0
+                                    if key
+                                    in {
+                                        "gdn3_orthogonal_head_write_fp32_norm_ratio_mean",
+                                        "gdn3_orthogonal_head_write_storage_norm_ratio_mean",
+                                    }
+                                    else 0.0
+                                ),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in INTERLEAVED_WRITE_TRAIN_KEYS:
                         accum_interleaved_write_diag[key] += float(
                             trace_last.get(
@@ -8718,6 +8982,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_orthogonal_chunk_state_diag.items()
             }
+            last_orthogonal_head_write_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_orthogonal_head_write_diag.items()
+            }
             last_interleaved_write_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_interleaved_write_diag.items()
@@ -8783,6 +9051,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_read_residual_relative_rms']:.4f} "
                     f"orth_chunk_norm={last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean']:.6f}/"
                     f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error']:.2e} "
+                    f"orth_head_angle={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_angle_abs']:.4f}/"
+                    f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_angle_batch_std']:.4f} "
+                    f"orth_head_v={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_v_residual_relative_rms']:.4f}/"
+                    f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_v_residual_batch_std']:.4f} "
+                    f"orth_head_norm={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_fp32_norm_ratio_mean']:.6f}/"
+                    f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_storage_norm_ratio_max_error']:.2e} "
                     f"interleave_kv={last_interleaved_write_diag['gdn3_interleaved_write_k_residual_relative_rms']:.4f}/"
                     f"{last_interleaved_write_diag['gdn3_interleaved_write_v_relative_rms']:.4f} "
                     f"interleave_write={last_interleaved_write_diag['gdn3_interleaved_write_state_write_relative_rms']:.4f}/"
@@ -8863,6 +9137,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "orthogonal_chunk_state": dict(
                             last_orthogonal_chunk_state_diag
+                        ),
+                        "orthogonal_head_write": dict(
+                            last_orthogonal_head_write_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -8958,6 +9235,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "orthogonal_chunk_state": dict(
                                 last_orthogonal_chunk_state_diag
                             ),
+                            "orthogonal_head_write": dict(
+                                last_orthogonal_head_write_diag
+                            ),
                             "interleaved_write": dict(
                                 last_interleaved_write_diag
                             ),
@@ -9030,6 +9310,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "orthogonal_chunk_state": dict(
                             last_orthogonal_chunk_state_diag
+                        ),
+                        "orthogonal_head_write": dict(
+                            last_orthogonal_head_write_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -9118,6 +9401,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "state_feedback": dict(last_state_feedback_diag),
         "terminal_consolidation": dict(last_terminal_consolidation_diag),
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
+        "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "interleaved_write": dict(last_interleaved_write_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
@@ -10448,6 +10732,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "state_feedback",
             "terminal_consolidation",
             "orthogonal_chunk_state",
+            "orthogonal_head_write",
             "interleaved_write",
         }:
             raise ValueError(

@@ -2220,3 +2220,31 @@
   should add scalable learned recurrent memory/address/state capacity and let
   optimization discover its use, rather than encode another fragile aggregate
   prior.
+- More recurrent state is not automatically more useful state interaction.
+  P-GDN3-006 activates all 12 independent auxiliary experts, reaches loop5
+  residual relative RMS `0.010408`, and carries board-varying terminal state,
+  yet hard macro and mixed exact remain exactly unchanged.
+- A parallel expert behind a zero-init readout can learn locally without
+  changing the parent solver's global decisions. Train CE improves
+  `0.858617->0.855923`, but every official hard-range blank score regresses and
+  same-board loop3-to5 correction weakens on both 56-60 and 61-64.
+- State capacity and update coupling are different hypotheses. The dual-state
+  expert adds a private address/update subspace, but its residual output does
+  not make current writes depend directly on what the main memory already
+  contains. The next test should close that feedback loop rather than add a
+  third state bank or tune expert size.
+- Full recurrent experts are a costly way to buy generic capacity. A 21.6%
+  parameter increase and 25% state-value increase more than double matched
+  continuation time (`+106.57%`) and reduce throughput
+  `15.497->7.502` boards/s, even though peak allocation rises only `46.79%`.
+  Measure recurrent kernel count and saved activations, not only parameters or
+  state values.
+- Strong activation evidence protects the mechanism conclusion. Exact
+  zero-readout identity, two-stage gradients, all-12 expert activity,
+  auxiliary FutureSeed RMS, board variation, and finite address/cosine metrics
+  rule out a dead-path explanation. The negative result is architectural, not
+  an implementation ambiguity.
+- Do not rescue dual-state expert width, count, address form, residual scale,
+  or continuation duration. Those would turn one decisive capacity test into
+  a nearby compute table. Following the bitter lesson now means a simpler,
+  scalable state-conditioned controller around the existing official core.

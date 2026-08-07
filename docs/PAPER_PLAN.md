@@ -962,3 +962,35 @@ cost proxy. Close positive-mix, scale, seed, optimizer, loss, duration, and
 nearby gate-form rescue. The next paper candidate must test higher-capacity,
 learned recurrent memory/address/state computation rather than another scalar
 aggregate prior.
+
+### P-GDN3-006 Dual-State Residual Expert Boundary
+
+P-GDN3-006 tests the higher-capacity alternative directly. Every main
+D256/H8/K32/V32 position-QK block receives an independent
+D128/H8/K16/V16 pinned official-GDN2 expert with private address, update, and
+terminal state, adjacent-layer native FutureSeed, and a zero-initialized
+residual readout. The formal migration preserves the complete parent function
+and main recurrent states exactly. The strict contract establishes gradients
+through every one of the 12 expert cores and all 11 receiving auxiliary
+FutureSeed gates.
+
+The additional state is recruited, not dormant. Loop5 expert residual relative
+RMS is `0.010408`, terminal-state RMS/board std is
+`1.271940/0.171060`, auxiliary FutureSeed incoming RMS is `0.457982`, and
+expert/main cosine is finite and nonzero. Yet hard51-64 macro loop5 exact stays
+`0.000651`, mixed exact stays `0.025391`, and official51-55/56-60/61-64 blank
+changes by `-0.003616/-0.006143/-0.002625`. Same-board loop3-to5 correction
+weakens on both 56-60 and 61-64. The CE change
+`0.858617->0.855923` again fails to predict board closure.
+
+The systems boundary is stronger than the quality boundary. A 21.6% parameter
+increase and 25% recurrent-state increase reduce throughput
+`15.497->7.502` effective boards/s; matched elapsed time rises `106.57%`, while
+peak allocation rises `46.79%`. The paper must not claim that a cold parallel
+state expert improves GDN3 scaling. The reusable result is that simply
+duplicating an independently addressed recurrent stack behind a zero-init
+readout is both slow and insufficient for closure, even when every new path is
+active. Close expert width/count/address/readout-scale and duration rescue. A
+successor must let carried memory condition current addressing and state edits
+directly, so added computation participates in a closed-loop update rather
+than remaining a parallel residual subsystem.

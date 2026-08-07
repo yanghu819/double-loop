@@ -2,8 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: strict CUDA contract and exact-resume step3001 full-stack probe
-  passed; formal step3000-to3100 candidate in progress
+- Status: discarded after a clean formal step3000-to3100 matched decision
 - Date: 2026-08-07
 - Branch: `codex/gdn3-residual-state-expert-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -19,10 +18,8 @@
 - Frozen matched control:
   `p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
 
-No GPU model process is authorized from a local-only commit. The complete
-implementation, launcher, strict contract, and this preregistration must first
-be pushed. AIStation must then use a clean detached worktree at the exact
-pushed SHA.
+The formal source was pushed before launch and executed from a clean detached
+worktree at exact SHA `605b9c2ed58973aeeed97117def4bb6139c2428c`.
 
 ## 2. Closed Nearby Axes
 
@@ -262,3 +259,86 @@ and status path is the adjacent `.status` file. The live log confirms
 `gdn2_state_expert=dual_state` and exact resume at step3000 on CUDA index0 with
 the registered UUID. No concurrent GPU evaluation is authorized while this
 trajectory is healthy.
+
+The formal continuation then exited cleanly with status0. It produced the
+step3100 checkpoint and complete mixed/official metrics without NaN, OOM,
+fallback, source drift, data drift, or GPU drift. The final candidate train CE
+was `0.855923`, versus `0.858617` for the frozen control.
+
+### Formal activation
+
+The expert is not dormant. At loop5, residual relative RMS is `0.010408`,
+between-board residual std is `0.001286`, terminal-state RMS/std is
+`1.271940/0.171060`, auxiliary FutureSeed incoming RMS is `0.457982`, and the
+readout weight RMS is `0.006379`. Address contrast is `0.002369` and
+expert/main output cosine is `-0.002639`. Together with the strict contract,
+these values pass the registered activation gate for all 12 experts.
+
+### Formal quality decision
+
+Mixed exact across loops1-to5 is:
+
+| Arm | L1 | L2 | L3 | L4 | L5 |
+|---|---:|---:|---:|---:|---:|
+| frozen control | 0.017578 | 0.023438 | 0.025391 | 0.025391 | 0.025391 |
+| dual-state expert | 0.017578 | 0.023438 | 0.023438 | 0.025391 | 0.025391 |
+
+Mixed loop5 blank accuracy regresses `0.545610->0.543408`. Official loop5
+results are:
+
+| Range | Control exact/blank | Candidate exact/blank | Blank delta |
+|---|---:|---:|---:|
+| 51-55 | 0.001953 / 0.573766 | 0.001953 / 0.570150 | -0.003616 |
+| 56-60 | 0 / 0.503861 | 0 / 0.497718 | -0.006143 |
+| 61-64 | 0 / 0.591923 | 0 / 0.589298 | -0.002625 |
+
+The hard51-64 macro loop5 exact is unchanged at `0.000651`. Therefore the
+primary exact delta is `0`, and the alternate mixed exact delta is also `0`.
+Both registered quality routes fail.
+
+The same 256 boards in each hard range confirm that this is not hidden by an
+aggregate tie. Candidate loop3-to5 wrong-cell correction is
+`0.042969/0.015625/0.089844` for 51-55/56-60/61-64, versus control
+`-0.015625/0.066406/0.183594`. Only the easiest hard range gains a small late
+correction; both harder ranges weaken. At loop5, candidate better/equal/worse
+board counts are `90/50/116`, `91/54/111`, and `97/41/118`.
+
+### Formal cost decision
+
+The candidate has `13,965,248` parameters versus `11,485,760` for control.
+Matched 100-step elapsed time rises `825.970->1706.212` seconds, a
+`+106.57%` regression, and effective throughput falls
+`15.497->7.502` boards/s. Peak allocation rises
+`13,186.42->19,356.85 MiB` (`+46.79%`) and peak reservation rises
+`14,288->20,888 MiB` (`+46.19%`). Memory remains just inside the registered
+50% limit, but the independent warmed elapsed gate fails decisively.
+
+### Closure and artifacts
+
+P-GDN3-006 is discarded. A fully active second recurrent expert lowers CE but
+does not close another board, slightly regresses every official hard blank
+range, weakens late correction on 56-64, and more than doubles continuation
+time. Do not rescue expert width/count, address form, residual scale, seed, LR,
+loss, batch, main width/depth, or duration. The next mechanism must obtain
+closed-loop state-dependent addressing or updating more directly, without
+duplicating a full recurrent stack behind a slow zero-init readout.
+
+The complete paired comparison and same-board loop1-to5 visualization are
+archived at
+`/huyang2/double-loop/runs/p-gdn3-006-comparison-20260807T025309Z-605b9c2`
+and mirrored under
+`research/reports/visualizations/gdn3-dual-state-residual-expert-20260807/`.
+Artifact SHA256 values are candidate metrics
+`6c704bc1c8b5d83ca5b08c3c2d69bcdd6b4e5f7b5ea8034cc2847325ad417496`,
+checkpoint
+`f200d4dbedcd8dee75b743b1f8b8d672b76798e9730ba4e58a432e20de1024ca`,
+config `b23e0549aae1c193487020f75e8d876dd0a6c51c1f222ed733e4c8f008f66515`,
+run log `b7100b22452a8a28f6a517f6a774dae93e4397d2f9d38d97b8549d1fedc27829`,
+source snapshot
+`faae93cb81b8e82542c89f8aecf06d2b511e962035fbc89e89f5cefdc20a62e5`,
+comparison JSON
+`0207bfbb159d9180ad495cb9ce3978d2f5de0950ddb5a788820f79d1870e2df8`,
+comparison HTML
+`b42115c979bbfb39e2aa01630b89b72761d678883cadd436b6939a3e4ec2cf0b`,
+and manifest
+`9d25b90b4868262eaac2a0a9df90b9a4c469ba356bcd94d2fa0455f8e59e2559`.

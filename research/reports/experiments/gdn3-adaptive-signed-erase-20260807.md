@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation not yet authorized for CUDA
+- Status: implementation complete; pushed-source CUDA gates pending
 - Date: 2026-08-07
 - Planned branch: `codex/gdn3-adaptive-signed-erase-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -144,6 +144,10 @@ visualization.
 
 ## 9. Decision
 
-Only static implementation is authorized next. No CPU model smoke or GPU task
-may run until complete code and this preregistration are committed, pushed and
-read back, and a clean detached worktree is built from that exact SHA.
+The model path, exact-resume migration, train/eval/checkpoint diagnostics,
+single-GPU config, fail-closed launcher and strict CUDA checker are complete.
+`py_compile`, launcher `bash -n`, and `git diff --check` pass without running a
+CPU model. No GPU task may run until this exact implementation is committed,
+pushed and read back, and a clean detached worktree is built from that SHA.
+The next authorized action is the strict GPU1 CUDA contract, followed only on
+success by the exact step3001 production probe.

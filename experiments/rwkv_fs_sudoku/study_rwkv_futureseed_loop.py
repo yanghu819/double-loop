@@ -385,6 +385,24 @@ ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS = (
     "gdn3_orthogonal_head_write_angle_weight_rms",
     "gdn3_orthogonal_head_write_plane_weight_rms",
 )
+ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS = (
+    "gdn3_adaptive_signed_erase_enabled",
+    "gdn3_adaptive_signed_erase_residual_abs",
+    "gdn3_adaptive_signed_erase_residual_relative_rms",
+    "gdn3_adaptive_signed_erase_residual_batch_std",
+    "gdn3_adaptive_signed_erase_residual_token_std",
+    "gdn3_adaptive_signed_erase_residual_head_std",
+    "gdn3_adaptive_signed_erase_b_relative_change",
+    "gdn3_adaptive_signed_erase_effective_mean",
+    "gdn3_adaptive_signed_erase_effective_min",
+    "gdn3_adaptive_signed_erase_effective_max",
+    "gdn3_adaptive_signed_erase_above_one_frac",
+    "gdn3_adaptive_signed_erase_clipped_low_frac",
+    "gdn3_adaptive_signed_erase_clipped_high_frac",
+    "gdn3_adaptive_signed_erase_terminal_rms",
+    "gdn3_adaptive_signed_erase_terminal_batch_std",
+    "gdn3_adaptive_signed_erase_weight_rms",
+)
 INTERLEAVED_WRITE_TRAIN_KEYS = (
     "gdn3_interleaved_write_enabled",
     "gdn3_interleaved_write_k_residual_rms",
@@ -455,6 +473,7 @@ GDN2_UPDATE_MODES = (
     "terminal_consolidation",
     "orthogonal_chunk_state",
     "orthogonal_head_write",
+    "adaptive_signed_erase",
     "interleaved_write",
 )
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
@@ -829,7 +848,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "orthogonal_head_write" and address_mode == "position_qk":
+        if update_mode == "adaptive_signed_erase" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_adaptive_signed_erase_"
+                "then_one_official_gdn2_chunk"
+            )
+        elif update_mode == "orthogonal_head_write" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_orthogonal_head_write_routing_"
                 "then_one_official_gdn2_chunk"
@@ -2412,6 +2436,13 @@ class FLADeltaTimeMix(nn.Module):
         if self.orthogonal_head_write_proj is not None:
             with torch.no_grad():
                 self.orthogonal_head_write_proj.weight[-1:].zero_()
+        self.adaptive_signed_erase_proj = (
+            nn.Linear(self.head_v_dim, self.head_dim, bias=False)
+            if update_mode == "adaptive_signed_erase"
+            else None
+        )
+        if self.adaptive_signed_erase_proj is not None:
+            nn.init.zeros_(self.adaptive_signed_erase_proj.weight)
         if update_mode == "interleaved_write" and self.value_dim != d_model:
             raise ValueError(
                 "Interleaved write requires matched K/V width (gdn_expand_v=1)"
@@ -2581,6 +2612,13 @@ class FLADeltaTimeMix(nn.Module):
         return values
 
     @staticmethod
+    def _zero_adaptive_signed_erase_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS}
+
+    @staticmethod
     def _zero_interleaved_write_diag(
         x: torch.Tensor,
     ) -> Dict[str, torch.Tensor]:
@@ -2707,6 +2745,88 @@ class FLADeltaTimeMix(nn.Module):
                 ),
             }
         return routed, diagnostics
+
+    def _adaptive_signed_erase(
+        self,
+        value: torch.Tensor,
+        erase: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.adaptive_signed_erase_proj
+        if self.update_mode != "adaptive_signed_erase" or projection is None:
+            return erase, self._zero_adaptive_signed_erase_diag(value)
+        if value.ndim != 4 or erase.ndim != 4:
+            raise RuntimeError(
+                "Adaptive signed erase requires rank-4 V and erase tensors"
+            )
+        if value.shape[:-1] != erase.shape[:-1]:
+            raise RuntimeError(
+                "Adaptive signed erase V/erase prefix mismatch: "
+                f"{tuple(value.shape)} != {tuple(erase.shape)}"
+            )
+        if value.shape[-1] != self.head_v_dim or erase.shape[-1] != self.head_dim:
+            raise RuntimeError(
+                "Adaptive signed erase requires V32->K32 per-head tensors, got "
+                f"V={tuple(value.shape)} erase={tuple(erase.shape)}"
+            )
+
+        residual = torch.tanh(projection(value))
+        candidate = erase + residual
+        effective = candidate.clamp(min=0.0, max=2.0)
+
+        with torch.no_grad():
+            applied = effective.float() - erase.float()
+            erase_float = erase.float()
+            erase_board_rms = erase_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-6)
+            applied_board_rms = applied.square().mean(dim=(1, 2, 3)).sqrt()
+            applied_board_relative = applied_board_rms / erase_board_rms
+            residual_token_abs = applied.abs().mean(dim=(0, 2, 3))
+            residual_head_abs = applied.abs().mean(dim=(0, 1, 3))
+            diagnostics = {
+                "gdn3_adaptive_signed_erase_enabled": value.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_adaptive_signed_erase_residual_abs": applied.abs().mean(),
+                "gdn3_adaptive_signed_erase_residual_relative_rms": (
+                    applied_board_relative.mean()
+                ),
+                "gdn3_adaptive_signed_erase_residual_batch_std": (
+                    applied_board_relative.std(unbiased=False)
+                ),
+                "gdn3_adaptive_signed_erase_residual_token_std": (
+                    residual_token_abs.std(unbiased=False)
+                ),
+                "gdn3_adaptive_signed_erase_residual_head_std": (
+                    residual_head_abs.std(unbiased=False)
+                ),
+                "gdn3_adaptive_signed_erase_b_relative_change": (
+                    applied.square().mean().sqrt()
+                    / erase_float.square().mean().sqrt().clamp_min(1e-6)
+                ),
+                "gdn3_adaptive_signed_erase_effective_mean": effective.float().mean(),
+                "gdn3_adaptive_signed_erase_effective_min": effective.float().min(),
+                "gdn3_adaptive_signed_erase_effective_max": effective.float().max(),
+                "gdn3_adaptive_signed_erase_above_one_frac": (
+                    effective.float() > 1.0
+                ).float().mean(),
+                "gdn3_adaptive_signed_erase_clipped_low_frac": (
+                    candidate.float() < 0.0
+                ).float().mean(),
+                "gdn3_adaptive_signed_erase_clipped_high_frac": (
+                    candidate.float() > 2.0
+                ).float().mean(),
+                "gdn3_adaptive_signed_erase_terminal_rms": value.new_zeros(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_adaptive_signed_erase_terminal_batch_std": value.new_zeros(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_adaptive_signed_erase_weight_rms": (
+                    projection.weight.float().square().mean().sqrt()
+                ),
+            }
+        return effective, diagnostics
 
     def _orthogonal_chunk_state_transport(
         self,
@@ -3858,6 +3978,12 @@ class FLADeltaTimeMix(nn.Module):
             w = w_raw.sigmoid()
             coherent_delta_diag = self._zero_coherent_delta_diag(x)
             state_feedback_diag = self._zero_state_feedback_diag(x)
+        if self.update_mode == "adaptive_signed_erase":
+            b, adaptive_signed_erase_diag = self._adaptive_signed_erase(v, b)
+        else:
+            adaptive_signed_erase_diag = (
+                self._zero_adaptive_signed_erase_diag(x)
+            )
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
         if core.num_v_heads > core.num_heads:
@@ -3991,6 +4117,17 @@ class FLADeltaTimeMix(nn.Module):
                 orthogonal_head_write_diag[
                     "gdn3_orthogonal_head_write_terminal_batch_std"
                 ] = terminal_board_rms.std(unbiased=False)
+        if self.update_mode == "adaptive_signed_erase":
+            with torch.no_grad():
+                terminal_board_rms = terminal_state.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt()
+                adaptive_signed_erase_diag[
+                    "gdn3_adaptive_signed_erase_terminal_rms"
+                ] = terminal_board_rms.mean()
+                adaptive_signed_erase_diag[
+                    "gdn3_adaptive_signed_erase_terminal_batch_std"
+                ] = terminal_board_rms.std(unbiased=False)
 
         with torch.no_grad():
             q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
@@ -4019,6 +4156,7 @@ class FLADeltaTimeMix(nn.Module):
             **terminal_consolidation_diag,
             **orthogonal_chunk_state_diag,
             **orthogonal_head_write_diag,
+            **adaptive_signed_erase_diag,
             **interleaved_write_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
@@ -6509,6 +6647,7 @@ def load_training_checkpoint(
                         "terminal_consolidation",
                         "orthogonal_chunk_state",
                         "orthogonal_head_write",
+                        "adaptive_signed_erase",
                         "interleaved_write",
                     }
                 ):
@@ -6566,6 +6705,7 @@ def load_training_checkpoint(
                     "terminal_consolidation",
                     "orthogonal_chunk_state",
                     "orthogonal_head_write",
+                    "adaptive_signed_erase",
                     "interleaved_write",
                 }
             ):
@@ -6712,6 +6852,7 @@ def load_training_checkpoint(
         ".time_mix.terminal_consolidation_k_proj.weight",
         ".time_mix.orthogonal_chunk_state_proj.weight",
         ".time_mix.orthogonal_head_write_proj.weight",
+        ".time_mix.adaptive_signed_erase_proj.weight",
         ".time_mix.interleaved_write_k_proj.weight",
         ".time_mix.interleaved_write_v_proj.weight",
     )
@@ -7781,6 +7922,25 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_orthogonal_head_write_fp32_norm_ratio_max_error', 0.0):.2e}/"
             f"{m.get('gdn3_orthogonal_head_write_storage_norm_ratio_max_error', 0.0):.2e}"
         )
+    if m.get("gdn3_adaptive_signed_erase_enabled", 0.0) > 0:
+        parts.append(
+            "signed_erase_residual="
+            f"{m.get('gdn3_adaptive_signed_erase_residual_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_adaptive_signed_erase_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_adaptive_signed_erase_residual_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            "signed_erase_b="
+            f"{m.get('gdn3_adaptive_signed_erase_effective_mean', 0.0):.4f}/"
+            f"{m.get('gdn3_adaptive_signed_erase_effective_min', 0.0):.4f}/"
+            f"{m.get('gdn3_adaptive_signed_erase_effective_max', 0.0):.4f}/"
+            f"{m.get('gdn3_adaptive_signed_erase_above_one_frac', 0.0):.4f}"
+        )
+        parts.append(
+            "signed_erase_state="
+            f"{m.get('gdn3_adaptive_signed_erase_terminal_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_adaptive_signed_erase_terminal_batch_std', 0.0):.4f}"
+        )
     if m.get("gdn3_interleaved_write_enabled", 0.0) > 0:
         parts.append(
             "interleave_k/v="
@@ -8204,6 +8364,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_orthogonal_head_write_diag[
         "gdn3_orthogonal_head_write_storage_norm_ratio_mean"
     ] = 1.0
+    last_adaptive_signed_erase_diag = {
+        key: 0.0 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
+    }
     last_interleaved_write_diag = {
         key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
     }
@@ -8337,6 +8500,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.orthogonal_head_write_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "adaptive_signed_erase":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(
+                    ".time_mix.adaptive_signed_erase_proj.weight"
+                )
+            }
         elif args.gdn2_update_mode == "interleaved_write":
             expected_gdn2_update_insertions = {
                 name
@@ -8354,6 +8525,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "terminal_consolidation",
                 "orthogonal_chunk_state",
                 "orthogonal_head_write",
+                "adaptive_signed_erase",
                 "interleaved_write",
             }
             and bool(expected_gdn2_update_insertions)
@@ -8516,6 +8688,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 )
                 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
             }
+        saved_adaptive_signed_erase_diag = last_metrics.get(
+            "adaptive_signed_erase", {}
+        )
+        if isinstance(saved_adaptive_signed_erase_diag, dict):
+            last_adaptive_signed_erase_diag = {
+                key: float(saved_adaptive_signed_erase_diag.get(key, 0.0))
+                for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
+            }
         saved_interleaved_write_diag = last_metrics.get(
             "interleaved_write", {}
         )
@@ -8617,6 +8797,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_orthogonal_head_write_diag = {
                 key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
+            }
+            accum_adaptive_signed_erase_diag = {
+                key: 0.0 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
             }
             accum_interleaved_write_diag = {
                 key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
@@ -8885,6 +9068,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS:
+                        accum_adaptive_signed_erase_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in INTERLEAVED_WRITE_TRAIN_KEYS:
                         accum_interleaved_write_diag[key] += float(
                             trace_last.get(
@@ -8986,6 +9178,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_orthogonal_head_write_diag.items()
             }
+            last_adaptive_signed_erase_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_adaptive_signed_erase_diag.items()
+            }
             last_interleaved_write_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_interleaved_write_diag.items()
@@ -9057,6 +9253,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_v_residual_batch_std']:.4f} "
                     f"orth_head_norm={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_fp32_norm_ratio_mean']:.6f}/"
                     f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_storage_norm_ratio_max_error']:.2e} "
+                    f"signed_erase={last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_residual_abs']:.4f}/"
+                    f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_residual_batch_std']:.4f}/"
+                    f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_residual_token_std']:.4f} "
+                    f"signed_erase_b={last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_effective_mean']:.4f}/"
+                    f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_effective_max']:.4f}/"
+                    f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_above_one_frac']:.4f} "
+                    f"signed_erase_state={last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_terminal_rms']:.4f} "
                     f"interleave_kv={last_interleaved_write_diag['gdn3_interleaved_write_k_residual_relative_rms']:.4f}/"
                     f"{last_interleaved_write_diag['gdn3_interleaved_write_v_relative_rms']:.4f} "
                     f"interleave_write={last_interleaved_write_diag['gdn3_interleaved_write_state_write_relative_rms']:.4f}/"
@@ -9140,6 +9343,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "orthogonal_head_write": dict(
                             last_orthogonal_head_write_diag
+                        ),
+                        "adaptive_signed_erase": dict(
+                            last_adaptive_signed_erase_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -9238,6 +9444,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "orthogonal_head_write": dict(
                                 last_orthogonal_head_write_diag
                             ),
+                            "adaptive_signed_erase": dict(
+                                last_adaptive_signed_erase_diag
+                            ),
                             "interleaved_write": dict(
                                 last_interleaved_write_diag
                             ),
@@ -9313,6 +9522,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "orthogonal_head_write": dict(
                             last_orthogonal_head_write_diag
+                        ),
+                        "adaptive_signed_erase": dict(
+                            last_adaptive_signed_erase_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -9402,6 +9614,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "terminal_consolidation": dict(last_terminal_consolidation_diag),
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
+        "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
         "interleaved_write": dict(last_interleaved_write_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
@@ -10733,6 +10946,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "terminal_consolidation",
             "orthogonal_chunk_state",
             "orthogonal_head_write",
+            "adaptive_signed_erase",
             "interleaved_write",
         }:
             raise ValueError(

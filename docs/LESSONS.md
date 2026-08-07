@@ -2197,3 +2197,26 @@
   state exactly, while a positive learned value must measurably contract the
   aggregate gate gap. Require both activation and contraction before reading
   Sudoku metrics as evidence for the mechanism.
+- Learned sign is part of the hypothesis, not an implementation detail.
+  P-GDN3-005 activates to loop5 mean absolute mix `0.012261`, but the train
+  mean is negative and the observed gap ratio is `1.001982`. The model uses the
+  new degree of freedom to differentiate erase and write strengths rather than
+  enforce the hand-specified aggregate coherence. This directly falsifies the
+  premise; constraining the sign would be a nearby rescue, not a discovery.
+- A mechanism can improve CE and selected wrong-cell counts while adding no
+  global closure. Coherent delta changes train CE `0.858617->0.855293` and
+  lowers loop5 mean wrong cells on some 56-64 boards, but hard macro and mixed
+  exact are unchanged and loop3-to5 correction is weaker in both ranges.
+  Promote board-level exact only when the additional recurrent computation
+  closes additional boards.
+- Tiny parameter count is especially misleading inside a recurrent kernel
+  path. The 96 scalar parameters require materializing and differentiating
+  full gate tensors at every layer, token, head, and loop; matched elapsed time
+  rises `11.18%` and peak allocation `18.35%`. Cost follows tensor operations
+  and saved activations, not the trainable-parameter delta.
+- Four live but non-closing interventions now rule out another nearby scalar or
+  residual refinement: three FutureSeed content routes plus coherent-delta
+  gate coupling. Following the bitter lesson, the next high-information test
+  should add scalable learned recurrent memory/address/state capacity and let
+  optimization discover its use, rather than encode another fragile aggregate
+  prior.

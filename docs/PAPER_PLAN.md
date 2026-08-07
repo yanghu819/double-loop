@@ -934,18 +934,31 @@ seed, optimizer, loss, duration, and model-size rescue. A successor must alter
 generic GDN memory/state dynamics rather than add a fourth transfer-side
 content transform.
 
-### P-GDN3-005 Coherent Delta Update Test
+### P-GDN3-005 Coherent Delta Update Boundary
 
-The next registered experiment moves from FutureSeed transfer content to the
-generic recurrent state edit. Official GDN2 predicts K-axis erase and V-axis
-write gates independently even though both participate in one delta update.
-P-GDN3-005 adds one zero-initialized scalar per layer/head and moves both gates
-toward their shared per-token/head strength before invoking the unchanged
-pinned official kernel. At D256/L12/H8 this is 96 parameters, no new state,
-scan, loss, or task logic, and exact parent behavior at initialization.
+P-GDN3-005 moved the intervention from FutureSeed transfer content into the
+generic recurrent state edit. It added one zero-initialized scalar per
+layer/head and moved official GDN2's K-axis erase and V-axis write gates toward
+their shared per-token/head strength before the unchanged pinned official
+kernel. At D256/L12/H8 this added exactly 96 parameters and preserved exact
+parent output and recurrent states at initialization, including nonzero
+incoming states.
 
-This experiment can support a paper mechanism only if the learned coupling is
-positive, contracts the erase/write gap, and changes hard or mixed full-board
-exact under strict cost limits. Soft blank or wrong-cell movement alone is not
-sufficient. A miss closes coherent gate coupling without a strength, seed, LR,
-duration, or nearby gate-form sweep.
+The CUDA, migration, gradient, exact-resume, source, data, and GPU contracts all
+passed. The formal mechanism activated with loop5 mean absolute mix `0.012261`,
+but the learned mean was negative and the erase/write gap ratio became
+`1.001982`. Thus the candidate differentiated the gate strengths instead of
+contracting them. Hard51-64 macro loop5 exact stayed `0.000651`, mixed exact
+stayed `0.025391`, and official51-55/56-60/61-64 blank changed by
+`-0.000609/-0.000892/-0.000366`. Same-board loop3-to5 correction was weaker on
+both 56-60 and 61-64. The small train-CE gain
+`0.858617->0.855293` did not close any additional board.
+
+The systems result also fails: elapsed time and peak allocation increase by
+`11.18%` and `18.35%`, despite only 96 added parameters. This is useful as a
+negative paper boundary: exact zero-init and active learned gate coupling do
+not imply a useful update geometry, and parameter count is not an execution-
+cost proxy. Close positive-mix, scale, seed, optimizer, loss, duration, and
+nearby gate-form rescue. The next paper candidate must test higher-capacity,
+learned recurrent memory/address/state computation rather than another scalar
+aggregate prior.

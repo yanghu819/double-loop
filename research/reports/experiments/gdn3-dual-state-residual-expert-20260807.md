@@ -192,3 +192,15 @@ started. It is recorded in
 `3b416b5a6167519c71606969e200cb314f3ffe4b3549b0c1620b3525b6036cb1`).
 R2 checks both `f_proj[0]` and `f_proj[1]` explicitly; no model setting or gate
 changed.
+
+Contract R2 at source `6b17b1d6fee4ef5aadef9acde93bf6716e0fcc88`
+then completed the per-layer two-stage gradient assertions but stopped because
+the checker searched the final model-output graph for the custom chunk
+backward node. The established official-FLA audit surface is each returned
+terminal-state graph. This second pre-science observation error is recorded in
+`contract-6b17b1d-r2.abort.json` (SHA256
+`f54fa141cd4bd067bc77f82736c52effd926a8f554295a87ed1e1bd5f921648b`);
+its log SHA256 is
+`dd5ea5e5fd2946405dc94c2e5d1db694c844e2da04fcafbb67cab8e39c3a651b`.
+R3 checks every main and auxiliary terminal-state graph independently. No
+model, data, optimizer, or registered gate changed.

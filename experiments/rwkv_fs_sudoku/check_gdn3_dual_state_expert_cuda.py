@@ -278,7 +278,7 @@ def check_two_stage_learning_path(
     optimizer.step()
 
     optimizer.zero_grad(set_to_none=True)
-    output, diagnostics, _main_states, expert_states = capture_states(
+    output, diagnostics, main_states, expert_states = capture_states(
         candidate, x, address, cell_order
     )
     (output.float() * target).mean().backward()
@@ -332,16 +332,26 @@ def check_two_stage_learning_path(
             )
         stage2_grads[str(layer)] = row
 
-    graph = graph_names(output)
-    chunk_backward_count = graph.count("ChunkGDN2FunctionBackward")
-    if chunk_backward_count < 2 * LAYERS:
-        raise AssertionError(
-            "expected both main and expert official GDN2 backward paths, got "
-            f"{chunk_backward_count}"
-        )
+    if len(main_states) != LAYERS:
+        raise AssertionError(f"expected {LAYERS} main states, got {len(main_states)}")
     if len(expert_states) != LAYERS:
         raise AssertionError(f"expected {LAYERS} expert states, got {len(expert_states)}")
-
+    main_chunk_backward = []
+    for layer, state in enumerate(main_states):
+        present = "ChunkGDN2FunctionBackward" in graph_names(state)
+        if not present:
+            raise AssertionError(
+                f"main layer {layer} official GDN2 chunk backward is missing"
+            )
+        main_chunk_backward.append(present)
+    expert_chunk_backward = []
+    for layer, state in enumerate(expert_states):
+        present = "ChunkGDN2FunctionBackward" in graph_names(state)
+        if not present:
+            raise AssertionError(
+                f"expert layer {layer} official GDN2 chunk backward is missing"
+            )
+        expert_chunk_backward.append(present)
     diag_keys = (
         "gdn3_state_expert_enabled",
         "gdn3_state_expert_residual_relative_rms",
@@ -371,7 +381,8 @@ def check_two_stage_learning_path(
     return {
         "stage1_up_projection_gradient_max_abs_by_layer": stage1_up_grads,
         "stage2_inner_gradient_max_abs_by_layer": stage2_grads,
-        "official_chunk_backward_count": chunk_backward_count,
+        "main_official_chunk_backward_by_layer": main_chunk_backward,
+        "expert_official_chunk_backward_by_layer": expert_chunk_backward,
         "active_diagnostics": diag,
     }
 

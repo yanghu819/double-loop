@@ -2,8 +2,8 @@
 
 ## 1. Metainfo
 
-- Status: static implementation and launch specification complete; GPU launch
-  blocked until pushed-SHA verification and all contracts pass
+- Status: strict CUDA contract and exact-resume step3001 full-stack probe
+  passed; formal step3000-to3100 candidate in progress
 - Date: 2026-08-07
 - Branch: `codex/gdn3-residual-state-expert-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -216,3 +216,49 @@ its log SHA256 is
 `31e615d0d51308688882cde7a695add055545834d0a5aa6fa8ae0668c184b2ec`.
 R4 marks only the synthetic inputs as requiring gradients, while keeping every
 main parameter frozen and every registered model setting unchanged.
+
+Contract R4 passed at pushed source
+`605b9c2ed58973aeeed97117def4bb6139c2428c`. Its log SHA256 is
+`28f5596b93101bb082c80445efea02748a97d708d2eafc1934eed488c2ec044f`.
+It confirms the target GPU/FLA SHA, exact zero-readout output and 12 main-state
+identity, exact identity with nonzero incoming main and auxiliary states, 12
+main plus 12 auxiliary official `GatedDeltaNet2` layers, both sets of 12
+`ChunkGDN2FunctionBackward` graphs, 2,479,488 inserted parameters, 24,576
+auxiliary state values, all 12 readout gradients, all 12 inner Q/K/V/decay/
+erase/write paths after one synthetic opening step, and all 11 receiving-layer
+auxiliary FutureSeed gates. No probe or formal metric is inferred from this
+contract.
+
+The exact-resume full-stack probe then passed at the same pushed source as
+`p-gdn3-006-dual-state-probe-s3001-20260807T015559Z-605b9c2` with status0.
+The parent checkpoint/hash and source contract were accepted at step3000; the
+new migration set contained only the registered expert parameters, no
+unexpected parameters, and the optimizer groups expanded explicitly. The
+production batch32/accum4 BF16 fit completed without NaN, OOM, fallback, or
+source drift. It used 13,965,248 parameters and peaked at 19,335.76 MiB
+allocated / 20,284 MiB reserved, well below the 80 GiB device limit.
+
+After one real optimizer step, the fixed probe's loop5 expert residual
+relative RMS was `0.0070933`, between-board residual std `0.0002498`, terminal
+state RMS/std `0.0429976/0.0015680`, residual readout weight RMS `0.0014993`,
+address contrast `-0.0044468`, and expert/main output cosine `-0.0034930`.
+These values establish finite nonzero output, state, board variation, address,
+and expert interaction; the eight-board probe is not used as a science score.
+Probe artifact SHA256 values are metrics
+`db3d5ca8207b6732643236d0634e3802660f3d4ae2c5b7cf0fb5c168761e4a0e`,
+checkpoint
+`5809e12bb27793c519a23df564b8082743a7e818e7d151efeb5d15528d21d2c1`,
+config `779e71f63bf67eaab3cecf441c452b3ae04f5254c64e9f2ed8c038159d11f5ea`,
+run log `2bb063da5bda87d1816c028a2ef881939a95e23703b23394ce7fd14047692ca4`,
+and source snapshot
+`faae93cb81b8e82542c89f8aecf06d2b511e962035fbc89e89f5cefdc20a62e5`.
+
+With every launch gate satisfied and GPU1 idle, the formal candidate started
+immediately from the same clean detached source and exact parent as
+`p-gdn3-006-dual-state-s3100-20260807T020415Z-605b9c2`. Its wrapper PID/PGID is
+`22830`, Python child `22917`, launch log is
+`/huyang2/double-loop/artifacts/launch/p-gdn3-006/formal-20260807T020415Z-605b9c2.log`,
+and status path is the adjacent `.status` file. The live log confirms
+`gdn2_state_expert=dual_state` and exact resume at step3000 on CUDA index0 with
+the registered UUID. No concurrent GPU evaluation is authorized while this
+trajectory is healthy.

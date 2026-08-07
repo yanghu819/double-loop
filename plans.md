@@ -12,8 +12,8 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-07 CST): `P-GDN3-010` interleaved residual write is
-approved for static implementation and checker construction only. P009 proves
+Current update (2026-08-07 CST): `P-GDN3-010` interleaved residual write has a
+complete local implementation and strict CUDA checker. P009 proves
 that external official calls can be forward-identical while missing the
 registered two-call state-gradient chain. P010 therefore stays inside one
 official autograd function and tests a new boundary: two learned state-update
@@ -26,7 +26,9 @@ identity-write geometry (`g=0,b=0,w=1`). Zero auxiliary V makes migration an
 exact identity; V must receive first-stage gradient, and K residual must receive
 gradient after synthetic V opening. It adds exactly 1,572,864 parameters, no
 state or second core, and remains one pinned-official GDN2 call per layer.
-Quality gates stay `+0.02` hard macro exact or the registered `+0.03` mixed
+The local model path, exact-resume migration, diagnostics and checker pass
+syntax and whitespace validation without a CPU model smoke. Quality gates stay
+`+0.02` hard macro exact or the registered `+0.03` mixed
 alternate; terminal RMS must remain within `4x` control, elapsed overhead below
 `120%`, and allocation below `80%`. No GPU work is authorized before pushed
 source, clean detached worktree, strict single-call identity/gradient contract,

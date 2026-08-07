@@ -366,6 +366,23 @@ ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS = (
     "gdn3_orthogonal_chunk_state_angle_weight_rms",
     "gdn3_orthogonal_chunk_state_plane_weight_rms",
 )
+INTERLEAVED_WRITE_TRAIN_KEYS = (
+    "gdn3_interleaved_write_enabled",
+    "gdn3_interleaved_write_k_residual_rms",
+    "gdn3_interleaved_write_k_residual_relative_rms",
+    "gdn3_interleaved_write_k_batch_std",
+    "gdn3_interleaved_write_k_token_std",
+    "gdn3_interleaved_write_v_rms",
+    "gdn3_interleaved_write_v_relative_rms",
+    "gdn3_interleaved_write_v_batch_std",
+    "gdn3_interleaved_write_v_token_std",
+    "gdn3_interleaved_write_state_write_relative_rms",
+    "gdn3_interleaved_write_state_write_batch_std",
+    "gdn3_interleaved_write_terminal_rms",
+    "gdn3_interleaved_write_terminal_batch_std",
+    "gdn3_interleaved_write_k_weight_rms",
+    "gdn3_interleaved_write_v_weight_rms",
+)
 STATE_EXPERT_TRAIN_KEYS = (
     "gdn3_state_expert_enabled",
     "gdn3_state_expert_residual_relative_rms",
@@ -418,6 +435,7 @@ GDN2_UPDATE_MODES = (
     "state_feedback",
     "terminal_consolidation",
     "orthogonal_chunk_state",
+    "interleaved_write",
 )
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
 FUTURE_SEED_CONTENT_MODES = (
@@ -791,7 +809,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "orthogonal_chunk_state" and address_mode == "position_qk":
+        if update_mode == "interleaved_write" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_interleaved_auxiliary_write_then_"
+                "parent_update_in_one_official_gdn2_chunk"
+            )
+        elif update_mode == "orthogonal_chunk_state" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_two_official_gdn2_chunks_with_"
                 "orthogonal_live_state_transport"
@@ -2356,6 +2379,24 @@ class FLADeltaTimeMix(nn.Module):
         if self.orthogonal_chunk_state_proj is not None:
             with torch.no_grad():
                 self.orthogonal_chunk_state_proj.weight[-1:].zero_()
+        if update_mode == "interleaved_write" and self.value_dim != d_model:
+            raise ValueError(
+                "Interleaved write requires matched K/V width (gdn_expand_v=1)"
+            )
+        self.interleaved_write_k_proj = (
+            nn.Linear(d_model, d_model, bias=False)
+            if update_mode == "interleaved_write"
+            else None
+        )
+        self.interleaved_write_v_proj = (
+            nn.Linear(d_model, self.value_dim, bias=False)
+            if update_mode == "interleaved_write"
+            else None
+        )
+        if self.interleaved_write_k_proj is not None:
+            nn.init.zeros_(self.interleaved_write_k_proj.weight)
+        if self.interleaved_write_v_proj is not None:
+            nn.init.zeros_(self.interleaved_write_v_proj.weight)
         self.last_gain_budget_diag: Dict[str, torch.Tensor] = {}
         # Official GDN/KDA layers request V-first states from their kernels;
         # official GDN2 currently keeps its default K-first cache layout.
@@ -2492,6 +2533,13 @@ class FLADeltaTimeMix(nn.Module):
         )
         return values
 
+    @staticmethod
+    def _zero_interleaved_write_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in INTERLEAVED_WRITE_TRAIN_KEYS}
+
     def _orthogonal_chunk_state_transport(
         self,
         first_output: torch.Tensor,
@@ -2626,6 +2674,163 @@ class FLADeltaTimeMix(nn.Module):
                 ),
             }
         return rotated_state, diagnostics
+
+    def _interleaved_write_transition(
+        self,
+        x: torch.Tensor,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        g: torch.Tensor,
+        b: torch.Tensor,
+        w: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        k_projection = self.interleaved_write_k_proj
+        v_projection = self.interleaved_write_v_proj
+        if (
+            self.update_mode != "interleaved_write"
+            or k_projection is None
+            or v_projection is None
+        ):
+            raise RuntimeError("Interleaved-write projections are unavailable")
+        if chunk_gdn2 is None:
+            raise RuntimeError(
+                "Interleaved write requires the official GDN2 chunk op"
+            )
+        if q.shape != k.shape or q.shape[:2] != x.shape[:2]:
+            raise RuntimeError(
+                "Interleaved write requires matched position Q/K token geometry"
+            )
+        if q.shape[2] != v.shape[2] or q.shape[2] != self.heads:
+            raise RuntimeError(
+                "Interleaved write requires one matched K/V head per model head"
+            )
+
+        batch_size, seq_len, _channels = x.shape
+        k_residual = k_projection(x).view(
+            batch_size, seq_len, self.heads, self.head_dim
+        )
+        auxiliary_k = k + k_residual.to(dtype=k.dtype)
+        auxiliary_v = v_projection(x).view(
+            batch_size, seq_len, self.heads, self.head_v_dim
+        )
+
+        def interleave(auxiliary: torch.Tensor, parent: torch.Tensor) -> torch.Tensor:
+            return torch.stack((auxiliary, parent), dim=2).reshape(
+                batch_size, 2 * seq_len, *parent.shape[2:]
+            )
+
+        interleaved_q = interleave(q, q)
+        interleaved_k = interleave(auxiliary_k, k)
+        interleaved_v = interleave(auxiliary_v, v)
+        interleaved_g = interleave(torch.zeros_like(g), g)
+        interleaved_b = interleave(torch.zeros_like(b), b)
+        interleaved_w = interleave(torch.ones_like(w), w)
+        interleaved_output, terminal_state = chunk_gdn2(
+            q=interleaved_q,
+            k=interleaved_k,
+            v=interleaved_v,
+            g=interleaved_g,
+            b=interleaved_b,
+            w=interleaved_w,
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+        output = interleaved_output[:, 1::2]
+        if output.shape[1] != seq_len:
+            raise RuntimeError(
+                "Interleaved write did not preserve the logical sequence length"
+            )
+
+        with torch.no_grad():
+            k_residual_float = k_residual.float()
+            auxiliary_v_float = auxiliary_v.float()
+            k_float = k.float()
+            v_float = v.float()
+            k_board_rms = k_residual_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            k_token_rms = k_residual_float.square().mean(
+                dim=(2, 3)
+            ).sqrt()
+            v_board_rms = auxiliary_v_float.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            v_token_rms = auxiliary_v_float.square().mean(
+                dim=(2, 3)
+            ).sqrt()
+            auxiliary_k_unit = F.normalize(
+                auxiliary_k.float(), dim=-1, eps=1e-6
+            )
+            parent_k_unit = F.normalize(k_float, dim=-1, eps=1e-6)
+            auxiliary_write = torch.einsum(
+                "bthk,bthv->bthkv", auxiliary_k_unit, auxiliary_v_float
+            )
+            parent_write = torch.einsum(
+                "bthk,bthv->bthkv", parent_k_unit, v_float * w.float()
+            )
+            auxiliary_write_board_rms = auxiliary_write.square().mean(
+                dim=(1, 2, 3, 4)
+            ).sqrt()
+            parent_write_board_rms = parent_write.square().mean(
+                dim=(1, 2, 3, 4)
+            ).sqrt().clamp_min(1e-8)
+            write_relative = auxiliary_write_board_rms / parent_write_board_rms
+            terminal_board_rms = terminal_state.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            diagnostics = {
+                "gdn3_interleaved_write_enabled": x.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_interleaved_write_k_residual_rms": (
+                    k_residual_float.square().mean().sqrt()
+                ),
+                "gdn3_interleaved_write_k_residual_relative_rms": (
+                    k_residual_float.square().mean().sqrt()
+                    / k_float.square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_interleaved_write_k_batch_std": k_board_rms.std(
+                    unbiased=False
+                ),
+                "gdn3_interleaved_write_k_token_std": k_token_rms.std(
+                    dim=1, unbiased=False
+                ).mean(),
+                "gdn3_interleaved_write_v_rms": (
+                    auxiliary_v_float.square().mean().sqrt()
+                ),
+                "gdn3_interleaved_write_v_relative_rms": (
+                    auxiliary_v_float.square().mean().sqrt()
+                    / v_float.square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_interleaved_write_v_batch_std": v_board_rms.std(
+                    unbiased=False
+                ),
+                "gdn3_interleaved_write_v_token_std": v_token_rms.std(
+                    dim=1, unbiased=False
+                ).mean(),
+                "gdn3_interleaved_write_state_write_relative_rms": (
+                    write_relative.mean()
+                ),
+                "gdn3_interleaved_write_state_write_batch_std": (
+                    write_relative.std(unbiased=False)
+                ),
+                "gdn3_interleaved_write_terminal_rms": (
+                    terminal_board_rms.mean()
+                ),
+                "gdn3_interleaved_write_terminal_batch_std": (
+                    terminal_board_rms.std(unbiased=False)
+                ),
+                "gdn3_interleaved_write_k_weight_rms": (
+                    k_projection.weight.float().square().mean().sqrt()
+                ),
+                "gdn3_interleaved_write_v_weight_rms": (
+                    v_projection.weight.float().square().mean().sqrt()
+                ),
+            }
+        return output, terminal_state, diagnostics
 
     def _terminal_consolidation_transition(
         self,
@@ -3492,7 +3697,26 @@ class FLADeltaTimeMix(nn.Module):
         if core.allow_neg_eigval:
             b = b * 2.0
 
-        if self.update_mode == "orthogonal_chunk_state":
+        if self.update_mode == "interleaved_write":
+            o, terminal_state, interleaved_write_diag = (
+                self._interleaved_write_transition(
+                    x,
+                    q,
+                    k,
+                    v,
+                    g,
+                    b,
+                    w,
+                    initial_state,
+                )
+            )
+            terminal_consolidation_diag = (
+                self._zero_terminal_consolidation_diag(x)
+            )
+            orthogonal_chunk_state_diag = (
+                self._zero_orthogonal_chunk_state_diag(x)
+            )
+        elif self.update_mode == "orthogonal_chunk_state":
             if chunk_gdn2 is None:
                 raise RuntimeError(
                     "Orthogonal chunk-state transport requires the official "
@@ -3548,6 +3772,7 @@ class FLADeltaTimeMix(nn.Module):
             terminal_consolidation_diag = (
                 self._zero_terminal_consolidation_diag(x)
             )
+            interleaved_write_diag = self._zero_interleaved_write_diag(x)
         else:
             operation = (
                 fused_recurrent_gdn2
@@ -3581,6 +3806,7 @@ class FLADeltaTimeMix(nn.Module):
             orthogonal_chunk_state_diag = (
                 self._zero_orthogonal_chunk_state_diag(x)
             )
+            interleaved_write_diag = self._zero_interleaved_write_diag(x)
 
         with torch.no_grad():
             q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
@@ -3608,6 +3834,7 @@ class FLADeltaTimeMix(nn.Module):
             **state_feedback_diag,
             **terminal_consolidation_diag,
             **orthogonal_chunk_state_diag,
+            **interleaved_write_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -6096,6 +6323,7 @@ def load_training_checkpoint(
                         "state_feedback",
                         "terminal_consolidation",
                         "orthogonal_chunk_state",
+                        "interleaved_write",
                     }
                 ):
                     accepted_gdn2_update_upgrade = True
@@ -6151,6 +6379,7 @@ def load_training_checkpoint(
                     "state_feedback",
                     "terminal_consolidation",
                     "orthogonal_chunk_state",
+                    "interleaved_write",
                 }
             ):
                 accepted_gdn2_update_upgrade = True
@@ -6295,6 +6524,8 @@ def load_training_checkpoint(
         ".time_mix.state_feedback_out.weight",
         ".time_mix.terminal_consolidation_k_proj.weight",
         ".time_mix.orthogonal_chunk_state_proj.weight",
+        ".time_mix.interleaved_write_k_proj.weight",
+        ".time_mix.interleaved_write_v_proj.weight",
     )
     state_expert_marker = ".state_expert."
     allowed_unexpected = {"loop_update_logit"}
@@ -7343,6 +7574,17 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_orthogonal_chunk_state_plane_norm_error_max', 0.0):.2e}/"
             f"{m.get('gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error', 0.0):.2e}"
         )
+    if m.get("gdn3_interleaved_write_enabled", 0.0) > 0:
+        parts.append(
+            "interleave_k/v="
+            f"{m.get('gdn3_interleaved_write_k_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_interleaved_write_v_relative_rms', 0.0):.4f}"
+        )
+        parts.append(
+            "interleave_write/state="
+            f"{m.get('gdn3_interleaved_write_state_write_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_interleaved_write_terminal_rms', 0.0):.4f}"
+        )
     if m.get("gdn2_gain_budget_enabled", 0.0) > 0:
         parts.append(
             "gain_clip="
@@ -7746,6 +7988,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_orthogonal_chunk_state_diag[
         "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"
     ] = 1.0
+    last_interleaved_write_diag = {
+        key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
+    }
     last_state_expert_diag = {
         key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
     }
@@ -7868,6 +8113,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.orthogonal_chunk_state_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "interleaved_write":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if ".time_mix.interleaved_write_" in name
+            }
         else:
             expected_gdn2_update_insertions = set()
         declared_gdn2_update_upgrade = (
@@ -7878,6 +8129,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "state_feedback",
                 "terminal_consolidation",
                 "orthogonal_chunk_state",
+                "interleaved_write",
             }
             and bool(expected_gdn2_update_insertions)
             and migrated_missing == expected_gdn2_update_insertions
@@ -8020,6 +8272,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 )
                 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
             }
+        saved_interleaved_write_diag = last_metrics.get(
+            "interleaved_write", {}
+        )
+        if isinstance(saved_interleaved_write_diag, dict):
+            last_interleaved_write_diag = {
+                key: float(saved_interleaved_write_diag.get(key, 0.0))
+                for key in INTERLEAVED_WRITE_TRAIN_KEYS
+            }
         saved_state_expert_diag = last_metrics.get("state_expert", {})
         if isinstance(saved_state_expert_diag, dict):
             last_state_expert_diag = {
@@ -8110,6 +8370,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_orthogonal_chunk_state_diag = {
                 key: 0.0 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
+            }
+            accum_interleaved_write_diag = {
+                key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
             }
             accum_state_expert_diag = {
                 key: 0.0 for key in STATE_EXPERT_TRAIN_KEYS
@@ -8358,6 +8621,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in INTERLEAVED_WRITE_TRAIN_KEYS:
+                        accum_interleaved_write_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in STATE_EXPERT_TRAIN_KEYS:
                         accum_state_expert_diag[key] += float(
                             trace_last.get(
@@ -8446,6 +8718,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_orthogonal_chunk_state_diag.items()
             }
+            last_interleaved_write_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_interleaved_write_diag.items()
+            }
             last_state_expert_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_state_expert_diag.items()
@@ -8507,6 +8783,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_read_residual_relative_rms']:.4f} "
                     f"orth_chunk_norm={last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean']:.6f}/"
                     f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error']:.2e} "
+                    f"interleave_kv={last_interleaved_write_diag['gdn3_interleaved_write_k_residual_relative_rms']:.4f}/"
+                    f"{last_interleaved_write_diag['gdn3_interleaved_write_v_relative_rms']:.4f} "
+                    f"interleave_write={last_interleaved_write_diag['gdn3_interleaved_write_state_write_relative_rms']:.4f}/"
+                    f"{last_interleaved_write_diag['gdn3_interleaved_write_terminal_rms']:.4f} "
                     f"expert_resid={last_state_expert_diag['gdn3_state_expert_residual_relative_rms']:.4f}/"
                     f"{last_state_expert_diag['gdn3_state_expert_residual_batch_std']:.4f} "
                     f"expert_state={last_state_expert_diag['gdn3_state_expert_terminal_rms']:.4f}/"
@@ -8583,6 +8863,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "orthogonal_chunk_state": dict(
                             last_orthogonal_chunk_state_diag
+                        ),
+                        "interleaved_write": dict(
+                            last_interleaved_write_diag
                         ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
@@ -8675,6 +8958,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "orthogonal_chunk_state": dict(
                                 last_orthogonal_chunk_state_diag
                             ),
+                            "interleaved_write": dict(
+                                last_interleaved_write_diag
+                            ),
                             "state_expert": dict(last_state_expert_diag),
                             "address_operator": dict(last_address_diag),
                         },
@@ -8744,6 +9030,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "orthogonal_chunk_state": dict(
                             last_orthogonal_chunk_state_diag
+                        ),
+                        "interleaved_write": dict(
+                            last_interleaved_write_diag
                         ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
@@ -8829,6 +9118,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "state_feedback": dict(last_state_feedback_diag),
         "terminal_consolidation": dict(last_terminal_consolidation_diag),
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
+        "interleaved_write": dict(last_interleaved_write_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
         "feature_buffer_count": feature_buffer.count,
@@ -10158,6 +10448,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "state_feedback",
             "terminal_consolidation",
             "orthogonal_chunk_state",
+            "interleaved_write",
         }:
             raise ValueError(
                 "--resume_allow_gdn2_update_upgrade requires "

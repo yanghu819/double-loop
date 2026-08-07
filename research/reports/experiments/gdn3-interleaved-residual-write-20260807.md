@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved for static implementation and checker construction only
+- Status: implemented and statically checked; CUDA contract not yet authorized
 - Date: 2026-08-07
 - Branch: `codex/gdn3-interleaved-write-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -155,7 +155,8 @@ checkpoint/metrics/log hashes; and same-board loop1-5 visualization.
 
 ## 9. Decision
 
-Approved for static implementation and checker construction only. GPU launch
-remains forbidden until complete source and this preregistration are pushed and
-read back, a clean detached worktree exists, and the strict GPU1 contract plus
-exact step3001 probe both pass.
+The model path, exact-resume migration, diagnostics, and strict CUDA checker are
+implemented. Local syntax compilation and whitespace validation pass without a
+CPU model smoke. GPU launch remains forbidden until this complete source is
+committed, pushed and read back, a clean detached worktree exists, and the
+strict GPU1 contract plus exact step3001 probe both pass.

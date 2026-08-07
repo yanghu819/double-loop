@@ -2391,3 +2391,16 @@
   parameters to first-order gradients while preserving exact parent behavior.
   Do not repackage P013 through a different read-gate map or initialization;
   that nearby family is closed for this experiment sequence.
+- Zero rows do not guarantee an exact lower-dimensional embedding of a pinned
+  recurrent operator. P-GDN3-014 appends a zero K32 state bank and a zero extra
+  write projection, yet the K64 call changes full model output at initialization.
+- Audit normalization in the actual physical operator geometry. Reproducing
+  parent K32 normalization externally and fixing the nominal `1/sqrt(32)` scale
+  was not enough to preserve the parent function after the row-axis expansion.
+- Parent identity is a binding systems gate, not a tolerance to tune after the
+  fact. P014 stops before step3001, consumes no benchmark score, and closes
+  normalization placement, address map, row count, scale and init rescue for
+  this exact coupled-row construction.
+- Keep orchestration failures separate from mechanism evidence. P014 R1-R3
+  exited before CUDA/model execution on interpreter or environment assertions;
+  only R4 reached and falsified the registered model identity claim.

@@ -2,9 +2,10 @@
 
 ## 1. Metainfo
 
-- Status: approved, not launched
+- Status: discarded at strict CUDA contract; no production probe or formal run
 - Date: 2026-08-07
 - Branch: `codex/gdn3-coupled-address-rows-20260807`
+- Source SHA: `078fe7e21bc1f4c77b37900b8a2bc318fad86759`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
 - Compute: AIStation task-mode GPU1 only
 - GPU UUID: `GPU-53e9f3b4-2966-65d3-6614-09c540921519`
@@ -143,8 +144,39 @@ loss, batch, width/depth or duration rescue.
 
 ## 8. Results
 
-Pending.
+The implementation, checker and preregistration were committed, pushed and
+read back at exact SHA `078fe7e21bc1f4c77b37900b8a2bc318fad86759`.
+The detached worktree remained clean and GPU1 exposed only CUDA index0 with
+UUID `GPU-53e9f3b4-2966-65d3-6614-09c540921519`.
+
+R1-R3 exited before model construction or CUDA execution on explicit launch-
+environment assertions: R1 used an interpreter without PyTorch, R2 treated the
+non-git FLA snapshot as a git root and therefore read the parent repository
+SHA, and R3 omitted one required persistent cache variable. Their logs and
+non-science abort records are retained. None produced a model result or used a
+GPU compute application.
+
+R4 used the established Python 3.10/PyTorch 2.7 environment, pinned FLA marker
+`9c8e42e762fce087c27b673af4922795d9edb85e`, all required persistent cache
+paths, the exact pushed source and the exclusive target GPU. It reached the
+binding identity check and failed with:
+
+`external K32 normalization plus K64 zero bank changed full output`
+
+Thus zero extra K projection and zero extra incoming state do not make this
+K32-to-K64 invocation bit-exact to the parent function. The strict contract
+exited status1 and released GPU1 naturally to 0 MiB with no surviving compute
+application. The R4 log SHA256 is
+`d0cb54ed2feed88bedc7f0145572e79a51324e195f0917a8fc2edc19595836eb`;
+the abort JSON SHA256 is
+`bbc04bd09d963dd1ebe27ad85c6e9ff372fcf1706f00155c0aa54642e9ce7caf`.
+No step3001 metrics, checkpoint, benchmark score or visualization exists.
 
 ## 9. Decision
 
-Pending strict pushed-source CUDA contract.
+Discard P-GDN3-014 at the preregistered parent-identity gate. Do not change the
+normalization placement, scale, row count, address map, initialization,
+precision or tolerance after observing the miss. Do not run a production
+probe, formal continuation, seed, LR, loss, batch, width/depth or duration
+rescue. The result closes this exact external-normalization K-row embedding;
+it does not establish that address-row capacity is irrelevant.

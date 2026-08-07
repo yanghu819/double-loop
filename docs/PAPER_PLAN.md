@@ -1198,3 +1198,27 @@ evidence against multibank recurrent memory. Exact migration plus a synthetic
 two-stage gradient demonstration is insufficient when the registered
 production checkpoint has not activated the actual state-diversifying path.
 Do not repair the result with a second probe step or changed initialization.
+
+### P-GDN3-014 Coupled-Row Identity Boundary
+
+P-GDN3-014 removes P013's serial read gate and instead tries to double each
+head's address-row axis inside one pinned-official transition. The proposed
+K64 call repeats the normalized parent query and erase/decay fields, appends a
+zero-initialized extra write-address bank, pads incoming state with zero rows,
+and preserves H8/V32, tokens, scans and core count. This would expose the new
+address projection to a direct first-order task gradient if exact migration
+held.
+
+It does not. On exact pushed SHA `078fe7e`, the strict GPU1 contract reaches
+the zero-init end-to-end comparison and finds that external K32 normalization
+plus a K64 zero-row bank changes full model output. This is a parent-function
+identity failure before any production step, activation metric or Sudoku
+score. No step3001 checkpoint or formal continuation exists.
+
+The paper should use this as a numerical/operator boundary, not evidence
+against address capacity: enlarging a recurrent row axis is not automatically
+an exact embedding of the smaller pinned operator, even when added parameters
+and incoming state are zero. Future scalable-memory candidates must prove the
+full parent function under their actual physical state geometry; normalization
+and scale arguments at the equation level are insufficient. The registered
+normalization/map/scale/row-count family is closed without rescue.

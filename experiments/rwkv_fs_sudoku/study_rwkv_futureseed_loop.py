@@ -426,6 +426,22 @@ PAIRED_ADDRESS_BANK_TRAIN_KEYS = (
     "gdn3_paired_address_bank_q_weight_rms",
     "gdn3_paired_address_bank_k_weight_rms",
 )
+COUPLED_ADDRESS_ROWS_TRAIN_KEYS = (
+    "gdn3_coupled_address_rows_enabled",
+    "gdn3_coupled_address_rows_k_weight_rms",
+    "gdn3_coupled_address_rows_k_residual_relative_rms",
+    "gdn3_coupled_address_rows_k_residual_batch_std",
+    "gdn3_coupled_address_rows_k_residual_token_std",
+    "gdn3_coupled_address_rows_k_residual_head_std",
+    "gdn3_coupled_address_rows_k_norm_max",
+    "gdn3_coupled_address_rows_extra_state_relative_rms",
+    "gdn3_coupled_address_rows_extra_state_batch_std",
+    "gdn3_coupled_address_rows_extra_state_head_std",
+    "gdn3_coupled_address_rows_base_state_rms",
+    "gdn3_coupled_address_rows_extra_state_rms",
+    "gdn3_coupled_address_rows_terminal_rms",
+    "gdn3_coupled_address_rows_terminal_batch_std",
+)
 INTERLEAVED_WRITE_TRAIN_KEYS = (
     "gdn3_interleaved_write_enabled",
     "gdn3_interleaved_write_k_residual_rms",
@@ -498,6 +514,7 @@ GDN2_UPDATE_MODES = (
     "orthogonal_head_write",
     "adaptive_signed_erase",
     "paired_address_bank",
+    "coupled_address_rows",
     "interleaved_write",
 )
 GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
@@ -872,7 +889,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "paired_address_bank" and address_mode == "position_qk":
+        if update_mode == "coupled_address_rows" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_coupled_k64_address_rows_in_one_"
+                "official_gdn2_chunk"
+            )
+        elif update_mode == "paired_address_bank" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_paired_address_state_bank_in_one_"
                 "official_gdn2_chunk"
@@ -2494,6 +2516,13 @@ class FLADeltaTimeMix(nn.Module):
             nn.init.zeros_(self.paired_address_k_proj.weight)
         if self.paired_address_read_gate is not None:
             self.paired_address_read_gate._no_weight_decay = True
+        self.coupled_address_k_proj = (
+            nn.Linear(d_model, self.heads * self.head_dim, bias=False)
+            if update_mode == "coupled_address_rows"
+            else None
+        )
+        if self.coupled_address_k_proj is not None:
+            nn.init.zeros_(self.coupled_address_k_proj.weight)
         if update_mode == "interleaved_write" and self.value_dim != d_model:
             raise ValueError(
                 "Interleaved write requires matched K/V width (gdn_expand_v=1)"
@@ -2675,6 +2704,13 @@ class FLADeltaTimeMix(nn.Module):
     ) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS}
+
+    @staticmethod
+    def _zero_coupled_address_rows_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {key: zero for key in COUPLED_ADDRESS_ROWS_TRAIN_KEYS}
 
     @staticmethod
     def _zero_interleaved_write_diag(
@@ -3118,6 +3154,190 @@ class FLADeltaTimeMix(nn.Module):
                 ),
                 "gdn3_paired_address_bank_k_weight_rms": (
                     k_projection.weight.float().square().mean().sqrt()
+                ),
+            }
+        return output, terminal_state, diagnostics
+
+    def _coupled_address_rows_transition(
+        self,
+        operation: Any,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        g: torch.Tensor,
+        b: torch.Tensor,
+        w: torch.Tensor,
+        address: torch.Tensor,
+        cell_order: Optional[torch.Tensor],
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.coupled_address_k_proj
+        if self.update_mode != "coupled_address_rows" or projection is None:
+            raise RuntimeError("Coupled address-row projection is unavailable")
+        if operation is None:
+            raise RuntimeError("Coupled address rows require the official GDN2 op")
+        if (
+            q.ndim != 4
+            or k.shape != q.shape
+            or g.shape != q.shape
+            or b.shape != q.shape
+            or v.ndim != 4
+            or w.shape != v.shape
+            or q.shape[:3] != v.shape[:3]
+            or q.shape[2] != self.heads
+            or q.shape[-1] != self.head_dim
+            or v.shape[-1] != self.head_v_dim
+        ):
+            raise RuntimeError(
+                "Coupled address rows require matched HxK32/HxV32 official inputs"
+            )
+        if address.ndim != 3 or address.shape[:2] != q.shape[:2]:
+            raise RuntimeError("Coupled address rows require the canonical address stream")
+
+        batch_size, seq_len = q.shape[:2]
+        address_ordered = (
+            address
+            if cell_order is None
+            else address.index_select(1, cell_order)
+        )
+        extra_k_raw = projection(address_ordered).view(
+            batch_size,
+            seq_len,
+            self.heads,
+            self.head_dim,
+        )
+        extra_k_float = extra_k_raw.float()
+        extra_k = (
+            extra_k_float
+            * torch.rsqrt(
+                1.0
+                + extra_k_float.square().sum(dim=-1, keepdim=True)
+            )
+        ).to(dtype=k.dtype)
+
+        q_base = fla_l2norm_fp32(q).to(dtype=q.dtype)
+        k_base = fla_l2norm_fp32(k).to(dtype=k.dtype)
+        q_expanded = torch.cat((q_base, q_base), dim=-1)
+        k_expanded = torch.cat((k_base, extra_k), dim=-1)
+        g_expanded = torch.cat((g, g), dim=-1)
+        b_expanded = torch.cat((b, b), dim=-1)
+
+        base_state_shape = (
+            batch_size,
+            self.heads,
+            self.head_dim,
+            self.head_v_dim,
+        )
+        expanded_state_shape = (
+            batch_size,
+            self.heads,
+            2 * self.head_dim,
+            self.head_v_dim,
+        )
+        expanded_initial_state: Optional[torch.Tensor]
+        if initial_state is None:
+            expanded_initial_state = None
+        elif tuple(initial_state.shape) == base_state_shape:
+            expanded_initial_state = torch.cat(
+                (initial_state, torch.zeros_like(initial_state)),
+                dim=-2,
+            )
+        elif tuple(initial_state.shape) == expanded_state_shape:
+            expanded_initial_state = initial_state
+        else:
+            raise RuntimeError(
+                "Coupled address-row incoming state mismatch: "
+                f"{tuple(initial_state.shape)} not in "
+                f"{{{base_state_shape}, {expanded_state_shape}}}"
+            )
+
+        output, terminal_state = operation(
+            q=q_expanded,
+            k=k_expanded,
+            v=v,
+            g=g_expanded,
+            b=b_expanded,
+            w=w,
+            scale=1.0 / math.sqrt(float(self.head_dim)),
+            initial_state=expanded_initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=False,
+        )
+        if tuple(terminal_state.shape) != expanded_state_shape:
+            raise RuntimeError(
+                "Coupled address rows returned unexpected state shape: "
+                f"{tuple(terminal_state.shape)} != {expanded_state_shape}"
+            )
+
+        with torch.no_grad():
+            extra_k_value = extra_k.float()
+            k_base_value = k_base.float()
+            k_board = extra_k_value.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            k_token = extra_k_value.square().mean(
+                dim=(2, 3)
+            ).sqrt()
+            k_head = extra_k_value.square().mean(
+                dim=(1, 3)
+            ).sqrt()
+            base_state, extra_state = terminal_state.float().split(
+                self.head_dim,
+                dim=-2,
+            )
+            base_board = base_state.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt().clamp_min(1e-8)
+            extra_board = extra_state.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            extra_relative = extra_board / base_board
+            base_head = base_state.square().mean(
+                dim=(2, 3)
+            ).sqrt().clamp_min(1e-8)
+            extra_head = extra_state.square().mean(
+                dim=(2, 3)
+            ).sqrt() / base_head
+            terminal_comparable = torch.maximum(base_board, extra_board)
+            diagnostics = {
+                "gdn3_coupled_address_rows_enabled": q.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_coupled_address_rows_k_weight_rms": (
+                    projection.weight.float().square().mean().sqrt()
+                ),
+                "gdn3_coupled_address_rows_k_residual_relative_rms": (
+                    extra_k_value.square().mean().sqrt()
+                    / k_base_value.square().mean().sqrt().clamp_min(1e-8)
+                ),
+                "gdn3_coupled_address_rows_k_residual_batch_std": (
+                    k_board.std(unbiased=False)
+                ),
+                "gdn3_coupled_address_rows_k_residual_token_std": (
+                    k_token.std(dim=1, unbiased=False).mean()
+                ),
+                "gdn3_coupled_address_rows_k_residual_head_std": (
+                    k_head.std(dim=1, unbiased=False).mean()
+                ),
+                "gdn3_coupled_address_rows_k_norm_max": (
+                    extra_k_value.norm(dim=-1).max()
+                ),
+                "gdn3_coupled_address_rows_extra_state_relative_rms": (
+                    extra_relative.mean()
+                ),
+                "gdn3_coupled_address_rows_extra_state_batch_std": (
+                    extra_relative.std(unbiased=False)
+                ),
+                "gdn3_coupled_address_rows_extra_state_head_std": (
+                    extra_head.std(dim=1, unbiased=False).mean()
+                ),
+                "gdn3_coupled_address_rows_base_state_rms": base_board.mean(),
+                "gdn3_coupled_address_rows_extra_state_rms": extra_board.mean(),
+                "gdn3_coupled_address_rows_terminal_rms": (
+                    terminal_comparable.mean()
+                ),
+                "gdn3_coupled_address_rows_terminal_batch_std": (
+                    terminal_comparable.std(unbiased=False)
                 ),
             }
         return output, terminal_state, diagnostics
@@ -4279,6 +4499,7 @@ class FLADeltaTimeMix(nn.Module):
                 self._zero_adaptive_signed_erase_diag(x)
             )
         paired_address_bank_diag = self._zero_paired_address_bank_diag(x)
+        coupled_address_rows_diag = self._zero_coupled_address_rows_diag(x)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
         if core.num_v_heads > core.num_heads:
@@ -4290,7 +4511,34 @@ class FLADeltaTimeMix(nn.Module):
         if core.allow_neg_eigval:
             b = b * 2.0
 
-        if self.update_mode == "paired_address_bank":
+        if self.update_mode == "coupled_address_rows":
+            operation = (
+                fused_recurrent_gdn2
+                if seq_len <= 64 and not self.training
+                else chunk_gdn2
+            )
+            o, terminal_state, coupled_address_rows_diag = (
+                self._coupled_address_rows_transition(
+                    operation,
+                    q,
+                    k,
+                    v,
+                    g,
+                    b,
+                    w,
+                    address,
+                    cell_order,
+                    initial_state,
+                )
+            )
+            terminal_consolidation_diag = (
+                self._zero_terminal_consolidation_diag(x)
+            )
+            orthogonal_chunk_state_diag = (
+                self._zero_orthogonal_chunk_state_diag(x)
+            )
+            interleaved_write_diag = self._zero_interleaved_write_diag(x)
+        elif self.update_mode == "paired_address_bank":
             operation = (
                 fused_recurrent_gdn2
                 if seq_len <= 64 and not self.training
@@ -4478,6 +4726,7 @@ class FLADeltaTimeMix(nn.Module):
             **orthogonal_head_write_diag,
             **adaptive_signed_erase_diag,
             **paired_address_bank_diag,
+            **coupled_address_rows_diag,
             **interleaved_write_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
@@ -5068,10 +5317,15 @@ class FLADeltaTimeMix(nn.Module):
                 self.raven_num_slots,
             )
         else:
+            state_key_dim = (
+                2 * self.head_dim
+                if self.update_mode == "coupled_address_rows"
+                else self.head_dim
+            )
             expected = (
-                (batch_size, self.state_heads, self.head_v_dim, self.head_dim)
+                (batch_size, self.state_heads, self.head_v_dim, state_key_dim)
                 if self.state_v_first
-                else (batch_size, self.state_heads, self.head_dim, self.head_v_dim)
+                else (batch_size, self.state_heads, state_key_dim, self.head_v_dim)
             )
         if initial_state is not None:
             base_expected = (
@@ -5080,7 +5334,10 @@ class FLADeltaTimeMix(nn.Module):
                 else (batch_size, self.heads, self.head_dim, self.head_v_dim)
             )
             allowed = {expected}
-            if self.update_mode == "paired_address_bank":
+            if self.update_mode in {
+                "paired_address_bank",
+                "coupled_address_rows",
+            }:
                 allowed.add(base_expected)
             if tuple(initial_state.shape) not in allowed:
                 raise ValueError(
@@ -5649,6 +5906,27 @@ class FutureSeedRWKV(nn.Module):
                 "independent position-QK GDN2 and fixed adjacent-layer terminal "
                 "FutureSeed"
             )
+        if gdn2_update_mode == "coupled_address_rows" and (
+            backbone != "gdn2"
+            or gdn2_address_mode != "position_qk"
+            or gdn2_state_expert_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+            or not math.isclose(gdn_expand_v, 1.0)
+            or not math.isclose(gdn_progressive_base_expand_v, 0.0)
+            or not math.isclose(future_seed_scale, 1.0)
+            or not math.isclose(future_seed_decay, 0.0)
+            or future_seed_update != "fixed"
+            or future_seed_norm_mode != "unit"
+            or future_seed_gate_mode != "head"
+            or future_seed_scope != "layer"
+            or future_seed_readout_hop != 0
+            or future_seed_content_mode != "terminal"
+        ):
+            raise ValueError(
+                "Coupled address-row expansion composes only with matched-width "
+                "independent position-QK GDN2 and fixed adjacent-layer terminal "
+                "FutureSeed"
+            )
         self.backbone = backbone
         self.future_seed_scale = float(future_seed_scale)
         self.future_seed_decay = float(future_seed_decay)
@@ -5706,7 +5984,11 @@ class FutureSeedRWKV(nn.Module):
             state_row_dim = expanded_head_dim
             state_col_dim = head_dim
         elif backbone == "gdn2":
-            state_row_dim = head_dim
+            state_row_dim = (
+                2 * head_dim
+                if gdn2_update_mode == "coupled_address_rows"
+                else head_dim
+            )
             state_col_dim = expanded_head_dim
         elif backbone == "raven":
             state_row_dim = head_dim + expanded_head_dim
@@ -5740,6 +6022,9 @@ class FutureSeedRWKV(nn.Module):
         )
         future_seed_state_heads = (
             2 * heads if gdn2_update_mode == "paired_address_bank" else heads
+        )
+        self.future_seed_row_bank_dim = (
+            head_dim if gdn2_update_mode == "coupled_address_rows" else 0
         )
         self.future_seed_selector = FutureSeedSelectiveGate(
             mode=future_seed_gate_mode,
@@ -6242,7 +6527,39 @@ class FutureSeedRWKV(nn.Module):
                 selective_seed_changes.append(
                     selective_diag["fs2_seed_relative_change"]
                 )
-                if self.gdn_progressive_base_head_v_dim > 0:
+                if self.future_seed_row_bank_dim > 0:
+                    bank_states = candidate_seed_state.split(
+                        self.future_seed_row_bank_dim,
+                        dim=-2,
+                    )
+                    if len(bank_states) != 2:
+                        raise RuntimeError(
+                            "Coupled address-row FutureSeed requires exactly "
+                            "two equal K-row banks"
+                        )
+                    bank_denoms_native = [
+                        bank.square().mean(
+                            dim=(-1, -2), keepdim=True
+                        ).sqrt().clamp(min=1e-6)
+                        for bank in bank_states
+                    ]
+                    bank_denoms = [
+                        bank.float().square().mean(
+                            dim=(-1, -2), keepdim=True
+                        ).sqrt().clamp(min=1e-6)
+                        for bank in bank_states
+                    ]
+                    normalized_state = torch.cat(
+                        [
+                            bank / bank_denom
+                            for bank, bank_denom in zip(
+                                bank_states, bank_denoms_native
+                            )
+                        ],
+                        dim=-2,
+                    )
+                    denom = torch.cat(bank_denoms, dim=-2)
+                elif self.gdn_progressive_base_head_v_dim > 0:
                     base_state, extra_state = candidate_seed_state.split(
                         self.gdn_progressive_base_head_v_dim,
                         dim=-2,
@@ -6292,7 +6609,13 @@ class FutureSeedRWKV(nn.Module):
                     norm_gain = torch.ones_like(denom)
                 norm_gain_means.append(norm_gain.mean().to(dtype=x.dtype))
                 norm_gain_stds.append(norm_gain.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
-                if self.gdn_progressive_base_head_v_dim > 0:
+                if self.future_seed_row_bank_dim > 0:
+                    norm_gain_state = torch.repeat_interleave(
+                        norm_gain,
+                        self.future_seed_row_bank_dim,
+                        dim=-2,
+                    )
+                elif self.gdn_progressive_base_head_v_dim > 0:
                     norm_gain_state = torch.repeat_interleave(
                         norm_gain,
                         self.gdn_progressive_base_head_v_dim,
@@ -7008,6 +7331,7 @@ def load_training_checkpoint(
                         "orthogonal_head_write",
                         "adaptive_signed_erase",
                         "paired_address_bank",
+                        "coupled_address_rows",
                         "interleaved_write",
                     }
                 ):
@@ -7067,6 +7391,7 @@ def load_training_checkpoint(
                     "orthogonal_head_write",
                     "adaptive_signed_erase",
                     "paired_address_bank",
+                    "coupled_address_rows",
                     "interleaved_write",
                 }
             ):
@@ -7217,6 +7542,7 @@ def load_training_checkpoint(
         ".time_mix.paired_address_q_proj.weight",
         ".time_mix.paired_address_k_proj.weight",
         ".time_mix.paired_address_read_gate",
+        ".time_mix.coupled_address_k_proj.weight",
         ".time_mix.interleaved_write_k_proj.weight",
         ".time_mix.interleaved_write_v_proj.weight",
     )
@@ -8322,6 +8648,18 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_paired_address_bank_base_address_contrast', 0.0):.4f}/"
             f"{m.get('gdn3_paired_address_bank_companion_address_contrast', 0.0):.4f}"
         )
+    if m.get("gdn3_coupled_address_rows_enabled", 0.0) > 0:
+        parts.append(
+            "coupled_rows_k="
+            f"{m.get('gdn3_coupled_address_rows_k_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_coupled_address_rows_k_residual_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_coupled_address_rows_k_norm_max', 0.0):.4f}"
+        )
+        parts.append(
+            "coupled_rows_state="
+            f"{m.get('gdn3_coupled_address_rows_extra_state_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_coupled_address_rows_terminal_rms', 0.0):.4f}"
+        )
     if m.get("gdn3_interleaved_write_enabled", 0.0) > 0:
         parts.append(
             "interleave_k/v="
@@ -8751,6 +9089,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_paired_address_bank_diag = {
         key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
     }
+    last_coupled_address_rows_diag = {
+        key: 0.0 for key in COUPLED_ADDRESS_ROWS_TRAIN_KEYS
+    }
     last_interleaved_write_diag = {
         key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
     }
@@ -8898,6 +9239,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 for name, _parameter in model.named_parameters()
                 if ".time_mix.paired_address_" in name
             }
+        elif args.gdn2_update_mode == "coupled_address_rows":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(
+                    ".time_mix.coupled_address_k_proj.weight"
+                )
+            }
         elif args.gdn2_update_mode == "interleaved_write":
             expected_gdn2_update_insertions = {
                 name
@@ -8917,6 +9266,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "orthogonal_head_write",
                 "adaptive_signed_erase",
                 "paired_address_bank",
+                "coupled_address_rows",
                 "interleaved_write",
             }
             and bool(expected_gdn2_update_insertions)
@@ -9095,6 +9445,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_paired_address_bank_diag.get(key, 0.0))
                 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
             }
+        saved_coupled_address_rows_diag = last_metrics.get(
+            "coupled_address_rows", {}
+        )
+        if isinstance(saved_coupled_address_rows_diag, dict):
+            last_coupled_address_rows_diag = {
+                key: float(saved_coupled_address_rows_diag.get(key, 0.0))
+                for key in COUPLED_ADDRESS_ROWS_TRAIN_KEYS
+            }
         saved_interleaved_write_diag = last_metrics.get(
             "interleaved_write", {}
         )
@@ -9202,6 +9560,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_paired_address_bank_diag = {
                 key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
+            }
+            accum_coupled_address_rows_diag = {
+                key: 0.0 for key in COUPLED_ADDRESS_ROWS_TRAIN_KEYS
             }
             accum_interleaved_write_diag = {
                 key: 0.0 for key in INTERLEAVED_WRITE_TRAIN_KEYS
@@ -9488,6 +9849,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in COUPLED_ADDRESS_ROWS_TRAIN_KEYS:
+                        accum_coupled_address_rows_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_zeros(()),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in INTERLEAVED_WRITE_TRAIN_KEYS:
                         accum_interleaved_write_diag[key] += float(
                             trace_last.get(
@@ -9597,6 +9967,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_paired_address_bank_diag.items()
             }
+            last_coupled_address_rows_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_coupled_address_rows_diag.items()
+            }
             last_interleaved_write_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_interleaved_write_diag.items()
@@ -9680,6 +10054,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_paired_address_bank_diag['gdn3_paired_address_bank_k_residual_relative_rms']:.4f} "
                     f"paired_bank_state={last_paired_address_bank_diag['gdn3_paired_address_bank_state_residual_relative_rms']:.4f}/"
                     f"{last_paired_address_bank_diag['gdn3_paired_address_bank_terminal_rms']:.4f} "
+                    f"coupled_rows_k={last_coupled_address_rows_diag['gdn3_coupled_address_rows_k_residual_relative_rms']:.4f}/"
+                    f"{last_coupled_address_rows_diag['gdn3_coupled_address_rows_k_residual_batch_std']:.4f} "
+                    f"coupled_rows_state={last_coupled_address_rows_diag['gdn3_coupled_address_rows_extra_state_relative_rms']:.4f}/"
+                    f"{last_coupled_address_rows_diag['gdn3_coupled_address_rows_terminal_rms']:.4f} "
                     f"interleave_kv={last_interleaved_write_diag['gdn3_interleaved_write_k_residual_relative_rms']:.4f}/"
                     f"{last_interleaved_write_diag['gdn3_interleaved_write_v_relative_rms']:.4f} "
                     f"interleave_write={last_interleaved_write_diag['gdn3_interleaved_write_state_write_relative_rms']:.4f}/"
@@ -9769,6 +10147,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "paired_address_bank": dict(
                             last_paired_address_bank_diag
+                        ),
+                        "coupled_address_rows": dict(
+                            last_coupled_address_rows_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -9873,6 +10254,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "paired_address_bank": dict(
                                 last_paired_address_bank_diag
                             ),
+                            "coupled_address_rows": dict(
+                                last_coupled_address_rows_diag
+                            ),
                             "interleaved_write": dict(
                                 last_interleaved_write_diag
                             ),
@@ -9954,6 +10338,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "paired_address_bank": dict(
                             last_paired_address_bank_diag
+                        ),
+                        "coupled_address_rows": dict(
+                            last_coupled_address_rows_diag
                         ),
                         "interleaved_write": dict(
                             last_interleaved_write_diag
@@ -10045,6 +10432,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
         "paired_address_bank": dict(last_paired_address_bank_diag),
+        "coupled_address_rows": dict(last_coupled_address_rows_diag),
         "interleaved_write": dict(last_interleaved_write_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
@@ -11378,6 +11766,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "orthogonal_head_write",
             "adaptive_signed_erase",
             "paired_address_bank",
+            "coupled_address_rows",
             "interleaved_write",
         }:
             raise ValueError(

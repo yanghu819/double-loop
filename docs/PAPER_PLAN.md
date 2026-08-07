@@ -1137,3 +1137,35 @@ gradients and algebraic invariants must be tested under the same precision
 context that training uses, after the mechanism activates. Do not present P011
 as evidence against cross-head memory routing, and do not repair autocast,
 plane, angle, target or tolerance within this registered experiment.
+
+### P-GDN3-012 Signed-Transition Spectrum Boundary
+
+P-GDN3-012 keeps the original 81-token, one-call pinned-official GDN2 path and
+tests a missing transition family rather than another readout. A zero-init,
+head-shared V32-to-K32 adapter changes erase from the parent's `[0,1]` range to
+`b'=clamp(b+tanh(Wv),0,2)`. Values above one give a content-dependent negative
+key-direction eigenvalue while exact zero initialization preserves parent
+output and all carried states. The candidate adds 12,288 parameters and no
+state, token, scan, second core or task logic.
+
+The contract, one-step production probe and formal endpoint all pass their
+identity, official-kernel, gradient, activation, stability and cost gates.
+At mixed loop5, all 12 adapters are active, erase residual relative RMS is
+`0.303028`, `8.707%` of channels use `b'>1`, the effective range is
+`[0,1.84375]`, and terminal RMS remains bounded at `7.200136`. This is direct
+evidence that signed recurrent modes are trainable in the pinned operator.
+
+They are not sufficient for global closure at this checkpoint. Hard51-64
+macro loop5 exact stays `0.000651`, mixed exact falls
+`0.025391->0.023438`, and hard-range blank deltas are
+`+0.000143/-0.001476/+0.000092`. Same-board loop3-to5 correction strengthens
+only on 51-55 and weakens on 56-60 and 61-64. Train CE is effectively
+unchanged. Throughput falls `15.497->13.287` effective boards/s; elapsed and
+peak allocation rise `16.64%` and `6.04%`, inside the fixed ceilings.
+
+The paper may claim a clean negative boundary: monotone nonnegative retention
+is not the sole bottleneck, because a substantially used, stable negative-
+retention regime does not improve full-board exactness. Do not tune adapter
+source, nonlinear map, bound, scale, sharing or training duration. The next
+general mechanism should increase address-state interaction or memory
+organization rather than revisit transition spectrum strength.

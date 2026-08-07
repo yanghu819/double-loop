@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: implementation complete; pushed-source CUDA gates pending
+- Status: discarded after clean matched endpoint; no rescue
 - Date: 2026-08-07
 - Planned branch: `codex/gdn3-adaptive-signed-erase-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -144,10 +144,76 @@ visualization.
 
 ## 9. Decision
 
-The model path, exact-resume migration, train/eval/checkpoint diagnostics,
-single-GPU config, fail-closed launcher and strict CUDA checker are complete.
-`py_compile`, launcher `bash -n`, and `git diff --check` pass without running a
-CPU model. No GPU task may run until this exact implementation is committed,
-pushed and read back, and a clean detached worktree is built from that SHA.
-The next authorized action is the strict GPU1 CUDA contract, followed only on
-success by the exact step3001 production probe.
+Discard. Complete source SHA
+`c09c36851e5a17224eae9d38a40923c77fe6cba2` was pushed and read back before
+the run, and the formal worktree was clean and detached at that exact SHA.
+The strict R1 GPU1 contract passed the target UUID, pinned FLA SHA, exact
+12,288-parameter delta, one official `ChunkGDN2FunctionBackward` per layer,
+zero-init output/state identity including nonzero incoming state, gradients,
+head equivariance, opened signed spectrum and `[0,2]` bounds. Contract log
+SHA256 is
+`6d1badaaa24533646b2f926770c2cc933659726ee19e8b9f42310fa8edb1dbde`.
+
+The exact step3001 production probe completed from the frozen parent and
+activated all 12 paths. Its metrics/checkpoint SHA256 values are
+`7fdc5fb8998666b8578b602b747fd6a4fcfc134022b1abe3e4e1132f12222639`
+and
+`564854a3063e2837e6f3ef732f1973ae9cfda6fa91aa84b011d84ce060896aca`.
+The formal candidate then exact-resumed the original step3000 parent to
+step3100 with status0, no NaN/OOM/fallback, and no concurrent GPU process.
+
+### Endpoint quality
+
+| Readout | Frozen control | Candidate | Delta |
+|---|---:|---:|---:|
+| hard51-64 macro loop5 exact | 0.000651 | 0.000651 | +0.000000 |
+| mixed loop5 exact | 0.025391 | 0.023438 | -0.001953 |
+| official51-55 loop5 blank | 0.573766 | 0.573909 | +0.000143 |
+| official56-60 loop5 blank | 0.503861 | 0.502385 | -0.001476 |
+| official61-64 loop5 blank | 0.591923 | 0.592015 | +0.000092 |
+| train CE | 0.858617 | 0.858690 | +0.000073 |
+
+The primary quality route fails because hard macro exact is unchanged. The
+alternate route fails because mixed exact loses one of 512 boards and
+same-board loop3-to5 correction is not stronger in all hard ranges.
+
+All three official case banks match by data hash and contain the same 256
+boards per range. Mean wrong cells across loops1-5 are:
+
+- 51-55 control `25.74/24.35/23.92/23.86/23.93`, candidate
+  `25.64/24.25/24.02/23.98/23.92`; loop3-to5 correction
+  `-0.016 -> +0.102`;
+- 56-60 control `29.70/28.20/28.08/28.04/28.02`, candidate
+  `29.65/28.34/27.99/28.00/27.95`; loop3-to5 correction
+  `+0.066 -> +0.039`;
+- 61-64 control `31.86/27.20/26.61/26.51/26.43`, candidate
+  `31.66/27.33/26.64/26.54/26.54`; loop3-to5 correction
+  `+0.184 -> +0.098`.
+
+### Activation, stability, and cost
+
+The mechanism is not dormant. At mixed loop5, all 12 paths are enabled;
+erase residual absolute/relative RMS is `0.123345/0.303028`, board/token/head
+variation is `0.006507/0.011541/0.052904`, effective erase spans
+`[0,1.84375]`, and `8.707%` of channels use `b'>1`. Terminal RMS/board std is
+bounded at `7.200136/0.402642`. Activation and stability gates pass.
+
+The 100-step continuation takes `963.370s` versus `825.970s`; throughput is
+`13.287` versus `15.497` effective boards/s, for `+16.64%` elapsed overhead.
+Peak allocated/reserved memory is `13982.6/15102.0 MiB` versus
+`13186.4/14288.0 MiB`, or `+6.04/+5.70%`. Both preregistered 25% cost gates
+pass.
+
+Formal metrics/checkpoint SHA256 values are
+`949ce8078b1cc882f1cd527c50d0ad89ea0abf89d6f9fc519a77cff849aad8f8`
+and
+`dffb6600c9bd153e68d13ebe5a9c3278ffeeb29b0078f450bdcd21f3c252044f`.
+The machine-readable comparison and same-board loop visualization are in
+`/huyang2/double-loop/runs/p-gdn3-012-comparison-20260807T090000Z-c09c368`.
+
+This closes adaptive signed erase at this checkpoint. Signed transition modes
+are learnable, active, stable and affordable, but they do not provide the
+missing global closure. Do not rescue projection source, map, clamp, scale,
+layer/head sharing, seed, LR, loss, batch, width/depth or duration. The next
+mechanism must change a different scalable memory bottleneck rather than tune
+this spectrum.

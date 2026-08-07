@@ -2351,3 +2351,22 @@
   resumed training step, produced no NaN/OOM/fallback, and returned GPU1 to
   0 MiB. Fixing autocast after seeing the registered miss would be a precision
   rescue, so the orthogonal head-write family is closed without a Sudoku score.
+- A signed recurrent spectrum is learnable but does not by itself close hard
+  boards. P-GDN3-012 uses `b'>1` on `8.707%` of mixed loop5 channels with erase
+  residual relative RMS `0.303028`, yet hard51-64 macro exact is unchanged and
+  mixed exact loses one board.
+- Activation strength is not a substitute for causal usefulness. The adapter
+  changes erase by about 30%, spans `[0,1.84375]`, and remains numerically
+  bounded, ruling out dead-path and instability explanations for the negative
+  result.
+- Aggregate blank movement can hide a worse recurrent trajectory. P012's
+  loop5 blank deltas are nearly neutral, but same-board loop3-to5 correction
+  weakens from `0.066->0.039` on 56-60 and `0.184->0.098` on 61-64.
+- Lower-dimensional gate flexibility still materializes over every token,
+  head, layer and loop. Only 12,288 parameters add `16.64%` continuation time
+  while peak allocation rises `6.04%`; measure execution topology, not just
+  parameter count.
+- P005, P007, P008 and P012 now cover coherent nonnegative gates, inherited-
+  state-conditioned gates, an extra post-scan transition and adaptive signed
+  erase. The next experiment should target generic memory organization or
+  address-state interaction, not erase source, bound, scale or training rescue.

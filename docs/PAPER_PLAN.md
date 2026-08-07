@@ -1060,3 +1060,27 @@ general GDN3 mechanism should make the live transition contractive or
 normalized by construction while increasing useful state capacity; another
 fixed scan, transfer router, pre-scan residual, scalar prior, or parallel expert
 is not warranted.
+
+### P-GDN3-009 External Chunk-Composition Boundary
+
+P-GDN3-009 tests a norm-preserving live-state transport rather than another
+pre/post-scan residual. It exposes the existing 81-token official GDN2 call as
+its native 64+17 chunks and inserts a content-conditioned orthogonal rotation
+of the KxV state between them. The controller adds 24,960 parameters and no
+state, tokens, or additional recurrent transition.
+
+The strict contract establishes a useful forward result: at zero angle, the
+externally split path is bit-exact to the unsplit parent for full output and all
+12 terminal states, including synthetic nonzero incoming states. The required
+training graph does not compose, however. Every final terminal state exposes
+one `ChunkGDN2FunctionBackward`, not the registered two. The experiment closes
+before a step3001 probe or formal continuation.
+
+This is an implementation boundary worth retaining in the paper plan. An
+official recurrent operator can be forward-composable across cache boundaries
+without exposing the state-gradient chain required to learn an inserted live
+transition. Future mechanisms must either act within one differentiable
+official call or prove an official-compatible initial-state gradient contract
+before spending continuation compute. Do not present P009 as a Sudoku score or
+rescue it with a custom backward, relaxed graph assertion, or alternate chunk
+boundary.

@@ -2301,3 +2301,20 @@
   transition, while preserving scalable capacity. Another fixed sweep,
   pre-scan residual, parallel expert, scalar prior, or transfer router would
   repeat a closed boundary rather than test a new mechanism.
+- Forward cache composition does not guarantee a trainable recurrent
+  composition. P-GDN3-009's zero-angle 64+17 official path is bit-exact to the
+  unsplit parent for model output and all terminal states, including nonzero
+  incoming state, yet each final state graph exposes only one rather than two
+  `ChunkGDN2FunctionBackward` nodes.
+- Prove the initial-state gradient contract before building a mechanism around
+  an external recurrent boundary. Exact forward parity, official kernel
+  provenance, and bounded state geometry are insufficient when the inserted
+  transition cannot receive the registered cross-boundary learning signal.
+- Contract failures can be high-information results. P009 consumed no
+  continuation steps and no benchmark evaluation, but it closes external
+  chunk splitting, graph-assertion relaxation, custom backward, alternate
+  boundary, and nearby controller/scale rescue for this mechanism.
+- The next stable live-transition candidate should remain inside one
+  differentiable official GDN2 invocation, for example by changing a general
+  address/update parameterization before the single scan. It must not hide a
+  second scan, custom solver, or unproven cache-gradient bridge.

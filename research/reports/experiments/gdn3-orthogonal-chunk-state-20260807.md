@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: implemented; static validation passed, GPU launch not yet authorized
+- Status: discarded at strict CUDA contract; no probe or formal continuation
 - Date: 2026-08-07
 - Branch: `codex/gdn3-orthogonal-chunk-state-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -124,6 +124,29 @@ Any contract or production-probe miss closes this implementation. It does not
 authorize a tolerance relaxation, different chunk boundary, angle cap, plane
 source, extra transform, or custom non-official recurrent fallback.
 
+### Contract Result
+
+Source SHA `1994db5918bc8783210cbc5c146ecf44f53a4cd1` was pushed, read
+back, and checked out as clean detached worktree
+`/huyang2/double-loop/worktrees/p-gdn3-009-1994db5`. Contract R1
+exited before importing Torch because the wrapper selected the repository
+metadata venv rather than the established training interpreter. It is archived
+as a non-science abort; no model or CUDA path was entered.
+
+R2 used the unchanged source and `/opt/conda/bin/python`. The zero-angle full
+output and all terminal-state identities passed, including all 12 synthetic
+nonzero incoming-state checks. The registered recurrent graph gate then failed:
+each final terminal state exposed one `ChunkGDN2FunctionBackward`, not the
+required two, yielding `[1,1,1,1,1,1,1,1,1,1,1,1]`. The externally split
+official calls therefore do not expose the required trainable two-chunk state
+chain under this composition. The run closed immediately before the angle and
+plane gradient stages. No step3001 probe or formal continuation started.
+
+- R1 log SHA256: `c867578f26e9e4a9a1ebf12cae7d4c2fe21936a33392727c16ef9b42fe69018c`
+- R1 abort SHA256: `9e83972912a3a93ed6aab73348593bff10c9858771743a3e48af7ca804836126`
+- R2 log SHA256: `3152539a09bdf40d512205ea4b86d1e73600422174e7dddc1ff03a1de19cbbad`
+- R2 abort SHA256: `3b7721d2cebb29d10af4caba910ae664d4d7144faacd86270281545c26347ebb`
+
 ## 7. Science, Stability, And Cost Gates
 
 At step3100, activation and stability require all of:
@@ -170,8 +193,11 @@ Report and archive:
 
 ## 9. Decision
 
-The implementation and strict checker pass Python compilation and static
-source-contract checks. GPU launch remains forbidden until this
-preregistration and complete code are pushed, read back, checked out as a
-clean detached worktree, and the strict GPU1 contract plus exact step3001
-production probe both pass.
+Discard P-GDN3-009 at the strict CUDA contract. Forward composition is exactly
+parent-compatible at zero angle, but the registered two-chunk recurrent
+backward chain is absent. Do not rescue the graph assertion, boundary, custom
+backward, angle/controller/plane source, state scale, seed, optimizer, loss,
+batch, model size, or duration. A successor must remain inside one
+differentiable official recurrent call, or introduce a separately justified
+official-compatible transition whose state gradient contract is proven before
+any continuation.

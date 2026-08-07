@@ -2414,3 +2414,20 @@
 - Zero-init algebra is not enough. P-FS3-004 must prove bit-exact full-model
   identity, direct gradients on every edge/head, and bounded opened geometry in
   the production autocast context before an exact-resume step is authorized.
+- Migration wiring is part of the contract. P-FS3-004's first probe stopped
+  before step3001 because two new angle tensors were absent from the explicit
+  upgrade allowlist; adding only those exact names and repeating the full
+  pushed-SHA CUDA contract produced a clean, auditable resume.
+- Orthogonal cross-layer basis transport is production-feasible. On final SHA
+  `0335534`, all edge minima activate after one step: K/V rotation RMS
+  `0.005694/0.005998` and transported-state residual RMS `0.014258`, with
+  nonzero board/head variation. Norm and orthogonality errors stay below
+  `2.21e-6`, substantially inside the fixed bounds.
+- Keep mechanism and quality claims separate. An eight-board one-step probe can
+  prove exact migration, first-order access and stable geometry, but cannot say
+  whether cross-layer basis mismatch causes the 51-64 exact cliff. The matched
+  100-step quality/cost test was not run, so P-FS3-004 ends as activation
+  evidence rather than a Sudoku win or loss.
+- Continuous automation is not a research objective. Once an experiment has a
+  bounded hypothesis, falsifiable probe and fixed kill gate, stop at the next
+  decision boundary instead of automatically launching another candidate.

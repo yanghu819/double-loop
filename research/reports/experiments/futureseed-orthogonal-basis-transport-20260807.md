@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved, not launched
+- Status: activation/stability probe complete; formal science run not launched
 - Date: 2026-08-07
 - Branch: `codex/fs3-orthogonal-basis-transport-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -17,6 +17,7 @@
   `6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`
 - Parent source SHA: `9f2ee8d1738032bc5f09b55db0b81d507780b376`
 - Frozen control: `p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
+- Final pushed source SHA: `0335534c7589f9f1f3d069e2dcb4133a03b3dd80`
 
 ## 2. Evidence Boundary
 
@@ -161,12 +162,61 @@ already present. Probe R1 log/abort SHA256 are
 `5d316768a25d15bea224900cb475401b88137679172371696bda3ca36d67a7f4`.
 The only correction adds those two exact names to the allowlist; it does not
 change the model, initialization, optimizer, data, threshold, or run command.
-A new pushed SHA must repeat strict CUDA contract before a corrected probe.
-No benchmark score exists yet.
+
+Final pushed SHA `0335534c7589f9f1f3d069e2dcb4133a03b3dd80` repeated the
+strict CUDA contract as R3 and exited status0. It retained the R2 mechanism
+evidence: exact 87,296 parameter delta, bit-exact zero-init output and all 12
+terminal states, all 11x8 direct K/V gradients, 12 official GDN2/backward
+paths, opened maximum terminal RMS ratio `1.003604`, FP32 norm error
+`1.78814e-7`, orthogonality error `1.13249e-6`, and zero head-permutation
+error. R3 contract log SHA256 is
+`3122811be21be6bd52424d5dff358ee036bfe9894528abd3dcd6376c486057eb`.
+
+The corrected exact-resume probe
+`p-fs3-004-basis-transport-probe-r2-s3001-20260807T115452Z-0335534`
+then completed status0 from the exact step3000 parent. At loop5:
+
+- enabled routes: all 11 adjacent FutureSeed edges;
+- angle absolute mean/min: `0.001103/0.000933`;
+- K-row rotation relative RMS mean/min: `0.006393/0.005694`;
+- V-column rotation relative RMS mean/min: `0.006841/0.005998`;
+- transported-state residual relative RMS mean/min: `0.015385/0.014258`;
+- residual board/head std: `0.000275/0.002256`;
+- FP32/storage norm max error: `1.49e-6/1.49e-6`;
+- orthogonality max error: `2.21e-6`.
+
+Every registered activation floor is exceeded and every geometry bound passes.
+The source worktree remained clean at the exact detached SHA, the run used the
+pinned FLA source SHA, and the log contains no NaN, OOM, traceback or fallback.
+Train CE/total loss after the single resumed step is `0.872101/0.894450`.
+
+The probe evaluated only eight h53 boards and eight official51-55 boards. Its
+h53 loop1-5 exact values are all zero and blank accuracy is
+`0.5383/0.6194/0.6419/0.6464/0.6441`; the tiny official51-55 loop5 value is
+exact/blank `0.1250/0.6152`. These are migration diagnostics only. They cannot
+be compared with the frozen full official control and are not a hard51-64,
+mixed, cost, or leaderboard result.
+
+Final artifact SHA256 values:
+
+- metrics: `0bd4e7fa87ff6ee02e56b9b5dc81feb2fd18b7bdca0105a45efd325e235f8c21`;
+- step3001 checkpoint: `c38607daab51965df6b5514dfb4478db2fd857fea078be4e3035068f9a80e4e8`;
+- config: `ee5eaa9fb219ff5167d4f102774499ffad1b363ee6a36b2df4b285543df13cac`;
+- run log: `72a35783b571accd52956c2d063f6887f3a2379c85f631c9cf83eaf483f6604d`;
+- source snapshot: `be066794c61ec503bca7719c0699e21fc4f77cf1a403c873d89208b7afc28e65`.
 
 ## 9. Decision
 
-Strict R2 on `f5befff` passes, but its first probe attempt did not reach a
-training step because of the explicit loader allowlist omission. Permit only
-the exact two-name migration-wiring correction, followed by a new pushed-SHA
-contract and corrected step3001 probe. Formal continuation remains blocked.
+Go at the mechanism boundary: final-SHA R3 and the corrected production probe
+prove that learned cross-layer K/V basis transport is trainable, active on all
+edges, board/head dependent, and numerically stable under the real BF16 CUDA
+path. This is the first clean evidence for the specific basis-alignment
+capability; it does not yet show that basis mismatch limits Sudoku closure.
+
+No-go on making a quality claim: the preregistered 100-step candidate-only
+continuation was deliberately not launched when the recurring automation was
+stopped. Therefore hard51-64 exact, mixed exact, same-board late correction,
+throughput overhead and peak-allocation gates remain untested. P-FS3-004 is
+closed at the activation-evidence boundary. Any future continuation requires a
+fresh explicit research decision and must use the already fixed matched gates;
+it must not be started as an automatic loop or nearby rescue.

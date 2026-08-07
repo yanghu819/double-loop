@@ -1245,3 +1245,18 @@ routes, bounded full-model state geometry, and one-step activation before any
 Sudoku score exists. A clean negative result would show that coordinate
 misalignment is not the current hard-board bottleneck; a positive result would
 identify learned cross-layer state transport as a concrete FutureSeed advance.
+
+The contract and one-step production boundary now pass on final pushed SHA
+`0335534`. All edge minima are active: K/V rotation relative RMS
+`0.005694/0.005998` and state residual relative RMS `0.014258`; board/head
+variation is nonzero. FP32/storage norm error is `1.49e-6` and orthogonality
+error is `2.21e-6`, so the real BF16 production path preserves the registered
+geometry. This is valid implementation and activation evidence for learned
+cross-layer coordinate transport.
+
+It is not performance evidence. The step3001 probe used eight boards per tiny
+diagnostic slice, and no matched step3000-to3100 hard51-64 continuation was
+launched. The paper may state that orthogonal basis transport is feasible,
+first-order trainable and stable, but must not state that it improves Sudoku
+exactness, cost, or FutureSeed quality. The automated sequence stops here; any
+future matched test is a separate explicit decision.

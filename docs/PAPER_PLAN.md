@@ -1223,6 +1223,27 @@ full parent function under their actual physical state geometry; normalization
 and scale arguments at the equation level are insufficient. The registered
 normalization/map/scale/row-count family is closed without rescue.
 
+### P-GDN3-015 Bi-Axis Value-Lifetime Boundary
+
+P-GDN3-015 asks a genuinely different recurrent-memory question: official
+GDN2 has persistent forgetting on K/address rows, while V channels only receive
+a write-time gate. It adds eight grouped V-axis lifetimes per head and uses an
+exact moving frame so the original 81-token pinned-official call and backward
+graph remain unchanged. The clean pushed implementation passes strict parent
+identity, nonzero-state identity, direct-gradient, official-kernel, recurrence-
+reference and equivariance contracts with exactly 196,608 new parameters.
+
+The exact one-step production probe falsifies the implementation before a
+quality run. All 12 paths activate with loop5 log-decay magnitude `0.032549`
+and nonzero group/board/token variation, but the cumulative scale minimum falls
+to `0.000285` and inverse scale reaches `3505.29`; restored-state relative RMS
+is `0.998929`. This is not evidence that V-axis lifetime is useless. It is
+evidence that a sequence-global inverse moving frame is too ill-conditioned to
+serve as its training parameterization, even on 81 tokens. No hard-Sudoku score
+is claimed and no map/group/init/precision/scale rescue is permitted. Any future
+paper candidate must implement an intrinsically bounded, chunk-local V-axis
+transition rather than tune this wrapper.
+
 ### P-FS3-004 Cross-Layer Basis-Alignment Test
 
 P-FS3-004 tests a missing FutureSeed mechanism boundary rather than another

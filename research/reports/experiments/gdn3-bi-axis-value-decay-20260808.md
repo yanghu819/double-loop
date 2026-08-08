@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; not launched
+- Status: discarded at the exact step3001 production stability gate
 - Date: 2026-08-08
 - Branch: `codex/gdn3-bi-axis-value-decay-20260808`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -158,5 +158,67 @@ visualization.
 
 ## 9. Decision
 
-Pending strict CUDA contract and exact-resume production probe. No formal
-continuation is authorized until both pass.
+Discard before formal continuation. Source
+`f32e5cbcb206b2b95c36d4555904d6ccd6913759` was pushed and read back, and the
+GPU1 worktree was clean and detached at that exact SHA.
+
+Strict CUDA contract R2 completed with status0. It verified the registered UUID,
+pinned FLA source SHA, 12 official `GatedDeltaNet2` layers, exactly one
+`ChunkGDN2FunctionBackward` per layer, exact 196,608-parameter insertion,
+bit-exact zero-init full output and all 12 terminal states including nonzero
+incoming states, finite nonzero direct gradients in all 12 projections, the
+direct Bi-Axis recurrence reference, eight-group equivariance and synthetic
+scale bounds. Contract log SHA256 is
+`c3318660bc90058bf4834e194555ef2cb602e631ca60da1567bfe13d2555863d`.
+R1 used the repository helper venv, which has no PyTorch, and exited before
+model construction or CUDA work. It is separately classified as a non-science
+orchestration failure; abort SHA256 is
+`28830deaa94ddbc133accc955253641a3f977155137957f80fdbf6b619d38cc5`.
+
+The exact-resume production probe
+`p-gdn3-015-bi-axis-value-decay-probe-s3001-20260808T031414Z-f32e5cb`
+completed with status0 from the registered step3000 parent. It saved a complete
+step3001 checkpoint and metrics, retained the official kernel path, and returned
+GPU1 to zero memory with no NaN, OOM, fallback, source drift, checkpoint drift
+or concurrent model process.
+
+The path was not dead. At loop5, mean absolute grouped log-decay was
+`0.0325488`, active fraction `0.474091`, group/board/token standard deviations
+were `0.0111240/0.0004223/0.0012784`, and projection weight RMS was
+`0.00140234`. The registered moving-frame stability gate nevertheless failed
+decisively:
+
+| Probe readout | Required | Observed |
+|---|---:|---:|
+| cumulative scale minimum | `>=0.25` | `0.0002853` |
+| inverse scale maximum | `<=4` | `3505.29` |
+| write-frame relative RMS | finite, active | `198.57` |
+| output restore relative RMS | finite | `0.997583` |
+| state restore relative RMS | finite | `0.998929` |
+| terminal-state RMS | finite, `<=4x` parent | `4.35444` |
+
+The result separates two claims. The Bi-Axis recurrence and its exact parent
+embedding are algebraically valid under the strict contract, so persistent
+V-channel lifetime remains a coherent architectural concept. This global
+81-token moving frame is not a production-stable parameterization: a single
+optimizer step makes the inverse frame thousands-fold and nearly rewrites the
+entire restored state. Probe exact/blank values are intentionally not used as
+science evidence, and the registered step3100 quality/cost test was not run.
+
+Artifact SHA256 values:
+
+| Artifact | SHA256 |
+|---|---|
+| metrics JSON | `07dee45d2f33f391919fbb686cb9888a3866b434dbe31c229c7a6db4de606f55` |
+| step3001 checkpoint | `3d3d9b4de576f4da918f556d17639e559688eec9d1cafc3ab0912913a19b2e8b` |
+| config | `ffbfdb40b9a85b4e6f3756d0b42f544efda7b02531d329368e5da80fcdab59ad` |
+| run log | `e895cbbfb32925fdf338623b32408c424489a6ae55d8c38353eafbfe29ad0444` |
+| launch log | `9978323d1a96b54870df8768290b7f27a1e753281195b9a3f11e9a33e0391269` |
+| source snapshot | `342985c767723c284a72fe1c08f0791dc021736925bcb4015cdbee4a8d12ae37` |
+| visualization HTML | `60bb8e66e7e675562083153a8df54e538fd788bd14148657266be2b4a0df987f` |
+| stability abort | `4fed3082f2aeb175629670b3f526612c256453fecb6a4a2386797522481ffd59` |
+
+Close this implementation without a group-count, map, epsilon, clipping,
+initialization, precision, kernel, scale, seed, LR, loss, batch, width/depth or
+duration rescue. A future Bi-Axis revisit would need a new intrinsically bounded
+chunk-local transition, not a tuned version of this global inverse frame.

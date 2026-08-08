@@ -2404,6 +2404,24 @@
 - Keep orchestration failures separate from mechanism evidence. P014 R1-R3
   exited before CUDA/model execution on interpreter or environment assertions;
   only R4 reached and falsified the registered model identity claim.
+- Algebraic equivalence does not guarantee trainable numerical conditioning.
+  P-GDN3-015 preserves zero-init full output and all terminal states bit-exact,
+  matches a direct Bi-Axis recurrence and keeps one official backward per layer,
+  yet one optimizer step drives its global inverse moving frame above `3505x`.
+- Instrument both sides of a moving-frame transform. P015's grouped decay is
+  finite and structured (`0.032549` magnitude with nonzero group/board/token
+  variation), but cumulative scale falls to `0.000285`, write-frame relative RMS
+  reaches `198.57`, and restored-state relative RMS reaches `0.998929`. Looking
+  only at decay logits would incorrectly label this path healthy.
+- A production stability probe can be the final scientific decision. P015
+  returns status0 and writes a valid checkpoint, metrics and visualization, but
+  the preregistered scale bounds fail before quality evaluation. Do not spend a
+  100-step continuation to rediscover an already-observed conditioning failure.
+- Retain the abstraction, reject the implementation. Persistent V-axis lifetime
+  is not covered by prior K-gate, state-feedback or address-capacity failures,
+  but revisiting it requires an intrinsically bounded chunk-local transition.
+  Group count, softplus map, epsilon, clipping, initialization, precision and
+  scale changes are rescues of this exact global-frame experiment.
 - Cross-layer state reuse has a coordinate problem that scalar gates cannot
   express. Producer and receiver GDN2 layers learn independent K/V bases, so
   direct terminal-state transfer may preserve magnitude while misaligning

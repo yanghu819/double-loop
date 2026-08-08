@@ -12,29 +12,26 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-08 CST): `P-GDN3-015` Bi-Axis Value Decay is
-preregistered for one matched candidate. The parent official GDN2 recurrence
-has persistent forgetting only on the K/address axis; its V-side write gate
-scales the current write but cannot independently control how already-stored
-value channels persist. P015 adds one grouped, nonpositive V-axis log-decay
-per token/head and wraps the unchanged single official `chunk_gdn2` call in an
-exact moving-frame transform. The fixed candidate uses eight V groups, adds
-exactly 196,608 parameters across 12 layers, and adds no state, token, scan,
-second core, reverse traversal, or task logic.
+Current update (2026-08-08 CST): `P-GDN3-015` Bi-Axis Value Decay is closed at
+its exact step3001 production stability gate; no 100-step formal continuation
+was run. Pushed source `f32e5cb` passed the strict GPU1 R2 contract: exact
+196,608-parameter insertion, bit-exact zero-init output and all 12 terminal
+states including nonzero incoming state, one pinned-official backward per
+layer, all 12 direct gradients, direct-recurrence agreement, fixed eight-group
+equivariance and bounded synthetic geometry.
 
-This experiment is deliberately bounded to the 81-token Sudoku scaffold. It
-tests whether a second persistent state axis is useful while retaining the
-pinned official solver and backward graph; it does not claim a production
-long-context chunk-local kernel. Source must be pushed and read back, a clean
-detached GPU1 worktree must pass zero-init/nonzero-state identity, one-official-
-backward, direct-gradient, algebraic-reference, bound and provenance checks,
-and an exact step3001 probe must pass activation and frame-stability gates
-before the sole step3000-to3100 continuation can start. Quality requires the
-existing hard macro `+0.02` route or mixed `+0.03` alternate. Cumulative value
-scale must stay at least `0.25`; warmed elapsed/allocation overhead ceilings
-are fixed at `15%/10%`. Any miss closes this exact mechanism with no group,
-initialization, map, scale, seed, LR, loss, batch, width/depth or duration
-rescue.
+The real one-step resume activated all 12 V-axis paths with loop5 log-decay
+absolute value `0.032549`, active fraction `0.474091`, and finite group/board/
+token variation. It simultaneously falsified the global moving-frame
+parameterization: cumulative scale minimum fell to `0.000285` against the
+registered `0.25` floor, inverse scale rose to `3505.29` against the `4` cap,
+write-frame relative RMS reached `198.57`, and restored-state relative RMS was
+`0.998929`. This is a numerical-conditioning failure before a Sudoku quality
+claim. Close without group count, map, epsilon, clipping, initialization,
+precision, kernel, scale or training-setting rescue. The useful retained idea
+is V-axis persistent lifetime control; any future revisit requires a new,
+intrinsically bounded chunk-local state parameterization, not this global
+inverse frame.
 
 Previous update (2026-08-07 CST): `P-FS3-004` Orthogonal State-Basis Transport
 has completed its contract and exact step3001 production gates, then stopped
@@ -740,7 +737,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-015 | approved | Official GDN2 persistently forgets only along K/address rows. Its V write gate affects new writes but cannot give already-stored value-channel groups distinct lifetimes, so interference inside each K row may block hard-board closure. | Preserve D256/L12/H8/K32/V32 position-QK, native terminal FutureSeed, the original81 tokens, and one pinned-official call/layer. Add a zero-init bias-free D256->H8xG8 projection/layer. Map it to nonpositive grouped V log-decay, use cumulative moving-frame scaling for V writes, restore outputs and terminal states, and otherwise call unchanged `chunk_gdn2`. Exact +196,608 parameters; no state/token/scan/core/task-rule delta. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2, CPU model smoke or concurrent GPU model/eval | preregistration, static implementation, strict CUDA contract, exact step3001 probe, then at most one candidate-only100-step continuation | Contract: exact zero-init output/state identity including nonzero incoming state, one official backward/layer, all12 direct gradients, exact moving-frame/reference recurrence, groups8, bounded scale and exact deltas. Probe/formal: all12 paths active with group/board/token variation and frame change>=1e-4; cumulative scale>=0.25, terminal RMS<=4x. Primary hard51-64 macro exact +0.02 with each blank regression<=0.01; alternate mixed +0.03 with non-regressive61-64 and stronger same-board loop3-5 correction. Warmed elapsed<15%, alloc<10%. Kill on any miss; no group/init/map/scale or training rescue. | pending |
+| P-GDN3-015 | discarded at production stability gate | Official GDN2 persistently forgets only along K/address rows. Its V write gate affects new writes but cannot give already-stored value-channel groups distinct lifetimes, so interference inside each K row may block hard-board closure. | Preserve D256/L12/H8/K32/V32 position-QK, native terminal FutureSeed, the original81 tokens, and one pinned-official call/layer. Add a zero-init bias-free D256->H8xG8 projection/layer. Map it to nonpositive grouped V log-decay, use cumulative moving-frame scaling for V writes, restore outputs and terminal states, and otherwise call unchanged `chunk_gdn2`. Exact +196,608 parameters; no state/token/scan/core/task-rule delta. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2, CPU model smoke or concurrent GPU model/eval | completed strict R2 contract and one exact step3001 probe; no formal continuation | Contract: exact zero-init output/state identity including nonzero incoming state, one official backward/layer, all12 direct gradients, exact moving-frame/reference recurrence, groups8, bounded scale and exact deltas. Probe/formal: all12 paths active with group/board/token variation and frame change>=1e-4; cumulative scale>=0.25, terminal RMS<=4x. Primary hard51-64 macro exact +0.02 with each blank regression<=0.01; alternate mixed +0.03 with non-regressive61-64 and stronger same-board loop3-5 correction. Warmed elapsed<15%, alloc<10%. Kill on any miss; no group/init/map/scale or training rescue. | Clean pushed SHA `f32e5cb` passes strict R2. Step3001 status0 activates all12 paths; loop5 decay abs/active fraction/group std=`0.032549/0.474091/0.011124`, but scale min=`0.000285` and inverse max=`3505.29` violate fixed `0.25/4` bounds; write/state frame relative RMS=`198.57/0.998929`. Metrics/checkpoint SHA=`07dee45d...6f55`/`3d3d9b4d...2e8b`; abort SHA=`4fed3082...f59`. No formal score or group/map/epsilon/clipping/init/precision/kernel/scale/training rescue. |
 | P-FS3-004 | activation probe complete; formal not run | Producer and receiver GDN2 layers learn independent K/V coordinates, but native FutureSeed transfers terminal state directly; scalar gate and unit-RMS normalization cannot align those bases. Existing FS3 content/update routers and within-layer rotations do not test the actual cross-layer state edge. | For each of 11 adjacent edges and 8 heads, learn packed skew K32/V32 generators and apply Cayley transport `S'=R_K S R_V^T` through `(R-I)` residuals. Exact +87,296 parameters, no state/token/scan/core/task delta. Zero init must be bit-exact with direct first-order gradients. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2, CPU model smoke, or concurrent GPU model/eval | completed final-SHA contract and one corrected step3001 probe; no formal continuation | Contract: full/state/nonzero-state exact identity, all11x8 K/V direct gradients, FP32 norm/orth error<=3e-5, BF16 norm error<=5e-3, terminal RMS<=4x. Probe: all edges K/V/state RMS>=1e-4. Primary hard macro exact +0.02 with each blank regression<=0.01; alternate mixed +0.03 with non-regressive61-64 and stronger late correction. Warmed elapsed<35%, alloc<15%. | Final pushed SHA `0335534` passes strict R3 and exact-resume step3001 status0. Loop5 minimum K/V/state RMS=`0.005694/0.005998/0.014258`; board/head std=`0.000275/0.002256`; norm/orth errors=`1.49e-6/2.21e-6`. Activation and stability pass. The n=8 probe is not a quality score; hard51-64/cost gates remain untested. Metrics/checkpoint SHA=`0bd4e7fa...8c21`/`c38607da...e4e8`. Formal continuation was intentionally not launched. |
 | P-GDN3-014 | discarded | Existing failures changed gates, payload routing, external scans, independent experts or independently gated companion heads; none expanded the address-row capacity of one coupled official GDN2 state while giving new rows a first-order production gradient. | Keep D256/L12/H8/V32 and one81-token official call; externally normalize the parent K32 Q/K, concatenate a zero-initialized K32 row bank with tied parent Q/g/b, pad incoming state with zero rows and normalize FutureSeed banks separately. Exact +786,432 parameters and +98,304 state values/board. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2, CPU model smoke, or concurrent GPU model/eval | completed static implementation and strict R4 CUDA contract; no probe/formal continuation | Contract required bit-exact parent/base identity before gradient, activation, quality or cost gates. Any miss closes the family with no map/row-count/norm/scale/init or training rescue. | Pushed clean SHA `078fe7e` failed the binding parent-function identity assertion: external K32 normalization plus a K64 zero-row bank changed full output even with zero extra projection/state. R4 status1; log/abort SHA256 `d0cb54ed...36eb`/`bbc04bd0...7caf`. R1-R3 are separately archived pre-CUDA orchestration errors. No step3001 score/checkpoint or formal run; GPU1 returned to0MiB. |
 | P-GDN3-013 | discarded | P005-P012 did not test whether one position-QK state trajectory per head limits scalable recurrent address capacity. | Duplicate each H8 base head into an aligned H16 companion bank inside the same 81-token pinned-official call; zero-init shared V32->K32 companion Q/K residuals and an H8 read gate; exact +24,672 parameters and +98,304 state values per board. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2, CPU model smoke or concurrent model/eval | completed strict R2 contract and exact step3001 production probe; no formal continuation | Require exact migration, one official backward/layer, first-stage read-gate and opened Q/K gradients, then production step3001 read/Q/K/state activation >=1e-4 before the registered quality/cost gates. Kill on any miss; no gate/init/step-count or training rescue. | Pushed SHA `9ca0626` passes strict R2, including bit-exact H8-to-H16 output/base/companion/nonzero-state identity, exact parameter/state deltas and synthetic two-stage gradients. Step3001 status0 opens read gate to `0.001048`, but Q/K weights, Q/K residuals and paired-state residual remain exactly0 in loops1-5. The binding production activation gate fails because serial zero initialization gives address projections no first-step loss path. Abort and hashes archived; no formal score, step3002, init/gate-map or training rescue. |

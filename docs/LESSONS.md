@@ -2446,6 +2446,28 @@
   whether cross-layer basis mismatch causes the 51-64 exact cliff. The matched
   100-step quality/cost test was not run, so P-FS3-004 ends as activation
   evidence rather than a Sudoku win or loss.
+- Intrinsic gauge bounds can convert a numerical failure into a clean
+  scientific test. P-GDN3-016 keeps every frame and inverse inside `[0.25,4]`,
+  retains one official backward per layer and activates all 12 V-lifetime
+  paths, resolving P015's `3505x` inverse-frame ambiguity.
+- A bounded coordinate system can still be driven to a bad operating point.
+  P016 reaches frame extrema `0.250029/3.998026` and inverse `3.999530`; bounds
+  prevent explosion but do not prevent saturation or preserve useful memory.
+- Funding nonexpansive V-axis lifetime through common K contraction changes the
+  parent's forgetting policy too aggressively. Loop5 V-decay/common-K magnitude
+  reaches `0.351812/0.351764`, while hard macro and mixed exact collapse to zero
+  and CE rises `0.858617->1.498811`.
+- Same-board evidence makes the failure causal and decision-relevant. On all
+  256 official61-64 boards the candidate has more loop5 errors, and loop1-to5
+  correction falls from `5.426` to `1.441` cells. Aggregate instability or one
+  unlucky exact board cannot explain the result.
+- Small parameter count does not imply cheap recurrent execution. The 196,608
+  coordinate parameters add `28.60%` elapsed time and `21.55%` peak allocation
+  because frame transforms are materialized across layer, token, head and loop.
+- P015 and P016 jointly close the registered grouped V-lifetime family at this
+  parent: P015 rejects the global cumulative frame numerically; P016 rejects the
+  bounded gauge scientifically. Do not tune cap, group count, common-shift map,
+  max operator, initialization or training settings under a new run name.
 - Continuous automation is not a research objective. Once an experiment has a
   bounded hypothesis, falsifiable probe and fixed kill gate, stop at the next
   decision boundary instead of automatically launching another candidate.

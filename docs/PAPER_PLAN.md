@@ -1244,6 +1244,39 @@ is claimed and no map/group/init/precision/scale rescue is permitted. Any future
 paper candidate must implement an intrinsically bounded, chunk-local V-axis
 transition rather than tune this wrapper.
 
+### P-GDN3-016 Stable Bi-Axis Scientific Boundary
+
+P-GDN3-016 removes P015's numerical confound without changing the scientific
+question. It predicts a bounded grouped V-coordinate potential, funds the
+common nonexpansive component through additional K contraction, transforms the
+write frame, and uses exactly one unchanged pinned-official GDN2 call per
+layer. The candidate adds 196,608 parameters and no recurrent state, token,
+scan, second core, reverse traversal or task logic.
+
+The strict contract and exact step3001 probe establish that this is a valid
+implementation of the intended family. Zero initialization preserves full
+output and all 12 carried states bit-exactly, including nonzero incoming
+states; all 12 projections receive direct gradients; the direct physical
+Bi-Axis recurrence agrees; and the frame and inverse remain in `[0.25,4]`.
+The formal endpoint remains activated and bounded: mixed loop5 potential, physical V
+decay and common K contraction are `0.564159/0.351812/0.351764`, while frame
+min/max/inverse is `0.250029/3.998026/3.999530`.
+
+Stability does not recover quality. Hard51-64 macro loop5 exact falls
+`0.000651->0`, mixed exact falls `0.025391->0`, and official51-55/56-60/61-64
+blank accuracy changes by `-0.220564/-0.181016/-0.297518`. On the matched
+61-64 bank, all 256 candidate boards have more loop5 errors than control and
+loop1-to5 correction shrinks `5.426->1.441` cells. CE degrades
+`0.858617->1.498811`. Elapsed and allocation overhead are `+28.60/+21.55%`,
+also outside their fixed ceilings.
+
+The paper can therefore make a stronger negative claim than P015 allowed:
+persistent grouped V-axis lifetime remains insufficient after its moving-frame
+conditioning problem is removed. The model saturates the bounded gauge, and
+the common K contraction required for nonexpansive physical V decay destroys
+useful parent memory. This result closes the registered cap/group/map/max and
+training-rescue family; it should not be softened into a tuning recommendation.
+
 ### P-FS3-004 Cross-Layer Basis-Alignment Test
 
 P-FS3-004 tests a missing FutureSeed mechanism boundary rather than another

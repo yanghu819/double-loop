@@ -408,6 +408,8 @@ ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS = (
 )
 BI_AXIS_VALUE_DECAY_TRAIN_KEYS = (
     "gdn3_bi_axis_value_decay_enabled",
+    "gdn3_bi_axis_value_decay_potential_abs",
+    "gdn3_bi_axis_value_decay_common_k_log_decay_abs",
     "gdn3_bi_axis_value_decay_log_decay_abs",
     "gdn3_bi_axis_value_decay_active_frac",
     "gdn3_bi_axis_value_decay_group_std",
@@ -415,6 +417,7 @@ BI_AXIS_VALUE_DECAY_TRAIN_KEYS = (
     "gdn3_bi_axis_value_decay_token_std",
     "gdn3_bi_axis_value_decay_cumulative_scale_min",
     "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+    "gdn3_bi_axis_value_decay_cumulative_scale_max",
     "gdn3_bi_axis_value_decay_inverse_scale_max",
     "gdn3_bi_axis_value_decay_write_frame_relative_rms",
     "gdn3_bi_axis_value_decay_output_restore_relative_rms",
@@ -534,6 +537,7 @@ GDN2_UPDATE_MODES = (
     "orthogonal_head_write",
     "adaptive_signed_erase",
     "bi_axis_value_decay",
+    "gauge_balanced_bi_axis",
     "paired_address_bank",
     "coupled_address_rows",
     "interleaved_write",
@@ -929,6 +933,11 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         elif update_mode == "bi_axis_value_decay" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_grouped_value_decay_moving_frame_"
+                "around_one_official_gdn2_chunk"
+            )
+        elif update_mode == "gauge_balanced_bi_axis" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_gauge_balanced_grouped_value_decay_"
                 "around_one_official_gdn2_chunk"
             )
         elif update_mode == "orthogonal_head_write" and address_mode == "position_qk":
@@ -2523,8 +2532,9 @@ class FLADeltaTimeMix(nn.Module):
         if self.adaptive_signed_erase_proj is not None:
             nn.init.zeros_(self.adaptive_signed_erase_proj.weight)
         self.bi_axis_value_decay_groups = 8
+        self.bi_axis_value_decay_potential_cap = math.log(4.0)
         if (
-            update_mode == "bi_axis_value_decay"
+            update_mode in {"bi_axis_value_decay", "gauge_balanced_bi_axis"}
             and self.head_v_dim % self.bi_axis_value_decay_groups
         ):
             raise ValueError(
@@ -2536,7 +2546,7 @@ class FLADeltaTimeMix(nn.Module):
                 self.heads * self.bi_axis_value_decay_groups,
                 bias=False,
             )
-            if update_mode == "bi_axis_value_decay"
+            if update_mode in {"bi_axis_value_decay", "gauge_balanced_bi_axis"}
             else None
         )
         if self.bi_axis_value_decay_proj is not None:
@@ -2753,6 +2763,7 @@ class FLADeltaTimeMix(nn.Module):
         for key in (
             "gdn3_bi_axis_value_decay_cumulative_scale_min",
             "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+            "gdn3_bi_axis_value_decay_cumulative_scale_max",
             "gdn3_bi_axis_value_decay_inverse_scale_max",
         ):
             values[key] = x.new_ones((), dtype=torch.float32)
@@ -2995,7 +3006,11 @@ class FLADeltaTimeMix(nn.Module):
         initial_state: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
         projection = self.bi_axis_value_decay_proj
-        if self.update_mode != "bi_axis_value_decay" or projection is None:
+        if (
+            self.update_mode
+            not in {"bi_axis_value_decay", "gauge_balanced_bi_axis"}
+            or projection is None
+        ):
             output, terminal_state = operation(
                 q=q,
                 k=k,
@@ -3019,26 +3034,58 @@ class FLADeltaTimeMix(nn.Module):
                 self.heads,
                 groups,
             )
-            softplus_zero = F.softplus(raw.new_zeros(()))
-            group_log_decay = torch.clamp(
-                softplus_zero - F.softplus(raw),
-                max=0.0,
-            )
-            value_log_decay = torch.repeat_interleave(
-                group_log_decay,
-                group_width,
-                dim=-1,
-            )
-            cumulative_log_decay = value_log_decay.cumsum(dim=1)
-            cumulative_scale = cumulative_log_decay.exp()
-            inverse_scale = (-cumulative_log_decay).exp()
+            if self.update_mode == "bi_axis_value_decay":
+                softplus_zero = F.softplus(raw.new_zeros(()))
+                group_log_decay = torch.clamp(
+                    softplus_zero - F.softplus(raw),
+                    max=0.0,
+                )
+                value_frame_log = torch.repeat_interleave(
+                    group_log_decay,
+                    group_width,
+                    dim=-1,
+                ).cumsum(dim=1)
+                group_potential = torch.zeros_like(group_log_decay)
+                common_k_log_decay = raw.new_zeros(
+                    batch_size,
+                    seq_len,
+                    self.heads,
+                    1,
+                )
+                operation_g = g
+            else:
+                group_potential = (
+                    self.bi_axis_value_decay_potential_cap * torch.tanh(raw)
+                )
+                previous_potential = torch.cat(
+                    (
+                        torch.zeros_like(group_potential[:, :1]),
+                        group_potential[:, :-1],
+                    ),
+                    dim=1,
+                )
+                potential_delta = group_potential - previous_potential
+                common_k_log_decay = torch.relu(
+                    potential_delta.amax(dim=-1, keepdim=True)
+                )
+                group_log_decay = potential_delta - common_k_log_decay
+                value_frame_log = torch.repeat_interleave(
+                    group_potential,
+                    group_width,
+                    dim=-1,
+                )
+                operation_g = (
+                    g.float() - common_k_log_decay
+                ).to(dtype=g.dtype)
+            cumulative_scale = value_frame_log.exp()
+            inverse_scale = (-value_frame_log).exp()
             transformed_value = (v.float() * inverse_scale).to(dtype=v.dtype)
 
         transformed_output, transformed_terminal = operation(
             q=q,
             k=k,
             v=transformed_value,
-            g=g,
+            g=operation_g,
             b=b,
             w=w,
             initial_state=initial_state,
@@ -3070,6 +3117,12 @@ class FLADeltaTimeMix(nn.Module):
                 "gdn3_bi_axis_value_decay_enabled": x.new_ones(
                     (), dtype=torch.float32
                 ),
+                "gdn3_bi_axis_value_decay_potential_abs": (
+                    group_potential.abs().mean()
+                ),
+                "gdn3_bi_axis_value_decay_common_k_log_decay_abs": (
+                    common_k_log_decay.abs().mean()
+                ),
                 "gdn3_bi_axis_value_decay_log_decay_abs": log_decay_abs.mean(),
                 "gdn3_bi_axis_value_decay_active_frac": (
                     log_decay_abs > 0
@@ -3088,6 +3141,9 @@ class FLADeltaTimeMix(nn.Module):
                 ),
                 "gdn3_bi_axis_value_decay_cumulative_scale_mean": (
                     cumulative_scale.mean()
+                ),
+                "gdn3_bi_axis_value_decay_cumulative_scale_max": (
+                    cumulative_scale.max()
                 ),
                 "gdn3_bi_axis_value_decay_inverse_scale_max": inverse_scale.max(),
                 "gdn3_bi_axis_value_decay_write_frame_relative_rms": (
@@ -7711,6 +7767,7 @@ def load_training_checkpoint(
                         "orthogonal_head_write",
                         "adaptive_signed_erase",
                         "bi_axis_value_decay",
+                        "gauge_balanced_bi_axis",
                         "paired_address_bank",
                         "coupled_address_rows",
                         "interleaved_write",
@@ -7773,6 +7830,7 @@ def load_training_checkpoint(
                     "orthogonal_head_write",
                     "adaptive_signed_erase",
                     "bi_axis_value_decay",
+                    "gauge_balanced_bi_axis",
                     "paired_address_bank",
                     "coupled_address_rows",
                     "interleaved_write",
@@ -9041,7 +9099,9 @@ def fs_line(m: Dict[str, float]) -> str:
         )
     if m.get("gdn3_bi_axis_value_decay_enabled", 0.0) > 0:
         parts.append(
-            "bi_axis_decay="
+            "bi_axis_potential/common/decay="
+            f"{m.get('gdn3_bi_axis_value_decay_potential_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_common_k_log_decay_abs', 0.0):.4f}/"
             f"{m.get('gdn3_bi_axis_value_decay_log_decay_abs', 0.0):.4f}/"
             f"{m.get('gdn3_bi_axis_value_decay_group_std', 0.0):.4f}/"
             f"{m.get('gdn3_bi_axis_value_decay_batch_std', 0.0):.4f}/"
@@ -9051,6 +9111,7 @@ def fs_line(m: Dict[str, float]) -> str:
             "bi_axis_scale="
             f"{m.get('gdn3_bi_axis_value_decay_cumulative_scale_min', 1.0):.4f}/"
             f"{m.get('gdn3_bi_axis_value_decay_cumulative_scale_mean', 1.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_cumulative_scale_max', 1.0):.4f}/"
             f"{m.get('gdn3_bi_axis_value_decay_inverse_scale_max', 1.0):.4f}"
         )
         parts.append(
@@ -9520,6 +9581,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     for key in (
         "gdn3_bi_axis_value_decay_cumulative_scale_min",
         "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+        "gdn3_bi_axis_value_decay_cumulative_scale_max",
         "gdn3_bi_axis_value_decay_inverse_scale_max",
     ):
         last_bi_axis_value_decay_diag[key] = 1.0
@@ -9676,7 +9738,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.adaptive_signed_erase_proj.weight"
                 )
             }
-        elif args.gdn2_update_mode == "bi_axis_value_decay":
+        elif args.gdn2_update_mode in {
+            "bi_axis_value_decay",
+            "gauge_balanced_bi_axis",
+        }:
             expected_gdn2_update_insertions = {
                 name
                 for name, _parameter in model.named_parameters()
@@ -9717,6 +9782,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "orthogonal_head_write",
                 "adaptive_signed_erase",
                 "bi_axis_value_decay",
+                "gauge_balanced_bi_axis",
                 "paired_address_bank",
                 "coupled_address_rows",
                 "interleaved_write",
@@ -9902,6 +9968,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         in {
                             "gdn3_bi_axis_value_decay_cumulative_scale_min",
                             "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+                            "gdn3_bi_axis_value_decay_cumulative_scale_max",
                             "gdn3_bi_axis_value_decay_inverse_scale_max",
                         }
                         else 0.0,
@@ -10325,6 +10392,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                                     in {
                                         "gdn3_bi_axis_value_decay_cumulative_scale_min",
                                         "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+                                        "gdn3_bi_axis_value_decay_cumulative_scale_max",
                                         "gdn3_bi_axis_value_decay_inverse_scale_max",
                                     }
                                     else 0.0
@@ -10546,10 +10614,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_effective_max']:.4f}/"
                     f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_above_one_frac']:.4f} "
                     f"signed_erase_state={last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_terminal_rms']:.4f} "
+                    f"bi_axis_potential={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_potential_abs']:.4f}/"
+                    f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_common_k_log_decay_abs']:.4f} "
                     f"bi_axis_decay={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_log_decay_abs']:.4f}/"
                     f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_batch_std']:.4f}/"
                     f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_token_std']:.4f} "
                     f"bi_axis_scale={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_cumulative_scale_min']:.4f}/"
+                    f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_cumulative_scale_max']:.4f}/"
                     f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_inverse_scale_max']:.4f} "
                     f"bi_axis_frame={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_write_frame_relative_rms']:.4f}/"
                     f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_terminal_rms']:.4f} "
@@ -10983,7 +11054,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn2_address_mode": args.gdn2_address_mode,
         "gdn2_update_mode": args.gdn2_update_mode,
         "gdn2_bi_axis_value_decay_groups": (
-            8 if args.gdn2_update_mode == "bi_axis_value_decay" else 0
+            8
+            if args.gdn2_update_mode
+            in {"bi_axis_value_decay", "gauge_balanced_bi_axis"}
+            else 0
+        ),
+        "gdn2_bi_axis_value_decay_potential_cap": (
+            math.log(4.0)
+            if args.gdn2_update_mode == "gauge_balanced_bi_axis"
+            else 0.0
         ),
         "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
@@ -12284,6 +12363,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "orthogonal_head_write",
             "adaptive_signed_erase",
             "bi_axis_value_decay",
+            "gauge_balanced_bi_axis",
             "paired_address_bank",
             "coupled_address_rows",
             "interleaved_write",
@@ -12829,7 +12909,15 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn2_address_mode": args.gdn2_address_mode,
         "gdn2_update_mode": args.gdn2_update_mode,
         "gdn2_bi_axis_value_decay_groups": (
-            8 if args.gdn2_update_mode == "bi_axis_value_decay" else 0
+            8
+            if args.gdn2_update_mode
+            in {"bi_axis_value_decay", "gauge_balanced_bi_axis"}
+            else 0
+        ),
+        "gdn2_bi_axis_value_decay_potential_cap": (
+            math.log(4.0)
+            if args.gdn2_update_mode == "gauge_balanced_bi_axis"
+            else 0.0
         ),
         "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,

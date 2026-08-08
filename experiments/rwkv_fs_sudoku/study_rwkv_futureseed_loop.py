@@ -406,6 +406,23 @@ ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS = (
     "gdn3_adaptive_signed_erase_terminal_batch_std",
     "gdn3_adaptive_signed_erase_weight_rms",
 )
+BI_AXIS_VALUE_DECAY_TRAIN_KEYS = (
+    "gdn3_bi_axis_value_decay_enabled",
+    "gdn3_bi_axis_value_decay_log_decay_abs",
+    "gdn3_bi_axis_value_decay_active_frac",
+    "gdn3_bi_axis_value_decay_group_std",
+    "gdn3_bi_axis_value_decay_batch_std",
+    "gdn3_bi_axis_value_decay_token_std",
+    "gdn3_bi_axis_value_decay_cumulative_scale_min",
+    "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+    "gdn3_bi_axis_value_decay_inverse_scale_max",
+    "gdn3_bi_axis_value_decay_write_frame_relative_rms",
+    "gdn3_bi_axis_value_decay_output_restore_relative_rms",
+    "gdn3_bi_axis_value_decay_state_restore_relative_rms",
+    "gdn3_bi_axis_value_decay_terminal_rms",
+    "gdn3_bi_axis_value_decay_terminal_batch_std",
+    "gdn3_bi_axis_value_decay_weight_rms",
+)
 PAIRED_ADDRESS_BANK_TRAIN_KEYS = (
     "gdn3_paired_address_bank_enabled",
     "gdn3_paired_address_bank_read_gate_abs",
@@ -516,6 +533,7 @@ GDN2_UPDATE_MODES = (
     "orthogonal_chunk_state",
     "orthogonal_head_write",
     "adaptive_signed_erase",
+    "bi_axis_value_decay",
     "paired_address_bank",
     "coupled_address_rows",
     "interleaved_write",
@@ -907,6 +925,11 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = (
                 "canonical_position_qk_plus_adaptive_signed_erase_"
                 "then_one_official_gdn2_chunk"
+            )
+        elif update_mode == "bi_axis_value_decay" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_grouped_value_decay_moving_frame_"
+                "around_one_official_gdn2_chunk"
             )
         elif update_mode == "orthogonal_head_write" and address_mode == "position_qk":
             execution_path = (
@@ -2499,6 +2522,25 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.adaptive_signed_erase_proj is not None:
             nn.init.zeros_(self.adaptive_signed_erase_proj.weight)
+        self.bi_axis_value_decay_groups = 8
+        if (
+            update_mode == "bi_axis_value_decay"
+            and self.head_v_dim % self.bi_axis_value_decay_groups
+        ):
+            raise ValueError(
+                "Bi-Axis value decay requires V width divisible by eight"
+            )
+        self.bi_axis_value_decay_proj = (
+            nn.Linear(
+                d_model,
+                self.heads * self.bi_axis_value_decay_groups,
+                bias=False,
+            )
+            if update_mode == "bi_axis_value_decay"
+            else None
+        )
+        if self.bi_axis_value_decay_proj is not None:
+            nn.init.zeros_(self.bi_axis_value_decay_proj.weight)
         self.paired_address_q_proj = (
             nn.Linear(self.head_v_dim, self.head_dim, bias=False)
             if update_mode == "paired_address_bank"
@@ -2701,6 +2743,20 @@ class FLADeltaTimeMix(nn.Module):
     ) -> Dict[str, torch.Tensor]:
         zero = x.new_zeros((), dtype=torch.float32)
         return {key: zero for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS}
+
+    @staticmethod
+    def _zero_bi_axis_value_decay_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        values = {key: zero for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS}
+        for key in (
+            "gdn3_bi_axis_value_decay_cumulative_scale_min",
+            "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+            "gdn3_bi_axis_value_decay_inverse_scale_max",
+        ):
+            values[key] = x.new_ones((), dtype=torch.float32)
+        return values
 
     @staticmethod
     def _zero_paired_address_bank_diag(
@@ -2925,6 +2981,142 @@ class FLADeltaTimeMix(nn.Module):
                 ),
             }
         return effective, diagnostics
+
+    def _bi_axis_value_decay_transition(
+        self,
+        operation: Any,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        g: torch.Tensor,
+        b: torch.Tensor,
+        w: torch.Tensor,
+        x: torch.Tensor,
+        initial_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.bi_axis_value_decay_proj
+        if self.update_mode != "bi_axis_value_decay" or projection is None:
+            output, terminal_state = operation(
+                q=q,
+                k=k,
+                v=v,
+                g=g,
+                b=b,
+                w=w,
+                initial_state=initial_state,
+                output_final_state=True,
+                use_qk_l2norm_in_kernel=True,
+            )
+            return output, terminal_state, self._zero_bi_axis_value_decay_diag(x)
+
+        batch_size, seq_len, _channels = x.shape
+        groups = self.bi_axis_value_decay_groups
+        group_width = self.head_v_dim // groups
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            raw = F.linear(x.float(), projection.weight.float()).view(
+                batch_size,
+                seq_len,
+                self.heads,
+                groups,
+            )
+            softplus_zero = F.softplus(raw.new_zeros(()))
+            group_log_decay = torch.clamp(
+                softplus_zero - F.softplus(raw),
+                max=0.0,
+            )
+            value_log_decay = torch.repeat_interleave(
+                group_log_decay,
+                group_width,
+                dim=-1,
+            )
+            cumulative_log_decay = value_log_decay.cumsum(dim=1)
+            cumulative_scale = cumulative_log_decay.exp()
+            inverse_scale = (-cumulative_log_decay).exp()
+            transformed_value = (v.float() * inverse_scale).to(dtype=v.dtype)
+
+        transformed_output, transformed_terminal = operation(
+            q=q,
+            k=k,
+            v=transformed_value,
+            g=g,
+            b=b,
+            w=w,
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            output = (
+                transformed_output.float() * cumulative_scale
+            ).to(dtype=transformed_output.dtype)
+            terminal_scale = cumulative_scale[:, -1].unsqueeze(-2)
+            terminal_state = (
+                transformed_terminal.float() * terminal_scale
+            ).to(dtype=transformed_terminal.dtype)
+
+        with torch.no_grad():
+            log_decay_abs = group_log_decay.abs()
+            board_mean = log_decay_abs.mean(dim=(1, 2, 3))
+            token_mean = log_decay_abs.mean(dim=(0, 2, 3))
+            group_mean = log_decay_abs.mean(dim=(0, 1, 2))
+            value_float = v.float()
+            transformed_value_float = transformed_value.float()
+            transformed_output_float = transformed_output.float()
+            transformed_terminal_float = transformed_terminal.float()
+            terminal_board_rms = terminal_state.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            diagnostics = {
+                "gdn3_bi_axis_value_decay_enabled": x.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_bi_axis_value_decay_log_decay_abs": log_decay_abs.mean(),
+                "gdn3_bi_axis_value_decay_active_frac": (
+                    log_decay_abs > 0
+                ).float().mean(),
+                "gdn3_bi_axis_value_decay_group_std": group_mean.std(
+                    unbiased=False
+                ),
+                "gdn3_bi_axis_value_decay_batch_std": board_mean.std(
+                    unbiased=False
+                ),
+                "gdn3_bi_axis_value_decay_token_std": token_mean.std(
+                    unbiased=False
+                ),
+                "gdn3_bi_axis_value_decay_cumulative_scale_min": (
+                    cumulative_scale.min()
+                ),
+                "gdn3_bi_axis_value_decay_cumulative_scale_mean": (
+                    cumulative_scale.mean()
+                ),
+                "gdn3_bi_axis_value_decay_inverse_scale_max": inverse_scale.max(),
+                "gdn3_bi_axis_value_decay_write_frame_relative_rms": (
+                    (transformed_value_float - value_float).square().mean().sqrt()
+                    / value_float.square().mean().sqrt().clamp_min(1e-6)
+                ),
+                "gdn3_bi_axis_value_decay_output_restore_relative_rms": (
+                    (output.float() - transformed_output_float)
+                    .square()
+                    .mean()
+                    .sqrt()
+                    / transformed_output_float.square().mean().sqrt().clamp_min(1e-6)
+                ),
+                "gdn3_bi_axis_value_decay_state_restore_relative_rms": (
+                    (terminal_state.float() - transformed_terminal_float)
+                    .square()
+                    .mean()
+                    .sqrt()
+                    / transformed_terminal_float.square().mean().sqrt().clamp_min(1e-6)
+                ),
+                "gdn3_bi_axis_value_decay_terminal_rms": terminal_board_rms.mean(),
+                "gdn3_bi_axis_value_decay_terminal_batch_std": (
+                    terminal_board_rms.std(unbiased=False)
+                ),
+                "gdn3_bi_axis_value_decay_weight_rms": (
+                    projection.weight.float().square().mean().sqrt()
+                ),
+            }
+        return output, terminal_state, diagnostics
 
     def _paired_address_bank_transition(
         self,
@@ -4504,6 +4696,7 @@ class FLADeltaTimeMix(nn.Module):
             )
         paired_address_bank_diag = self._zero_paired_address_bank_diag(x)
         coupled_address_rows_diag = self._zero_coupled_address_rows_diag(x)
+        bi_axis_value_decay_diag = self._zero_bi_axis_value_decay_diag(x)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
 
         if core.num_v_heads > core.num_heads:
@@ -4651,16 +4844,18 @@ class FLADeltaTimeMix(nn.Module):
             )
             if operation is None:
                 raise RuntimeError("The required official GDN2 kernel is unavailable")
-            o, terminal_state = operation(
-                q=q,
-                k=k,
-                v=v,
-                g=g,
-                b=b,
-                w=w,
-                initial_state=initial_state,
-                output_final_state=True,
-                use_qk_l2norm_in_kernel=True,
+            o, terminal_state, bi_axis_value_decay_diag = (
+                self._bi_axis_value_decay_transition(
+                    operation,
+                    q,
+                    k,
+                    v,
+                    g,
+                    b,
+                    w,
+                    x,
+                    initial_state,
+                )
             )
             terminal_state, terminal_consolidation_diag = (
                 self._terminal_consolidation_transition(
@@ -4729,6 +4924,7 @@ class FLADeltaTimeMix(nn.Module):
             **orthogonal_chunk_state_diag,
             **orthogonal_head_write_diag,
             **adaptive_signed_erase_diag,
+            **bi_axis_value_decay_diag,
             **paired_address_bank_diag,
             **coupled_address_rows_diag,
             **interleaved_write_diag,
@@ -7514,6 +7710,7 @@ def load_training_checkpoint(
                         "orthogonal_chunk_state",
                         "orthogonal_head_write",
                         "adaptive_signed_erase",
+                        "bi_axis_value_decay",
                         "paired_address_bank",
                         "coupled_address_rows",
                         "interleaved_write",
@@ -7575,6 +7772,7 @@ def load_training_checkpoint(
                     "orthogonal_chunk_state",
                     "orthogonal_head_write",
                     "adaptive_signed_erase",
+                    "bi_axis_value_decay",
                     "paired_address_bank",
                     "coupled_address_rows",
                     "interleaved_write",
@@ -7726,6 +7924,7 @@ def load_training_checkpoint(
         ".time_mix.orthogonal_chunk_state_proj.weight",
         ".time_mix.orthogonal_head_write_proj.weight",
         ".time_mix.adaptive_signed_erase_proj.weight",
+        ".time_mix.bi_axis_value_decay_proj.weight",
         ".time_mix.paired_address_q_proj.weight",
         ".time_mix.paired_address_k_proj.weight",
         ".time_mix.paired_address_read_gate",
@@ -8840,6 +9039,26 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_adaptive_signed_erase_terminal_rms', 0.0):.4f}/"
             f"{m.get('gdn3_adaptive_signed_erase_terminal_batch_std', 0.0):.4f}"
         )
+    if m.get("gdn3_bi_axis_value_decay_enabled", 0.0) > 0:
+        parts.append(
+            "bi_axis_decay="
+            f"{m.get('gdn3_bi_axis_value_decay_log_decay_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_group_std', 0.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_token_std', 0.0):.4f}"
+        )
+        parts.append(
+            "bi_axis_scale="
+            f"{m.get('gdn3_bi_axis_value_decay_cumulative_scale_min', 1.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_cumulative_scale_mean', 1.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_inverse_scale_max', 1.0):.4f}"
+        )
+        parts.append(
+            "bi_axis_frame/state="
+            f"{m.get('gdn3_bi_axis_value_decay_write_frame_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_state_restore_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_bi_axis_value_decay_terminal_rms', 0.0):.4f}"
+        )
     if m.get("gdn3_paired_address_bank_enabled", 0.0) > 0:
         parts.append(
             "paired_bank_gate/q/k="
@@ -9295,6 +9514,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_adaptive_signed_erase_diag = {
         key: 0.0 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
     }
+    last_bi_axis_value_decay_diag = {
+        key: 0.0 for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS
+    }
+    for key in (
+        "gdn3_bi_axis_value_decay_cumulative_scale_min",
+        "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+        "gdn3_bi_axis_value_decay_inverse_scale_max",
+    ):
+        last_bi_axis_value_decay_diag[key] = 1.0
     last_paired_address_bank_diag = {
         key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
     }
@@ -9448,6 +9676,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.adaptive_signed_erase_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "bi_axis_value_decay":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(
+                    ".time_mix.bi_axis_value_decay_proj.weight"
+                )
+            }
         elif args.gdn2_update_mode == "paired_address_bank":
             expected_gdn2_update_insertions = {
                 name
@@ -9480,6 +9716,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "orthogonal_chunk_state",
                 "orthogonal_head_write",
                 "adaptive_signed_erase",
+                "bi_axis_value_decay",
                 "paired_address_bank",
                 "coupled_address_rows",
                 "interleaved_write",
@@ -9652,6 +9889,26 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_adaptive_signed_erase_diag.get(key, 0.0))
                 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
             }
+        saved_bi_axis_value_decay_diag = last_metrics.get(
+            "bi_axis_value_decay", {}
+        )
+        if isinstance(saved_bi_axis_value_decay_diag, dict):
+            last_bi_axis_value_decay_diag = {
+                key: float(
+                    saved_bi_axis_value_decay_diag.get(
+                        key,
+                        1.0
+                        if key
+                        in {
+                            "gdn3_bi_axis_value_decay_cumulative_scale_min",
+                            "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+                            "gdn3_bi_axis_value_decay_inverse_scale_max",
+                        }
+                        else 0.0,
+                    )
+                )
+                for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS
+            }
         saved_paired_address_bank_diag = last_metrics.get(
             "paired_address_bank", {}
         )
@@ -9772,6 +10029,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_adaptive_signed_erase_diag = {
                 key: 0.0 for key in ADAPTIVE_SIGNED_ERASE_TRAIN_KEYS
+            }
+            accum_bi_axis_value_decay_diag = {
+                key: 0.0 for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS
             }
             accum_paired_address_bank_diag = {
                 key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
@@ -10055,6 +10315,24 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS:
+                        accum_bi_axis_value_decay_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_tensor(
+                                    1.0
+                                    if key
+                                    in {
+                                        "gdn3_bi_axis_value_decay_cumulative_scale_min",
+                                        "gdn3_bi_axis_value_decay_cumulative_scale_mean",
+                                        "gdn3_bi_axis_value_decay_inverse_scale_max",
+                                    }
+                                    else 0.0
+                                ),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS:
                         accum_paired_address_bank_diag[key] += float(
                             trace_last.get(
@@ -10178,6 +10456,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_adaptive_signed_erase_diag.items()
             }
+            last_bi_axis_value_decay_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_bi_axis_value_decay_diag.items()
+            }
             last_paired_address_bank_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_paired_address_bank_diag.items()
@@ -10264,6 +10546,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_effective_max']:.4f}/"
                     f"{last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_above_one_frac']:.4f} "
                     f"signed_erase_state={last_adaptive_signed_erase_diag['gdn3_adaptive_signed_erase_terminal_rms']:.4f} "
+                    f"bi_axis_decay={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_log_decay_abs']:.4f}/"
+                    f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_batch_std']:.4f}/"
+                    f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_token_std']:.4f} "
+                    f"bi_axis_scale={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_cumulative_scale_min']:.4f}/"
+                    f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_inverse_scale_max']:.4f} "
+                    f"bi_axis_frame={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_write_frame_relative_rms']:.4f}/"
+                    f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_terminal_rms']:.4f} "
                     f"paired_bank_gate={last_paired_address_bank_diag['gdn3_paired_address_bank_read_gate_abs']:.4f} "
                     f"paired_bank_qk={last_paired_address_bank_diag['gdn3_paired_address_bank_q_residual_relative_rms']:.4f}/"
                     f"{last_paired_address_bank_diag['gdn3_paired_address_bank_k_residual_relative_rms']:.4f} "
@@ -10359,6 +10648,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "adaptive_signed_erase": dict(
                             last_adaptive_signed_erase_diag
+                        ),
+                        "bi_axis_value_decay": dict(
+                            last_bi_axis_value_decay_diag
                         ),
                         "paired_address_bank": dict(
                             last_paired_address_bank_diag
@@ -10466,6 +10758,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "adaptive_signed_erase": dict(
                                 last_adaptive_signed_erase_diag
                             ),
+                            "bi_axis_value_decay": dict(
+                                last_bi_axis_value_decay_diag
+                            ),
                             "paired_address_bank": dict(
                                 last_paired_address_bank_diag
                             ),
@@ -10550,6 +10845,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "adaptive_signed_erase": dict(
                             last_adaptive_signed_erase_diag
+                        ),
+                        "bi_axis_value_decay": dict(
+                            last_bi_axis_value_decay_diag
                         ),
                         "paired_address_bank": dict(
                             last_paired_address_bank_diag
@@ -10646,6 +10944,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
+        "bi_axis_value_decay": dict(last_bi_axis_value_decay_diag),
         "paired_address_bank": dict(last_paired_address_bank_diag),
         "coupled_address_rows": dict(last_coupled_address_rows_diag),
         "interleaved_write": dict(last_interleaved_write_diag),
@@ -10683,6 +10982,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
         "gdn2_update_mode": args.gdn2_update_mode,
+        "gdn2_bi_axis_value_decay_groups": (
+            8 if args.gdn2_update_mode == "bi_axis_value_decay" else 0
+        ),
         "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,
@@ -11981,6 +12283,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "orthogonal_chunk_state",
             "orthogonal_head_write",
             "adaptive_signed_erase",
+            "bi_axis_value_decay",
             "paired_address_bank",
             "coupled_address_rows",
             "interleaved_write",
@@ -12525,6 +12828,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gdn2_precondition_mode": args.gdn2_precondition_mode,
         "gdn2_address_mode": args.gdn2_address_mode,
         "gdn2_update_mode": args.gdn2_update_mode,
+        "gdn2_bi_axis_value_decay_groups": (
+            8 if args.gdn2_update_mode == "bi_axis_value_decay" else 0
+        ),
         "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
         "raven_num_slots": args.raven_num_slots,

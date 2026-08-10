@@ -2,15 +2,16 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; awaiting the first admitted single-A10080 task
+- Status: preregistered; awaiting the admitted single-A100 40GB task
 - Date: 2026-08-10
 - Branch: `codex/gdn3-raven-routed-update-20260810`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
-- Compute: one AIStation task-mode A100 80GB only
+- Compute: one AIStation task-mode A100 40GB only
 - Required GPU identity: bind `EXPECTED_GPU_UUID` to the first admitted task's
   CUDA index0 UUID before any CUDA import, then require that exact UUID and one
-  compute app throughout. Parallel admission requests must be cancelled before
-  any losing task starts a model process.
+  compute app throughout. The platform disables Stop while losing admission
+  requests are Pending; if either becomes admitted, stop it before any model
+  process starts.
 - Seed: 52 only
 - Parent: D256/L12/H8/K32/V32 position-QK GDN3 plus native terminal
   FutureSeed
@@ -94,7 +95,7 @@ is an implementation-level falsification before training.
 
 The exact pushed source in a clean detached worktree must pass all of:
 
-1. CUDA index0 and the admission-bound A10080 UUID, with no concurrent compute
+1. CUDA index0 and the admission-bound A100 40GB UUID, with no concurrent compute
    app;
 2. pinned FLA source SHA
    `9c8e42e762fce087c27b673af4922795d9edb85e`;
@@ -148,9 +149,15 @@ the step3001 bounds. Quality passes by exactly one route:
 2. mixed loop5 exact improves by at least `+0.03`, official61-64 does not
    regress, and same-board loop3-to5 wrong-cell correction is stronger.
 
-Independently warmed elapsed overhead is capped below 15% and peak allocated
-memory overhead below 10% versus the frozen control. Any activation, stability,
-quality, timing, memory or integrity miss discards P017 without rescue.
+The frozen control ran on A100 80GB, while P017 uses the first admitted A100
+40GB task. Its timing and memory are therefore not treated as a same-hardware
+overhead comparison. Before any CUDA result, the absolute A100 40GB
+production-fit gate is fixed at independently warmed throughput at least
+`12.0` effective boards/s, peak allocated memory below `20 GiB`, peak reserved
+memory below `24 GiB`, and stable-step timing coefficient of variation below
+`10%`. Quality remains compared against the frozen control because predictions
+and data are hardware invariant. Any activation, stability, quality, timing,
+memory or integrity miss discards P017 without rescue.
 
 ## 8. Required Readout
 

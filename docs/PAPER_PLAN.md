@@ -1314,3 +1314,38 @@ launched. The paper may state that orthogonal basis transport is feasible,
 first-order trainable and stable, but must not state that it improves Sudoku
 exactness, cost, or FutureSeed quality. The automated sequence stops here; any
 future matched test is a separate explicit decision.
+
+### P-GDN3-017 Raven Allocation Control-Plane Boundary
+
+P-GDN3-017 tests a Raven/GDN hybrid without replacing the stronger recurrent
+core. Raven contributes only token-dependent allocation over eight fixed K-row
+slots; position-QK GDN2 remains the only live transition, and native terminal
+FutureSeed remains the only cross-layer state path. The conserved
+`8*softmax` allocation routes K by its square root and nonpositive row decay
+directly, adding 196,608 parameters but no state, token, scan, second core,
+reverse pass or task logic.
+
+The implementation boundary is clean. On exact pushed SHA `e884b7d`, the
+strict A100 40GB contract preserves zero-init full output and all 12 terminal
+states bit-exactly, including nonzero incoming states; all 12 routers receive
+direct gradients; allocation conservation, slot equivariance and protected
+rows hold; and every layer executes one pinned-official GDN2 backward. The
+exact step3001 production probe is active, diverse and stable, so the formal
+negative cannot be attributed to migration or a dead route.
+
+Training drives the allocation toward nearly hard single-slot selection. At
+loop5, normalized entropy is `0.765180`, allocation spans
+`0.000145..7.983757`, K/g relative change reaches `0.508998/1.127739`, and the
+fixed `<7.5` maximum-allocation bound fails. This high-amplitude routing does
+not close more boards: hard51-64 macro loop5 exact remains `0.000651`, mixed
+exact falls `0.025391->0.023438`, and official blank deltas are
+`-0.000179/-0.001510/-0.008455`. Same-board late correction improves only on
+51-55 and weakens on 56-64.
+
+The paper can therefore state a precise negative result: content-dependent
+allocation over a fixed GDN K-row bank is trainable and computationally viable
+(`12.622` effective boards/s on A100 40GB), but allocation alone is not the
+missing hard-closure mechanism at this parent. The eight-slot softmax family is
+closed without temperature, slot-count, top-k, scale or training rescue. A
+future Raven/GDN hybrid must change stable recurrent state organization or
+state interaction, not merely sharpen or soften this router.

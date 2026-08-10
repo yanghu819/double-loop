@@ -2471,3 +2471,31 @@
 - Continuous automation is not a research objective. Once an experiment has a
   bounded hypothesis, falsifiable probe and fixed kill gate, stop at the next
   decision boundary instead of automatically launching another candidate.
+- Raven can be isolated as an allocation control plane without replacing GDN.
+  P-GDN3-017 keeps one pinned-official position-QK transition per layer and
+  adds no state, token or scan, while exact zero initialization preserves the
+  parent and gives every router a direct first-order gradient.
+- A one-step activation probe does not guarantee endpoint routing geometry.
+  P017 moves from loop5 allocation range `0.706..1.368` and entropy `0.997790`
+  at step3001 to `0.000145..7.983757` and entropy `0.765180` at step3100. Bind
+  non-collapse limits at the formal endpoint, not only at migration.
+- Strong routing activation is not evidence of useful memory specialization.
+  Endpoint K/g relative change reaches `0.508998/1.127739`, yet hard macro
+  exact is unchanged and mixed exact regresses. The controller learns a large
+  intervention without learning a closure-producing partition.
+- Same-board evidence separates a local benefit from a general mechanism.
+  P017 improves loop3-to5 correction on 51-55, but weakens it on 56-60 and
+  61-64; the hardest range has 124 worse versus 87 better loop5 boards.
+- Cross-hardware quality and systems claims need different contracts. Exact
+  predictions can be compared with the frozen A10080 control, while P017's
+  A10040 systems evidence uses preregistered absolute gates. Throughput and
+  memory pass at `12.622` boards/s and `15720.7/16898.0 MiB`; no same-hardware
+  overhead claim is made.
+- Do not benchmark a gate that cannot change the decision. Once endpoint
+  allocation stability and both exact-quality routes fail, a separate timing-
+  CV GPU run has zero decision value. Record it as not measured rather than
+  burning another continuation.
+- P017 closes fixed-bank softmax allocation, not all Raven/GDN hybrids. A
+  successor would need qualitatively different stable recurrent state
+  organization or state interaction. Slot count, temperature, top-k, route
+  scale and longer training are rescues of this experiment, not new science.

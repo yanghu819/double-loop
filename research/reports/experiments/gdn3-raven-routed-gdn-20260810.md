@@ -2,11 +2,16 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; awaiting the admitted single-A100 40GB task
+- Status: discarded after complete strict contract, exact step3001 probe and
+  matched step3000-to3100 endpoint
 - Date: 2026-08-10
 - Branch: `codex/gdn3-raven-routed-update-20260810`
+- Formal source SHA: `e884b7df948334ba6ca326717414cb3045b0d5bb`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
-- Compute: one AIStation task-mode A100 40GB only
+- Compute: one AIStation task-mode A100-SXM4-40GB only, CUDA index0, UUID
+  `GPU-bfb964ca-068f-8fd1-8f27-463dca141125`
+- Formal run:
+  `p-gdn3-017-raven-routed-s3100-20260810T065231Z-e884b7d`
 - Required GPU identity: bind `EXPECTED_GPU_UUID` to the first admitted task's
   CUDA index0 UUID before any CUDA import, then require that exact UUID and one
   compute app throughout. The platform disables Stop while losing admission
@@ -114,6 +119,26 @@ The exact pushed source in a clean detached worktree must pass all of:
 10. no backend dispatch, fallback, CPU model smoke, GPU2 use or concurrent GPU
     model/eval.
 
+R1 exited before model construction because the launch environment pointed
+`FLA_SOURCE_ROOT` at a source copy nested under an older repository, causing
+the provenance check to resolve the wrong outer Git SHA. The non-science abort
+is preserved with SHA256
+`d4427e9b1571434c519a41ea99d082ef41dbe1ef2b890facf1f8fe305cdd765f`.
+R2 removed that erroneous override and used the immutable FLA SHA marker. It
+completed with status0 on the exact formal source:
+
+- exact zero-init full output and all terminal states, including nonzero
+  incoming states;
+- exact parameter/state deltas `+196608/+0`;
+- exactly one `ChunkGDN2FunctionBackward` in each of 12 official layers;
+- minimum all-layer route gradient `0.0003039563`;
+- allocation-budget error `1.192e-7`, slot-equivariance error `0`, protected
+  zero-slot state error `0`;
+- opened output change `0.111328`, with finite terminal RMS
+  `0.065358415` versus parent `0.065358348`;
+- R2 contract log SHA256
+  `02809c22b1b8a693f807148151364de3a8b2079c4288f2b1e641109203c3e24d`.
+
 Any miss closes P017. It does not authorize a slot count, grouping, top-k,
 temperature, route scale, initialization, seed, LR, loss, batch, width, depth
 or continuation rescue.
@@ -138,6 +163,17 @@ hashes and show:
 Probe score is migration and production-fit evidence only. It cannot pass the
 science gate.
 
+The exact step3001 probe completed status0 and passed every registered bound.
+All 12 route projections were active. At loop5, allocation deviation,
+slot/board/token variation was
+`0.080237/0.030918/0.001934/0.003546`; normalized entropy and min/max allocation
+were `0.997790` and `0.706491/1.368140`. Routed K/g relative change was
+`0.049376/0.097463`, router-weight RMS was `0.00143987`, and terminal RMS was
+`6.589435` versus parent `6.697617`. Peak allocated/reserved memory was
+`15718.6/16476.0 MiB`. Metrics/checkpoint SHA256 were
+`4d1ea06f00e2a443eebcb63d35cfe45625a45fe29b8184eabfdf8561a45091bb` and
+`0ddb152c7097e6c8be34d3f3a48bd30561d8fa0707d7eb4f43a06a57f7fede6b`.
+
 ## 7. Science And Cost Gates
 
 Run one candidate-only exact continuation from step3000 to step3100. Do not
@@ -159,17 +195,79 @@ memory below `24 GiB`, and stable-step timing coefficient of variation below
 and data are hardware invariant. Any activation, stability, quality, timing,
 memory or integrity miss discards P017 without rescue.
 
+The formal continuation completed status0 with exact optimizer/RNG/data-order
+resume. Endpoint activation is strong but no longer satisfies the probe's
+non-collapse bound. Across loops1-5, allocation deviation is
+`0.8267/0.7798/0.7840/0.7861/0.7867`, normalized entropy is
+`0.7429/0.7694/0.7668/0.7655/0.7652`, and maximum allocation is
+`7.984962/7.983979/7.983813/7.983770/7.983757`. Loop5 minimum allocation is
+`0.000145`, routed K/g relative change is `0.508998/1.127739`, router-weight
+RMS is `0.0156067`, and terminal RMS is finite at `7.366014`. The fixed
+maximum-allocation `<7.5` stability gate therefore fails even though all 12
+routers remain enabled and board/token variation is nonzero.
+
+The A100 40GB absolute throughput and memory checks pass: 100 optimizer steps
+at effective batch128 take `1014.070 s`, or `12.622` effective boards/s; peak
+allocated/reserved memory is `15720.7/16898.0 MiB`. A separate timing-CV run is
+not executed because the binding stability gate and both quality routes have
+already failed. This avoids spending another GPU continuation on a result that
+cannot pass the conjunction of registered gates.
+
 ## 8. Required Readout
 
-Report mixed and official51-55/56-60/61-64 loop1-5 exact, blank accuracy and
-wrong cells; train CE and same-board correction; allocation deviation,
-slot/board/token variation, normalized entropy, min/max allocation, routed K/g
-relative change, router weight RMS and terminal-state geometry; independently
-warmed throughput, peak allocated/reserved memory and timing stability; source,
-parent, checkpoint, metrics, config and log hashes; and same-board loop1-5
-visualization.
+All official rows contain 512 boards. Values below are loops1-5.
+
+| Slice | Control exact | Candidate exact | Control blank | Candidate blank |
+|---|---|---|---|---|
+| mixed | .017578/.023438/.025391/.025391/.025391 | .021484/.023438/.023438/.023438/.023438 | .515087/.536904/.544841/.545540/.545610 | .510961/.536100/.541135/.542953/.543617 |
+| 51-55 | 0/0/.001953/.001953/.001953 | 0/0/.001953/.001953/.001953 | .532345/.566677/.573945/.573623/.573766 | .534422/.565747/.573300/.573623/.573587 |
+| 56-60 | 0/0/0/0/0 | 0/0/0/0/0 | .473182/.498061/.501699/.503140/.503861 | .472187/.498301/.502659/.503243/.502351 |
+| 61-64 | 0/0/0/0/0 | 0/0/0/0/0 | .504319/.578523/.589207/.591954/.591923 | .500382/.569824/.581789/.583407/.583468 |
+
+Hard51-64 macro loop5 exact is unchanged at `0.000651`; mixed exact regresses
+by `-0.001953`. Loop5 blank deltas for 51-55/56-60/61-64 are
+`-0.000179/-0.001510/-0.008455`. Train CE changes
+`0.858617->0.867753`.
+
+The matched 256-board banks have identical case IDs, labels and data hashes.
+
+| Range | Control mean wrong cells loops1-5 | Candidate mean wrong cells loops1-5 | Control L3-L5 | Candidate L3-L5 | Candidate L5 better/equal/worse |
+|---|---|---|---:|---:|---:|
+| 51-55 | 25.742/24.348/23.918/23.855/23.934 | 25.918/24.227/23.859/23.742/23.703 | -0.016 | 0.156 | 108/48/100 |
+| 56-60 | 29.695/28.195/28.082/28.043/28.016 | 29.836/28.355/28.063/28.074/28.070 | 0.066 | -0.008 | 102/52/102 |
+| 61-64 | 31.855/27.203/26.613/26.508/26.430 | 32.004/27.613/26.887/26.754/26.723 | 0.184 | 0.164 | 87/45/124 |
+
+The candidate improves late correction only on 51-55. It weakens on 56-60
+and 61-64, so the alternate route fails independently of its mixed-exact
+regression.
+
+Formal artifact SHA256:
+
+- metrics: `73f6304079110881544c95d7b83aae67cbb04edaff898fbb3a8848158c251b9e`;
+- checkpoint: `1712f5e6318b31c137fd517a3aaa9bce319d6386689e1907686360da945ac37a`;
+- config: `4aaaec99b4db1045d2c1b7efb033a2228922ab963f9ffc04aa442a8989977db7`;
+- source snapshot: `1d224042557432ae3cfa55d2dab37000092763464f5bc4d9f10baef4c390fbec`;
+- run log: `74fec0dbc66d119027bb5111f4af99d54e2aebb0f8706555b275f4dde026579c`;
+- launch log: `eb9653e1e16dbeee4f8704ace628db9f50f5ade811748d2b3cc18065ac603666`.
+
+Machine-readable comparison, `abort.json`, and same-board loop1-5 HTML are in
+`/huyang2/double-loop/runs/p-gdn3-017-comparison-20260810T071900Z-e884b7d`.
+Their SHA256 values are respectively
+`44d4bbf1a64490ee7b4ed697f2bc34a529cb80e403a6ed0177f4b9d06694a6d8`,
+`cf76bb6a28668272897784cdef798fc71d75371e5ff57814df2230e29d188c4e`,
+and `211c426da8c619ee93c3ad0caeca501d65eb225026899b9fa408dc869b6ac87e`.
 
 ## 9. Decision
 
-Pending strict GPU1 contract, exact step3001 production probe and the single
-matched step3100 endpoint. No nearby rescue is preregistered.
+Discard P-GDN3-017. The strict implementation and one-step production path are
+valid, so this is not a kernel, migration or optimization-connectivity failure.
+The fixed eight-slot Raven control plane learns a high-amplitude allocation,
+then approaches single-slot selection without increasing hard-board closure.
+Content-dependent allocation over the existing K rows is therefore not the
+missing mechanism at this parent and budget.
+
+Do not run slot-count, top-k, temperature, route-scale, initialization, seed,
+LR, loss, batch, width/depth or duration rescue. No automatic successor is
+authorized. A future Raven/GDN hybrid must add a qualitatively different,
+stable recurrent state organization rather than reparameterize this softmax
+router.

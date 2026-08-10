@@ -6117,7 +6117,8 @@ class RavenWriteController(nn.Module):
     WIDTH = 64
     HEADS = 4
     HEAD_DIM = 16
-    NUM_SLOTS = 8
+    # The pinned official chunk-GSA Triton kernel requires each dot axis >= 16.
+    NUM_SLOTS = 16
     TOPK = 1
 
     def __init__(self, d_model: int) -> None:

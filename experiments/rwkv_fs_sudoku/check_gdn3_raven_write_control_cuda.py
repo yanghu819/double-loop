@@ -45,11 +45,11 @@ MAIN_HEAD_DIM = 32
 CONTROL_WIDTH = 64
 CONTROL_HEADS = 4
 CONTROL_HEAD_DIM = 16
-CONTROL_SLOTS = 8
+CONTROL_SLOTS = 16
 CONTROL_TOPK = 1
 TOKENS = 81
-EXPECTED_RAVEN_PARAMETERS_PER_LAYER = 18_792
-EXPECTED_PARAMETER_DELTA_PER_LAYER = 51_564
+EXPECTED_RAVEN_PARAMETERS_PER_LAYER = 20_840
+EXPECTED_PARAMETER_DELTA_PER_LAYER = 53_612
 EXPECTED_PARAMETER_DELTA = LAYERS * EXPECTED_PARAMETER_DELTA_PER_LAYER
 EXPECTED_STATE_VALUES_PER_LAYER = (
     CONTROL_HEADS * (2 * CONTROL_HEAD_DIM) * CONTROL_SLOTS
@@ -542,6 +542,10 @@ def main() -> None:
         f"Raven source is outside pinned FLA root: {raven_source}",
     )
 
+    require(
+        CONTROL_SLOTS >= 16,
+        "pinned official Raven chunk GSA requires every Triton dot axis >= 16",
+    )
     device = torch.device("cuda:0")
     torch.manual_seed(18101)
     torch.cuda.manual_seed_all(18101)

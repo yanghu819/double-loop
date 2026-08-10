@@ -3,10 +3,10 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PERSIST_ROOT="${PERSIST_ROOT:-/huyang2/double-loop}"
-EXPECTED_UUID="${EXPECTED_GPU_UUID:?P-GDN3-018 requires EXPECTED_GPU_UUID bound to the admitted task GPU}"
+EXPECTED_UUID="${EXPECTED_GPU_UUID:?P-GDN3-019 requires EXPECTED_GPU_UUID bound to the admitted task GPU}"
 
 if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
-  printf 'P-GDN3-018 requires CUDA_VISIBLE_DEVICES=0.\n' >&2
+  printf 'P-GDN3-019 requires CUDA_VISIBLE_DEVICES=0.\n' >&2
   exit 3
 fi
 export CUDA_VISIBLE_DEVICES=0
@@ -17,15 +17,15 @@ if [[ "$VISIBLE_GPU" != "0, $EXPECTED_UUID" ]]; then
   exit 4
 fi
 if [[ -n "$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null)" ]]; then
-  printf 'P-GDN3-018 refuses to overlap an existing GPU compute process.\n' >&2
+  printf 'P-GDN3-019 refuses to overlap an existing GPU compute process.\n' >&2
   exit 5
 fi
 if git -C "$REPO_ROOT" symbolic-ref -q HEAD >/dev/null; then
-  printf 'P-GDN3-018 requires a detached source worktree.\n' >&2
+  printf 'P-GDN3-019 requires a detached source worktree.\n' >&2
   exit 6
 fi
 if [[ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
-  printf 'P-GDN3-018 requires a clean source worktree.\n' >&2
+  printf 'P-GDN3-019 requires a clean source worktree.\n' >&2
   exit 7
 fi
 
@@ -70,9 +70,9 @@ if [[ "${GDN3_FULL_STACK_PROBE:-0}" == "1" ]]; then
   export SAVE_TRAIN_CHECKPOINT_EVERY=
   export CASE_BANK_N=0
   export FULL_LOG_EVERY=1
-  DEFAULT_NAME="p-gdn3-018-raven-write-probe-s3001-${TIMESTAMP}-${GIT_SHA:0:7}"
+  DEFAULT_NAME="p-gdn3-019-raven-write-s16-probe-s3001-${TIMESTAMP}-${GIT_SHA:0:7}"
 else
-  DEFAULT_NAME="p-gdn3-018-raven-write-s3100-${TIMESTAMP}-${GIT_SHA:0:7}"
+  DEFAULT_NAME="p-gdn3-019-raven-write-s16-s3100-${TIMESTAMP}-${GIT_SHA:0:7}"
 fi
 export RUN_NAME="${RUN_NAME:-$DEFAULT_NAME}"
 export TRAIN_CHECKPOINT_DIR="${TRAIN_CHECKPOINT_DIR:-$PERSIST_ROOT/models/$RUN_NAME/checkpoints}"

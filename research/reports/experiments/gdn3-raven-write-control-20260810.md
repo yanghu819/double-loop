@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: implemented; awaiting strict CUDA contract
+- Status: failed at strict CUDA production-fit contract; no model score
 - Date: 2026-08-10
 - Branch: `codex/gdn3-raven-write-control-20260810`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -131,8 +131,29 @@ initialization, seed, LR, loss, batch, main width/depth or duration rescue.
 
 ## 8. Results
 
-Pending.
+The exact pushed source `10cf31bf6cbcab7cda08ca3a36fad0f637308717`
+reached the strict A10040 contract on CUDA index0, UUID
+`GPU-93aad99c-9d1c-f2fb-1f10-fed39dde185c`. R1 exited before model
+construction because an explicit `FLA_SOURCE_ROOT` pointed at a source tree
+nested below another repository and therefore resolved the wrong outer Git
+SHA. R2 used the immutable pinned-FLA marker and passed provenance, source,
+GPU and exclusivity checks.
+
+R2 then failed while compiling the official Raven `chunk_gsa` kernel. Its
+eight-slot axis reached a Triton `tl.dot` whose matrix dimensions must each be
+at least 16. The compiler raised `Input shapes should have M >= 16, N >= 16
+and K >= 16` before the first full model output. Contract log SHA256 values
+are `957583164566dc47658e27488879c71461270ba5a7e9c806ff07a8a55ad4f0e1`
+for R1 and
+`8990a167f084c67e36230484ac55ce8227005c66b693be788cd89dd3ba5f82cc`
+for R2. The structured abort SHA256 is
+`794473fb98b8fbbca336d5ed6b4d3706d1f982f774e9838c2cdf6ce2159561fd`.
+No checkpoint, benchmark metric or science claim was produced.
 
 ## 9. Decision
 
-Pending.
+Mark P-GDN3-018 `failed`, not `discarded`: the registered S8 mechanism is not
+executable by the pinned official chunk kernel. Do not pad, patch Triton,
+switch to recurrent fallback or reinterpret this as a score. Register one
+successor with the kernel-minimum S16 fixed before execution; no other slot
+count is authorized.

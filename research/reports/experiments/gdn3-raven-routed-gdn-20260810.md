@@ -2,13 +2,15 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; awaiting the exact GPU1 task
+- Status: preregistered; awaiting the first admitted single-A10080 task
 - Date: 2026-08-10
 - Branch: `codex/gdn3-raven-routed-update-20260810`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
-- Compute: AIStation task-mode GPU1 only
-- Required GPU UUID:
-  `GPU-53e9f3b4-2966-65d3-6614-09c540921519`
+- Compute: one AIStation task-mode A100 80GB only
+- Required GPU identity: bind `EXPECTED_GPU_UUID` to the first admitted task's
+  CUDA index0 UUID before any CUDA import, then require that exact UUID and one
+  compute app throughout. Parallel admission requests must be cancelled before
+  any losing task starts a model process.
 - Seed: 52 only
 - Parent: D256/L12/H8/K32/V32 position-QK GDN3 plus native terminal
   FutureSeed
@@ -92,7 +94,8 @@ is an implementation-level falsification before training.
 
 The exact pushed source in a clean detached worktree must pass all of:
 
-1. CUDA index0 and the registered GPU1 UUID, with no concurrent compute app;
+1. CUDA index0 and the admission-bound A10080 UUID, with no concurrent compute
+   app;
 2. pinned FLA source SHA
    `9c8e42e762fce087c27b673af4922795d9edb85e`;
 3. 12 exact official `GatedDeltaNet2` layers and one

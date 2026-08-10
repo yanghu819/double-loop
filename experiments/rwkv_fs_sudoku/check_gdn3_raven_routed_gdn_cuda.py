@@ -7,6 +7,12 @@ import os
 import subprocess
 from typing import Any, Callable
 
+EXPECTED_GPU_UUID = os.environ.get("EXPECTED_GPU_UUID", "").strip()
+if not EXPECTED_GPU_UUID:
+    raise RuntimeError(
+        "EXPECTED_GPU_UUID must be bound to the admitted task GPU before CUDA imports"
+    )
+
 for cache_var in (
     "XDG_CACHE_HOME",
     "TRITON_CACHE_DIR",
@@ -30,7 +36,6 @@ import torch.nn.functional as F
 import study_rwkv_futureseed_loop as study
 
 
-EXPECTED_GPU_UUID = "GPU-53e9f3b4-2966-65d3-6614-09c540921519"
 EXPECTED_FLA_SOURCE_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
 LAYERS = 12
 HEADS = 8

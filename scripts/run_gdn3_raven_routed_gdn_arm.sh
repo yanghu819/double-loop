@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PERSIST_ROOT="${PERSIST_ROOT:-/huyang2/double-loop}"
-EXPECTED_UUID="GPU-53e9f3b4-2966-65d3-6614-09c540921519"
+EXPECTED_UUID="${EXPECTED_GPU_UUID:?P-GDN3-017 requires EXPECTED_GPU_UUID bound to the admitted task GPU}"
 
 if [[ "${CUDA_VISIBLE_DEVICES:-0}" != "0" ]]; then
   printf 'P-GDN3-017 requires CUDA_VISIBLE_DEVICES=0.\n' >&2

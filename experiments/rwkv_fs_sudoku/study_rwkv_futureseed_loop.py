@@ -426,6 +426,21 @@ BI_AXIS_VALUE_DECAY_TRAIN_KEYS = (
     "gdn3_bi_axis_value_decay_terminal_batch_std",
     "gdn3_bi_axis_value_decay_weight_rms",
 )
+RAVEN_ROUTED_GDN_TRAIN_KEYS = (
+    "gdn3_raven_routed_enabled",
+    "gdn3_raven_routed_allocation_abs_from_one",
+    "gdn3_raven_routed_allocation_slot_std",
+    "gdn3_raven_routed_allocation_batch_std",
+    "gdn3_raven_routed_allocation_token_std",
+    "gdn3_raven_routed_allocation_entropy_normalized",
+    "gdn3_raven_routed_allocation_min",
+    "gdn3_raven_routed_allocation_max",
+    "gdn3_raven_routed_k_relative_change",
+    "gdn3_raven_routed_g_relative_change",
+    "gdn3_raven_routed_router_weight_rms",
+    "gdn3_raven_routed_terminal_rms",
+    "gdn3_raven_routed_terminal_batch_std",
+)
 PAIRED_ADDRESS_BANK_TRAIN_KEYS = (
     "gdn3_paired_address_bank_enabled",
     "gdn3_paired_address_bank_read_gate_abs",
@@ -538,6 +553,7 @@ GDN2_UPDATE_MODES = (
     "adaptive_signed_erase",
     "bi_axis_value_decay",
     "gauge_balanced_bi_axis",
+    "raven_routed_gdn",
     "paired_address_bank",
     "coupled_address_rows",
     "interleaved_write",
@@ -939,6 +955,11 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = (
                 "canonical_position_qk_plus_gauge_balanced_grouped_value_decay_"
                 "around_one_official_gdn2_chunk"
+            )
+        elif update_mode == "raven_routed_gdn" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_raven_soft_slot_allocation_"
+                "inside_one_official_gdn2_chunk"
             )
         elif update_mode == "orthogonal_head_write" and address_mode == "position_qk":
             execution_path = (
@@ -2551,6 +2572,25 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.bi_axis_value_decay_proj is not None:
             nn.init.zeros_(self.bi_axis_value_decay_proj.weight)
+        self.raven_routed_slots = 8
+        if (
+            update_mode == "raven_routed_gdn"
+            and self.head_dim % self.raven_routed_slots
+        ):
+            raise ValueError(
+                "Raven-routed GDN requires K width divisible by eight"
+            )
+        self.raven_route_proj = (
+            nn.Linear(
+                d_model,
+                self.heads * self.raven_routed_slots,
+                bias=False,
+            )
+            if update_mode == "raven_routed_gdn"
+            else None
+        )
+        if self.raven_route_proj is not None:
+            nn.init.zeros_(self.raven_route_proj.weight)
         self.paired_address_q_proj = (
             nn.Linear(self.head_v_dim, self.head_dim, bias=False)
             if update_mode == "paired_address_bank"
@@ -2768,6 +2808,120 @@ class FLADeltaTimeMix(nn.Module):
         ):
             values[key] = x.new_ones((), dtype=torch.float32)
         return values
+
+    @staticmethod
+    def _zero_raven_routed_gdn_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        values = {key: zero for key in RAVEN_ROUTED_GDN_TRAIN_KEYS}
+        values["gdn3_raven_routed_allocation_entropy_normalized"] = (
+            x.new_ones((), dtype=torch.float32)
+        )
+        values["gdn3_raven_routed_allocation_min"] = x.new_ones(
+            (), dtype=torch.float32
+        )
+        values["gdn3_raven_routed_allocation_max"] = x.new_ones(
+            (), dtype=torch.float32
+        )
+        return values
+
+    def _raven_routed_gdn_update(
+        self,
+        x: torch.Tensor,
+        key: torch.Tensor,
+        log_decay: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        projection = self.raven_route_proj
+        if self.update_mode != "raven_routed_gdn" or projection is None:
+            return key, log_decay, self._zero_raven_routed_gdn_diag(x)
+        if key.shape != log_decay.shape or key.ndim != 4:
+            raise RuntimeError(
+                "Raven-routed GDN requires matched rank-4 K and decay tensors"
+            )
+        if key.shape[-2:] != (self.heads, self.head_dim):
+            raise RuntimeError(
+                "Raven-routed GDN received unexpected K geometry: "
+                f"{tuple(key.shape)}"
+            )
+
+        batch_size, seq_len, _channels = x.shape
+        slots = self.raven_routed_slots
+        slot_width = self.head_dim // slots
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            logits = F.linear(x.float(), projection.weight.float()).view(
+                batch_size,
+                seq_len,
+                self.heads,
+                slots,
+            )
+            probabilities = logits.softmax(dim=-1)
+            allocation = probabilities * float(slots)
+            row_allocation = torch.repeat_interleave(
+                allocation,
+                slot_width,
+                dim=-1,
+            )
+            routed_key_float = key.float() * row_allocation.sqrt()
+            routed_decay_float = log_decay.float() * row_allocation
+
+        routed_key = routed_key_float.to(dtype=key.dtype)
+        routed_decay = routed_decay_float.to(dtype=log_decay.dtype)
+        with torch.no_grad():
+            key_float = key.float()
+            decay_float = log_decay.float()
+            allocation_delta = allocation - 1.0
+            allocation_board = allocation_delta.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            allocation_token = allocation_delta.square().mean(
+                dim=(0, 2, 3)
+            ).sqrt()
+            allocation_slot = allocation.mean(dim=(0, 1, 2))
+            entropy = -(
+                probabilities.clamp_min(1e-12)
+                * probabilities.clamp_min(1e-12).log()
+            ).sum(dim=-1) / math.log(float(slots))
+            diagnostics = {
+                "gdn3_raven_routed_enabled": x.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_raven_routed_allocation_abs_from_one": (
+                    allocation - 1.0
+                ).abs().mean(),
+                "gdn3_raven_routed_allocation_slot_std": (
+                    allocation_slot.std(unbiased=False)
+                ),
+                "gdn3_raven_routed_allocation_batch_std": (
+                    allocation_board.std(unbiased=False)
+                ),
+                "gdn3_raven_routed_allocation_token_std": (
+                    allocation_token.std(unbiased=False)
+                ),
+                "gdn3_raven_routed_allocation_entropy_normalized": (
+                    entropy.mean()
+                ),
+                "gdn3_raven_routed_allocation_min": allocation.min(),
+                "gdn3_raven_routed_allocation_max": allocation.max(),
+                "gdn3_raven_routed_k_relative_change": (
+                    (routed_key_float - key_float).square().mean().sqrt()
+                    / key_float.square().mean().sqrt().clamp_min(1e-6)
+                ),
+                "gdn3_raven_routed_g_relative_change": (
+                    (routed_decay_float - decay_float).square().mean().sqrt()
+                    / decay_float.square().mean().sqrt().clamp_min(1e-6)
+                ),
+                "gdn3_raven_routed_router_weight_rms": (
+                    projection.weight.float().square().mean().sqrt()
+                ),
+                "gdn3_raven_routed_terminal_rms": x.new_zeros(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_raven_routed_terminal_batch_std": x.new_zeros(
+                    (), dtype=torch.float32
+                ),
+            }
+        return routed_key, routed_decay, diagnostics
 
     @staticmethod
     def _zero_paired_address_bank_diag(
@@ -4753,7 +4907,15 @@ class FLADeltaTimeMix(nn.Module):
         paired_address_bank_diag = self._zero_paired_address_bank_diag(x)
         coupled_address_rows_diag = self._zero_coupled_address_rows_diag(x)
         bi_axis_value_decay_diag = self._zero_bi_axis_value_decay_diag(x)
+        raven_routed_gdn_diag = self._zero_raven_routed_gdn_diag(x)
         g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+
+        if self.update_mode == "raven_routed_gdn":
+            k, g, raven_routed_gdn_diag = self._raven_routed_gdn_update(
+                x,
+                k,
+                g,
+            )
 
         if core.num_v_heads > core.num_heads:
             groups = core.num_v_heads // core.num_heads
@@ -4951,6 +5113,17 @@ class FLADeltaTimeMix(nn.Module):
                 adaptive_signed_erase_diag[
                     "gdn3_adaptive_signed_erase_terminal_batch_std"
                 ] = terminal_board_rms.std(unbiased=False)
+        if self.update_mode == "raven_routed_gdn":
+            with torch.no_grad():
+                terminal_board_rms = terminal_state.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt()
+                raven_routed_gdn_diag[
+                    "gdn3_raven_routed_terminal_rms"
+                ] = terminal_board_rms.mean()
+                raven_routed_gdn_diag[
+                    "gdn3_raven_routed_terminal_batch_std"
+                ] = terminal_board_rms.std(unbiased=False)
 
         with torch.no_grad():
             q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
@@ -4981,6 +5154,7 @@ class FLADeltaTimeMix(nn.Module):
             **orthogonal_head_write_diag,
             **adaptive_signed_erase_diag,
             **bi_axis_value_decay_diag,
+            **raven_routed_gdn_diag,
             **paired_address_bank_diag,
             **coupled_address_rows_diag,
             **interleaved_write_diag,
@@ -7768,6 +7942,7 @@ def load_training_checkpoint(
                         "adaptive_signed_erase",
                         "bi_axis_value_decay",
                         "gauge_balanced_bi_axis",
+                        "raven_routed_gdn",
                         "paired_address_bank",
                         "coupled_address_rows",
                         "interleaved_write",
@@ -7831,6 +8006,7 @@ def load_training_checkpoint(
                     "adaptive_signed_erase",
                     "bi_axis_value_decay",
                     "gauge_balanced_bi_axis",
+                    "raven_routed_gdn",
                     "paired_address_bank",
                     "coupled_address_rows",
                     "interleaved_write",
@@ -7983,6 +8159,7 @@ def load_training_checkpoint(
         ".time_mix.orthogonal_head_write_proj.weight",
         ".time_mix.adaptive_signed_erase_proj.weight",
         ".time_mix.bi_axis_value_decay_proj.weight",
+        ".time_mix.raven_route_proj.weight",
         ".time_mix.paired_address_q_proj.weight",
         ".time_mix.paired_address_k_proj.weight",
         ".time_mix.paired_address_read_gate",
@@ -9120,6 +9297,26 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_bi_axis_value_decay_state_restore_relative_rms', 0.0):.4f}/"
             f"{m.get('gdn3_bi_axis_value_decay_terminal_rms', 0.0):.4f}"
         )
+    if m.get("gdn3_raven_routed_enabled", 0.0) > 0:
+        parts.append(
+            "raven_alloc="
+            f"{m.get('gdn3_raven_routed_allocation_abs_from_one', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_allocation_slot_std', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_allocation_batch_std', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_allocation_token_std', 0.0):.4f}"
+        )
+        parts.append(
+            "raven_entropy/range="
+            f"{m.get('gdn3_raven_routed_allocation_entropy_normalized', 1.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_allocation_min', 1.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_allocation_max', 1.0):.4f}"
+        )
+        parts.append(
+            "raven_kg/state="
+            f"{m.get('gdn3_raven_routed_k_relative_change', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_g_relative_change', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_routed_terminal_rms', 0.0):.4f}"
+        )
     if m.get("gdn3_paired_address_bank_enabled", 0.0) > 0:
         parts.append(
             "paired_bank_gate/q/k="
@@ -9585,6 +9782,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "gdn3_bi_axis_value_decay_inverse_scale_max",
     ):
         last_bi_axis_value_decay_diag[key] = 1.0
+    last_raven_routed_gdn_diag = {
+        key: 0.0 for key in RAVEN_ROUTED_GDN_TRAIN_KEYS
+    }
+    for key in (
+        "gdn3_raven_routed_allocation_entropy_normalized",
+        "gdn3_raven_routed_allocation_min",
+        "gdn3_raven_routed_allocation_max",
+    ):
+        last_raven_routed_gdn_diag[key] = 1.0
     last_paired_address_bank_diag = {
         key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
     }
@@ -9749,6 +9955,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.bi_axis_value_decay_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "raven_routed_gdn":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(".time_mix.raven_route_proj.weight")
+            }
         elif args.gdn2_update_mode == "paired_address_bank":
             expected_gdn2_update_insertions = {
                 name
@@ -9783,6 +9995,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "adaptive_signed_erase",
                 "bi_axis_value_decay",
                 "gauge_balanced_bi_axis",
+                "raven_routed_gdn",
                 "paired_address_bank",
                 "coupled_address_rows",
                 "interleaved_write",
@@ -9976,6 +10189,26 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 )
                 for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS
             }
+        saved_raven_routed_gdn_diag = last_metrics.get(
+            "raven_routed_gdn", {}
+        )
+        if isinstance(saved_raven_routed_gdn_diag, dict):
+            last_raven_routed_gdn_diag = {
+                key: float(
+                    saved_raven_routed_gdn_diag.get(
+                        key,
+                        1.0
+                        if key
+                        in {
+                            "gdn3_raven_routed_allocation_entropy_normalized",
+                            "gdn3_raven_routed_allocation_min",
+                            "gdn3_raven_routed_allocation_max",
+                        }
+                        else 0.0,
+                    )
+                )
+                for key in RAVEN_ROUTED_GDN_TRAIN_KEYS
+            }
         saved_paired_address_bank_diag = last_metrics.get(
             "paired_address_bank", {}
         )
@@ -10099,6 +10332,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_bi_axis_value_decay_diag = {
                 key: 0.0 for key in BI_AXIS_VALUE_DECAY_TRAIN_KEYS
+            }
+            accum_raven_routed_gdn_diag = {
+                key: 0.0 for key in RAVEN_ROUTED_GDN_TRAIN_KEYS
             }
             accum_paired_address_bank_diag = {
                 key: 0.0 for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS
@@ -10401,6 +10637,24 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in RAVEN_ROUTED_GDN_TRAIN_KEYS:
+                        accum_raven_routed_gdn_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_tensor(
+                                    1.0
+                                    if key
+                                    in {
+                                        "gdn3_raven_routed_allocation_entropy_normalized",
+                                        "gdn3_raven_routed_allocation_min",
+                                        "gdn3_raven_routed_allocation_max",
+                                    }
+                                    else 0.0
+                                ),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in PAIRED_ADDRESS_BANK_TRAIN_KEYS:
                         accum_paired_address_bank_diag[key] += float(
                             trace_last.get(
@@ -10528,6 +10782,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_bi_axis_value_decay_diag.items()
             }
+            last_raven_routed_gdn_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_raven_routed_gdn_diag.items()
+            }
             last_paired_address_bank_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_paired_address_bank_diag.items()
@@ -10624,6 +10882,16 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_inverse_scale_max']:.4f} "
                     f"bi_axis_frame={last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_write_frame_relative_rms']:.4f}/"
                     f"{last_bi_axis_value_decay_diag['gdn3_bi_axis_value_decay_terminal_rms']:.4f} "
+                    f"raven_alloc={last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_abs_from_one']:.4f}/"
+                    f"{last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_slot_std']:.4f}/"
+                    f"{last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_batch_std']:.4f}/"
+                    f"{last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_token_std']:.4f} "
+                    f"raven_entropy={last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_entropy_normalized']:.4f}/"
+                    f"{last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_min']:.4f}/"
+                    f"{last_raven_routed_gdn_diag['gdn3_raven_routed_allocation_max']:.4f} "
+                    f"raven_kg={last_raven_routed_gdn_diag['gdn3_raven_routed_k_relative_change']:.4f}/"
+                    f"{last_raven_routed_gdn_diag['gdn3_raven_routed_g_relative_change']:.4f} "
+                    f"raven_state={last_raven_routed_gdn_diag['gdn3_raven_routed_terminal_rms']:.4f} "
                     f"paired_bank_gate={last_paired_address_bank_diag['gdn3_paired_address_bank_read_gate_abs']:.4f} "
                     f"paired_bank_qk={last_paired_address_bank_diag['gdn3_paired_address_bank_q_residual_relative_rms']:.4f}/"
                     f"{last_paired_address_bank_diag['gdn3_paired_address_bank_k_residual_relative_rms']:.4f} "
@@ -10722,6 +10990,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "bi_axis_value_decay": dict(
                             last_bi_axis_value_decay_diag
+                        ),
+                        "raven_routed_gdn": dict(
+                            last_raven_routed_gdn_diag
                         ),
                         "paired_address_bank": dict(
                             last_paired_address_bank_diag
@@ -10832,6 +11103,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "bi_axis_value_decay": dict(
                                 last_bi_axis_value_decay_diag
                             ),
+                            "raven_routed_gdn": dict(
+                                last_raven_routed_gdn_diag
+                            ),
                             "paired_address_bank": dict(
                                 last_paired_address_bank_diag
                             ),
@@ -10919,6 +11193,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "bi_axis_value_decay": dict(
                             last_bi_axis_value_decay_diag
+                        ),
+                        "raven_routed_gdn": dict(
+                            last_raven_routed_gdn_diag
                         ),
                         "paired_address_bank": dict(
                             last_paired_address_bank_diag
@@ -11016,6 +11293,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
         "bi_axis_value_decay": dict(last_bi_axis_value_decay_diag),
+        "raven_routed_gdn": dict(last_raven_routed_gdn_diag),
         "paired_address_bank": dict(last_paired_address_bank_diag),
         "coupled_address_rows": dict(last_coupled_address_rows_diag),
         "interleaved_write": dict(last_interleaved_write_diag),
@@ -11063,6 +11341,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             math.log(4.0)
             if args.gdn2_update_mode == "gauge_balanced_bi_axis"
             else 0.0
+        ),
+        "gdn2_raven_routed_slots": (
+            8 if args.gdn2_update_mode == "raven_routed_gdn" else 0
         ),
         "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,
@@ -12364,6 +12645,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "adaptive_signed_erase",
             "bi_axis_value_decay",
             "gauge_balanced_bi_axis",
+            "raven_routed_gdn",
             "paired_address_bank",
             "coupled_address_rows",
             "interleaved_write",
@@ -12918,6 +13200,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             math.log(4.0)
             if args.gdn2_update_mode == "gauge_balanced_bi_axis"
             else 0.0
+        ),
+        "gdn2_raven_routed_slots": (
+            8 if args.gdn2_update_mode == "raven_routed_gdn" else 0
         ),
         "gdn2_state_expert_mode": args.gdn2_state_expert_mode,
         "gdn2_cross_layer_init": args.gdn2_cross_layer_init,

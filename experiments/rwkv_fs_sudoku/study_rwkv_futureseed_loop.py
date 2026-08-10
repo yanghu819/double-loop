@@ -497,7 +497,7 @@ INTERLEAVED_WRITE_TRAIN_KEYS = (
     "gdn3_interleaved_write_k_weight_rms",
     "gdn3_interleaved_write_v_weight_rms",
 )
-STATE_EXPERT_TRAIN_KEYS = (
+DUAL_STATE_EXPERT_TRAIN_KEYS = (
     "gdn3_state_expert_enabled",
     "gdn3_state_expert_residual_relative_rms",
     "gdn3_state_expert_residual_batch_std",
@@ -508,6 +508,33 @@ STATE_EXPERT_TRAIN_KEYS = (
     "gdn3_state_expert_up_weight_rms",
     "gdn3_state_expert_address_contrast",
     "gdn3_state_expert_output_cosine",
+)
+RAVEN_WRITE_CONTROL_TRAIN_KEYS = (
+    "gdn3_raven_write_control_enabled",
+    "gdn3_raven_write_control_v_residual_relative_rms",
+    "gdn3_raven_write_control_v_residual_relative_rms_min",
+    "gdn3_raven_write_control_v_residual_relative_rms_max",
+    "gdn3_raven_write_control_v_residual_batch_std",
+    "gdn3_raven_write_control_v_residual_token_std",
+    "gdn3_raven_write_control_output_rms",
+    "gdn3_raven_write_control_output_batch_std",
+    "gdn3_raven_write_control_terminal_rms",
+    "gdn3_raven_write_control_terminal_batch_std",
+    "gdn3_raven_write_control_seed_rms",
+    "gdn3_raven_write_control_seed_gate_mean",
+    "gdn3_raven_write_control_seed_rms_receiving_min",
+    "gdn3_raven_write_control_incoming_path_count_sum",
+    "gdn3_raven_write_control_slot_entropy_normalized",
+    "gdn3_raven_write_control_slot_entropy_normalized_min",
+    "gdn3_raven_write_control_slot_max_mass_share",
+    "gdn3_raven_write_control_slot_max_mass_share_max",
+    "gdn3_raven_write_control_main_terminal_rms",
+    "gdn3_raven_write_control_main_terminal_rms_max",
+    "gdn3_raven_write_control_main_terminal_batch_std",
+    "gdn3_raven_write_control_adapter_weight_rms",
+)
+STATE_EXPERT_TRAIN_KEYS = (
+    DUAL_STATE_EXPERT_TRAIN_KEYS + RAVEN_WRITE_CONTROL_TRAIN_KEYS
 )
 ROWS: List[List[int]] = []
 COLS: List[List[int]] = []
@@ -558,7 +585,7 @@ GDN2_UPDATE_MODES = (
     "coupled_address_rows",
     "interleaved_write",
 )
-GDN2_STATE_EXPERT_MODES = ("none", "dual_state")
+GDN2_STATE_EXPERT_MODES = ("none", "dual_state", "raven_write_control")
 FUTURE_SEED_CONTENT_MODES = (
     "terminal",
     "innovation_residual",
@@ -4820,6 +4847,7 @@ class FLADeltaTimeMix(nn.Module):
         address: torch.Tensor,
         cell_order: Optional[torch.Tensor],
         initial_state: Optional[torch.Tensor],
+        value_residual: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         if self.backbone != "gdn2" or chunk_gdn2 is None:
             raise RuntimeError("Position-addressed Q/K requires the official GDN2 chunk op")
@@ -4876,6 +4904,50 @@ class FLADeltaTimeMix(nn.Module):
         )
         g = g.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
         v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        raven_write_value_diag: Dict[str, torch.Tensor] = {}
+        if value_residual is not None:
+            expected_residual = (batch_size, seq_len, core.value_dim)
+            if tuple(value_residual.shape) != expected_residual:
+                raise ValueError(
+                    "External GDN2 value residual shape "
+                    f"{tuple(value_residual.shape)} does not match "
+                    f"{expected_residual}"
+                )
+            value_residual_heads = value_residual.view(
+                batch_size,
+                seq_len,
+                core.num_v_heads,
+                core.head_v_dim,
+            ).to(dtype=v.dtype)
+            with torch.no_grad():
+                base_board_rms = v.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt().clamp_min(1e-6)
+                residual_board_rms = value_residual_heads.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt()
+                residual_ratio = residual_board_rms / base_board_rms
+                base_token_rms = v.float().square().mean(
+                    dim=(2, 3)
+                ).sqrt().clamp_min(1e-6)
+                residual_token_rms = value_residual_heads.float().square().mean(
+                    dim=(2, 3)
+                ).sqrt()
+                token_ratio = residual_token_rms / base_token_rms
+                ratio_mean = residual_ratio.mean()
+                raven_write_value_diag = {
+                    "gdn3_raven_write_control_v_residual_relative_rms": ratio_mean,
+                    "gdn3_raven_write_control_v_residual_relative_rms_min": ratio_mean,
+                    "gdn3_raven_write_control_v_residual_relative_rms_max": ratio_mean,
+                    "gdn3_raven_write_control_v_residual_batch_std": residual_ratio.std(
+                        unbiased=False
+                    ),
+                    "gdn3_raven_write_control_v_residual_token_std": token_ratio.std(
+                        dim=1,
+                        unbiased=False,
+                    ).mean(),
+                }
+            v = v + value_residual_heads
         if self.update_mode == "orthogonal_head_write":
             v, orthogonal_head_write_diag = self._orthogonal_head_write_route(v)
         else:
@@ -5124,6 +5196,21 @@ class FLADeltaTimeMix(nn.Module):
                 raven_routed_gdn_diag[
                     "gdn3_raven_routed_terminal_batch_std"
                 ] = terminal_board_rms.std(unbiased=False)
+        if value_residual is not None:
+            with torch.no_grad():
+                terminal_board_rms = terminal_state.float().square().mean(
+                    dim=(1, 2, 3)
+                ).sqrt()
+                terminal_rms_mean = terminal_board_rms.mean()
+                raven_write_value_diag.update(
+                    {
+                        "gdn3_raven_write_control_main_terminal_rms": terminal_rms_mean,
+                        "gdn3_raven_write_control_main_terminal_rms_max": terminal_rms_mean,
+                        "gdn3_raven_write_control_main_terminal_batch_std": terminal_board_rms.std(
+                            unbiased=False
+                        ),
+                    }
+                )
 
         with torch.no_grad():
             q_unit = F.normalize(q_canonical[:1].float(), dim=-1)
@@ -5158,6 +5245,7 @@ class FLADeltaTimeMix(nn.Module):
             **paired_address_bank_diag,
             **coupled_address_rows_diag,
             **interleaved_write_diag,
+            **raven_write_value_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -5735,6 +5823,7 @@ class FLADeltaTimeMix(nn.Module):
         initial_state: Optional[torch.Tensor] = None,
         address: Optional[torch.Tensor] = None,
         cell_order: Optional[torch.Tensor] = None,
+        value_residual: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         if not x.is_cuda:
             raise RuntimeError(f"BACKBONE={self.backbone} is CUDA-only; CPU fallback is intentionally disabled.")
@@ -5776,6 +5865,16 @@ class FLADeltaTimeMix(nn.Module):
                 )
             initial_state = initial_state.float()
 
+        if value_residual is not None and not (
+            self.backbone == "gdn2"
+            and self.address_mode == "position_qk"
+            and self.update_mode == "none"
+        ):
+            raise ValueError(
+                "External value residuals are restricted to the unmodified "
+                "position-QK GDN2 transition"
+            )
+
         if self.gain_budget_mode != "none":
             return self._forward_gain_budget(
                 x,
@@ -5805,6 +5904,7 @@ class FLADeltaTimeMix(nn.Module):
                 address=address,
                 cell_order=cell_order,
                 initial_state=initial_state,
+                value_residual=value_residual,
             )
         if self.address_mode in {
             "anchor_rotary",
@@ -6011,6 +6111,143 @@ class GDN2ResidualStateExpert(nn.Module):
         }
 
 
+class RavenWriteController(nn.Module):
+    """Persistent official-Raven control state that writes into GDN2 V."""
+
+    WIDTH = 64
+    HEADS = 4
+    HEAD_DIM = 16
+    NUM_SLOTS = 8
+    TOPK = 1
+
+    def __init__(self, d_model: int) -> None:
+        super().__init__()
+        if d_model != 256:
+            raise ValueError(
+                "The registered Raven write controller requires D256"
+            )
+        self.d_model = int(d_model)
+        self.content_down = nn.Linear(d_model, self.WIDTH, bias=False)
+        self.time_mix = FLADeltaTimeMix(
+            self.WIDTH,
+            self.HEADS,
+            self.HEAD_DIM,
+            backbone="raven",
+            expand_v=1.0,
+            mode="chunk",
+            use_short_conv=False,
+            conv_size=4,
+            allow_neg_eigval=False,
+            address_mode="none",
+            update_mode="none",
+            raven_num_slots=self.NUM_SLOTS,
+            raven_topk=self.TOPK,
+        )
+        self.value_adapter = nn.Linear(self.WIDTH, d_model, bias=False)
+        nn.init.zeros_(self.value_adapter.weight)
+        self.future_seed_logit = nn.Parameter(
+            torch.zeros(1, self.HEADS, 1, 1)
+        )
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        incoming_state: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+        content = self.content_down(x)
+        zero = x.new_zeros(())
+        initial_state: Optional[torch.Tensor] = None
+        seed_rms = zero
+        seed_gate_mean = zero
+        if incoming_state is not None:
+            expected = (
+                x.shape[0],
+                self.HEADS,
+                2 * self.HEAD_DIM,
+                self.NUM_SLOTS,
+            )
+            if tuple(incoming_state.shape) != expected:
+                raise ValueError(
+                    "Raven write-control incoming shape mismatch: "
+                    f"{tuple(incoming_state.shape)} != {expected}"
+                )
+            incoming = incoming_state.float()
+            denom = incoming.square().mean(
+                dim=(-1, -2),
+                keepdim=True,
+            ).sqrt().clamp_min(1e-6)
+            gate = torch.sigmoid(self.future_seed_logit.float())
+            initial_state = incoming / denom * gate
+            seed_rms = initial_state.square().mean().sqrt().to(dtype=x.dtype)
+            seed_gate_mean = gate.mean().to(dtype=x.dtype)
+
+        controller_output, terminal_state = self.time_mix(
+            content,
+            initial_state=initial_state,
+        )
+        value_residual = self.value_adapter(controller_output)
+
+        with torch.no_grad():
+            output_board_rms = controller_output.float().square().mean(
+                dim=(1, 2)
+            ).sqrt()
+            terminal_board_rms = terminal_state.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            slot_mass = terminal_state.float().square().sum(dim=(1, 2))
+            slot_probability = slot_mass / slot_mass.sum(
+                dim=-1,
+                keepdim=True,
+            ).clamp_min(1e-12)
+            slot_entropy = -(
+                slot_probability
+                * slot_probability.clamp_min(1e-12).log()
+            ).sum(dim=-1) / math.log(float(self.NUM_SLOTS))
+            slot_max_mass_share = slot_probability.max(dim=-1).values
+
+        diagnostics = {
+            "gdn3_raven_write_control_enabled": x.new_ones(()),
+            "gdn3_raven_write_control_output_rms": output_board_rms.mean().to(
+                dtype=x.dtype
+            ),
+            "gdn3_raven_write_control_output_batch_std": output_board_rms.std(
+                unbiased=False
+            ).to(dtype=x.dtype),
+            "gdn3_raven_write_control_terminal_rms": terminal_board_rms.mean().to(
+                dtype=x.dtype
+            ),
+            "gdn3_raven_write_control_terminal_batch_std": terminal_board_rms.std(
+                unbiased=False
+            ).to(dtype=x.dtype),
+            "gdn3_raven_write_control_seed_rms": seed_rms,
+            "gdn3_raven_write_control_seed_gate_mean": seed_gate_mean,
+            "gdn3_raven_write_control_slot_entropy_normalized": slot_entropy.mean().to(
+                dtype=x.dtype
+            ),
+            "gdn3_raven_write_control_slot_entropy_normalized_min": slot_entropy.mean().to(
+                dtype=x.dtype
+            ),
+            "gdn3_raven_write_control_slot_max_mass_share": slot_max_mass_share.mean().to(
+                dtype=x.dtype
+            ),
+            "gdn3_raven_write_control_slot_max_mass_share_max": slot_max_mass_share.max().to(
+                dtype=x.dtype
+            ),
+            "gdn3_raven_write_control_adapter_weight_rms": self.value_adapter.weight.float().square().mean().sqrt().to(
+                dtype=x.dtype
+            ),
+        }
+        if incoming_state is not None:
+            diagnostics[
+                "gdn3_raven_write_control_seed_rms_receiving_min"
+            ] = seed_rms
+            diagnostics[
+                "gdn3_raven_write_control_incoming_path_count_sum"
+            ] = x.new_ones(())
+        return value_residual, terminal_state, diagnostics
+
+
 class FLADeltaBlock(nn.Module):
     def __init__(
         self,
@@ -6086,20 +6323,21 @@ class FLADeltaBlock(nn.Module):
             backbone != "gdn2" or gdn2_address_mode != "position_qk"
         ):
             raise ValueError(
-                "The dual-state expert requires position-QK official GDN2"
+                "GDN3 auxiliary state modes require position-QK official GDN2"
             )
         self.gdn2_state_expert_mode = gdn2_state_expert_mode
-        self.state_expert = (
-            GDN2ResidualStateExpert(
+        if gdn2_state_expert_mode == "dual_state":
+            self.state_expert: Optional[nn.Module] = GDN2ResidualStateExpert(
                 d_model,
                 heads,
                 expert_width=d_model // 2,
                 use_short_conv=gdn_use_short_conv,
                 conv_size=gdn_conv_size,
             )
-            if gdn2_state_expert_mode == "dual_state"
-            else None
-        )
+        elif gdn2_state_expert_mode == "raven_write_control":
+            self.state_expert = RavenWriteController(d_model)
+        else:
+            self.state_expert = None
         self.last_state_expert_terminal: Optional[torch.Tensor] = None
         self.last_state_expert_diag: Dict[str, torch.Tensor] = {}
 
@@ -6121,13 +6359,32 @@ class FLADeltaBlock(nn.Module):
             else None
         )
         normalized_x = self.ln_time(x)
-        time_out, terminal_state = self.time_mix(
-            normalized_x,
-            initial_state=initial_state,
-            address=normalized_address,
-            cell_order=cell_order,
-        )
-        if self.state_expert is not None:
+        if self.gdn2_state_expert_mode == "raven_write_control":
+            if not isinstance(self.state_expert, RavenWriteController):
+                raise RuntimeError("Raven write controller is missing")
+            value_residual, expert_terminal, expert_diag = self.state_expert(
+                normalized_x,
+                incoming_state=state_expert_initial_state,
+            )
+            time_out, terminal_state = self.time_mix(
+                normalized_x,
+                initial_state=initial_state,
+                address=normalized_address,
+                cell_order=cell_order,
+                value_residual=value_residual,
+            )
+            self.last_state_expert_terminal = expert_terminal
+            self.last_state_expert_diag = expert_diag
+        else:
+            time_out, terminal_state = self.time_mix(
+                normalized_x,
+                initial_state=initial_state,
+                address=normalized_address,
+                cell_order=cell_order,
+            )
+        if self.gdn2_state_expert_mode == "dual_state":
+            if not isinstance(self.state_expert, GDN2ResidualStateExpert):
+                raise RuntimeError("Dual-state expert is missing")
             if normalized_address is None:
                 raise ValueError("Dual-state expert requires a canonical address stream")
             expert_residual, expert_terminal, expert_diag = self.state_expert(
@@ -6147,7 +6404,7 @@ class FLADeltaBlock(nn.Module):
             time_out = time_out + expert_residual
             self.last_state_expert_terminal = expert_terminal
             self.last_state_expert_diag = expert_diag
-        else:
+        elif self.gdn2_state_expert_mode == "none":
             if state_expert_initial_state is not None:
                 raise ValueError("State-expert input was provided while the expert is disabled")
             zero = x.new_zeros(())
@@ -6324,9 +6581,21 @@ class FutureSeedRWKV(nn.Module):
             or future_seed_content_mode != "terminal"
         ):
             raise ValueError(
-                "The first dual-state expert composes only with independent "
+                "GDN3 auxiliary state modes compose only with independent "
                 "position-QK GDN2, the unmodified main update, and fixed "
                 "adjacent-layer terminal FutureSeed"
+            )
+        if gdn2_state_expert_mode == "raven_write_control" and (
+            d_model != 256
+            or layers != 12
+            or heads != 8
+            or head_dim != 32
+            or not math.isclose(gdn_expand_v, 1.0)
+            or not math.isclose(gdn_progressive_base_expand_v, 0.0)
+        ):
+            raise ValueError(
+                "The registered Raven write controller is fixed to "
+                "D256/L12/H8/K32/V32"
             )
         if gdn2_update_mode == "paired_address_bank" and (
             backbone != "gdn2"
@@ -7482,7 +7751,9 @@ class FutureSeedRWKV(nn.Module):
             for key, values in gain_budget_values.items():
                 stacked = torch.stack([value.float() for value in values])
                 out[key] = (
-                    stacked.max()
+                    stacked.sum()
+                    if key.endswith("_sum")
+                    else stacked.max()
                     if key.endswith("_max")
                     else stacked.min()
                     if key.endswith("_min")
@@ -7953,7 +8224,7 @@ def load_training_checkpoint(
                 if (
                     field == "gdn2_state_expert_mode"
                     and bool(expected_args.resume_allow_gdn2_state_expert_upgrade)
-                    and current_value == "dual_state"
+                    and current_value in {"dual_state", "raven_write_control"}
                 ):
                     accepted_gdn2_state_expert_upgrade = True
                     continue
@@ -8019,7 +8290,7 @@ def load_training_checkpoint(
                 and field == "gdn2_state_expert_mode"
                 and bool(expected_args.resume_allow_gdn2_state_expert_upgrade)
                 and saved_value == "none"
-                and current_value == "dual_state"
+                and current_value in {"dual_state", "raven_write_control"}
             ):
                 accepted_gdn2_state_expert_upgrade = True
                 matches = True
@@ -9182,6 +9453,24 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_state_expert_address_contrast', 0.0):.4f}/"
             f"{m.get('gdn3_state_expert_output_cosine', 0.0):.4f}"
         )
+    if m.get("gdn3_raven_write_control_enabled", 0.0) > 0:
+        parts.append(
+            "raven_write_v="
+            f"{m.get('gdn3_raven_write_control_v_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_write_control_v_residual_relative_rms_min', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_write_control_v_residual_relative_rms_max', 0.0):.4f}"
+        )
+        parts.append(
+            "raven_write_slot="
+            f"{m.get('gdn3_raven_write_control_slot_entropy_normalized_min', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_write_control_slot_max_mass_share_max', 0.0):.4f}"
+        )
+        parts.append(
+            "raven_write_state="
+            f"{m.get('gdn3_raven_write_control_terminal_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_write_control_seed_rms_receiving_min', 0.0):.4f}/"
+            f"{m.get('gdn3_raven_write_control_main_terminal_rms_max', 0.0):.4f}"
+        )
     if m.get("gdn3_state_feedback_enabled", 0.0) > 0:
         parts.append(
             "state_fb_read="
@@ -10016,7 +10305,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         }
         declared_gdn2_state_expert_upgrade = (
             bool(args.resume_allow_gdn2_state_expert_upgrade)
-            and args.gdn2_state_expert_mode == "dual_state"
+            and args.gdn2_state_expert_mode
+            in {"dual_state", "raven_write_control"}
             and bool(expected_gdn2_state_expert_insertions)
             and migrated_missing == expected_gdn2_state_expert_insertions
             and not migration.get("unexpected_parameters")
@@ -10910,6 +11200,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"expert_state={last_state_expert_diag['gdn3_state_expert_terminal_rms']:.4f}/"
                     f"{last_state_expert_diag['gdn3_state_expert_seed_rms']:.4f} "
                     f"expert_addr={last_state_expert_diag['gdn3_state_expert_address_contrast']:.4f} "
+                    f"raven_write_v={last_state_expert_diag['gdn3_raven_write_control_v_residual_relative_rms']:.4f}/"
+                    f"{last_state_expert_diag['gdn3_raven_write_control_v_residual_relative_rms_min']:.4f} "
+                    f"raven_write_slot={last_state_expert_diag['gdn3_raven_write_control_slot_entropy_normalized_min']:.4f}/"
+                    f"{last_state_expert_diag['gdn3_raven_write_control_slot_max_mass_share_max']:.4f} "
                     f"addr_scale={last_address_diag['gdn2_address_rotation_scale_abs']:.4f} "
                     f"addr_phase={last_address_diag['gdn2_address_phase_abs']:.4f} "
                     f"addr_qchg={last_address_diag['gdn2_address_q_relative_change']:.4f} "
@@ -12660,10 +12954,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "--resume_allow_gdn2_state_expert_upgrade requires an exact "
                 "checkpoint resume"
             )
-        if args.gdn2_state_expert_mode != "dual_state":
+        if args.gdn2_state_expert_mode not in {
+            "dual_state",
+            "raven_write_control",
+        }:
             raise ValueError(
                 "--resume_allow_gdn2_state_expert_upgrade requires "
-                "--gdn2_state_expert_mode dual_state"
+                "a non-default --gdn2_state_expert_mode"
             )
     if not (0.0 < args.loop_update_gate_init < 1.0):
         raise ValueError("--loop_update_gate_init must be in (0, 1)")
@@ -12803,29 +13100,29 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             )
         if args.gdn2_address_mode != "position_qk":
             raise ValueError(
-                "The first dual-state expert requires "
+                "GDN3 auxiliary state modes require "
                 "--gdn2_address_mode position_qk"
             )
         if args.gdn2_update_mode != "none":
             raise ValueError(
-                "The first dual-state expert requires an unmodified main GDN2 update"
+                "GDN3 auxiliary state modes require an unmodified main GDN2 update"
             )
         if args.gdn2_cross_layer_init != "independent":
             raise ValueError(
-                "The first dual-state expert requires independent main-state coordinates"
+                "GDN3 auxiliary state modes require independent main-state coordinates"
             )
         if args.future_seed_content_mode != "terminal":
             raise ValueError(
-                "The first dual-state expert requires terminal FutureSeed content"
+                "GDN3 auxiliary state modes require terminal FutureSeed content"
             )
         if args.future_seed_norm_mode != "unit" or args.future_seed_gate_mode != "head":
             raise ValueError(
-                "The first dual-state expert requires unit FutureSeed normalization "
+                "GDN3 auxiliary state modes require unit FutureSeed normalization "
                 "and head gates"
             )
         if args.future_seed_scope != "layer" or args.future_seed_readout_hop != 0:
             raise ValueError(
-                "The first dual-state expert requires adjacent-layer FutureSeed routing"
+                "GDN3 auxiliary state modes require adjacent-layer FutureSeed routing"
             )
         if (
             not math.isclose(args.future_seed_scale, 1.0)
@@ -12833,7 +13130,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             or args.future_seed_update != "fixed"
         ):
             raise ValueError(
-                "The first dual-state expert requires unit-scale fixed terminal "
+                "GDN3 auxiliary state modes require unit-scale fixed terminal "
                 "FutureSeed without decay"
             )
         if (
@@ -12842,7 +13139,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             or args.gdn2_precondition_mode != "none"
         ):
             raise ValueError(
-                "The first dual-state expert cannot be mixed with Gain-Budget, "
+                "GDN3 auxiliary state modes cannot be mixed with Gain-Budget, "
                 "Fast-Slow decay, or tied preconditioning"
             )
     if args.gdn2_address_mode != "none" and args.backbone != "gdn2":

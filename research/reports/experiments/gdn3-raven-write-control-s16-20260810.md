@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; strict CUDA contract pending
+- Status: discarded after complete matched endpoint
 - Date: 2026-08-10
 - Branch: `codex/gdn3-raven-write-control-s16-20260810`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -91,8 +91,94 @@ UUID and use `/opt/conda/bin/python` with project-local persistent caches.
 
 ## 8. Results
 
-Pending.
+Exact pushed source `9abc2929256657e06399b62fe62cdd9c6ec19d9f`
+ran from a clean detached worktree on one task-mode A100-SXM4-40GB at CUDA
+index0, UUID `GPU-93aad99c-9d1c-f2fb-1f10-fed39dde185c`. The strict contract
+completed with status0. It proved 12 official GDN2 paths, 12 official Raven
+paths at S16/top1, their official backward functions, exact zero-adapter parent
+output and all 12 main-state identities including nonzero incoming states,
+exact +643,344 parameters and +24,576 controller-state values, finite gradients
+through every adapter and Raven projection, 11 state-transport dependencies,
+packed-state round trips, and no fallback. Contract-log SHA256 is
+`76d8c6c7ed6969a2e7099d6b4fbb975b2af4ba0f3c8f47bb48502b933dd04806`.
+
+The exact step3001 probe also completed with status0. Loop5 V residual relative
+RMS was `0.009200`, normalized slot entropy `0.9328`, maximum slot mass share
+`0.1493`, and all 11 receiving paths were live. Probe metrics/checkpoint SHA256
+values are
+`8e97469bff444913e8aa79436408f3c6b9e58a96bb3aa227d604b2bac9e14688`
+and
+`2b8ab976ab13c6ec3a00f0838bb47585fc3a952184be53f6519cb154b68d824e`.
+This passes migration, activation and production-fit gates; its tiny evaluation
+is not used as science evidence.
+
+The formal run
+`p-gdn3-019-raven-write-s16-s3100-20260810T100445Z-9abc292` exited naturally
+with status0. At loop5 all controllers remain stable and nontrivial: V residual
+relative RMS is `0.066201` (`0.027680..0.115102` across layers), board/token
+variation is `0.004768/0.019113`, minimum normalized slot entropy is `0.670635`,
+maximum slot mass share is `0.370819`, all 11 incoming paths remain live, and
+maximum main-state RMS is `11.8991`, inside the fixed `4x` bound.
+
+Candidate loop1-to5 fixed-condition readout:
+
+| Range | Exact L1/L2/L3/L4/L5 | Blank L1/L2/L3/L4/L5 | Mean wrong cells L1/L2/L3/L4/L5 |
+|---|---|---|---|
+| mixed | `0.015625/0.023438/0.023438/0.023438/0.023438` | `0.514947/0.535506/0.543408/0.543512/0.543303` | not a single fixed blank range |
+| 51-55 | `0/0/0.003906/0.003906/0.003906` | `0.537214/0.567000/0.573873/0.573730/0.573981` | `25.65/24.21/24.06/23.99/23.94` |
+| 56-60 | `0/0/0/0/0` | `0.473731/0.497581/0.504272/0.504959/0.505336` | `29.72/28.49/28.05/27.96/27.93` |
+| 61-64 | `0/0/0/0/0` | `0.502610/0.576234/0.588383/0.590244/0.590031` | `31.88/27.32/26.71/26.59/26.59` |
+
+Activation does not translate into closure. The frozen-control to candidate
+official loop5 exact/blank results are:
+
+- 51-55: `0.001953/0.573766 -> 0.003906/0.573981`;
+- 56-60: `0/0.503861 -> 0/0.505336`;
+- 61-64: `0/0.591923 -> 0/0.590031`.
+
+Hard51-64 macro exact therefore moves only `0.000651 -> 0.001302`
+(`+0.000651`, far below `+0.02`). Mixed loop5 exact regresses
+`0.025391 -> 0.023438`; train CE also worsens `0.858617 -> 0.862443`.
+Across the identical 256-board case banks, mean wrong cells over loops1-5 are
+`25.65/24.21/24.06/23.99/23.94`,
+`29.72/28.49/28.05/27.96/27.93`, and
+`31.88/27.32/26.71/26.59/26.59` for the three hard ranges. Loop3-to5
+correction is stronger than control on 51-55 and 56-60, but weaker on 61-64
+(`0.1172` versus `0.1836` wrong cells). The alternate route fails independently
+because mixed exact regresses and the hardest range is not non-regressive.
+
+The controller adds `5.60%` parameters but recurrent execution is expensive.
+Fresh matched 100-step throughput falls `15.497 -> 7.451` effective boards/s;
+elapsed overhead is `+107.99%`, above the fixed `60%` ceiling. Peak allocated
+and reserved memory rise `+17.54/+17.72%` and remain within the `30%` allocation
+ceiling. No separate timing-CV benchmark can change the binding quality and
+elapsed-cost decision.
+
+Formal metrics/checkpoint/config/log/source-snapshot SHA256 values are
+`641ba615dd9ab3eda68009e97ee3f5395def50fbbff3fc86bbbb1a3f466d27e5`,
+`b5c4db3364aadffb2b2827107a2b317d1265ea829539ce1586680f20c3f25553`,
+`6c372f43f98737900e0bd90c1332111c3abd82437c286970bc33c667f79582b4`,
+`7a0e224cd6ebb6def165dc68f166de7d23692aa12f44ad7cd6b4b77320fb1274`,
+and
+`9e3fc4438dec4dd1b07a4ea26ce76f5f9d06c925195c3dc4dea2fda578cd3cd1`.
+Machine comparison, abort record and hardest-shared-board loop visualizations
+are archived at
+`/huyang2/double-loop/runs/p-gdn3-019-comparison-20260810T105107Z-9abc292`;
+comparison JSON SHA256 is
+`21ca61f8bd82d4f58957a7873744d2de63e992d44a4ceda56672a1f1895af3b2`.
 
 ## 9. Decision
 
-Pending.
+Discard P-GDN3-019. The experiment establishes that a real pinned-official
+Raven sparse memory can be attached to GDN as a persistent cross-layer write
+control plane without migration ambiguity, dead paths, slot collapse or state
+explosion. It does not establish a useful hybrid: the hard improvement is one
+board-equivalent in one range, mixed exact regresses, hardest-range late
+correction weakens, and elapsed cost more than doubles.
+
+This closes the registered compact persistent Raven-write family at the fixed
+parent and 100-step budget. Do not run S24/S32, top-k, controller-width,
+injection-target/scale, gate-initialization, seed, LR, loss, batch, main-width,
+depth or duration rescues. No successor is launched automatically; a future
+experiment requires a different mechanism hypothesis and a new explicit
+decision.

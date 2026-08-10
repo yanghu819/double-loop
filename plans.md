@@ -12,24 +12,27 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current candidate (2026-08-10 CST): `P-GDN3-019` is the minimum-production-
-valid form of persistent Raven write control. P018's fixed S8 controller
-reached the pinned official Raven chunk-GSA Triton compiler, where the slot
-axis violated the kernel's hard `N>=16` dot requirement before any model
-output. P019 keeps the same two-plane Raven/GDN mechanism, parent, optimizer,
-data, loss, gates and budget, but fixes Raven at the kernel minimum S16/top1.
-No other slot count, kernel patch, padding or backend fallback is authorized.
+Current update (2026-08-10 CST): `P-GDN3-019` Kernel-Minimum Persistent Raven
+Write Control is discarded after a complete strict contract, exact step3001
+probe and matched step3100 endpoint. Exact pushed SHA `9abc292` runs 12
+pinned-official S16/top1 Raven controllers beside the 12 position-QK GDN2
+layers, with 11 normalized Raven-state transports and zero-init V adapters.
+The contract proves exact parent migration, all official backward paths,
+gradients, state dependency and exact +643,344 parameters/+24,576 state values.
 
-Each D256 position-QK GDN2 block receives one D64/H4/K16/V16/S16 official
-Raven control plane with its own persistent sparse state and adjacent-layer
-normalized terminal transport. A zero-init D64-to-V256 adapter injects Raven
-retrieval only into the main GDN2 V payload before the unchanged official GDN
-transition. Exact additions are 643,344 parameters and 24,576 controller-state
-values. Activation, quality, stability and cost gates remain P018's fixed
-`+0.02` hard macro or `+0.03` mixed alternate, slot entropy `>=0.50`, maximum
-mass share `<0.80`, V residual `[1e-4,0.5]`, main state `<=4x`, and elapsed/
-allocation overhead `<60/30%`. Any miss closes the mechanism without slots,
-top-k, controller width, injection target/scale, training or duration rescue.
+All paths remain active and stable at the endpoint: loop5 V residual relative
+RMS is `0.066201`, minimum slot entropy `0.670635`, maximum slot mass share
+`0.370819`, and maximum main-state RMS `11.8991`. Hard51-64 macro exact rises
+only `0.000651->0.001302`, far below the fixed `+0.02`; mixed exact falls
+`0.025391->0.023438`; official blank deltas are
+`+0.000215/+0.001476/-0.001892`. Same-board loop3-to5 correction improves on
+51-55 and 56-60 but weakens on 61-64. Throughput falls
+`15.497->7.451` boards/s, with elapsed/allocated overhead
+`+107.99/+17.54%`; quality and elapsed-cost gates fail. Comparison and
+hardest-board loop views are archived at
+`/huyang2/double-loop/runs/p-gdn3-019-comparison-20260810T105107Z-9abc292`.
+No Raven slot/top-k/width/injection/training rescue or automatic successor is
+authorized; the continuous loop is stopped at this decision boundary.
 
 Previous update (2026-08-10 CST): `P-GDN3-018` failed its strict production-
 fit contract before scoring. R2 passed exact GPU, source and pinned-FLA
@@ -822,7 +825,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-019 | approved, contract pending | P018 did not test the Raven/GDN hypothesis because pinned official chunk GSA rejected S8 before model execution. The same persistent sparse controller may still complement dense position-QK GDN if run at the kernel-minimum valid slot dimension. | Keep P018 unchanged except fix official Raven at D64/H4/K16/V16 S16/top1. Preserve adjacent-layer normalized Raven state transport and zero-init D64->V256 write injection before one unchanged main GDN2 call. Exact expected delta: 643,344 parameters and 24,576 controller-state values. No S24/S32 arm, padding, kernel edit or fallback. | Admitted AIStation task-mode A10040GB, exact CUDA index0 UUID; no CPU model smoke or concurrent model/eval. | strict CUDA contract, exact step3001 probe, then at most one matched100-step candidate | Activation/stability and quality/cost gates are unchanged from P018: 12 controllers/adapters, 11 state paths, residual `[1e-4,0.5]`, entropy>=0.50, max mass<0.80, main state<=4x; hard macro +0.02 or mixed +0.03 alternate; elapsed/alloc<60/30%. | Pending strict contract on an exact pushed SHA. Any miss closes the architecture; no slot/top-k/width/injection/training rescue. |
+| P-GDN3-019 | discarded | P018 did not test the Raven/GDN hypothesis because pinned official chunk GSA rejected S8 before model execution. The same persistent sparse controller may still complement dense position-QK GDN at the kernel-minimum valid slot dimension. | Fix official Raven at D64/H4/K16/V16 S16/top1, preserve adjacent-layer normalized Raven-state transport, and inject zero-init D64->V256 retrieval into V before one unchanged main GDN2 call. Exact delta: 643,344 parameters and 24,576 controller-state values; no S24/S32, padding, kernel edit or fallback. | One task-mode A10040GB, CUDA index0 UUID `GPU-93aad99c-9d1c-f2fb-1f10-fed39dde185c`; no CPU model smoke or concurrent model/eval. | completed strict contract, exact step3001 probe and one matched100-step candidate | Contract/probe pass. Endpoint residual/entropy/max-mass/main-state are `0.066201/0.670635/0.370819/11.8991`; hard macro exact `0.000651->0.001302`, mixed exact `0.025391->0.023438`, blank deltas `+0.000215/+0.001476/-0.001892`, elapsed/alloc overhead `+107.99/+17.54%`. | Both quality routes and elapsed gate fail. Comparison `p-gdn3-019-comparison-20260810T105107Z-9abc292`; no slot/top-k/width/injection/training rescue or automatic successor. |
 | P-GDN3-018 | failed at strict contract | P017 shows that a stateless soft allocation over existing K rows collapses, while full Raven is too weak as the sole dense-constraint carrier. Raven may still be complementary if its actual persistent sparse slot state retrieves long-lived content and the stronger GDN data plane commits that content into its live V state. | In every D256/L12 position-QK GDN2 block, run one compact official D64/H4/K16/V16 Raven with S8/top1 and adjacent-layer normalized Raven terminal-state transport. Feed its retrieved D64 output through one zero-init D64->V256 adapter into the main GDN2 V payload, then use the unchanged single official GDN2 chunk. Main Q/K/g/b/w/state and native terminal FutureSeed remain parent-exact. Fixed expected delta: 618,768 parameters and 12,288 controller-state values across 12 blocks. | Admitted task-mode A10040GB, CUDA index0 UUID `GPU-93aad99c-9d1c-f2fb-1f10-fed39dde185c`; no CPU model smoke or concurrent model/eval. | strict CUDA contract only; no probe or formal candidate | Activation and science gates were not reached. | R2 passed GPU/source/FLA provenance then official Raven S8 failed Triton compilation because the slot dot axis is below the pinned kernel minimum16. No model metric/checkpoint. Logs SHA256 `95758316...4f0e1` and `8990a167...f82cc`; no padding, fallback, kernel edit or S8 rescue. |
 | P-GDN3-017 | discarded | Full Raven replacement failed, but it did not test Raven's scalable content-dependent allocation as a control plane for the stronger GDN transition. Existing failed mechanisms do not allocate the live K-row state per token. | Partition each existing K32 head into eight K4 slots. A zero-init bias-free D256->H8xS8 router gives conserved `rho=8*softmax`; route `K` by `sqrt(rho)` and nonpositive row decay by `rho`, then use one unchanged official GDN2 chunk. Q/V/erase/write/state/FutureSeed stay parent-exact. +196,608 params, zero state/scan delta. | First admitted AIStation task-mode single A10040GB only; exact index0 UUID `GPU-bfb964ca-068f-8fd1-8f27-463dca141125`; no CPU model smoke or concurrent model/eval. | completed strict contract, exact step3001 probe and one matched 100-step candidate | Contract and probe pass. Formal hard macro exact stays `0.000651`, mixed exact falls `0.025391->0.023438`, blank deltas are `-0.000179/-0.001510/-0.008455`, and late correction weakens on 56-64. Endpoint routing approaches one-slot collapse: loop5 entropy `0.765180`, min/max `0.000145/7.983757`, missing the fixed `<7.5` stability bound. A10040 throughput and allocated/reserved memory pass at `12.622` boards/s and `15720.7/16898.0 MiB`. | Both quality routes and endpoint stability fail. Comparison `p-gdn3-017-comparison-20260810T071900Z-e884b7d`; no slot/top-k/temperature/scale or training rescue. |
 | P-GDN3-016 | discarded | P015 established the Bi-Axis algebra and learning path but failed because an 81-token global cumulative frame made the inverse scale explode. A bounded V-coordinate potential can preserve a real nonexpansive right-axis decay and one official chunk call without limiting the model to a dead write/read residual. | Keep groups8 and the exact +196,608 zero-init projection. Predict `phi=log(4)*tanh(r)`, set `delta=phi_t-phi_(t-1)`, `m=relu(max_g delta)`, physical `gV=delta-m<=0`, and fund the common contraction with `gK'=gK-m`. Transform writes by `exp(-phi)`, call one unchanged pinned-official `chunk_gdn2`, and restore output/state by `exp(phi)`. Frame and inverse are analytically <=4; relative group lifetimes span up to16x. No new state/token/scan/core/task logic. | AIStation task-mode GPU1 A10080GB only; exact UUID; no GPU2, CPU model smoke or concurrent GPU model/eval | completed strict contract, exact step3001 probe and one matched 100-step candidate | Contract/probe pass on clean pushed SHA `79469ed`: exact identity, one official backward/layer, all12 gradients, direct physical recurrence, nonpositive K/V decay, groups8 equivariance and bounded frame. Formal activation remains strong and stable, but hard macro/mixed loop5 exact fall `0.000651/0.025391 -> 0/0`; blank deltas are `-0.220564/-0.181016/-0.297518`, CE rises `0.858617->1.498811`, and elapsed/alloc overhead is `+28.60/+21.55%`. | Both quality routes and both cost gates fail. The model saturates the bounded gauge (`frame 0.250029..3.998026`, inverse `3.999530`) and the required common K contraction destroys useful parent memory. Comparison `p-gdn3-016-comparison-20260808T050000Z-79469ed`; no cap/map/max/group or training rescue. |

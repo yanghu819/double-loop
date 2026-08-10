@@ -2499,3 +2499,33 @@
   successor would need qualitatively different stable recurrent state
   organization or state interaction. Slot count, temperature, top-k, route
   scale and longer training are rescues of this experiment, not new science.
+- Kernel feasibility is part of mechanism design. P018's S8 persistent Raven
+  controller never produced a model score because pinned official chunk GSA
+  requires every Triton dot axis to be at least 16. Moving once to S16 was a
+  preregistered production-minimum correction, not a slot-count sweep.
+- Raven and GDN can be combined without ambiguity. P019 preserves the dense
+  position-QK GDN transition while an independent official Raven state carries
+  sparse retrieved content across layers and writes only into V. Zero adapters
+  retain bit-exact parent output/main-state identity, while every Raven and
+  adapter path becomes trainable after opening.
+- Stable sparse retrieval still need not solve dense global closure. At the
+  endpoint P019 has V residual RMS `0.066201`, minimum entropy `0.670635`,
+  maximum slot mass `0.370819`, and finite 11-edge state transport, yet hard
+  macro exact improves by only `0.000651` and mixed exact regresses.
+- Check the hardest same-board correction before crediting a local exact gain.
+  P019 improves average loop3-to5 correction on 51-55 and 56-60, but weakens
+  61-64 from `0.1836` to `0.1172` cells; one extra solved 51-55 board does not
+  establish a scalable recurrent-memory improvement.
+- Recurrent controller cost follows repeated stateful execution, not parameter
+  count. P019 adds only `5.60%` parameters and `17.54%` peak allocation, but
+  throughput halves from `15.497` to `7.451` boards/s and elapsed rises
+  `107.99%` because 12 Raven scans run inside each of five reasoning loops.
+- P017 and P019 jointly close two nearby Raven/GDN hypotheses at this parent:
+  stateless allocation over GDN rows collapses, while a genuine persistent
+  Raven memory remains stable but is too costly and does not improve exact
+  closure. Slot/top-k/width/injection/scale or duration changes are rescues, not
+  evidence-driven next experiments.
+- Stop autonomous iteration when the registered mechanism family closes. GPU
+  occupancy is not a research metric; release the task after hashes, matched
+  case evidence and GitHub provenance are complete, and require a new explicit
+  mechanism hypothesis before spending more compute.

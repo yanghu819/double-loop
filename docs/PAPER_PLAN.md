@@ -1349,3 +1349,42 @@ missing hard-closure mechanism at this parent. The eight-slot softmax family is
 closed without temperature, slot-count, top-k, scale or training rescue. A
 future Raven/GDN hybrid must change stable recurrent state organization or
 state interaction, not merely sharpen or soften this router.
+
+### P-GDN3-019 Persistent Raven Write-Control Boundary
+
+P-GDN3-019 tests the stronger Raven/GDN composition left open by P017. Instead
+of using Raven only as a stateless allocation rule, every position-QK GDN2
+block receives a compact pinned-official D64/H4/K16/V16 Raven with S16/top1,
+its own persistent sparse state, and normalized adjacent-layer terminal-state
+transport. A zero-initialized adapter injects retrieved Raven content into the
+main GDN2 V write payload before the unchanged dense transition. This adds
+643,344 parameters and 24,576 controller-state values while leaving the main
+GDN state, native FutureSeed and benchmark contract unchanged.
+
+The implementation result is clean. Exact pushed SHA `9abc292` passes the
+strict A100 40GB contract with 12 official Raven and 12 official GDN2 backward
+paths, exact parent output/main-state identity including nonzero incoming
+states, finite gradients, state dependency and exact parameter/state deltas.
+The step3001 probe and step3100 endpoint keep all controllers active. At loop5,
+V residual relative RMS is `0.066201`, minimum slot entropy is `0.670635`,
+maximum slot mass share is `0.370819`, and maximum main-state RMS is `11.8991`.
+The negative result is therefore not caused by a dead adapter, collapsed sparse
+bank, unstable state or backend fallback.
+
+The quality result is nevertheless binding. Official 51-55 exact doubles from
+one to two solved boards in the 512-board range sample, but hard51-64 macro
+exact rises only `0.000651->0.001302`, far below the registered `+0.02` floor.
+Mixed exact regresses `0.025391->0.023438`; 61-64 blank accuracy falls by
+`0.001892`; and matched 61-64 loop3-to5 correction weakens
+`0.1836->0.1172` wrong cells. CE also rises `0.858617->0.862443`.
+
+Persistent sparse retrieval is also costly in this composition. Effective
+throughput falls `15.497->7.451` boards/s: `+107.99%` elapsed overhead versus
+the fixed `<60%` gate, despite only `+5.60%` parameters. Peak allocation rises
+`17.54%` and passes its separate memory ceiling. The paper can therefore state
+a precise boundary: an organic Raven control plane plus a dense GDN data plane
+is executable, trainable and geometrically stable, but persistent retrieval
+does not supply the missing short-horizon exact-closure mechanism at this
+parent and more than doubles recurrent compute. This closes S16/top1 Raven
+write control without slot, top-k, width, injection or duration tuning; it does
+not claim that every long-context Raven/GDN composition is impossible.

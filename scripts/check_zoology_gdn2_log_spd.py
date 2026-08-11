@@ -318,8 +318,21 @@ def main() -> None:
         block.sequence_mixer.layer.address_metric.raw.grad
         for block in candidate.backbone.layers
     ]
-    if any(gradient is None or not torch.isfinite(gradient).all() for gradient in raw_gradients):
-        raise RuntimeError("Log-SPD metric gradient is missing or non-finite")
+    metric_gradient_status = [
+        {
+            "layer_index": layer_index,
+            "present": gradient is not None,
+            "finite": gradient is not None and bool(torch.isfinite(gradient).all()),
+            "abs_max": (
+                None if gradient is None else float(gradient.abs().amax().item())
+            ),
+        }
+        for layer_index, gradient in enumerate(raw_gradients)
+    ]
+    if not all(row["present"] and row["finite"] for row in metric_gradient_status):
+        raise RuntimeError(
+            f"Log-SPD metric gradient is missing or non-finite: {metric_gradient_status}"
+        )
     metric_gradient_per_head = [
         float(value)
         for gradient in raw_gradients
@@ -433,6 +446,7 @@ def main() -> None:
         "parent_gradient_max_diff": parent_gradient_max_diff,
         "metric_gradient_min": metric_gradient_min,
         "metric_gradient_per_head": metric_gradient_per_head,
+        "metric_gradient_status": metric_gradient_status,
         "official_backward_count": official_backward_count,
         "mechanism_output_delta": mechanism_output_delta,
         "opened_metric": opened,

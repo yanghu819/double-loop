@@ -35,8 +35,11 @@ adding memory slots or task-specific logic.
 
 After each official GDN2 Q/K ShortConv and SiLU, and before the unchanged
 official recurrence, apply the same per-head SPD matrix `C` to Q and K. Write a
-symmetric trace-free generator `G`, bound it as `A=G/(1+||G||_F)`, and use
-`C=exp(0.5 log(2) A)`. The recurrence still performs its own Q/K normalization.
+symmetric trace-free generator `G`, bound it as
+`A=G/(1+sqrt(||G||_F^2+1e-12))`, and use `C=exp(0.5 log(2) A)`. The smooth
+epsilon removes the undefined zero-norm gradient while preserving exact
+zero-output identity and the strict spectral bound. The recurrence still
+performs its own Q/K normalization.
 
 The actual address metric is `M=C^T C`: it is volume preserving, has FP32
 eigenvalues in `[0.5,2]`, and condition below four. Initialization uses

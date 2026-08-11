@@ -105,6 +105,13 @@ construction because the launcher omitted the pinned Zoology checkout from
 contains a `non_science_harness_failure` `abort.json`; the launcher-only fix
 adds exact SHA and clean-worktree checks for Zoology before import.
 
+The R2 contract then stopped in the pre-model provenance check because
+`inspect.getfile` reported Torch Dynamo's wrapper file for `chunk_gdn2`. Direct
+inspection showed `inspect.unwrap(chunk_gdn2)` resolves to the expected pinned
+`fla/ops/gdn2/chunk.py`. This is archived as a second non-science checker
+failure; R3 validates the unwrapped implementation path while retaining the
+wrapper module in provenance.
+
 Scientific results pending.
 
 ## 9. Decision

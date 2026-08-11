@@ -155,7 +155,8 @@ def fla_provenance() -> dict[str, Any]:
     from fla.ops.gdn2 import chunk_gdn2
 
     layer_path = Path(inspect.getfile(GatedDeltaNet2)).resolve()
-    operation_path = Path(inspect.getfile(chunk_gdn2)).resolve()
+    operation = inspect.unwrap(chunk_gdn2)
+    operation_path = Path(inspect.getfile(operation)).resolve()
     for path in (layer_path, operation_path):
         if PINNED_FLA_SHA not in str(path):
             raise RuntimeError(f"unpinned official FLA source: {path}")
@@ -164,6 +165,7 @@ def fla_provenance() -> dict[str, Any]:
         "layer_source": str(layer_path),
         "operation_source": str(operation_path),
         "operation_module": chunk_gdn2.__module__,
+        "operation_unwrapped_module": operation.__module__,
     }
 
 

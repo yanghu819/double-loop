@@ -127,6 +127,22 @@ failure. The next source disables autocast for the complete committed-edit
 replay and explicitly casts Gram inputs to FP32; model forward autocast remains
 unchanged.
 
+The next run completed Sudoku capture and then exposed a historical provenance
+gap before MQAR training: the August 4 A100 endpoint did not save a checkpoint,
+and exact frozen source `77e5539` on the current A800 runtime deterministically
+produces init/model parameter hashes `b03e287...e17d9` / `3e8fe03...e4c44`
+instead of the historical `5595ecb...28ae` / `3b0c133...1a368`. Source, pinned
+FLA/Zoology, model parameter count, and both data hashes remain exact. Bytewise
+endpoint reconstruction is therefore impossible rather than silently assumed.
+
+Before observing any new training metric, R3 registers one runtime-fork
+reconstruction: the current hashes above are frozen; balanced accuracy must be
+at least `0.70`, joint exact at least `0.25`, and both past/future accuracy at
+least `0.68`. A pass freezes the resulting checkpoint as the matched parent for
+new MQAR arms. The successor quality bar is unchanged: balanced at least
+`0.85` and at least `+0.10` over the historical `0.7475`. A reconstruction miss
+invalidates MQAR branch evidence and receives no seed/epoch/LR rescue.
+
 Scientific results pending.
 
 ## 9. Decision

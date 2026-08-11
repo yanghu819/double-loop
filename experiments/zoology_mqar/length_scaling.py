@@ -375,12 +375,11 @@ def run_arm(
     gdn2_expand_v: float = 1.0,
     output_arm_name: str | None = None,
     save_checkpoint: bool = False,
-    capture_address_geometry: bool = False,
 ) -> dict[str, Any]:
     run_arm_name = output_arm_name or arm
     arm_dir = output_dir / f"length_{sequence_length}" / run_arm_name
     arm_dir.mkdir(parents=True, exist_ok=True)
-    arm_started = time.perf_counter()
+    cold_arm_started = time.perf_counter()
     config = build_config(
         arm=arm,
         sequence_length=sequence_length,
@@ -409,6 +408,7 @@ def run_arm(
     fixed_batch = next(iter(train_dataloader))
     warm_model(model, fixed_batch)
     set_determinism(config.seed)
+    post_warm_arm_started = time.perf_counter()
 
     logger = CaptureLogger(arm_dir / "metrics.jsonl", run_arm_name)
     logger.log_config(config)
@@ -442,16 +442,6 @@ def run_arm(
         sequence_length=sequence_length,
     )
     future_seed = futureseed_diagnostics(model) if arm in GDN2_ARMS else None
-    address_geometry = None
-    if capture_address_geometry:
-        from experiments.zoology_mqar.gdn2_log_spd import address_geometry_diagnostics
-
-        address_geometry = address_geometry_diagnostics(
-            model,
-            test_dataloader,
-            sequence_length=sequence_length,
-            max_examples=128,
-        )
     log_spd = None
     if arm == "future_seed_gdn2_log_spd":
         from experiments.zoology_mqar.gdn2_log_spd import log_spd_diagnostics
@@ -476,7 +466,8 @@ def run_arm(
         )
         checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
     torch.cuda.synchronize()
-    arm_wall_sec = time.perf_counter() - arm_started
+    post_warm_arm_wall_sec = time.perf_counter() - post_warm_arm_started
+    cold_arm_wall_sec = time.perf_counter() - cold_arm_started
     score: dict[str, Any] = {
         "arm": run_arm_name,
         "carrier_arm": arm,
@@ -499,14 +490,14 @@ def run_arm(
         "train_examples": TRAIN_EXAMPLES,
         "train_tokens": TRAIN_EXAMPLES * sequence_length * max_epochs,
         "elapsed_sec_including_validation": elapsed,
-        "arm_wall_sec_through_checkpoint": arm_wall_sec,
+        "cold_arm_wall_sec_through_checkpoint": cold_arm_wall_sec,
+        "post_warm_arm_wall_sec_through_checkpoint": post_warm_arm_wall_sec,
         "peak_training_cuda_mem_bytes": training_peak,
         "metrics": metrics,
         "valid_curve": logger.rows,
         "warmed_step_benchmark": benchmark,
         "checkpoint_path": None if checkpoint_path is None else str(checkpoint_path),
         "checkpoint_sha256": checkpoint_sha256,
-        "address_geometry": address_geometry,
     }
     if future_seed is not None:
         score["future_seed"] = future_seed

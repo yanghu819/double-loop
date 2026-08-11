@@ -85,12 +85,15 @@ therefore train the unchanged runtime control first. It is admitted only if
 balanced accuracy is at least `0.70`, joint exact at least `0.25`, and both
 past/future accuracy at least `0.68`, with exact source/data/model geometry.
 
-After carrier admission, the same runtime control alone supplies a zero-parameter
-128-example address-geometry branch selector. Log-SPD opens only if global
+After carrier admission, the frozen final runtime-control checkpoint alone
+supplies a zero-parameter 128-example address-geometry branch selector. The
+capture uses the pinned FLA `l2norm_fwd` path, records the exact fixed-prefix
+sample SHA256, and is performed only after the scored checkpoint is complete.
+Log-SPD opens only if global
 median effective-rank fraction is `<=0.50` or anisotropy is `>=4.0`, and at
 least `75%` of layer/head/example records satisfy one of those conditions. The
-candidate process is not created until both carrier and branch checks pass. The known
-A800 runtime that scored `0.3245/0.0010` is excluded from a repeated formal
+candidate process is not created until both carrier and branch checks pass. The
+known A800 runtime that scored `0.3245/0.0010` is excluded from a repeated formal
 attempt. A resource admission failure is not a GDN3 quality result and receives
 no seed, epoch, LR, loss, width, depth, or duration rescue.
 
@@ -101,7 +104,8 @@ All conditions must pass:
 - activation/stability: both layers have actual `||M-I||_F >= 1e-4`; FP32 `M`
   stays in `[0.5,2]` with condition below four and absolute log-determinant
   `<=1e-4`; BF16-applied `M` stays within the fixed production bounds above;
-- geometry: on the same fixed 128-example prefix, each layer raises median
+- geometry: on the same hashed fixed 128-example prefix loaded from each
+  frozen final checkpoint, each layer raises median
   effective-rank fraction by at least `0.05`, reduces median anisotropy by at
   least `20%`, and does not regress future or past own-key binding contrast by
   more than `5%` relative to the matched control;
@@ -112,9 +116,11 @@ All conditions must pass:
   both directions at least `0.85`;
 - binding: wrong-key valid-value swap fraction falls by at least `0.10` versus
   both historical and same-runtime control;
-- cost: trainer fit elapsed, complete arm wall time through checkpoint, and
-  independent warmed-step elapsed each below `+15%`; peak training allocation
-  below `+10%`. Geometry collection is matched and outside the warmed benchmark.
+- cost: trainer fit elapsed, post-warm complete arm wall time through
+  checkpoint, and independent warmed-step elapsed each below `+15%`; peak
+  training allocation below `+10%`. Cold arm wall is retained as provenance,
+  while matched frozen-checkpoint geometry collection is outside the warmed
+  benchmark.
 
 Any miss discards this mechanism. There is no metric cap, parameterization,
 seed, LR, loss, batch, width/depth, duration, or nearby conditioner rescue.
@@ -127,9 +133,10 @@ admission, and only then the candidate. It requires runtime-provided exact
 Both admitted arms save final model state, metrics, cases, timing, memory, and
 SHA256 provenance under `/huyang2/double-loop/runs`.
 
-Resource allocation may race task-mode A10080/H80080/A10040 requests, but only the
-first exact single-GPU task satisfying this protocol is used; all other pending
-requests are closed. The known failing A800 runtime is not rerun.
+Resource allocation may race task-mode A10080/H80080/A10040 requests, but only
+the first exact single-GPU task satisfying this protocol is used; all other
+pending requests are closed. The known failing A800 runtime may verify the CUDA
+contract only and is never accepted for the formal carrier or quality decision.
 
 ## 9. Decision
 

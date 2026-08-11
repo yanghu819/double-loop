@@ -6,7 +6,18 @@ import json
 from pathlib import Path
 from typing import Any
 
-from experiments.zoology_mqar.length_scaling import run_arm
+import torch
+from zoology.data.utils import prepare_data
+from zoology.utils import set_determinism
+
+from experiments.zoology_mqar.gdn2_log_spd import address_geometry_diagnostics
+from experiments.zoology_mqar.length_scaling import (
+    build_config,
+    dataset_hash,
+    make_model,
+    parameter_hash,
+    run_arm,
+)
 
 
 SEQUENCE_LENGTH = 1024
@@ -119,12 +130,62 @@ def load_historical(reference_run: Path) -> dict[str, Any]:
 def branch_selector(geometry: dict[str, Any]) -> dict[str, bool]:
     return {
         "exactly_128_examples": geometry["examples"] == 128,
+        "exactly_1024_layer_head_records": geometry["records"] == 1_024,
         "rank_or_anisotropy_trigger": (
             geometry["effective_rank_fraction"]["median"] <= 0.50
             or geometry["anisotropy"]["median"] >= 4.0
         ),
         "affected_fraction_at_least_0.75": geometry["affected_fraction"] >= 0.75,
     }
+
+
+def capture_frozen_geometry(
+    *,
+    arm: str,
+    score: dict[str, Any],
+) -> dict[str, Any]:
+    checkpoint_path = Path(score["checkpoint_path"])
+    checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+    if checkpoint_sha256 != score["checkpoint_sha256"]:
+        raise RuntimeError(f"Frozen {arm} checkpoint hash changed")
+    config = build_config(
+        arm=arm,
+        sequence_length=SEQUENCE_LENGTH,
+        num_kv_pairs=NUM_KV_PAIRS,
+        max_epochs=MAX_EPOCHS,
+        batch_size=BATCH_SIZE,
+    )
+    set_determinism(123)
+    model = make_model(config, arm)
+    payload = torch.load(checkpoint_path, map_location="cpu")
+    model.load_state_dict(payload["model_state_dict"], strict=True)
+    if parameter_hash(model) != score["trained_parameter_hash"]:
+        raise RuntimeError(f"Frozen {arm} model state does not match its score")
+    train_dataloader, test_dataloader = prepare_data(config.data)
+    data_hashes = {
+        "train": dataset_hash(train_dataloader),
+        "test": dataset_hash(test_dataloader),
+    }
+    if data_hashes != score["data_hashes"]:
+        raise RuntimeError(f"Frozen {arm} geometry data changed")
+    model = model.cuda()
+    geometry = address_geometry_diagnostics(
+        model,
+        test_dataloader,
+        sequence_length=SEQUENCE_LENGTH,
+        max_examples=128,
+    )
+    geometry.update(
+        {
+            "arm": arm,
+            "checkpoint_path": str(checkpoint_path),
+            "checkpoint_sha256": checkpoint_sha256,
+            "data_hashes": data_hashes,
+        }
+    )
+    del model
+    torch.cuda.empty_cache()
+    return geometry
 
 
 def _binding_not_regressed(control_value: float, candidate_value: float) -> bool:
@@ -142,6 +203,12 @@ def geometry_gate(
     return {
         "exactly_two_matched_layers": (
             len(control_layers) == len(candidate_layers) == len(metric_layers) == 2
+        ),
+        "same_fixed_128_example_prefix": (
+            control_geometry["examples"] == candidate_geometry["examples"] == 128
+            and control_geometry["records"] == candidate_geometry["records"] == 1_024
+            and control_geometry["sample_sha256"]
+            == candidate_geometry["sample_sha256"]
         ),
         "all_actual_metrics_active": all(
             row["actual_metric_delta_fro_mean"] >= 1e-4 for row in metric_layers
@@ -202,7 +269,6 @@ def main() -> None:
         max_epochs=MAX_EPOCHS,
         batch_size=BATCH_SIZE,
         save_checkpoint=True,
-        capture_address_geometry=True,
     )
     if runtime_control["data_hashes"] != historical["score"]["data_hashes"]:
         raise RuntimeError("Matched runtime-control data changed")
@@ -243,11 +309,18 @@ def main() -> None:
     if not carrier_admission["passed"]:
         raise RuntimeError("Matched directional MQAR carrier admission failed")
 
-    branch_checks = branch_selector(runtime_control["address_geometry"])
+    runtime_control_geometry = capture_frozen_geometry(
+        arm="future_seed_gdn2",
+        score=runtime_control,
+    )
+    (args.output_dir / "runtime_control_address_geometry.json").write_text(
+        json.dumps(runtime_control_geometry, indent=2, sort_keys=True) + "\n"
+    )
+    branch_checks = branch_selector(runtime_control_geometry)
     branch_admission = {
         "passed": all(branch_checks.values()),
         "checks": branch_checks,
-        "control_address_geometry": runtime_control["address_geometry"],
+        "control_address_geometry": runtime_control_geometry,
         "decision": "bounded_native_log_spd" if all(branch_checks.values()) else "closed",
     }
     (args.output_dir / "branch_admission.json").write_text(
@@ -256,6 +329,19 @@ def main() -> None:
     if not branch_admission["passed"]:
         raise RuntimeError("Matched runtime geometry did not open the Log-SPD branch")
 
+    (args.output_dir / "candidate_started.json").write_text(
+        json.dumps(
+            {
+                "plan": "P-GDN3-020",
+                "arm": "future_seed_gdn2_log_spd",
+                "control_checkpoint_sha256": runtime_control["checkpoint_sha256"],
+                "control_geometry_sample_sha256": runtime_control_geometry["sample_sha256"],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
     candidate = run_arm(
         arm="future_seed_gdn2_log_spd",
         sequence_length=SEQUENCE_LENGTH,
@@ -264,7 +350,6 @@ def main() -> None:
         max_epochs=MAX_EPOCHS,
         batch_size=BATCH_SIZE,
         save_checkpoint=True,
-        capture_address_geometry=True,
     )
     if candidate["parent_init_parameter_hash"] != runtime_control["init_parameter_hash"]:
         raise RuntimeError("Candidate did not preserve the matched runtime-control init")
@@ -281,9 +366,16 @@ def main() -> None:
     )
     candidate_swaps = wrong_key_swap_summary(cases)
     metrics = candidate["metrics"]
+    candidate_geometry = capture_frozen_geometry(
+        arm="future_seed_gdn2_log_spd",
+        score=candidate,
+    )
+    (args.output_dir / "candidate_address_geometry.json").write_text(
+        json.dumps(candidate_geometry, indent=2, sort_keys=True) + "\n"
+    )
     geometry_checks = geometry_gate(
-        runtime_control["address_geometry"],
-        candidate["address_geometry"],
+        runtime_control_geometry,
+        candidate_geometry,
         candidate["log_spd"],
     )
     stability_checks = {
@@ -296,7 +388,9 @@ def main() -> None:
         ),
     }
     control_elapsed = float(runtime_control["elapsed_sec_including_validation"])
-    control_arm_wall = float(runtime_control["arm_wall_sec_through_checkpoint"])
+    control_arm_wall = float(
+        runtime_control["post_warm_arm_wall_sec_through_checkpoint"]
+    )
     control_peak = float(runtime_control["peak_training_cuda_mem_bytes"])
     quality_checks = {
         "balanced_accuracy_at_least_0.85": metrics["balanced_accuracy"] >= 0.85,
@@ -326,8 +420,8 @@ def main() -> None:
         "elapsed_overhead_below_15_percent": (
             float(candidate["elapsed_sec_including_validation"]) < 1.15 * control_elapsed
         ),
-        "arm_wall_overhead_below_15_percent": (
-            float(candidate["arm_wall_sec_through_checkpoint"])
+        "post_warm_arm_wall_overhead_below_15_percent": (
+            float(candidate["post_warm_arm_wall_sec_through_checkpoint"])
             < 1.15 * control_arm_wall
         ),
         "peak_memory_overhead_below_10_percent": (
@@ -357,6 +451,7 @@ def main() -> None:
         "carrier_admission": carrier_admission,
         "branch_admission": branch_admission,
         "candidate": candidate,
+        "candidate_address_geometry": candidate_geometry,
         "candidate_swap_summary": candidate_swaps,
         "registered_gate": {
             "passed": all(geometry_checks.values())

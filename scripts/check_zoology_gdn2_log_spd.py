@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import inspect
 import json
+import math
 import os
 import subprocess
 from pathlib import Path
@@ -34,6 +35,21 @@ EXPECTED_ZOOLOGY_SHA = "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
 EXPECTED_TRAIN_HASH = "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
 EXPECTED_TEST_HASH = "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f"
 EXPECTED_PARAMETER_DELTA = 4216
+
+
+def normalized_uuid(value: str) -> str:
+    return value.removeprefix("GPU-").lower()
+
+
+def finite_max_abs_difference(
+    left: torch.Tensor,
+    right: torch.Tensor,
+    label: str,
+) -> float:
+    difference = (left - right).abs()
+    if not torch.isfinite(difference).all():
+        raise RuntimeError(f"Non-finite {label} difference")
+    return float(difference.max().item())
 
 
 def git_head(path: Path) -> str:
@@ -84,7 +100,10 @@ def main() -> None:
         raise RuntimeError(f"Expected one visible GPU, got {torch.cuda.device_count()}")
     device = torch.cuda.get_device_properties(0)
     device_uuid = str(getattr(device, "uuid", "unavailable"))
-    if device.name != args.expected_gpu_name or device_uuid != args.expected_gpu_uuid:
+    if (
+        device.name != args.expected_gpu_name
+        or normalized_uuid(device_uuid) != normalized_uuid(args.expected_gpu_uuid)
+    ):
         raise RuntimeError(f"Unexpected GPU: {device.name} {device_uuid}")
     if os.environ.get("FLA_EXPECTED_SOURCE_SHA") != PINNED_FLA_SHA:
         raise RuntimeError("Pinned FLA SHA is missing")
@@ -165,14 +184,20 @@ def main() -> None:
     with torch.no_grad():
         control_logits = control(inputs)
         candidate_logits = candidate(inputs)
-    identity_output_max_diff = float((control_logits - candidate_logits).abs().max().item())
+    identity_output_max_diff = finite_max_abs_difference(
+        control_logits,
+        candidate_logits,
+        "zero-metric output",
+    )
     if identity_output_max_diff != 0.0:
         raise RuntimeError(f"Zero metric changed full output: {identity_output_max_diff}")
 
     with torch.no_grad(), capture_chunk_addresses() as recorder:
         recorded_control_logits = control(inputs)
-    recorder_output_max_diff = float(
-        (control_logits - recorded_control_logits).abs().max().item()
+    recorder_output_max_diff = finite_max_abs_difference(
+        control_logits,
+        recorded_control_logits,
+        "address-recorder output",
     )
     if recorder_output_max_diff != 0.0 or len(recorder.records) != 2:
         raise RuntimeError(
@@ -206,8 +231,16 @@ def main() -> None:
             candidate_output, candidate_state = candidate_mixer.forward_with_state(
                 hidden, initial_state=incoming
             )
-        output_diff = float((control_output - candidate_output).abs().max().item())
-        state_diff = float((control_state - candidate_state).abs().max().item())
+        output_diff = finite_max_abs_difference(
+            control_output,
+            candidate_output,
+            f"layer-{layer_index} incoming-state output",
+        )
+        state_diff = finite_max_abs_difference(
+            control_state,
+            candidate_state,
+            f"layer-{layer_index} incoming-state terminal state",
+        )
         incoming_output_max_diff = max(incoming_output_max_diff, output_diff)
         incoming_state_max_diff = max(incoming_state_max_diff, state_diff)
         incoming_layer_results.append(
@@ -242,9 +275,21 @@ def main() -> None:
             candidate_first_state
         )
     future_seed_transport_max_diff = max(
-        float((control_first_output - candidate_first_output).abs().max().item()),
-        float((control_first_state - candidate_first_state).abs().max().item()),
-        float((control_seed - candidate_seed).abs().max().item()),
+        finite_max_abs_difference(
+            control_first_output,
+            candidate_first_output,
+            "FutureSeed producer output",
+        ),
+        finite_max_abs_difference(
+            control_first_state,
+            candidate_first_state,
+            "FutureSeed producer state",
+        ),
+        finite_max_abs_difference(
+            control_seed,
+            candidate_seed,
+            "FutureSeed transported state",
+        ),
     )
     if future_seed_transport_max_diff != 0.0:
         raise RuntimeError(
@@ -253,7 +298,11 @@ def main() -> None:
 
     control.train().zero_grad(set_to_none=True)
     candidate.train().zero_grad(set_to_none=True)
+    cpu_rng_state = torch.get_rng_state()
+    cuda_rng_state = torch.cuda.get_rng_state()
     control_train_logits = control(inputs)
+    torch.set_rng_state(cpu_rng_state)
+    torch.cuda.set_rng_state(cuda_rng_state)
     candidate_train_logits = candidate(inputs)
     graph_names = backward_names(candidate_train_logits)
     mask = targets != -100
@@ -285,9 +334,17 @@ def main() -> None:
         candidate_parameter = candidate_parameters[name]
         if parameter.grad is None or candidate_parameter.grad is None:
             raise RuntimeError(f"Missing parent gradient: {name}")
+        if not torch.isfinite(parameter.grad).all() or not torch.isfinite(
+            candidate_parameter.grad
+        ).all():
+            raise RuntimeError(f"Non-finite parent gradient: {name}")
         parent_gradient_max_diff = max(
             parent_gradient_max_diff,
-            float((parameter.grad - candidate_parameter.grad).abs().max().item()),
+            finite_max_abs_difference(
+                parameter.grad,
+                candidate_parameter.grad,
+                f"parent gradient {name}",
+            ),
         )
     if parent_gradient_max_diff != 0.0:
         raise RuntimeError(f"Zero metric changed parent gradients: {parent_gradient_max_diff}")
@@ -316,8 +373,11 @@ def main() -> None:
         opened_output, _opened_state = candidate_mixer.forward_with_state(
             mechanism_hidden, initial_state=mechanism_incoming
         )
-    mechanism_output_delta = float((opened_output - control_output).abs().mean().item())
-    if mechanism_output_delta <= 1e-5:
+    mechanism_difference = (opened_output - control_output).abs()
+    if not torch.isfinite(mechanism_difference).all():
+        raise RuntimeError("Opened Log-SPD metric produced a non-finite output")
+    mechanism_output_delta = float(mechanism_difference.mean().item())
+    if not math.isfinite(mechanism_output_delta) or mechanism_output_delta <= 1e-5:
         raise RuntimeError("Opened Log-SPD metric does not affect the model")
     if not (
         opened["fp32_metric_eigenvalue_min"] >= 0.5 - 1e-5
@@ -339,7 +399,11 @@ def main() -> None:
         metric.raw.copy_(raw[permutation])
         actual = metric(probe[:, :, permutation])
         metric.raw.copy_(raw)
-    head_permutation_error = float((expected - actual).abs().max().item())
+    head_permutation_error = finite_max_abs_difference(
+        expected,
+        actual,
+        "head permutation",
+    )
     if head_permutation_error > 2e-6:
         raise RuntimeError(f"Head permutation equivariance failed: {head_permutation_error}")
 

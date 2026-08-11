@@ -12,6 +12,7 @@ from einops import rearrange
 from torch.nn import functional as F
 
 from fla.layers.utils import get_layer_cache, update_layer_cache
+from fla.modules.l2norm import l2norm_fwd
 from fla.ops.gdn2 import chunk_gdn2, fused_recurrent_gdn2
 
 from experiments.gdn2_diagnostics.committed_edit import key_gram_statistics
@@ -391,6 +392,7 @@ def address_geometry_diagnostics(
         for _ in range(layer_count)
     ]
     examples = 0
+    sample_digest = hashlib.sha256()
     with capture_chunk_addresses() as recorder:
         for inputs, targets, _slices in dataloader:
             if examples >= max_examples:
@@ -398,6 +400,8 @@ def address_geometry_diagnostics(
             take = min(inputs.shape[0], max_examples - examples)
             inputs = inputs[:take]
             targets = targets[:take]
+            sample_digest.update(inputs.contiguous().numpy().tobytes())
+            sample_digest.update(targets.contiguous().numpy().tobytes())
             recorder.reset()
             model(inputs.cuda())
             if len(recorder.records) != layer_count:
@@ -407,8 +411,8 @@ def address_geometry_diagnostics(
 
             for layer_index, (q, k) in enumerate(recorder.records):
                 with torch.autocast(device_type="cuda", enabled=False):
-                    q = F.normalize(q[:take].float(), dim=-1)
-                    k = F.normalize(k[:take].float(), dim=-1)
+                    q, _q_rstd = l2norm_fwd(q[:take])
+                    k, _k_rstd = l2norm_fwd(k[:take])
                     gram = key_gram_statistics(k)
                 per_layer[layer_index]["rank"].append(
                     gram["effective_rank_fraction"].flatten().cpu()
@@ -468,6 +472,7 @@ def address_geometry_diagnostics(
     affected = (rank <= 0.50) | (anisotropy >= 4.0)
     return {
         "examples": examples,
+        "sample_sha256": sample_digest.hexdigest(),
         "records": int(rank.numel()),
         "effective_rank_fraction": _summary(rank),
         "anisotropy": _summary(anisotropy),

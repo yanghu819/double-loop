@@ -56,12 +56,6 @@ if [[ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
   printf 'P-GDN3-020 requires a clean source worktree.\n' >&2
   exit 10
 fi
-REMOTE_SHA="$(git -C "$REPO_ROOT" ls-remote --refs origin "$SOURCE_REMOTE_REF" | awk '{print $1}')"
-if [[ "$REMOTE_SHA" != "$GIT_SHA" ]]; then
-  printf 'GitHub source readback mismatch: %s != %s\n' "$REMOTE_SHA" "$GIT_SHA" >&2
-  exit 11
-fi
-
 REFERENCE_RUN="$PERSIST_ROOT/$HISTORICAL_REFERENCE_RUN"
 for required in git_sha.txt score.json output/length_1024/future_seed_gdn2/cases.json; do
   if [[ ! -f "$REFERENCE_RUN/$required" ]]; then
@@ -90,36 +84,112 @@ mkdir -p "$OUT_DIR"
 
 STATUS=""
 FINALIZED=0
+PHASE="preflight"
+LAUNCHER_PID="$$"
+LAUNCHER_PGID="$(ps -o pgid= -p "$$" | tr -d ' ')"
+set_phase() {
+  PHASE="$1"
+  printf '%s\n' "$PHASE" > "$RUN_DIR/phase.txt"
+}
+gpu_is_idle() {
+  [[ -z "$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null)" ]]
+}
 finalize() {
   local shell_status="$?"
   if [[ "$FINALIZED" == "1" ]]; then
     return
   fi
   FINALIZED=1
+  trap - EXIT
   set +e
   local final_status="${STATUS:-$shell_status}"
+  local archive_status=0
   if [[ "$shell_status" != "0" && "$final_status" == "0" ]]; then
     final_status="$shell_status"
   fi
   if [[ "$final_status" != "0" && ! -f "$RUN_DIR/abort.json" ]]; then
-    "$PYTHON_BIN" -c 'import json,sys; from datetime import datetime,timezone; from pathlib import Path; Path(sys.argv[1]).write_text(json.dumps({"timestamp_utc":datetime.now(timezone.utc).isoformat(),"reason":"launcher exited before classified terminal state","exit_status":int(sys.argv[2]),"scientific_failure":False},indent=2,sort_keys=True)+"\n")' "$RUN_DIR/abort.json" "$final_status"
+    "$PYTHON_BIN" -c 'import json,sys; from datetime import datetime,timezone; from pathlib import Path; Path(sys.argv[1]).write_text(json.dumps({"timestamp_utc":datetime.now(timezone.utc).isoformat(),"reason":"launcher exited before classified terminal state","exit_status":int(sys.argv[2]),"phase":sys.argv[3],"scientific_failure":False},indent=2,sort_keys=True)+"\n")' "$RUN_DIR/abort.json" "$final_status" "$PHASE" || archive_status=1
   fi
-  date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/completed_at.txt"
+  date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/completed_at.txt" || archive_status=1
   nvidia-smi --query-gpu=index,uuid,name,memory.used,utilization.gpu \
-    --format=csv,noheader > "$RUN_DIR/gpu_after.txt"
-  printf '%s\n' "$final_status" > "$RUN_DIR/exit_status.txt"
-  find "$RUN_DIR" -type f ! -name artifacts.sha256 -print0 \
-    | sort -z | xargs -0 sha256sum > "$RUN_DIR/artifacts.sha256"
+    --format=csv,noheader > "$RUN_DIR/gpu_after.txt" || archive_status=1
+  if [[ "$archive_status" != "0" && "$final_status" == "0" ]]; then
+    final_status=70
+  fi
+  printf '%s\n' "$final_status" > "$RUN_DIR/exit_status.txt" || archive_status=1
+  if ! find "$RUN_DIR" -type f ! -name artifacts.sha256 ! -name artifacts.sha256.tmp -print0 \
+    | sort -z | xargs -0 sha256sum > "$RUN_DIR/artifacts.sha256.tmp"; then
+    archive_status=1
+  elif ! mv "$RUN_DIR/artifacts.sha256.tmp" "$RUN_DIR/artifacts.sha256"; then
+    archive_status=1
+  fi
+  if [[ "$archive_status" != "0" && "$final_status" == "0" ]]; then
+    final_status=70
+    printf '%s\n' "$final_status" > "$RUN_DIR/exit_status.txt"
+    find "$RUN_DIR" -type f ! -name artifacts.sha256 ! -name artifacts.sha256.tmp -print0 \
+      | sort -z | xargs -0 sha256sum > "$RUN_DIR/artifacts.sha256.tmp"
+    mv "$RUN_DIR/artifacts.sha256.tmp" "$RUN_DIR/artifacts.sha256"
+  fi
   printf 'completed run_dir=%s status=%s\n' "$RUN_DIR" "$final_status"
+  exit "$final_status"
+}
+on_signal() {
+  STATUS="$1"
+  exit "$1"
 }
 trap finalize EXIT
+trap 'on_signal 130' INT
+trap 'on_signal 143' TERM
 
+printf '%s\n' "$LAUNCHER_PID" > "$RUN_DIR/pid.txt"
+printf '%s\n' "$LAUNCHER_PGID" > "$RUN_DIR/pgid.txt"
+set_phase preflight
+if [[ "$LAUNCHER_PID" != "$LAUNCHER_PGID" ]]; then
+  STATUS=15
+  printf 'P-GDN3-020 must be launched under its own setsid process group.\n' >&2
+  exit "$STATUS"
+fi
 cp "$P020_CONFIG" "$RUN_DIR/launch.env"
 git -C "$REPO_ROOT" rev-parse HEAD > "$RUN_DIR/git_sha.txt"
 git -C "$REPO_ROOT" status --short > "$RUN_DIR/git_status.txt"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/started_at.txt"
 nvidia-smi --query-gpu=index,uuid,name,memory.total,memory.used,utilization.gpu \
   --format=csv,noheader > "$RUN_DIR/gpu_before.txt"
+if ! gpu_is_idle; then
+  STATUS=16
+  printf 'GPU became occupied before the formal lease completed.\n' >&2
+  exit "$STATUS"
+fi
+
+EXPECTED_ORIGIN_URL="https://github.com/yanghu819/double-loop.git"
+ORIGIN_URL="$(git -C "$REPO_ROOT" remote get-url origin)"
+if [[ "$ORIGIN_URL" != "$EXPECTED_ORIGIN_URL" ]]; then
+  STATUS=17
+  printf 'Unexpected origin URL: %s\n' "$ORIGIN_URL" >&2
+  exit "$STATUS"
+fi
+set_phase github_readback
+set +e
+timeout --signal=TERM --kill-after=5 30 \
+  git -C "$REPO_ROOT" ls-remote --refs origin "$SOURCE_REMOTE_REF" \
+  > "$RUN_DIR/github_ls_remote.txt" 2> "$RUN_DIR/github_ls_remote.stderr"
+REMOTE_STATUS="$?"
+set -e
+if [[ "$REMOTE_STATUS" != "0" ]]; then
+  STATUS=69
+  printf 'GitHub source readback failed with status %s.\n' "$REMOTE_STATUS" >&2
+  exit "$STATUS"
+fi
+REMOTE_SHA="$(awk '{print $1}' "$RUN_DIR/github_ls_remote.txt")"
+if [[ "$REMOTE_SHA" != "$GIT_SHA" ]]; then
+  STATUS=11
+  printf 'GitHub source readback mismatch: %s != %s\n' "$REMOTE_SHA" "$GIT_SHA" >&2
+  exit "$STATUS"
+fi
+printf 'origin=%s\nref=%s\nsha=%s\nreadback_utc=%s\n' \
+  "$ORIGIN_URL" "$SOURCE_REMOTE_REF" "$REMOTE_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  > "$RUN_DIR/github_provenance.txt"
+set_phase snapshot
 git -C "$REPO_ROOT" ls-files -z -- . \
   ':(exclude).cache/**' ':(exclude).venv/**' ':(exclude)artifacts/**' \
   ':(exclude)models/**' ':(exclude)repos/**' ':(exclude)runs/**' \
@@ -151,6 +221,13 @@ Path("$RUN_DIR/config.json").write_text(json.dumps({
 }, indent=2, sort_keys=True) + "\n")
 PY
 
+if ! gpu_is_idle; then
+  STATUS=18
+  printf 'GPU became occupied before strict contract.\n' >&2
+  exit "$STATUS"
+fi
+set_phase contract
+date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/contract_started_at.txt"
 set +e
 "$PYTHON_BIN" "$REPO_ROOT/scripts/check_zoology_gdn2_log_spd.py" \
   --output "$RUN_DIR/contract.json" \
@@ -164,9 +241,19 @@ if [[ "$CONTRACT_STATUS" == "0" && "$CONTRACT_TEE_STATUS" != "0" ]]; then
   CONTRACT_STATUS=74
 fi
 set -e
+printf 'python=%s\ntee=%s\ncombined=%s\n' \
+  "${CONTRACT_PIPE_STATUS[0]}" "$CONTRACT_TEE_STATUS" "$CONTRACT_STATUS" \
+  > "$RUN_DIR/contract_status.txt"
 
 STATUS="$CONTRACT_STATUS"
 if [[ "$CONTRACT_STATUS" == "0" ]]; then
+  if ! gpu_is_idle; then
+    STATUS=19
+    printf 'GPU remained occupied after strict contract.\n' >&2
+    exit "$STATUS"
+  fi
+  set_phase formal_endpoint
+  date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/formal_started_at.txt"
   set +e
   timeout --signal=TERM --kill-after=30 "$WALL_BUDGET_SEC" \
     "$PYTHON_BIN" -u -m experiments.zoology_mqar.gdn2_log_spd_endpoint \
@@ -182,8 +269,12 @@ if [[ "$CONTRACT_STATUS" == "0" ]]; then
     STATUS=74
   fi
   set -e
+  printf 'endpoint=%s\ntee=%s\ncombined=%s\n' \
+    "${FORMAL_PIPE_STATUS[0]}" "$FORMAL_TEE_STATUS" "$STATUS" \
+    > "$RUN_DIR/formal_status.txt"
 fi
 
+set_phase decision
 if [[ -f "$OUT_DIR/comparison.json" ]]; then
   cp "$OUT_DIR/comparison.json" "$RUN_DIR/score.json"
   if [[ "$STATUS" == "0" ]]; then
@@ -201,7 +292,7 @@ PY
 fi
 
 if [[ "$STATUS" != "0" ]]; then
-  "$PYTHON_BIN" - "$RUN_DIR/abort.json" "$STATUS" "$OUT_DIR/carrier_admission.json" "$OUT_DIR/branch_admission.json" "$OUT_DIR/comparison.json" <<'PY'
+  "$PYTHON_BIN" - "$RUN_DIR/abort.json" "$STATUS" "$OUT_DIR/carrier_admission.json" "$OUT_DIR/branch_admission.json" "$OUT_DIR/candidate_started.json" "$OUT_DIR/comparison.json" "$RUN_DIR/phase.txt" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -210,10 +301,12 @@ from pathlib import Path
 status = int(sys.argv[2])
 carrier_path = Path(sys.argv[3])
 branch_path = Path(sys.argv[4])
-comparison_path = Path(sys.argv[5])
+candidate_marker = Path(sys.argv[5])
+comparison_path = Path(sys.argv[6])
+phase = Path(sys.argv[7]).read_text().strip()
 carrier = json.loads(carrier_path.read_text()) if carrier_path.exists() else None
 branch = json.loads(branch_path.read_text()) if branch_path.exists() else None
-candidate_started = comparison_path.exists() or (branch is not None and branch["passed"])
+candidate_started = candidate_marker.exists()
 if carrier is not None and not carrier["passed"]:
     reason = "matched directional MQAR carrier admission failed; candidate did not start"
     scientific_failure = False
@@ -224,8 +317,8 @@ elif status == 2 and comparison_path.exists():
     reason = "P-GDN3-020 registered mechanism gate failed"
     scientific_failure = True
 elif status == 124:
-    reason = "wall budget exceeded"
-    scientific_failure = False
+    reason = "wall budget exceeded after candidate start" if candidate_started else "wall budget exceeded before candidate start"
+    scientific_failure = candidate_started
 else:
     reason = "strict contract or formal integrity returned nonzero"
     scientific_failure = False
@@ -235,8 +328,10 @@ Path(sys.argv[1]).write_text(json.dumps({
     "exit_status": status,
     "scientific_failure": scientific_failure,
     "candidate_started": candidate_started,
+    "phase": phase,
 }, indent=2, sort_keys=True) + "\n")
 PY
 fi
 
+set_phase archived
 exit "$STATUS"

@@ -112,6 +112,13 @@ inspection showed `inspect.unwrap(chunk_gdn2)` resolves to the expected pinned
 failure; R3 validates the unwrapped implementation path while retaining the
 wrapper module in provenance.
 
+R3 reached the synthetic official backward contract, then its hand-built test
+inputs exposed a BF16/FP32 mismatch between `q/k/v` and `g/b/w`. Triton rejected
+the mixed dot during compilation before the formal Sudoku model ran. This is
+archived as a third non-science harness failure. R4 makes all six synthetic
+kernel inputs BF16, matching production autocast, while the diagnostic replay
+remains FP32.
+
 Scientific results pending.
 
 ## 9. Decision

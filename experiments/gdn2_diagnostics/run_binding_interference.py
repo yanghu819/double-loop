@@ -879,9 +879,15 @@ def synthetic_backward_contract(device: torch.device) -> dict[str, Any]:
     q = torch.randn(*shapes, device=device, dtype=torch.bfloat16, generator=generator, requires_grad=True)
     k = torch.randn(*shapes, device=device, dtype=torch.bfloat16, generator=generator, requires_grad=True)
     v = torch.randn(*shapes, device=device, dtype=torch.bfloat16, generator=generator, requires_grad=True)
-    g = (-F.softplus(torch.randn(*shapes, device=device, generator=generator))).requires_grad_()
-    b = torch.sigmoid(torch.randn(*shapes, device=device, generator=generator)).requires_grad_()
-    w = torch.sigmoid(torch.randn(*shapes, device=device, generator=generator)).requires_grad_()
+    g = (-F.softplus(torch.randn(
+        *shapes, device=device, dtype=torch.bfloat16, generator=generator
+    ))).requires_grad_()
+    b = torch.sigmoid(torch.randn(
+        *shapes, device=device, dtype=torch.bfloat16, generator=generator
+    )).requires_grad_()
+    w = torch.sigmoid(torch.randn(
+        *shapes, device=device, dtype=torch.bfloat16, generator=generator
+    )).requires_grad_()
     output, final_state = chunk_gdn2(
         q=q,
         k=k,

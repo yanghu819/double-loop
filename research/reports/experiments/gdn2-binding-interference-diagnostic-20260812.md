@@ -99,9 +99,14 @@ detached worktree.
 
 ## 8. Results
 
-Pending.
+The first contract attempt from source `843b02b` exited before model
+construction because the launcher omitted the pinned Zoology checkout from
+`PYTHONPATH`. It used no GPU memory and consumed no science gate. The run
+contains a `non_science_harness_failure` `abort.json`; the launcher-only fix
+adds exact SHA and clean-worktree checks for Zoology before import.
+
+Scientific results pending.
 
 ## 9. Decision
 
 Pending the zero-parameter diagnostic.
-

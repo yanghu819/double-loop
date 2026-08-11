@@ -35,6 +35,9 @@ EXPECTED_ZOOLOGY_SHA = "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
 EXPECTED_TRAIN_HASH = "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
 EXPECTED_TEST_HASH = "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f"
 EXPECTED_PARAMETER_DELTA = 4216
+EXPECTED_UNUSED_PARENT_GRADIENTS = {
+    "backbone.layers.0.sequence_mixer.future_seed_logit",
+}
 
 
 def normalized_uuid(value: str) -> str:
@@ -343,10 +346,14 @@ def main() -> None:
         raise RuntimeError("A Log-SPD layer received zero gradient")
 
     parent_gradient_max_diff = 0.0
+    parent_gradients_absent_in_both = []
     for name, parameter in control_parameters.items():
         candidate_parameter = candidate_parameters[name]
+        if parameter.grad is None and candidate_parameter.grad is None:
+            parent_gradients_absent_in_both.append(name)
+            continue
         if parameter.grad is None or candidate_parameter.grad is None:
-            raise RuntimeError(f"Missing parent gradient: {name}")
+            raise RuntimeError(f"Parent gradient presence differs: {name}")
         if not torch.isfinite(parameter.grad).all() or not torch.isfinite(
             candidate_parameter.grad
         ).all():
@@ -361,6 +368,11 @@ def main() -> None:
         )
     if parent_gradient_max_diff != 0.0:
         raise RuntimeError(f"Zero metric changed parent gradients: {parent_gradient_max_diff}")
+    if set(parent_gradients_absent_in_both) != EXPECTED_UNUSED_PARENT_GRADIENTS:
+        raise RuntimeError(
+            "Unexpected jointly unused parent gradients: "
+            f"{parent_gradients_absent_in_both}"
+        )
 
     candidate_mixer = candidate.backbone.layers[1].sequence_mixer
     control_mixer = control.backbone.layers[1].sequence_mixer
@@ -444,6 +456,7 @@ def main() -> None:
         "incoming_layer_results": incoming_layer_results,
         "future_seed_transport_max_diff": future_seed_transport_max_diff,
         "parent_gradient_max_diff": parent_gradient_max_diff,
+        "parent_gradients_absent_in_both": parent_gradients_absent_in_both,
         "metric_gradient_min": metric_gradient_min,
         "metric_gradient_per_head": metric_gradient_per_head,
         "metric_gradient_status": metric_gradient_status,

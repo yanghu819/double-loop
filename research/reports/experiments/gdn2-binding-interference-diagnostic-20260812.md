@@ -143,8 +143,51 @@ new MQAR arms. The successor quality bar is unchanged: balanced at least
 `0.85` and at least `+0.10` over the historical `0.7475`. A reconstruction miss
 invalidates MQAR branch evidence and receives no seed/epoch/LR rescue.
 
-Scientific results pending.
+The strict R6 contract passed from exact pushed source `74f928e` on the only
+visible A800. It confirmed zero new parameters, bit-exact wrapped/unwrapped
+Sudoku logits, unchanged model-state hashes, the pinned official FLA source,
+and `ChunkGDN2FunctionBackward`. The formal Sudoku capture then completed
+without changing logits or model state.
+
+On the combined official 51-64 blank batches, exact committed-edit surprise
+does **not** identify cells corrected by a later loop: AUROC is `0.522970`,
+Pearson is `0.015239`, and top-quartile lift is `1.052392`. Surprise-selected
+writes survive `0.144955` less than recency-selected writes, but the other two
+registered surprise gates miss decisively. A receiver-native surprise cache is
+therefore not opened by Sudoku evidence.
+
+The same capture exposes a strong address-geometry symptom. Median key Gram
+effective-rank fraction is `0.479188`, median anisotropy is `6.456761`, median
+condition number is `402.9106`, and median coherence is `0.924599`. These are
+descriptive Sudoku evidence only: the preregistered PGDN branch additionally
+requires the affected-record fraction from the validated L1024 MQAR carrier.
+
+The sole preregistered runtime-fork reconstruction completed all ten epochs but
+failed every carrier floor. Balanced accuracy is `0.3245`, joint exact is
+`0.0010`, and past/future accuracy is `0.3275/0.3215`, versus fixed minimums
+`0.70/0.25/0.68/0.68`. Source `77e5539`, Zoology/FLA SHAs, both data hashes,
+parameter count, and the newly frozen runtime initialization hashes all match;
+the failure is a quality-regime mismatch, not an integrity or harness error.
+No checkpoint or MQAR internal diagnostic is accepted.
+
+Artifact SHA256 values are:
+
+- CUDA contract: `fb75afeca0456ee2824d2200caf50f15cd1b29efb31d3361a7ac777eb0eb1d32`
+- Sudoku diagnostic: `2571472623f0d2616995e198effe24b2e7541d4486177044e796585032bd37bb`
+- MQAR reconstruction score: `a19226f2aea4b17ecc4fa2e2123d1850691a8c1ed1e3acad3e8e6099a5c33404`
+- MQAR training metrics: `b085f498717cee4ee4174fb15384aeccef5c139fc14043d384290c0313eb8cc5`
+- Scientific abort: `b3c2a6df172184a3f2f42263b69b2a1bdffae096f31f091057b9d53120b42968`
 
 ## 9. Decision
 
-Pending the zero-parameter diagnostic.
+Close `P-BIND-001` at its registered MQAR reconstruction gate. The Sudoku
+capture is valid and rules out surprise-cache admission on this parent, but it
+cannot substitute post hoc for the missing MQAR affected-record statistic.
+Consequently none of the four mechanism branches is authorized by this run.
+
+Do not retry seed, epoch count, LR, loss, width, or the same A800 runtime fork.
+The only admissible recovery is provenance work: reproduce the historical A100
+runtime and exact initialization, or preregister a different independently
+validated directional-binding carrier. Until then, the anisotropic Sudoku
+geometry is a concrete hypothesis for a bounded native PGDN conditioner, not a
+quality claim or launch permission.

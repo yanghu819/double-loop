@@ -38,6 +38,7 @@ MODEL_LAYERS = 2
 MODEL_HEADS = 4
 GDN2_HEAD_DIM = 32
 ATTENTION_HEAD_DIM = 57
+GDN2_ARMS = ("causal_gdn2", "future_seed_gdn2", "future_seed_gdn2_log_spd")
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
     "31bac228c46a1c85b0b0e164675c7f65e9bb0a3d4b733d4c42d7c057bd6d5bf9"
@@ -85,14 +86,20 @@ def build_config(
             f"zoology-directional-scaling-l{sequence_length}-k{num_kv_pairs}"
         ),
     )
-    if arm in {"causal_gdn2", "future_seed_gdn2"}:
+    if arm in GDN2_ARMS:
         if model_width != model_heads * gdn2_head_dim:
             raise ValueError("model_width must equal model_heads * gdn2_head_dim")
-        sequence_mixer = ModuleConfig(
-            name=(
+        mixer_name = (
+            "experiments.zoology_mqar.gdn2_log_spd."
+            "ZoologyLogSPDGDN2FutureSeedMixer"
+            if arm == "future_seed_gdn2_log_spd"
+            else (
                 "experiments.zoology_mqar.gdn2_futureseed."
                 "ZoologyGDN2FutureSeedMixer"
-            ),
+            )
+        )
+        sequence_mixer = ModuleConfig(
+            name=mixer_name,
             kwargs={
                 "num_heads": model_heads,
                 "head_dim": gdn2_head_dim,
@@ -139,7 +146,7 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
-    if arm in {"causal_gdn2", "future_seed_gdn2"}:
+    if arm in GDN2_ARMS:
         return FutureSeedLanguageModel(copy.deepcopy(config.model))
     return LanguageModel(copy.deepcopy(config.model))
 
@@ -367,10 +374,13 @@ def run_arm(
     gdn2_head_dim: int = GDN2_HEAD_DIM,
     gdn2_expand_v: float = 1.0,
     output_arm_name: str | None = None,
+    save_checkpoint: bool = False,
+    capture_address_geometry: bool = False,
 ) -> dict[str, Any]:
     run_arm_name = output_arm_name or arm
     arm_dir = output_dir / f"length_{sequence_length}" / run_arm_name
     arm_dir.mkdir(parents=True, exist_ok=True)
+    arm_started = time.perf_counter()
     config = build_config(
         arm=arm,
         sequence_length=sequence_length,
@@ -386,6 +396,11 @@ def run_arm(
     model = make_model(config, arm)
     init_hash = model_hash(model)
     init_parameter_hash = parameter_hash(model)
+    parent_init_parameter_hash = None
+    if arm == "future_seed_gdn2_log_spd":
+        from experiments.zoology_mqar.gdn2_log_spd import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
     data_hashes = {
         "train": dataset_hash(train_dataloader),
@@ -426,7 +441,42 @@ def run_arm(
         test_dataloader,
         sequence_length=sequence_length,
     )
+    future_seed = futureseed_diagnostics(model) if arm in GDN2_ARMS else None
+    address_geometry = None
+    if capture_address_geometry:
+        from experiments.zoology_mqar.gdn2_log_spd import address_geometry_diagnostics
+
+        address_geometry = address_geometry_diagnostics(
+            model,
+            test_dataloader,
+            sequence_length=sequence_length,
+            max_examples=128,
+        )
+    log_spd = None
+    if arm == "future_seed_gdn2_log_spd":
+        from experiments.zoology_mqar.gdn2_log_spd import log_spd_diagnostics
+
+        log_spd = log_spd_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
+    trained_parameter_hash = parameter_hash(model)
+    checkpoint_path = None
+    checkpoint_sha256 = None
+    if save_checkpoint:
+        checkpoint_path = arm_dir / "model_state.pt"
+        torch.save(
+            {
+                "arm": run_arm_name,
+                "carrier_arm": arm,
+                "model_state_dict": {
+                    name: tensor.detach().cpu()
+                    for name, tensor in model.state_dict().items()
+                },
+            },
+            checkpoint_path,
+        )
+        checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+    torch.cuda.synchronize()
+    arm_wall_sec = time.perf_counter() - arm_started
     score: dict[str, Any] = {
         "arm": run_arm_name,
         "carrier_arm": arm,
@@ -441,19 +491,27 @@ def run_arm(
         ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
+        "parent_init_parameter_hash": parent_init_parameter_hash,
+        "trained_parameter_hash": trained_parameter_hash,
         "data_hashes": data_hashes,
         "parameters": sum(parameter.numel() for parameter in model.parameters()),
         "epochs": max_epochs,
         "train_examples": TRAIN_EXAMPLES,
         "train_tokens": TRAIN_EXAMPLES * sequence_length * max_epochs,
         "elapsed_sec_including_validation": elapsed,
+        "arm_wall_sec_through_checkpoint": arm_wall_sec,
         "peak_training_cuda_mem_bytes": training_peak,
         "metrics": metrics,
         "valid_curve": logger.rows,
         "warmed_step_benchmark": benchmark,
+        "checkpoint_path": None if checkpoint_path is None else str(checkpoint_path),
+        "checkpoint_sha256": checkpoint_sha256,
+        "address_geometry": address_geometry,
     }
-    if arm in {"causal_gdn2", "future_seed_gdn2"}:
-        score["future_seed"] = futureseed_diagnostics(model)
+    if future_seed is not None:
+        score["future_seed"] = future_seed
+    if arm == "future_seed_gdn2_log_spd":
+        score["log_spd"] = log_spd
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

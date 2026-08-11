@@ -38,6 +38,7 @@ def _effective_rank(eigenvalues: Tensor) -> Tensor:
 
 def key_gram_statistics(k: Tensor) -> dict[str, Tensor]:
     """Return per-board/head geometry for normalized keys [B,T,H,K]."""
+    k = k.float()
     gram = torch.einsum("bthk,bthl->bhkl", k, k) / float(k.shape[1])
     eigenvalues = torch.linalg.eigvalsh(gram).clamp_min(0)
     mean_eigenvalue = eigenvalues.mean(dim=-1).clamp_min(1e-12)
@@ -108,6 +109,7 @@ def _selected_survival(
 
 
 @torch.no_grad()
+@torch.autocast(device_type="cuda", enabled=False)
 def committed_edit_diagnostics(
     *,
     q: Tensor,

@@ -119,6 +119,14 @@ archived as a third non-science harness failure. R4 makes all six synthetic
 kernel inputs BF16, matching production autocast, while the diagnostic replay
 remains FP32.
 
+The first full run reached the formal Sudoku forward and then stopped in the
+first read-only Gram statistic: production autocast downcast the recorder's
+`einsum`, and CUDA `eigvalsh` does not accept BF16. No result or branch decision
+was emitted. The incident is archived as a non-science diagnostic-precision
+failure. The next source disables autocast for the complete committed-edit
+replay and explicitly casts Gram inputs to FP32; model forward autocast remains
+unchanged.
+
 Scientific results pending.
 
 ## 9. Decision

@@ -253,9 +253,8 @@ printf 'remote=%s\nref=%s\nsha=%s\nreadback_utc=%s\n' \
   > "$RUN_DIR/github_provenance.txt"
 
 set_phase snapshot
-git -C "$REPO_ROOT" ls-files -z -- . \
-  ':(exclude).cache/**' ':(exclude).venv/**' ':(exclude)artifacts/**' \
-  ':(exclude)models/**' ':(exclude)repos/**' ':(exclude)runs/**' \
+git -C "$REPO_ROOT" ls-files -z -- \
+  configs experiments scripts research plans.md \
   | tar --null -czf "$RUN_DIR/source_snapshot.tar.gz" \
       -C "$REPO_ROOT" --files-from -
 

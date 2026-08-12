@@ -1,0 +1,101 @@
+# P-GDN3-025: Committed-Delta Correction Memory
+
+## 1. Metainfo
+
+- Status: pre-registered, implementation complete, awaiting strict GPU contract
+- Benchmark: directional MQAR L1024 wrong-key regime
+- Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
+  batch32, seed123
+- Arms: fixed shared K16 correction basis; learned semi-orthogonal K16
+  correction basis
+- Resource: one task-mode GPU, no concurrent model process
+
+## 2. Evidence And Hypothesis
+
+P020's bounded Log-SPD address metric raises current-runtime balanced accuracy
+from `0.1735` to `0.48225`, but `94.16%` of its remaining errors are
+correct-value/wrong-key swaps. P021 shows that a second write into the parent
+state overwrites useful payload. P022/P023 show that ordinary same-byte bank
+splitting does not close binding. P024's product hash removes wrong-key swaps
+by also destroying the useful linear address channel. Earlier companion-state
+work did not give the companion address path a demonstrated production
+gradient.
+
+The untested hypothesis is therefore a correction state whose payload is not
+another learned V stream. It receives the exact `v_new` residual already
+committed by pinned official GDN2 after accounting for the decayed live state.
+If wrong-key swaps come from interference among committed edits, a smaller
+receiver-native address state should preserve that evidence without replacing
+or rewriting the parent state. A learned stable K32-to-K16 basis should beat a
+fixed same-state-byte compression if address organization, rather than raw
+extra capacity, is the causal lever.
+
+## 3. Mechanism
+
+The parent H4/K32/V32 official GDN2 scan and native FutureSeed path remain
+unchanged. During each parent scan, capture the exact official `v_new` tensor
+at the recurrence boundary. Detach this tensor from the parent backward so the
+correction loss cannot distort the parent transition. A second pinned official
+GDN2 scan writes it into an independent H4/K16/V32 correction state. Its
+readout is added through a zero-initialized bounded `tanh` gate, preserving
+bit-exact parent output and nonzero-incoming-state behavior at initialization.
+
+The fixed arm uses pairwise orthonormal K32-to-K16 rows. The learned arm starts
+from exactly those rows and applies a per-head Cayley rotation, so its rows
+remain semi-orthogonal. Both arms add exactly 2,048 state values/layer and use
+two official scans/layer. The fixed arm adds 8 scalar read parameters; the
+learned arm adds 3,976 parameters. No selector, search, Sudoku rule, extra V
+producer, product hash, cross-loop cache, custom recurrence kernel or fallback
+is present.
+
+## 4. Falsifiable Prediction And Gate
+
+The endpoint passes only if all hold:
+
+- both parent hashes and both dataset hashes match the exact P020 provenance;
+- all four official scan backwards are present, zero-read parent output and
+  nonzero-incoming main terminal state are bit exact, and read/basis gradients
+  are finite and nonzero in the registered two-stage contract;
+- both arms activate in both layers; committed edit, correction read, board and
+  token variation are finite/nonzero; correction/main state RMS is in
+  `[1e-4, 10]`; learned basis movement is at least `1e-4` and row orthogonality
+  error at most `1e-4`;
+- learned balanced accuracy is at least `0.70`, joint exact at least `0.25`,
+  both directions at least `0.68`, and balanced gain over P020 at least `0.10`;
+- learned beats the fixed same-state-byte arm by at least `0.05` balanced or
+  joint exact, and lowers wrong-key swap fraction by at least `0.10` from P020;
+- both arm fit ratios versus P020 are at most `1.65`; learned warmed-step and
+  allocation ratios are at most `1.60`; learned/fixed system delta is at most
+  `1.10`.
+
+Any miss discards committed-delta correction memory. There is no K, basis
+rank, gate, erase/write, detach policy, sharing, seed, LR, loss, batch, width,
+depth, epoch or duration rescue. A pass authorizes one fused Sudoku-scale
+transfer; a failure closes this correction-memory organization.
+
+## 5. Configuration
+
+- train/test examples: `10,000/1,000`
+- sequence length / KV pairs: `1024/4`
+- train tokens: `102.4M` per arm
+- P020 score/cases SHA256:
+  `a9c750e84fc918910c008b679016c3f24a5e821e3c20b84b1f0b07c1c64b9b3e` /
+  `127fb40e32a14a54f6f90c784dfe728c85dcf200535e0fb300e3e28a55c8751b`
+- pinned FLA source SHA:
+  `9c8e42e762fce087c27b673af4922795d9edb85e`
+
+## 6. Artifacts
+
+Pending exact pushed source SHA, detached worktree, contract and formal run.
+
+## 7. Results
+
+Pending.
+
+## 8. Decision
+
+Pending the sole registered endpoint.
+
+## 9. Submission
+
+Not applicable.

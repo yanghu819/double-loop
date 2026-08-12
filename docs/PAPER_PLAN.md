@@ -1388,3 +1388,33 @@ does not supply the missing short-horizon exact-closure mechanism at this
 parent and more than doubles recurrent compute. This closes S16/top1 Raven
 write control without slot, top-k, width, injection or duration tuning; it does
 not claim that every long-context Raven/GDN composition is impossible.
+
+### P-GDN3-020--023 Directional-MQAR Address Boundary
+
+The historical directional-MQAR L1024 carrier did not reproduce on the current
+A100 software/runtime stack: native FutureSeed reached balanced/joint only
+`0.1735/0`, versus the historical `0.7475/0.339`. P020 therefore failed its
+formal carrier-admission gate. Its one fixed exploratory Log-SPD candidate is
+still mechanistically informative: a bounded learned Q/K metric raises
+balanced accuracy to `0.48225` without changing state size or scan count. This
+is evidence that address geometry is a real lever, but not a formal benchmark
+win and not sufficient for transfer to Sudoku.
+
+The three discriminators around that signal are negative. A second live edit
+in P021 activates but destructively overwrites the shared state, ending at
+balanced `0.00975`. A same-byte H8/K16/V32 bank organization in P022 preserves
+4,096 state values and one official scan but reaches only `0.27975`, with
+`2.55x` fit time. The fixed P023 combination of H8/K16/V32 and Log-SPD reaches
+balanced/future/past/joint `0.3090/0.3225/0.2955/0.004`, below P020 by
+`0.17325`, and misses the fit gate at `1.670x` control.
+
+The error transition sharpens the mechanism boundary. P020 leaves fewer total
+errors but `94.16%` of them are correct values assigned to the wrong key. P023
+reduces that fraction to `48.19%` while increasing total errors to 2,764. The
+model can learn much of the value set, yet static metric conditioning and bank
+factorization do not establish reliable key-value binding. This closes extra
+rank-one writes, same-byte head/K reshaping, and their fixed Log-SPD
+combination. The next credible GDN3 direction, if research resumes, must be a
+stable collision-aware associative state organization evaluated from scratch
+on a reproducible binding carrier, rather than another static conditioner,
+router, bank-shape change or zero-init Sudoku graft.

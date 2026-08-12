@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: in progress on one A100 80GB
+- Status: discarded after the single registered endpoint
 - Source: exact pushed SHA `18ad10fee1efa531fb970dff92efc7d985cfe07f`
 - Fixed field: directional MQAR L1024, D128/L2, 10 epochs, batch32, seed123
 - Geometry: H8/K16/V32, exactly 4,096 recurrent-state values per layer
@@ -55,4 +55,62 @@ K/V shape, epoch, LR, loss, seed, width, depth or duration rescue.
 
 ## 6. Decision
 
-Pending the one fixed endpoint.
+The run completed normally with status `0` and preserved the registered one
+official scan and 4,096 recurrent-state values per layer. Its endpoint is:
+
+| Metric | Result | Gate |
+|---|---:|---:|
+| balanced accuracy | `0.3090` | `>=0.60` and `>=0.56225` |
+| future accuracy | `0.3225` | `>=0.58` |
+| past accuracy | `0.2955` | `>=0.58` |
+| joint exact | `0.004` | `>=0.15` |
+| fit elapsed | `245.390s` (`1.6697x` control) | `<=1.5x` |
+| peak allocation | `1,314,409,984` bytes (`1.2500x`) | `<=1.5x` |
+
+The training curve ends at balanced `0.3090` after
+`0.00975/0.00975/0.00975/0.0130/0.0200/0.03575/0.11775/0.2315/0.2910/0.3090`.
+The bounded metric remains active: layer condition numbers are
+`1.46498/1.30475`, with eigenvalue ranges `0.73690..1.29130` and
+`0.84858..1.22366`. Thus the negative result is not a dead metric or an
+unbounded transform.
+
+The combination improves only `+0.02925` over P022 and falls `-0.17325` below
+P020. It leaves `2,764/4,000` records wrong; `1,332` are wrong-key
+valid-value swaps (`0.48191` of errors). The changed swap fraction does not
+represent closure because total errors increase substantially relative to
+P020. Static within-bank geometry and same-byte bank factorization are not
+complementary enough under the fixed budget.
+
+Two earlier launch attempts failed before model execution: one lacked the
+Zoology import path and one lacked `FLA_EXPECTED_SOURCE_SHA`. Both are retained
+as orchestration evidence and did not consume a science arm. The `formal-r3`
+run above is the sole completed endpoint.
+
+## 7. Systems
+
+- Parameters: `771,536`, including `2,160` Log-SPD parameters for H8/K16.
+- Post-warm wall time: `247.203s`; cold wall time: `665.869s`.
+- Independent warm benchmark: `0.622636s`, `1,027.888` examples/s and
+  `1,052,557` tokens/s.
+- Training peak allocation: `1,314,409,984` bytes; benchmark peak allocation:
+  `1,347,702,272` bytes.
+
+## 8. Integrity
+
+- Score and candidate-summary SHA256:
+  `20483f5ddb9ca895c279274f6b789a7cfd17fa227726c92d46c9c4428310a006`
+- Cases SHA256:
+  `226c7ea8371015280b380ae7425a9aaebc24617644358a2676c5e75cf1252faf`
+- Checkpoint SHA256:
+  `8c80f92b0c27e0889edeeddab8ef0ff4fd708b86e3acf5630f573f078f8e37af`
+- Source remained the exact pushed SHA above. No NaN, OOM, fallback, second
+  model process or GPU identity drift occurred.
+
+## 9. Next Decision
+
+Discard P023 and close the fixed static-address combination line. Do not tune
+metric strength, head count, K/V geometry, epochs, LR, loss or seed. P020 is
+evidence that learned address geometry can matter; P021-P023 show that an
+extra write, a same-byte bank split, and their static combination do not solve
+binding. A future GDN3 proposal must introduce a stable, scalable
+address-binding state organization and first establish a reproducible carrier.

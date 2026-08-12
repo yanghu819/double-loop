@@ -12,14 +12,18 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-12 CST): `P-GDN3-023` is the one active, final
-directional-MQAR combination decision. It holds D128/L2, 10 epochs, seed123,
-one official scan, and 4,096 recurrent-state values per layer fixed while
-combining the two independently positive interventions: P020's bounded
-within-bank Log-SPD Q/K metric and P022's H8/K16/V32 same-byte bank topology.
-It must reach balanced/joint `0.60/0.15`, both directions `0.58`, and improve
-balanced accuracy by at least `0.08` over P020's `0.48225`; any miss closes the
-combination with no metric/head/geometry/budget rescue.
+Current update (2026-08-12 CST): `P-GDN3-023` is discarded and the fixed
+directional-MQAR address/binding sequence is closed. The H8/K16/V32 Log-SPD
+combination reaches balanced/future/past/joint
+`0.3090/0.3225/0.2955/0.004`: only `+0.02925` over P022 and `-0.17325` below
+P020. Fit elapsed is `245.39s` (`1.670x` the current-A100 control), while peak
+allocation is `1.250x`; both quality routes and the fit-cost gate fail. The
+model still leaves `2,764/4,000` records wrong, including `48.19%` wrong-key
+valid-value swaps. There is no active model run and no metric/head/K/V/epoch/
+LR/seed rescue. P020 remains a useful exploratory mechanism signal, not an
+architecture pass; a successor would require a new stable address-binding
+state organization on a reproducible carrier rather than another static
+conditioner or bank factorization.
 
 `P-GDN3-020` is a useful exploratory positive but not a formal pass. The exact
 current-A100 FutureSeed replay reached only balanced/joint `0.1735/0`, so the
@@ -853,7 +857,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-023 | in progress | P020 improves within-bank geometry while P022 changes bank organization; their gains are complementary only if combining them closes substantially more binding errors than either alone. | Fixed L1024 D128/L2 H8/K16/V32 Log-SPD FutureSeed, 10 epochs, batch32, seed123. One pinned-official scan and exactly 4,096 state values/layer. | One task-mode A10080, CUDA index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`. | one fixed 10-epoch arm | Balanced/joint >=`0.60/0.15`, past/future >=`0.58`, balanced gain over P020 >=`0.08`; fit and allocation <=`1.5x` current-A100 control. | Pending. Any miss closes the combination; no metric/head/K/V/epoch/LR/seed rescue. |
+| P-GDN3-023 | discarded | P020 improves within-bank geometry while P022 changes bank organization; their gains are complementary only if combining them closes substantially more binding errors than either alone. | Fixed L1024 D128/L2 H8/K16/V32 Log-SPD FutureSeed, 10 epochs, batch32, seed123. One pinned-official scan and exactly 4,096 state values/layer. | One task-mode A10080, CUDA index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`. | completed one fixed 10-epoch arm | Balanced/joint >=`0.60/0.15`, past/future >=`0.58`, balanced gain over P020 >=`0.08`; fit and allocation <=`1.5x` current-A100 control. | Balanced/future/past/joint=`0.3090/0.3225/0.2955/0.004`; `-0.17325` versus P020. Fit=`245.39s` (`1.670x` control), allocation=`1.250x`; quality and fit gates fail. Remaining-error swap fraction=`0.4819`. Combination closed without rescue. |
 | P-GDN3-022 | discarded | Same-byte independent address banks may reduce binding collisions without increasing state bytes. | Fixed L1024 D128/L2 H8/K16/V32 FutureSeed, 10 epochs, batch32, seed123; one official scan and 4,096 state values/layer. | One task-mode A10080. | completed | Balanced/joint >=`0.70/0.25`, directions >=`0.68`, +`0.10` over P020, swap fraction -`0.10`, fit/allocation <=`1.5x`. | Balanced/future/past/joint=`0.27975/0.3000/0.2595/0.007`; swap fraction among errors=`0.3752`; fit=`375.25s` (`2.55x` control). Quality and fit gates fail. |
 | P-GDN3-021 | discarded | Two independent rank-one edits per token may separate associations in one live state. | Interleave parent and auxiliary microsteps in one official scan; fixed L1024 D128/L2/H4/K32/10ep. | One task-mode A10080. | completed | Balanced/joint >=`0.70/0.25`, directions >=`0.68`, +`0.10` over P020. | Balanced/joint=`0.00975/0`; active auxiliary writes overwrite shared state. Closed without rescue. |
 | P-GDN3-020 | formal carrier failed; exploratory positive, discarded | Historical L1024 errors are dominated by wrong-key/valid-value swaps (`0.8069`), while zero-parameter Sudoku capture shows low effective key rank and high anisotropy; a bounded learned address metric may improve binding without another router, cache, state bank, or hand prior. | Fixed directional MQAR L1024 D128/L2/H4/K32/10ep with one per-head bounded trace-free Log-SPD Q/K factor. Exact +4,216 parameters, zero state/token/scan/custom-kernel/task delta. | One task-mode A10080 after the exact runtime replay. | completed fixed replay and one direct exploratory candidate | Formal carrier >=`0.70/0.25/0.68/0.68`; candidate balanced >=`0.85`, joint >=`0.60`, swap fraction -`0.10`, bounded active metric and cost gates. | Runtime carrier was only balanced/joint `0.1735/0`, so formal protocol closed. Direct exploratory candidate reached balanced `0.48225` (+`0.30875`), future/past `0.4780/0.4865`, joint `0.044`; metric condition <=`1.488`, but quality misses and remaining-error swap fraction rises to `0.9416`. Keep the mechanism signal, not a pass. |

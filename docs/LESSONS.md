@@ -2529,3 +2529,22 @@
   occupancy is not a research metric; release the task after hashes, matched
   case evidence and GitHub provenance are complete, and require a new explicit
   mechanism hypothesis before spending more compute.
+- Runtime reproduction is a science gate, not bookkeeping. The current A100
+  replay of the historical L1024 FutureSeed carrier reaches balanced `0.1735`
+  rather than `0.7475`; P020 can only be called an exploratory mechanism signal.
+- A bounded learned Q/K metric is the only positive address intervention in
+  P020--P023: it raises balanced accuracy by `0.30875` with unchanged state and
+  scan count. Its failure tail is `94.16%` wrong-key valid-value swaps, showing
+  that learning the value set and binding values to keys are distinct problems.
+- More writes are not more memory. P021's second live edit is fully active but
+  overwrites the shared state and collapses balanced accuracy to `0.00975`.
+- Same-byte state repartition is not free capacity. H8/K16/V32 preserves 4,096
+  values, yet P022 is slower (`2.55x` fit) and weaker than P020. State bytes
+  alone do not capture optimization or addressing cost.
+- Individually positive deltas need an explicit combination gate. P023 reaches
+  only `0.3090`, below P020 by `0.17325`; lowering its swap fraction while
+  increasing total errors is not binding closure.
+- P020--P023 close static metric conditioning, extra rank-one writes, same-byte
+  bank factorization and their fixed combination. A successor must change
+  stable address-binding state organization on a reproducible carrier; do not
+  rescue this family with metric/head/K/V/epoch/LR/seed tuning.

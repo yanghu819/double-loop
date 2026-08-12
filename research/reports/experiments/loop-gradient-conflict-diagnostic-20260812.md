@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; R1 engineering abort archived, corrected R2 pending
+- Status: completed; FutureSeed gate branch admitted, GDN2 groups rejected
 - Parent: position-QK GDN2 plus native terminal FutureSeed, exact step3000
 - Task: official/full-diversity hard 9x9 Sudoku, 51-64 blanks
 - Intervention: none; this diagnostic does not alter logits or parameters
@@ -73,6 +73,14 @@ incorrect `ChunkGDN2FunctionBackward count=0` provenance verdict. The run wrote
 produce a science result. R2 retains autograd node objects during traversal and
 changes no registered scientific condition or threshold.
 
+R2 `p-loop-001-gradient-conflict-r2-20260812T140000Z-f99b4a7`
+completed with `status=0` on CUDA index 0, A100-SXM4-80GB UUID
+`GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. It retained 180 official
+`ChunkGDN2FunctionBackward` nodes per hard range, used 3,502.73 MiB peak
+allocation, and completed in 340.05 seconds. The result JSON SHA256 is
+`528adc5a77740d73b59d89780651449c65a50bbb2eaaef680a601455b73aef19`;
+the clean detached source was exact pushed SHA `f99b4a7b007092a2d6289b4e619d594319232547`.
+
 ## 7. Frozen Admission Gate
 
 A parameter group admits exactly one later gradient-coordination candidate only
@@ -96,8 +104,28 @@ mechanism and cost ceiling must be committed before it is launched.
 
 ## 8. Conclusions
 
-Pending the zero-parameter CUDA diagnostic. The result selects or kills the
-only next loop-credit branch; it is not itself a quality score.
+The frozen gate admits only `future_seed_gate`:
+
+| range | loop1->5 blank | wrong cells | FS early/late cosine | pair conflict | cancellation | FS admitted |
+|---|---:|---:|---:|---:|---:|---|
+| 51-55 | 0.541284 -> 0.587156 | 25.00 -> 22.50 | -0.904763 | 0.40 | 0.529537 | yes |
+| 56-60 | 0.520971 -> 0.538631 | 27.125 -> 26.125 | +0.996918 | 0.00 | 0.996945 | no |
+| 61-64 | 0.519531 -> 0.585938 | 30.75 -> 26.50 | -0.718710 | 0.40 | 0.698487 | yes |
+
+The GDN2 address and edit groups have zero negative pairs on all three ranges;
+their early/late cosine is respectively `0.916..0.970` and `0.873..0.888` on
+56-64. The shared shell is also strongly aligned. This rejects a global
+optimizer-conflict explanation and does not authorize another GDN state,
+address, or edit wrapper.
+
+The matrix identifies opening credit more narrowly: in the two admitted
+ranges, loop1 versus loops3-5 has cosine about `-0.94/-0.86`, while loops3-5
+are `0.998..1.000` aligned. Therefore exactly one forward-invariant FutureSeed
+gate-gradient candidate is admitted. It must protect the continuation gradient
+from a conflicting loop1 component while preserving the original total gate
+gradient norm; no loss reweight, per-head variant, scale, seed, LR, batch or
+duration sweep is authorized. This diagnostic is causal admission evidence,
+not itself a quality score.
 
 ## 9. Submission Record
 

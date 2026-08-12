@@ -1481,3 +1481,30 @@ independent compressed committed-delta bank is inferior to organizing the
 main recurrent address itself. The paper should report this as causal evidence
 for address geometry and a boundary against separate correction memory, not as
 a GDN3 quality win.
+
+### P-LOOP-001 Native FutureSeed Credit-Conflict Diagnostic
+
+After the address/state families closed, P-LOOP-001 tested a different
+explanation without changing logits or training: equal five-loop CE may send
+opposed credit specifically into native FutureSeed gates. On three fixed
+official hard batches it computed each loop loss gradient for the 96 FS gate
+parameters, GDN2 address parameters, GDN2 edit parameters, and the shared
+shell from the exact D256/L12 position-QK step3000 parent.
+
+The result is localized rather than global. FutureSeed early-versus-late
+cosine is `-0.904763` on 51-55 and `-0.718710` on 61-64; both have `0.40`
+negative gradient-pair fraction, cancellation `0.529537/0.698487`, and genuine
+loop1-to5 wrong-cell reduction. The 56-60 batch is strongly aligned and does
+not pass. In contrast, GDN2 address and edit gradients have no negative pairs
+on any range, and their early/late cosine remains strongly positive. The
+remaining optimization conflict is therefore not evidence for more recurrent
+capacity or another address wrapper.
+
+The full cosine matrices sharpen the claim: loop1 opposes the continuation
+loops in the two admitted ranges, while loops3-5 are nearly collinear. This
+admits one narrow training-only FutureSeed experiment that projects a
+conflicting opening gradient away from the continuation direction while
+preserving the baseline FS-gradient norm. It does not justify global loss
+reweighting, GDN gradient surgery, per-head selection, or a hyperparameter
+sweep. The diagnostic establishes a causal target; the matched endpoint must
+still show that removing this conflict improves exact-board closure.

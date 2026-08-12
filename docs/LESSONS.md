@@ -2604,3 +2604,21 @@
   address metric signal and P025 shows learned-basis causality, but P025's
   independent bank misses every absolute gate. Combining them would be an
   unregistered rescue, not a justified next architecture.
+- Diagnose gradient ownership before adding another mechanism. P-LOOP-001
+  finds strong opening-versus-continuation conflict only in the 96 native
+  FutureSeed gate parameters on 51-55 and 61-64; GDN2 address/edit and shared
+  parameters have zero negative pairs across all three hard ranges.
+- A conflict claim needs both direction and useful trajectory evidence. The two
+  admitted ranges combine cosine `-0.904763/-0.718710`, pair conflict `0.40`,
+  cancellation below `0.70`, and loop1-to5 wrong-cell reduction. The aligned
+  56-60 counterexample prevents overgeneralizing this into a global optimizer
+  diagnosis.
+- Inspect the full task cosine matrix, not only one aggregate. Here loops3-5
+  are almost collinear; the actionable conflict is loop1 against continuation.
+  A first intervention should therefore be a deterministic FS-only opening
+  projection with unchanged forward and gradient norm, not delayed loss or a
+  learned loop selector.
+- Python autograd node proxies must remain alive during large graph provenance
+  walks. Tracking only `id(fn)` can suffer object-ID reuse and falsely report a
+  missing official backward path; archive this as an engineering abort and
+  rerun from a new pushed clean SHA without changing science gates.

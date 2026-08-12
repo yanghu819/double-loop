@@ -228,18 +228,27 @@ exec 9> "$LOCK_DIR/p-gdn3-027.lock"
 flock -n 9 || fail 25 "Another P-GDN3-027 launcher owns the formal lease."
 
 set_phase github_readback
+SOURCE_BRANCH="${SOURCE_REMOTE_REF#refs/heads/}"
 set +e
-timeout --signal=TERM --kill-after=5 30 \
-  git -C "$REPO_ROOT" ls-remote --refs origin "$SOURCE_REMOTE_REF" \
-  > "$RUN_DIR/github_ls_remote.txt" 2> "$RUN_DIR/github_ls_remote.stderr"
+timeout --signal=TERM --kill-after=5 30 curl -fsSL \
+  --connect-timeout 10 --max-time 25 \
+  "https://api.github.com/repos/$GITHUB_API_REPOSITORY/git/ref/heads/$SOURCE_BRANCH" \
+  > "$RUN_DIR/github_ref.json" 2> "$RUN_DIR/github_ref.stderr"
 REMOTE_STATUS="$?"
 set -e
 [[ "$REMOTE_STATUS" == 0 ]] || fail 69 "GitHub source readback failed."
-REMOTE_SHA="$(awk '{print $1}' "$RUN_DIR/github_ls_remote.txt")"
+REMOTE_SHA="$("$PYTHON_BIN" - "$RUN_DIR/github_ref.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1]) as handle:
+    print(json.load(handle)["object"]["sha"])
+PY
+)"
 [[ "$REMOTE_SHA" == "$GIT_SHA" ]] \
   || fail 26 "GitHub source readback mismatch: $REMOTE_SHA != $GIT_SHA"
 printf 'remote=%s\nref=%s\nsha=%s\nreadback_utc=%s\n' \
-  "$(git -C "$REPO_ROOT" remote get-url origin)" "$SOURCE_REMOTE_REF" \
+  "https://api.github.com/repos/$GITHUB_API_REPOSITORY" "$SOURCE_REMOTE_REF" \
   "$REMOTE_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   > "$RUN_DIR/github_provenance.txt"
 

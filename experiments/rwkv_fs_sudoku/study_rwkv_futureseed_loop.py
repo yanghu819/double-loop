@@ -15,12 +15,15 @@ import time
 from contextlib import nullcontext
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint as torch_checkpoint
+
+
+FUTURE_SEED_GRADIENT_MODES = ("canonical", "opening_projection")
 
 from futureseed2_selective import (
     FUTURE_SEED_GATE_MODES,
@@ -8116,6 +8119,7 @@ def load_training_checkpoint(
             "future_seed_scope",
             "future_seed_readout_hop",
             "future_seed_content_mode",
+            "future_seed_gradient_mode",
             "lambda_",
             "loop_update_mode",
             "loop_update_gate_init",
@@ -8170,6 +8174,7 @@ def load_training_checkpoint(
             "future_seed_scope": "layer",
             "future_seed_readout_hop": 0,
             "future_seed_content_mode": "terminal",
+            "future_seed_gradient_mode": "canonical",
             "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
             "gdn2_update_mode": "none",
@@ -8185,11 +8190,19 @@ def load_training_checkpoint(
         mismatches = {}
         accepted_legacy_defaults = {}
         accepted_future_seed_content_upgrade = False
+        accepted_future_seed_gradient_upgrade = False
         accepted_gdn2_update_upgrade = False
         accepted_gdn2_state_expert_upgrade = False
         for field in contract_fields:
             current_value = getattr(expected_args, field)
             if field not in saved_args:
+                if (
+                    field == "future_seed_gradient_mode"
+                    and bool(expected_args.resume_allow_future_seed_gradient_upgrade)
+                    and current_value == "opening_projection"
+                ):
+                    accepted_future_seed_gradient_upgrade = True
+                    continue
                 if (
                     field == "future_seed_content_mode"
                     and bool(expected_args.resume_allow_future_seed_content_upgrade)
@@ -8250,6 +8263,15 @@ def load_training_checkpoint(
                 )
             else:
                 matches = saved_value == current_value
+            if (
+                not matches
+                and field == "future_seed_gradient_mode"
+                and bool(expected_args.resume_allow_future_seed_gradient_upgrade)
+                and saved_value == "canonical"
+                and current_value == "opening_projection"
+            ):
+                accepted_future_seed_gradient_upgrade = True
+                matches = True
             if (
                 not matches
                 and field == "future_seed_content_mode"
@@ -8372,6 +8394,9 @@ def load_training_checkpoint(
             "accepted_legacy_defaults": accepted_legacy_defaults,
             "accepted_future_seed_content_upgrade": (
                 accepted_future_seed_content_upgrade
+            ),
+            "accepted_future_seed_gradient_upgrade": (
+                accepted_future_seed_gradient_upgrade
             ),
             "accepted_gdn2_update_upgrade": accepted_gdn2_update_upgrade,
             "accepted_gdn2_state_expert_upgrade": (
@@ -9298,6 +9323,328 @@ def weighted_loop_loss(losses: List[torch.Tensor], args: argparse.Namespace) -> 
     return (stacked * weights).sum(), weights
 
 
+def project_future_seed_opening_gradient(
+    opening_gradient: torch.Tensor,
+    baseline_gradient: torch.Tensor,
+    *,
+    num_loops: int = 5,
+    eps: float = 1e-30,
+) -> Tuple[torch.Tensor, Dict[str, float]]:
+    """Protect the continuation direction without changing the FS gradient norm."""
+    if opening_gradient.ndim != 1 or baseline_gradient.ndim != 1:
+        raise ValueError("FutureSeed gradient projection expects flat vectors")
+    if opening_gradient.shape != baseline_gradient.shape:
+        raise ValueError(
+            "FutureSeed opening/baseline gradient shape mismatch: "
+            f"{tuple(opening_gradient.shape)} != {tuple(baseline_gradient.shape)}"
+        )
+    if num_loops != 5:
+        raise ValueError("FutureSeed opening projection is registered for five loops")
+
+    opening = opening_gradient.detach().to(dtype=torch.float64)
+    baseline = baseline_gradient.detach().to(dtype=torch.float64)
+    if not bool(torch.isfinite(opening).all()) or not bool(torch.isfinite(baseline).all()):
+        raise RuntimeError("FutureSeed gradient projection received non-finite input")
+
+    continuation = (float(num_loops) * baseline - opening) / float(num_loops - 1)
+    opening_norm = torch.linalg.vector_norm(opening)
+    baseline_norm = torch.linalg.vector_norm(baseline)
+    continuation_norm = torch.linalg.vector_norm(continuation)
+    continuation_norm_sq = torch.dot(continuation, continuation)
+    if (
+        float(opening_norm.item()) <= eps
+        or float(baseline_norm.item()) <= eps
+        or float(continuation_norm_sq.item()) <= eps
+    ):
+        raise RuntimeError(
+            "FutureSeed gradient projection encountered a near-zero active gradient"
+        )
+
+    opening_continuation_dot = torch.dot(opening, continuation)
+    cosine = opening_continuation_dot / (opening_norm * continuation_norm)
+    active = bool(opening_continuation_dot.item() < 0.0)
+    projected_opening = opening
+    corrected = baseline
+    projection_coefficient = 0.0
+    removed_fraction = 0.0
+    relative_correction = 0.0
+    if active:
+        coefficient = -opening_continuation_dot / continuation_norm_sq
+        projected_opening = opening + coefficient * continuation
+        raw = (
+            projected_opening
+            + float(num_loops - 1) * continuation
+        ) / float(num_loops)
+        raw_norm = torch.linalg.vector_norm(raw)
+        if float(raw_norm.item()) <= eps or not bool(torch.isfinite(raw_norm)):
+            raise RuntimeError("FutureSeed projected gradient has invalid norm")
+        corrected = raw * (baseline_norm / raw_norm)
+        projection_coefficient = float(coefficient.item())
+        removed_fraction = float(
+            (torch.linalg.vector_norm(projected_opening - opening) / opening_norm).item()
+        )
+        relative_correction = float(
+            (torch.linalg.vector_norm(corrected - baseline) / baseline_norm).item()
+        )
+
+    corrected_norm = torch.linalg.vector_norm(corrected)
+    norm_relative_error = float(
+        (torch.abs(corrected_norm - baseline_norm) / baseline_norm).item()
+    )
+    post_dot = float(torch.dot(projected_opening, continuation).item())
+    if not bool(torch.isfinite(corrected).all()):
+        raise RuntimeError("FutureSeed gradient projection produced non-finite output")
+    return corrected.to(dtype=baseline_gradient.dtype), {
+        "active": float(active),
+        "opening_continuation_cosine": float(cosine.item()),
+        "opening_continuation_dot": float(opening_continuation_dot.item()),
+        "post_opening_continuation_dot": post_dot,
+        "projection_coefficient": projection_coefficient,
+        "removed_opening_fraction": removed_fraction,
+        "relative_correction": relative_correction,
+        "norm_relative_error": norm_relative_error,
+        "opening_norm": float(opening_norm.item()),
+        "continuation_norm": float(continuation_norm.item()),
+        "baseline_norm": float(baseline_norm.item()),
+    }
+
+
+def future_seed_gate_parameters(
+    model: nn.Module,
+) -> List[Tuple[str, nn.Parameter]]:
+    return [
+        (name, parameter)
+        for name, parameter in model.named_parameters()
+        if name.endswith(".future_seed_logit")
+    ]
+
+
+def apply_future_seed_opening_projection(
+    gate_parameters: List[Tuple[str, nn.Parameter]],
+    opening_gradients: List[Optional[torch.Tensor]],
+) -> Dict[str, float]:
+    if len(gate_parameters) != len(opening_gradients):
+        raise ValueError("FutureSeed gate/opening-gradient count mismatch")
+    active_rows: List[Tuple[nn.Parameter, torch.Tensor, torch.Tensor]] = []
+    inactive_tensors = 0
+    for (_name, parameter), opening in zip(gate_parameters, opening_gradients):
+        baseline = parameter.grad
+        if opening is None and baseline is None:
+            inactive_tensors += 1
+            continue
+        if opening is None or baseline is None:
+            raise RuntimeError(
+                "FutureSeed opening and canonical gradients disagree on active tensors"
+            )
+        if opening.shape != parameter.shape or baseline.shape != parameter.shape:
+            raise RuntimeError("FutureSeed gate gradient shape changed")
+        active_rows.append((parameter, opening, baseline))
+    if not active_rows:
+        raise RuntimeError("FutureSeed opening projection found no active receiving edges")
+
+    opening_vector = torch.cat(
+        [opening.detach().float().reshape(-1) for _p, opening, _b in active_rows]
+    )
+    baseline_vector = torch.cat(
+        [baseline.detach().float().reshape(-1) for _p, _o, baseline in active_rows]
+    )
+    corrected, diagnostics = project_future_seed_opening_gradient(
+        opening_vector,
+        baseline_vector,
+    )
+    if diagnostics["active"]:
+        cursor = 0
+        for parameter, _opening, baseline in active_rows:
+            count = parameter.numel()
+            baseline.copy_(
+                corrected[cursor : cursor + count]
+                .reshape_as(parameter)
+                .to(device=baseline.device, dtype=baseline.dtype)
+            )
+            cursor += count
+        if cursor != corrected.numel():
+            raise RuntimeError("FutureSeed projected-gradient slicing mismatch")
+        actual = torch.cat(
+            [
+                baseline.detach().float().reshape(-1)
+                for _parameter, _opening, baseline in active_rows
+            ]
+        ).to(dtype=torch.float64)
+        baseline_norm = torch.linalg.vector_norm(
+            baseline_vector.to(dtype=torch.float64)
+        ).clamp_min(1e-30)
+        diagnostics["norm_relative_error"] = float(
+            (
+                torch.abs(torch.linalg.vector_norm(actual) - baseline_norm)
+                / baseline_norm
+            ).item()
+        )
+    diagnostics.update(
+        {
+            "active_tensor_count": float(len(active_rows)),
+            "active_parameter_count": float(opening_vector.numel()),
+            "inactive_tensor_count": float(inactive_tensors),
+        }
+    )
+    return diagnostics
+
+
+def new_future_seed_projection_stats() -> Dict[str, float]:
+    return {
+        "steps": 0.0,
+        "active_steps": 0.0,
+        "cosine_sum": 0.0,
+        "cosine_min": 1.0,
+        "removed_fraction_sum": 0.0,
+        "removed_fraction_min": 1.0,
+        "relative_correction_sum": 0.0,
+        "relative_correction_min": 1.0,
+        "norm_relative_error_max": 0.0,
+        "post_dot_min": 0.0,
+        "active_tensor_count": 0.0,
+        "active_parameter_count": 0.0,
+        "inactive_tensor_count": 0.0,
+        "canonical_global_grad_norm_sum": 0.0,
+        "canonical_clip_steps": 0.0,
+        "canonical_clip_coefficient_min": 1.0,
+        "final_global_grad_norm_max": 0.0,
+        "final_global_grad_norm_relative_error_max": 0.0,
+    }
+
+
+def update_future_seed_projection_stats(
+    state: Dict[str, float],
+    diagnostics: Dict[str, float],
+) -> None:
+    previous_steps = state["steps"]
+    previous_active_steps = state["active_steps"]
+    state["steps"] += 1.0
+    state["active_steps"] += diagnostics["active"]
+    state["cosine_sum"] += diagnostics["opening_continuation_cosine"]
+    state["cosine_min"] = (
+        diagnostics["opening_continuation_cosine"]
+        if previous_steps == 0.0
+        else min(
+            state["cosine_min"], diagnostics["opening_continuation_cosine"]
+        )
+    )
+    if diagnostics["active"]:
+        state["removed_fraction_sum"] += diagnostics["removed_opening_fraction"]
+        state["removed_fraction_min"] = (
+            diagnostics["removed_opening_fraction"]
+            if previous_active_steps == 0.0
+            else min(
+                state["removed_fraction_min"],
+                diagnostics["removed_opening_fraction"],
+            )
+        )
+        state["relative_correction_sum"] += diagnostics["relative_correction"]
+        state["relative_correction_min"] = (
+            diagnostics["relative_correction"]
+            if previous_active_steps == 0.0
+            else min(
+                state["relative_correction_min"],
+                diagnostics["relative_correction"],
+            )
+        )
+    state["norm_relative_error_max"] = max(
+        state["norm_relative_error_max"], diagnostics["norm_relative_error"]
+    )
+    state["post_dot_min"] = (
+        diagnostics["post_opening_continuation_dot"]
+        if previous_steps == 0.0
+        else min(
+            state["post_dot_min"],
+            diagnostics["post_opening_continuation_dot"],
+        )
+    )
+    for key in (
+        "active_tensor_count",
+        "active_parameter_count",
+        "inactive_tensor_count",
+    ):
+        state[key] = diagnostics[key]
+    state["canonical_global_grad_norm_sum"] += diagnostics[
+        "canonical_global_grad_norm"
+    ]
+    state["canonical_clip_steps"] += float(
+        diagnostics["canonical_clip_coefficient"] < 1.0
+    )
+    state["canonical_clip_coefficient_min"] = min(
+        state["canonical_clip_coefficient_min"],
+        diagnostics["canonical_clip_coefficient"],
+    )
+    state["final_global_grad_norm_max"] = max(
+        state["final_global_grad_norm_max"],
+        diagnostics["final_global_grad_norm"],
+    )
+    state["final_global_grad_norm_relative_error_max"] = max(
+        state["final_global_grad_norm_relative_error_max"],
+        diagnostics["final_global_grad_norm_relative_error"],
+    )
+
+
+def summarize_future_seed_projection_stats(
+    state: Dict[str, float],
+) -> Dict[str, float]:
+    steps = state["steps"]
+    active_steps = state["active_steps"]
+    return {
+        "steps": steps,
+        "active_steps": active_steps,
+        "activation_rate": active_steps / steps if steps else 0.0,
+        "opening_continuation_cosine_mean": (
+            state["cosine_sum"] / steps if steps else 0.0
+        ),
+        "opening_continuation_cosine_min": (
+            state["cosine_min"] if steps else 0.0
+        ),
+        "active_removed_opening_fraction_mean": (
+            state["removed_fraction_sum"] / active_steps if active_steps else 0.0
+        ),
+        "active_removed_opening_fraction_min": (
+            state["removed_fraction_min"] if active_steps else 0.0
+        ),
+        "active_relative_correction_mean": (
+            state["relative_correction_sum"] / active_steps if active_steps else 0.0
+        ),
+        "active_relative_correction_min": (
+            state["relative_correction_min"] if active_steps else 0.0
+        ),
+        "norm_relative_error_max": state["norm_relative_error_max"],
+        "post_opening_continuation_dot_min": (
+            state["post_dot_min"] if steps else 0.0
+        ),
+        "active_tensor_count": state["active_tensor_count"],
+        "active_parameter_count": state["active_parameter_count"],
+        "inactive_tensor_count": state["inactive_tensor_count"],
+        "canonical_global_grad_norm_mean": (
+            state["canonical_global_grad_norm_sum"] / steps if steps else 0.0
+        ),
+        "canonical_clip_rate": (
+            state["canonical_clip_steps"] / steps if steps else 0.0
+        ),
+        "canonical_clip_coefficient_min": (
+            state["canonical_clip_coefficient_min"] if steps else 1.0
+        ),
+        "final_global_grad_norm_max": state["final_global_grad_norm_max"],
+        "final_global_grad_norm_relative_error_max": state[
+            "final_global_grad_norm_relative_error_max"
+        ],
+    }
+
+
+def current_global_gradient_norm(parameters: Iterable[nn.Parameter]) -> torch.Tensor:
+    gradient_norms = [
+        torch.linalg.vector_norm(parameter.grad.detach().float())
+        for parameter in parameters
+        if parameter.grad is not None
+    ]
+    if not gradient_norms:
+        raise RuntimeError("Cannot measure an empty global gradient")
+    return torch.linalg.vector_norm(torch.stack(gradient_norms))
+
+
 @torch.no_grad()
 def fs_metrics_from_trace(trace: Dict[str, torch.Tensor]) -> Dict[str, float]:
     return {key: float(value.detach().cpu()) for key, value in trace.items()}
@@ -9930,6 +10277,15 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     if args.shared_shell_init_seed >= 0:
         model.reset_shared_shell_parameters(args.shared_shell_init_seed)
     model = model.to(device)
+    gate_parameters = future_seed_gate_parameters(model)
+    if args.future_seed_gradient_mode == "opening_projection":
+        if len(gate_parameters) != 12 or sum(
+            parameter.numel() for _name, parameter in gate_parameters
+        ) != 96:
+            raise RuntimeError(
+                "Registered FutureSeed opening projection requires exactly "
+                "12 gate tensors and 96 gate parameters"
+            )
     post_init_torch_seed = args.seed + 2000
     torch.manual_seed(post_init_torch_seed)
     if device.type == "cuda":
@@ -10096,6 +10452,8 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_address_diag = {
         key: 0.0 for key in ADDRESS_TRAIN_KEYS
     }
+    future_seed_projection_stats = new_future_seed_projection_stats()
+    last_future_seed_projection_diag: Dict[str, float] = {}
     stages = parse_hole_stages(args)
     checkpoint_steps = parse_eval_checkpoint_steps(args, stages)
     checkpoint_step_set = set(checkpoint_steps)
@@ -10190,6 +10548,24 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             is True
         )
+        declared_future_seed_gradient_upgrade = (
+            bool(args.resume_allow_future_seed_gradient_upgrade)
+            and args.future_seed_gradient_mode == "opening_projection"
+            and not migration.get("missing_parameters")
+            and not migration.get("unexpected_parameters")
+            and migration.get("optimizer_groups_expanded") is False
+            and checkpoint.get("_resume_contract", {}).get(
+                "accepted_future_seed_gradient_upgrade"
+            )
+            is True
+        )
+        if (
+            args.resume_allow_future_seed_gradient_upgrade
+            and not declared_future_seed_gradient_upgrade
+        ):
+            raise RuntimeError(
+                "FutureSeed gradient semantic upgrade was not accepted exactly"
+            )
         if args.gdn2_update_mode == "coherent_delta":
             expected_gdn2_update_insertions = {
                 name
@@ -10536,6 +10912,17 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: float(saved_address_diag.get(key, 0.0))
                 for key in ADDRESS_TRAIN_KEYS
             }
+        saved_projection_stats = last_metrics.get(
+            "future_seed_gradient_projection_state", {}
+        )
+        if isinstance(saved_projection_stats, dict) and (
+            args.future_seed_gradient_mode == "opening_projection"
+        ):
+            for key in future_seed_projection_stats:
+                if key in saved_projection_stats:
+                    future_seed_projection_stats[key] = float(
+                        saved_projection_stats[key]
+                    )
         resume_info = {
             "path": str(args.resume_train_checkpoint),
             "saved_at_step": global_step,
@@ -10642,6 +11029,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             accum_address_diag = {
                 key: 0.0 for key in ADDRESS_TRAIN_KEYS
             }
+            opening_gradient_accum: List[Optional[torch.Tensor]] = [
+                None for _name, _parameter in gate_parameters
+            ]
             for _accum_idx in range(accum_count):
                 inputs, labels, clue_mask = make_train_batch(
                     args,
@@ -10706,6 +11096,22 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     + float(args.scratch_gauss_weight) * scratch_gauss_loss
                     + float(args.exact_margin_weight) * exact_margin_loss
                 )
+                if args.future_seed_gradient_mode == "opening_projection":
+                    opening_gradients = torch.autograd.grad(
+                        loop_losses[0] / float(accum_count),
+                        [parameter for _name, parameter in gate_parameters],
+                        retain_graph=True,
+                        create_graph=False,
+                        allow_unused=True,
+                    )
+                    for gradient_idx, gradient in enumerate(opening_gradients):
+                        if gradient is None:
+                            continue
+                        detached = gradient.detach().float()
+                        if opening_gradient_accum[gradient_idx] is None:
+                            opening_gradient_accum[gradient_idx] = detached.clone()
+                        else:
+                            opening_gradient_accum[gradient_idx].add_(detached)
                 (loss / float(accum_count)).backward()
                 accum_ce_loss += float(ce_loss.detach().cpu())
                 accum_total_loss += float(loss.detach().cpu())
@@ -10991,7 +11397,90 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            canonical_global_grad_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), 1.0
+            )
+            if args.future_seed_gradient_mode == "opening_projection":
+                canonical_grad_norm_value = float(
+                    canonical_global_grad_norm.detach().float().cpu().item()
+                )
+                if not math.isfinite(canonical_grad_norm_value):
+                    raise RuntimeError("Canonical global gradient norm is non-finite")
+                canonical_clip_coefficient = min(
+                    1.0,
+                    1.0 / (canonical_grad_norm_value + 1e-6),
+                )
+                clipped_opening_gradients = [
+                    (
+                        None
+                        if gradient is None
+                        else gradient * canonical_clip_coefficient
+                    )
+                    for gradient in opening_gradient_accum
+                ]
+                last_future_seed_projection_diag = (
+                    apply_future_seed_opening_projection(
+                        gate_parameters,
+                        clipped_opening_gradients,
+                    )
+                )
+                last_future_seed_projection_diag.update(
+                    {
+                        "canonical_global_grad_norm": canonical_grad_norm_value,
+                        "canonical_clip_coefficient": canonical_clip_coefficient,
+                    }
+                )
+                expected_final_grad_norm = min(1.0, canonical_grad_norm_value)
+                final_global_grad_norm = float(
+                    current_global_gradient_norm(model.parameters())
+                    .detach()
+                    .cpu()
+                    .item()
+                )
+                final_global_grad_norm_relative_error = abs(
+                    final_global_grad_norm - expected_final_grad_norm
+                ) / max(expected_final_grad_norm, 1e-30)
+                last_future_seed_projection_diag.update(
+                    {
+                        "final_global_grad_norm": final_global_grad_norm,
+                        "final_global_grad_norm_relative_error": (
+                            final_global_grad_norm_relative_error
+                        ),
+                    }
+                )
+                if (
+                    last_future_seed_projection_diag["active_tensor_count"] != 11.0
+                    or last_future_seed_projection_diag["active_parameter_count"] != 88.0
+                    or last_future_seed_projection_diag["inactive_tensor_count"] != 1.0
+                ):
+                    raise RuntimeError(
+                        "FutureSeed opening projection expected exactly 11 active "
+                        "receiving gates (88 parameters) and one inactive gate"
+                    )
+                if last_future_seed_projection_diag["norm_relative_error"] >= 1e-5:
+                    raise RuntimeError(
+                        "FutureSeed opening projection violated its norm contract"
+                    )
+                if final_global_grad_norm_relative_error >= 2e-5:
+                    raise RuntimeError(
+                        "FutureSeed opening projection changed the canonical global "
+                        "gradient norm"
+                    )
+                if (
+                    last_future_seed_projection_diag["active"]
+                    and last_future_seed_projection_diag[
+                        "post_opening_continuation_dot"
+                    ]
+                    < -1e-6
+                ):
+                    raise RuntimeError(
+                        "FutureSeed opening projection violated its continuation "
+                        "half-space contract"
+                    )
+                update_future_seed_projection_stats(
+                    future_seed_projection_stats,
+                    last_future_seed_projection_diag,
+                )
             opt.step()
             last_ce_loss = accum_ce_loss / float(accum_count)
             last_total_loss = accum_total_loss / float(accum_count)
@@ -11098,6 +11587,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 for key, value in accum_address_diag.items()
             }
             if args.log_every and global_step % args.log_every == 0:
+                projection_summary = summarize_future_seed_projection_stats(
+                    future_seed_projection_stats
+                )
                 print(
                     f"[future_seed_loop stage={stage_idx}:{holes_min}-{holes_max}] "
                     f"step={global_step:04d} ce={last_ce_loss:.4f} total={last_total_loss:.4f} "
@@ -11119,6 +11611,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"gb_bound={last_gain_budget_step_bound_max:.6f} "
                     f"gb_delta={last_gain_budget_delta_error_max:.2e} "
                     f"gb_change={last_gain_budget_gate_relative_change:.4f} "
+                    f"fsproj_rate={projection_summary['activation_rate']:.4f} "
+                    f"fsproj_cos={projection_summary['opening_continuation_cosine_mean']:.4f} "
+                    f"fsproj_remove={projection_summary['active_removed_opening_fraction_mean']:.4f} "
+                    f"fsproj_corr={projection_summary['active_relative_correction_mean']:.4f} "
+                    f"fsproj_norm={projection_summary['norm_relative_error_max']:.2e} "
                     f"slow_rho={last_fast_slow_diag['gdn2_fast_slow_rho_mean']:.4f} "
                     f"slow_lag={last_fast_slow_diag['gdn2_fast_slow_lag_mass']:.4f} "
                     f"slow_tv={last_fast_slow_diag['gdn2_fast_slow_tv_ratio']:.4f} "
@@ -11300,6 +11797,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
+                        "future_seed_gradient_projection": (
+                            summarize_future_seed_projection_stats(
+                                future_seed_projection_stats
+                            )
+                        ),
+                        "future_seed_gradient_projection_state": dict(
+                            future_seed_projection_stats
+                        ),
                     },
                     "eval_by_holes": {},
                 }
@@ -11412,6 +11917,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             ),
                             "state_expert": dict(last_state_expert_diag),
                             "address_operator": dict(last_address_diag),
+                            "future_seed_gradient_projection": (
+                                summarize_future_seed_projection_stats(
+                                    future_seed_projection_stats
+                                )
+                            ),
+                            "future_seed_gradient_projection_state": dict(
+                                future_seed_projection_stats
+                            ),
                         },
                         reason="eval_checkpoint",
                     )
@@ -11503,6 +12016,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         ),
                         "state_expert": dict(last_state_expert_diag),
                         "address_operator": dict(last_address_diag),
+                        "future_seed_gradient_projection": (
+                            summarize_future_seed_projection_stats(
+                                future_seed_projection_stats
+                            )
+                        ),
+                        "future_seed_gradient_projection_state": dict(
+                            future_seed_projection_stats
+                        ),
                     },
                     reason="periodic",
                 )
@@ -11594,6 +12115,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "interleaved_write": dict(last_interleaved_write_diag),
         "state_expert": dict(last_state_expert_diag),
         "address_operator": dict(last_address_diag),
+        "future_seed_gradient_projection": (
+            summarize_future_seed_projection_stats(
+                future_seed_projection_stats
+            )
+        ),
         "feature_buffer_count": feature_buffer.count,
         "train_sec": time.time() - t0,
         "optimizer_steps": total_steps,
@@ -11652,6 +12178,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "resume_allow_future_seed_content_upgrade": bool(
             args.resume_allow_future_seed_content_upgrade
         ),
+        "resume_allow_future_seed_gradient_upgrade": bool(
+            args.resume_allow_future_seed_gradient_upgrade
+        ),
         "resume_allow_gdn2_update_upgrade": bool(
             args.resume_allow_gdn2_update_upgrade
         ),
@@ -11672,6 +12201,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_scope": args.future_seed_scope,
         "future_seed_readout_hop": args.future_seed_readout_hop,
         "future_seed_content_mode": args.future_seed_content_mode,
+        "future_seed_gradient_mode": args.future_seed_gradient_mode,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
         "loop_feedback_corrupt_prob": args.loop_feedback_corrupt_prob,
@@ -12926,6 +13456,47 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "--resume_allow_future_seed_content_upgrade requires a nonterminal "
                 "FutureSeed content mode"
             )
+    if args.resume_allow_future_seed_gradient_upgrade:
+        if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
+            raise ValueError(
+                "--resume_allow_future_seed_gradient_upgrade requires an exact "
+                "checkpoint resume"
+            )
+        if args.future_seed_gradient_mode != "opening_projection":
+            raise ValueError(
+                "--resume_allow_future_seed_gradient_upgrade requires "
+                "--future_seed_gradient_mode opening_projection"
+            )
+    if args.future_seed_gradient_mode == "opening_projection":
+        if (
+            not str(args.resume_train_checkpoint).strip()
+            or not args.resume_require_exact_state
+            or not args.resume_allow_future_seed_gradient_upgrade
+        ):
+            raise ValueError(
+                "FutureSeed opening projection is candidate-only and requires "
+                "its explicit exact-resume semantic upgrade"
+            )
+        if args.max_loops != 5 or args.loop_loss != "all":
+            raise ValueError(
+                "FutureSeed opening projection requires max_loops=5 and loop_loss=all"
+            )
+        if args.future_seed_content_mode != "terminal":
+            raise ValueError(
+                "FutureSeed opening projection requires native terminal content"
+            )
+        if args.future_seed_scope != "layer" or args.future_seed_gate_mode != "head":
+            raise ValueError(
+                "FutureSeed opening projection requires layer scope and head gates"
+            )
+        if args.scratch_gauss_weight != 0.0 or args.exact_margin_weight != 0.0:
+            raise ValueError(
+                "FutureSeed opening projection forbids auxiliary gradient terms"
+            )
+        if args.activation_checkpoint:
+            raise ValueError(
+                "FutureSeed opening projection forbids activation checkpointing"
+            )
     if args.resume_allow_gdn2_update_upgrade:
         if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
             raise ValueError(
@@ -13262,6 +13833,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"future_seed_gate_mode={args.future_seed_gate_mode} future_seed_scope={args.future_seed_scope} "
         f"future_seed_readout_hop={args.future_seed_readout_hop} "
         f"future_seed_content_mode={args.future_seed_content_mode} "
+        f"future_seed_gradient_mode={args.future_seed_gradient_mode} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
         f"gdn2_fast_slow_decay={args.gdn2_fast_slow_decay_mode} "
@@ -13445,6 +14017,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_scope": args.future_seed_scope,
         "future_seed_readout_hop": args.future_seed_readout_hop,
         "future_seed_content_mode": args.future_seed_content_mode,
+        "future_seed_gradient_mode": args.future_seed_gradient_mode,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
         "loop_feedback_scale": args.loop_feedback_scale,
@@ -13669,6 +14242,11 @@ def parse_args() -> argparse.Namespace:
         choices=FUTURE_SEED_CONTENT_MODES,
         default="terminal",
     )
+    p.add_argument(
+        "--future_seed_gradient_mode",
+        choices=FUTURE_SEED_GRADIENT_MODES,
+        default="canonical",
+    )
     p.add_argument("--loop_feedback_scale", type=float, default=0.0)
     p.add_argument("--loop_feedback_detach", type=int, choices=(0, 1), default=0)
     p.add_argument("--loop_feedback_corrupt_prob", type=float, default=0.0)
@@ -13699,6 +14277,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--resume_require_exact_state", action="store_true")
     p.add_argument(
         "--resume_allow_future_seed_content_upgrade",
+        action="store_true",
+    )
+    p.add_argument(
+        "--resume_allow_future_seed_gradient_upgrade",
         action="store_true",
     )
     p.add_argument(

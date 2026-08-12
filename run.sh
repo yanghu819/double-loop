@@ -530,6 +530,7 @@ COMMON_ARGS=(
   --future_seed_scope "${FUTURE_SEED_SCOPE:-layer}"
   --future_seed_readout_hop "${FUTURE_SEED_READOUT_HOP:-0}"
   --future_seed_content_mode "${FUTURE_SEED_CONTENT_MODE:-terminal}"
+  --future_seed_gradient_mode "${FUTURE_SEED_GRADIENT_MODE:-canonical}"
   --loop_feedback_scale "${LOOP_FEEDBACK_SCALE:-0.0}"
   --loop_feedback_detach "${LOOP_FEEDBACK_DETACH:-0}"
   --loop_feedback_corrupt_prob "${LOOP_FEEDBACK_CORRUPT_PROB:-0.0}"
@@ -607,6 +608,9 @@ if [[ "${RESUME_REQUIRE_EXACT_STATE:-0}" == "1" ]]; then
 fi
 if [[ "${RESUME_ALLOW_FUTURE_SEED_CONTENT_UPGRADE:-0}" == "1" ]]; then
   COMMON_ARGS+=(--resume_allow_future_seed_content_upgrade)
+fi
+if [[ "${RESUME_ALLOW_FUTURE_SEED_GRADIENT_UPGRADE:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--resume_allow_future_seed_gradient_upgrade)
 fi
 if [[ "${RESUME_ALLOW_GDN2_UPDATE_UPGRADE:-0}" == "1" ]]; then
   COMMON_ARGS+=(--resume_allow_gdn2_update_upgrade)

@@ -127,6 +127,12 @@ gradient norm; no loss reweight, per-head variant, scale, seed, LR, batch or
 duration sweep is authorized. This diagnostic is causal admission evidence,
 not itself a quality score.
 
+The admitted successor is registered as `P-LOOP-002` in
+`research/reports/experiments/futureseed-opening-projection-20260812.md`. It
+recovers the mean loops2-5 continuation gradient from loop1 and the canonical
+equal-five-loop gradient, then performs a training-only FS-gate projection;
+it does not reopen a GDN2 mechanism family.
+
 ## 9. Submission Record
 
 Not applicable.

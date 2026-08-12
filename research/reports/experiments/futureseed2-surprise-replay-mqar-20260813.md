@@ -11,6 +11,8 @@
   recency-K16 replay, exact-surprise-K16 replay
 - New parameters: zero
 - Persistent recurrent-state delta: zero
+- Matched transient tape: `16 * 128 = 2,048` values per board in both replay
+  arms; no tape survives the forward or macro-loop boundary
 
 ## 2. Evidence And Hypothesis
 
@@ -52,10 +54,12 @@ K/V/state coordinates.
 
 Before the next layer's normal L1024 scan, its own unchanged GDN2 mixer scans
 the selected 16 hidden vectors once and uses that receiver-native terminal
-state as FutureSeed. The normal receiver scan then runs unchanged. The event
-tape is rebuilt at every layer and forward; it is not carried across a macro
-loop. Admission has no trainable parameters, while gradients through selected
-hidden evidence and the receiver replay remain end-to-end.
+state as FutureSeed. Replay short-convolution state is intentionally discarded:
+the K16 pass constructs only the recurrent seed and is not claimed to be an
+exact continuous-prefix execution. The normal receiver scan then runs unchanged.
+The event tape is rebuilt at every layer and forward; it is not carried across
+a macro loop. Admission has no trainable parameters, while gradients through
+selected hidden evidence and the receiver replay remain end-to-end.
 
 ## 4. Why Existing Failures Do Not Cover It
 
@@ -78,16 +82,21 @@ Before training, the exact pushed SHA in a clean detached worktree must prove:
 2. pinned FLA SHA `9c8e42e...d85e`, exact GDN2 layer/ops hashes, Triton short
    convolution, disabled backend dispatch, and clean Zoology SHA `1ad20d1`;
 3. exact historical train/test data hashes;
-4. baseline, recency and surprise have identical parameter names, tensors,
-   hashes and counts;
+4. baseline, recency and surprise have the exact historical parameter count,
+   and identical parameter names, buffers, tensors and hashes;
 5. capture changes neither producer output, terminal state nor committed edit
    for zero or nonzero incoming state;
-6. a synthetic event field makes surprise select positions `0..15` and
-   recency select `48..63`, both restored in time order;
+6. stable deterministic per-board selection on a heterogeneous synthetic field
+   makes surprise select `0..15` for board 0 and `16..31` for board 1 while
+   recency selects `48..63`, with gathered evidence restored in time order;
 7. replay state changes when selected evidence order changes;
-8. a full candidate backward contains exactly three
-   `ChunkGDN2FunctionBackward` paths and finite nonzero gradients; and
-9. no fallback, CPU model run or concurrent GPU process occurs.
+8. full forward wiring passes the exact producer-selected tensor to the
+   receiver replay, and that selected evidence receives a finite nonzero
+   gradient;
+9. every instantiated main/replay scan is exact official `GatedDeltaNet2`, its
+   short convolutions use Triton, and a full candidate backward contains
+   exactly three `ChunkGDN2FunctionBackward` paths; and
+10. no fallback, CPU model run or concurrent GPU process occurs.
 
 Any miss closes this exact implementation before science. It does not license
 a tolerance, capture, K, precision or training rescue.
@@ -99,6 +108,9 @@ count, optimizer, schedule, batch order, seed and evaluation cases. RNG is
 reset before each arm. The historical source `77e5539` score and cases remain
 SHA-locked as an absolute reference; the contemporaneous baseline controls
 known runtime optimization drift and supplies the end-to-end cost denominator.
+The first warmup/epoch anchor batch is content-hashed across arms. Activation
+statistics are recomputed on the fixed first 32-example test prefix rather than
+inherited from the final partial validation batch.
 
 The historical baseline is evidence, not silently claimed reproducible. A
 runtime baseline miss does not relax the absolute candidate bar.
@@ -117,7 +129,7 @@ Surprise must satisfy every quality condition:
 - joint exact `>=0.60`;
 - balanced or joint exact at least `+0.05` over matched recency-K16; and
 - wrong-key valid-value swap fraction at least `0.10` below historical
-  `0.8069306931`.
+  `0.8069306931` and at least `0.10` below the contemporaneous baseline.
 
 Surprise fit elapsed, post-warm wall, independently warmed training step and
 peak allocation must each be no more than `1.25x` the contemporaneous native

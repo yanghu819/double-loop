@@ -32,6 +32,8 @@ class ZoologyEventTapeGDN2FutureSeedMixer(ZoologyGDN2FutureSeedMixer):
         self.last_event_diagnostics: dict[str, torch.Tensor] = {}
         self.last_replay_diagnostics: dict[str, torch.Tensor] = {}
         self.last_selected_indices: Optional[torch.Tensor] = None
+        self.last_selected_evidence: Optional[torch.Tensor] = None
+        self.last_replay_input: Optional[torch.Tensor] = None
 
     def forward_with_committed_edit(
         self,
@@ -71,13 +73,12 @@ class ZoologyEventTapeGDN2FutureSeedMixer(ZoologyGDN2FutureSeedMixer):
             raise RuntimeError("Committed-edit surprise contains non-finite values")
 
         if self.admission_mode == "surprise":
-            indices = torch.topk(
+            indices = torch.argsort(
                 scores,
-                k=self.event_tape_size,
                 dim=1,
-                largest=True,
-                sorted=False,
-            ).indices
+                descending=True,
+                stable=True,
+            )[:, : self.event_tape_size]
             indices = indices.sort(dim=1).values
         elif self.admission_mode == "recency":
             indices = torch.arange(
@@ -91,6 +92,9 @@ class ZoologyEventTapeGDN2FutureSeedMixer(ZoologyGDN2FutureSeedMixer):
         gather = indices.unsqueeze(-1).expand(-1, -1, width)
         evidence = hidden_states.gather(dim=1, index=gather)
         self.last_selected_indices = indices.detach()
+        self.last_selected_evidence = evidence
+        if evidence.requires_grad:
+            evidence.retain_grad()
         selected_scores = scores.gather(dim=1, index=indices)
         total_score = scores.sum(dim=1).clamp_min(1e-12)
         position_std = indices.float().std(dim=1, unbiased=False)
@@ -114,6 +118,7 @@ class ZoologyEventTapeGDN2FutureSeedMixer(ZoologyGDN2FutureSeedMixer):
         return evidence
 
     def replay_seed(self, evidence: torch.Tensor) -> torch.Tensor:
+        self.last_replay_input = evidence
         _output, terminal_state = super().forward_with_state(
             evidence,
             initial_state=None,
@@ -252,6 +257,11 @@ def event_tape_diagnostics(model: nn.Module) -> dict[str, Any]:
         "main_official_scans": 2,
         "replay_official_scans": 1,
         "selected_evidence_values_per_board": producer.event_tape_size * 128,
+        "diagnostic_examples": int(
+            producer.last_selected_indices.shape[0]
+            if producer.last_selected_indices is not None
+            else 0
+        ),
         "committed_edit_gradient_policy": "detached admission only",
         "selected_evidence_gradient_policy": "receiver replay remains differentiable",
         "producer": {

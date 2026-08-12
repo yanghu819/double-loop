@@ -221,6 +221,13 @@ def parameter_hash(model: torch.nn.Module) -> str:
     return digest.hexdigest()
 
 
+def fixed_batch_hash(batch: tuple[torch.Tensor, torch.Tensor, Any]) -> str:
+    digest = hashlib.sha256()
+    for tensor in batch[:2]:
+        digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
 def warm_model(
     model: torch.nn.Module,
     batch: tuple[torch.Tensor, torch.Tensor, Any],
@@ -487,6 +494,7 @@ def run_arm(
         "test": dataset_hash(test_dataloader),
     }
     fixed_batch = next(iter(train_dataloader))
+    warmup_batch_hash = fixed_batch_hash(fixed_batch)
     warm_model(model, fixed_batch)
     set_determinism(config.seed)
     post_warm_arm_started = time.perf_counter()
@@ -567,6 +575,11 @@ def run_arm(
             event_tape_diagnostics,
         )
 
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs.cuda())
         event_tape = event_tape_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
@@ -606,6 +619,7 @@ def run_arm(
         "parent_init_parameter_hash": parent_init_parameter_hash,
         "trained_parameter_hash": trained_parameter_hash,
         "data_hashes": data_hashes,
+        "warmup_batch_hash": warmup_batch_hash,
         "parameters": sum(parameter.numel() for parameter in model.parameters()),
         "epochs": max_epochs,
         "train_examples": TRAIN_EXAMPLES,

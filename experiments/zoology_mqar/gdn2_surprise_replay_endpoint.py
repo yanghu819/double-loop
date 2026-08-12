@@ -37,6 +37,7 @@ def activation_checks(score: dict[str, Any], *, admission: str) -> dict[str, boo
         "event_tape_size_exactly_16": tape["event_tape_size"] == 16,
         "zero_new_parameters": tape["new_parameters"] == 0,
         "zero_persistent_state_delta": tape["persistent_state_delta"] == 0,
+        "fixed_32_example_activation_prefix": tape["diagnostic_examples"] == 32,
         "exactly_two_main_and_one_replay_official_scans": (
             tape["main_official_scans"] == 2
             and tape["replay_official_scans"] == 1
@@ -128,6 +129,11 @@ def main() -> None:
         "identical_data": (
             baseline["data_hashes"] == recency["data_hashes"] == surprise["data_hashes"]
         ),
+        "identical_warmup_and_first_epoch_anchor_batch": (
+            baseline["warmup_batch_hash"]
+            == recency["warmup_batch_hash"]
+            == surprise["warmup_batch_hash"]
+        ),
         "identical_initial_model_state": (
             baseline["init_hash"] == recency["init_hash"] == surprise["init_hash"]
         ),
@@ -139,11 +145,16 @@ def main() -> None:
         "identical_parameter_count": (
             baseline["parameters"] == recency["parameters"] == surprise["parameters"]
         ),
-        "identical_state_budget": (
+        "identical_persistent_recurrent_state_budget": (
             baseline["recurrent_state_values_per_layer"]
             == recency["recurrent_state_values_per_layer"]
             == surprise["recurrent_state_values_per_layer"]
             == 4096
+        ),
+        "matched_transient_k16_tape_budget": (
+            recency["event_tape"]["selected_evidence_values_per_board"]
+            == surprise["event_tape"]["selected_evidence_values_per_board"]
+            == 2048
         ),
         "historical_reference_locked": (
             historical["score"]["metrics"]["balanced_accuracy"]
@@ -182,6 +193,13 @@ def main() -> None:
         "wrong_key_swap_fraction_down_0.10_from_historical": (
             swaps["surprise_k16"]["wrong_key_swap_fraction_of_errors"]
             <= HISTORICAL_SWAP_FRACTION - 0.10
+        ),
+        "wrong_key_swap_fraction_down_0.10_from_contemporaneous": (
+            swaps["surprise_k16"]["wrong_key_swap_fraction_of_errors"]
+            <= swaps["contemporaneous_native_futureseed"][
+                "wrong_key_swap_fraction_of_errors"
+            ]
+            - 0.10
         ),
     }
     cost = {
@@ -241,6 +259,7 @@ def main() -> None:
             "main_recurrence_changed": False,
             "admission_parameters": 0,
             "event_tape_size": 16,
+            "transient_event_tape_values_per_board": 2048,
         },
         "historical_reference": historical,
         "contemporaneous_baseline": baseline,

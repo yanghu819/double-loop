@@ -318,6 +318,10 @@ set +e
 timeout --signal=TERM --kill-after=30 "$WALL_BUDGET_SEC" \
   "$PYTHON_BIN" -u -m "$ENDPOINT_MODULE" \
   --output-dir "$OUT_DIR" \
+  --p020-score "$P020_SCORE" \
+  --p020-cases "$P020_CASES" \
+  --max-epochs "$MAX_EPOCHS" \
+  --batch-size "$BATCH_SIZE" \
   2>&1 | tee "$RUN_DIR/formal.log"
 PIPE=("${PIPESTATUS[@]}")
 ENDPOINT_STATUS="${PIPE[0]}"

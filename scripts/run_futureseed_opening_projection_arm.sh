@@ -101,6 +101,7 @@ if [[ "$ARM" == "opening_projection" ]]; then
 fi
 if [[ "$RUN_KIND" == "probe" ]]; then
   FULL_STEPS=3001
+  HOLE_STAGES=46-50:500,51-55:2501
   FULL_EVAL_N=8
   OFFICIAL_EVAL_BLANK_RANGES=51-55
   EVAL_HOLES_LIST=53
@@ -121,6 +122,22 @@ else
   CASE_BANK_N=8
   FULL_LOG_EVERY=25
   DEFAULT_NAME="p-loop-002-${ARM}-s3100-${TIMESTAMP}-${GIT_SHA:0:7}"
+fi
+
+stage_total=0
+IFS=',' read -r -a stage_rows <<< "$HOLE_STAGES"
+for stage_row in "${stage_rows[@]}"; do
+  stage_steps="${stage_row##*:}"
+  if [[ ! "$stage_steps" =~ ^[0-9]+$ ]]; then
+    printf 'Invalid P-LOOP-002 stage row: %s\n' "$stage_row" >&2
+    exit 12
+  fi
+  stage_total=$((stage_total + stage_steps))
+done
+if [[ "$stage_total" -ne "$FULL_STEPS" ]]; then
+  printf 'P-LOOP-002 stage total %s does not match endpoint %s.\n' \
+    "$stage_total" "$FULL_STEPS" >&2
+  exit 12
 fi
 export RUN_NAME="${RUN_NAME:-$DEFAULT_NAME}"
 RUN_DIR="$RUNS_ROOT/$RUN_NAME"

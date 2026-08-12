@@ -47,6 +47,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_dual_hash",
     "future_seed_gdn2_shared_committed_delta",
     "future_seed_gdn2_clustered_committed_delta",
+    "future_seed_gdn2_oig",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -127,6 +128,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_committed_delta."
                 "ZoologyClusteredCommittedDeltaFutureSeedMixer"
+            )
+        elif arm == "future_seed_gdn2_oig":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_oig."
+                "ZoologyOIGGDN2FutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -450,6 +456,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_committed_delta import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_gdn2_oig":
+        from experiments.zoology_mqar.gdn2_oig import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
     data_hashes = {
         "train": dataset_hash(train_dataloader),
@@ -522,6 +532,11 @@ def run_arm(
         )
 
         committed_delta = committed_delta_diagnostics(model)
+    oig = None
+    if arm == "future_seed_gdn2_oig":
+        from experiments.zoology_mqar.gdn2_oig import oig_diagnostics
+
+        oig = oig_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -586,6 +601,8 @@ def run_arm(
         score["dual_hash"] = dual_hash
     if committed_delta is not None:
         score["committed_delta"] = committed_delta
+    if oig is not None:
+        score["oig"] = oig
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

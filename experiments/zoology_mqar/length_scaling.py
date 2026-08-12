@@ -48,6 +48,8 @@ GDN2_ARMS = (
     "future_seed_gdn2_shared_committed_delta",
     "future_seed_gdn2_clustered_committed_delta",
     "future_seed_gdn2_oig",
+    "future_seed_gdn2_recency_replay",
+    "future_seed_gdn2_surprise_replay",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -134,6 +136,16 @@ def build_config(
                 "experiments.zoology_mqar.gdn2_oig."
                 "ZoologyOIGGDN2FutureSeedMixer"
             )
+        elif arm == "future_seed_gdn2_recency_replay":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_surprise_replay."
+                "ZoologyRecencyReplayGDN2FutureSeedMixer"
+            )
+        elif arm == "future_seed_gdn2_surprise_replay":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_surprise_replay."
+                "ZoologySurpriseReplayGDN2FutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -187,6 +199,15 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm in (
+        "future_seed_gdn2_recency_replay",
+        "future_seed_gdn2_surprise_replay",
+    ):
+        from experiments.zoology_mqar.gdn2_surprise_replay import (
+            EventTapeFutureSeedLanguageModel,
+        )
+
+        return EventTapeFutureSeedLanguageModel(copy.deepcopy(config.model))
     if arm in GDN2_ARMS:
         return FutureSeedLanguageModel(copy.deepcopy(config.model))
     return LanguageModel(copy.deepcopy(config.model))
@@ -537,6 +558,16 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_oig import oig_diagnostics
 
         oig = oig_diagnostics(model)
+    event_tape = None
+    if arm in (
+        "future_seed_gdn2_recency_replay",
+        "future_seed_gdn2_surprise_replay",
+    ):
+        from experiments.zoology_mqar.gdn2_surprise_replay import (
+            event_tape_diagnostics,
+        )
+
+        event_tape = event_tape_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -603,6 +634,8 @@ def run_arm(
         score["committed_delta"] = committed_delta
     if oig is not None:
         score["oig"] = oig
+    if event_tape is not None:
+        score["event_tape"] = event_tape
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

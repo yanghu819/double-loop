@@ -12,19 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-12 CST): `P-LOOP-003` is approved as a zero-parameter
-receiver-edge phase-credit diagnostic. P-LOOP-002 proved that aggregate
-FutureSeed gate conflict is real but that changing the shared gate gradient
-does not improve closure. The remaining narrow hypothesis is role aliasing:
-opening and continuation may require different gate values even though they
-share one parameter. P-LOOP-003 captures all 165 actual receiver-state
-injections in the five-loop graph and reconstructs each gate gradient from its
-local cotangent. A phase candidate is admitted only if at least two hard ranges
-show strong opening/continuation opposition, local sign conflict, nontrivial
-phase leverage, cross-board aggregation, at least 8 active edges and genuine
-loop correction. Otherwise close scalar FS loop-credit coordination and move
-to a new GDN recurrent transition; orthogonal content evidence is descriptive
-because P-FS3-004 already closed simple basis transport.
+Current update (2026-08-13 CST): `P-LOOP-003` completed and rejects the final
+scalar FutureSeed loop-credit hypothesis. The zero-parameter A10080 diagnostic
+captured all 165 receiver-state injections per hard range, reconstructed the
+direct gate gradients with maximum relative error `3.71e-5` and minimum cosine
+`0.99999987`, and left the parameter hash unchanged. None of 51-55/56-60/61-64
+qualifies. The apparent 51-55 opening/continuation conflict (`cos=-0.9711`) is
+not broad: only edges 7/8 are active, one board carries `79.11%` of phase
+energy, cross-board aggregation is `0.4698`, and leave-one-out cosine is
+`0.4060`. The two harder ranges are aggregate-aligned (`+0.9580/+0.8898`),
+with zero/one active edge; 56-60 also misses the registered correction floor.
+Therefore P-LOOP-004 is not admitted. Close phase-gate, projection, scalar
+credit and simple orthogonal-transport rescues. The next formal mechanism must
+change the live recurrent address/state transition and first prove itself from
+scratch on the directional L1024 binding regime.
 
 Current update (2026-08-12 CST): `P-LOOP-002` completed and is discarded. The
 fresh matched run on clean pushed SHA `15657cc` completed strict contract,
@@ -913,7 +914,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-LOOP-003 | approved | P-LOOP-002 failed because one shared FS gate value, not merely its aggregate gradient, may alias incompatible opening and refinement roles. | Zero-parameter receiver-edge cotangent audit on three fixed official B8 ranges. Capture exactly 165 injected states, reconstruct direct gate gradients, and measure opening/continuation cosine, magnitude-weighted conflict/overlap, virtual phase leverage, leave-one-board stability, cross-board/range consistency and active edges. No logits, parameter, optimizer or checkpoint change. | One AIStation A10080, CUDA index0 only; exact pushed clean detached SHA required. | about 8 minutes | Admit one phase-gate candidate only if >=2 ranges pass cosine<=-0.25, weighted conflict>=0.60, overlap>=0.20, phase/shared>=0.25, absolute energy>=0.15, board aggregation>=0.50, leave-one-out>=0.75, >=8 active edges, >=6 shared edges, cross-range cosine>=0.25 and genuine correction. | Pending. |
+| P-LOOP-003 | completed; rejected | P-LOOP-002 failed because one shared FS gate value, not merely its aggregate gradient, may alias incompatible opening and refinement roles. | Zero-parameter receiver-edge cotangent audit on three fixed official B8 ranges. Capture exactly 165 injected states, reconstruct direct gate gradients, and measure opening/continuation cosine, magnitude-weighted conflict/overlap, virtual phase leverage, leave-one-board stability, cross-board/range consistency and active edges. No logits, parameter, optimizer or checkpoint change. | A100-SXM4-80GB index0 UUID `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`; clean detached pushed SHA `82c48479`. | 601.74s; 3517.83 MiB peak allocation | Admit one phase-gate candidate only if >=2 ranges pass cosine<=-0.25, weighted conflict>=0.60, overlap>=0.20, phase/shared>=0.25, absolute energy>=0.15, board aggregation>=0.50, leave-one-out>=0.75, >=8 active edges, >=6 shared edges, cross-range cosine>=0.25 and genuine correction. | `0/3` ranges qualify. 51-55 has strong aggregate opposition but only edges7/8 active, board aggregation `0.4698`, maximum board share `0.7911`, and leave-one-out `0.4060`. 56-60/61-64 aggregate cosines are `+0.9580/+0.8898`, with zero/one active edge; 56-60 correction is below floor. Integrity passes and parameter SHA is unchanged. Reject P-LOOP-004 and close scalar phase-credit without rescue. |
 | P-LOOP-002 | discarded | P-LOOP-001 isolates loop1 opposition to loops3-5 inside native FutureSeed gates, while continuation loops are nearly collinear; removing only the opening component that points against continuation may preserve opening and improve late closure. | Training-only, zero-parameter projection on exactly 11 receiving gate tensors/88 scalars. Recover `C=(5B-O)/4`; when `O dot C<0`, replace `O` by its half-space projection and preserve the canonical FS norm after canonical global clip. Forward, inference, losses and all non-FS clipped gradients stay unchanged. Strict contract, step3001 probe, then sequential same-source canonical/candidate 100-step continuation. | One A100-SXM4-80GB, CUDA index0 UUID `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`; clean detached pushed SHA `15657cc`. | completed status0; candidate/control `971.40/1023.02s` | Activation >=`10%`, mean removed opening fraction >=`5%`, post-dot >=`-1e-6`, FS/global norm relative error `<1e-5/2e-5`. Primary hard51-64 macro loop5 exact `+0.02`, every range blank regression <=`0.01`; alternate mixed `+0.03`, 61-64 non-regressive and late correction stronger. Elapsed/alloc overhead `<25/10%`. | Activation and all integrity/cost gates pass, but hard macro exact `0.001302->0`, mixed exact is unchanged `0.025391`, all three range blank deltas are negative, and late correction weakens on 56-64. Close without projection/local-selector/Adam/loss/training rescue. |
 | P-LOOP-001 | completed; FS admitted | Equal all-loop CE may cancel early-opening and late-closure gradients inside native FutureSeed edges or official GDN2 address/edit parameters. | Zero-parameter, three-range fixed-board audit of five per-loop gradient vectors; no optimizer, logits change or checkpoint. Candidate admission requires one mechanism group to qualify on at least two hard ranges. | Single A10080 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`; clean detached pushed SHA `f99b4a7`. | 340.05s; 3502.73 MiB peak allocation | Early-vs-late cosine <=`-0.10` FS or `-0.05` GDN, pair conflict >=`0.30`, cancellation <=`0.75`, and loop5 blank gain >=`0.02` on >=2 ranges. | FS gate passes 51-55 and 61-64: cosine `-0.904763/-0.718710`, conflict `0.40`, cancellation `0.529537/0.698487`, genuine correction. GDN address/edit pass 0 ranges. Admit one FS-only opening-vs-continuation gradient projection; no GDN arm. |
 | P-GDN3-026 | discarded | P020's static full-matrix metric helps but leaves 94.16% wrong-key swaps; completed-block key geometry may improve the next block's query against one canonical main state. | Frozen-P020 zero-logit B64 exclusive-prefix Gram diagnostic, then at most one D128/L2/H4/K32 10-epoch candidate. Query-only bounded factor, +8 parameters, no payload state or official-scan delta. | One task-mode A10080, CUDA index0 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. | strict contract and 128-example diagnostic complete; candidate not admitted | Diagnostic rank/anisotropy/binding admission; candidate balanced>=0.65 and >=P020+0.10, joint>=0.15, directions>=0.62, swaps -0.10, bounded activation and fixed cost ceilings. | Contract passes. Rank median gain/improved fraction `-0.000020/0.3995`; anisotropy ratio/improved fraction `1.000088/0.4009`; binding median gain/improved fraction `0/0.3657`, future/past `0.3105/0.4209`. Every geometric admission route fails, so no training runs. Close online Gram conditioning without rescue. |

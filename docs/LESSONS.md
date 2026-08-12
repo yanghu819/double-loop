@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-13: Receiver-local conflict must be broad to justify a new gate
+
+- Aggregate opposition can be mathematically real and still be too localized
+  to support a mechanism. On 51-55, P-LOOP-003 measures cosine `-0.9711` and
+  conflict `0.7909`, but only two of eleven receiver edges are active, one
+  board carries `79.11%` of the phase energy, and leave-one-board cosine is
+  only `0.4060`.
+- The harder ranges contradict a universal phase story: opening and
+  continuation are aligned at `+0.9580/+0.8898`, not opposed. A scalar phase
+  gate would therefore encode a narrow batch/depth accident.
+- Exact receiver-boundary reconstruction matters. The diagnostic matches
+  direct gate gradients to `3.71e-5` relative error while leaving every model
+  parameter unchanged, so rejection is not attributable to a weak proxy.
+- Do not rescue phase credit with per-edge selectors, phase strength or loss
+  weights. The next useful intervention must change live recurrent address
+  organization and target the observed wrong-key binding failure directly.
+
 ## 2026-08-12: Aggregate FutureSeed gradient conflict is not closure
 
 - P-LOOP-002 cleanly separates optimizer credit from the forward mechanism.

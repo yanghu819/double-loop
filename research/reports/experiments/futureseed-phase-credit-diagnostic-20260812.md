@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; not yet run
+- Status: completed; diagnostic rejected; P-LOOP-004 not admitted
 - Parent: position-QK GDN2 plus native terminal FutureSeed, exact step3000
 - Task: official/full-diversity hard 9x9 Sudoku, 51-64 blanks
 - Intervention: none; this diagnostic does not alter logits, parameters or optimizer state
@@ -73,9 +73,20 @@ EXPECTED_UUID=<admitted-uuid> scripts/run_futureseed_phase_credit_diagnostic.sh
 
 ## 6. Artifacts
 
-The launcher writes `futureseed_phase_credit.json`, `run.log`, `gpu.txt`, source
-provenance and hashes below one immutable `p-loop-003-phase-credit-*` run
-directory. It creates no checkpoint.
+- Run: `p-loop-003-phase-credit-20260812T185345Z-82c4847`
+- Source: clean detached pushed SHA
+  `82c48479f11e95ef9f337453f8cf8d5d377b6fb0`
+- GPU: A100-SXM4-80GB, CUDA index 0, UUID
+  `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`
+- JSON SHA256:
+  `e42f505a468ecf1c1a9f9fd02fe5954d26a21de740b535182b2a032062c00ee4`
+- Log SHA256:
+  `39c1734ce4dc3a7af650160a46afbf745b5ba35081f713848fa7f25c3d19ce2a`
+- Elapsed/peak allocated: `601.739s` / `3517.831 MiB`
+
+The immutable evidence is mirrored under
+`research/reports/visualizations/futureseed-phase-credit-20260812/`. The
+diagnostic creates no checkpoint.
 
 ## 7. Frozen Admission Gate
 
@@ -107,7 +118,32 @@ test; it does not predict endpoint exact by itself.
 
 ## 8. Conclusions
 
-Pending.
+The integrity gate passes. Each range captures exactly 165 non-null receiver
+states and 180 official `ChunkGDN2FunctionBackward` nodes. Direct gate-gradient
+reconstruction has maximum relative error `3.71e-5` and minimum cosine
+`0.99999987`; parameter SHA256 is identical before and after.
+
+No hard range qualifies:
+
+| Range | loop1->5 blank | wrong cells | O/C cosine | conflict | phase/shared | board aggregation | max board share | leave-one-out | active edges |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 51-55 | `0.5413->0.5872` | `25.00->22.50` | `-0.9711` | `0.7909` | `1.4811` | `0.4698` | `0.7911` | `0.4060` | `7,8` |
+| 56-60 | `0.5210->0.5386` | `27.13->26.13` | `+0.9580` | `0.1619` | `0.2365` | `0.4081` | `0.3506` | `0.9012` | none |
+| 61-64 | `0.5195->0.5859` | `30.75->26.50` | `+0.8898` | `0.4590` | `0.3035` | `0.1707` | `0.2757` | `0.2989` | `8` |
+
+The strongest-looking 51-55 opposition is concentrated in receiver edge 8
+and one board rather than a stable cross-board, cross-depth mechanism. The two
+harder ranges are aggregate-aligned, and 56-60 misses the frozen `+0.02`
+correction floor. Although the continuation cotangent is almost entirely
+orthogonal to the injected state (`0.99997` mean), P-FS3-004 already rejected
+simple orthogonal basis transport, so this descriptive statistic does not
+reopen that family.
+
+Decision: `0/3` ranges qualify, so P-LOOP-004 is forbidden. Close scalar
+FutureSeed phase-credit coordination, including phase gates, projection
+strength, edge selection and loss-weight rescues. The next experiment must
+alter a genuinely live recurrent address/state transition and earn a fresh
+from-scratch directional binding result before any Sudoku scale claim.
 
 ## 9. Submission Record
 

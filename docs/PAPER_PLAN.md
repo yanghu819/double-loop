@@ -1,5 +1,23 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Receiver-Edge Phase-Credit Boundary
+
+P-LOOP-003 completes the causal localization sequence started by P-LOOP-001.
+Its zero-parameter receiver-boundary audit reconstructs native FutureSeed gate
+gradients to `3.71e-5` relative error without changing parameters, logits or
+optimizer state. None of the three hard ranges satisfies the preregistered
+cross-board and cross-depth phase-credit gate. The 51-55 aggregate opposition
+is concentrated in receiver edge 8 and one board; 56-60 and 61-64 are instead
+aggregate-aligned. P-LOOP-004 is therefore not admitted.
+
+The paper-level claim is negative and useful: loop-specific scalar credit is
+not a stable explanation for FutureSeed's hard-board closure failures. The
+remaining near-unit orthogonal cotangent fraction is descriptive only because
+simple orthogonal producer/receiver transport already failed its matched
+quality test. Future work should change the live recurrent address/state
+transition, with address binding tested from scratch before returning to the
+Sudoku scale trajectory.
+
 ## 2026-08-12 FutureSeed Gradient-Conflict Boundary
 
 P-LOOP-001 found genuine opening-versus-continuation conflict in native

@@ -86,7 +86,20 @@ transfer; a failure closes this correction-memory organization.
 
 ## 6. Artifacts
 
-Pending exact pushed source SHA, detached worktree, contract and formal run.
+- R1 source SHA: `fc42fa1e3710d01b5762efefc3c79e928e100603`
+- R1 contract log SHA256:
+  `38e8c9708dcf43632e96fb94708a637a57ece28d452a8364d76f11c565578d92`
+- R1 `abort.json` SHA256:
+  `b05bbf0ed25963b259192535d7bc403312186156bf9821d97b55c124f515d8f1`
+
+R1 stopped before training on a non-science contract error. The checker
+compared a separately constructed plain model with the wrapped model. Zoology
+recursively reinitializes nested `out_proj` parameters, so changing the module
+tree changes those parent parameters despite resetting the seed. R2 instead
+checks each wrapper directly against its own pinned-official base with the same
+weights, for both zero and nonzero incoming state, and separately checks exact
+fixed/learned full-model parity while the read gates are zero. The mechanism,
+data, optimizer, budget and science gates are unchanged.
 
 ## 7. Results
 

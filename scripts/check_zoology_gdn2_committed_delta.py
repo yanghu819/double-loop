@@ -68,6 +68,51 @@ def exact_equal(first: torch.Tensor, second: torch.Tensor, name: str) -> None:
         raise RuntimeError(f"{name} lost exact identity; max delta={delta}")
 
 
+def check_same_weight_parent_identity(
+    mixer: ZoologySharedCommittedDeltaFutureSeedMixer
+    | ZoologyClusteredCommittedDeltaFutureSeedMixer,
+    hidden: torch.Tensor,
+    incoming: torch.Tensor,
+    name: str,
+) -> None:
+    wrapper = mixer.layer
+    if torch.tanh(wrapper.correction_read_logit).count_nonzero().item() != 0:
+        raise RuntimeError(f"{name} correction read gate is not exactly zero")
+
+    with torch.no_grad(), torch.autocast(
+        device_type="cuda", dtype=torch.bfloat16
+    ):
+        base_output, _base_attentions, _base_cache = wrapper.base(hidden)
+        wrapped_output, _wrapped_attentions, _wrapped_cache = wrapper(hidden)
+    exact_equal(base_output, wrapped_output, f"{name} zero-state same-weight output")
+
+    base_cache = mixer._new_cache(incoming.clone())
+    wrapped_cache = mixer._new_cache(incoming.clone())
+    with torch.no_grad(), torch.autocast(
+        device_type="cuda", dtype=torch.bfloat16
+    ):
+        base_output, _base_attentions, base_cache = wrapper.base(
+            hidden,
+            past_key_values=base_cache,
+            use_cache=True,
+        )
+        wrapped_output, _wrapped_attentions, wrapped_cache = wrapper(
+            hidden,
+            past_key_values=wrapped_cache,
+            use_cache=True,
+        )
+    exact_equal(
+        base_output,
+        wrapped_output,
+        f"{name} nonzero-state same-weight output",
+    )
+    exact_equal(
+        base_cache[mixer.layer_idx]["recurrent_state"],
+        wrapped_cache[mixer.layer_idx]["recurrent_state"],
+        f"{name} nonzero-state same-weight terminal state",
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
@@ -130,17 +175,14 @@ def main() -> None:
         raise RuntimeError(f"Directional MQAR data drifted: {data_hashes}")
 
     arm_names = {
-        "parent": "future_seed_gdn2",
         "shared": "future_seed_gdn2_shared_committed_delta",
         "clustered": "future_seed_gdn2_clustered_committed_delta",
     }
     models = {}
-    for name, config in configs.items():
+    for name, arm_name in arm_names.items():
         set_determinism(123)
-        models[name] = make_model(config, arm_names[name]).cuda()
-    parent, shared, clustered = models["parent"], models["shared"], models["clustered"]
-    if sum(p.numel() for p in parent.parameters()) != 661_584:
-        raise RuntimeError("Parent parameter count changed")
+        models[name] = make_model(configs[name], arm_name).cuda()
+    shared, clustered = models["shared"], models["clustered"]
     if sum(p.numel() for p in shared.parameters()) != 661_592:
         raise RuntimeError("Shared correction parameter count changed")
     if sum(p.numel() for p in clustered.parameters()) != 665_560:
@@ -166,31 +208,20 @@ def main() -> None:
     inputs = inputs[:2].cuda()
     targets = targets[:2].cuda()
     with torch.no_grad():
-        parent_logits = parent(inputs)
         shared_logits = shared(inputs)
         clustered_logits = clustered(inputs)
-    exact_equal(parent_logits, shared_logits, "shared zero-read full output")
-    exact_equal(parent_logits, clustered_logits, "clustered zero-read full output")
+    exact_equal(
+        shared_logits,
+        clustered_logits,
+        "fixed/learned zero-read full output",
+    )
 
     hidden = torch.randn(2, 128, 128, device="cuda")
     incoming = torch.randn(2, 4, 32, 32, device="cuda")
-    parent_mixer = parent.backbone.layers[1].sequence_mixer
     shared_mixer = shared.backbone.layers[1].sequence_mixer
     clustered_mixer = clustered.backbone.layers[1].sequence_mixer
-    with torch.no_grad():
-        parent_output, parent_state = parent_mixer.forward_with_state(
-            hidden, initial_state=incoming
-        )
-        shared_output, shared_state = shared_mixer.forward_with_state(
-            hidden, initial_state=incoming
-        )
-        clustered_output, clustered_state = clustered_mixer.forward_with_state(
-            hidden, initial_state=incoming
-        )
-    exact_equal(parent_output, shared_output, "shared nonzero-state output")
-    exact_equal(parent_state, shared_state, "shared nonzero-state terminal state")
-    exact_equal(parent_output, clustered_output, "clustered nonzero-state output")
-    exact_equal(parent_state, clustered_state, "clustered nonzero-state terminal state")
+    check_same_weight_parent_identity(shared_mixer, hidden, incoming, "shared")
+    check_same_weight_parent_identity(clustered_mixer, hidden, incoming, "clustered")
 
     clustered.train().zero_grad(set_to_none=True)
     logits = clustered(inputs)
@@ -262,8 +293,9 @@ def main() -> None:
         "parent_parameter_hash": EXPECTED_PARENT_HASH,
         "state_values_per_layer": {"main": 4096, "correction": 2048, "total": 6144},
         "official_backward_count": official_backward_count,
-        "zero_read_parent_output_exact": True,
-        "nonzero_incoming_state_output_and_terminal_exact": True,
+        "fixed_learned_zero_read_full_output_exact": True,
+        "same_weight_parent_zero_read_output_exact": True,
+        "same_weight_parent_nonzero_state_output_and_terminal_exact": True,
         "two_stage_gradients": {"read_gate": True, "learned_basis": True},
         "loss": float(loss.item()),
         "active_loss": float(active_loss.item()),

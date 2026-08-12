@@ -1,5 +1,18 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Online Inverse-Geometry Production Boundary
+
+P-GDN3-027 tests the strongest remaining live-address hypothesis with a
+receiver-local inverse-information matrix and an exact constrained committed
+edit. The strict A100 CUDA contract passes, but production training is at
+least `40.95x` slower than the contemporaneous official GDN2 control, against
+the preregistered `<2.5x` ceiling. The run is therefore stopped during epoch 0
+without a candidate quality verdict. The paper may use this as an engineering
+boundary: exact online dense address whitening is algebraically feasible but
+does not retain the linear-memory production advantage in this implementation.
+It must not be presented as a negative accuracy result or as evidence against
+all dynamic address mechanisms.
+
 ## 2026-08-13 Receiver-Edge Phase-Credit Boundary
 
 P-LOOP-003 completes the causal localization sequence started by P-LOOP-001.

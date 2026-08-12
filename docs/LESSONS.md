@@ -1,5 +1,17 @@
 # Lessons
 
+## 2026-08-13: Algebraic validity does not imply production viability
+
+- P-GDN3-027's compiled Online Inverse-Gram Preconditioned Delta recurrence
+  passes the strict parent-identity, state, gradient, equivariance and
+  no-fallback contract, but post-compile training is conservatively `40.95x`
+  the matched official control versus a frozen `<2.5x` ceiling. Stop before
+  quality scoring: a dense KxK online geometry state implemented outside a
+  fused linear-memory kernel is not a viable GDN3 path at L1024. This does not
+  say that address geometry is irrelevant; P020 remains the positive signal.
+  It closes same-family chunk/block/compiler rescue and requires the next
+  mechanism to expose a genuinely scalable live transition.
+
 ## 2026-08-13: Receiver-local conflict must be broad to justify a new gate
 
 - Aggregate opposition can be mathematically real and still be too localized

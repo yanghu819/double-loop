@@ -2,7 +2,11 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; no science result yet
+- Status: discarded at preregistered production-cost gate; quality not reached
+- Formal run: `p-gdn3-027-oig-l1024-r2-20260812T203614Z-37fe529`
+- Exact source: pushed/read-back SHA `37fe529bff0450495958187bf8286cc29d3ce74c`
+- GPU: A100-SXM4-80GB index 0, UUID
+  `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`
 - First decision field: directional MQAR L1024 wrong-key binding regime
 - Fixed model: D128/L2/H4/K32/V32, native FutureSeed, one recurrent scan
 - Fixed data: four associations, 10,000 train and 1,000 validation examples
@@ -195,8 +199,50 @@ pipeline status, endpoint log/status, arm outputs/checkpoints, final score,
 terminal classification, and a SHA256 manifest under
 `/huyang2/double-loop/runs/<run_name>`.
 
+Formal archive:
+
+```text
+/huyang2/double-loop/runs/
+  p-gdn3-027-oig-l1024-r2-20260812T203614Z-37fe529
+```
+
+The strict contract passed before either arm. Its JSON SHA256 is
+`1fa4de36e90267464e514b8753f90082e6b54a47ab2e9dcf1d780d2cf8e285f6`;
+the contract log, formal log, source snapshot, manifest and abort hashes are:
+
+```text
+contract.log           e088199c50ab15e2ec46bda727c9a64af912247bbf5c256ab663db77b2f7338f
+formal.log             b8f9f8269cf6c1c1f9584d2cbb658f259381a0c917c6212e5b43869db1f4853a
+source_snapshot.tar.gz b43f2315215a95495f3fb1a546676bb9e1271cb6f3d6ed0943a6ecb4d0cda09b
+artifacts.sha256       9594639609cc610b8699dd1895d700ad94dccd4a30f173ecdc8b1478f8e5ac40
+abort.json             f2c10147ca185242c795f5f526bfb4583f7c2d1d0d104430a8eaca15157b5a88
+```
+
+The completed control score/cases/checkpoint SHA256 values are
+`1dc2278d48b401bbcfa1156c12f0262dda7cb3499e83c3b09ad443e91f6c237a`,
+`efad44df866873bc5aaf873c9c3785449a33cdea676daa4bc844bd6936048c29`,
+and `9a96b532cac7939b1260e0c1fd3fb2d8c82f10549a2399e10f1a97a7adde2352`.
+No candidate checkpoint or score exists because the registered cost close
+occurred during epoch 0.
+
 ## 9. Decision
 
-Pending one fixed matched endpoint. A pass authorizes analysis of OIG transfer
-to hard Sudoku; a registered exit-3 close ends this exact mechanism before any
-Sudoku run. No result may alter the gates above.
+Discard P-GDN3-027 at its frozen production-cost gate. The contemporaneous
+official control completed at balanced/future/past/joint
+`0.33525/0.3410/0.3295/0.0030`, with `126.263s` total elapsed,
+`127.143s` post-warm wall through checkpoint, and `1,051,489,792` peak allocated
+bytes. The candidate compiled successfully and reached epoch 0 at 35%, with no
+remaining compiler workers. Its last-20-step median was `1.73s` and minimum
+was `1.57s`; the control's conservative slowest completed post-warm epoch was
+`12.0s/313 = 0.03834s` per step. The conservative observed candidate/control
+lower bound is therefore `40.95x`, decisively above the registered `<2.5x`
+ceiling.
+
+The endpoint PGID `21510` and launcher PGID `20930` were stopped exactly and
+the GPU returned to zero allocation. `abort.json` records
+`scientific_failure=true`, `rescue_authorized=false`, and
+`quality_verdict=not_reached`. This is an engineering falsification of the
+dense online KxK recurrence under the formal production contract, not evidence
+that candidate accuracy is poor and not evidence against address geometry in
+general. No chunk, block, compiler, inverse-prior, epsilon, mix, K, seed, LR,
+batch, epoch or duration rescue is allowed.

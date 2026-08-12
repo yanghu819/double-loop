@@ -191,3 +191,19 @@ runtime and exact initialization, or preregister a different independently
 validated directional-binding carrier. Until then, the anisotropic Sudoku
 geometry is a concrete hypothesis for a bounded native PGDN conditioner, not a
 quality claim or launch permission.
+
+### A100 provenance recovery addendum
+
+The one preregistered exact-source A100 recovery used source `4976725` to
+replay historical code `77e5539`, exact model initialization hashes
+`5595ec...8ae` / `3b0c13...368`, and exact train/test hashes
+`647c64...a68` / `4a8237...78f` on A100 UUID
+`GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. After the same fixed ten epochs it
+reached balanced/future/past/joint `0.2575/0.2570/0.2580/0.0010`, failing all
+carrier floors. Score/abort SHA256 are `3e9e51fa...f752` / `9287e754...0240`.
+
+This establishes a runtime/hardware optimization bifurcation despite exact
+source, data and initialization provenance. The historical `.7475` remains a
+frozen observation, not a currently reproducible formal carrier. Current-A100
+from-scratch arms can be compared internally, but must not be presented as
+historical-quality reproductions. No additional reconstruction is authorized.

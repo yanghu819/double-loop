@@ -1,5 +1,16 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-12 Block-Causal Address Geometry Boundary
+
+P-GDN3-026 tests the remaining address-interference hypothesis after static
+Log-SPD improved directional MQAR L1024 yet left `94.16%` of errors as
+wrong-key valid-value swaps. A fixed B64 exclusive-prefix key Gram changes only
+the next block's query metric; keys, payload writes, recurrent state, native
+FutureSeed and the one pinned-official GDN2 scan remain canonical. The test is
+admitted by a frozen-checkpoint zero-logit diagnostic before one fixed
+10-epoch arm. This separates useful online geometry from another learned
+router or capacity wrapper.
+
 ## Fixed Research Scope
 
 As of 2026-08-05, the primary experimental scaffold is hard 9x9 Sudoku scaling.

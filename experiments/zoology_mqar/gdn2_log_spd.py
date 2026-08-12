@@ -192,6 +192,40 @@ class LogSPDGatedDeltaNet2(nn.Module):
     def head_v_dim(self) -> int:
         return int(self.base.head_v_dim)
 
+    def transform_addresses(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.address_metric.transform_pair(q, k)
+
+    def run_recurrence(
+        self,
+        *,
+        operation: Any,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        g: torch.Tensor,
+        b: torch.Tensor,
+        w: torch.Tensor,
+        recurrent_state: torch.Tensor | None,
+        use_cache: bool | None,
+        cu_seqlens: torch.Tensor | None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        return operation(
+            q=q,
+            k=k,
+            v=v,
+            g=g,
+            b=b,
+            w=w,
+            initial_state=recurrent_state,
+            output_final_state=use_cache,
+            use_qk_l2norm_in_kernel=True,
+            cu_seqlens=cu_seqlens,
+        )
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -253,22 +287,22 @@ class LogSPDGatedDeltaNet2(nn.Module):
         w = rearrange(w, "... (h d) -> ... h d", d=layer.head_v_dim)
         g = -layer.A_log.float().exp().unsqueeze(-1) * g
 
-        q, k = self.address_metric.transform_pair(q, k)
+        q, k = self.transform_addresses(q, k)
         if layer.allow_neg_eigval:
             b = b * 2.0
 
         recurrent_state = last_state["recurrent_state"] if last_state is not None else None
         operation = chunk_gdn2 if mode == "chunk" else fused_recurrent_gdn2
-        output, recurrent_state = operation(
+        output, recurrent_state = self.run_recurrence(
+            operation=operation,
             q=q,
             k=k,
             v=v,
             g=g,
             b=b,
             w=w,
-            initial_state=recurrent_state,
-            output_final_state=use_cache,
-            use_qk_l2norm_in_kernel=True,
+            recurrent_state=recurrent_state,
+            use_cache=use_cache,
             cu_seqlens=cu_seqlens,
         )
         update_layer_cache(
@@ -299,6 +333,7 @@ def log_spd_diagnostics(model: nn.Module) -> dict[str, Any]:
         layer.sequence_mixer
         for layer in model.backbone.layers
         if isinstance(layer.sequence_mixer, ZoologyLogSPDGDN2FutureSeedMixer)
+        and hasattr(layer.sequence_mixer.layer, "address_metric")
     ]
     if not mixers:
         raise RuntimeError("No Log-SPD GDN2 mixers found")

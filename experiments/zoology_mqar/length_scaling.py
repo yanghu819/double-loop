@@ -42,6 +42,7 @@ GDN2_ARMS = (
     "causal_gdn2",
     "future_seed_gdn2",
     "future_seed_gdn2_log_spd",
+    "future_seed_gdn2_log_spd_block_gram",
     "future_seed_gdn2_two_edit",
     "future_seed_gdn2_dual_hash",
     "future_seed_gdn2_shared_committed_delta",
@@ -101,6 +102,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_log_spd."
                 "ZoologyLogSPDGDN2FutureSeedMixer"
+            )
+        elif arm == "future_seed_gdn2_log_spd_block_gram":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_block_gram."
+                "ZoologyBlockGramGDN2FutureSeedMixer"
             )
         elif arm == "future_seed_gdn2_two_edit":
             mixer_name = (
@@ -429,6 +435,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_log_spd import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_gdn2_log_spd_block_gram":
+        from experiments.zoology_mqar.gdn2_block_gram import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_gdn2_two_edit":
         from experiments.zoology_mqar.gdn2_rank2 import parent_parameter_hash
 
@@ -483,10 +493,15 @@ def run_arm(
     )
     future_seed = futureseed_diagnostics(model) if arm in GDN2_ARMS else None
     log_spd = None
-    if arm == "future_seed_gdn2_log_spd":
+    if arm in ("future_seed_gdn2_log_spd", "future_seed_gdn2_log_spd_block_gram"):
         from experiments.zoology_mqar.gdn2_log_spd import log_spd_diagnostics
 
         log_spd = log_spd_diagnostics(model)
+    block_gram = None
+    if arm == "future_seed_gdn2_log_spd_block_gram":
+        from experiments.zoology_mqar.gdn2_block_gram import block_gram_diagnostics
+
+        block_gram = block_gram_diagnostics(model)
     two_edit = None
     if arm == "future_seed_gdn2_two_edit":
         from experiments.zoology_mqar.gdn2_rank2 import two_edit_diagnostics
@@ -561,8 +576,10 @@ def run_arm(
     }
     if future_seed is not None:
         score["future_seed"] = future_seed
-    if arm == "future_seed_gdn2_log_spd":
+    if arm in ("future_seed_gdn2_log_spd", "future_seed_gdn2_log_spd_block_gram"):
         score["log_spd"] = log_spd
+    if block_gram is not None:
+        score["block_gram"] = block_gram
     if arm == "future_seed_gdn2_two_edit":
         score["two_edit"] = two_edit
     if arm == "future_seed_gdn2_dual_hash":

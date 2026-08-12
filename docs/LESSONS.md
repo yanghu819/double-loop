@@ -1,5 +1,17 @@
 # Lessons
 
+## 2026-08-12: Dynamic address metrics need a coordinate contract
+
+- Applying a different full matrix to Q and K in each block silently puts old
+  state and new queries in inconsistent frames. Keep key/write/state canonical
+  unless a fused recurrence explicitly transports the live state.
+- Do not split L1024 into sixteen external official-GDN2 calls merely to gain
+  block boundaries; retain one official chunk graph and batch the exclusive
+  prefix-Gram computation before it.
+- Before training a data-dependent conditioner, test its frozen geometric
+  prediction without changing logits. Failure there is a mechanism decision,
+  not an invitation to sweep block size or spectral cap.
+
 ## 2026-08-05 research scope lock
 
 - The fixed research program is: use hard Sudoku scaling as the scaffold for

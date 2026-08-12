@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: pre-registered; not yet scored
+- Status: discarded at the frozen diagnostic admission; no candidate training
 - First decision field: directional MQAR L1024 wrong-key regime
 - Fixed parent: frozen P-GDN3-020 static bounded Log-SPD
 - Fixed model/data: D128/L2/H4/K32, native FutureSeed, 4 KV pairs,
@@ -79,6 +79,55 @@ LR, loss, batch, width/depth, epoch or query/key placement rescue.
 and at most one candidate. It archives source/config/log/score/checkpoint hashes
 under `/huyang2/double-loop/runs`.
 
+The terminal formal run is
+`p-gdn3-026-block-gram-l1024-20260812T124430Z-af732ef` on task-mode
+`NVIDIA A100-SXM4-80GB`, CUDA index 0, UUID
+`GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. Exact source
+`af732ef26fce4d87d60e88e9523a100cd3b52ada` was pushed and read back before
+the clean detached run. Key SHA256 values are:
+
+- score: `bf4be80fd8901904473acbba6fdc5792dff1e0ddfbde93ea0f7095b18edfceb8`
+- contract: `1797ce2cb18636826dd08851b6e86dbd31b3ca79eeb3b843bac59deccaee6e1e`
+- formal log: `f5dcf286f9b8a484cf18de9587ed33d49fd1b76c9e76bf727e40c9026bcd0729`
+- source snapshot: `d30e2fcc80e748851f282ba1bc055441d4f845eb52c8b8439c63265377d46146`
+- artifact manifest: `8cbdef1cb3ad84ad75b30774b61a46e3e68c8a8f2c124951010015319d81c89d`
+
+Two earlier executions consumed no diagnostic or training budget. Source
+`54e6710` exited before model construction because `ZOOLOGY_ROOT` was not
+exported; source `925498b` then passed the full CUDA contract but exited before
+the diagnostic because a hand-transcribed frozen swap fraction lacked the
+precision of the SHA-locked `1950/2071` evidence. Their non-science aborts are
+retained rather than counted as experiment arms.
+
 ## 9. Decision
 
-Pending the exact pushed-SHA A100 contract and diagnostic.
+Discard. The terminal strict CUDA contract passes all registered mechanical
+claims: one visible A100; pinned FLA/Zoology provenance; Triton ShortConv;
+exactly two official calls/backwards; exact parent output, incoming-state and
+gradient identity; exactly eight new parameters; all eight finite nonzero
+gate gradients; block causality and token/head equivariance. An opened factor
+is nontrivial but bounded, with eigenvalues `0.9283..1.0369`, condition
+`1.1131`, and mean output delta `0.12288`.
+
+The frozen 128-example, 2-layer, 15-active-block diagnostic rejects the
+quality premise before training:
+
+- effective-rank fraction median gain is `-0.00001999`, versus required
+  `+0.01`; only `39.95%` improve versus `60%`;
+- anisotropy median ratio is `1.000088`, versus required `<=0.90`; only
+  `40.09%` improve versus `60%`;
+- binding-margin median gain is exactly `0`; only `36.57%` improve versus
+  `55%`;
+- future/past improved fractions are `31.05%/42.09%`, both below `55%`.
+
+The intervention was evaluated at full fixed strength, remained stable
+(factor eigenvalues `0.7616..1.0138`, condition `1.3232`) and did not alter
+logits, so this is a direct falsification rather than failed optimization.
+No 10-epoch candidate, checkpoint, cost score or Sudoku transfer was run.
+
+Close block size, strength, factor map and query/key placement rescues. Static
+P020 remains a useful signal, but online prefix-Gram geometry is not the
+missing binding mechanism. Combined with the failed caches, banks, correction
+state, hashes, Raven controllers and Bi-Axis variants, the next research move
+should target loop dynamics/training signal with a contemporaneous runtime
+control, not another address/state wrapper.

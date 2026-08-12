@@ -11,6 +11,21 @@
 - Before training a data-dependent conditioner, test its frozen geometric
   prediction without changing logits. Failure there is a mechanism decision,
   not an invitation to sweep block size or spectral cap.
+- P-GDN3-026 is the concrete boundary. Its query-only canonical-state variant
+  passes exact identity, causality, equivariance, official-kernel and bounded
+  activation contracts, yet at full strength its median effective-rank gain is
+  `-0.000020`, anisotropy ratio is `1.000088`, and binding-margin gain is `0`.
+  Only `36.57%` of margins improve. Completed-block Gram is not predictive
+  enough to repair the next block's binding geometry, so do not train or sweep
+  this family.
+- A strict pre-training diagnostic saved the entire 10-epoch budget. This is
+  the desired outcome of a kill gate, not missing GPU utilization.
+- The broader P020-P026 sequence says address interference is real but not
+  solved by more wrappers: static Log-SPD helps, while extra edits, state banks,
+  compact hashes, correction memory and online Gram all fail to close. Shift
+  the next mechanism question to loop dynamics/training signal and use a
+  contemporaneous runtime control because the historical MQAR trajectory is
+  not reproducible under the current Triton/runtime stack.
 
 ## 2026-08-05 research scope lock
 

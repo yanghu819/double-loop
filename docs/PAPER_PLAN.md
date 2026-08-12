@@ -2,14 +2,18 @@
 
 ## 2026-08-12 Block-Causal Address Geometry Boundary
 
-P-GDN3-026 tests the remaining address-interference hypothesis after static
-Log-SPD improved directional MQAR L1024 yet left `94.16%` of errors as
-wrong-key valid-value swaps. A fixed B64 exclusive-prefix key Gram changes only
-the next block's query metric; keys, payload writes, recurrent state, native
-FutureSeed and the one pinned-official GDN2 scan remain canonical. The test is
-admitted by a frozen-checkpoint zero-logit diagnostic before one fixed
-10-epoch arm. This separates useful online geometry from another learned
-router or capacity wrapper.
+P-GDN3-026 closes the remaining online-Gram address-interference hypothesis.
+Its exact strict contract verifies a causal, bounded, eight-parameter B64
+exclusive-prefix query factor around one unchanged pinned-official GDN2 scan.
+On the frozen P020 checkpoint, however, full-strength conditioning gives
+effective-rank median gain `-0.000020`, anisotropy ratio `1.000088`, binding
+margin median gain `0`, and only `36.57%` binding improvements. The geometric
+admission fails before training, so no quality or Sudoku claim is made. This
+negative result joins the cache/bank/hash/Raven/Bi-Axis boundaries: the paper
+should not present another address wrapper as the next GDN3. The next justified
+question is whether loop dynamics or the training signal, evaluated with a
+same-runtime matched control, can turn already-active local correction into
+global closure.
 
 ## Fixed Research Scope
 

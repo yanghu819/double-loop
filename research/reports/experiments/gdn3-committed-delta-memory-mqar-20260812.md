@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: pre-registered, implementation complete, awaiting strict GPU contract
+- Status: complete, discarded at the sole registered endpoint
 - Benchmark: directional MQAR L1024 wrong-key regime
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
   batch32, seed123
@@ -128,13 +128,80 @@ hash-verified P020 balanced value is `0.48224999999999996`, while a redundant
 guard compared it exactly with the decimal literal `0.48225`. R4 changes only
 that already hash-protected check to absolute tolerance `1e-12`.
 
+- R4 source SHA: `af9eba8c834e669b4dab6f776bb453a2cf3d6aa0`
+- R4 run:
+  `p-gdn3-025-committed-delta-l1024-r4-20260812T100710Z-af9eba8`
+- R4 contract JSON/log SHA256:
+  `6ec31779105bbc9e1b74c312f604462c40240f16ef1641807360465116121378` /
+  `f9b17ed855b19747baf3ccec45e177c668d9568cf16be80320d19a475404f578`
+- R4 formal log/score/abort SHA256:
+  `c0b2fb45c90acbc8cacc891f7950bd4f6582edc54c04048acd70b219da485b41` /
+  `a6eb4a44f0b6af2b7c1ec33aaeb3299731d4a4a503642df299ce02cd52fc284a` /
+  `aa61458d6ea3c70dd344f0918446571003fe50ac8010c905ba2dad271a9999d3`
+- Artifact manifest SHA256:
+  `d09c9aa01805f154d41e1681a702924790e7f9c93726bdd32475e2f0cbb70bd1`
+
+R4 passed the complete strict CUDA contract: the parent parameter hashes
+match, zero and nonzero incoming-state behavior is exact against each arm's
+same-weight official base, both zero-gated full models are exact, all four
+`ChunkGDN2FunctionBackward` paths are present, and read-gate/basis gradients
+pass the registered two-stage checks. Both 10-epoch arms then completed before
+the endpoint emitted the registered scientific-failure status.
+
 ## 7. Results
 
-Pending.
+| metric | fixed K16 basis | learned K16 basis | P020 |
+| --- | ---: | ---: | ---: |
+| balanced accuracy | 0.018750 | 0.361750 | 0.482250 |
+| future / past accuracy | 0.020500 / 0.017000 | 0.350500 / 0.373000 | 0.478000 / 0.486500 |
+| joint exact | 0.000000 | 0.011000 | 0.044000 |
+| future / past exact | 0.000 / 0.000 | 0.105 / 0.101 | 0.193 / 0.226 |
+| future / past CE | 4.35559 / 4.30745 | 1.93795 / 1.88016 | 0.98297 / 1.00022 |
+| wrong-key valid-value / all errors | 0.040255 | 0.576185 | 0.941574 |
+
+The learned basis beats its same-byte fixed control by `+0.343000` balanced
+and `+0.011000` joint, while remaining `-0.120500` balanced and `-0.033000`
+joint below P020. Its wrong-key swap fraction is lower than P020 by `0.365389`,
+but this is not closure: the learned arm still makes 2,553 errors, and the
+fixed arm's superficially tiny `0.040255` swap fraction occurs because almost
+all 3,925 errors are arbitrary wrong values.
+
+Both mechanisms are active and bounded. Fixed/learned read-gate absolute means
+are `0.033783/0.018257` in layer 1 and `0.013329/0.029236` in layer 2. Fixed
+correction-output relative RMS is `0.153806/0.062914`; learned is
+`0.602310/0.050073`. Learned basis movement is `0.900619/0.737551`, maximum
+row-orthogonality error is `5.96e-7`, and correction/main state RMS remains
+`0.569741/0.055705`. Thus the rejection is not dead activation, basis collapse
+or numerical instability.
+
+Systems gates also pass. Fixed and learned fit-time ratios versus P020 are
+`0.946390` and `0.707685`; learned/fixed is `0.747770`. The learned warmed-step
+ratio versus P020 is `0.665560`, peak-allocation ratio versus P020 is
+`1.164370`, and learned/fixed peak-allocation ratio is `1.027520`.
+
+Fixed score/cases/checkpoint SHA256:
+`5da070e55d0b2542203b023cec72a6b8892bfee0c7c8f6b6fb295344b0135403` /
+`123f57434cffafb7e7829279c6ca44e83bf2b2c96fc3e14ce9941fc09d80a052` /
+`267d3750ef9690910deb3a1a9931243d6fb262a0f4e9323d42d7f8f6d18b0c95`.
+Learned score/cases/checkpoint SHA256:
+`d27a90be147c9854f5c534e7a813845fddca345cbf0bdf7ce1d14987ee88f215` /
+`b811d41f13c461a112273ffe1da94051a221510c1388e7e3c14076b333648fae` /
+`6b567b2ccfbe00734021d7a764221f4a6dc7626018179b08e42ca285e755576e`.
 
 ## 8. Decision
 
-Pending the sole registered endpoint.
+Discard. The learned basis cleanly proves that stable address organization is
+causal: at identical state bytes it recovers `+0.343` balanced over the fixed
+compression and substantially reduces wrong-key swaps. It nevertheless misses
+every absolute quality gate (`0.70` balanced, `0.25` joint, `0.68` per
+direction, and P020 `+0.10`) and remains materially below the simpler P020
+main-state Log-SPD intervention. Therefore an independently indexed committed-
+delta bank is not the next GDN3 architecture.
+
+Close K/rank, basis, read gate, erase/write, detach, sharing and training
+rescues. Do not stack this discarded correction bank onto P020: the evidence
+says that address organization should act directly on the main recurrent
+state, not that another failed module should be added to it.
 
 ## 9. Submission
 

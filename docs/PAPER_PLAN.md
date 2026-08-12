@@ -1443,3 +1443,26 @@ This closes fixed compact product binding without hash/partition/permutation,
 soft interpolation, metric or training rescue. A collision-aware successor
 must retain the native linear GDN2 state as a base path and introduce a bounded
 correction memory whose contribution can be falsified independently.
+
+### P-GDN3-025 Committed-Delta Correction-Memory Boundary
+
+P025 preserves the parent H4/K32/V32 state and captures the exact committed
+`v_new` residual from the pinned-official transition. A second official scan
+writes that evidence into an independent H4/K16/V32 state. Fixed pairwise and
+learned Cayley semi-orthogonal K32-to-K16 bases receive identical state bytes,
+so their comparison isolates address organization from raw capacity.
+
+The learned basis is a real mechanistic positive: balanced accuracy rises from
+`0.01875` with the fixed basis to `0.36175`, basis movement is large while row
+orthogonality error stays below `6e-7`, and wrong-key valid-value swaps fall
+from P020 `0.94157` to `0.57618` of errors. The correction path is active,
+bounded and within every preregistered systems gate.
+
+The architecture result is still negative. Learned balanced/joint exact are
+`0.36175/0.011`, below P020's direct main-state Log-SPD result by
+`0.12050/0.033`, and all absolute quality gates fail. A learned address system
+can recover much of the information destroyed by fixed compression, but an
+independent compressed committed-delta bank is inferior to organizing the
+main recurrent address itself. The paper should report this as causal evidence
+for address geometry and a boundary against separate correction memory, not as
+a GDN3 quality win.

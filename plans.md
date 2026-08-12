@@ -12,28 +12,18 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-12 CST): `P-GDN3-025` is pre-registered and implemented
-for its sole strict contract and matched endpoint. R1 stopped before training
-because its checker compared separately initialized plain/wrapped module trees;
-Zoology recursively reinitializes nested output projections, so that was not a
-valid same-weight identity test. R2 then stopped before training because its
-fixed/learned full-output parity check ran in training mode and consumed
-different dropout masks despite exact parent hashes. R3 keeps the mechanism and
-all gates unchanged, uses evaluation mode only for identity, and compares each
-wrapper directly with its own pinned-official base weights. R3 then passed the
-strict CUDA contract; its endpoint exited before training on an exact float
-comparison (`0.48224999999999996` versus `0.48225`) after the P020 artifact hash
-had already matched. R4 changes only that redundant guard to `1e-12` tolerance.
-The candidate preserves the parent
-official GDN2 state/output and writes the exact official committed `v_new`
-residual into an independent H4/K16/V32 correction state. The only science
-variable is fixed pairwise K32-to-K16 compression versus a learned
-semi-orthogonal receiver-native basis at identical 2,048 correction-state
-values/layer and two official scans/layer. The learned arm must reach
-balanced/joint `0.70/0.25`, beat P020 by `+0.10`, beat its same-state-byte fixed
-arm by `+0.05` balanced or joint, reduce wrong-key swaps by `0.10`, and pass
-fixed activation/stability/cost gates. Any miss closes the mechanism without
-K/basis/gate/training rescue.
+Current update (2026-08-12 CST): `P-GDN3-025` is discarded after its sole
+registered endpoint. R4 passed exact same-weight zero/nonzero-state identity,
+four pinned-official backward paths, two-stage gradients, parent/data hashes,
+activation, bounded geometry and every cost gate. The learned semi-orthogonal
+K16 correction basis strongly beats the fixed same-byte basis (`0.36175` versus
+`0.01875` balanced), and cuts P020's wrong-key swap fraction from `0.94157` to
+`0.57618`. This proves that learned address organization is causal. It does not
+validate the architecture: learned balanced/joint are only `0.36175/0.011`,
+below P020 by `0.12050/0.033`, and miss all absolute gates. An independently
+indexed committed-delta bank is weaker than improving the main recurrent
+address directly. Close K/rank, basis, gate, erase/write, detach, sharing and
+training rescues; do not stack P020 and P025 failed modules.
 
 Previous update (2026-08-12 CST): `P-GDN3-024` is discarded after its sole
 registered endpoint. The zero-parameter H4/K32 dual-hash product binding is
@@ -879,7 +869,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-025 | in_progress | P020 leaves mostly wrong-key valid-value swaps; preserving the parent state while separately indexing its exact committed residual may retain correction evidence, and a learned stable K16 basis should beat fixed same-byte compression if address organization is causal. | D128/L2/H4/K32/V32 parent plus independent H4/K16/V32 correction state written with detached official `v_new`; fixed pairwise basis versus per-head Cayley-rotated semi-orthogonal basis. Two official scans/layer, +2,048 state values/layer in both arms. | One task-mode A10080; two sequential fixed 10-epoch arms, no repeated control. | R1/R2 checker-only aborts preceded training; R3 strict contract passed, then endpoint stopped pre-training on hash-protected float equality. R4 changes only that guard tolerance. | Contract identity/provenance/gradient; learned balanced/joint >=`0.70/0.25`, directions >=`0.68`, balanced >=P020+`0.10`, learned-fixed balanced or joint >=`+0.05`, swap fraction <=P020-`0.10`; registered cost ceilings. | Pending sole endpoint; any mechanism/integrity or endpoint miss closes K/basis/gate/training rescues. |
+| P-GDN3-025 | discarded | P020 leaves mostly wrong-key valid-value swaps; preserving the parent state while separately indexing its exact committed residual may retain correction evidence, and a learned stable K16 basis should beat fixed same-byte compression if address organization is causal. | D128/L2/H4/K32/V32 parent plus independent H4/K16/V32 correction state written with detached official `v_new`; fixed pairwise basis versus per-head Cayley-rotated semi-orthogonal basis. Two official scans/layer, +2,048 state values/layer in both arms. | One task-mode A10080; two sequential fixed 10-epoch arms, no repeated control. | R4 strict contract and both 10-epoch arms complete. | Contract identity/provenance/gradient; learned balanced/joint >=`0.70/0.25`, directions >=`0.68`, balanced >=P020+`0.10`, learned-fixed balanced or joint >=`+0.05`, swap fraction <=P020-`0.10`; registered cost ceilings. | Learned beats fixed by `+0.343` balanced and lowers P020 swap fraction by `0.365`, but ends at balanced/future/past/joint `0.36175/0.3505/0.3730/0.011`, below P020 by `0.1205` balanced. Activation and costs pass; all absolute quality routes fail. Close the separate correction-memory family without rescue. |
 | P-GDN3-023 | discarded | P020 improves within-bank geometry while P022 changes bank organization; their gains are complementary only if combining them closes substantially more binding errors than either alone. | Fixed L1024 D128/L2 H8/K16/V32 Log-SPD FutureSeed, 10 epochs, batch32, seed123. One pinned-official scan and exactly 4,096 state values/layer. | One task-mode A10080, CUDA index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`. | completed one fixed 10-epoch arm | Balanced/joint >=`0.60/0.15`, past/future >=`0.58`, balanced gain over P020 >=`0.08`; fit and allocation <=`1.5x` current-A100 control. | Balanced/future/past/joint=`0.3090/0.3225/0.2955/0.004`; `-0.17325` versus P020. Fit=`245.39s` (`1.670x` control), allocation=`1.250x`; quality and fit gates fail. Remaining-error swap fraction=`0.4819`. Combination closed without rescue. |
 | P-GDN3-024 | discarded | P020 leaves mostly wrong-key valid-value swaps; a degree-2 address binding may require two independent factors to collide without P013/P022's extra banks or P021's extra write. | Fixed L1024 D128/L2/H4/K32/V32 FutureSeed; normalize two K16 Q/K factors, apply a fixed signed permutation and compact bilinear product sketch, then use one unchanged official scan. Zero new parameters/state/scans. | One task-mode A10080, CUDA index0 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. | completed one fixed 10-epoch arm | Balanced/joint >=`0.60/0.15`, directions >=`0.58`, balanced >=P020+`0.10`, swap fraction <=P020-`0.10`, fit/allocation <=`1.25x/1.10x`. | Balanced/future/past/joint=`0.0115/0.0105/0.0125/0`; swap fraction falls `0.94157->0.03035`, but retrieval collapses to chance. Fit/allocation=`0.81724x/1.27185x`; quality and allocation gates fail. Product binding suppresses both collisions and usable linear addressing; family closed without rescue. |
 | P-GDN3-022 | discarded | Same-byte independent address banks may reduce binding collisions without increasing state bytes. | Fixed L1024 D128/L2 H8/K16/V32 FutureSeed, 10 epochs, batch32, seed123; one official scan and 4,096 state values/layer. | One task-mode A10080. | completed | Balanced/joint >=`0.70/0.25`, directions >=`0.68`, +`0.10` over P020, swap fraction -`0.10`, fit/allocation <=`1.5x`. | Balanced/future/past/joint=`0.27975/0.3000/0.2595/0.007`; swap fraction among errors=`0.3752`; fit=`375.25s` (`2.55x` control). Quality and fit gates fail. |

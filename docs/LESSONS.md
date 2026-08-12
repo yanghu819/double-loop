@@ -2562,3 +2562,18 @@
 - Close P024 without interpolation or factorization tuning. The evidence calls
   for a preserved linear base state plus an independently bounded correction
   memory, not another replacement hash topology.
+- Compare address organizations at identical state bytes before crediting
+  capacity. P025's learned semi-orthogonal basis reaches `0.36175` balanced
+  versus fixed compression `0.01875`, proving that address geometry itself is
+  causal rather than the extra 2,048 state values.
+- Error taxonomy needs its denominator. P025 fixed compression reports only
+  `0.04025` wrong-key swaps among errors because it makes 3,925 mostly arbitrary
+  errors; the lower fraction is not a better binding system.
+- A bounded active companion state can still be the wrong ownership boundary.
+  P025 passes activation, geometry and cost gates but remains `0.1205` balanced
+  below P020. Exact committed evidence should not automatically live in a
+  separately indexed correction bank.
+- Do not stack individually interesting failed modules. P020 shows a main-state
+  address metric signal and P025 shows learned-basis causality, but P025's
+  independent bank misses every absolute gate. Combining them would be an
+  unregistered rescue, not a justified next architecture.

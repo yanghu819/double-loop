@@ -2,7 +2,8 @@
 
 ## 1. Metainfo
 
-- Status: approved; implementation complete, strict CUDA contract pending
+- Status: formal carrier admission failed; direct exploratory candidate positive
+  but discarded by the fixed quality gate
 - Date: 2026-08-12
 - First decision field: directional MQAR L1024 from scratch
 - Fixed model: D128/L2/H4/K32 pinned-official GDN2 plus native FutureSeed
@@ -143,8 +144,27 @@ contract only and is never accepted for the formal carrier or quality decision.
 
 ## 9. Decision
 
-Pending strict contract and a valid same-runtime carrier. A pass would justify
-moving the bounded native address metric to the Sudoku D256/L12 scaffold. A
-quality or geometry miss closes this static conditioner and redirects the next
-architecture to a genuinely new scalable recurrence rather than another
-wrapper.
+The exact current-A100 runtime replay reproduced the source, data and model
+geometry but not the historical optimization endpoint. Its FutureSeed L1024
+arm reached balanced accuracy `0.1735`, future/past `0.2155/0.1315`, and joint
+exact `0`, below every `0.70/0.68/0.25` carrier floor. The formal protocol
+therefore closed before a candidate and cannot support a historical-runtime
+quality claim.
+
+At the user's request for a direct architecture decision, one fixed
+exploratory candidate was then trained on the same current A100 runtime. It
+reached balanced `0.48225`, future/past `0.4780/0.4865`, and joint exact
+`0.044`. This is a large `+0.30875` balanced gain over the same-runtime
+FutureSeed replay. Both metrics are active and bounded: BF16-applied condition
+is at most `1.4878`, with eigenvalues inside `[0.8556,1.3209]`. Fit elapsed is
+`139.72s` versus control `146.97s`, and peak allocation rises only
+`1.051GB -> 1.085GB`.
+
+The gain does not pass the registered endpoint. Balanced/joint remain far
+below `0.85/0.60`, and `94.16%` of the remaining errors are wrong-key
+valid-value swaps. The metric makes payload values usable but does not provide
+enough address separability to bind them reliably. Keep this as positive
+mechanism evidence, not a passed GDN3. The only final combination test is
+P-GDN3-023, which holds state bytes and training fixed while adding same-byte
+independent banks; no Log-SPD cap, scale, epoch, LR, seed or width rescue is
+allowed.

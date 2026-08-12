@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: in progress on one A100
+- Status: discarded after one complete fixed A100 endpoint
 - Source: exact pushed SHA `18ad10fee1efa531fb970dff92efc7d985cfe07f`
 - Decision field: directional MQAR L1024 from scratch
 - Fixed setting: D128/L2, native FutureSeed, 10 epochs, batch32, seed123
@@ -42,4 +42,23 @@ width, depth or duration rescue.
 
 ## 5. Decision
 
-Pending the single registered endpoint.
+Discard. Exact pushed source `18ad10f` completed all ten epochs with status 0.
+Balanced/future/past accuracy is `0.27975/0.3000/0.2595`, and joint exact is
+`0.007`. The curve opens only at epoch6 and ends
+`0.1525 -> 0.24775 -> 0.2670 -> 0.27975`; it is a real improvement over the
+same-current-A100 FutureSeed replay (`0.1735`) but remains below P020 Log-SPD
+(`0.48225`) and misses every fixed quality threshold.
+
+Among 2,881 wrong queries, 1,081 are another valid value from the same sample,
+for a wrong-key swap fraction of `0.37522` among errors. This is below P020's
+`0.94157` but does not translate into enough correct bindings. Fit elapsed is
+`375.25s` versus control `146.97s` (`2.55x`), so the fixed `1.5x` fit gate also
+fails; peak allocation is `1.281GB` (`1.22x`) and the independently warmed step
+is `0.46168s`.
+
+Score and checkpoint SHA256 values are
+`adbfc19a392db895516c1f7044d0e46a1dc3d37fe9dde5cff54dd59514ee9781`
+and `0ee0b3ff7ac213d877c19ebfcb3b7283fd935dbf772871ff8dae8a17b3f44c6b`.
+Close isolated H8/K16/V32 splitting without a head/K/V geometry, seed, LR,
+loss, width, depth or duration rescue. P023 is the one fixed complementarity
+test with P020's bounded metric.

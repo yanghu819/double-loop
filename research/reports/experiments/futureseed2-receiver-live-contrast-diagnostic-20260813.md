@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: registered; implementation complete; strict CUDA diagnostic pending
+- Status: failed at strict recurrence-parity gate; no quality verdict
 - Parent: D256/L12/H8/K32/V32 position-QK official GDN2 plus native terminal FutureSeed, exact step3000
 - Task: hard official/full-diversity 9x9 Sudoku, 51-64 blanks
 - Intervention: zero-parameter causal diagnostic only
@@ -116,11 +116,29 @@ and allocation `<1.10x` against a contemporaneous control.
 
 ## 8. Next Decision
 
-A diagnostic pass authorizes only one separately registered directional MQAR
-from-scratch candidate with a contemporaneous control; this finite
-intervention cannot be called Sudoku quality. A miss closes receiver-native
-inherited-vs-live recommit and returns the program to a new scalable GDN
-address/state transition.
+R1 on pushed SHA `dc972a38` was stopped before science when review found that
+the shuffled-F sham changed donor boards across receiver calls. It produced no
+score; its orchestration classified the externally terminated endpoint as a
+non-science timeout abort. R2 on pushed SHA `71a6fd53` reuses one fixed donor
+derangement across every receiver call in a microbatch and passes the source,
+GPU, data, parent, wheel and tensor-test contracts.
+
+R2 then fails before discovery aggregation: the first captured official call
+has FP32-replay output relative RMS `0.0025230150`, above the registered
+`0.002` ceiling; terminal-state relative RMS is `0.0011426633`. The endpoint
+exits nonzero, launcher status is `25`, `abort.json` marks an integrity failure,
+and no `score.json`, direction, holdout metrics or quality verdict exists.
+This closes the replay-based receiver-live diagnostic without tolerance,
+precision, epsilon, batch, seed or duration rescue. It does not falsify the
+receiver-live mechanism because its intervention was never admitted.
+
+R2 artifacts:
+
+- run: `/huyang2/double-loop/runs/p-fs2-006-receiver-live-contrast-r2-20260813T145000Z-71a6fd5`;
+- run log SHA256: `fe11beb63c806c73674e60e9e3e949f4493b296e1465a17c40d7554e71963585`;
+- abort SHA256: `0fe7de3d79f1fbfbb9f4614aac23f08426a8312f51dc2bca7aacf8fa86304db9`;
+- source/provenance SHA256: `e6976a166c35e12db4d3f8db11551f22ea00af33fa67ffde1be1a62569396349` / `1109da69accf756be1e1b4e0033e89d0b7b8b25aef008363493a05a772db8c09`;
+- final GPU: index0, target UUID, zero MiB, no compute app.
 
 ## 9. Submission Record
 

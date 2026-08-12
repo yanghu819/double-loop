@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-13: A diagnostic proxy needs tighter parity than its effect budget
+
+- P-FS2-006 tried to use an FP32 replay of official BF16/Triton GDN2 to form a
+  receiver-native inherited-minus-live FutureSeed signal. The tensor equations
+  are correct, but the first production comparison gives output relative RMS
+  `0.002523`, above the frozen `0.002` parity ceiling; terminal parity is
+  `0.001143`.
+- The planned holdout intervention is only 1% of committed-edit RMS. A proxy
+  mismatch of this order can determine the direction being tested, so it is
+  not defensible to relax the parity threshold after seeing the result.
+- No cotangent aggregation or quality scoring occurred. This is an integrity
+  boundary for hand-replayed recurrence diagnostics, not evidence against the
+  inherited-vs-live mechanism. Prefer signals exposed by the exact official
+  graph or a from-scratch benchmark for the next test.
+- A shuffled-state sham must reuse one donor permutation through all receiver
+  calls in a microbatch; changing donors across layers/loops destroys the
+  trajectory coherence it is intended to control.
+
 ## 2026-08-13: Algebraic validity does not imply production viability
 
 - P-GDN3-027's compiled Online Inverse-Gram Preconditioned Delta recurrence

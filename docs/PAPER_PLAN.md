@@ -1,5 +1,17 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Receiver-Live Diagnostic Integrity Boundary
+
+P-FS2-006 does not contribute a mechanism or quality result. Its proposed
+receiver-native signal compares the inherited FutureSeed read with the live
+post-write read at the same receiver address, but the fixed FP32 recurrence
+replay misses the official BF16/Triton output by `0.002523` relative RMS versus
+the preregistered `0.002` ceiling. Terminal-state error is `0.001143`. The run
+stops before discovery aggregation and produces no score. The paper may cite
+this only as a measurement boundary: algebraically matching recurrence code is
+not accurate enough to rank a 1%-budget causal intervention unless production
+parity is demonstrated. It must not claim receiver-live FutureSeed failed.
+
 ## 2026-08-13 Online Inverse-Geometry Production Boundary
 
 P-GDN3-027 tests the strongest remaining live-address hypothesis with a

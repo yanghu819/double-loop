@@ -171,12 +171,14 @@ def build_model(saved_args: dict[str, Any]) -> study.FutureSeedLoopSudoku:
 def graph_names(tensor: torch.Tensor) -> list[str]:
     names: list[str] = []
     queue = [tensor.grad_fn]
-    seen: set[int] = set()
+    seen: set[Any] = set()
     while queue:
         fn = queue.pop()
-        if fn is None or id(fn) in seen:
+        if fn is None or fn in seen:
             continue
-        seen.add(id(fn))
+        # Retain the node proxies while traversing the large five-loop graph.
+        # Otherwise Python can reuse an object id and make us skip unseen nodes.
+        seen.add(fn)
         names.append(type(fn).__name__)
         queue.extend(next_fn for next_fn, _ in fn.next_functions if next_fn is not None)
     return names

@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; CUDA diagnostic not yet run
+- Status: preregistered; R1 engineering abort archived, corrected R2 pending
 - Parent: position-QK GDN2 plus native terminal FutureSeed, exact step3000
 - Task: official/full-diversity hard 9x9 Sudoku, 51-64 blanks
 - Intervention: none; this diagnostic does not alter logits or parameters
@@ -64,6 +64,14 @@ EXPECTED_UUID=<admitted-uuid> scripts/run_loop_gradient_conflict_diagnostic.sh
 The launcher writes `loop_gradient_conflict.json`, `run.log`, `gpu.txt`, source
 provenance and SHA256 manifests below one immutable
 `/huyang2/double-loop/runs/p-loop-001-*` directory. No checkpoint is created.
+
+R1 `p-loop-001-gradient-conflict-20260812T135105Z-8d933dc` exited before
+gradient measurement because the diagnostic retained only Python object IDs
+while traversing the large five-loop autograd graph. Object-ID reuse caused an
+incorrect `ChunkGDN2FunctionBackward count=0` provenance verdict. The run wrote
+`abort.json` with `scientific_failure=false`; it did not update parameters or
+produce a science result. R2 retains autograd node objects during traversal and
+changes no registered scientific condition or threshold.
 
 ## 7. Frozen Admission Gate
 

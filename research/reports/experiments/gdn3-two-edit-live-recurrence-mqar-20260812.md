@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved for one direct A100 L1024 run
+- Status: discarded after one direct A100 L1024 run
 - Decision field: directional MQAR L1024 from scratch
 - Fixed setting: D128/L2/H4/K32, native FutureSeed, 10 epochs, batch32, seed123
 - Added parameters: exactly 131,072; added recurrent state: zero
@@ -51,4 +51,21 @@ duration, or initialization rescue.
 
 ## 6. Decision
 
-Pending one direct A100 run.
+Discard. Exact pushed source `18ad10f` completed all 10 epochs on one A100.
+Balanced accuracy was `0.00975`, future/past accuracy `0.0110/0.0085`, and
+joint exact `0`. The validation curve remained in `[0.0085,0.0115]` for every
+epoch, so this is not a late-convergence miss.
+
+Both auxiliary paths were strongly active. Address separation was
+`0.7282/0.8390`, while auxiliary payload RMS reached `1.7118x/3.6221x` the
+parent payload and erase/write means remained near `0.5`. The mechanism
+therefore produced independent addresses but continuously overwrote useful
+state at filler tokens. Wrong-key swaps among errors fell only because almost
+all predictions became invalid values; it is not a binding improvement.
+
+Fit time was `124.61s`, warmed-step time `0.57785s`, and peak allocation
+`1.675GB`. The candidate score/cases/checkpoint/decision SHA256 values are
+`49c26f...9f68`, `cec4c0...ec22`, `d71525...e41eb`, and `4de1de...3037`.
+Close without write scale, gate, order, initialization, seed, LR, loss, width,
+depth or duration rescue. The next test isolates writes into same-byte banks
+instead of applying two destructive edits to one state.

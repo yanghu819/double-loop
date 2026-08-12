@@ -12,15 +12,18 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-12 CST): `P-GDN3-021` is the single approved successor
-after same-runtime L1024 replay. The exact historical source reaches only
-`0.1735` balanced accuracy on the current A100, while bounded Log-SPD reaches
-`0.48225/0.044` balanced/joint. This opens a distinct from-scratch recurrence
-test: two independent learned erase/write edits per token in one pinned-
-official chunk scan, unchanged K32xV32 state, +131,072 parameters. The fixed
-gate is documented in
-`research/reports/experiments/gdn3-two-edit-live-recurrence-mqar-20260812.md`.
-No control rerun, parameter sweep, or zero-init Sudoku graft is authorized.
+Current update (2026-08-12 CST): `P-GDN3-021` is discarded after all 10 fixed
+L1024 epochs. Two independent addresses activate, but the second write reaches
+`1.71x/3.62x` parent payload RMS across the two layers and continuously
+overwrites the shared state; balanced accuracy collapses to `0.00975` and
+joint exact remains zero. This closes serial same-state rank-2 edits without a
+gate/scale/initialization rescue.
+
+`P-GDN3-022` is the one active successor. It changes the memory topology while
+holding recurrent-state bytes fixed: H4/K32/V32 becomes H8/K16/V32, preserving
+4,096 state values per layer and one pinned-official scan. The fixed L1024
+quality/cost gate is documented in
+`research/reports/experiments/gdn3-same-byte-clustered-state-mqar-20260812.md`.
 
 Current update (2026-08-10 CST): `P-GDN3-019` Kernel-Minimum Persistent Raven
 Write Control is discarded after a complete strict contract, exact step3001

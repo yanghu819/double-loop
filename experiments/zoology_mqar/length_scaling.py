@@ -38,7 +38,12 @@ MODEL_LAYERS = 2
 MODEL_HEADS = 4
 GDN2_HEAD_DIM = 32
 ATTENTION_HEAD_DIM = 57
-GDN2_ARMS = ("causal_gdn2", "future_seed_gdn2", "future_seed_gdn2_log_spd")
+GDN2_ARMS = (
+    "causal_gdn2",
+    "future_seed_gdn2",
+    "future_seed_gdn2_log_spd",
+    "future_seed_gdn2_two_edit",
+)
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
     "31bac228c46a1c85b0b0e164675c7f65e9bb0a3d4b733d4c42d7c057bd6d5bf9"
@@ -89,15 +94,21 @@ def build_config(
     if arm in GDN2_ARMS:
         if model_width != model_heads * gdn2_head_dim:
             raise ValueError("model_width must equal model_heads * gdn2_head_dim")
-        mixer_name = (
-            "experiments.zoology_mqar.gdn2_log_spd."
-            "ZoologyLogSPDGDN2FutureSeedMixer"
-            if arm == "future_seed_gdn2_log_spd"
-            else (
+        if arm == "future_seed_gdn2_log_spd":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_log_spd."
+                "ZoologyLogSPDGDN2FutureSeedMixer"
+            )
+        elif arm == "future_seed_gdn2_two_edit":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_rank2."
+                "ZoologyTwoEditGDN2FutureSeedMixer"
+            )
+        else:
+            mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
                 "ZoologyGDN2FutureSeedMixer"
             )
-        )
         sequence_mixer = ModuleConfig(
             name=mixer_name,
             kwargs={
@@ -400,6 +411,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_log_spd import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_gdn2_two_edit":
+        from experiments.zoology_mqar.gdn2_rank2 import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
     data_hashes = {
         "train": dataset_hash(train_dataloader),
@@ -447,6 +462,11 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_log_spd import log_spd_diagnostics
 
         log_spd = log_spd_diagnostics(model)
+    two_edit = None
+    if arm == "future_seed_gdn2_two_edit":
+        from experiments.zoology_mqar.gdn2_rank2 import two_edit_diagnostics
+
+        two_edit = two_edit_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -503,6 +523,8 @@ def run_arm(
         score["future_seed"] = future_seed
     if arm == "future_seed_gdn2_log_spd":
         score["log_spd"] = log_spd
+    if arm == "future_seed_gdn2_two_edit":
+        score["two_edit"] = two_edit
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

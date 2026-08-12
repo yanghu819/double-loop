@@ -12,6 +12,16 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-12 CST): `P-GDN3-021` is the single approved successor
+after same-runtime L1024 replay. The exact historical source reaches only
+`0.1735` balanced accuracy on the current A100, while bounded Log-SPD reaches
+`0.48225/0.044` balanced/joint. This opens a distinct from-scratch recurrence
+test: two independent learned erase/write edits per token in one pinned-
+official chunk scan, unchanged K32xV32 state, +131,072 parameters. The fixed
+gate is documented in
+`research/reports/experiments/gdn3-two-edit-live-recurrence-mqar-20260812.md`.
+No control rerun, parameter sweep, or zero-init Sudoku graft is authorized.
+
 Current update (2026-08-10 CST): `P-GDN3-019` Kernel-Minimum Persistent Raven
 Write Control is discarded after a complete strict contract, exact step3001
 probe and matched step3100 endpoint. Exact pushed SHA `9abc292` runs 12

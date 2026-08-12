@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; source preparation before launch
+- Status: discarded after one complete matched A100 science run
 - Parent: position-QK GDN2 plus native terminal FutureSeed, exact step3000
 - Task: official/full-diversity hard 9x9 Sudoku, 51-64 blanks
 - Candidate: training-only FutureSeed opening-gradient projection
@@ -45,7 +45,7 @@ sequential with no concurrent model/eval.
 - AIStation development row: `GPU2`
 - Resource: one A100-SXM4-80GB
 - Required CUDA view: index0 only
-- Required UUID: `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`
+- Formal UUID: `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`
 - Persistent root: `/huyang2/double-loop`
 - Parent checkpoint SHA256: `6339c3cb2b5fc5230a581d6633716483e35ff8e4522f06a9d7aaf26512f023da`
 - Parent source SHA: `9f2ee8d1738032bc5f09b55db0b81d507780b376`
@@ -58,7 +58,7 @@ CPU model smoke, GPU2, fallback and concurrent GPU model/eval are forbidden.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 \
-EXPECTED_UUID=GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad \
+EXPECTED_UUID=GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5 \
 PUSHED_REF=refs/heads/codex/futureseed-opening-projection-20260812 \
 scripts/run_futureseed_opening_projection_matched.sh
 ```
@@ -89,13 +89,57 @@ wrong-cell correction at least `+0.5` cells/board, and non-weaker 56-60 late
 correction. Elapsed overhead must be below 25% and peak allocation overhead
 below 10%; inference overhead is exactly zero.
 
-## 8. Decision
+## 8. Results And Decision
 
-Pending. Any contract, production, activation, quality or cost miss closes this
-mechanism. No loss weighting, projection scale, per-head variant, seed, LR,
-batch, width, depth or duration rescue is permitted. A pass establishes a
-better FutureSeed training rule, not a new GDN3 recurrence.
+The first formal attempt on UUID
+`GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad` lost its platform lease during
+the canonical arm after the last logged step3075. It produced no canonical
+checkpoint or comparison and is recorded separately as a non-science resource
+interruption. No metric from that attempt enters the decision.
+
+The fresh matched run
+`p-loop-002-matched-20260812T172259Z-15657cc` completed status0 from exact
+pushed source `15657cc3e232d455b1823eaf392765d7b78c7e35` on one visible
+A100-SXM4-80GB. The strict contract, step3001 probe, same-source canonical arm,
+candidate arm, full official evaluation and same-board comparison all
+completed sequentially.
+
+The intervention is mechanically strong and numerically exact. It activates
+on 57/100 steps, touches exactly 11 receiving tensors and 88 scalars, removes
+on average `0.831642` of the conflicting opening component when active, and
+has mean active relative correction `0.126163`. The minimum post-projection
+opening/continuation dot is `-1.22e-20`; FS-vector and final-global norm maximum
+relative errors are `4.57e-8/9.59e-8`. Thus a no-op implementation cannot
+explain the outcome.
+
+Quality nevertheless fails both registered routes. Hard51-64 macro loop5
+exact changes `0.001302 -> 0`, and mixed loop5 exact remains `0.025391`.
+Official loop5 blank deltas for 51-55/56-60/61-64 are
+`-0.001895/-0.000996/-0.005311`. Same-board loop3-to5 wrong-cell correction
+improves on 51-55 (`+0.132812` cells/board relative to control) but weakens on
+56-60 and 61-64 (`-0.027344/-0.007812`). Candidate train CE is `0.858957`.
+
+Systems gates pass: candidate/control training time is
+`971.40/1023.02s` (`-5.05%` overhead), peak allocation is
+`13217.57/13186.49 MiB` (`+0.236%`), and inference delta is zero. The quality
+miss is therefore not a cost artifact.
+
+Discard and close the opening-gradient projection family. P-LOOP-001 found a
+real aggregate gradient conflict, but removing that component from the native
+FS gate gradient is not the causal hard-closure bottleneck at this parent.
+Do not rescue with projection scale, per-head/per-layer selection, Adam-moment
+editing, loss weighting, seed, LR, batch, width, depth or duration. A subsequent
+diagnostic may inspect receiver-state cotangents, but it must select a genuinely
+different receiver-native content or loop-dynamics mechanism rather than
+another scalar-gate surgery.
+
+Artifact SHA256 values are:
+
+- CUDA contract: `c2196dbbd8f349c641a1d0e65313f721933c3fa3b9784324763094d148e997c5`;
+- canonical metrics/checkpoint: `d73c629f45962269a619291a6d76e5980c9802c0e97f840e122e75bf366e8151` / `51cef631ae0388d9f0d3086127f71189aefb6b9914144979ba381fd8b9139719`;
+- candidate metrics/checkpoint: `d419a7197e71e1b00aa26a1297221e33b8928e7eb5cdcbccf8ca46d6e6f29ccb` / `7233dcd4bb2c5e0feeee5154f811965baa12c00810b79b593899ade45be7efca`.
 
 ## 9. Submission Record
 
-Not applicable.
+Not applicable. The complete local archive is under
+`research/reports/visualizations/futureseed-opening-projection-20260812/`.

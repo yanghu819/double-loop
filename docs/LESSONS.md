@@ -1,5 +1,24 @@
 # Lessons
 
+## 2026-08-12: Aggregate FutureSeed gradient conflict is not closure
+
+- P-LOOP-002 cleanly separates optimizer credit from the forward mechanism.
+  It changes only 88 native FutureSeed gate gradients, preserves the canonical
+  gradient norm and has zero inference delta.
+- Mechanical activation is decisive: 57/100 steps project, the active removed
+  opening fraction averages `0.831642`, and norm errors stay below `1e-7`.
+  The failed quality gate is not explained by a dead intervention.
+- Removing aggregate opening-versus-continuation opposition does not improve
+  closure. Hard macro exact falls `0.001302 -> 0`, mixed exact is unchanged,
+  and 56-64 late correction weakens.
+- A scalar gate sees only the radial projection of a receiver's state demand.
+  Do not rescue this result with projection strength, per-head selection,
+  Adam-moment edits or loop-loss weights. Those variants refine the same
+  insufficient control surface.
+- The next diagnostic must localize receiver-state cotangent demand or
+  macro-loop convergence and must pre-register the distinct architecture it
+  opens. GPU occupancy alone is not a reason to run another wrapper.
+
 ## 2026-08-12: Dynamic address metrics need a coordinate contract
 
 - Applying a different full matrix to Q and K in each block silently puts old

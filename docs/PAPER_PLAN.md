@@ -1,5 +1,25 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-12 FutureSeed Gradient-Conflict Boundary
+
+P-LOOP-001 found genuine opening-versus-continuation conflict in native
+FutureSeed gate gradients on two of three hard ranges. P-LOOP-002 turns that
+correlation into a matched causal test without changing the forward graph,
+loss, parameters or inference. The projection is strongly active on 57/100
+steps, removes `83.16%` of the opposed opening component when active, and
+preserves both the FS-subvector and global gradient norms to below `1e-7`
+relative error.
+
+The quality result is negative. Hard51-64 macro loop5 exact falls
+`0.001302 -> 0`, mixed exact remains `0.025391`, all three official blank
+deltas are negative, and same-board late correction weakens on 56-64. Cost and
+integrity pass, so this closes scalar FutureSeed gate-gradient surgery rather
+than blaming implementation or compute. The paper may use the pair to show
+that aggregate loop-gradient conflict is real but insufficient for global
+closure. It must not claim that gradient orthogonalization improves
+FutureSeed. A next FS mechanism must change receiver-native content or resolve
+macro-loop convergence, not tune this projection.
+
 ## 2026-08-12 Block-Causal Address Geometry Boundary
 
 P-GDN3-026 closes the remaining online-Gram address-interference hypothesis.

@@ -12,32 +12,22 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-12 CST): `P-LOOP-001` completed and admits one
-FutureSeed-only gradient-coordination candidate. On fixed 51-55 and 61-64
-batches, native FS gate early-vs-late cosine is `-0.904763/-0.718710`, pair
-conflict is `0.40/0.40`, cancellation is `0.529537/0.698487`, and loop1-to5
-blank accuracy improves by `0.045872/0.066407` with fewer wrong cells. The
-56-60 batch is a strong aligned counterexample and does not pass. GDN2 address,
-GDN2 edit and shared-shell gradients are strongly aligned with zero negative
-pairs on every range, so no GDN3 state/address/edit candidate is admitted.
-R1's object-ID provenance-walker failure remains an archived non-science abort;
-R2 completed from clean pushed SHA `f99b4a7` with result SHA256 `528adc5a...`.
-The cosine matrices further isolate loop1 against loops2-5, so the sole next
-arm is a forward-invariant FutureSeed gate-gradient projection, not delayed
-loss, a learned loop gate, or another memory wrapper.
-
-Current update (2026-08-12 CST): `P-LOOP-002` is approved and registered but
-not yet scored. It keeps the exact five-loop forward, loss, parameters,
-optimizer state and inference graph. On each effective batch it recovers the
-mean continuation gradient on the 88 receiving `future_seed_logit` scalars as
-`C=(5B-O)/4`, where `O` is loop1 and `B` is canonical equal-five-loop CE. If
-`O dot C<0`, only `O` is projected into the continuation half-space; the final
-FS gate gradient is rescaled to the canonical FS norm after canonical global
-clipping. Non-FS clipped gradients remain bitwise untouched. The sole run is a
-strict CUDA contract, one step3001 production probe, then same-source sequential
-canonical/candidate step3000-to3100 arms. Activation, exact hard/mixed quality,
-same-board correction and fixed cost gates below decide keep or close; no loss,
-scale, head, LR, seed, batch or duration rescue is allowed.
+Current update (2026-08-12 CST): `P-LOOP-002` completed and is discarded. The
+fresh matched run on clean pushed SHA `15657cc` completed strict contract,
+step3001 probe, same-source canonical/candidate step3000-to3100 arms, full
+official evaluation and same-board export. The training-only FS projection is
+not a no-op: it activates on 57/100 steps, modifies exactly 11 tensors/88
+scalars, removes mean `0.831642` of the conflicting opening component, and
+preserves FS/global gradient norms within `4.57e-8/9.59e-8` relative error.
+Hard51-64 macro exact nevertheless falls `0.001302 -> 0`, mixed exact stays
+`0.025391`, and official51-55/56-60/61-64 blank deltas are
+`-0.001895/-0.000996/-0.005311`. Late correction improves only on 51-55 and
+weakens on both harder ranges. Cost gates pass at `-5.05%` elapsed and
+`+0.236%` allocation overhead. P-LOOP-001 therefore identified a real
+aggregate conflict but not the causal closure bottleneck. Close scalar-gate
+gradient surgery, including projection scale, local selector, Adam-moment and
+loss-weight rescues. The next registered work must distinguish receiver-native
+state-content demand from macro-loop convergence before another mechanism run.
 
 Current update (2026-08-12 CST): `P-GDN3-026` is discarded at its frozen
 diagnostic admission, and there is no open GPU experiment. Its exact `af732ef`
@@ -909,7 +899,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-LOOP-002 | approved; source preparation | P-LOOP-001 isolates loop1 opposition to loops3-5 inside native FutureSeed gates, while continuation loops are nearly collinear; removing only the opening component that points against continuation may preserve opening and improve late closure. | Training-only, zero-parameter projection on exactly 11 receiving gate tensors/88 scalars. Recover `C=(5B-O)/4`; when `O dot C<0`, replace `O` by its half-space projection and preserve the canonical FS norm after canonical global clip. Forward, inference, losses and all non-FS clipped gradients stay unchanged. Strict contract, step3001 probe, then sequential same-source canonical/candidate 100-step continuation. | Existing single AIStation A100-SXM4-80GB, CUDA index0 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`; clean detached pushed SHA required. | ~20-35m including contract, probe, paired train/eval | Activation >=`10%`, mean removed opening fraction >=`5%`, post-dot >=`-1e-6`, FS/global norm relative error `<1e-5/2e-5`. Primary hard51-64 macro loop5 exact `+0.02`, every range blank regression <=`0.01`; alternate mixed `+0.03`, 61-64 non-regressive and late correction stronger. Elapsed/alloc overhead `<25/10%`. | Pending. Any activation, integrity, quality or cost miss closes the mechanism without rescue. |
+| P-LOOP-002 | discarded | P-LOOP-001 isolates loop1 opposition to loops3-5 inside native FutureSeed gates, while continuation loops are nearly collinear; removing only the opening component that points against continuation may preserve opening and improve late closure. | Training-only, zero-parameter projection on exactly 11 receiving gate tensors/88 scalars. Recover `C=(5B-O)/4`; when `O dot C<0`, replace `O` by its half-space projection and preserve the canonical FS norm after canonical global clip. Forward, inference, losses and all non-FS clipped gradients stay unchanged. Strict contract, step3001 probe, then sequential same-source canonical/candidate 100-step continuation. | One A100-SXM4-80GB, CUDA index0 UUID `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`; clean detached pushed SHA `15657cc`. | completed status0; candidate/control `971.40/1023.02s` | Activation >=`10%`, mean removed opening fraction >=`5%`, post-dot >=`-1e-6`, FS/global norm relative error `<1e-5/2e-5`. Primary hard51-64 macro loop5 exact `+0.02`, every range blank regression <=`0.01`; alternate mixed `+0.03`, 61-64 non-regressive and late correction stronger. Elapsed/alloc overhead `<25/10%`. | Activation and all integrity/cost gates pass, but hard macro exact `0.001302->0`, mixed exact is unchanged `0.025391`, all three range blank deltas are negative, and late correction weakens on 56-64. Close without projection/local-selector/Adam/loss/training rescue. |
 | P-LOOP-001 | completed; FS admitted | Equal all-loop CE may cancel early-opening and late-closure gradients inside native FutureSeed edges or official GDN2 address/edit parameters. | Zero-parameter, three-range fixed-board audit of five per-loop gradient vectors; no optimizer, logits change or checkpoint. Candidate admission requires one mechanism group to qualify on at least two hard ranges. | Single A10080 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`; clean detached pushed SHA `f99b4a7`. | 340.05s; 3502.73 MiB peak allocation | Early-vs-late cosine <=`-0.10` FS or `-0.05` GDN, pair conflict >=`0.30`, cancellation <=`0.75`, and loop5 blank gain >=`0.02` on >=2 ranges. | FS gate passes 51-55 and 61-64: cosine `-0.904763/-0.718710`, conflict `0.40`, cancellation `0.529537/0.698487`, genuine correction. GDN address/edit pass 0 ranges. Admit one FS-only opening-vs-continuation gradient projection; no GDN arm. |
 | P-GDN3-026 | discarded | P020's static full-matrix metric helps but leaves 94.16% wrong-key swaps; completed-block key geometry may improve the next block's query against one canonical main state. | Frozen-P020 zero-logit B64 exclusive-prefix Gram diagnostic, then at most one D128/L2/H4/K32 10-epoch candidate. Query-only bounded factor, +8 parameters, no payload state or official-scan delta. | One task-mode A10080, CUDA index0 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. | strict contract and 128-example diagnostic complete; candidate not admitted | Diagnostic rank/anisotropy/binding admission; candidate balanced>=0.65 and >=P020+0.10, joint>=0.15, directions>=0.62, swaps -0.10, bounded activation and fixed cost ceilings. | Contract passes. Rank median gain/improved fraction `-0.000020/0.3995`; anisotropy ratio/improved fraction `1.000088/0.4009`; binding median gain/improved fraction `0/0.3657`, future/past `0.3105/0.4209`. Every geometric admission route fails, so no training runs. Close online Gram conditioning without rescue. |
 | P-GDN3-025 | discarded | P020 leaves mostly wrong-key valid-value swaps; preserving the parent state while separately indexing its exact committed residual may retain correction evidence, and a learned stable K16 basis should beat fixed same-byte compression if address organization is causal. | D128/L2/H4/K32/V32 parent plus independent H4/K16/V32 correction state written with detached official `v_new`; fixed pairwise basis versus per-head Cayley-rotated semi-orthogonal basis. Two official scans/layer, +2,048 state values/layer in both arms. | One task-mode A10080; two sequential fixed 10-epoch arms, no repeated control. | R4 strict contract and both 10-epoch arms complete. | Contract identity/provenance/gradient; learned balanced/joint >=`0.70/0.25`, directions >=`0.68`, balanced >=P020+`0.10`, learned-fixed balanced or joint >=`+0.05`, swap fraction <=P020-`0.10`; registered cost ceilings. | Learned beats fixed by `+0.343` balanced and lowers P020 swap fraction by `0.365`, but ends at balanced/future/past/joint `0.36175/0.3505/0.3730/0.011`, below P020 by `0.1205` balanced. Activation and costs pass; all absolute quality routes fail. Close the separate correction-memory family without rescue. |

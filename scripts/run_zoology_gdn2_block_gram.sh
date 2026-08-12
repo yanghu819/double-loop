@@ -138,7 +138,9 @@ if [[ "$STATUS" == 0 ]]; then
     > "$RUN_DIR/formal_status.txt"
 fi
 
-PHASE=decision
+if [[ "$STATUS" == 0 || -f "$OUT_DIR/diagnostic_admission.json" ]]; then
+  PHASE=decision
+fi
 if [[ -f "$OUT_DIR/comparison.json" ]]; then
   cp "$OUT_DIR/comparison.json" "$RUN_DIR/score.json"
   if [[ "$STATUS" == 0 ]]; then
@@ -151,5 +153,13 @@ elif [[ -f "$OUT_DIR/diagnostic_admission.json" ]]; then
   cp "$OUT_DIR/diagnostic_admission.json" "$RUN_DIR/score.json"
 fi
 
-PHASE=archived
+if [[ "$STATUS" == 0 ]]; then
+  PHASE=archived
+elif [[ -f "$OUT_DIR/comparison.json" ]]; then
+  PHASE=decision
+elif [[ -f "$OUT_DIR/candidate_started.json" ]]; then
+  PHASE=formal
+elif [[ -f "$OUT_DIR/diagnostic_admission.json" ]]; then
+  PHASE=diagnostic
+fi
 exit "$STATUS"

@@ -152,4 +152,10 @@ under `/huyang2/double-loop/runs/<run_name>`.
 
 ## 9. Decision
 
-Pending the strict CUDA contract and the single fixed three-arm endpoint.
+R1 source `fe56143e` exited before run-directory creation, Python, or CUDA when
+the launcher's GitHub readback inherited Conda `LD_LIBRARY_PATH` and the system
+`git-remote-https` hit a `libffi` symbol mismatch. This is a non-science
+orchestration abort; GPU usage remained zero. R2 clears that variable only for
+the immutable GitHub readback. Mechanism, data, commands and gates are unchanged.
+
+Pending the R2 strict CUDA contract and the single fixed three-arm endpoint.

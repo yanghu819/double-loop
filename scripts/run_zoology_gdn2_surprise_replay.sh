@@ -39,7 +39,7 @@ if [[ "$GIT_SHA" != "$EXPECTED_SOURCE_SHA" ]] || [[ -n "$(git -C "$REPO_ROOT" st
   printf 'Source is not the exact clean pushed SHA.\n' >&2
   exit 6
 fi
-REMOTE_SHA="$(git -C "$REPO_ROOT" ls-remote origin "$SOURCE_REMOTE_REF" | awk '{print $1}')"
+REMOTE_SHA="$(env -u LD_LIBRARY_PATH git -C "$REPO_ROOT" ls-remote origin "$SOURCE_REMOTE_REF" | awk '{print $1}')"
 if [[ "$REMOTE_SHA" != "$GIT_SHA" ]]; then
   printf 'GitHub readback differs from detached source: %s vs %s\n' "$REMOTE_SHA" "$GIT_SHA" >&2
   exit 7

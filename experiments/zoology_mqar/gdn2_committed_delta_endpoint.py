@@ -101,7 +101,12 @@ def main() -> None:
 
     p020 = json.loads(args.p020_score.read_text())
     p020_cases = json.loads(args.p020_cases.read_text())
-    if p020["metrics"]["balanced_accuracy"] != P020_BALANCED:
+    if not math.isclose(
+        p020["metrics"]["balanced_accuracy"],
+        P020_BALANCED,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
         raise RuntimeError("P020 reference metric changed")
     if p020["parent_init_parameter_hash"] != P020_PARENT_HASH:
         raise RuntimeError("P020 parent initialization changed")

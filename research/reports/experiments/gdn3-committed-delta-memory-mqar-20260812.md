@@ -113,6 +113,21 @@ Zoology dropout consumed different random masks. R3 performs identity checks
 in evaluation mode, then explicitly restores training mode for the official
 backward and two-stage gradient checks. No model or gate changed.
 
+- R3 source SHA: `e48f7ef123628e8e7e2686621914f4bad3ff7799`
+- R3 contract JSON/log SHA256:
+  `b5720618781da106168d84d4a9b6dffdd32dca20b750ed8cd19feede5f741042` /
+  `2922fc62819aeb309d2e17bc5ddfbcb94f796448967ae06f263618ecd705824a`
+- R3 formal pre-training log/abort SHA256:
+  `cbe3b14e6cc0a8a89848fb10a174581f837186cc678cef895a4d5d7613c5452a` /
+  `516b870696a39870659b28ce1493a543026041f589d7a7594fec54ab6a50899c`
+
+R3 passed the full CUDA contract, including same-weight zero/nonzero-state
+identity, four official backward functions and both gradient stages. The
+endpoint then exited before constructing either training arm because the
+hash-verified P020 balanced value is `0.48224999999999996`, while a redundant
+guard compared it exactly with the decimal literal `0.48225`. R4 changes only
+that already hash-protected check to absolute tolerance `1e-12`.
+
 ## 7. Results
 
 Pending.

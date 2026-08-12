@@ -2553,3 +2553,12 @@
   K32 head requires joint address agreement while preserving parameters, state bytes and one
   official scan. Judge it only by endpoint binding quality and cost; do not
   turn hash count, partition or weighting into a sweep.
+- Lower wrong-key swap fraction is not sufficient when total retrieval errors
+  explode. P024 cuts the fraction from `0.94157` to `0.03035`, yet balanced
+  accuracy collapses to `0.0115`; report both the error class and denominator.
+- A fixed product address can erase collisions and learnability together. Two
+  active, norm-balanced K16 factors do not preserve the parent's useful linear
+  K32 geometry merely because they occupy the same state bytes.
+- Close P024 without interpolation or factorization tuning. The evidence calls
+  for a preserved linear base state plus an independently bounded correction
+  memory, not another replacement hash topology.

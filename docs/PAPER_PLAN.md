@@ -1421,13 +1421,25 @@ router, bank-shape change or zero-init Sudoku graft.
 
 ### P-GDN3-024 Dual-Hash Binding Test
 
-P024 isolates one collision-aware topology without adding capacity. Every
+P024 isolated one collision-aware topology without adding capacity. Every
 existing H4/K32 address is split into two independently normalized K16 factors
 and mapped through a fixed compact bilinear product sketch, while V and every
 official GDN2 transition remain unchanged. Thus a strong retrieval requires
 agreement in both factors, but
 parameters, 4,096 state values and official scan count remain exact. This is
 distinct from P022's costly H8 bank split and P013's separately gated companion
-state. The fixed L1024 endpoint must materially exceed P020 and reduce its
-wrong-key swap tail; otherwise fixed block-contiguous redundant addressing is
-closed without topology or training rescue.
+state.
+
+The endpoint is a sharp negative. Both hash factors remain active and balanced,
+and wrong-key valid-value swaps fall from P020 `94.16%` to `3.03%` of errors.
+Balanced accuracy nevertheless collapses from `0.48225` to `0.0115`, with
+future/past `0.0105/0.0125` and joint exact zero. The multiplicative sketch has
+not separated useful bindings; it has destroyed the trainable linear address
+channel strongly enough that almost every query becomes an arbitrary wrong
+value. Peak allocation also reaches `1.27185x` control despite zero parameter
+and state delta.
+
+This closes fixed compact product binding without hash/partition/permutation,
+soft interpolation, metric or training rescue. A collision-aware successor
+must retain the native linear GDN2 state as a base path and introduce a bounded
+correction memory whose contribution can be falsified independently.

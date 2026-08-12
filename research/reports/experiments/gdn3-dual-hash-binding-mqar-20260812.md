@@ -2,7 +2,8 @@
 
 ## 1. Metainfo
 
-- Status: approved, awaiting one fixed endpoint
+- Status: discarded after the single registered endpoint
+- Source: exact pushed SHA `42a3557826c3d23c5d51731c4ed32945db8baca7`
 - Benchmark: directional MQAR L1024 wrong-key regime
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
   batch32, seed123
@@ -68,15 +69,53 @@ next decision to a genuinely learned sparse delta memory.
 
 ## 6. Artifacts
 
-Pending.
+- Run: `/huyang2/double-loop/runs/p-gdn3-024-dual-hash-l1024-20260812T080817Z-42a3557`
+- Launch log: `/huyang2/double-loop/artifacts/launch/p-gdn3-024/formal-20260812T080817Z-42a3557.log`
+- GPU: CUDA index0, `NVIDIA A100-SXM4-80GB`, UUID
+  `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`
+- Pinned FLA source SHA: `9c8e42e762fce087c27b673af4922795d9edb85e`
+- Checkpoint SHA256: `b31de349436936a72110d0ba611d8a529efc45dc1d9af11300e4c05bcdc911e2`
+- Score/comparison SHA256: `e835b5ffe24919acb4ab1ac697b45fd331cfa3ab2a2820dc84dc43691142f724`
+- Cases SHA256: `f1e5efc5402d5f6294dd76f23ed85e276909a52b7fa9fba2ee254443529381c6`
+- Contract/abort SHA256:
+  `48990216fb11b82861d7e89830b60f84b58a2ca6a8bf89cf4e862ec0426c0cc7` /
+  `6f660babb15ea8b81a32ee6d9c4effa0616a857ad7ac1ee97cff2015e42f221c`
 
 ## 7. Results
 
-Pending.
+The strict contract passes exactly as registered: both layers use the pinned
+official `ChunkGDN2FunctionBackward`, parameter delta is zero, state remains
+4,096 values/layer, and there is one official scan/layer. Both hash factors
+are active. Endpoint token standard deviations span `0.06789..0.11963`, while
+the maximum applied hash-norm imbalance is only `1.19e-7`.
+
+| Metric | Result | Gate |
+|---|---:|---:|
+| balanced accuracy | `0.0115` | `>=0.60` and `>=0.58225` |
+| future / past accuracy | `0.0105 / 0.0125` | each `>=0.58` |
+| future / past CE | `4.91135 / 4.91902` | diagnostic |
+| joint exact | `0` | `>=0.15` |
+| wrong-key swaps / all errors | `120 / 3,954` (`0.03035`) | `<=0.84157` |
+| fit ratio versus control | `0.81724x` | `<=1.25x` |
+| allocation ratio versus control | `1.27185x` | `<=1.10x` |
+
+The candidate does reduce P020's wrong-key valid-value fraction from
+`0.94157` to `0.03035`. That apparent binding win is not useful retrieval:
+accuracy collapses from P020 `0.48225` to `0.0115`, almost chance, while joint
+exact falls from `0.044` to zero. The validation curve stays near chance in
+all ten epochs and ends with CE `4.91581`, so this is not a late overfit or an
+inactive-hash artifact. No NaN, OOM, fallback, source drift, data drift, GPU
+drift, or concurrent model process occurred.
 
 ## 8. Decision
 
-Pending the single registered endpoint.
+Discard P-GDN3-024. Multiplicative compact binding suppresses wrong-key
+collisions by suppressing the usable learnable linear address channel itself.
+The result closes fixed factor count, partition, signed permutation, cyclic
+shift, soft interpolation, Log-SPD combination, and training-setting rescues.
+The next credible mechanism must preserve the parent linear state as a usable
+base path and add a bounded, independently testable correction memory rather
+than replacing every native address with a product sketch.
 
 ## 9. Submission
 

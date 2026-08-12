@@ -101,6 +101,18 @@ weights, for both zero and nonzero incoming state, and separately checks exact
 fixed/learned full-model parity while the read gates are zero. The mechanism,
 data, optimizer, budget and science gates are unchanged.
 
+- R2 source SHA: `6faa6ff1f7bf196bba2f11a5ec1ca2be8e3d2e49`
+- R2 contract log SHA256:
+  `8e88dda18dc934ad8346c1230af8ef43210fffe52aaffa31f9f2db50fc83c1a9`
+- R2 `abort.json` SHA256:
+  `fa0aa807cc2f7abeb3ea50109a1e7e26e14bbc32cfa81215b7f6b1ffd2fb6a97`
+
+R2 also stopped before training. Parent parameter hashes were exact, but the
+fixed and learned full models were compared sequentially in training mode, so
+Zoology dropout consumed different random masks. R3 performs identity checks
+in evaluation mode, then explicitly restores training mode for the official
+backward and two-stage gradient checks. No model or gate changed.
+
 ## 7. Results
 
 Pending.

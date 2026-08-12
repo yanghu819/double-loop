@@ -207,6 +207,8 @@ def main() -> None:
     inputs, targets, _slices = next(iter(test_loader))
     inputs = inputs[:2].cuda()
     targets = targets[:2].cuda()
+    shared.eval()
+    clustered.eval()
     with torch.no_grad():
         shared_logits = shared(inputs)
         clustered_logits = clustered(inputs)

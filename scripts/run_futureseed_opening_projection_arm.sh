@@ -49,8 +49,8 @@ if [[ ! -f "$CONFIG_PATH" || ! -f "$TRAINER" ]]; then
   printf 'P-LOOP-002 source files are incomplete.\n' >&2
   exit 8
 fi
-if ! rg -q 'choices=FUTURE_SEED_GRADIENT_MODES' "$TRAINER" || \
-  ! rg -q 'resume_allow_future_seed_gradient_upgrade' "$TRAINER"; then
+if ! grep -q 'choices=FUTURE_SEED_GRADIENT_MODES' "$TRAINER" || \
+  ! grep -q 'resume_allow_future_seed_gradient_upgrade' "$TRAINER"; then
   printf 'P-LOOP-002 trainer gradient contract is not present in this SHA.\n' >&2
   exit 8
 fi
@@ -273,7 +273,7 @@ if [[ ! -s "$RESULT" || ! -s "$CHECKPOINT" ]]; then
     "$RESULT" "$CHECKPOINT" >&2
   exit 13
 fi
-if rg -i -n 'nan|out of memory|traceback|fallback' "$LOG_DIR/run.log"; then
+if grep -E -i -n 'nan|out of memory|traceback|fallback' "$LOG_DIR/run.log"; then
   printf 'P-LOOP-002 integrity pattern found in run log.\n' >&2
   exit 14
 fi

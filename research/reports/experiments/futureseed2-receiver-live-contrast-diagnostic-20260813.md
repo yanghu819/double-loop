@@ -91,7 +91,9 @@ the official CUDA contract.
 
 The disjoint holdout evaluates baseline, full contrast at `+epsilon`, full
 contrast at `-epsilon`, frozen-only `q^T F`, and board-shuffled
-`q^T F_other-q^T S_t`. All conditions are required:
+`q^T F_other-q^T S_t`. One fixed seeded board derangement is reused across
+every receiver call in a microbatch so the sham preserves cross-layer,
+depth-cycle and loop coherence. All conditions are required:
 
 - mean paired equal-five-loop CE improvement >=`0.01`;
 - deterministic paired-bootstrap 95% lower bound >`0`;

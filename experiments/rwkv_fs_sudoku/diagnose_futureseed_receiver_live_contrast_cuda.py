@@ -296,7 +296,7 @@ class DiscoveryRecorder:
                 ),
                 "official_output": output[0].detach(),
                 "official_terminal": output[1].detach(),
-                "shuffle_seed": self.shuffle_seed + call_index,
+                "shuffle_seed": self.shuffle_seed,
             }
         )
         return output
@@ -367,7 +367,7 @@ class HoldoutIntervention:
         replay = replay_from_call(
             args,
             kwargs,
-            board_shuffle_seed=self.shuffle_seed + call_index,
+            board_shuffle_seed=self.shuffle_seed,
         )
         v_chunks = list(v.split(self.base_batch_size, dim=0))
         modified_chunks: list[torch.Tensor] = []
@@ -392,7 +392,7 @@ class HoldoutIntervention:
                     raise RuntimeError("shuffled receiver arm requires inherited state")
                 permutation = deterministic_board_permutation(
                     self.base_batch_size,
-                    seed=self.shuffle_seed + call_index,
+                    seed=self.shuffle_seed,
                     device=v.device,
                 )
                 frozen = initial_state[arm_slice].float().index_select(0, permutation)

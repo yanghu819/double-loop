@@ -21,7 +21,7 @@ post-write live read `q_t^T S_t`. The contrast `d_t=q_t^T F-q_t^T S_t` is
 RMS-matched to the exact official committed edit and enters only as a virtual V
 residual. Discovery forms one global `[11,H,V]` descent direction from three
 independent hard ranges; a disjoint holdout tests fixed `+/-` direction,
-frozen-only and board-shuffled shams at a causal 1% actual committed-edit RMS
+frozen-only and a cross-call-coherent fixed board-shuffled sham at a causal 1% actual committed-edit RMS
 target over heads/values at each current token, with actual BF16 relative error
 capped at 10% and no future-token normalization.
 The parent training sampler was replayed for all 384,000 draws and its final

@@ -1418,3 +1418,16 @@ combination. The next credible GDN3 direction, if research resumes, must be a
 stable collision-aware associative state organization evaluated from scratch
 on a reproducible binding carrier, rather than another static conditioner,
 router, bank-shape change or zero-init Sudoku graft.
+
+### P-GDN3-024 Dual-Hash Binding Test
+
+P024 isolates one collision-aware topology without adding capacity. Every
+existing H4/K32 address is split into two independently normalized K16 factors
+and mapped through a fixed compact bilinear product sketch, while V and every
+official GDN2 transition remain unchanged. Thus a strong retrieval requires
+agreement in both factors, but
+parameters, 4,096 state values and official scan count remain exact. This is
+distinct from P022's costly H8 bank split and P013's separately gated companion
+state. The fixed L1024 endpoint must materially exceed P020 and reduce its
+wrong-key swap tail; otherwise fixed block-contiguous redundant addressing is
+closed without topology or training rescue.

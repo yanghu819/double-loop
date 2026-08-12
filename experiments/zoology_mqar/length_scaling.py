@@ -43,6 +43,7 @@ GDN2_ARMS = (
     "future_seed_gdn2",
     "future_seed_gdn2_log_spd",
     "future_seed_gdn2_two_edit",
+    "future_seed_gdn2_dual_hash",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -103,6 +104,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_rank2."
                 "ZoologyTwoEditGDN2FutureSeedMixer"
+            )
+        elif arm == "future_seed_gdn2_dual_hash":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_dual_hash."
+                "ZoologyDualHashGDN2FutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -467,6 +473,11 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_rank2 import two_edit_diagnostics
 
         two_edit = two_edit_diagnostics(model)
+    dual_hash = None
+    if arm == "future_seed_gdn2_dual_hash":
+        from experiments.zoology_mqar.gdn2_dual_hash import dual_hash_diagnostics
+
+        dual_hash = dual_hash_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -525,6 +536,8 @@ def run_arm(
         score["log_spd"] = log_spd
     if arm == "future_seed_gdn2_two_edit":
         score["two_edit"] = two_edit
+    if arm == "future_seed_gdn2_dual_hash":
+        score["dual_hash"] = dual_hash
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

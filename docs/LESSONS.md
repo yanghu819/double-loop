@@ -2548,3 +2548,8 @@
   bank factorization and their fixed combination. A successor must change
   stable address-binding state organization on a reproducible carrier; do not
   rescue this family with metric/head/K/V/epoch/LR/seed tuning.
+- P024 is the zero-capacity collision test left by that boundary: a fixed
+  compact bilinear binding of two normalized K16 factors inside each existing
+  K32 head requires joint address agreement while preserving parameters, state bytes and one
+  official scan. Judge it only by endpoint binding quality and cost; do not
+  turn hash count, partition or weighting into a sweep.

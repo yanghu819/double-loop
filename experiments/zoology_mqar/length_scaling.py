@@ -50,6 +50,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_oig",
     "future_seed_gdn2_recency_replay",
     "future_seed_gdn2_surprise_replay",
+    "future_seed_gdn2_atomic_pair",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -145,6 +146,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_surprise_replay."
                 "ZoologySurpriseReplayGDN2FutureSeedMixer"
+            )
+        elif arm == "future_seed_gdn2_atomic_pair":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_atomic_pair."
+                "ZoologyAtomicPairGDN2FutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -488,6 +494,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_oig import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_gdn2_atomic_pair":
+        from experiments.zoology_mqar.gdn2_atomic_pair import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
     data_hashes = {
         "train": dataset_hash(train_dataloader),
@@ -581,6 +591,13 @@ def run_arm(
         with torch.no_grad():
             model.eval()(diagnostic_inputs.cuda())
         event_tape = event_tape_diagnostics(model)
+    atomic_pair = None
+    if arm == "future_seed_gdn2_atomic_pair":
+        from experiments.zoology_mqar.gdn2_atomic_pair import (
+            atomic_pair_diagnostics,
+        )
+
+        atomic_pair = atomic_pair_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -650,6 +667,8 @@ def run_arm(
         score["oig"] = oig
     if event_tape is not None:
         score["event_tape"] = event_tape
+    if atomic_pair is not None:
+        score["atomic_pair"] = atomic_pair
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

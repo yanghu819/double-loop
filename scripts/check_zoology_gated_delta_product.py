@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import inspect
 import json
 import os
@@ -133,7 +134,10 @@ def main() -> None:
 
     fla_root = Path(os.environ["FLA_SOURCE_ROOT"]).resolve()
     layer_source = Path(inspect.getfile(GatedDeltaProduct)).resolve()
-    chunk_source = Path(inspect.getfile(chunk_gated_delta_product)).resolve()
+    chunk_module = importlib.import_module("fla.ops.gated_delta_product.chunk")
+    if getattr(chunk_module, "chunk_gated_delta_product") is not chunk_gated_delta_product:
+        raise RuntimeError("Exported GatedDeltaProduct chunk function identity changed")
+    chunk_source = Path(chunk_module.__file__).resolve()
     expected_layer_source = fla_root / "fla" / "layers" / "gated_deltaproduct.py"
     expected_chunk_source = fla_root / "fla" / "ops" / "gated_delta_product" / "chunk.py"
     if layer_source != expected_layer_source or chunk_source != expected_chunk_source:

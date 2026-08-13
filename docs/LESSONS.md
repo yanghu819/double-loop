@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-13: Stable memory can still be unusable memory
+
+- P-GDN3-030 passes every registered activation and sampled-stability check.
+  Its transition spectral norm is at most `0.999988`, terminal-state RMS stays
+  `0.2476/0.4699`, and learned beta std is `0.1983/0.3145`.
+- Balanced accuracy nevertheless collapses `0.30625->0.0205`, with total
+  errors increasing `2775->3918`. Contractivity prevents explosive observed
+  state geometry; it does not preserve a useful address/value map by itself.
+- Wrong-key swap fraction improves `0.458018->0.041858`. Together with
+  P028/P029, this makes conditional error composition unsafe as a standalone
+  target. Require absolute accuracy and lower total errors.
+- All cost gates pass, so this rejection is not explained by an impractical
+  kernel. Close separate-erase/write DPLR rather than sweep beta, angle,
+  normalization, rank, or training.
+- Preserve P-FS2-007's causal surprise signal, but replace its sparse ordered
+  replay with all-token receiver-native state formation.
+
 ## 2026-08-13: More native delta transforms are not automatically better memory
 
 - P-GDN3-029 uses a genuine official two-transform recurrent operator, and

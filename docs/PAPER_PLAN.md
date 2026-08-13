@@ -1,5 +1,23 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Contractivity Alone Does Not Preserve Retrieval
+
+P-GDN3-030 is a direct negative test of numerical stability. Its separate
+erase/write DPLR uses one pinned-official scan and factors every live
+transition as `sqrt(D)(I-beta rr^T)sqrt(D)`. Both learned directions activate,
+the largest sampled spectral norm stays below one, terminal states remain
+bounded, and every cost gate passes. Yet L1024 balanced accuracy falls from
+the current native-FutureSeed reference's `0.30625` to `0.0205`, with errors
+rising `2,775->3,918`.
+
+The conditional wrong-key swap fraction falls to `0.041858`, lower than P028
+or P029, while absolute retrieval is worst. The paper should state that
+contractive geometry is useful protection against state explosion but is not
+sufficient for learnable address/value binding. Combined with P-FS2-007, the
+next thesis is sharper: surprise identifies useful evidence, but the receiver
+must form it in a binding-preserving native basis rather than through sparse
+sequential replay or a replacement recurrence that destroys the parent map.
+
 ## 2026-08-13 Sequential Delta Products Do Not Preserve Retrieval
 
 P-GDN3-029 tests a dedicated pinned-official `GatedDeltaProduct(n=2)` rather

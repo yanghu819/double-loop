@@ -50,6 +50,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_oig",
     "future_seed_gdn2_recency_replay",
     "future_seed_gdn2_surprise_replay",
+    "future_seed_gdn2_surprise_regression",
     "future_seed_gdn2_atomic_pair",
     "future_seed_gated_delta_product_n2",
     "future_seed_contractive_dplr",
@@ -149,6 +150,11 @@ def build_config(
                 "experiments.zoology_mqar.gdn2_surprise_replay."
                 "ZoologySurpriseReplayGDN2FutureSeedMixer"
             )
+        elif arm == "future_seed_gdn2_surprise_regression":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_surprise_regression_seed."
+                "ZoologySurpriseRegressionGDN2FutureSeedMixer"
+            )
         elif arm == "future_seed_gdn2_atomic_pair":
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_atomic_pair."
@@ -217,6 +223,14 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_gdn2_surprise_regression":
+        from experiments.zoology_mqar.gdn2_surprise_regression_seed import (
+            SurpriseRegressionFutureSeedLanguageModel,
+        )
+
+        return SurpriseRegressionFutureSeedLanguageModel(
+            copy.deepcopy(config.model)
+        )
     if arm in (
         "future_seed_gdn2_recency_replay",
         "future_seed_gdn2_surprise_replay",
@@ -561,6 +575,22 @@ def run_arm(
         test_dataloader,
         sequence_length=sequence_length,
     )
+    surprise_regression = None
+    if arm == "future_seed_gdn2_surprise_regression":
+        from experiments.zoology_mqar.gdn2_surprise_regression_seed import (
+            surprise_regression_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        for block in model.backbone.layers:
+            block.sequence_mixer.collect_regression_diagnostics = True
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs[:8].cuda())
+        for block in model.backbone.layers:
+            block.sequence_mixer.collect_regression_diagnostics = False
+        surprise_regression = surprise_regression_diagnostics(model)
     future_seed = futureseed_diagnostics(model) if arm in GDN2_ARMS else None
     log_spd = None
     if arm in ("future_seed_gdn2_log_spd", "future_seed_gdn2_log_spd_block_gram"):
@@ -721,6 +751,8 @@ def run_arm(
         score["gated_delta_product"] = gated_delta_product
     if contractive_dplr is not None:
         score["contractive_dplr"] = contractive_dplr
+    if surprise_regression is not None:
+        score["surprise_regression"] = surprise_regression
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

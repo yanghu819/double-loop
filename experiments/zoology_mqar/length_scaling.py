@@ -51,6 +51,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_recency_replay",
     "future_seed_gdn2_surprise_replay",
     "future_seed_gdn2_atomic_pair",
+    "future_seed_gated_delta_product_n2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -151,6 +152,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_atomic_pair."
                 "ZoologyAtomicPairGDN2FutureSeedMixer"
+            )
+        elif arm == "future_seed_gated_delta_product_n2":
+            mixer_name = (
+                "experiments.zoology_mqar.gated_delta_product_futureseed."
+                "ZoologyGatedDeltaProductFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -598,6 +604,19 @@ def run_arm(
         )
 
         atomic_pair = atomic_pair_diagnostics(model)
+    gated_delta_product = None
+    if arm == "future_seed_gated_delta_product_n2":
+        from experiments.zoology_mqar.gated_delta_product_futureseed import (
+            gated_delta_product_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        gated_delta_product = gated_delta_product_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -669,6 +688,8 @@ def run_arm(
         score["event_tape"] = event_tape
     if atomic_pair is not None:
         score["atomic_pair"] = atomic_pair
+    if gated_delta_product is not None:
+        score["gated_delta_product"] = gated_delta_product
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

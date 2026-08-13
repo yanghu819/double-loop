@@ -1,5 +1,28 @@
 # Lessons
 
+## 2026-08-13: Surprise preserves values but does not bind them
+
+- P-FS2-007 cleanly separates admission from capacity: exact committed-edit
+  surprise K16 raises directional MQAR balanced accuracy
+  `0.30625 -> 0.48825`, while matched recency K16 falls to `0.01525`. The
+  signal is therefore causal and not a generic extra-scan benefit.
+- The candidate still misses the frozen absolute gates, and `2,044/2,047`
+  remaining errors are correct-value/wrong-key swaps. Sparse replay converts
+  many retrieval failures into almost pure binding failures instead of closing
+  them.
+- Receiver-native reprojection avoids producer-basis transport, but a bounded
+  event tape cannot repair an address collision already encoded by the live
+  recurrent transition. Close K, admission score, cache width, positional and
+  receiver-projection rescue.
+- Fit wall and allocation can look cheap while the independently warmed step is
+  not: the replay path is `1.438x` baseline per step, above the registered
+  `1.25x` ceiling. Future successors must report both endpoint wall time and a
+  warm compile-independent step measure.
+- The next high-information test should be an order-independent live block
+  update or another genuinely new scalable address-binding recurrence trained
+  from scratch. It should not be another value cache, separate correction bank,
+  sequential second write, static metric wrapper or Sudoku graft.
+
 ## 2026-08-13: A diagnostic proxy needs tighter parity than its effect budget
 
 - P-FS2-006 tried to use an FP32 replay of official BF16/Triton GDN2 to form a

@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation ready for strict CUDA contract
+- Status: completed; rejected by registered quality and warmed-step cost gates
 - First decision field: directional MQAR L1024 wrong-key binding regime
 - Compute: one AIStation A100-SXM4-80GB, CUDA index 0 only
 - Model: D128/L2/H4/K32/V32 pinned official FLA GDN2
@@ -150,6 +150,30 @@ runtime `EXPECTED_GPU_NAME`, `EXPECTED_GPU_UUID` and exact pushed
 checkpoints, cases, scores, source snapshot, GPU evidence and SHA256 manifest
 under `/huyang2/double-loop/runs/<run_name>`.
 
+The completed R2 endpoint is:
+
+- source: clean detached pushed SHA `dc1dd53bfb5ff5b8f239cd7d39b5e77a0945369c`;
+- run: `p-fs2-007-surprise-replay-l1024-r2-20260813T075300Z-dc1dd53`;
+- run directory:
+  `/huyang2/double-loop/runs/p-fs2-007-surprise-replay-l1024-r2-20260813T075300Z-dc1dd53`;
+- contract SHA256:
+  `be6a9d9355d28ad22b4592ddec7f2abfd49e62e210b119f08314e2337675a736`;
+- decision/score SHA256:
+  `0ffde24c326c3a7acfe24298ea2dbb562571c5021d3aea6ade90cc155bbbdcfc`;
+- baseline/recency/surprise checkpoint SHA256:
+  `257dc76d8a7647e196af717b300c2de26d62ed76d0195f82f72d0cdfdf61732c`,
+  `bcd36de4df917fffe5b7892509a11201390ca36d79646015e31dd3ef2fdea073`,
+  and `5c60e3d2681d84c648aee52b4fe463c14c10dd6bda215f9b275a467356ea270c`;
+- source snapshot and artifact manifest SHA256:
+  `617ff6d60db97ba108f08ec41137153626f5d9af3e1f12c80a7599c109cc4165`
+  and `6242386dccbf7c20df7d9d7a39ed12a378dfe21ae6e13ad15e2b07e2a8ea1ddb`.
+
+The strict contract passed all registered identity, official-kernel,
+deterministic-admission, exact-wiring, gradient and no-fallback assertions.
+All three arms have exactly `661,584` parameters and identical initial
+parameter hash `3b0c1334...a368`. The candidate backward contains exactly
+three official `ChunkGDN2FunctionBackward` paths.
+
 ## 9. Decision
 
 R1 source `fe56143e` exited before run-directory creation, Python, or CUDA when
@@ -158,4 +182,32 @@ the launcher's GitHub readback inherited Conda `LD_LIBRARY_PATH` and the system
 orchestration abort; GPU usage remained zero. R2 clears that variable only for
 the immutable GitHub readback. Mechanism, data, commands and gates are unchanged.
 
-Pending the R2 strict CUDA contract and the single fixed three-arm endpoint.
+R2 completed all three fixed arms. The contemporaneous native-FutureSeed
+baseline reached balanced/future/past/joint accuracy
+`0.30625/0.3115/0.3010/0`. Recency-K16 collapsed to
+`0.01525/0.0190/0.0115/0`. Surprise-K16 reached
+`0.48825/0.4880/0.4885/0.044`, a real `+0.18200` balanced gain over the
+same-runtime baseline and `+0.47300` over matched recency. Its future/past CE
+was `0.930669/0.989523`, versus `2.500476/2.498779` for the current baseline.
+
+The mechanism and admission checks all pass. Surprise selects positions
+`2..1018` with board-level mean-position standard deviation `46.90`; selected
+committed-edit energy fraction is `0.029489` versus recency's `0.015671`.
+Receiver replay terminal RMS/board variation is `0.043119/0.002541`.
+
+The endpoint nevertheless fails the absolute and binding gates. Balanced
+accuracy misses `0.85`, joint exact misses `0.60`, and the historical
+`0.7475` carrier. More importantly, `2,044/2,047 = 0.998534` of the remaining
+query errors are correct values retrieved from the wrong key, compared with
+`0.458018` for the contemporaneous baseline and `0.806931` historically.
+The sparse complement improves value retention while concentrating the
+remaining failure almost entirely in key-value binding; it does not solve the
+registered target.
+
+Fit, post-warm wall and allocation ratios are `0.8791x/0.8827x/1.0197x`, but
+the independent warmed-step ratio is `1.4378x`, above `1.25x`. The final
+decision is `completed_rejected`: close receiver-native sparse replay without
+K, admission, cache, position, receiver, seed or training rescue. Do not move
+this mechanism to Sudoku. The next candidate must change the live recurrent
+address-binding transition rather than add another cache or value-capacity
+path.

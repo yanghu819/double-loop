@@ -1,5 +1,27 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Receiver-Native Surprise Replay Boundary
+
+P-FS2-007 is the strongest new FutureSeed mechanism signal in the current
+directional MQAR runtime, but it fails the preregistered endpoint. With both
+main GDN2 scans unchanged and zero new parameters or persistent state, a K16
+receiver-native replay chosen by exact committed-edit surprise raises balanced
+accuracy from the contemporaneous baseline `0.30625` to `0.48825`; matched
+recency replay collapses to `0.01525`. Surprise reaches joint exact `0.044`,
+future/past accuracy `0.4880/0.4885`, and all activation/integrity checks pass.
+
+The scientifically decisive result is the error transition: `99.853%` of the
+remaining surprise-replay errors are correct values bound to the wrong key,
+versus `45.802%` in the contemporaneous baseline and `80.693%` historically.
+Thus exact surprise is a useful admission signal for preserving value evidence,
+but sparse receiver-native replay does not resolve address binding or meet the
+absolute `0.85` balanced and `0.60` joint gates. Its independently warmed step
+also costs `1.438x` baseline. The paper may report this as positive mechanistic
+evidence plus a closed cache boundary; it must not call the mechanism a quality
+pass or justify K/admission/position/cache tuning. The next GDN3 should alter
+the live joint address-state transition from scratch on the binding-error
+carrier.
+
 ## 2026-08-13 Receiver-Live Diagnostic Integrity Boundary
 
 P-FS2-006 does not contribute a mechanism or quality result. Its proposed

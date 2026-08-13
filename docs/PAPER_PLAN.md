@@ -1,5 +1,21 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Sequential Delta Products Do Not Preserve Retrieval
+
+P-GDN3-029 tests a dedicated pinned-official `GatedDeltaProduct(n=2)` rather
+than another wrapper around GDN2. Both learned transform branches diverge,
+their gradients and state dependence are active, and recurrent state remains
+bounded. Yet directional L1024 balanced accuracy falls from the current
+native-GDN2 FutureSeed reference's `0.30625` to `0.1370`, with errors rising
+`2,775->3,452` and joint exact staying zero.
+
+Wrong-key swap fraction still falls `0.458018->0.169177`. Together with P028,
+this shows that adding sequential or analytically separated address updates
+can change error composition without preserving a learnable value/read map.
+The paper should treat swap reduction only as a mechanistic diagnostic and
+motivate a stable state topology that jointly organizes erase and write, not
+claim more within-token transformations as GDN3 progress.
+
 ## 2026-08-13 Atomic Binding Is Not Sufficient
 
 P-GDN3-028 gives the cleanest separation yet between address-confusion rate

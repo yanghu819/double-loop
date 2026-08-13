@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-13: More native delta transforms are not automatically better memory
+
+- P-GDN3-029 uses a genuine official two-transform recurrent operator, and
+  both projection branches, gradients, incoming-state dependency and order
+  sensitivity activate. Balanced accuracy still falls `0.30625->0.1370` and
+  total errors rise `2775->3452`.
+- Its wrong-key swap fraction improves `0.458018->0.169177`. As with P028, a
+  lower swap fraction can result from replacing binding errors with broader
+  retrieval failure. Require absolute accuracy and total errors alongside
+  error composition.
+- Endpoint projection divergence proves available capacity, not that both
+  sequential committed edits are independently useful. Future contracts
+  should inspect the actual committed state contributions when that claim is
+  scientifically necessary.
+- The warmed timing comparison used an earlier A100 reference and permanent
+  inactive diagnostic hooks. Record its `1.963x` miss as supporting evidence,
+  but close this family on the large quality failure rather than timing alone.
+
 ## 2026-08-13: Low swap rate can hide a failed memory
 
 - P-GDN3-028 proves that a low wrong-key-swap fraction is not by itself a

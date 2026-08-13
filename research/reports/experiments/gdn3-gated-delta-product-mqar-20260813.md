@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation and static checks in progress
+- Status: completed; rejected at the registered quality and cost gate
 - Decision field: directional MQAR L1024 binding closure before Sudoku transfer
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs, batch32, seed123
 - Resource: one task-mode A100-SXM4-80GB, CUDA index0
@@ -75,9 +75,52 @@ epoch, width, depth, or Sudoku rescue.
 
 ## 6. Results
 
-Pending the one registered contract and one fixed training run.
+R1 stopped before model execution because the contract used `inspect.getfile`
+on a `torch.compile`-wrapped export and therefore saw Torch Dynamo's wrapper
+path. R2 changed only source-file discovery to verify the exported function
+identity and the official module file; mechanism, data, protocol, and gates
+were unchanged.
+
+The R2 A100 contract passed. It verified the exact target UUID, both pinned
+official `GatedDeltaProduct` layers, Triton short convolutions, exactly two
+`ChunkGatedDeltaProductFunctionBackward` paths, 666,200 parameters, unchanged
+4,096-value state, finite gradients through both K/V/beta transform slices,
+one active FutureSeed gate, incoming-state dependency, and noncommutative
+transform order. The two trained projection branches also passed every
+registered divergence and bounded-state diagnostic. This establishes that the
+two projection branches learned different tensors; it does not claim that
+both branches made independently useful committed edits.
+
+The fixed endpoint reached balanced/future/past/joint accuracy
+`0.1370/0.1460/0.1280/0`, versus the same-runtime native-GDN2 FutureSeed
+reference's `0.30625/0.3115/0.3010/0` and the locked historical reference's
+`0.7475/0.7415/0.7535/0.339`. Candidate errors rose to `3,452`, from `2,775`
+in the runtime reference. Wrong-key valid-value swaps fell from
+`1,271 (0.458018 of errors)` to `584 (0.169177)`, but this is the same failure
+mode exposed by P028: suppressing swap composition while replacing it with
+more non-swap retrieval failures.
+
+Fit/post-warm/allocation ratios were `1.3268x/1.3308x/0.8864x`; the warmed-step
+ratio was `1.9634x`, above the registered `1.75x` ceiling. Cost is supporting,
+not decisive, because its denominator is a frozen earlier A100 run and the
+candidate retained inactive Python diagnostic hooks. The quality miss is
+large enough to close the family independently of timing.
+
+Formal run:
+`p-gdn3-029-gated-delta-product-l1024-r2-20260813T020347Z-3c255e0`.
+Source SHA is `3c255e0a4f206e8812d70bdf3d63d284329164f0`; decision, contract,
+checkpoint, formal-log, and source-snapshot SHA256 are respectively
+`ddbcdcee0041349c60ad645bde656da7a4b23c027ef79738074c499d3d9cd1a3`,
+`d28f18dfdcdbd7c99ceaa84c25404c84addf6f4b4c474c1ebd4003309054d544`,
+`5c00c64f2b93398ec1b7f4700dba450f60e4c8e493ac11dd3d187bcc981af0c3`,
+`30d2caf8eba1b0b64a74e3e0cce51d6add573428d4cfa0bec667c2cd8d078d48`,
+and `b8b0844d26a984d1042ee63bfd45636c6f5a3d8104cb3c00c67bfc0bd021a35c`.
 
 ## 7. Decision
 
-Pending. Pass authorizes one hard-Sudoku transfer gate; failure closes native
-n=2 GatedDeltaProduct plus FutureSeed and moves to a different state topology.
+Reject P-GDN3-029. Do not transfer it to Sudoku or rescue Householder count,
+signed eigenvalues, beta, gate, projection, seed, LR, loss, batch, duration,
+width, or depth. Native sequential transformations can reduce wrong-key swap
+composition, but this endpoint does not preserve learnable retrieval. Move to
+a different stable state topology that separates erase and write organization
+without duplicating payload or wrapping the same KxV update.

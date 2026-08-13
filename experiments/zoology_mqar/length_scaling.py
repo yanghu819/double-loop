@@ -480,6 +480,15 @@ def run_arm(
     )
     set_determinism(config.seed)
     model = make_model(config, arm)
+    contractive_dplr_initial_beta_weights = None
+    if arm == "future_seed_contractive_dplr":
+        contractive_dplr_initial_beta_weights = [
+            block.sequence_mixer.layer.beta_proj.weight.detach()
+            .float()
+            .cpu()
+            .clone()
+            for block in model.backbone.layers
+        ]
     init_hash = model_hash(model)
     init_parameter_hash = parameter_hash(model)
     parent_init_parameter_hash = None
@@ -635,6 +644,7 @@ def run_arm(
         contractive_dplr = contractive_dplr_diagnostics(
             model,
             diagnostic_inputs[:8].cuda(),
+            initial_beta_weights=contractive_dplr_initial_beta_weights,
         )
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)

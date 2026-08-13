@@ -261,6 +261,8 @@ def _layer_diagnostics(
 def contractive_dplr_diagnostics(
     model: FutureSeedLanguageModel,
     inputs: torch.Tensor,
+    *,
+    initial_beta_weights: list[torch.Tensor] | None = None,
 ) -> dict[str, Any]:
     mixers = [
         layer.sequence_mixer
@@ -277,6 +279,15 @@ def contractive_dplr_diagnostics(
         for mixer in mixers:
             mixer.layer.set_capture(False)
     rows = [_layer_diagnostics(mixer) for mixer in mixers]
+    if initial_beta_weights is not None:
+        if len(initial_beta_weights) != len(mixers):
+            raise RuntimeError("Initial beta snapshot count changed")
+        for row, mixer, initial in zip(rows, mixers, initial_beta_weights):
+            delta = (
+                mixer.layer.beta_proj.weight.detach().float().cpu()
+                - initial.float().cpu()
+            )
+            row["beta_weight_delta_rms"] = float(_rms(delta).item())
     return {
         "active_layers": len(rows),
         "new_persistent_state_values": 0,

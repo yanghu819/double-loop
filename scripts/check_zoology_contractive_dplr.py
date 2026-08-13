@@ -114,6 +114,33 @@ def finite_gradient_rms(parameter: torch.nn.Parameter, label: str) -> float:
     return rms
 
 
+def finite_module_gradient_rms(module: torch.nn.Module, label: str) -> float:
+    squared_sum = 0.0
+    element_count = 0
+    parameter_count = 0
+    for name, parameter in module.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        gradient = parameter.grad
+        if gradient is None or not torch.isfinite(gradient).all():
+            raise RuntimeError(f"{label}.{name} has no finite gradient")
+        parameter_squared_sum = float(gradient.float().square().sum().item())
+        parameter_rms = (parameter_squared_sum / gradient.numel()) ** 0.5
+        if parameter_rms <= 0.0:
+            raise RuntimeError(
+                f"{label}.{name} gradient is inactive: {parameter_rms}"
+            )
+        squared_sum += parameter_squared_sum
+        element_count += gradient.numel()
+        parameter_count += 1
+    if parameter_count == 0:
+        raise RuntimeError(f"{label} has no trainable parameters")
+    rms = (squared_sum / element_count) ** 0.5
+    if rms <= 0.0:
+        raise RuntimeError(f"{label} gradient is inactive: {rms}")
+    return rms
+
+
 def transition_diagnostics(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -431,8 +458,8 @@ def main() -> None:
         row = {"layer": layer_index}
         for name in ("q", "k", "v", "f", "b", "w"):
             projection = getattr(layer.base, f"{name}_proj")
-            row[f"{name}_gradient_rms"] = finite_gradient_rms(
-                projection.weight, f"layer{layer_index}.{name}_proj.weight"
+            row[f"{name}_gradient_rms"] = finite_module_gradient_rms(
+                projection, f"layer{layer_index}.{name}_proj"
             )
         row["beta_gradient_rms"] = finite_gradient_rms(
             layer.beta_proj.weight, f"layer{layer_index}.beta_proj.weight"
@@ -630,6 +657,30 @@ def main() -> None:
         gk=gk,
         initial_state=torch.zeros_like(initial_state),
     )
+    explicit_zero_output, explicit_zero_state = explicit_dplr_recurrence(
+        q=q,
+        k=k,
+        v=v,
+        a=a,
+        b=b,
+        gk=gk,
+        initial_state=torch.zeros_like(initial_state),
+    )
+    zero_recurrence_output_relative_rms = relative_rms(
+        zero_output, explicit_zero_output
+    )
+    zero_recurrence_state_relative_rms = relative_rms(
+        zero_state, explicit_zero_state
+    )
+    if (
+        zero_recurrence_output_relative_rms > 0.03
+        or zero_recurrence_state_relative_rms > 0.03
+    ):
+        raise RuntimeError(
+            "Official zero-state DPLR differs from explicit FP32 recurrence: "
+            f"{zero_recurrence_output_relative_rms} "
+            f"{zero_recurrence_state_relative_rms}"
+        )
     incoming_output_dependency = relative_rms(output, zero_output)
     incoming_state_dependency = relative_rms(state, zero_state)
     if min(incoming_output_dependency, incoming_state_dependency) <= 1e-4:
@@ -734,6 +785,12 @@ def main() -> None:
         "production_rows": production_rows,
         "recurrence_output_relative_rms": recurrence_output_relative_rms,
         "recurrence_state_relative_rms": recurrence_state_relative_rms,
+        "zero_recurrence_output_relative_rms": (
+            zero_recurrence_output_relative_rms
+        ),
+        "zero_recurrence_state_relative_rms": (
+            zero_recurrence_state_relative_rms
+        ),
         "incoming_state_output_relative_rms": incoming_output_dependency,
         "incoming_state_final_relative_rms": incoming_state_dependency,
         "component_dependencies": component_dependencies,

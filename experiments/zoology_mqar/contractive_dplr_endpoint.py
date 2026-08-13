@@ -147,6 +147,10 @@ def main() -> None:
         float(row["erase_write_separation"]) for row in rows
     ]
     beta_mean = [float(row["beta_mean"]) for row in rows]
+    beta_std = [float(row["beta_std"]) for row in rows]
+    beta_weight_delta_rms = [
+        float(row["beta_weight_delta_rms"]) for row in rows
+    ]
     erase_strength_mean = [
         float(row["erase_strength_mean"]) for row in rows
     ]
@@ -179,6 +183,14 @@ def main() -> None:
         "beta_mean_finite_and_nonzero": (
             _all_finite(beta_mean)
             and all(abs(value) > 1e-6 for value in beta_mean)
+        ),
+        "beta_std_at_least_1e-4": (
+            _all_finite(beta_std)
+            and all(value >= 1e-4 for value in beta_std)
+        ),
+        "beta_weight_delta_rms_at_least_1e-5": (
+            _all_finite(beta_weight_delta_rms)
+            and all(value >= 1e-5 for value in beta_weight_delta_rms)
         ),
         "erase_strength_finite_and_nonzero": (
             _all_finite(erase_strength_mean)
@@ -234,6 +246,10 @@ def main() -> None:
         "wrong_key_swaps_down_at_least_0.10_from_historical": (
             swaps["contractive_dplr"]["wrong_key_swap_fraction_of_errors"]
             <= HISTORICAL_SWAP_FRACTION - 0.10
+        ),
+        "wrong_key_swaps_down_at_least_0.10_from_runtime_control": (
+            swaps["contractive_dplr"]["wrong_key_swap_fraction_of_errors"]
+            <= runtime_control_swaps["wrong_key_swap_fraction_of_errors"] - 0.10
         ),
         "total_errors_lower_than_both_references": (
             swaps["contractive_dplr"]["errors"]

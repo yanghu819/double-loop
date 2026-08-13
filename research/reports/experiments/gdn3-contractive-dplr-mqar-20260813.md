@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation pending strict CUDA contract
+- Status: implementation complete; strict CUDA contract R2 pending
 - Decision field: directional MQAR L1024 wrong-key binding before Sudoku transfer
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs, batch32, seed123
 - Resource: one task-mode A100-SXM4-80GB, CUDA index0
@@ -67,8 +67,9 @@ Before training, the strict A100 contract must prove:
 - CUDA index0 and the registered physical UUID;
 - pinned FLA SHA `9c8e42e762fce087c27b673af4922795d9edb85e` and complete transitive DPLR source hashes;
 - two official DPLR layers and exactly two `ChunkDPLRDeltaRuleFunctionBackward` paths, with no fallback;
-- explicit-step parity for zero and nonzero incoming state, output and terminal state;
-- finite nonzero gradients through Q/P/R/V/decay/write/beta, initial state and native FutureSeed;
+- explicit-step parity from both zero and nonzero incoming state for output
+  and terminal state, plus finite nonzero gradients through
+  Q/P/R/V/decay/write/beta, initial state and native FutureSeed;
 - exact 662,608 parameters, 4,096 state values per layer, zero state/scan increment;
 - head permutation equivariance, incoming-state dependency, independent P/R dependency;
 - transition symmetry error <=0.005, spectral norm <=1.001 and minimum eigenvalue >=-0.005.
@@ -83,12 +84,20 @@ The candidate passes only if all conditions hold:
 
 - two active layers and one active native FutureSeed route;
 - mean `1-|p^T r| >=0.05` in each layer;
-- finite nonzero beta, erase strength, write RMS and board-varying terminal state;
+- finite nonzero beta, beta token/batch std >=`1e-4`, beta-weight RMS movement
+  from initialization >=`1e-5`, erase strength, write RMS and board-varying
+  terminal state;
 - transition spectral norm <=1.001, minimum eigenvalue >=-0.005, symmetry error <=0.005, and terminal-state RMS in `[1e-4,1e4]`;
 - balanced/future/past accuracy each >=0.85 and joint exact >=0.60;
 - balanced accuracy >= historical `0.7475 + 0.10` and >= current-runtime control +0.10;
-- wrong-key swap fraction at least 0.10 below historical and total errors below both references;
+- wrong-key swap fraction at least 0.10 below both historical and locked
+  runtime-control references, and total errors below both references;
 - fit, post-warm wall and warmed-step ratios <=1.75x; peak allocation <=1.50x current-runtime control.
+
+The cost denominator is the locked same-SKU A100 runtime control, not the same
+physical card. These preregistered ratios remain conservative hard filters,
+but are not interpreted as a paired latency estimate. Formal wall budget is
+fixed at 2,700 seconds, matching the ledger's <=45-minute allowance.
 
 Any contract, activation, stability, quality or cost miss closes this exact
 equation. There is no angle, beta, rank, normalization, state, kernel, seed,
@@ -96,7 +105,15 @@ LR, loss, batch, epoch, width, depth, duration or Sudoku rescue.
 
 ## 7. Results
 
-Pending.
+R1 reached the full production forward and both official DPLR backward paths,
+then stopped in the checker before any science run. The checker assumed every
+official projection exposed a direct `.weight`; `f_proj` is a composite module.
+This is a non-science validation-harness failure. R2 aggregates finite nonzero
+gradients over every trainable parameter in each projection module and adds
+the already registered zero-state explicit recurrence check. It also makes
+the activation interpretation executable with fixed beta-variation and
+trained-weight-movement floors. The mechanism, data and quality gates are
+unchanged.
 
 ## 8. Decision
 

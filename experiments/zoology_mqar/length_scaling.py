@@ -52,6 +52,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_surprise_replay",
     "future_seed_gdn2_atomic_pair",
     "future_seed_gated_delta_product_n2",
+    "future_seed_contractive_dplr",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -157,6 +158,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gated_delta_product_futureseed."
                 "ZoologyGatedDeltaProductFutureSeedMixer"
+            )
+        elif arm == "future_seed_contractive_dplr":
+            mixer_name = (
+                "experiments.zoology_mqar.contractive_dplr_futureseed."
+                "ZoologyContractiveDPLRFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -617,6 +623,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    contractive_dplr = None
+    if arm == "future_seed_contractive_dplr":
+        from experiments.zoology_mqar.contractive_dplr_futureseed import (
+            contractive_dplr_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        contractive_dplr = contractive_dplr_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -690,6 +709,8 @@ def run_arm(
         score["atomic_pair"] = atomic_pair
     if gated_delta_product is not None:
         score["gated_delta_product"] = gated_delta_product
+    if contractive_dplr is not None:
+        score["contractive_dplr"] = contractive_dplr
     logger.finish()
     (arm_dir / "config.json").write_text(
         json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"

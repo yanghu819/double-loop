@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered, implementation complete, GPU contract pending
+- Status: completed, rejected at the registered activation/quality/cost gate
 - Decision field: directional MQAR L1024 binding closure before Sudoku transfer
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs, batch32, seed123
 - Resource: one A100-SXM4-80GB, CUDA index0
@@ -71,10 +71,48 @@ query aggregation, gate, seed, LR, loss, batch, epoch, width, or depth rescue.
 
 ## 6. Results
 
-Pending.
+The strict A100 contract passed before training. It verified the exact target
+UUID, pinned official FLA/Triton path, two `ChunkGDN2FunctionBackward` nodes,
+exact parent initialization, exactly 65,536 added parameters, zero recurrent
+state delta, finite nonzero auxiliary-Q/K gradients, and BF16 column-swap
+output/state relative RMS `6.85e-5/1.01e-5`.
+
+The fixed 10-epoch endpoint completed without NaN, OOM, fallback, source, or
+data drift. Candidate balanced/future/past/joint accuracy was
+`0.04975/0.0470/0.0525/0`, versus the same-runtime native-FutureSeed control's
+`0.30625/0.3115/0.3010/0` and the locked historical reference's
+`0.7475/0.7415/0.7535/0.339`. Total candidate errors increased to `3,801`,
+from `2,775` in the same-runtime control and `1,010` historically.
+
+The mechanism nevertheless produced a sharp diagnostic separation. The
+wrong-key valid-value swap fraction among errors fell from `0.458018` in the
+same-runtime control and `0.806931` historically to `0.074980`; wrong-key
+swaps fell to `285`, versus `1,271/815`. Atomic addressing therefore suppresses
+cross-key confusion, but the full model no longer learns a useful value/read
+map. This is not closure: it trades binding errors for a much larger set of
+non-swap errors.
+
+The trained geometry also missed its preregistered stability bounds. Layer
+mean conditions were `8.29/10.50` (required `<=4`), maximum conditions were
+`170.62/100.15`, polar diagonal errors were `0.01953/0.02344`, and the second
+layer's maximum weighted cross term was `0.00550`. Peak allocation was
+`1.739x` control, above the `1.5x` ceiling; warmed-step, fit, and post-warm wall
+ratios were `1.832x/1.535x/1.535x` and stayed within their `2x` ceilings.
+
+Provenance hashes: decision
+`fb60b9e51f07bc2a4e700acf0b8df527dd352fed21d7fa015c61e5e8daa9be96`,
+contract `5210d0b7fd5f8055befc83c330d5ef7817f0db4aee709f044349835e6e66594c`,
+checkpoint `e04e95dec6d91b7aa95fac5926ca126467ad0705f738df849f32278e4f888d38`,
+formal log `207d02b11bd81c8ca370bc1d0e39746c9f807f6c3a5b79cd8deeea82a3a5e8cf`,
+and source snapshot
+`6bd580cdaeee641a47a83896371fc8c2d5721de2102fea8c16ea7b104862335a`.
 
 ## 7. Decision
 
-Pending the one fixed A100 run. A pass admits one hard-Sudoku transfer gate; a
-miss returns to a fundamentally different scalable recurrence rather than a
-nearby variant.
+Reject P-GDN3-028 and close the atomic paired-address family. Do not rescue
+rank, auxiliary projection, whitening, epsilon, query aggregation, payload
+scale, gate, order, seed, LR, loss, batch, duration, width, or depth. The useful
+result is the decomposition: suppressing wrong-key swaps alone is insufficient
+when the address transformation damages value/read learnability. The next
+mechanism must organize interference without duplicating or whitening each
+token's address inside the same update.

@@ -1,5 +1,23 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Atomic Binding Is Not Sufficient
+
+P-GDN3-028 gives the cleanest separation yet between address-confusion rate
+and end-to-end retrieval. Its atomic shared-payload paired-address update cuts
+wrong-key valid-value swaps among errors from `0.458018` to `0.074980`, but
+balanced accuracy collapses from `0.30625` to `0.04975` and total errors rise
+from `2,775` to `3,801`. The model makes fewer wrong-key substitutions because
+it has largely stopped learning a useful value/read mapping, not because it
+closes bindings.
+
+This negative result rules out a tempting claim that pairwise address
+orthogonality alone solves the L1024 regime. It supports a sharper thesis:
+GDN3 needs a scalable memory organization that jointly preserves linear
+readout learnability and limits overwrite interference. Report the endpoint
+as a causal boundary together with P020's address-metric gain and P-FS2-007's
+surprise-admission gain; do not transfer P028 to Sudoku or tune the paired
+address construction.
+
 ## 2026-08-13 Receiver-Native Surprise Replay Boundary
 
 P-FS2-007 is the strongest new FutureSeed mechanism signal in the current

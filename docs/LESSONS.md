@@ -1,5 +1,20 @@
 # Lessons
 
+## 2026-08-13: Low swap rate can hide a failed memory
+
+- P-GDN3-028 proves that a low wrong-key-swap fraction is not by itself a
+  successful binding mechanism. Atomic erase-orthogonal shared-payload pairs
+  reduce swap fraction `0.458018->0.074980`, yet balanced accuracy falls
+  `0.30625->0.04975` and errors increase `2775->3801`. Track error count and
+  value/read learnability alongside swap composition; a method can improve the
+  latter simply by replacing swap errors with other failures.
+- The trained weighted-polar geometry did not remain in its registered stable
+  regime: mean condition reached `8.29/10.50`, maximum condition
+  `170.62/100.15`, and diagonal error about `0.02`. Contract-time algebraic
+  correctness does not guarantee that a learned address pair stays numerically
+  useful. Close auxiliary projection, whitening, payload scaling, and ordering
+  rescues rather than treating this as a tuning problem.
+
 ## 2026-08-13: Surprise preserves values but does not bind them
 
 - P-FS2-007 cleanly separates admission from capacity: exact committed-edit

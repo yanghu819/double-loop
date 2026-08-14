@@ -1,5 +1,21 @@
 # Lessons
 
+## 2026-08-14: More coherent address rows can reduce swaps while worsening retrieval
+
+- Native K64/V32 passes the unmodified official-GDN2 contract and halves no
+  payload dimension in the recurrent state: address state doubles from 4,096
+  to 8,192 values/layer while one coherent erase/write/read key is preserved.
+- Wrong-key valid-value swaps fall `1271->294`, but total errors rise
+  `2775->3818` and balanced accuracy falls `0.30625->0.0455`. Conditional
+  error composition is not a capacity metric.
+- The K64 learning curve stays near chance through epoch4 and reaches only
+  `0.02725` at epoch6, while historical K32 is already `0.71575`. Added rows
+  receive finite gradients, so this is delayed/diluted learnability rather
+  than an inactive implementation.
+- Close raw K-axis expansion. Severe key-Gram anisotropy does not by itself
+  justify more address dimensions; the next mechanism must improve binding or
+  credit in the coherent namespace.
+
 ## 2026-08-14: Geometry collapse is not enough to admit an address wrapper
 
 - P-DIAG-ADDR-001 measures very low effective rank and extreme anisotropy on

@@ -1708,3 +1708,27 @@ unconstrained erase/write-key decoupling without angle, tie, scale,
 regularization or training rescue and does not authorize Sudoku transfer. It
 does not close mechanisms that preserve a shared base address while adding a
 separately bounded correction topology.
+
+### P-GDN3-032 Native K64 Address-Capacity Boundary
+
+P032 asks whether P031 failed because the coherent native key namespace was
+simply too small. It trains unmodified pinned-official GDN2 from scratch at
+D128/L2/H4/K64/V32, preserving one normalized erase/write/read key, one scan,
+and native FutureSeed. This doubles recurrent state from 4,096 to 8,192 values
+per layer without a cache, wrapper, second bank, or task-specific operation.
+
+The strict contract and cost gates pass, but quality collapses. Balanced/
+future/past/joint accuracy is `0.0455/0.0445/0.0465/0`, versus contemporaneous
+K32 `0.30625/0.3115/0.3010/0` and historical K32
+`0.7475/0.7415/0.7535/0.339`. Wrong-key valid-value swaps fall from 1,271 to
+294, yet total errors increase from 2,775 to 3,818. The paper should use this
+as a second independent warning that a lower conditional swap fraction can
+mean the model stopped retrieving rather than improved binding.
+
+K64 also exposes an optimization boundary: its added address rows and native
+FutureSeed gradients are active, but validation accuracy stays near chance
+through epoch4 and reaches only `0.02725` at epoch6. Historical K32 is already
+`0.71575` at that point. More coherent address dimensions therefore dilute or
+delay learnability under the fixed budget; key-Gram anisotropy is not evidence
+for raw K expansion. P032 closes K48/K96 and training rescue and does not
+authorize Sudoku transfer.

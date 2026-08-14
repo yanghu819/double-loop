@@ -1,0 +1,108 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+{
+  "cuda_device_count": 1,
+  "data_hashes": {
+    "test": "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f",
+    "train": "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
+  },
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_uuid": "d2877fe4-641c-fe64-2a74-8abca47c292f",
+  "fla_gdn2_ops_sources": {
+    "__init__.py": "c6212c82f5447c784a72ead0a8bed92861b31015b606d180ca513dbf1a0d9809",
+    "chunk.py": "d006903b9dff07cdc9b0467f6265a93bc6135cac71860554b4f24cf86b8e6ef0",
+    "chunk_bwd.py": "d46ccb74901b6816ab2424298de7a2483c475d18018a42ed13f121dac3624cc9",
+    "chunk_fwd.py": "ccc88c0a5271465f59993f870c578c192ea696e874b34138bf8d205ac9eb503c",
+    "chunk_intra.py": "d417ba950c35745c10a47ba03d0fa9f02215a471651ac4a7563a285e283023d0",
+    "chunk_intra_token_parallel.py": "e0e12e85eb79d99c0d6808d457bef854f918b081eea2dc52c7b623c9a6e6b349",
+    "fused_recurrent.py": "cdb3171095030cf7fcbd5f15de83a7582f7a5635069d5e3f3203ea73dd0172e2",
+    "naive.py": "6a65805401eb300df85b6297611a0dd158dd183423cf2bcd5e0f0ecdde3e9e7a",
+    "wy_fast.py": "18eb36c77c8c18645bde285d102fb8ea067286081438a64657676065ad0380fe"
+  },
+  "fla_gdn2_ops_tree_sha256": "b9267a516290a30b72be06954651b4221a1191402531a9749a99e50b14f8944c",
+  "fla_gdn2_source_sha256": "4d001b6a8903cc7acb42b908ab3ade0f1edca0a17275630fc9c080c0232bf910",
+  "fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "fla_wheel_sha256": "0280db310981915eb048ece99d7bedca8b5caa9be65c99835a0f912ada977d6a",
+  "future_dependency_mean": 0.011767061427235603,
+  "future_seed": {
+    "active_seed_routes": 1,
+    "future_seed_gate": 0.5,
+    "future_seed_norm": 22.627416610717773,
+    "future_seed_raw_rms": 0.01610589399933815,
+    "future_seed_scale": 1.0,
+    "per_layer": [
+      {
+        "future_seed_gate": null,
+        "future_seed_norm": null,
+        "future_seed_raw_rms": null,
+        "layer_idx": 0,
+        "seed_applied": false
+      },
+      {
+        "future_seed_gate": 0.5,
+        "future_seed_norm": 22.627416610717773,
+        "future_seed_raw_rms": 0.01610589399933815,
+        "layer_idx": 1,
+        "seed_applied": true
+      }
+    ]
+  },
+  "future_seed_gradient_rms": 0.0033635678701102734,
+  "geometry": [
+    {
+      "head_k_dim": 64,
+      "head_v_dim": 32,
+      "k_conv_backend": "triton",
+      "num_heads": 4,
+      "num_v_heads": 4,
+      "q_conv_backend": "triton",
+      "state_values": 8192,
+      "v_conv_backend": "triton"
+    },
+    {
+      "head_k_dim": 64,
+      "head_v_dim": 32,
+      "k_conv_backend": "triton",
+      "num_heads": 4,
+      "num_v_heads": 4,
+      "q_conv_backend": "triton",
+      "state_values": 8192,
+      "v_conv_backend": "triton"
+    }
+  ],
+  "gradient_rms": [
+    {
+      "decay_extra_rows": 0.00016234246140811592,
+      "erase_extra_rows": 0.0005441238754428923,
+      "k_extra_rows": 0.025340018793940544,
+      "layer": 0,
+      "q_extra_rows": 0.021695241332054138,
+      "value": 0.04047669470310211,
+      "write": 0.004004780203104019
+    },
+    {
+      "decay_extra_rows": 0.00011219492444070056,
+      "erase_extra_rows": 0.0006157915922813118,
+      "k_extra_rows": 0.016558021306991577,
+      "layer": 1,
+      "q_extra_rows": 0.017929663881659508,
+      "value": 0.017233598977327347,
+      "write": 0.0016690237680450082
+    }
+  ],
+  "logical_scans_per_layer": 1,
+  "no_fallback": true,
+  "nonzero_incoming_state": {
+    "output_rms": 0.11376416683197021,
+    "terminal_state_rms": 0.20988835394382477
+  },
+  "official_backward_count": 2,
+  "parameter_delta_vs_k32": 108800,
+  "parameters": 770384,
+  "peak_cuda_mem_bytes": 381654016,
+  "plan": "P-GDN3-032",
+  "state_ratio_vs_k32": 2.0,
+  "state_values_per_layer": 8192,
+  "zoology_sha": "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+}

@@ -97,11 +97,77 @@ initial state while pinned official `chunk_gdn2` requires FP32 recurrent state.
 No formal training ran. R4 changes only that synthetic state dtype; the model,
 data, budget and all decision gates remain frozen.
 
+R4 source `daff830afd54fb1ceb07a12c9125b726a675c184` passed the strict
+contract and completed the one registered endpoint. The contract observed two
+official `ChunkGDN2FunctionBackward` nodes, Triton Q/K/V short convolutions,
+exact K64/V32 geometry, 8,192 state values per layer, and exactly 770,384
+parameters. Both layers had finite nonzero gradients in the added address rows;
+native FutureSeed dependency and gradient were also finite and nonzero. The
+contract JSON SHA256 is
+`a30a9e298d21121b7a71daf91af029041281b046c1b57be8d802fb9496220da1`.
+
+| metric | historical K32 | runtime K32 | native K64/V32 |
+| --- | ---: | ---: | ---: |
+| balanced accuracy | 0.747500 | 0.306250 | **0.045500** |
+| future accuracy | 0.741500 | 0.311500 | **0.044500** |
+| past accuracy | 0.753500 | 0.301000 | **0.046500** |
+| joint exact | 0.339000 | 0 | **0** |
+| errors / 4,000 queries | 1,010 | 2,775 | **3,818** |
+| wrong-key valid-value swaps | 815 | 1,271 | **294** |
+| swap fraction among errors | 0.806931 | 0.458018 | **0.077004** |
+
+The extra address rows therefore change the error composition but do not solve
+binding. They reduce wrong-key swaps by 977 versus the runtime K32 reference,
+while adding 1,043 total errors. Only 182 of 4,000 queries are correct. This is
+the same diagnostic trap exposed by P028-P031: a lower conditional swap rate
+can result from broader retrieval failure.
+
+Optimization is also materially slower. Historical K32 reaches validation
+accuracy `0.1965` by epoch4 and `0.71575` by epoch6. K64 is only `0.0110` at
+epoch4 and `0.02725` at epoch6, ending at `0.0455`. The mechanism is active,
+not dead: the native FutureSeed gate is `0.506501`, its raw RMS is `0.064316`,
+and every registered added-row gradient passes. Raw coherent address capacity
+has diluted or delayed learnability rather than providing useful separation.
+
+All cost gates pass. Fit, post-warm wall, warmed-step and peak-allocation ratios
+are `1.34535x/1.34482x/1.69907x/1.35364x`; warmed throughput is 1,200.31
+examples/s. Training plus validation takes 124.24 seconds. The complete run
+finishes from `2026-08-14T05:41:26Z` to `05:49:44Z`; decision SHA256 is
+`c6153f3b15eed55c7479d4517f97f9772d18dbe1527e91b1333ad397969294b5`.
+
 ## 8. Decision
 
-Pending.
+Reject and close native K-axis state expansion. K64/V32 passes provenance,
+activation, official-kernel and cost gates, but misses every absolute quality
+gate and performs far below both K32 references. The observed swap reduction
+is not accompanied by lower total error, so severe K32 Gram anisotropy is not
+evidence that adding address rows will improve usable memory.
+
+There will be no K48/K96, state-size, head-count, seed, LR, loss, batch, epoch,
+width, depth or duration rescue. No Sudoku transfer is authorized. The next
+candidate must improve how evidence is bound or credited in a coherent address
+namespace, rather than merely increasing its dimensional capacity.
 
 ## 9. Provenance
 
-Pending exact pushed source, clean detached worktree, run, checkpoint, and
-artifact hashes.
+- Branch: `codex/gdn3-native-k64-20260814`.
+- Formal source and GitHub readback:
+  `daff830afd54fb1ceb07a12c9125b726a675c184`.
+- Clean detached worktree:
+  `/huyang2/double-loop/worktrees/p-gdn3-032-e80baf7`.
+- Formal run:
+  `/huyang2/double-loop/runs/p-gdn3-032-native-k64-l1024-r4-20260814T054524Z-daff830`.
+- Candidate checkpoint/config/score SHA256:
+  `916189db960875ed26be5219dde3cd64a876078a43f71873912497550ccd7153` /
+  `1c7659b0cb6702a8c1a79a441bb5a62c8f82649fbe06192c97edefc8d2c7da7c` /
+  `daccd1ed10444b0c2da879da90e23e75c65014c5d94f7ac268ebb89b8adc4d60`.
+- Contract/decision/source-snapshot/formal-log SHA256:
+  `a30a9e298d21121b7a71daf91af029041281b046c1b57be8d802fb9496220da1` /
+  `c6153f3b15eed55c7479d4517f97f9772d18dbe1527e91b1333ad397969294b5` /
+  `3b863e9397628d4359aa2e359255896abe9daa04faeb36ac0db5c944981ba7f4` /
+  `6fb3a7cd70d02156cf52722fe96b4ecd0a5d5dd04504e947b930ba3a129b8fca`.
+- R3 non-science abort/contract-log SHA256:
+  `0e80811f942aba3c9d97c6b57f74852d62fac967e1589670f7332fd97e0ff432` /
+  `4cb6dbd8d832eb5f86411cf750891fcb67a6b11e54c51834937c539c9ddb81b5`.
+- Compact tracked evidence:
+  `runs/p-gdn3-032-native-k64-l1024-r4-20260814T054524Z-daff830`.

@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation pending strict CUDA contract
+- Status: complete; discarded; dynamic-frame family closed without rescue
 - Date: 2026-08-15
 - Benchmark: directional MQAR L1024 wrong-key binding regime
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
@@ -124,6 +124,45 @@ source/config/log hashes, GPU provenance and one comparison JSON under
 
 ## 9. Decision
 
-Pending the strict CUDA contract and the single fixed matched endpoint. A full
-gate pass admits one Sudoku transfer; any miss closes the family without
-rescue.
+Discard. Exact pushed/read-back source
+`913f40cd6e52a063c4ee87299e2f076c335bd108` passed the strict A100 contract.
+The candidate has exactly 665,680 parameters versus 661,584 for control,
+unchanged 4,096-value state/layer, one scan/layer and two official
+`ChunkGDN2FunctionBackward` paths. Zero-frame full output, nonzero-incoming
+output/state, native FutureSeed transport and every parent gradient are exact
+with maximum difference zero. Opened-frame telescoping error is below
+`6e-10`, both controller stages receive finite nonzero gradients, and no
+fallback, NaN, OOM, SHA, data or GPU drift occurred.
+
+The trained mechanism is strong and stable. Layer frame-log RMS is
+`.03509/.13676`; Q relative change is `.04775/.26952`, K relative change is
+`.07107/.18102`, and effective-decay change is `.01569/.01304`. Factors span
+`.71010..1.40268` with maximum condition `1.96408`; telescoping error remains
+below `1e-7`, canonicalization error below `2.4e-7`, and canonical state RMS is
+`.08049/.05613` with nonzero board variation. Native FutureSeed remains active.
+This is not an inactive or unstable implementation.
+
+Quality fails decisively. Control/candidate balanced accuracy is
+`.36625/.07650`, future `.35150/.07100`, past `.38100/.08200`, and joint exact
+`.002/0`. Total errors increase `2535->3694`. Wrong-key valid-value swaps fall
+`1574->353` and their conditional fraction `.62091->.09556`, but the absolute
+error increase proves this is broad retrieval collapse, not improved binding.
+
+Elapsed and post-warm wall ratios pass at `.8480/.8527x`; peak allocation and
+independently warmed-step ratios fail at `1.1462/1.4064x`. Formal endpoint
+status is zero, launcher exit `2` denotes the registered science/cost gate
+miss, no scientific abort file was written, the detached worktree stayed
+clean, GitHub readback matched, and the sole GPU returned to zero memory and
+utilization. Comparison SHA256 is
+`790b1550d9efe43754e2203067b482c45618f90b74167b625bc0fe1626cdff6b`;
+contract SHA256 is
+`7171e54484fa17bb43cfb575f9c23ff73e1f12b05d22f1835c201991f3976a0d`;
+candidate checkpoint SHA256 is
+`440959c61fc179e749090d7e2d9e5cc4805a712dc9fcbde7f571ce315fd0ef75`.
+
+Close the complete dynamic-frame family. Radius, rank, controller, sharing,
+canonicalization and training variants are forbidden. Together
+P031/P036/P042/P043/P044 show that splitting address ownership, forcing Q/K
+coherence, applying a static pairing-preserving gauge, and transporting state
+through a learned token-varying frame all suppress conditional swaps by
+destroying general retrieval. Do not transfer P044 to Sudoku.

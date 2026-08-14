@@ -13,20 +13,19 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-044` Dynamic Canonical Address Frame
-is preregistered as the sole successor. P031/P036/P042/P043 jointly close key
-splitting, forced Q/K coherence and static dual-coordinate gauges. P044 instead
-tests a token-dependent bounded diagonal frame inside the live official GDN2
-scan. Native Q/K share one coherent frame, the exact frame difference is added
-to native row decay to transport the existing K32xV32 state, and terminal rows
-are returned to a canonical basis before native FutureSeed. The fixed D128/L2
-candidate adds exactly 4,096 parameters, zero state and zero scans. It must
-pass exact parent/nonzero-state/FutureSeed identity, two official backward
-paths, telescoping and bounded-state checks before one contemporaneous L1024
-endpoint. Quality requires balanced `.55` and control `+.15`, both directions
-`.50` and `+.10`, joint `.06` and `+.04`, fewer errors and swap fraction
-`-.05`; time ratios must be below `1.30x` and allocation below `1.12x`. Any
-miss closes radius/rank/controller/sharing/canonicalization/training rescue.
-Report: `research/reports/experiments/gdn3-dynamic-canonical-frame-mqar-20260815.md`.
+is complete and discarded. Exact pushed/read-back source `913f40cd` passes the
+strict A100 contract with exact parent, nonzero-incoming-state and FutureSeed
+identity, exact +4,096 parameters, two official backward paths, one scan,
+telescoping frame transport and bounded canonical state. Both layers strongly
+activate: Q/K changes reach `.2695/.1810`, factors span `.7101..1.4027`, and
+maximum condition is `1.9641`. The fixed endpoint rejects the mechanism.
+Control/candidate balanced/future/past/joint is
+`.36625/.3515/.3810/.002` versus `.0765/.0710/.0820/0`, while errors rise
+`2535->3694`. Conditional wrong-key swaps fall only through broad retrieval
+collapse. Allocation and warmed-step costs also miss at `1.1462/1.4064x`.
+Close frame radius/rank/controller/sharing/canonicalization/training rescue and
+do not transfer to Sudoku. Comparison SHA256 is `790b1550...ff6b`. Report:
+`research/reports/experiments/gdn3-dynamic-canonical-frame-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-043` Biorthogonal Q/K Gauge is
 complete and discarded. Exact pushed/read-back source `5ffaa6ea` passes the
@@ -1319,6 +1318,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-GDN3-044 | discarded; completed_rejected | Static Q/K gauges are closed, but a fixed K basis may still alias long-sequence phases. Test a bounded token-varying frame that transports live state without splitting ownership. | Per token/layer learn diagonal `C_t`; apply one coherent factor to Q/K, add `log C_t-log C_{t-1}` to native row decay inside one official scan, and canonicalize terminal rows before native FutureSeed. Exact +4,096 params, zero state/scan. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `913f40cd`. | strict contract and fixed endpoint complete | Balanced `>=.55` and control `+.15`; directions `>=.50` and `+.10`; joint `>=.06` and `+.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.12x`. | Contract and all activation/stability gates pass. Control/candidate balanced/future/past/joint=`.36625/.3515/.381/.002` versus `.0765/.071/.082/0`; errors rise `2535->3694`. Factors approach the fixed bound and Q/K changes are large, so the mechanism is active. Lower swap fraction is broad collapse. Allocation/warmed step fail at `1.1462/1.4064x`. Close the complete dynamic-frame family; comparison SHA `790b1550...ff6b`. |
 | P-GDN3-043 | discarded; completed_rejected | P031/P036 close split erase keys and P042 closes forced Q/K similarity, but neither tests a strict coordinate change that retains coherent ownership and the full native differential. P020 says address geometry is causal. | Per layer/head learn bounded symmetric trace-free `G`; use `C=exp(.5log2 G)`, `q'=qC^-T`, `k'=kC`. Raw pairing is invariant, normalization/state geometry can adapt. Exact +4,216 params, zero state/scan, parent-exact at zero. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `5ffaa6ea`. | strict contract and fixed endpoint complete | Balanced `>=.55` and control `+.10`; directions `>=.52` and `+.07`; joint `>=.08` and `+.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.35x`, allocation `<1.12x`. | Contract and all activation gates pass. Control/candidate balanced/future/past/joint=`.04850/.05450/.04250/0` versus `.01975/.01800/.02150/0`; errors rise `3806->3921`. Wrong-key swaps `302->163` are broad collapse and miss the registered fraction gain. Elapsed/wall/allocation pass; warmed step `1.9149x` fails. Close the full gauge family without rescue; comparison SHA `94e85397...505c79`. |
 | P-GDN3-042 | discarded; completed_rejected | P020/P025 prove learned address organization is causal, while surprise replay leaves almost pure wrong-key swaps. The untested cause was drift between native Q read and K write maps, not erase/write key specialization. | Preserve Q/K projections, K32xV32 state, coherent erase/write/read ownership, one pinned-official scan and native FutureSeed. Learn per-layer H4xK32 `alpha=1+.5*tanh(a)` over midpoint/difference coordinates: `q'=c+alpha*d`, `k'=c-alpha*d`; exact256 parameters, zero state/scan delta, parent-exact at zero. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `39386276`. | strict R2 contract and fixed two-arm endpoint complete | Balanced `>=.55` and control `+.10`; directions `>=.52` and `+.07`; joint `>=.08` and `+.04`; fewer errors; swap fraction `-.05`; wall/warm `<1.20x`, allocation `<1.10x`. | Contract and activation pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.05725/.10/.0145/0`; errors rise`3301->3771`. Alpha is bounded and all8 heads active. Swap fraction `.23326->.08778` is broad collapse; warmed step is `1.6108x`. Close all coherence/rescaling/training rescues; no Sudoku transfer. Comparison SHA `02ecf1c6...20e6`. |
 | P-FS2-010 | discarded; completed_rejected | Native FutureSeed state may be useful but unreadable in the receiver basis; decode it through the producer Q/output interface and fuse that evidence into receiver hidden states. | Keep native state transfer and both official GDN2 scans. Add one zero-init bounded rank32 producer-native readout edge, +12,288 params, zero state/scan delta. Fixed same-process directional MQAR L1024 control/candidate plus trained edge-off attribution. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `eb983102`. | strict R2 contract and fixed endpoint complete | Balanced `>=max(.55, control+.10)`, both directions and joint improve, fewer errors, swap fraction `-.05`, edge-on `>=edge-off+.03`; cost ceilings fixed. | Mechanism is strongly active but quality collapses: control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.028/.0365/.0195/0`; errors `3301->3888`. Edge-off remains `.028` with 3,888 errors; residual reaches `.499865` of hidden RMS. State-RMS board std is structurally zero after native per-board normalization, so that activation sub-gate is invalid rather than scientific evidence. Warmed step `1.5657x` also fails. Close the full readout/fusion neighborhood; comparison SHA `32d14347...79c9`. |

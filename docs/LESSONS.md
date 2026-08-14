@@ -1,5 +1,26 @@
 # Lessons
 
+## 2026-08-15: Stable dynamic state frames can still erase binding
+
+- P-GDN3-044 is a genuine live-transition intervention: the token-dependent
+  frame difference enters native row decay, the one official scan transports
+  state between frames, and terminal state returns to a canonical FutureSeed
+  basis.
+- The implementation is exact at identity and remains numerically controlled
+  after training. Frame transport telescopes below `1e-7`, factors stay inside
+  `.7101..1.4027`, canonicalization error is below `2.4e-7`, and both layers
+  have variable nonzero frame, Q/K and decay changes.
+- Balanced accuracy nevertheless falls `.36625->.0765` and errors rise
+  `2535->3694`. A bounded stable coordinate system does not imply a learnable
+  address system.
+- Wrong-key swap fraction falls `.62091->.09556` because broad retrieval
+  replaces binding errors. Require lower absolute errors alongside any
+  conditional error-composition gain.
+- Static and dynamic Q/K coordinate interventions are now jointly closed.
+  Do not rescue frame radius, rank, controller or sharing. The next experiment
+  should target exact receiver credit or a genuinely different memory edit,
+  not another address reparameterization.
+
 ## 2026-08-15: A strong producer-native readout can erase learnability
 
 - P-FS2-010 keeps native FutureSeed state transfer and both official GDN2

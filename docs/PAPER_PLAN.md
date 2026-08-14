@@ -1,5 +1,26 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Dynamic Address Frames Are Stable But Not Learnable
+
+P-GDN3-044 tests the live-state operation left open by static metric and gauge
+experiments. A token-dependent diagonal frame multiplies coherent native Q/K,
+its exact log difference enters row decay so the existing K32xV32 state moves
+between frames inside one official scan, and terminal rows return to a
+canonical basis before native FutureSeed. The strict contract proves exact
+identity, two official backward paths, zero state/scan expansion and exact
+telescoping. At endpoint factors remain bounded (`.7101..1.4027`), condition is
+below `1.965`, and canonical state is finite and variable.
+
+The quality result is negative. Balanced accuracy falls `.36625->.0765`, both
+directions fall below `.083`, joint exact goes to zero, and errors rise
+`2535->3694`. The lower conditional wrong-key fraction accompanies broad
+retrieval failure. Peak allocation and independently warmed-step ratios also
+miss at `1.1462/1.4064x`. Together with P031/P036/P042/P043, this closes split
+keys, forced Q/K similarity, static dual gauges and dynamic state frames. The
+paper should state that stable coordinate transport is not sufficient for
+binding; future work should target receiver credit or a different committed
+memory edit, not another Q/K coordinate wrapper.
+
 ## 2026-08-15 Query Feedback Can Break Coherent Delta Learning
 
 P-GDN3-041 keeps native normalized ownership/write/read key `k`, every K-wise

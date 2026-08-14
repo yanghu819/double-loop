@@ -12,6 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-14 CST): `P-GDN3-038` is the sole preregistered
+successor after P-FS2-009. It tests a genuinely new persistent state topology,
+not another key/metric/readout wrapper: every H4 head gets two first-class full
+K32xV32 live states, and one learned content hash jointly partitions bounded
+erase/write admission and query read inside one pinned-official GDN2 scan.
+Uniform routing is exactly native; the fixed formal model trains from scratch
+on directional MQAR L1024 with a contemporaneous matched-initialization
+control. Exact delta is +2,056 parameters and 4,096 state values/layer. Pass
+requires active noncollapsed slots plus balanced >=.50 and control +.10,
+future/past >=.45 and +.07, joint >=.05 and +.04, fewer errors, wrong-key swap
+fraction -0.05, and registered <=2.75x compute/<=2.00x allocation. Any miss
+closes slot count/router/gate/init/training rescue. Report:
+`research/reports/experiments/gdn3-slot-state-mqar-20260814.md`.
+
 Current update (2026-08-14 CST): `P-FS2-009` Metric-Pullback FutureSeed is
 complete and discarded. Its strict contract proves exact identity for full
 outputs, terminal states, nonzero incoming state and all parent gradients;

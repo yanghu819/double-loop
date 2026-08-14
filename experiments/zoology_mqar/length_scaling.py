@@ -60,6 +60,7 @@ GDN2_ARMS = (
     "future_seed_anchored_dual_key_gdn2",
     "future_seed_committed_residual_gdn2",
     "future_seed_chunk_local_biaxis_gdn2",
+    "future_seed_slot_state_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -202,6 +203,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_chunk_local_biaxis."
                 "ZoologyChunkLocalBiAxisFutureSeedMixer"
+            )
+        elif arm == "future_seed_slot_state_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_slot_state."
+                "ZoologySlotStateFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -545,6 +551,7 @@ def run_arm(
     gdn2_expand_v: float = 1.0,
     output_arm_name: str | None = None,
     save_checkpoint: bool = False,
+    matched_init_path: Path | None = None,
 ) -> dict[str, Any]:
     run_arm_name = output_arm_name or arm
     arm_dir = output_dir / f"length_{sequence_length}" / run_arm_name
@@ -563,6 +570,20 @@ def run_arm(
     )
     set_determinism(config.seed)
     model = make_model(config, arm)
+    if matched_init_path is not None:
+        matched_state = torch.load(
+            matched_init_path,
+            map_location="cpu",
+            weights_only=True,
+        )
+        if arm == "future_seed_slot_state_gdn2":
+            from experiments.zoology_mqar.gdn2_slot_state import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
+        else:
+            model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
     if arm == "future_seed_contractive_dplr":
         contractive_dplr_initial_beta_weights = [
@@ -631,6 +652,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
             parent_parameter_hash,
         )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_slot_state_gdn2":
+        from experiments.zoology_mqar.gdn2_slot_state import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
@@ -844,6 +869,18 @@ def run_arm(
         with torch.no_grad():
             model.eval()(diagnostic_inputs[:8].cuda())
         chunk_local_biaxis = chunk_local_biaxis_diagnostics(model)
+    slot_state = None
+    if arm == "future_seed_slot_state_gdn2":
+        from experiments.zoology_mqar.gdn2_slot_state import (
+            slot_state_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs[:8].cuda())
+        slot_state = slot_state_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -876,6 +913,7 @@ def run_arm(
         "gdn2_expand_v": gdn2_expand_v,
         "recurrent_state_values_per_layer": (
             int(model_heads * gdn2_head_dim * gdn2_head_dim * gdn2_expand_v)
+            * (2 if arm == "future_seed_slot_state_gdn2" else 1)
         ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
@@ -899,6 +937,8 @@ def run_arm(
     }
     if future_seed is not None:
         score["future_seed"] = future_seed
+    if slot_state is not None:
+        score["slot_state"] = slot_state
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",

@@ -68,6 +68,7 @@ GDN2_ARMS = (
     "future_seed_biorthogonal_qk_gdn2",
     "future_seed_dynamic_frame_gdn2",
     "future_seed_receiver_read_credit_gdn2",
+    "future_seed_coherent_key_spectrum_gdn2",
     "future_seed_producer_readout_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
@@ -300,6 +301,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_coherent_key_spectrum_gdn2":
+        from experiments.zoology_mqar.coherent_key_spectrum_credit import (
+            CoherentKeySpectrumLanguageModel,
+        )
+
+        return CoherentKeySpectrumLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_receiver_read_credit_gdn2":
         from experiments.zoology_mqar.futureseed_read_credit import (
             ReceiverReadCreditLanguageModel,
@@ -1119,6 +1126,13 @@ def run_arm(
         )
 
         receiver_read_credit = receiver_read_credit_diagnostics(model)
+    coherent_key_spectrum = None
+    if arm == "future_seed_coherent_key_spectrum_gdn2":
+        from experiments.zoology_mqar.coherent_key_spectrum_credit import (
+            coherent_key_spectrum_diagnostics,
+        )
+
+        coherent_key_spectrum = coherent_key_spectrum_diagnostics(model)
     producer_readout = None
     producer_readout_edge_off = None
     producer_readout_edge_off_cases = None
@@ -1224,6 +1238,8 @@ def run_arm(
         score["dynamic_frame"] = dynamic_frame
     if receiver_read_credit is not None:
         score["receiver_read_credit"] = receiver_read_credit
+    if coherent_key_spectrum is not None:
+        score["coherent_key_spectrum"] = coherent_key_spectrum
     if producer_readout is not None:
         score["producer_readout"] = producer_readout
         score["producer_readout_edge_off_metrics"] = producer_readout_edge_off

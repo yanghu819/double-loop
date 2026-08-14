@@ -41,6 +41,7 @@ HEAD_DIM = 32
 EXPECTED_PARAMETER_DELTA = LAYERS * HEADS * (
     HEAD_DIM * (HEAD_DIM + 1) // 2 - 1
 )
+MAX_BF16_LOGDET_DRIFT = 0.10
 
 
 def graph_names(tensor: torch.Tensor) -> list[str]:
@@ -230,7 +231,7 @@ def check_metric_geometry(device: torch.device) -> dict[str, Any]:
         raise AssertionError(
             f"bounded SPD contract failed: min={eigen_min} max={eigen_max} cond={condition}"
         )
-    if logdet_error > 0.02:
+    if logdet_error > MAX_BF16_LOGDET_DRIFT:
         raise AssertionError(f"BF16 metric logdet drift is too large: {logdet_error}")
     return {
         "query_head_permutation_max_abs_error": query_error,

@@ -3000,3 +3000,21 @@
 - New FutureSeed readouts need an edge-off counterfactual on the same trained
   model. Activation alone cannot distinguish useful transferred evidence from
   capacity that the rest of the network ignores.
+
+## 2026-08-15: Native Q/K disagreement is useful structure, not drift to remove
+
+- P-GDN3-042 is an exact test of bounded midpoint-preserving Q/K coherence:
+  it keeps the coherent erase/write/read state, one official scan and native
+  FutureSeed while adding only 256 zero-initialized parameters.
+- All eight adapter heads activate, alpha stays in `.9570-1.0547`, and Q/K
+  changes are finite, yet balanced accuracy falls `.17475->.05725`, past
+  accuracy nearly collapses `.1885->.0145`, and errors rise `3301->3771`.
+- Reducing wrong-key swaps `770->331` is not success when arbitrary retrieval
+  errors increase. Always couple conditional error composition to total errors,
+  directional accuracy and joint exact.
+- P020's large positive Log-SPD signal should be read as within-map address
+  geometry, not pressure to make native Q and K similar. Preserve their full
+  learned differential and exact read/write/erase ownership.
+- Close alpha cap, coordinate/head/layer granularity, initialization,
+  regularization, normalization and duration rescues. A successor must change
+  a different scalable address geometry or state organization boundary.

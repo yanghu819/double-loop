@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation and static checks complete; GPU gate pending
+- Status: completed; discarded by registered quality and warmed-cost gates
 - Date: 2026-08-15
 - Benchmark: directional MQAR L1024 wrong-key binding regime
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
@@ -122,11 +122,64 @@ GPU provenance and one comparison JSON under `/huyang2/double-loop/runs`.
 ## 9. Decision
 
 Implementation, endpoint, strict checker and sole launcher are complete. Python
-compilation, shell parsing and `git diff --check` pass; no CPU model smoke was
+compilation, shell parsing and `git diff --check` passed; no CPU model smoke was
 run. R1 source `63493645` stopped before model construction because the
 checker asked `inspect` for a Torch-Dynamo-wrapped function and received
-`torch/_dynamo/eval_frame.py`; its non-science abort is retained. R2 changes
+`torch/_dynamo/eval_frame.py`; its non-science abort is retained. R2 changed
 only provenance inspection to verify the exported function identity, the
-`fla.ops.gdn2.chunk` module path and the unchanged full ops-tree hash. Pending
-R2 exact pushed SHA, clean detached worktree, strict GPU contract and the sole
-fixed endpoint.
+`fla.ops.gdn2.chunk` module path and the unchanged full ops-tree hash.
+
+R2 exact pushed/read-back source is
+`39386276cc89c3e931579ae190254f242a47354d`. Its strict CUDA contract passes:
+the candidate adds exactly 256 parameters, retains 4,096 state values and one
+scan per layer, is bit-exact to the parent for zero and nonzero incoming state,
+keeps both official `ChunkGDN2FunctionBackward` paths and native gradients,
+and gives finite nonzero gradients to all eight new adapter heads. Opened
+adapters preserve the midpoint and registered differential map within
+`4.77e-7`, are head-permutation equivariant, and alter both output and state.
+
+The fixed endpoint result is:
+
+| metric | native control | midpoint-coherent Q/K |
+| --- | ---: | ---: |
+| balanced accuracy | 0.174750 | 0.057250 |
+| future accuracy / CE / exact | 0.1610 / 2.91777 / 0.002 | 0.1000 / 3.71948 / 0.007 |
+| past accuracy / CE / exact | 0.1885 / 2.90015 / 0.002 | 0.0145 / 5.09822 / 0.001 |
+| joint exact | 0.000000 | 0.000000 |
+| total query errors | 3,301 | 3,771 |
+| wrong-key valid-value swaps | 770 | 331 |
+| wrong-key fraction of errors | 0.233263 | 0.087775 |
+
+The failure is not dead activation. Layer adapter RMS is `0.03885/0.01712`,
+all eight heads are active, Q/K relative changes span `0.00835-0.02068`, and
+alpha spans `0.95703-1.05469`. Terminal state remains finite and variable, and
+native FutureSeed remains active with gate `0.52463`. The lower conditional
+swap fraction is invalid as a quality win because total errors increase by
+470 and both directional accuracies regress, with the past direction nearly
+collapsing.
+
+Elapsed, post-warm wall and allocation ratios are
+`0.7288x/0.5352x/1.0160x`, but the independent warmed-step ratio is `1.6108x`
+and fails the registered `1.20x` ceiling. Quality already fails every absolute
+and relative gate except the conditional swap fraction.
+
+Discard P-GDN3-042. P031/P036 already show that splitting erase from the
+coherent key destroys row ownership; P042 now shows that directly contracting
+or expanding native Q/K disagreement also destroys directional binding. The
+positive P020 boundary should therefore be interpreted as better geometry
+inside each full native address map, not evidence that the maps should be made
+similar. Preserve the full native Q/K differential and exact coherent
+read/write/erase ownership in successors. Do not rescue alpha range,
+granularity, sharing, initialization, projection, normalization, regularize
+coherence, or extend training. No Sudoku transfer is authorized.
+
+Run:
+`p-gdn3-042-qk-coherence-r2-l1024-20260814T205400Z-3938627`.
+Contract/score/comparison/formal-log SHA256 are
+`2ae3c35b98171d6e23a47695c1a5c2543aee7c0c1eb0eab9707b2f4e0735b893` /
+`02ecf1c604aeb6164e02060d8f8d8951fcbbdbc6e640dc8dca06822bfbf820e6` /
+`02ecf1c604aeb6164e02060d8f8d8951fcbbdbc6e640dc8dca06822bfbf820e6` /
+`485580f50f3e7b5588b7cd280c2cc496061fef9a3bc8e4fe1dfffdd19349e0dc`.
+Control/candidate checkpoint SHA256 are
+`4d96b91f9278d38bd92e6f6cf35559ad067a8d5f3ea96d5cd519c558b8a346aa` /
+`2c0c70a54a5ff7cbf4848541a1d3d1a625add0ab711f54d30b44413a8b281ee7`.

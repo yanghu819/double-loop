@@ -1975,3 +1975,27 @@ The valid conclusion is narrower: a strongly active producer-native hidden
 residual does not improve binding and can derail learning. Future FS2 work
 must improve what is carried or credited, not add a stronger hidden residual
 around the same terminal state.
+
+### P-GDN3-042 Midpoint-Coherent Q/K Boundary
+
+P042 directly tests whether drift between the native read-query and write-key
+maps causes directional binding errors. It preserves their midpoint and learns
+only a bounded per-coordinate scale on their difference. The K32xV32 state,
+coherent erase/write/read ownership, one pinned-official scan and native
+FutureSeed remain unchanged; the candidate adds exactly 256 parameters.
+
+The strict contract passes and the mechanism is unambiguously active, but the
+quality result is negative. Control/candidate balanced accuracy is
+`.17475/.05725`, future/past accuracy is `.1610/.1885` versus
+`.1000/.0145`, joint exact remains zero, and errors rise `3301->3771`.
+Although wrong-key swaps among errors fall `.23326->.08778`, that change is a
+broad-retrieval-collapse artifact. The independent warmed-step ratio also
+fails at `1.6108x`.
+
+Together with P031/P036, this result separates two address claims. GDN2 needs
+exact coherent read/write/erase ownership, and it also needs the full learned
+Q/K differential. P020's positive Log-SPD result changes geometry inside both
+native maps without shrinking that differential; P042 shows why this
+distinction matters. The paper should not motivate GDN3 as Q/K alignment or
+decoupling. The open target is a scalable address geometry or state
+organization that preserves both native maps and lowers binding interference.

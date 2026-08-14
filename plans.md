@@ -12,22 +12,22 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-15 CST): `P-GDN3-042` Midpoint-Coherent Q/K is the
-sole preregistered successor. P020/P025 show that learned address organization
-is causal, while P-FS2-007 shows that preserving exact-surprise values leaves
-almost pure wrong-key swaps. P031/P036 reject erase/write key splitting and
-P041 rejects injecting current Q only into erase content; none tests native
-read/write-map drift. The candidate keeps the K32xV32 state, one coherent
-erase/write key, one pinned-official scan and native FutureSeed. For every
-token/head it writes `c=(q+k)/2`, `d=(q-k)/2`, then
-`q'=c+alpha*d`, `k'=c-alpha*d` with a zero-init per-layer H4xK32
-`alpha=1+.5*tanh(a)`. This adds exactly256 parameters, no state/scan/task
-logic, and is parent-exact at initialization. One same-process control then
-candidate runs at fixed L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123.
-Quality requires balanced `>=.55` and `+.10`, both directions `>=.52` and
-`+.07`, joint `>=.08` and `+.04`, fewer errors and swap fraction `-.05`.
-Wall/warm must stay `<1.20x`, allocation `<1.10x`. Any miss closes alpha
-cap/granularity/sharing/init/projection/training rescue. Report:
+Current update (2026-08-15 CST): `P-GDN3-042` Midpoint-Coherent Q/K is
+complete and discarded. Exact pushed/read-back R2 source `39386276` passes the
+strict contract with exact parent identity, two pinned-official GDN2 backward
+paths, all eight adapter heads active, bounded midpoint/difference mapping and
+unchanged K32xV32 state/scan topology. The fixed endpoint rejects the quality
+hypothesis: control/candidate balanced/future/past/joint is
+`.17475/.1610/.1885/0` versus `.05725/.1000/.0145/0`, and total errors rise
+`3301->3771`. Candidate Q/K changes are finite (`.00835-.02068` relative RMS)
+and alpha spans `.9570-1.0547`, so this is not dead activation. Conditional
+wrong-key swaps fall `.23326->.08778`, but only alongside broad retrieval
+collapse. Warmed-step cost also fails at `1.6108x` despite elapsed/wall and
+allocation passing. Close alpha cap/granularity/sharing/init/projection,
+coherence regularization and training rescue; no Sudoku transfer. The useful
+boundary is narrower: preserve the full native Q/K differential and coherent
+read/write/erase ownership; P020's positive signal comes from within-map
+address geometry, not forcing the two maps toward one another. Report:
 `research/reports/experiments/gdn3-midpoint-qk-coherence-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-040` Linear + Exact Product
@@ -1285,7 +1285,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-042 | preregistered; R1 non-science contract abort; R2 provenance fix pending | P020/P025 prove learned address organization is causal, while surprise replay leaves almost pure wrong-key swaps. The untested cause is drift between native Q read and K write maps, not erase/write key specialization. | Preserve Q/K projections, K32xV32 state, coherent erase/write/read ownership, one pinned-official scan and native FutureSeed. Learn per-layer H4xK32 `alpha=1+.5*tanh(a)` over midpoint/difference coordinates: `q'=c+alpha*d`, `k'=c-alpha*d`; exact256 parameters, zero state/scan delta, parent-exact at zero. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | Sole admitted task-mode GPU, exact index0/UUID; pushed SHA and clean detached worktree required. | strict contract plus one fixed endpoint | Balanced `>=.55` and control `+.10`; directions `>=.52` and `+.07`; joint `>=.08` and `+.04`; fewer errors; swap fraction `-.05`; wall/warm `<1.20x`, allocation `<1.10x`. | R1 source `63493645` stopped before model construction: `inspect.getfile` followed a Torch-Dynamo function wrapper into `torch/_dynamo/eval_frame.py`. Non-science abort retained. R2 changes only provenance inspection to exported-function identity plus chunk-module path and unchanged ops-tree hash; mechanism/data/gates unchanged. |
+| P-GDN3-042 | discarded; completed_rejected | P020/P025 prove learned address organization is causal, while surprise replay leaves almost pure wrong-key swaps. The untested cause was drift between native Q read and K write maps, not erase/write key specialization. | Preserve Q/K projections, K32xV32 state, coherent erase/write/read ownership, one pinned-official scan and native FutureSeed. Learn per-layer H4xK32 `alpha=1+.5*tanh(a)` over midpoint/difference coordinates: `q'=c+alpha*d`, `k'=c-alpha*d`; exact256 parameters, zero state/scan delta, parent-exact at zero. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `39386276`. | strict R2 contract and fixed two-arm endpoint complete | Balanced `>=.55` and control `+.10`; directions `>=.52` and `+.07`; joint `>=.08` and `+.04`; fewer errors; swap fraction `-.05`; wall/warm `<1.20x`, allocation `<1.10x`. | Contract and activation pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.05725/.10/.0145/0`; errors rise`3301->3771`. Alpha is bounded and all8 heads active. Swap fraction `.23326->.08778` is broad collapse; warmed step is `1.6108x`. Close all coherence/rescaling/training rescues; no Sudoku transfer. Comparison SHA `02ecf1c6...20e6`. |
 | P-FS2-010 | discarded; completed_rejected | Native FutureSeed state may be useful but unreadable in the receiver basis; decode it through the producer Q/output interface and fuse that evidence into receiver hidden states. | Keep native state transfer and both official GDN2 scans. Add one zero-init bounded rank32 producer-native readout edge, +12,288 params, zero state/scan delta. Fixed same-process directional MQAR L1024 control/candidate plus trained edge-off attribution. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `eb983102`. | strict R2 contract and fixed endpoint complete | Balanced `>=max(.55, control+.10)`, both directions and joint improve, fewer errors, swap fraction `-.05`, edge-on `>=edge-off+.03`; cost ceilings fixed. | Mechanism is strongly active but quality collapses: control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.028/.0365/.0195/0`; errors `3301->3888`. Edge-off remains `.028` with 3,888 errors; residual reaches `.499865` of hidden RMS. State-RMS board std is structurally zero after native per-board normalization, so that activation sub-gate is invalid rather than scientific evidence. Warmed step `1.5657x` also fails. Close the full readout/fusion neighborhood; comparison SHA `32d14347...79c9`. |
 | P-GDN3-041 | discarded; completed_rejected | GDN2's state update corrects only the value predicted at `k`; the current output query carries a complementary wrong-binding signal that must enter the same live token transition, not a second key, state, readout, or scan. | Keep native normalized `q/k`, K32xV32 state, vector `b/w`, write direction `k`, native FutureSeed and one scan. Define `lambda=.5*tanh(W_lambda h+b_lambda)`, `x=k+lambda*q`, and run one pinned-official DPLR transition `S'=DS-k[(b*x)^TDS]+k(w*v)^T`. Exact +1,032 params, zero state delta, zero-init parent identity. Fixed matched directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `5f6b757`. | strict contract and fixed two-arm endpoint complete | All activation/stability/integrity/cost checks pass. Control/candidate balanced/future/past/joint=`.36625/.3515/.381/.002` versus `.0145/.0175/.0115/0`; errors `2535->3942`. Lambda RMS `.3273/.3194` and max transition norm `1.0562` prove a strong bounded intervention. Lower swap fraction is broad collapse. Close query-feedback without rescue; no Sudoku transfer. Comparison SHA `b986b559...2536d`. |
 | P-GDN3-040 | discarded; completed_rejected | Native K32 can preserve ordinary retrieval while an exact uncompressed K8xK8 address complement separates pairwise bindings that collide in the linear state. | One coherent K96xV32 state: exact native normalized K32 plus exact K8 outer K8 product K64; native decay/erase block unchanged, bounded lifted product gates, one pinned-official scan, native whole-state FutureSeed. Zero new parameters, 3x state. Fixed matched L1024 D128/L2/H4/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; clean detached pushed SHA `def26f33`. | strict R2 contract and fixed two-arm endpoint complete | Balanced/future/past >=.85, joint>=.60, balanced >=historical and control +.10, fewer errors, swap fraction -.10; elapsed/wall/warmed <3.25x, allocation <2.50x. | Activation and cost pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.01225/.0155/.009/0`; errors `3301->3951`. Product read contributes only `.1728/.2473x` native RMS. Lower swap fraction `.23326->.03189` is broad retrieval collapse. Close exact-product factors/weights/scales/gates/training; no Sudoku transfer. Comparison SHA `f9cd8360...1ed3`. |

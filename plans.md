@@ -75,7 +75,13 @@ R1 `004dd055` exited before model construction because its launcher omitted the
 external Zoology source root from `PYTHONPATH`; zero GPU memory was allocated
 and the generated `abort.json` is non-science evidence. R2 changes only the
 environment wiring and adds an exact Zoology SHA check; all diagnostic gates
-remain frozen.
+remain frozen. R2 then loaded the exact checkpoint but its observer incorrectly
+required the K16 replay to appear in the `chunk_gdn2` hook. Official FLA routes
+that short replay through its recurrent path, so only the producer and receiver
+L1024 scans are visible there. R3 requires those exact two captures and directly
+asserts production top16 equality, same-object producer-to-receiver evidence,
+and finite nonzero replay terminal/seed state. Metrics, cost and branch gates
+are unchanged.
 
 Current update (2026-08-13 CST): `P-FS2-006` is closed without a quality
 verdict at its strict recurrence-parity gate. P-GDN3-007 already falsified a

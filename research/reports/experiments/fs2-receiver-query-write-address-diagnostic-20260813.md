@@ -94,5 +94,19 @@ failure and carries no mechanism evidence.
 R2 fixes only that deterministic environment defect: it adds the fixed
 `/huyang2/double-loop/repos/zoology-official` source root, verifies Zoology SHA
 `1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb`, and invokes the explicit base
-Python. The checkpoint, data, measurements, cost ceiling and branch rule remain
-unchanged. R2 result pending exact pushed source and clean detached execution.
+Python. It loaded the exact checkpoint and reached the first hooked production
+batch, then stopped before any aggregate measurement because the observer
+incorrectly required three `chunk_gdn2` captures. Production uses two L1024
+chunk scans plus one K16 replay; official FLA dispatches that short replay via
+its recurrent path, so the chunk-only address/edit hooks correctly expose two
+records. The generated `abort.json` is a second non-science observer-wiring
+failure.
+
+R3 changes only the observer contract. Every batch must expose exactly the two
+L1024 producer/receiver chunk scans. The recomputed committed-edit top-16 set
+must exactly equal the production chronological selection; producer selected
+evidence and receiver replay input must be the same tensor object and bitwise
+equal; receiver replay terminal/seed RMS and board variation must be finite and
+nonzero. The completed P-FS2-007 strict contract remains the independent proof
+of exactly two main plus one replay official backward paths. The checkpoint,
+data, measurements, cost ceiling and branch rule remain unchanged.

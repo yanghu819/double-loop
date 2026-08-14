@@ -254,6 +254,8 @@ def main() -> None:
     surprise_survival_boards: list[float] = []
     recency_survival_boards: list[float] = []
     logits_bitwise_equal = True
+    replay_wiring_exact = True
+    replay_state_active = True
     predictions_correct = 0
     query_count = 0
     torch.cuda.reset_peak_memory_stats()
@@ -262,21 +264,26 @@ def main() -> None:
         inputs_gpu = inputs.cuda()
         with capture_chunk_addresses() as addresses, capture_committed_edit() as edits:
             logits = model(inputs_gpu)
-        if len(addresses.records) != 3 or len(addresses.transition_records) != 3 or len(edits) != 3:
-            raise RuntimeError(
-                "Expected producer/replay/receiver captures, got "
-                f"{len(addresses.records)} addresses, {len(addresses.transition_records)} transitions, "
-                f"and {len(edits)} edits"
-            )
         lengths = [int(q.shape[1]) for q, _k in addresses.records]
         edit_lengths = [int(edit.shape[1]) for edit in edits]
-        if lengths != [SEQUENCE_LENGTH, EVENT_TAPE_SIZE, SEQUENCE_LENGTH] or edit_lengths != lengths:
-            raise RuntimeError(f"Unexpected scan lengths: addresses={lengths}, edits={edit_lengths}")
+        if (
+            len(addresses.records) != 2
+            or len(addresses.transition_records) != 2
+            or len(edits) != 2
+            or lengths != [SEQUENCE_LENGTH, SEQUENCE_LENGTH]
+            or edit_lengths != lengths
+        ):
+            raise RuntimeError(
+                "Expected the two L1024 chunk scans; the K16 replay uses the official "
+                "short-sequence recurrent path. Got "
+                f"{len(addresses.records)} addresses, {len(addresses.transition_records)} transitions, "
+                f"and {len(edits)} edits with lengths addresses={lengths}, edits={edit_lengths}"
+            )
         if batch_index == 0:
             logits_bitwise_equal = torch.equal(baseline_first_logits, logits)
 
         producer_q, producer_k = addresses.records[0]
-        receiver_q, receiver_k = addresses.records[2]
+        receiver_q, receiver_k = addresses.records[1]
         with torch.autocast(device_type="cuda", enabled=False):
             producer_q, _ = l2norm_fwd(producer_q)
             producer_k, _ = l2norm_fwd(producer_k)
@@ -284,7 +291,48 @@ def main() -> None:
             receiver_k, _ = l2norm_fwd(receiver_k)
         del producer_q
         surprise_gpu = edits[0].float().square().sum(dim=(-1, -2)).sqrt()
-        selected_gpu = torch.argsort(surprise_gpu, dim=1, descending=True, stable=True)[:, :EVENT_TAPE_SIZE]
+        expected_selected_gpu = torch.argsort(
+            surprise_gpu,
+            dim=1,
+            descending=True,
+            stable=True,
+        )[:, :EVENT_TAPE_SIZE].sort(dim=1).values
+        producer_mixer = model.backbone.layers[0].sequence_mixer
+        receiver_mixer = model.backbone.layers[1].sequence_mixer
+        production_selected = producer_mixer.last_selected_indices
+        selected_evidence = producer_mixer.last_selected_evidence
+        replay_input = receiver_mixer.last_replay_input
+        replay_diagnostics = receiver_mixer.last_replay_diagnostics
+        batch_replay_wiring_exact = (
+            production_selected is not None
+            and selected_evidence is not None
+            and replay_input is not None
+            and production_selected.shape == expected_selected_gpu.shape
+            and torch.equal(production_selected, expected_selected_gpu)
+            and selected_evidence.shape[:2] == (inputs.shape[0], EVENT_TAPE_SIZE)
+            and replay_input is selected_evidence
+            and torch.equal(replay_input, selected_evidence)
+        )
+        if not batch_replay_wiring_exact:
+            raise RuntimeError("Production top16 selection or exact producer-to-receiver replay wiring changed")
+        required_replay_metrics = (
+            "replay_terminal_rms",
+            "replay_terminal_board_std",
+            "replay_seed_rms",
+            "replay_seed_abs_max",
+        )
+        batch_replay_state_active = (
+            all(name in replay_diagnostics for name in required_replay_metrics)
+            and all(torch.isfinite(replay_diagnostics[name]).all() for name in required_replay_metrics)
+            and float(replay_diagnostics["replay_terminal_rms"].item()) >= 1e-4
+            and float(replay_diagnostics["replay_terminal_board_std"].item()) > 0.0
+            and float(replay_diagnostics["replay_seed_rms"].item()) >= 1e-4
+        )
+        if not batch_replay_state_active:
+            raise RuntimeError(f"Receiver K16 replay state is inactive: {replay_diagnostics}")
+        replay_wiring_exact = replay_wiring_exact and batch_replay_wiring_exact
+        replay_state_active = replay_state_active and batch_replay_state_active
+        selected_gpu = production_selected
         predictions = logits.argmax(dim=-1).cpu()
 
         batch_events: list[list[dict[str, Any]]] = []
@@ -310,7 +358,7 @@ def main() -> None:
         )
         if batch_index * BATCH_SIZE < STATE_DIAGNOSTIC_EXAMPLES:
             producer_transition = addresses.transition_records[0]
-            receiver_transition = addresses.transition_records[2]
+            receiver_transition = addresses.transition_records[1]
             if not producer_transition["use_qk_l2norm_in_kernel"] or not receiver_transition["use_qk_l2norm_in_kernel"]:
                 raise RuntimeError("The fixed checkpoint no longer uses normalized Q/K in both full scans")
             producer_geometry_records.append(
@@ -482,7 +530,9 @@ def main() -> None:
         "first_batch_logits_bitwise_equal": logits_bitwise_equal,
         "parameter_sha_unchanged": parameter_sha_before == parameter_sha_after,
         "all_parameter_gradients_none": no_gradients,
-        "exactly_three_official_scans_per_forward": True,
+        "exactly_two_instrumented_l1024_chunk_scans_per_forward": True,
+        "production_top16_and_receiver_replay_wiring_exact": replay_wiring_exact,
+        "receiver_k16_replay_state_active": replay_state_active,
         "full_validation_1000_cases": len(cases) == 1000 and len(rows) == 4000,
     }
     cost_checks = {
@@ -508,6 +558,10 @@ def main() -> None:
             "committed_write_token": "value token at recovered write_position+1",
             "producer_basis_score": "per-head receiver normalized Q dot producer normalized committed-write K",
             "receiver_native_score": "per-head receiver normalized Q dot receiver normalized committed-write K",
+            "capture_contract": (
+                "two instrumented L1024 chunk scans; the official K16 short-sequence replay is "
+                "validated by exact production selection/wiring identity and active receiver state"
+            ),
             "logits_modified": False,
             "parameters_added": 0,
         },

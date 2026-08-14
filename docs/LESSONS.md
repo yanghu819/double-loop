@@ -2820,3 +2820,12 @@
 - Unlicensed idea repositories can inform a clean-room equation, but code must
   not be copied and weak unmatched demonstrations must not be treated as
   evidence. P031 used only the mathematical idea from `GDN_decouple_k`.
+- Exact source and process-order restoration did not recover the historical
+  directional-MQAR L1024 score. P-DIAG-CARRIER-002 reaches only `0.10825`
+  balanced after the exact causal-to-FS order, while the same process reaches
+  `0.99525` at L64. The long carrier is optimization-trajectory sensitive, not
+  generally broken.
+- A historical absolute score cannot gate a new architecture once exact
+  reproduction fails. Use a contemporaneous control in the same source,
+  process, GPU task and fixed arm order, and judge a candidate by preregistered
+  relative quality plus absolute usability.

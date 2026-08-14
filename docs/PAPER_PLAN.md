@@ -1732,3 +1732,20 @@ through epoch4 and reaches only `0.02725` at epoch6. Historical K32 is already
 delay learnability under the fixed budget; key-Gram anisotropy is not evidence
 for raw K expansion. P032 closes K48/K96 and training rescue and does not
 authorize Sudoku transfer.
+
+### P-DIAG-CARRIER-002 Historical Carrier Reproduction
+
+The historical directional-MQAR L1024 native FutureSeed score of `0.7475`
+could not be reproduced despite matching source `77e5539`, data hashes,
+initialization hash, pinned FLA/Zoology stack, A100 architecture and original
+single-process order `causal_gdn2 -> future_seed_gdn2`. The exact reproduction
+reaches balanced/future/past/joint only `0.10825/0.0990/0.1175/0` at L1024.
+Its validation curve lacks the historical epoch-4-to-6 jump.
+
+The same process reaches `0.99525/0.9920/0.9985/0.981` at L64, ruling out a
+broken import, data generator or FutureSeed path. The evidence instead exposes
+high sensitivity of long-sequence optimization to runtime trajectory. The
+paper must therefore treat `.7475` as descriptive historical evidence rather
+than an absolute gate. New L1024 mechanisms require a contemporaneous
+same-source, same-process control and a registered relative improvement; no
+architecture claim may mix scores from these runtime conditions.

@@ -71,11 +71,39 @@ accepted as a carrier decision regardless of score and is never rescued.
 
 ## 7. Results
 
-Pending.
+The fixed run completed with status 0 on CUDA index 0, UUID
+`GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`. All source, data, initialization,
+pinned-FLA and Zoology provenance checks passed.
+
+At L1024, the historical-order causal arm reached balanced/future/past/joint
+accuracy `0.015/0.009/0.021/0`. The following native FutureSeed arm reached
+only `0.10825/0.0990/0.1175/0`. Its validation curve remained near chance
+through epoch 3 and rose only to `0.02075/0.03775/0.08375` at epochs 4/6/7,
+ending at `0.10825`. It did not reproduce the historical epoch-4-to-6 jump
+(`0.1965->0.71575`) or endpoint `0.7475`.
+
+The same process reproduced the L64 sanity carrier: native FutureSeed reached
+balanced/future/past/joint `0.99525/0.9920/0.9985/0.981`. This rules out a
+broken model import, dataset or FutureSeed path and localizes the discrepancy
+to the unstable long-sequence optimization trajectory.
+
+The L1024 FutureSeed warmed throughput was `1,349,294.7` tokens/s with
+`1,084,782,080` peak benchmark bytes; training plus validation took
+`101.447` seconds after warmup. No NaN, OOM or fallback occurred.
 
 ## 8. Decision
 
-Pending the one fixed run.
+The preregistered `<=0.40` branch fires. Retire historical L1024 balanced
+accuracy `0.7475` as a non-reproducible absolute architecture gate on the
+current stack. Restoring exact historical source and exact causal-to-FS
+single-process order is insufficient, so process order is not the missing
+explanation.
+
+Future L1024 architecture decisions must use a contemporaneous control in the
+same source, process, GPU task and arm order, plus a relative improvement gate.
+Historical scores remain useful descriptive evidence but cannot pass or fail a
+new candidate. No additional carrier seed, LR, epoch or subprocess-isolation
+run is authorized.
 
 ## 9. Provenance
 
@@ -84,3 +112,11 @@ Pending the one fixed run.
   `/huyang2/double-loop/runs/zoology-gdn2-fs-length1024-20260804T095300Z-77e5539`.
 - Current native reference:
   `/huyang2/double-loop/runs/p-fs2-007-surprise-replay-l1024-r2-20260813T075300Z-dc1dd53`.
+- Reproduction run:
+  `/huyang2/double-loop/runs/p-diag-carrier-002-historical-order-20260814T063454Z-77e5539`.
+- Score SHA256:
+  `f26dd46bef652f8f88136fcd11a2a52b4dcd1f86b07563f8750424263031e255`.
+- Contract SHA256:
+  `9d7f7a664597ec1233386caad1a0f542b978bfc3732055dbc5fd89b53ddb7b0d`.
+- Formal log SHA256:
+  `8d5b069f1bc52ae51b5e64ca48e90346ac81229f5228923f275002d9f34df905`.

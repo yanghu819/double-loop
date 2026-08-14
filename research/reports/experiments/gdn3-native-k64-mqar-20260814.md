@@ -85,6 +85,12 @@ construction and allocated zero GPU memory, so it is retained as a non-science
 orchestration abort. R2 changes only that quoting; mechanism, data, budget and
 all gates remain frozen.
 
+R2 source `f6f9951d` then exited before model construction because its checker
+used the newer NUL-delimited generic Python-tree hash while the frozen GDN2 ops
+hash was defined by the existing undelimited checker. The locked source files
+were unchanged and only a 3 MiB CUDA context was created. R3 aligns the hash
+algorithm with the existing GDN2 contracts; no mechanism or gate changes.
+
 ## 8. Decision
 
 Pending.

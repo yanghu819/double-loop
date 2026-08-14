@@ -29,7 +29,6 @@ from scripts.check_zoology_contractive_dplr import (
     backward_names,
     git_head,
     normalized_uuid,
-    python_tree_hash,
 )
 
 
@@ -50,6 +49,20 @@ HEAD_VALUE_DIM = 32
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _python_tree_hash(path: Path) -> tuple[str, dict[str, str]]:
+    digest = hashlib.sha256()
+    source_hashes: dict[str, str] = {}
+    for source in sorted(path.rglob("*.py")):
+        relative = str(source.relative_to(path))
+        content = source.read_bytes()
+        digest.update(relative.encode())
+        digest.update(content)
+        source_hashes[relative] = hashlib.sha256(content).hexdigest()
+    if not source_hashes:
+        raise RuntimeError(f"No Python sources found under {path}")
+    return digest.hexdigest(), source_hashes
 
 
 def _gradient_rms(tensor: torch.Tensor) -> float:
@@ -123,7 +136,9 @@ def main() -> None:
     gdn2_source_hash = _sha256(gdn2_source)
     if gdn2_source_hash != os.environ["FLA_GDN2_SOURCE_SHA256"]:
         raise RuntimeError(f"Unexpected GDN2 source hash: {gdn2_source_hash}")
-    gdn2_ops_hash, gdn2_ops_sources = python_tree_hash(fla_root / "fla/ops/gdn2")
+    gdn2_ops_hash, gdn2_ops_sources = _python_tree_hash(
+        fla_root / "fla/ops/gdn2"
+    )
     if gdn2_ops_hash != os.environ["FLA_GDN2_OPS_SHA256"]:
         raise RuntimeError(f"Unexpected GDN2 ops tree hash: {gdn2_ops_hash}")
     zoology_root = Path(os.environ["ZOOLOGY_ROOT"]).resolve()

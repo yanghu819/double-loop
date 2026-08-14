@@ -119,4 +119,14 @@ allocation ratios and source/config/checkpoint/score/log hashes.
 
 ## 9. Decision
 
-Pending strict CUDA contract and the single fixed matched endpoint.
+R1 source `09c1aed9` stopped in the strict contract after the full CUDA
+forward, K96 state-dependency path and official backward graph had executed.
+The final gradient audit incorrectly accessed official GDN2 `f_proj` as one
+linear layer, while the pinned implementation exposes a two-linear
+`Sequential`. It raised `AttributeError` before writing `contract.json`.
+`abort.json` records `phase=contract` and `scientific_failure=false`; GPU memory
+and processes cleared. R2 changes only the checker locator from
+`f_proj.weight` to `f_proj[1].weight`. Mechanism, data, prediction, quality,
+cost and kill gates remain byte-for-byte unchanged. No quality result exists.
+
+Pending strict R2 CUDA contract and the single fixed matched endpoint.

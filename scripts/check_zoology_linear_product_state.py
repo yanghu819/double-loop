@@ -363,7 +363,10 @@ def main() -> None:
                 "layer": layer_index,
                 "q": _projection_gradient_blocks(base.q_proj.weight, "q_proj"),
                 "k": _projection_gradient_blocks(base.k_proj.weight, "k_proj"),
-                "decay": _projection_gradient_blocks(base.f_proj.weight, "f_proj"),
+                "decay": _projection_gradient_blocks(
+                    base.f_proj[1].weight,
+                    "f_proj[1]",
+                ),
                 "erase": _projection_gradient_blocks(base.b_proj.weight, "b_proj"),
                 "value": _gradient_abs_max(base.v_proj.weight, "v_proj"),
                 "write": _gradient_abs_max(base.w_proj.weight, "w_proj"),

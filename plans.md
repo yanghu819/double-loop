@@ -14,7 +14,12 @@ repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-040` Linear + Exact Product
 Direct-Sum State is preregistered and being prepared for its strict GPU
-contract. It preserves the native learned K32 read/erase/write block exactly
+contract. R1 source `09c1aed9` reached the final gradient audit after CUDA
+forward/state/backward execution, then stopped because the checker treated
+official GDN2's two-layer `f_proj` as a single `Linear`; `abort.json` records a
+non-science contract failure and GPU resources cleared. R2 changes only the
+checker locator to `f_proj[1].weight`; no mechanism, data or gate changed. The
+candidate preserves the native learned K32 read/erase/write block exactly
 and appends one uncompressed K8xK8 product-address block inside the same
 K96xV32 state. It adds zero parameters and no scan/router/cache/expert; native
 FutureSeed transports the full state. This is distinct from P024, which

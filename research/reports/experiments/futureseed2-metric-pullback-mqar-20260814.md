@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; not yet launched
+- Status: completed; discarded at the registered quality gate
 - First decision field: directional MQAR L1024 wrong-key binding regime
 - Fixed model: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed data/training: 10,000 train and 1,000 validation examples, ten epochs,
@@ -139,7 +139,45 @@ A full pass authorizes one fixed hard-Sudoku transfer using the already frozen
 P034 private-metric parent. A miss closes metric-derived cross-layer transport
 and returns the next decision to a genuinely new live recurrent transition.
 
+The strict CUDA contract and all activation/stability checks pass. Control and
+candidate have exact matched initialization and `665,800` parameters; full
+output, nonzero incoming state and all non-metric gradients are bit-exact at
+identity. The opened pullback has condition `1.34482`, relative residual RMS
+`0.04994`, transported/producer RMS at most `1.02835`, and finite head/board
+variation. Both official GDN2 backward paths remain.
+
+The candidate produces a real but insufficient quality signal. Control versus
+candidate balanced/future/past/joint accuracy is
+`.1385/.1485/.1285/0` versus `.17825/.1820/.1745/.002`; total query errors
+fall `3446->3287`. It misses the registered balanced, directional and joint
+floors. It also moves errors in the wrong mechanistic direction: wrong-key
+valid-value swaps rise `602->748`, and their fraction among errors rises
+`.174695->.227563`. Thus linear private-metric mismatch explains a small part
+of state readability but not binding closure.
+
+Cost is not the rejection cause. Candidate/control elapsed, post-warm wall,
+warmed-step and peak-allocation ratios are
+`.94472/.93970/1.12688/1.00063`; warmed throughput is
+`802.61` versus `904.44` examples/s. Close pullback direction, transpose,
+inverse, scale, metric and training rescue. No Sudoku transfer is authorized.
+
 ## 9. Commands And Artifacts
 
-The exact launcher, pushed SHA, GPU identity, contract, run directory, hashes,
-metrics and decision will be filled before launch and after completion.
+- source: pushed commit `246afec54cc0a6f19f43a16e2e50b67de2f82bc7`,
+  clean detached tree `d34d174297a0ccd6ff72ed7969df52e7fae04470`;
+- GPU: A100-SXM4-40GB index0,
+  `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`;
+- run: `/huyang2/double-loop/runs/p-fs2-009-metric-pullback-l1024-20260814T144043Z-246afec`;
+- contract/comparison SHA256:
+  `6f9ed33a08b0b380395d23b6f978cf00ce0fe7745e1ba0a20d338716a8fa25c6` /
+  `e8b35796523483216e049186074c3d6d405db85caad0f4d5de763b95ab4fceeb`;
+- control/candidate score SHA256:
+  `2692d6b946385b3fe354602cb6cc7a5eeb42aaef349dc37936994adfcee4bc63` /
+  `24b359790326d3b49ab9f3bfd406a8299ed69c0226da500ca2419af340915f5a`;
+- control/candidate checkpoint SHA256:
+  `a5ce6480094c97580c601a42ea9e391c9191bfb4d5f71d248a9534423b1294c9` /
+  `bad2b86cc6eb4d80f8a00603331f9e818303dc46b2880519f48363dc5a67f329`;
+- formal log/source snapshot/artifact manifest SHA256:
+  `2cbe2abacad62df3e8eaaf5f6e04a5eabbd7a9dd6cd0d745d1018ecf73b7c8e8` /
+  `dfbb78ea984c97dde4e89c6dd05b9d257a98ba05cc0866ed5aa1d6b947adcab4` /
+  `1febc01dd33d587985c903dec5e2ab3f3424f78a1ace56148b8f54d8dff97071`.

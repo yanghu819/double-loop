@@ -1,5 +1,19 @@
 # Lessons
 
+## 2026-08-14: Better state readability can worsen key binding
+
+- P-FS2-009's analytic `C_r^-1 C_p` pullback is a clean causal intervention:
+  zero new parameters/state/scans, exact parent identity and all cost gates.
+- It improves balanced accuracy `.1385->.17825` and lowers errors
+  `3446->3287`, proving that private metric mismatch matters modestly.
+- The same candidate raises wrong-key valid-value swaps `602->748` and their
+  error fraction `.17470->.22756`; joint exact remains `.002`.
+- Do not equate a lower average retrieval error with better bindings. Require
+  absolute joint closure and an improved wrong-key denominator together.
+- Close transpose, inverse, interpolation, scale and metric rescues. A next
+  FutureSeed/GDN3 mechanism must partition or update live memory so colliding
+  bindings remain distinguishable, not merely rotate inherited state.
+
 ## 2026-08-14: Relative carrier replication is not cross-task transfer
 
 - P033's contemporaneous control validates P020's per-layer Log-SPD relative

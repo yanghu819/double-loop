@@ -13,23 +13,19 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-14 CST): `P-FS2-009` Metric-Pullback FutureSeed is
-approved for one directional-MQAR L1024 decision. P020's independently learned
-private Log-SPD metrics produce the only large same-runtime address gain
-(`+0.30875` balanced), while P033 proves that hard-sharing one metric across
-layers is harmful. The candidate keeps those private metrics and analytically
-pulls the producer terminal state into the receiver read coordinates with
-`B=C_receiver^-1 C_producer` before the unchanged native FutureSeed RMS/gate.
-This is explicitly a receiver-read pullback, not an exact Q/K basis covariance
-claim: tokenwise L2 normalization and different layer projections remain. It
-adds zero parameters, state or scans and is identity when both metrics are
-identity. Run one same-process private-Log-SPD control then one pullback arm at
-fixed D128/L2/H4/K32/V32, 10 epochs, batch32, seed123. Require active bounded
-private metrics and pullback, candidate balanced at least
-`max(.55, control+.10)`, each direction `+0.07`, joint at least
-`max(.08, control+.04)`, fewer
-errors, swap fraction `-.05`, elapsed/wall/warmed `<1.30x`, allocation
-`<1.10x`. Any miss closes metric-derived state transport without direction,
-transpose, inverse, scale, metric or training rescue.
+complete and discarded. Its strict contract proves exact identity for full
+outputs, terminal states, nonzero incoming state and all parent gradients;
+two official GDN2 backward paths remain, while the zero-parameter pullback is
+active, finite and equivariant. Candidate versus private-Log-SPD control raises
+balanced/future/past/joint from `.1385/.1485/.1285/0` to
+`.17825/.1820/.1745/.002` and reduces errors `3446->3287`, but misses every
+registered absolute and relative quality floor. More importantly, wrong-key
+valid-value swaps rise `602->748` and their error fraction
+`.17470->.22756`. All cost gates pass (`.945/.940/1.127/1.001x` for
+elapsed/wall/warmed/allocation). Metric pullback therefore improves some state
+readability without resolving address binding; close direction, transpose,
+inverse, scale, metric and training rescue. The next successor must target
+collision/state organization rather than another cross-layer metric map.
 
 Current update (2026-08-14 CST): `P-GDN3-037` completed and is discarded. Its
 strict contract proves byte-identical native initialization, equal `661,584`
@@ -1188,6 +1184,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-FS2-009 | discarded; completed_rejected | Independently useful private Log-SPD metrics create a known linear mismatch when native FutureSeed passes the producer KxV state directly to the receiver. Removing only that metric component may improve receiver binding without hard-sharing geometry. | Directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123. Same-process private-Log-SPD native-FS control then candidate. Candidate applies the zero-parameter receiver-read pullback `S'=C_r^-1 C_p S` before the unchanged native FS RMS/gate; zero state/scan delta. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `246afec`. | strict contract and fixed two-arm endpoint complete | Require active bounded private metrics/pullback; balanced `>=max(.55, control+.10)`, future/past each `+.07`, joint `>=max(.08, control+.04)`, fewer errors and swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.10x`. | Contract/activation/cost pass. Control/candidate balanced/future/past/joint=`.1385/.1485/.1285/0` versus `.17825/.182/.1745/.002`; errors fall `3446->3287`, but swaps rise `602->748` and fraction `.17470->.22756`. Close metric-derived state transport without rescue; comparison SHA `e8b35796...fceeb`. |
 | P-GDN3-037 | discarded; completed_rejected | GDN2 keeps one key but applies a K-coordinate erase response independently of its V-gated write target. A single exact committed residual may preserve coherent binding better than separate erase/write modulation. | From-scratch directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed. Keep byte-identical GDN2 Q/K/V/f/b/w/g/o projections, K decay, state and one coherent key. Define `u=w*v`, `beta=mean_K(sigmoid(b_logits))`, and run one pinned-official DPLR transition `S'=DS+beta*k(u-k^TDS)^T`. Same-process native control then candidate, 10ep/batch32/seed123; equal parameters/state, one scan. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `f7009fc`. | strict contract and fixed two-arm endpoint complete | Integrity, activation, stability and cost all pass. Control/candidate balanced=`.36625/.01525`, future=`.3515/.0195`, past=`.381/.011`, joint=`.002/0`, errors=`2535/3939`. Residual RMS is about`1.07` and spectral norm stays below one; lower conditional swaps are broad retrieval collapse. Close scalar committed residual without beta/target/scale/decay/training rescue; no Sudoku transfer. Comparison SHA `e37913a0...7084c`. |
 | P-GDN3-036 | discarded; completed_rejected | P031 did not disprove erase specialization itself; it disproved unconstrained specialization because erase stopped targeting rows populated by the coherent write/read key. A fixed tangent-space ownership invariant may preserve useful address binding while adding a bounded erase-specific direction. | Directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed. Add the same tied raw erase projection+Triton conv as P031, but project it onto the write-key tangent space and cap the correction at fixed `rho=.5`: `k_e=(k+.5P_k^perp r)/sqrt(1+||.5P_k^perp r||^2)`. One pinned-official DPLR scan, exact +33,792 parameters, zero state/scan delta. Same-process native control then candidate, 10 epochs/batch32/seed123. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `4b01640c`. | strict R2 contract and fixed two-arm endpoint complete | Exact tied identity and all activation/stability/cost gates pass. Control/candidate balanced=`.36025/.01375`, future=`.3675/.0145`, past=`.353/.013`, joint=`.014/0`, errors=`2559/3945`; active correction RMS is about`.46` while mean key cosine remains about`.91`. Lower swap fraction is broad retrieval collapse. Close the complete decoupled-key family without rho/projection/angle/init/regularizer/training rescue; no Sudoku transfer. Comparison SHA `0b4a7d61...036b`. |
 | P-GDN3-031 | discarded; completed_rejected | The working GDN2 manifold may need one address for erasing obsolete content and another for writing the replacement. P030 did not isolate this because it removed GDN2's channel-wise erase gate and began from a random independent erase direction. | Clean-room direct decoupling: preserve Q/V/g/b/w/output, K32xV32 state, native FutureSeed and one scan; add one erase-key projection+Triton short-conv per layer, copy exactly from write key, then run pinned official DPLR as `DS-k_e[(b*k_e)^TDS]+k_w[(w*v)^T]`. Fixed L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; 695,376 params (+33,792), zero state/scan delta. | A100-SXM4-80GB CUDA index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; clean detached pushed SHA `004dd055`. | strict contract plus one fixed 10-epoch candidate complete | Exact parent hash/tied recurrence parity; both key branches active and separated; sampled spectral<=`1.25`, bounded state. Balanced/future/past>=`0.85`, joint>=`0.60`, balanced>=historical/current+`0.10`, swaps<=both-`0.10`, fewer errors; fit/wall/warm<=`1.75x`, allocation<=`1.50x`. | Contract, activation, stability and cost pass. Balanced/future/past/joint=`0.011/0.008/0.014/0`; errors `2775->3956`. Layer key cosines collapse to `0.0483/0.0600`; predictions concentrate on tokens165/177. The lower conditional swap fraction is a retrieval-collapse artifact. No Sudoku transfer or rescue; decision SHA256 `1b631993...b1e538`. |

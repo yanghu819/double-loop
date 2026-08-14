@@ -1,5 +1,22 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-14 Metric Pullback Improves Readability, Not Binding
+
+P-FS2-009 keeps independently learned per-layer Log-SPD metrics and applies
+the analytic receiver-read pullback `C_r^-1 C_p S` only to the native
+FutureSeed edge. It is zero-parameter, bit-exact at identity, bounded and
+cheap. Balanced accuracy improves `.1385->.17825` and total errors fall
+`3446->3287`, so private-metric mismatch is a causal but small component of
+cross-layer state readability.
+
+The decisive binding result is negative. Joint exact reaches only `.002`, and
+wrong-key valid-value swaps increase `602->748` (`.17470->.22756` among
+errors). A static metric-derived coordinate map cannot reconcile tokenwise
+normalized, layer-specific projections well enough to preserve bindings. The
+paper may report the low-cost partial gain, but must not claim address closure
+or transfer it to Sudoku. Close metric direction/scale variants and require
+the next mechanism to alter collision-resistant live state organization.
+
 ## 2026-08-14 Receiver-Address Diagnostic Boundary
 
 The frozen surprise-replay checkpoint retains `2044/2047` wrong-key valid-value

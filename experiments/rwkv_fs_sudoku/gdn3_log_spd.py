@@ -72,34 +72,35 @@ class BoundedLogSPDAddressMetric(nn.Module):
 
     @torch.no_grad()
     def diagnostics(self, storage_dtype: torch.dtype) -> Dict[str, torch.Tensor]:
-        factor = self.factor()
-        identity = torch.eye(
-            self.head_dim,
-            device=factor.device,
-            dtype=factor.dtype,
-        )
-        applied_factor = (
-            torch.eye(
+        with torch.autocast(device_type=self.raw.device.type, enabled=False):
+            factor = self.factor()
+            identity = torch.eye(
                 self.head_dim,
                 device=factor.device,
-                dtype=storage_dtype,
+                dtype=factor.dtype,
             )
-            + (factor - identity).to(dtype=storage_dtype)
-        ).float()
-        metric = applied_factor.transpose(-1, -2) @ applied_factor
-        eigenvalues = torch.linalg.eigvalsh(metric)
-        return {
-            "gdn3_log_spd_enabled": factor.new_ones(()),
-            "gdn3_log_spd_raw_rms": self.raw.float().square().mean().sqrt(),
-            "gdn3_log_spd_metric_delta_fro": (
-                metric - identity
-            ).square().sum(dim=(-1, -2)).sqrt().mean(),
-            "gdn3_log_spd_eigenvalue_min": eigenvalues.amin(),
-            "gdn3_log_spd_eigenvalue_max": eigenvalues.amax(),
-            "gdn3_log_spd_condition_max": (
-                eigenvalues[..., -1] / eigenvalues[..., 0]
-            ).amax(),
-            "gdn3_log_spd_logdet_abs_max": torch.linalg.slogdet(
-                metric
-            ).logabsdet.abs().amax(),
-        }
+            applied_factor = (
+                torch.eye(
+                    self.head_dim,
+                    device=factor.device,
+                    dtype=storage_dtype,
+                )
+                + (factor - identity).to(dtype=storage_dtype)
+            ).float()
+            metric = applied_factor.transpose(-1, -2) @ applied_factor
+            eigenvalues = torch.linalg.eigvalsh(metric)
+            return {
+                "gdn3_log_spd_enabled": factor.new_ones(()),
+                "gdn3_log_spd_raw_rms": self.raw.float().square().mean().sqrt(),
+                "gdn3_log_spd_metric_delta_fro": (
+                    metric - identity
+                ).square().sum(dim=(-1, -2)).sqrt().mean(),
+                "gdn3_log_spd_eigenvalue_min": eigenvalues.amin(),
+                "gdn3_log_spd_eigenvalue_max": eigenvalues.amax(),
+                "gdn3_log_spd_condition_max": (
+                    eigenvalues[..., -1] / eigenvalues[..., 0]
+                ).amax(),
+                "gdn3_log_spd_logdet_abs_max": torch.linalg.slogdet(
+                    metric
+                ).logabsdet.abs().amax(),
+            }

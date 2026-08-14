@@ -33,7 +33,11 @@ GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 [[ "$GIT_SHA" == "$EXPECTED_SOURCE_SHA" ]]
 [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]
 [[ "$(git -C "$REPO_ROOT" remote get-url origin)" == "https://github.com/yanghu819/double-loop.git" ]]
-REMOTE_SHA="$(timeout 30 git -C "$REPO_ROOT" ls-remote --refs origin "$SOURCE_REMOTE_REF" | awk '{print $1}')"
+REMOTE_SHA="$(
+  curl -fsSL --connect-timeout 10 --max-time 30 \
+    "https://api.github.com/repos/yanghu819/double-loop/git/ref/${SOURCE_REMOTE_REF#refs/}" \
+    | "$PYTHON_BIN" -c 'import json,sys; print(json.load(sys.stdin)["object"]["sha"])'
+)"
 [[ "$REMOTE_SHA" == "$GIT_SHA" ]]
 
 LOCK_DIR="$PERSIST_ROOT/artifacts/locks"
@@ -96,10 +100,10 @@ printf '%s\n' "$REMOTE_SHA" > "$RUN_DIR/github_readback_sha.txt"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/started_at.txt"
 nvidia-smi --query-gpu=index,name,uuid,utilization.gpu,memory.used,memory.total \
   --format=csv,noheader > "$RUN_DIR/gpu_before.txt"
-git -C "$REPO_ROOT" ls-files -z -- . \
-  ':(exclude).cache/**' ':(exclude).venv/**' ':(exclude)artifacts/**' \
-  ':(exclude)models/**' ':(exclude)repos/**' ':(exclude)runs/**' \
-  | tar --null -czf "$RUN_DIR/source_snapshot.tar.gz" -C "$REPO_ROOT" --files-from -
+git -C "$REPO_ROOT" archive \
+  --format=tar.gz \
+  --output="$RUN_DIR/source_snapshot.tar.gz" \
+  HEAD
 
 PHASE=contract
 set +e

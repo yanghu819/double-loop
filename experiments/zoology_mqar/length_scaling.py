@@ -64,6 +64,7 @@ GDN2_ARMS = (
     "future_seed_raven_address_gdn2",
     "future_seed_linear_product_state_gdn2",
     "future_seed_query_delta_gdn2",
+    "future_seed_qk_coherence_gdn2",
     "future_seed_producer_readout_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
@@ -227,6 +228,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.query_delta_futureseed."
                 "ZoologyQueryDeltaFutureSeedMixer"
+            )
+        elif arm == "future_seed_qk_coherence_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.qk_coherence_futureseed."
+                "ZoologyQKCoherenceFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -625,6 +631,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_qk_coherence_gdn2":
+            from experiments.zoology_mqar.qk_coherence_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         elif arm == "future_seed_producer_readout_gdn2":
             from experiments.zoology_mqar.producer_readout_futureseed import (
                 load_matched_parent_state,
@@ -721,6 +733,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_query_delta_gdn2":
         from experiments.zoology_mqar.query_delta_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_qk_coherence_gdn2":
+        from experiments.zoology_mqar.qk_coherence_futureseed import (
             parent_parameter_hash,
         )
 
@@ -991,6 +1009,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    qk_coherence = None
+    if arm == "future_seed_qk_coherence_gdn2":
+        from experiments.zoology_mqar.qk_coherence_futureseed import (
+            qk_coherence_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        qk_coherence = qk_coherence_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     producer_readout = None
     producer_readout_edge_off = None
     producer_readout_edge_off_cases = None
@@ -1088,6 +1119,8 @@ def run_arm(
         score["linear_product_state"] = linear_product_state
     if query_delta is not None:
         score["query_delta"] = query_delta
+    if qk_coherence is not None:
+        score["qk_coherence"] = qk_coherence
     if producer_readout is not None:
         score["producer_readout"] = producer_readout
         score["producer_readout_edge_off_metrics"] = producer_readout_edge_off

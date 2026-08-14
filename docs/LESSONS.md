@@ -1,5 +1,24 @@
 # Lessons
 
+## 2026-08-14: Relative carrier replication is not cross-task transfer
+
+- P033's contemporaneous control validates P020's per-layer Log-SPD relative
+  MQAR gain, but P034 shows that a credible carrier effect can still fail on a
+  different closure task.
+- All 12 Sudoku metrics activate with bounded eigenvalues, and hardest-range
+  blank accuracy improves `+0.005769`; hard exact remains unchanged and mixed
+  exact regresses. Activation plus partial-cell improvement is not board-level
+  closure.
+- Same-board loop3-to5 correction improves on 51-55 and 61-64 but weakens on
+  56-60. Require the preregistered all-range criterion rather than selecting
+  the favorable difficulty band after the fact.
+- Small parameter/state overhead does not imply cheap execution. Repeated
+  per-layer matrix exponentials reduce throughput `15.497->9.337` boards/s
+  despite only +50,592 parameters and +3.99% allocated memory.
+- Close static metric scale, rank and sharing variants on this Sudoku parent.
+  The next intervention must address a different causal boundary rather than
+  tuning an active mechanism that already missed exact closure.
+
 ## 2026-08-14: More coherent address rows can reduce swaps while worsening retrieval
 
 - Native K64/V32 passes the unmodified official-GDN2 contract and halves no

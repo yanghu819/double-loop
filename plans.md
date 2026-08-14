@@ -12,20 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-14 CST): `P-GDN3-034` is approved pending its strict
-CUDA contract. P033's contemporaneous native control (`0.17325`) reproduces
-P020's control (`0.1735`), while P020's independent per-layer bounded Log-SPD
-candidate reached `0.48225`; the positive relative signal is therefore no
-longer attributable to the retired historical carrier. P034 transfers that
-exact mechanism, without sharing or retuning, to the frozen Sudoku step3000
-parent. It adds 50,592 parameters and no state/scan, then runs one candidate-
-only exact continuation to step3100 against the existing frozen control.
-Primary quality is hard51-64 macro loop5 exact `+0.02` with each range blank
-regression at most `.01`; alternate quality is mixed exact `+0.03`, no 61-64
-regression and stronger same-board loop3->5 correction. All 12 metrics must
-activate and remain bounded; elapsed/warmed overhead must stay below 25% and
-allocation below 10%. Any miss closes the transfer without metric/scale/seed/
-LR/loss/batch/width/depth/duration rescue.
+Current update (2026-08-14 CST): `P-GDN3-034` completed status0 and is
+discarded. The unchanged per-layer bounded Log-SPD mechanism passes the strict
+official-FLA contract, exact step3001 migration probe, and all activation and
+geometry gates on the frozen Sudoku parent. At step3100 all 12 metrics are
+active (`raw RMS=0.01554`, metric delta `0.2590`, eigenvalues
+`[0.7413,1.4189]`), but hard51-64 macro loop5 exact remains `0.000651`, mixed
+exact regresses `0.025391->0.023438`, and 56-60 same-board loop3->5 correction
+weakens. Official 51-55/56-60/61-64 blank deltas are
+`+0.000644/-0.002265/+0.005769`. Raw continuation throughput falls
+`15.497->9.337` effective boards/s (`+65.98%` elapsed), while allocation rises
+only `+3.99%`. Both registered quality routes and the elapsed gate fail. This
+closes the per-layer Sudoku transfer and all nearby metric scale/rank/share or
+training rescues. Comparison:
+`/huyang2/double-loop/runs/p-gdn3-034-comparison-20260814T093835Z-0ee1aac`.
 
 Current update (2026-08-14 CST): `P-GDN3-033` completed status0 and is
 rejected. Its shared 2,108-parameter metric passes exact parent identity,
@@ -432,28 +432,18 @@ is V-axis persistent lifetime control; any future revisit requires a new,
 intrinsically bounded chunk-local state parameterization, not this global
 inverse frame.
 
-Previous update (2026-08-07 CST): `P-FS3-004` Orthogonal State-Basis Transport
-has completed its contract and exact step3001 production gates, then stopped
-before any formal science continuation. Final pushed SHA `0335534` preserves
-the registered mechanism: per-edge/per-head Cayley K/V transport, exactly
-87,296 parameters, and no recurrent-state, token, scan or core delta. Strict
-R3 passed on the only visible GPU1 with 12 official GDN2/backward paths,
-bit-exact zero-init output/state identity, all 11x8 direct K/V gradients,
-opened terminal-state RMS ratio `1.003604`, and FP32 norm/orthogonality errors
-`1.79e-7/1.13e-6`; contract log SHA256 is `3122811b...7eb`.
-
-The corrected exact-resume step3001 probe also exited status0. At loop5 the
-minimum edge K rotation, V rotation and transported-state residual relative
-RMS are `0.005694/0.005998/0.014258`, all well above the `1e-4` activation
-floor. Residual board/head std is `0.000275/0.002256`; FP32/storage norm error
-is `1.49e-6` and orthogonality error is `2.21e-6`, all inside the fixed
-stability gates. Metrics/checkpoint SHA256 are `0bd4e7fa...8c21` and
-`c38607da...e4e8`. The probe used only eight h53/eight official51-55 boards
-after one resumed step, so its exact/blank values are migration diagnostics,
-not a benchmark result. No hard51-64 matched quality or cost gate has been run,
-and no leaderboard claim is permitted. The previously preregistered 100-step
-continuation was deliberately not launched; P-FS3-004 is closed at the
-activation-evidence boundary pending a fresh explicit research decision.
+Previous update (2026-08-12 CST): `P-FS3-004` Orthogonal State-Basis Transport
+completed its previously registered formal matched continuation and is
+discarded. Formal pushed SHA `8d8db7b` retains the same per-edge/per-head Cayley
+K/V transport, exactly 87,296 parameters, and no recurrent-state, token, scan
+or core delta. All 11 routes remain active and stable, but hard51-64 macro and
+mixed loop5 exact are unchanged at `0.000651/0.025391`; 51-55 and 56-60 blank
+regress `0.001110/0.002883`, and late correction weakens on 56-64. Throughput
+falls `15.497->10.767` boards/s, for `+43.94%` elapsed against the registered
+35% ceiling; allocation rises `+3.49%`. The earlier eight-board step3001 probe
+remains migration evidence only. Close basis transport without axis, angle,
+sharing, normalization or training rescue. Comparison:
+`/huyang2/double-loop/runs/p-fs3-004-comparison-20260811T170400Z-8d8db7b`.
 
 Previous update (2026-08-07 CST): `P-GDN3-014` Coupled Address-Row Expansion
 is discarded at its strict CUDA contract before a production probe. Exact
@@ -1146,7 +1136,7 @@ wall-time comparison, rescue, or second seed.
 | P-GDN3-032 | discarded; completed_rejected | P031 shows unconstrained erase/write key separation destroys retrieval; the zero-parameter diagnostic finds severe K32 key-Gram collapse while rejecting cache, survival and receiver-reprojection repairs. P-CAUSAL-014 rejected V-only expansion, leaving native main-state address-row capacity untested from scratch. | One candidate-only directional-MQAR L1024 run: unmodified pinned official GDN2 D128/L2/H4/K64/V32, native FutureSeed, 10 epochs, batch32, seed123. One coherent normalized erase/write/read key, one scan, 770,384 parameters and 8,192 state values/layer; reuse frozen historical and runtime K32 controls. | A100-SXM4-80GB index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; clean detached pushed SHA `daff830a`. | strict CUDA contract and one fixed10-epoch candidate complete | Contract and cost pass. Balanced/future/past/joint=`0.0455/0.0445/0.0465/0`; errors `2775->3818`. Wrong-key swaps `1271->294` and fraction `0.458018->0.077004`, but this is broader retrieval failure. Fit/wall/warmed/allocation=`1.345/1.345/1.699/1.354x`. | Reject native K-axis expansion; no K48/K96/state/head/training or Sudoku rescue. Decision SHA256 `c6153f3b...294b5`. |
 | P-DIAG-CARRIER-002 | completed; historical absolute gate retired | Historical and current native K32 runs have identical config, data and initialization hashes but balanced accuracy `0.7475` versus `0.30625`; exact historical process order was the last unresolved protocol variable. | Execute exact pushed source `77e5539` unchanged with its original single-process order causal GDN2 -> FutureSeed GDN2 at L1024, 10 epochs, batch32, seed123, pinned FLA/Zoology. No architecture changes and no repeated seed. | A100-SXM4-80GB index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; exact historical source and hashes. | one exact reproduction complete, status0 | FutureSeed balanced `>=0.70` freezes historical ordered carrier; `<=0.40` retires `.7475`; intermediate blocks L1024. | L1024 causal/FS balanced=`0.015/0.10825`, while L64 FS=`0.99525`. Registered low branch fires: exact source/order does not reproduce `.7475`. Future decisions require contemporaneous same-process controls; no carrier rescue. Score SHA `f26dd46b...1e255`. |
 | P-GDN3-033 | discarded; completed_rejected | P031/P032 reject independent keys and raw K capacity; P020's bounded metric is the only positive address signal but its per-layer geometries can drift while FutureSeed transports state across layers. | Directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed. Tie one trace-free bounded Log-SPD Q/K metric across both layers; exact +2,108 parameters, zero state/scan. Fixed same-process native control then candidate, 10 epochs/batch32/seed123. | A100-SXM4-80GB index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; clean detached pushed SHA `f357af4`. | strict CUDA contract and fixed two-arm endpoint complete | Shared object/gradient and bounded active metric; balanced `>=max(.50, control+.15)`, future/past `>=control+.10`, joint `>=max(.10, control+.10)`, fewer errors, swap fraction `>=.10` lower; elapsed/wall/warm `<1.15x`, allocation `<1.10x`. | Candidate/control balanced=`.125/.17325`, errors=`3500/3307`, swap fraction=`.167714/.232537`; all quality gates and warmed cost (`1.2738x`) fail. Close sharing without rescue. The stable control revalidates P020's relative signal. Score SHA `b7e16626...0d30`. |
-| P-GDN3-034 | approved; pending_contract | P033's same-process control reproduces P020's control, validating P020's per-layer bounded Log-SPD relative gain; P033 separately proves cross-layer sharing is harmful. | Transfer P020 unchanged to frozen Sudoku: each of 12 position-QK layers gets its own H8/K32 symmetric trace-free bounded Log-SPD factor before the unchanged pinned official GDN2 chunk. Exact +50,592 parameters, zero state/scan. Candidate-only exact step3000->3100, frozen control reused. | First available approved single A100 index0 only; pushed clean detached SHA required. | strict CUDA contract, exact step3001 probe, then one 100-step formal candidate | All 12 independent metrics active with delta `>=1e-4`, eigenvalues in `[.5,2]`, finite logdet; primary hard macro exact `+0.02` with each blank delta `>=-.01`, or alternate mixed `+0.03`, 61-64 non-regressive and stronger same-board loop3->5 correction; elapsed/warmed `<1.25x`, allocation `<1.10x`. | Any integrity, activation, quality or cost miss closes per-layer Sudoku transfer. No metric scale/rank/share/seed/LR/loss/batch/width/depth/duration rescue. |
+| P-GDN3-034 | discarded; completed_rejected | P033's same-process control reproduces P020's control, validating P020's per-layer bounded Log-SPD relative gain; P033 separately proves cross-layer sharing is harmful. | Transfer P020 unchanged to frozen Sudoku: each of 12 position-QK layers gets its own H8/K32 symmetric trace-free bounded Log-SPD factor before the unchanged pinned official GDN2 chunk. Exact +50,592 parameters, zero state/scan. Candidate-only exact step3000->3100, frozen control reused. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; clean detached pushed SHA `0ee1aac`. | strict R6 CUDA contract, exact step3001 probe and one 100-step formal candidate complete | All 12 independent metrics active with delta `>=1e-4`, eigenvalues in `[.5,2]`, finite logdet; primary hard macro exact `+0.02` with each blank delta `>=-.01`, or alternate mixed `+0.03`, 61-64 non-regressive and stronger same-board loop3->5 correction; elapsed/warmed `<1.25x`, allocation `<1.10x`. | Activation/geometry pass, but hard macro exact delta is `0`, mixed delta `-0.001953`, and 56-60 late correction weakens. Official blank deltas are `+0.000644/-0.002265/+0.005769`; elapsed/allocation overhead `+65.98/+3.99%`. Discard without metric or training rescue; comparison `/huyang2/double-loop/runs/p-gdn3-034-comparison-20260814T093835Z-0ee1aac`. |
 | P-GDN3-027 | discarded; production cost gate | P020 proves learned full-matrix address geometry matters but leaves `94.16%` wrong-key valid-value swaps; P021/P025/P026 show that a second write, separate correction bank, or static online wrapper does not fix the main live state's interference. A receiver-local online inverse-information matrix may precondition each committed rank-one edit so it occupies underused address directions without changing the token's intended erase/write residual. | Directional MQAR L1024 from scratch, D128/L2/H4/K32/V32 native FutureSeed. Keep official GDN2 projections and short-conv; replace only the candidate recurrence with FP32 chunk-compiled OIG-PD. `B=A P A^T+(I-A^2)`, `u=Bk`, `P'=B-uu^T/(1+k^T u)`, and constrain `a_raw` so `z^T a_raw=z^T k`; use `a=k+tanh(m)(a_raw-k)` in `S'=AS+a e^T`. P starts identity per receiving scan and is not passed by FutureSeed. Run one same-runtime official control then one candidate, both fixed 10 epochs/batch32/seed123. | A100-SXM4-80GB index0 UUID `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`; clean detached pushed SHA `37fe529b`. | contract and control complete; candidate stopped at epoch0 35% | Balanced `>=0.60`, `>=control+0.20`, `>=P020+0.10`; future/past `>=0.58`, joint `>=0.15`, swaps `<=0.841574`; 2 layers/8 heads active, mix `>=1e-3`, nontrivial bounded P and write-direction change, constraint/symmetry/eigenvalue checks; warmed elapsed `<2.5x`, allocation `<1.8x`. | Strict contract passes. Control balanced/future/past/joint=`0.33525/0.3410/0.3295/0.0030`. Candidate post-compile median/min step=`1.73/1.57s`; conservative control=`0.03834s`, so observed lower-bound cost ratio=`40.95x` fails `<2.5x`. Exact PGIDs stopped, abort archived, quality verdict `not_reached`. Close dense OIG without rescue. |
 | P-LOOP-003 | completed; rejected | P-LOOP-002 failed because one shared FS gate value, not merely its aggregate gradient, may alias incompatible opening and refinement roles. | Zero-parameter receiver-edge cotangent audit on three fixed official B8 ranges. Capture exactly 165 injected states, reconstruct direct gate gradients, and measure opening/continuation cosine, magnitude-weighted conflict/overlap, virtual phase leverage, leave-one-board stability, cross-board/range consistency and active edges. No logits, parameter, optimizer or checkpoint change. | A100-SXM4-80GB index0 UUID `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`; clean detached pushed SHA `82c48479`. | 601.74s; 3517.83 MiB peak allocation | Admit one phase-gate candidate only if >=2 ranges pass cosine<=-0.25, weighted conflict>=0.60, overlap>=0.20, phase/shared>=0.25, absolute energy>=0.15, board aggregation>=0.50, leave-one-out>=0.75, >=8 active edges, >=6 shared edges, cross-range cosine>=0.25 and genuine correction. | `0/3` ranges qualify. 51-55 has strong aggregate opposition but only edges7/8 active, board aggregation `0.4698`, maximum board share `0.7911`, and leave-one-out `0.4060`. 56-60/61-64 aggregate cosines are `+0.9580/+0.8898`, with zero/one active edge; 56-60 correction is below floor. Integrity passes and parameter SHA is unchanged. Reject P-LOOP-004 and close scalar phase-credit without rescue. |
 | P-LOOP-002 | discarded | P-LOOP-001 isolates loop1 opposition to loops3-5 inside native FutureSeed gates, while continuation loops are nearly collinear; removing only the opening component that points against continuation may preserve opening and improve late closure. | Training-only, zero-parameter projection on exactly 11 receiving gate tensors/88 scalars. Recover `C=(5B-O)/4`; when `O dot C<0`, replace `O` by its half-space projection and preserve the canonical FS norm after canonical global clip. Forward, inference, losses and all non-FS clipped gradients stay unchanged. Strict contract, step3001 probe, then sequential same-source canonical/candidate 100-step continuation. | One A100-SXM4-80GB, CUDA index0 UUID `GPU-05f3e3f9-3f6f-82e9-1107-6e86672e77b5`; clean detached pushed SHA `15657cc`. | completed status0; candidate/control `971.40/1023.02s` | Activation >=`10%`, mean removed opening fraction >=`5%`, post-dot >=`-1e-6`, FS/global norm relative error `<1e-5/2e-5`. Primary hard51-64 macro loop5 exact `+0.02`, every range blank regression <=`0.01`; alternate mixed `+0.03`, 61-64 non-regressive and late correction stronger. Elapsed/alloc overhead `<25/10%`. | Activation and all integrity/cost gates pass, but hard macro exact `0.001302->0`, mixed exact is unchanged `0.025391`, all three range blank deltas are negative, and late correction weakens on 56-64. Close without projection/local-selector/Adam/loss/training rescue. |

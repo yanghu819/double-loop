@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: activation/stability probe complete; formal science run not launched
+- Status: discarded; formal matched endpoint complete
 - Date: 2026-08-07
 - Branch: `codex/fs3-orthogonal-basis-transport-20260807`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -18,6 +18,7 @@
 - Parent source SHA: `9f2ee8d1738032bc5f09b55db0b81d507780b376`
 - Frozen control: `p-fs3-001-terminal-s3100-20260806T200859Z-3e167b6`
 - Final pushed source SHA: `0335534c7589f9f1f3d069e2dcb4133a03b3dd80`
+- Formal pushed source SHA: `8d8db7b963c16bba0be30ec386235c62d3c001cf`
 
 ## 2. Evidence Boundary
 
@@ -205,18 +206,27 @@ Final artifact SHA256 values:
 - run log: `72a35783b571accd52956c2d063f6887f3a2379c85f631c9cf83eaf483f6604d`;
 - source snapshot: `be066794c61ec503bca7719c0699e21fc4f77cf1a403c873d89208b7afc28e65`.
 
+The later explicitly authorized formal run
+`p-fs3-004-basis-transport-s3100-20260811T163937Z-8d8db7b` completed status0
+from the same frozen parent. All routes remained active and stable, but hard
+51-64 macro loop5 exact stayed `0.000651`, mixed loop5 exact stayed
+`0.025391`, and 51-55/56-60 blank accuracy regressed by
+`0.001110/0.002883`. The 61-64 blank gain was `0.004395`, but same-board late
+correction weakened on 56-64. Effective throughput fell
+`15.4969->10.7665` boards/s: elapsed overhead `+43.94%` exceeded the registered
+35% ceiling, while allocation overhead `+3.49%` passed. Formal metrics and
+checkpoint SHA256 are
+`c4313978f2a9dacece0a96e6c14c449938fac5d9a4b045b1c94da3d558b9154b`
+and `27bec2072e1949b5aa1206bd0ff1b791c83e4806ddefa5585bd748c9d1a0752d`.
+Comparison:
+`/huyang2/double-loop/runs/p-fs3-004-comparison-20260811T170400Z-8d8db7b`.
+
 ## 9. Decision
 
-Go at the mechanism boundary: final-SHA R3 and the corrected production probe
-prove that learned cross-layer K/V basis transport is trainable, active on all
-edges, board/head dependent, and numerically stable under the real BF16 CUDA
-path. This is the first clean evidence for the specific basis-alignment
-capability; it does not yet show that basis mismatch limits Sudoku closure.
-
-No-go on making a quality claim: the preregistered 100-step candidate-only
-continuation was deliberately not launched when the recurring automation was
-stopped. Therefore hard51-64 exact, mixed exact, same-board late correction,
-throughput overhead and peak-allocation gates remain untested. P-FS3-004 is
-closed at the activation-evidence boundary. Any future continuation requires a
-fresh explicit research decision and must use the already fixed matched gates;
-it must not be started as an automatic loop or nearby rescue.
+Discard. Learned cross-layer K/V basis transport is trainable, active on every
+edge, board/head dependent, and numerically stable under the real BF16 CUDA
+path, but the formal matched endpoint shows no hard or mixed exact gain. It
+also weakens late correction on 56-64 and misses the elapsed ceiling. Basis
+misalignment is therefore not the closure bottleneck at this parent. Do not
+rescue axis, angle, sharing, normalization, seed, LR, loss, batch, width/depth,
+or duration.

@@ -1770,3 +1770,28 @@ native control `0.1735`. Thus P020's per-layer candidate at `0.48225` retains a
 credible `+0.30875` relative mechanism effect after P-DIAG-CARRIER-002 retires
 the historical absolute gate. A Sudoku transfer can test task generality
 without rerunning or tuning the MQAR experiment.
+
+### P-GDN3-034 Per-Layer Log-SPD Sudoku Transfer
+
+P034 performs that transfer without changing the mechanism. Each of the 12
+position-QK layers receives its own bounded trace-free Log-SPD Q/K metric,
+adding 50,592 parameters and no state or scan. The strict official-FLA
+contract, exact-resume probe, and endpoint all pass integrity. At loop5 every
+metric is active and bounded: raw RMS is `0.01554`, metric delta is `0.2590`,
+and eigenvalues remain in `[0.7413,1.4189]`.
+
+The mechanism effect does not become board closure. Hard51-64 macro exact is
+unchanged at `0.000651`, mixed exact regresses `0.025391->0.023438`, and
+same-board loop3-to5 correction weakens on 56-60. Blank accuracy does improve
+on 51-55 and 61-64 by `0.000644/0.005769`, showing that the learned geometry is
+not inert, but it cannot close the remaining globally inconsistent cells.
+Throughput also falls `15.497->9.337` boards/s because the per-layer matrix
+exponential is paid repeatedly through the five-loop model.
+
+The paper should distinguish relative carrier replication from cross-task
+transfer. P020 remains credible evidence that layer-specific Q/K geometry can
+help directional MQAR under a matched runtime; P034 shows that this lever is
+not sufficient for Sudoku loop closure. Close static metric variants on this
+parent. A successor must target a different causal boundary, especially
+FutureSeed loop credit or the live recurrent transition, rather than retuning
+the metric.

@@ -33,8 +33,9 @@ class ZoologyGDN2FutureSeedMixer(nn.Module):
         future_seed_scale: float = 0.0,
     ) -> None:
         super().__init__()
-        if d_model != num_heads * head_dim:
-            raise ValueError("d_model must equal num_heads * head_dim")
+        value_width = num_heads * head_dim * expand_v
+        if not float(value_width).is_integer():
+            raise ValueError("num_heads * head_dim * expand_v must be an integer")
         if os.environ.get("FLA_EXPECTED_SOURCE_SHA") != PINNED_FLA_SHA:
             raise RuntimeError("Pinned official FLA source SHA was not asserted")
 

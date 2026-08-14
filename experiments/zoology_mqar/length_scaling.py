@@ -104,8 +104,11 @@ def build_config(
         ),
     )
     if arm in GDN2_ARMS:
-        if model_width != model_heads * gdn2_head_dim:
-            raise ValueError("model_width must equal model_heads * gdn2_head_dim")
+        value_width = model_heads * gdn2_head_dim * gdn2_expand_v
+        if not float(value_width).is_integer():
+            raise ValueError(
+                "model_heads * gdn2_head_dim * gdn2_expand_v must be an integer"
+            )
         if arm == "future_seed_gdn2_log_spd":
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_log_spd."

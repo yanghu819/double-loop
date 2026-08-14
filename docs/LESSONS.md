@@ -2829,3 +2829,11 @@
   reproduction fails. Use a contemporaneous control in the same source,
   process, GPU task and fixed arm order, and judge a candidate by preregistered
   relative quality plus absolute usability.
+- Cross-layer parameter sharing is not automatically namespace alignment.
+  P033's two layers use the identical bounded metric object and both train it,
+  yet balanced accuracy drops `0.17325->0.1250`; each layer still needs its own
+  adaptation around independently learned content projections.
+- A newly stable control can change the interpretation of old evidence without
+  changing the old result. P033 reproduces P020's control (`0.17325` versus
+  `0.1735`), so P020's per-layer metric gain to `0.48225` is a credible relative
+  mechanism signal after retiring the non-reproducible `.7475` absolute gate.

@@ -1749,3 +1749,24 @@ paper must therefore treat `.7475` as descriptive historical evidence rather
 than an absolute gate. New L1024 mechanisms require a contemporaneous
 same-source, same-process control and a registered relative improvement; no
 architecture claim may mix scores from these runtime conditions.
+
+### P-GDN3-033 Shared Log-SPD Boundary
+
+P033 isolates whether tying P020's bounded metric across layers can align the
+state namespace used by native FutureSeed. It adds one shared 2,108-parameter
+trace-free Log-SPD factor and otherwise preserves coherent erase/write/read
+keys, state size and one official scan. The strict contract proves the two
+layers share exact storage and separately contribute finite gradient while the
+zero point is exactly native.
+
+The metric activates and remains bounded, but balanced accuracy falls from the
+contemporaneous native control `0.17325` to `0.1250`; errors rise
+`3307->3500`, and warmed-step time is `1.2738x`. Shared smooth geometry is not
+equivalent to aligning independently learned layer projections. Close this
+constraint without rescue.
+
+The control is itself a useful replication: it is within `0.00025` of P020's
+native control `0.1735`. Thus P020's per-layer candidate at `0.48225` retains a
+credible `+0.30875` relative mechanism effect after P-DIAG-CARRIER-002 retires
+the historical absolute gate. A Sudoku transfer can test task generality
+without rerunning or tuning the MQAR experiment.

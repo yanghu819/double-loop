@@ -88,12 +88,42 @@ activation, quality or cost miss closes the mechanism. No rescue run.
 
 ## 7. Results
 
-Pending.
+The strict A10080 contract and fixed endpoint completed status0. The contract
+proved exact parent identity, one shared 2,108-parameter storage object, two
+official GDN2 backward paths, finite nonzero gradient from each layer, native
+FutureSeed identity and bounded head-equivariant activation.
+
+The contemporaneous native control reached balanced/future/past/joint
+`0.17325/0.1820/0.1645/0`. The shared-metric candidate reached only
+`0.1250/0.1465/0.1035/0`. Total query errors increased `3307->3500`.
+Wrong-key valid-value swaps fell `769->587`, but their fraction among errors
+improved only `0.232537->0.167714`, below the registered `0.10` reduction and
+accompanied by broader retrieval failure.
+
+The shared metric was active and stable: applied metric delta Frobenius norm
+was `0.285376`, eigenvalues stayed in `[0.894175, 1.182312]`, condition was
+`1.322237`, and both layers referenced the same raw CUDA address. Quality
+therefore failed despite production activation rather than because the module
+was inert.
+
+Elapsed/post-warm-wall/peak-allocation ratios were
+`0.9381/0.9418/1.0321`, but warmed-step ratio was `1.2738`, missing the
+registered `1.15` limit. No NaN, OOM or fallback occurred.
 
 ## 8. Decision
 
-Pending the fixed contract and endpoint. A pass authorizes one matched Sudoku
-transfer; a miss returns to a different recurrent state-transition family.
+Reject P-GDN3-033. A single smooth cross-layer metric suppresses layer-specific
+address adaptation and delays the validation rise; tying geometry is not a
+valid way to make FutureSeed state namespaces coherent. Close shared Log-SPD
+without metric scale/rank/head/layer/training rescue and do not transfer this
+candidate to Sudoku.
+
+The contemporaneous control (`0.17325`) independently reproduces P020's
+control (`0.1735`). This removes the carrier ambiguity for P020's per-layer
+candidate (`0.48225`): its relative `+0.30875` signal is credible even though
+the retired historical absolute gate rejected it. The next decision may test
+that already-completed per-layer mechanism on Sudoku; it must not rerun or tune
+the MQAR arm.
 
 ## 9. Provenance
 
@@ -101,4 +131,14 @@ transfer; a miss returns to a different recurrent state-transition family.
   `f26dd46bef652f8f88136fcd11a2a52b4dcd1f86b07563f8750424263031e255`.
 - P020 exploratory mechanism signal:
   `/huyang2/double-loop/runs/p-gdn3-020-log-spd-exploratory-a100-20260812T025949Z-2af49c5`.
-- Source SHA, contract and endpoint hashes: pending.
+- Source SHA: `f357af4061bee624b7ffe771f7269f602bf0ff28`.
+- Run:
+  `/huyang2/double-loop/runs/p-gdn3-033-shared-log-spd-l1024-20260814T0706Z-f357af4`.
+- Score SHA256:
+  `b7e166268c2a4dad288064f6583c9784392e7793d1300839e82ce02ce0030d30`.
+- Contract SHA256:
+  `701d3c101b1ae72f76a6dd1442bf17279869de5a0e577acebfb8cdeb560a8e29`.
+- Formal log SHA256:
+  `d273fb9434c272113dd5538ea273704f7f4b4d3b860ca0923cb4acadb99da48f`.
+- Candidate checkpoint SHA256:
+  `d8a215cc11939b57510153f88597372ae7409cd7963f12836bd2e6424a4c4064`.

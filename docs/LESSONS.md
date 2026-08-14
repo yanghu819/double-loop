@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-15: Current-query feedback is not free binding credit
+
+- P-GDN3-041 is the narrow test left open by decoupled-key failures: write,
+  erase ownership and read all remain on native `k`; only the erased content
+  estimate includes a bounded signed current-query term.
+- The mechanism is strongly active and stable. Lambda RMS is `.3273/.3194`,
+  all eight heads move, mixed alignment remains `.6924..1.3120`, and sampled
+  transition spectral norm is at most `1.0562`.
+- Balanced accuracy nevertheless collapses `.36625->.0145` and errors rise
+  `2535->3942`. This rules out dead gradients, state explosion and cost as the
+  explanation.
+- The swap fraction `.62091->.03754` is meaningless without absolute
+  retrieval: 3,942 of 4,000 candidate queries are wrong.
+- Preserve native GDN2's learned erase-content equation in future work. A
+  next FutureSeed mechanism may decode completed producer memory through a
+  coherent interface, but should not inject another query/address term into
+  the live ownership correction.
+
 ## 2026-08-15: More expressive fixed addresses can block learning
 
 - P-GDN3-040 is the clean complement test missing from P024: it keeps the

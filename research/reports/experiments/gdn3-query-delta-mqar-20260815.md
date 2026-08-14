@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved and preregistered; implementation pending
+- Status: discarded; strict matched endpoint complete
 - First decision field: directional MQAR L1024 wrong-key binding regime
 - Fixed model: D128/L2/H4/K32/V32, native FutureSeed
 - Fixed data: four associations, 10,000 train and 1,000 validation examples
@@ -147,17 +147,59 @@ batch, width/depth, epoch/duration, FutureSeed or Sudoku rescue.
 
 ## 8. Commands And Artifacts
 
-Planned launcher: `scripts/run_zoology_query_delta.sh`.
-Planned config: `configs/retrieval/zoology_query_delta.env`.
-Planned strict checker: `scripts/check_zoology_query_delta.py`.
+- Launcher: `scripts/run_zoology_query_delta.sh`
+- Config: `configs/retrieval/zoology_query_delta.env`
+- Strict checker: `scripts/check_zoology_query_delta.py`
+- Exact pushed and read-back source SHA:
+  `5f6b75749085f2e45373c4deb102ffc5967ab197`
+- Formal run:
+  `/huyang2/double-loop/runs/p-gdn3-041-query-delta-l1024-20260814T182959Z-5f6b757`
+- Contract JSON/log SHA256:
+  `3fa78c7abac7cc6b01cb2272021108c70e86a6999e40e7e9965c2199367ee2f7` /
+  `2a68ccf828b5714f1d1036e11eb18d1160f3b4d3dbfb39f1e20247582c6cb2b8`
+- Comparison SHA256:
+  `b986b559894e06c2e52242290858fbf4a97e71763ac127fc623db932c8a2536d`
+- Control/candidate checkpoint SHA256:
+  `59ca8e2b8aa9fc9527772526956395094888858c9ecced74569216a8ba1cd6ce` /
+  `140107aee339d6135901a68e75daa7b44c8976dab9afe6adced9ac3d9bcbcfbe`
+- Source snapshot SHA256:
+  `9b9df9ccd20d5682b8473cfdabbb24b4bd89eccc7b0dd41937e6c12481a9a8c9`
 
-The formal run will archive exact source and GitHub readback, GPU identity,
-config, source snapshot, checker JSON/log, endpoint output, scores, cases,
-checkpoints, timing, memory, exit classification and a SHA256 manifest under
-`/huyang2/double-loop/runs/<run_name>`.
+The first launch attempt stopped before the contract because an outer status
+wrapper made the launcher a child rather than the process-group leader. A
+second attempt stopped before run creation when direct GitHub readback timed
+out. The successful R4 retained the same source and gates, used a bounded SSH
+reverse proxy only for the mandatory GitHub readback, and ran the launcher as
+the exact process-group leader. These are non-science orchestration events.
+
+The strict contract passes. Both layers use the pinned official
+`ChunkDPLRDeltaRuleFunctionBackward`; the parameter delta is exactly 1,032;
+zero-feedback projection and mixed-address errors are zero; every native and
+new projection gradient is finite and nonzero; head permutation error is
+zero; opened query dependency is nonzero; and sampled transition spectral
+norm is at most `1.046011`.
+
+The candidate is also fully active after training. Layer 0/1 lambda RMS is
+`.327339/.319422`; all eight heads are active; maximum absolute lambda is
+`.495930`; mixed alignment stays `.692379..1.312032`; query-feedback relative
+RMS is `.327338/.319420`; terminal-state RMS is `.026078/.054582`; and sampled
+transition spectral norm remains `1.042679/1.056130`. Native FutureSeed stays
+active.
 
 ## 9. Decision
 
-Pending the sole strict contract and fixed matched endpoint. A pass authorizes
-one Sudoku transfer; a miss closes this query-feedback recurrence without a
-nearby rescue.
+Discard P-GDN3-041. The contemporaneous control reaches balanced/future/past/
+joint `.36625/.3515/.3810/.002`; the candidate collapses to
+`.0145/.0175/.0115/0`. Total errors rise `2535 -> 3942`. The conditional
+wrong-key swap fraction falls `.620907 -> .037544`, but this is another broad
+retrieval-collapse artifact: the candidate makes 3,942 errors out of 4,000
+queries and its validation curve stays near chance through all ten epochs.
+
+The mechanism does not fail for lack of activation or system budget. Fit,
+post-warm wall, warmed-step and peak-allocation ratios are
+`.8235/.8344/1.4137/1.2071`, all inside their registered ceilings. The quality
+hypothesis alone fails. Current-query feedback in the erase-content estimate
+therefore does not preserve the native GDN2 learning dynamics, even when the
+ownership/write/read direction remains exactly `k` and the transition is
+bounded. Close lambda sign/cap, projection, normalization, kernel, gate and
+training rescues. Do not transfer this recurrence to Sudoku.

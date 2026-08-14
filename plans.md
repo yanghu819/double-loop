@@ -29,25 +29,20 @@ The next successor must preserve a native learnable address map without
 imposing another fixed analytic feature basis. Report:
 `research/reports/experiments/gdn3-linear-product-state-mqar-20260815.md`.
 
-Current update (2026-08-15 CST): `P-GDN3-041` Query-Aware Live Delta is the
-sole approved successor. It keeps the normalized native GDN2 ownership,
-write, and read key `k`, the K32xV32 state, vector K erase gate `b`, vector V
-write gate `w`, native FutureSeed, and one recurrent scan. It changes only the
-content estimate inside that same token transition:
-`x=k+lambda*q`, `S'=DS-k[(b*x)^T DS]+k(w*v)^T`, with
-`lambda=.5*tanh(W_lambda h+b_lambda)`. Both projection tensors initialize to
-zero, so `lambda=0` is exactly the parent recurrence while gradients can
-immediately reach the feedback path. This is not P031/P036: those moved an
-independent erase/update key away from the ownership key, whereas P041 leaves
-the update direction exactly `k` and uses the actual output query only in the
-mixed prediction error. It is not P007: the query changes every token's live
-state transition rather than reading a completed incoming layer state before
-the scan. The fixed first decision is a same-process, matched-initialization
-directional MQAR L1024 control/candidate pair, D128/L2/H4/K32/V32, 10 epochs,
-batch32, seed123. The candidate uses one pinned-official DPLR chunk scan per
-layer, adds exactly 1,032 parameters total and no state. No lambda cap/sign,
-projection, kernel, gate, seed, LR, loss, batch, width/depth, duration or
-Sudoku rescue is authorized. Preregistration:
+Current update (2026-08-15 CST): `P-GDN3-041` Query-Aware Live Delta is
+complete and discarded. Exact pushed/read-back SHA `5f6b757` passes the strict
+A100 contract with two pinned-official DPLR backwards, exact +1,032 parameters,
+zero state/scan delta, zero-feedback identity, all native/new gradients, Q
+dependency, head equivariance and bounded sampled transitions. Both learned
+feedback layers are strongly active: lambda RMS is `.3273/.3194`, all eight
+heads move, mixed alignment remains `.6924..1.3120`, and transition spectral
+norm is at most `1.0562`. Quality collapses independently of activation and
+cost. Control/candidate balanced/future/past/joint is
+`.36625/.3515/.3810/.002` versus `.0145/.0175/.0115/0`; errors rise
+`2535->3942`. The lower conditional swap fraction `.62091->.03754` is broad
+retrieval failure. All cost gates pass. Close current-query erase-content
+feedback without sign/cap/projection/normalization/kernel/gate/training rescue
+and do not transfer it to Sudoku. Report:
 `research/reports/experiments/gdn3-query-delta-mqar-20260815.md`.
 
 Current update (2026-08-14 CST): `P-GDN3-039` Raven Recurrent Address Composer
@@ -1255,7 +1250,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-041 | approved; preregistered | GDN2's state update corrects only the value predicted at `k`; the current output query carries a complementary wrong-binding signal that must enter the same live token transition, not a second key, state, readout, or scan. | Keep native normalized `q/k`, K32xV32 state, vector `b/w`, write direction `k`, native FutureSeed and one scan. Define `lambda=.5*tanh(W_lambda h+b_lambda)`, `x=k+lambda*q`, and run one pinned-official DPLR transition `S'=DS-k[(b*x)^TDS]+k(w*v)^T`. Exact +1,032 params, zero state delta, zero-init parent identity. Fixed matched directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; no sweep. | Reserved task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; formal source must be an exact clean detached pushed SHA. | strict CUDA contract then one fixed two-arm endpoint | Two active bounded feedback layers, mixed-address alignment `[.5,1.5]`, bounded sampled transition/state; balanced/future/past >=.85 and >=control+.10, joint>=.60 and >=control+.10, fewer errors, swap fraction -.10; elapsed/wall/warmed <1.75x, allocation <1.50x. | pending |
+| P-GDN3-041 | discarded; completed_rejected | GDN2's state update corrects only the value predicted at `k`; the current output query carries a complementary wrong-binding signal that must enter the same live token transition, not a second key, state, readout, or scan. | Keep native normalized `q/k`, K32xV32 state, vector `b/w`, write direction `k`, native FutureSeed and one scan. Define `lambda=.5*tanh(W_lambda h+b_lambda)`, `x=k+lambda*q`, and run one pinned-official DPLR transition `S'=DS-k[(b*x)^TDS]+k(w*v)^T`. Exact +1,032 params, zero state delta, zero-init parent identity. Fixed matched directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `5f6b757`. | strict contract and fixed two-arm endpoint complete | All activation/stability/integrity/cost checks pass. Control/candidate balanced/future/past/joint=`.36625/.3515/.381/.002` versus `.0145/.0175/.0115/0`; errors `2535->3942`. Lambda RMS `.3273/.3194` and max transition norm `1.0562` prove a strong bounded intervention. Lower swap fraction is broad collapse. Close query-feedback without rescue; no Sudoku transfer. Comparison SHA `b986b559...2536d`. |
 | P-GDN3-040 | discarded; completed_rejected | Native K32 can preserve ordinary retrieval while an exact uncompressed K8xK8 address complement separates pairwise bindings that collide in the linear state. | One coherent K96xV32 state: exact native normalized K32 plus exact K8 outer K8 product K64; native decay/erase block unchanged, bounded lifted product gates, one pinned-official scan, native whole-state FutureSeed. Zero new parameters, 3x state. Fixed matched L1024 D128/L2/H4/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; clean detached pushed SHA `def26f33`. | strict R2 contract and fixed two-arm endpoint complete | Balanced/future/past >=.85, joint>=.60, balanced >=historical and control +.10, fewer errors, swap fraction -.10; elapsed/wall/warmed <3.25x, allocation <2.50x. | Activation and cost pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.01225/.0155/.009/0`; errors `3301->3951`. Product read contributes only `.1728/.2473x` native RMS. Lower swap fraction `.23326->.03189` is broad retrieval collapse. Close exact-product factors/weights/scales/gates/training; no Sudoku transfer. Comparison SHA `f9cd8360...1ed3`. |
 | P-FS2-009 | discarded; completed_rejected | Independently useful private Log-SPD metrics create a known linear mismatch when native FutureSeed passes the producer KxV state directly to the receiver. Removing only that metric component may improve receiver binding without hard-sharing geometry. | Directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123. Same-process private-Log-SPD native-FS control then candidate. Candidate applies the zero-parameter receiver-read pullback `S'=C_r^-1 C_p S` before the unchanged native FS RMS/gate; zero state/scan delta. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `246afec`. | strict contract and fixed two-arm endpoint complete | Require active bounded private metrics/pullback; balanced `>=max(.55, control+.10)`, future/past each `+.07`, joint `>=max(.08, control+.04)`, fewer errors and swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.10x`. | Contract/activation/cost pass. Control/candidate balanced/future/past/joint=`.1385/.1485/.1285/0` versus `.17825/.182/.1745/.002`; errors fall `3446->3287`, but swaps rise `602->748` and fraction `.17470->.22756`. Close metric-derived state transport without rescue; comparison SHA `e8b35796...fceeb`. |
 | P-GDN3-037 | discarded; completed_rejected | GDN2 keeps one key but applies a K-coordinate erase response independently of its V-gated write target. A single exact committed residual may preserve coherent binding better than separate erase/write modulation. | From-scratch directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed. Keep byte-identical GDN2 Q/K/V/f/b/w/g/o projections, K decay, state and one coherent key. Define `u=w*v`, `beta=mean_K(sigmoid(b_logits))`, and run one pinned-official DPLR transition `S'=DS+beta*k(u-k^TDS)^T`. Same-process native control then candidate, 10ep/batch32/seed123; equal parameters/state, one scan. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `f7009fc`. | strict contract and fixed two-arm endpoint complete | Integrity, activation, stability and cost all pass. Control/candidate balanced=`.36625/.01525`, future=`.3515/.0195`, past=`.381/.011`, joint=`.002/0`, errors=`2535/3939`. Residual RMS is about`1.07` and spectral norm stays below one; lower conditional swaps are broad retrieval collapse. Close scalar committed residual without beta/target/scale/decay/training rescue; no Sudoku transfer. Comparison SHA `e37913a0...7084c`. |

@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Query Feedback Can Break Coherent Delta Learning
+
+P-GDN3-041 keeps native normalized ownership/write/read key `k`, every K-wise
+erase and V-wise write gate, the K32xV32 state, native FutureSeed and one
+official scan. It changes only the live content estimate from `k` to
+`k+lambda*q`, with an exactly zero-initialized bounded query term. The strict
+contract and endpoint show that this is a real, stable intervention: all eight
+feedback heads activate, lambda RMS is about `.32`, mixed alignment stays
+`.692..1.312`, and sampled transition spectral norm remains below `1.057`.
+
+That intervention destroys learning. Balanced accuracy falls
+`.36625->.0145`, future/past fall `.3515/.3810->.0175/.0115`, joint exact falls
+`.002->0`, and errors rise `2535->3942`. The apparent swap-fraction reduction
+is again caused by broad retrieval collapse. Costs all pass, so this is a
+quality boundary rather than an implementation or efficiency failure. The
+paper should distinguish using the query to read a completed state from using
+it inside the erase prediction: the latter disrupts the coherent native
+learning dynamics even while ownership remains anchored to `k`.
+
 ## 2026-08-15 Exact Product Features Do Not Rescue Linear Binding
 
 P-GDN3-040 preserves the complete learned native K32 address channel and adds

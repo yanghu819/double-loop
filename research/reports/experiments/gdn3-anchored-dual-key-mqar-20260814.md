@@ -84,6 +84,12 @@ Before training, the CUDA contract must prove all of:
 Formal artifacts must include control/candidate scores, cases, checkpoints,
 comparison JSON, source/config/log hashes and GPU timing/memory.
 
+R1 exited before model construction because the launcher used
+`FLA_SOURCE_ROOT` in `PYTHONPATH` without exporting it to the checker process.
+The wrapper wrote a non-science contract abort; GPU allocation remained zero.
+R2 changes only the missing environment export and preserves the mechanism,
+data, training command and all registered gates.
+
 ## 7. Registered Result Gates
 
 Activation requires both layers, native FutureSeed, exact initial tie,

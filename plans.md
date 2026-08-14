@@ -13,18 +13,22 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-14 CST): `P-GDN3-039` Raven Recurrent Address Composer
-is the sole preregistered successor. P038 shows that full-state partitioning
-can reduce wrong-key swaps but one global token-to-slot hash loses retrieval.
-P039 instead keeps one native coherent GDN2 data plane and lets a compact
-official Raven retrieve binding history used only to compose the shared Q/K
-input. V, decay, K-wise erase, V-wise write, main state and native FutureSeed
-stay native. This is distinct from P017 row allocation and P019 Raven-to-V
-write control. The fixed D128/L2 L1024 run adds exactly 181,648 parameters,
-4,096 state values and one official Raven scan/layer. Pass requires active
-noncollapsed Raven/address paths, balanced `>=.55` and control `+.08`, both
-directions `>=.50` and `+.07`, joint `>=.08` and `+.04`, fewer errors, swap
-fraction `-.05`, and registered `<2.75x` compute/`<1.75x` allocation. Any miss
-closes Raven width/slot/top-k/adapter/transport/training rescue. Report:
+is complete and discarded. Its strict A100 contract proves bit-exact parent
+output/main-state identity, two official GDN2 plus two official Raven/GSA
+backward paths, exact `+181,648` parameters, recurrent-state dependency,
+head-permutation equivariance and finite two-stage gradients. The trained
+Raven/address path is strongly active and noncollapsed: layer address-residual
+relative RMS is `1.738/2.991`, Q/K projection changes are `1.908/6.299` and
+`2.211/5.607`, slot entropy is `.766/.726`, and every activation gate passes.
+That context destroys learnability rather than closing bindings. Matched
+control/candidate balanced/future/past/joint is
+`.36625/.3515/.3810/.002` versus `.06275/.0625/.0630/0`; errors rise
+`2535->3749`. Conditional swaps fall `.62091->.09149` only because general
+retrieval collapses. All cost gates pass (`1.179/1.179/1.361/1.419x` for
+elapsed/wall/warmed/allocation), so quality independently closes Raven
+slots/top-k/width/adapter/transport/training rescue. The next mechanism must
+change scalable state organization without using a second recurrent context
+to rewrite the native coherent Q/K interface. Report:
 `research/reports/experiments/gdn3-raven-address-composer-mqar-20260814.md`.
 
 Current update (2026-08-14 CST): `P-GDN3-038` Content-Partitioned Full-State

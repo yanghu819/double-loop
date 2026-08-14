@@ -1,5 +1,24 @@
 # Lessons
 
+## 2026-08-14: Strong recurrent address context is not binding closure
+
+- P-GDN3-039 is an exact Raven/GDN composition rather than a replacement
+  carrier: Raven recurrent retrieval changes only the coherent native Q/K
+  input, while GDN2 retains V, gates, state, committed edit and FutureSeed.
+- Every mechanism gate passes. Address residual RMS is `1.738/2.991`, Q/K
+  changes reach `1.908-6.299x`, slot entropy is `.766/.726`, and Raven state
+  varies by board. Activation is not the problem.
+- Balanced accuracy collapses `.36625->.06275` and errors rise `2535->3749`.
+  The swap fraction improvement `.62091->.09149` again reflects replacing
+  binding errors with broader retrieval failure.
+- Costs are acceptable (`1.179x` endpoint wall, `1.361x` warmed step,
+  `1.419x` peak allocation), so reject the quality hypothesis directly.
+- P017, P019 and P039 now close Raven allocation, Raven-to-V control and
+  Raven-to-Q/K context at their fixed settings. Do not rescue slots, top-k,
+  width, adapter scale or transport. The next useful mechanism must alter
+  scalable state organization while preserving a learnable native read/write
+  map.
+
 ## 2026-08-14: Better state readability can worsen key binding
 
 - P-FS2-009's analytic `C_r^-1 C_p` pullback is a clean causal intervention:

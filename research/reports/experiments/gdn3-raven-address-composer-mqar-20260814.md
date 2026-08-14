@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered and implemented, pending strict CUDA contract
+- Status: completed_rejected; discarded without rescue
 - Date: 2026-08-14
 - Benchmark: directional MQAR L1024 wrong-key regime
 - Fixed setting: D128/L2, main H4/K32/V32 GDN2, native FutureSeed,
@@ -123,4 +123,53 @@ allocation ratios and source/config/checkpoint/score/log hashes.
 
 ## 9. Decision
 
-Pending strict CUDA contract and the one fixed matched endpoint.
+The strict CUDA contract passed on A100-SXM4-40GB index0, UUID
+`GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`, from clean detached pushed SHA
+`11dabc9c9605b5b08d026b791b525c1d88e1a606`. It proved exact parent
+initialization, zero-adapter full-output identity, exact output/main-state
+identity with nonzero incoming state, two official GDN2 and two official
+Raven/GSA backward paths, exact `+181,648` parameters, Raven-state dependency,
+head-permutation error `0`, and finite nonzero two-stage gradients.
+
+The fixed matched endpoint completed both arms:
+
+| Arm | Balanced | Future | Past | Joint | Errors | Wrong-key swaps | Swap/error |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Native GDN2 + FutureSeed control | 0.36625 | 0.3515 | 0.3810 | 0.002 | 2535 | 1574 | 0.620907 |
+| Raven-address candidate | 0.06275 | 0.0625 | 0.0630 | 0 | 3749 | 343 | 0.091491 |
+
+All activation checks passed. Layer0/layer1 Raven output RMS is
+`0.92198/1.19032`, terminal RMS `0.44897/0.41591`, terminal board std
+`0.01298/0.03188`, normalized slot entropy `0.76573/0.72604`, and maximum
+slot mass `0.26568/0.19360`. Address-residual relative RMS is
+`1.73790/2.99079`; Q projection relative change is `1.90773/6.29913` and K
+change is `2.21139/5.60678`. Main terminal state remains finite, and native
+FutureSeed stays active with gate `0.50172` and raw RMS `0.03419`.
+
+Every cost check also passed. Candidate/control ratios are `1.17912x` elapsed,
+`1.17936x` post-warm wall, `1.36105x` independently warmed step, and
+`1.41854x` peak allocation. The quality failure is therefore not an inactive
+implementation, collapsed Raven state, or excessive runtime. A strong
+recurrent context applied to the shared Q/K input delays and degrades the
+native learnable address/value map. The lower conditional swap fraction is a
+broad-retrieval-collapse artifact because total errors increase by 1,214.
+
+Decision: close recurrent Raven address composition. Do not rescue slots,
+top-k, Raven width, adapter scale/target, cross-layer Raven transport, seed,
+LR, loss, batch, main width/depth or duration. There is no Sudoku transfer.
+
+Artifacts:
+
+- run: `p-gdn3-039-raven-address-l1024-20260814T161743Z-11dabc9`;
+- contract/comparison SHA256:
+  `ed4d3538590d330c55fa931ade6bbbc99d5166195dd2d491538580eb39d43aba` /
+  `4932c50c6c13399e6de7deb107f76b14fca8dc4ae677eabd345ee3810b52eff7`;
+- control/candidate score SHA256:
+  `a4beff89f686a269018cd75fa82697ecf14e498882ca9b76ddd8847fed51a00d` /
+  `430d5ca9d7f7799a774a007c8abe59c03052c20c96e9c82fdf60cac3aea9774c`;
+- control/candidate checkpoint SHA256:
+  `59ca8e2b8aa9fc9527772526956395094888858c9ecced74569216a8ba1cd6ce` /
+  `7e0b4cedaa9723513d1d763fcbc78ca0e3c9ddcb4827505b4c7fecf82232fe10`;
+- formal log/source snapshot SHA256:
+  `a51d0f0b5867daaeecb75a4bb849e20ecd456ad6e8470a0be62665745630ee27` /
+  `d50d4072dfc94bbc8de5cf7325b2ca04a51efd39ca1a6764e9cad7b62a2eea80`.

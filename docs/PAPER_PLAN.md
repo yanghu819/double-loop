@@ -1,5 +1,26 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-14 Recurrent Address Context Can Destroy Native Binding
+
+P-GDN3-039 keeps native GDN2 as the sole data plane and uses an independent
+official Raven only to construct a recurrent residual for the shared Q/K
+input. This is a clean organic Raven/GDN hybrid: V, gates, committed edit,
+main K32xV32 state and native FutureSeed stay unchanged. The strict contract
+and endpoint show that the hybrid is fully active, noncollapsed and affordable.
+Raven slot entropy is `.766/.726`, address-residual relative RMS is
+`1.738/2.991`, and Q/K projections change by roughly `1.9-6.3x`; elapsed and
+warmed-step ratios are only `1.179x/1.361x`.
+
+Quality decisively rejects the composition. Balanced accuracy falls
+`.36625->.06275`, future/past fall `.3515/.3810->.0625/.0630`, joint exact
+falls `.002->0`, and errors rise `2535->3749`. Wrong-key swap fraction falls
+`.62091->.09149`, but only because the candidate loses general retrieval. The
+paper may use P039 to distinguish recurrent address-context activation from
+binding success. Together with P017/P019 it closes fixed-row Raven allocation,
+Raven-to-V write control, and Raven-to-Q/K address composition under their
+registered settings. Do not tune Raven slots, width, top-k, adapter or
+cross-layer transport; a next successor must organize live state itself.
+
 ## 2026-08-14 Metric Pullback Improves Readability, Not Binding
 
 P-FS2-009 keeps independently learned per-layer Log-SPD metrics and applies

@@ -231,7 +231,7 @@ def main() -> None:
         raise RuntimeError(f"Native FutureSeed route did not activate: {seed}")
 
     hidden = torch.randn(2, 65, 128, device="cuda", dtype=torch.float32)
-    incoming = torch.randn(2, 4, 64, 32, device="cuda", dtype=torch.bfloat16)
+    incoming = torch.randn(2, 4, 64, 32, device="cuda", dtype=torch.float32)
     with torch.no_grad():
         direct_output, direct_state = mixers[0].forward_with_state(
             hidden,

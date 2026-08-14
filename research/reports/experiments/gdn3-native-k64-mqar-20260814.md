@@ -91,6 +91,12 @@ hash was defined by the existing undelimited checker. The locked source files
 were unchanged and only a 3 MiB CUDA context was created. R3 aligns the hash
 algorithm with the existing GDN2 contracts; no mechanism or gate changes.
 
+R3 source `94c0da43` passed provenance, data and model construction, then exited
+inside the synthetic nonzero-state checker because the harness supplied a BF16
+initial state while pinned official `chunk_gdn2` requires FP32 recurrent state.
+No formal training ran. R4 changes only that synthetic state dtype; the model,
+data, budget and all decision gates remain frozen.
+
 ## 8. Decision
 
 Pending.

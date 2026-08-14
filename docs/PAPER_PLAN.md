@@ -1954,14 +1954,24 @@ full native GDN2 state. Close slot count, routing temperature and training
 rescues. A successor should preserve per-binding coherent ownership without
 selecting a whole global trajectory for each token.
 
-### P-FS2-010 Registered Producer-Native Readout Test
+### P-FS2-010 Producer-Native Readout Is Not FutureSeed Closure
 
-P-FS2-010 tests whether native FutureSeed carries useful terminal-state
-evidence that the receiver cannot fully read in its independently learned
-coordinates. It leaves the recurrent state and GDN2 transition untouched,
-reads the seed through the producer's own Q/output interface, and uses a
-zero-initialized bounded rank-32 fusion in hidden space. The directional-MQAR
-L1024 endpoint is preregistered with contemporaneous control, wrong-key error
-accounting and a same-trained-model edge-off attribution test. This is a
-pending experiment, not paper evidence; include it only after the full quality
-and cost gate is decided.
+P-FS2-010 isolates a plausible coordinate-mismatch explanation for native
+FutureSeed. The transferred KxV state remains the official initial state of
+the receiving GDN2 scan; a single extra edge decodes that state with the
+producer's own Q/output interface and fuses it into receiver hidden tokens.
+The strict contract proves exact parent identity, two official GDN2 backwards,
+zero new recurrent state or scans, and a fixed +12,288-parameter increment.
+
+The negative result is mechanistically sharp. The readout activates strongly
+and reaches its bounded residual cap, yet balanced accuracy falls
+`.17475->.0280` and total errors rise `3301->3888`. Same-trained edge-off
+accuracy is also `.0280`, so the candidate did not acquire a useful causal
+readout; its backbone co-adapted to a destructive shortcut. The zero
+transferred-state RMS board std is not evidence of identical content because
+native FutureSeed normalizes each board to fixed RMS. Record this as a
+diagnostic-design error and use pairwise content statistics in future runs.
+The valid conclusion is narrower: a strongly active producer-native hidden
+residual does not improve binding and can derail learning. Future FS2 work
+must improve what is carried or credited, not add a stronger hidden residual
+around the same terminal state.

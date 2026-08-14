@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-15: A strong producer-native readout can erase learnability
+
+- P-FS2-010 keeps native FutureSeed state transfer and both official GDN2
+  scans, changing only one producer-native state decode plus bounded rank-32
+  hidden fusion.
+- The path is not dead: read/feature/residual relative RMS is
+  `.3601/2.7084/.3853`, output-projection RMS is `.03519`, and the residual
+  reaches `.499865` of hidden RMS against its fixed `.5` cap.
+- Balanced accuracy collapses `.17475->.0280`, errors rise `3301->3888`, and
+  turning the trained edge off leaves balanced accuracy at `.0280`. The
+  backbone co-adapted to a harmful path rather than gaining usable evidence.
+- The transferred-state RMS board std is exactly zero because native
+  FutureSeed normalizes every board to fixed RMS. Do not preregister RMS
+  variation after a normalization that removes it; measure content variation
+  with pairwise state distance or centered cosine instead.
+- The lower conditional swap fraction `.23326->.07433` is another broad-error
+  artifact. Close producer decoder, rank, cap, injection and gate variants.
+
 ## 2026-08-15: Current-query feedback is not free binding credit
 
 - P-GDN3-041 is the narrow test left open by decoupled-key failures: write,

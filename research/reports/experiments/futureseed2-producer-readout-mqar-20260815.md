@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved and preregistered; not yet launched
+- Status: discarded; strict matched endpoint complete
 - First decision field: directional MQAR L1024 wrong-key binding regime
 - Fixed model: D128/L2/H4/K32/V32 pinned-official GDN2 with native FutureSeed
 - Fixed data: four associations, 10,000 train and 1,000 validation examples
@@ -126,6 +126,58 @@ failure directly.
 
 ## 9. Next Decision
 
-If every gate passes, admit exactly one hard-Sudoku transfer with the same
-mechanism and no retuning. If it fails, archive the evidence and choose a GDN3
-successor outside readout/transport and decoupled-key neighborhoods.
+Discard P-FS2-010. The strict contract passes at exact pushed and read-back
+source SHA `eb983102de0dbd49289008af7a2eb05f1780362f`: zero-init parent error is
+zero, both layers use pinned-official `ChunkGDN2FunctionBackward`, the
+candidate adds exactly 12,288 parameters and no state or scan, and all staged
+gradients and state-dependency checks pass.
+
+The mechanism trains and saturates its registered residual bound, but quality
+collapses. Control versus candidate balanced/future/past/joint accuracy is
+`.17475/.1610/.1885/0` versus `.0280/.0365/.0195/0`; total errors rise
+`3301 -> 3888`. The candidate lowers the wrong-key valid-value fraction among
+errors from `.233263` to `.074331`, but this is not binding closure because it
+replaces wrong-key swaps with broader invalid retrieval. The trained edge is
+also not causally useful at endpoint: edge-off balanced accuracy remains
+`.0280`, and edge-off has the same 3,888 total errors.
+
+Activation explains why the path is destructive rather than dead. Producer
+read RMS is `.360067`, feature RMS is `2.708361`, output-projection RMS is
+`.035193`, residual relative RMS is `.385321`, and maximum residual reaches
+`.499865 * rms(hidden)` against the fixed `.5` cap. The transferred-state RMS
+board standard deviation is exactly zero, but this is structurally forced by
+native FutureSeed's per-board RMS normalization and cannot be interpreted as
+identical state content. The preregistered state-RMS variation check is
+therefore invalid and should not be reused. Quality and edge-off attribution
+still reject producer-native state decode plus hidden residual fusion
+independently of that activation check.
+
+Elapsed and allocation ratios pass at `.9963x` and `1.1639x`; post-warm wall
+passes narrowly at `1.4811x`. Independently warmed-step time is `1.5657x` and
+misses the `<1.50x` ceiling. Quality, edge attribution and warmed cost
+independently reject the experiment. Close rank, residual cap,
+injection point, decoder, gate and training rescues; do not transfer to
+Sudoku.
+
+## 10. Commands And Artifacts
+
+- Formal R2 run:
+  `/huyang2/double-loop/runs/p-fs2-010-producer-readout-r2-l1024-20260814T193756Z-eb98310`
+- Clean detached source SHA:
+  `eb983102de0dbd49289008af7a2eb05f1780362f`
+- Contract JSON/log SHA256:
+  `450947e797f3a3227836da19ba6e2e0bbda5e4e30a5f6b8f28a30cd0f7bcbc93` /
+  `c8ebb38a540e29bcac338500abb0aad0cee0324a6ac35ebb2ef4b8e549d40f03`
+- Comparison SHA256:
+  `32d143471f101462027f8d856771ed5844491e0b5526c607bab5746a592b79c9`
+- Control/candidate checkpoint SHA256:
+  `4d96b91f9278d38bd92e6f6cf35559ad067a8d5f3ea96d5cd519c558b8a346aa` /
+  `4a48612f436af4e4a2fbedbe9964821197ee0d0abd0fa22adfa5d5ca66fac2c7`
+- Formal log/source snapshot SHA256:
+  `5b9a9dceaa74ba5dafabc5e22d6cad06595f4629333f50c71a5ddecd4c04baa3` /
+  `c0d50d352d9c12b41e5d9dbb99bcbbd23a967992f27a273d4a81fa69abf1e1e9`
+
+R1 passed the same strict CUDA contract but stopped before model construction
+because its sparse checkout omitted a transitive diagnostics module. It has a
+non-science infrastructure abort. R2 expanded only the checkout path and kept
+the exact source SHA, mechanism, data and gates unchanged.

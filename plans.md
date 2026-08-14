@@ -46,18 +46,20 @@ and do not transfer it to Sudoku. Report:
 `research/reports/experiments/gdn3-query-delta-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-FS2-010` Producer-Native Gated Readout is
-approved and preregistered, not yet scored. It keeps native FutureSeed and both
-pinned-official GDN2 scans unchanged, decodes the transferred terminal state
-through the producer's own Q/output coordinates, and injects that evidence
-through one zero-init bounded rank-32 receiver fusion. The fixed D128/L2
-candidate adds exactly 12,288 parameters, no recurrent state and no scan. The
-sole decision is a from-scratch directional-MQAR L1024 matched control/candidate
-endpoint plus a same-trained-model edge-off attribution evaluation. It must
-gain at least `.10` balanced accuracy while reaching `.55`, improve both
-directions and joint exact, reduce total and wrong-key errors, beat edge-off by
-`.03`, and stay below the preregistered cost ceilings. Any miss closes the
-entire readout rank/cap/injection/decoder/gate/training neighborhood without
-Sudoku transfer. Report:
+complete and discarded. Exact pushed/read-back SHA `eb983102` passes the
+strict A100 contract with zero parent error, two pinned-official GDN2
+backwards, exact +12,288 parameters, zero state/scan delta, staged gradients
+and state dependency. The trained path is strong: read/feature/residual
+relative RMS is `.3601/2.7084/.3853`, and the residual reaches `.499865` of
+hidden RMS against the fixed `.5` cap. It is not useful. Control/candidate
+balanced/future/past/joint is `.17475/.1610/.1885/0` versus
+`.0280/.0365/.0195/0`; errors rise `3301->3888`, and the same-trained edge-off
+model remains at `.0280` with 3,888 errors. The lower conditional swap
+fraction `.23326->.07433` is broad retrieval collapse. The state-RMS board std
+check is zero only because native FutureSeed normalizes each board to fixed
+RMS; it is an invalid activation gate, not evidence of identical state
+content. Warmed-step cost also misses at `1.5657x`. Close readout rank, cap,
+injection, decoder, gate and training rescue; no Sudoku transfer. Report:
 `research/reports/experiments/futureseed2-producer-readout-mqar-20260815.md`.
 
 Current update (2026-08-14 CST): `P-GDN3-039` Raven Recurrent Address Composer
@@ -1265,6 +1267,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-FS2-010 | discarded; completed_rejected | Native FutureSeed state may be useful but unreadable in the receiver basis; decode it through the producer Q/output interface and fuse that evidence into receiver hidden states. | Keep native state transfer and both official GDN2 scans. Add one zero-init bounded rank32 producer-native readout edge, +12,288 params, zero state/scan delta. Fixed same-process directional MQAR L1024 control/candidate plus trained edge-off attribution. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `eb983102`. | strict R2 contract and fixed endpoint complete | Balanced `>=max(.55, control+.10)`, both directions and joint improve, fewer errors, swap fraction `-.05`, edge-on `>=edge-off+.03`; cost ceilings fixed. | Mechanism is strongly active but quality collapses: control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.028/.0365/.0195/0`; errors `3301->3888`. Edge-off remains `.028` with 3,888 errors; residual reaches `.499865` of hidden RMS. State-RMS board std is structurally zero after native per-board normalization, so that activation sub-gate is invalid rather than scientific evidence. Warmed step `1.5657x` also fails. Close the full readout/fusion neighborhood; comparison SHA `32d14347...79c9`. |
 | P-GDN3-041 | discarded; completed_rejected | GDN2's state update corrects only the value predicted at `k`; the current output query carries a complementary wrong-binding signal that must enter the same live token transition, not a second key, state, readout, or scan. | Keep native normalized `q/k`, K32xV32 state, vector `b/w`, write direction `k`, native FutureSeed and one scan. Define `lambda=.5*tanh(W_lambda h+b_lambda)`, `x=k+lambda*q`, and run one pinned-official DPLR transition `S'=DS-k[(b*x)^TDS]+k(w*v)^T`. Exact +1,032 params, zero state delta, zero-init parent identity. Fixed matched directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `5f6b757`. | strict contract and fixed two-arm endpoint complete | All activation/stability/integrity/cost checks pass. Control/candidate balanced/future/past/joint=`.36625/.3515/.381/.002` versus `.0145/.0175/.0115/0`; errors `2535->3942`. Lambda RMS `.3273/.3194` and max transition norm `1.0562` prove a strong bounded intervention. Lower swap fraction is broad collapse. Close query-feedback without rescue; no Sudoku transfer. Comparison SHA `b986b559...2536d`. |
 | P-GDN3-040 | discarded; completed_rejected | Native K32 can preserve ordinary retrieval while an exact uncompressed K8xK8 address complement separates pairwise bindings that collide in the linear state. | One coherent K96xV32 state: exact native normalized K32 plus exact K8 outer K8 product K64; native decay/erase block unchanged, bounded lifted product gates, one pinned-official scan, native whole-state FutureSeed. Zero new parameters, 3x state. Fixed matched L1024 D128/L2/H4/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; clean detached pushed SHA `def26f33`. | strict R2 contract and fixed two-arm endpoint complete | Balanced/future/past >=.85, joint>=.60, balanced >=historical and control +.10, fewer errors, swap fraction -.10; elapsed/wall/warmed <3.25x, allocation <2.50x. | Activation and cost pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.01225/.0155/.009/0`; errors `3301->3951`. Product read contributes only `.1728/.2473x` native RMS. Lower swap fraction `.23326->.03189` is broad retrieval collapse. Close exact-product factors/weights/scales/gates/training; no Sudoku transfer. Comparison SHA `f9cd8360...1ed3`. |
 | P-FS2-009 | discarded; completed_rejected | Independently useful private Log-SPD metrics create a known linear mismatch when native FutureSeed passes the producer KxV state directly to the receiver. Removing only that metric component may improve receiver binding without hard-sharing geometry. | Directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123. Same-process private-Log-SPD native-FS control then candidate. Candidate applies the zero-parameter receiver-read pullback `S'=C_r^-1 C_p S` before the unchanged native FS RMS/gate; zero state/scan delta. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `246afec`. | strict contract and fixed two-arm endpoint complete | Require active bounded private metrics/pullback; balanced `>=max(.55, control+.10)`, future/past each `+.07`, joint `>=max(.08, control+.04)`, fewer errors and swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.10x`. | Contract/activation/cost pass. Control/candidate balanced/future/past/joint=`.1385/.1485/.1285/0` versus `.17825/.182/.1745/.002`; errors fall `3446->3287`, but swaps rise `602->748` and fraction `.17470->.22756`. Close metric-derived state transport without rescue; comparison SHA `e8b35796...fceeb`. |

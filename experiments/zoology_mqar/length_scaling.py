@@ -54,6 +54,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_atomic_pair",
     "future_seed_gated_delta_product_n2",
     "future_seed_contractive_dplr",
+    "future_seed_decoupled_key_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -170,6 +171,11 @@ def build_config(
                 "experiments.zoology_mqar.contractive_dplr_futureseed."
                 "ZoologyContractiveDPLRFutureSeedMixer"
             )
+        elif arm == "future_seed_decoupled_key_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.decoupled_key_futureseed."
+                "ZoologyDecoupledKeyGDN2FutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -223,6 +229,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_decoupled_key_gdn2":
+        from experiments.zoology_mqar.decoupled_key_futureseed import (
+            make_tied_decoupled_key_model,
+        )
+
+        return make_tied_decoupled_key_model(copy.deepcopy(config.model))
     if arm == "future_seed_gdn2_surprise_regression":
         from experiments.zoology_mqar.gdn2_surprise_regression_seed import (
             SurpriseRegressionFutureSeedLanguageModel,
@@ -533,6 +545,12 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_atomic_pair import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_decoupled_key_gdn2":
+        from experiments.zoology_mqar.decoupled_key_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
     data_hashes = {
         "train": dataset_hash(train_dataloader),
@@ -676,6 +694,19 @@ def run_arm(
             diagnostic_inputs[:8].cuda(),
             initial_beta_weights=contractive_dplr_initial_beta_weights,
         )
+    decoupled_key = None
+    if arm == "future_seed_decoupled_key_gdn2":
+        from experiments.zoology_mqar.decoupled_key_futureseed import (
+            decoupled_key_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        decoupled_key = decoupled_key_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -751,6 +782,8 @@ def run_arm(
         score["gated_delta_product"] = gated_delta_product
     if contractive_dplr is not None:
         score["contractive_dplr"] = contractive_dplr
+    if decoupled_key is not None:
+        score["decoupled_key"] = decoupled_key
     if surprise_regression is not None:
         score["surprise_regression"] = surprise_regression
     logger.finish()

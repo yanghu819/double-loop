@@ -57,6 +57,7 @@ GDN2_ARMS = (
     "future_seed_contractive_dplr",
     "future_seed_decoupled_key_gdn2",
     "future_seed_anchored_dual_key_gdn2",
+    "future_seed_committed_residual_gdn2",
     "future_seed_chunk_local_biaxis_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
@@ -190,6 +191,11 @@ def build_config(
                 "experiments.zoology_mqar.anchored_dual_key_futureseed."
                 "ZoologyAnchoredDualKeyGDN2FutureSeedMixer"
             )
+        elif arm == "future_seed_committed_residual_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.committed_residual_futureseed."
+                "ZoologyCommittedResidualGDN2FutureSeedMixer"
+            )
         elif arm == "future_seed_chunk_local_biaxis_gdn2":
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_chunk_local_biaxis."
@@ -266,6 +272,12 @@ def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
         )
 
         return make_tied_anchored_dual_key_model(copy.deepcopy(config.model))
+    if arm == "future_seed_committed_residual_gdn2":
+        from experiments.zoology_mqar.committed_residual_futureseed import (
+            make_matched_committed_residual_model,
+        )
+
+        return make_matched_committed_residual_model(copy.deepcopy(config.model))
     if arm == "future_seed_chunk_local_biaxis_gdn2":
         from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
             make_chunk_local_biaxis_model,
@@ -598,6 +610,12 @@ def run_arm(
         )
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_committed_residual_gdn2":
+        from experiments.zoology_mqar.committed_residual_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_chunk_local_biaxis_gdn2":
         from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
             parent_parameter_hash,
@@ -782,6 +800,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    committed_residual = None
+    if arm == "future_seed_committed_residual_gdn2":
+        from experiments.zoology_mqar.committed_residual_futureseed import (
+            committed_residual_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        committed_residual = committed_residual_diagnostics(
+            model,
+            diagnostic_inputs[:4].cuda(),
+        )
     chunk_local_biaxis = None
     if arm == "future_seed_chunk_local_biaxis_gdn2":
         from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
@@ -877,6 +908,8 @@ def run_arm(
         score["decoupled_key"] = decoupled_key
     if anchored_dual_key is not None:
         score["anchored_dual_key"] = anchored_dual_key
+    if committed_residual is not None:
+        score["committed_residual"] = committed_residual
     if chunk_local_biaxis is not None:
         score["chunk_local_biaxis"] = chunk_local_biaxis
     if surprise_regression is not None:

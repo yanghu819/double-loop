@@ -42,6 +42,7 @@ GDN2_ARMS = (
     "causal_gdn2",
     "future_seed_gdn2",
     "future_seed_gdn2_log_spd",
+    "future_seed_gdn2_shared_log_spd",
     "future_seed_gdn2_log_spd_block_gram",
     "future_seed_gdn2_two_edit",
     "future_seed_gdn2_dual_hash",
@@ -109,7 +110,10 @@ def build_config(
             raise ValueError(
                 "model_heads * gdn2_head_dim * gdn2_expand_v must be an integer"
             )
-        if arm == "future_seed_gdn2_log_spd":
+        if arm in (
+            "future_seed_gdn2_log_spd",
+            "future_seed_gdn2_shared_log_spd",
+        ):
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_log_spd."
                 "ZoologyLogSPDGDN2FutureSeedMixer"
@@ -232,6 +236,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_gdn2_shared_log_spd":
+        from experiments.zoology_mqar.gdn2_shared_log_spd import (
+            SharedLogSPDFutureSeedLanguageModel,
+        )
+
+        return SharedLogSPDFutureSeedLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_decoupled_key_gdn2":
         from experiments.zoology_mqar.decoupled_key_futureseed import (
             make_tied_decoupled_key_model,
@@ -525,6 +535,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_log_spd import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_gdn2_shared_log_spd":
+        from experiments.zoology_mqar.gdn2_shared_log_spd import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_gdn2_log_spd_block_gram":
         from experiments.zoology_mqar.gdn2_block_gram import parent_parameter_hash
 
@@ -614,10 +628,19 @@ def run_arm(
         surprise_regression = surprise_regression_diagnostics(model)
     future_seed = futureseed_diagnostics(model) if arm in GDN2_ARMS else None
     log_spd = None
-    if arm in ("future_seed_gdn2_log_spd", "future_seed_gdn2_log_spd_block_gram"):
+    if arm in (
+        "future_seed_gdn2_log_spd",
+        "future_seed_gdn2_log_spd_block_gram",
+    ):
         from experiments.zoology_mqar.gdn2_log_spd import log_spd_diagnostics
 
         log_spd = log_spd_diagnostics(model)
+    elif arm == "future_seed_gdn2_shared_log_spd":
+        from experiments.zoology_mqar.gdn2_shared_log_spd import (
+            shared_log_spd_diagnostics,
+        )
+
+        log_spd = shared_log_spd_diagnostics(model)
     block_gram = None
     if arm == "future_seed_gdn2_log_spd_block_gram":
         from experiments.zoology_mqar.gdn2_block_gram import block_gram_diagnostics
@@ -765,7 +788,11 @@ def run_arm(
     }
     if future_seed is not None:
         score["future_seed"] = future_seed
-    if arm in ("future_seed_gdn2_log_spd", "future_seed_gdn2_log_spd_block_gram"):
+    if arm in (
+        "future_seed_gdn2_log_spd",
+        "future_seed_gdn2_shared_log_spd",
+        "future_seed_gdn2_log_spd_block_gram",
+    ):
         score["log_spd"] = log_spd
     if block_gram is not None:
         score["block_gram"] = block_gram

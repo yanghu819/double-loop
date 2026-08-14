@@ -3062,3 +3062,23 @@
   forced-coherence and dual-gauge families. Further Q/K caps, ranks, sharing or
   normalization variants are table filling; move to a scalable live-state
   organization or transition mechanism.
+
+## 2026-08-15: Terminal-read self-distillation suppresses binding rather than repairing it
+
+- P-FS2-011 leaves native FutureSeed inference exactly unchanged and sends a
+  real all-token receiver-native read loss only into the producer state path
+  and receiving FutureSeed gate. Its strict contract and all cost gates pass.
+- The auxiliary target is easy to satisfy without learning retrieval:
+  inherited/live read cosine reaches `.9370`, yet balanced accuracy collapses
+  `.12375->.01775` and total errors rise `3505->3929`.
+- A large drop in valid-value/wrong-key swaps (`543->185`) is again misleading
+  when correct retrieval collapses. Always report absolute errors and accuracy
+  with conditional error composition.
+- Matching a detached receiver terminal state is not a credit signal for
+  binding correctness. It rewards agreement with the receiver's own mistakes
+  and can flatten useful producer evidence even with no labels or inference
+  overhead.
+- Close auxiliary weight, teacher, detach, normalization, token/layer mask and
+  duration variants. Future FS2 work needs a causal, receiver-native content
+  mechanism or a task-independent learning signal that cannot be minimized by
+  destroying retrieval.

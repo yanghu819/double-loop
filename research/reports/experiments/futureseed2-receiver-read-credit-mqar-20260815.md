@@ -2,8 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: R1 stopped before science on an invalid normalized-RMS variation
-  statistic; R2 implementation pending pushed SHA
+- Status: complete; R2 discarded on the fixed quality gate
 - Task: directional MQAR, sequence length 1024, four future and four past queries
 - Carrier: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed endpoint: 10 epochs, batch32, seed123, contemporaneous control then candidate
@@ -143,6 +142,41 @@ distillation and stop nearby loss variants. The next mechanism must then alter
 a genuinely different scalable state organization or training regime, not Q/K
 coordinates, producer readout, replay cache or another auxiliary proxy.
 
+R2 reaches the second branch and closes this mechanism. The strict contract,
+activation, integrity and all cost checks pass, but every absolute quality
+gate fails except the conditional swap-fraction check:
+
+- control/candidate balanced accuracy: `0.12375 -> 0.01775`;
+- future accuracy/exact: `0.12150/0.004 -> 0.01650/0`;
+- past accuracy/exact: `0.12600/0.002 -> 0.01900/0`;
+- joint exact: `0 -> 0`;
+- total query errors: `3505 -> 3929`;
+- wrong-key valid-value swaps: `543 -> 185`, or
+  `0.154922 -> 0.047086` among errors.
+
+The last line is not evidence of better binding. The candidate retrieves so
+few correct values that it no longer produces as many valid-value/wrong-key
+errors. The all-token credit itself is active: unweighted/weighted loss is
+`0.125961/0.031490`, inherited/live read RMS is `0.249175/0.052375`, read
+cosine is `0.937020`, and receiver-query content board variation is
+`0.008267`. It therefore trains a real but destructive shortcut toward the
+detached receiver terminal state.
+
+Cost is not the cause of failure. Candidate/control ratios are
+`0.7577x` elapsed, `0.7601x` post-warm wall, `0.9984x` independently warmed
+step and `1.0653x` peak allocation. The inference graph remains exactly native
+FutureSeed with zero added parameters, recurrent values or scans. Do not tune
+the auxiliary coefficient, teacher, detach boundary, normalization, token or
+layer selection, seed, data or duration. There is no Sudoku transfer.
+
 ## 9. Submission Record
 
-Not applicable. This is a local architecture science gate.
+- R2 source/read-back SHA: `9f911a250675ba1fcc4fccee4e5828776344eed9`.
+- Run: `p-fs2-011-r2-receiver-read-credit-l1024-20260814T232500Z-9f911a2`.
+- Score SHA256: `0ab8be7f8f64cf9da62631e2e400ea6630b0d69d3dcba56dd9042efb8b360d50`.
+- Contract JSON/log SHA256: `0b7205a0...8cc10c` / `eb244172...8ccbf4`.
+- Formal log SHA256: `9d7549e0...097ab5`.
+- Control/candidate checkpoint SHA256: `5ee21531...00060d` /
+  `995d6c0d...e9d16`.
+- Endpoint status is complete; launcher exit `2` records the preregistered
+  science miss, not an infrastructure or integrity failure.

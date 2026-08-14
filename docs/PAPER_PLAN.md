@@ -2045,3 +2045,26 @@ open problem is not solved by separating keys, forcing Q/K agreement, or
 changing their coordinate gauge while preserving pairings. The next credible
 GDN3 direction must change scalable live-state organization or the committed
 transition while retaining native coherent ownership and learnable Q/K maps.
+
+### P-FS2-011 Receiver-Native Terminal-Read Credit Boundary
+
+P-FS2-011 tests receiver-native credit without changing FutureSeed inference.
+Detached receiver queries read both the inherited producer state and the exact
+official receiver terminal state; normalized all-token MSE updates only the
+producer state path and receiver FutureSeed gate. The strict contract proves
+native inference identity, exact official-kernel provenance, zero added
+parameters/state/scans and nonzero intended gradients.
+
+The mechanism is active but destructive. Control/candidate balanced accuracy
+is `.12375/.01775`, future/past accuracy is `.12150/.12600` versus
+`.01650/.01900`, joint exact remains zero, and total errors rise `3505->3929`.
+Wrong-key valid-value swaps fall from `543` to `185` only because useful
+retrieval collapses. The candidate remains cheap at `.9984x` independently
+warmed step and `1.0653x` peak allocation, so implementation cost does not
+explain the negative result.
+
+The paper may use this as a clean self-distillation boundary: receiver-native
+coordinates alone do not make a terminal-state teacher causal for binding.
+Agreement with a detached receiver endpoint can reproduce its mistakes or
+flatten evidence. Do not present lower conditional swap fraction as an FS2
+gain, do not transfer this loss to Sudoku, and do not tune nearby loss variants.

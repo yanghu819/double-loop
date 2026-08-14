@@ -13,30 +13,20 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-FS2-011` Receiver-Native Terminal-Read
-Credit R1 passed all model/kernel/identity/gradient contract checks but exposed
-that `query_board_std` measured RMS after per-token L2 normalization and was
-structurally zero. Formal had only entered control compilation and produced no
-score; exact PGID `74064` was stopped and the archived abort is non-scientific.
-R2 changes only this harness statistic to centered query-content variation
-across boards and adds it to the strict contract; mechanism, fixed weight,
-data and all quality/cost gates remain unchanged. P031/P036/P042/P043/P044 close direct decoupled keys and
-nearby static/dynamic Q/K coordinate changes; P-FS2-006 left receiver-native
-credit untested because its hand FP32 replay missed the strict official-kernel
-parity gate. P-FS2-011 leaves inference byte-identical to native FutureSeed.
-During training only, detached receiver queries read the inherited seed and
-the exact official receiver terminal state; an all-token normalized read loss
-trains only the producer terminal-state path and receiver FutureSeed gate.
-Teacher and receiver query are detached, labels are absent, and the candidate
-adds zero parameters, state values and inference scans. Fixed directional MQAR
-L1024 endpoint: contemporaneous control then candidate, D128/L2/H4/K32/V32,
-10 epochs, batch32, seed123, auxiliary weight `.25`, no sweep. Admit one Sudoku
-transfer only if balanced accuracy is `>=.55` and `>=control+.10`, both
-directions are `>=.50` and `>=control+.08`, joint exact is `>=.06` and
-`>=control+.04`, total errors fall, wrong-key fraction falls `>=.05`, and
-elapsed/post-warm/warmed/allocation stay below `1.30/1.30/1.30/1.12x`.
-Any contract, activation, quality or cost miss closes this exact training
-signal without weight/detach/normalization/token/layer/seed/duration rescue.
-Report: `research/reports/experiments/futureseed2-receiver-read-credit-mqar-20260815.md`.
+Credit is complete and discarded. R2 exact pushed/read-back source `9f911a25`
+passes the strict model/kernel/identity/gradient contract and all activation,
+integrity and cost gates. The fixed L1024 endpoint rejects the training signal:
+control/candidate balanced/future/past/joint is
+`.12375/.12150/.12600/0` versus `.01775/.01650/.01900/0`, and total errors rise
+`3505->3929`. Wrong-key valid-value swaps fall `543->185`, but this is broad
+retrieval collapse, not improved binding. The auxiliary path is active
+(credit `.125961`, inherited/live read RMS `.249175/.052375`, read cosine
+`.937020`), while inference remains byte-identical native FutureSeed with zero
+added parameters/state/scans. Cost ratios elapsed/post-warm/warmed/allocation
+are `.7577/.7601/.9984/1.0653x`. Close coefficient, teacher, detach,
+normalization, token/layer selection, seed/data/duration rescue; no Sudoku
+transfer. Score SHA256 is `0ab8be7f...b360d50`. Report:
+`research/reports/experiments/futureseed2-receiver-read-credit-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-044` Dynamic Canonical Address Frame
 is complete and discarded. Exact pushed/read-back source `913f40cd` passes the
@@ -1344,7 +1334,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-FS2-011 | proposed; implementation complete | Native FutureSeed may carry the right completed evidence but receive no direct credit for making it readable under the next layer's own queries. P-FS2-006 did not reach quality because a hand FP32 replay missed parity; exact official graph tensors remain untested. | Keep native two-layer official GDN2 and native FutureSeed exactly unchanged at inference. During training, recompute detached receiver Q with the same projection/Triton conv, read inherited seed and detached exact receiver terminal state, and minimize all-token per-read normalized MSE with fixed weight `.25`. Gradients may reach only producer state parameters and the receiving FS gate. Zero parameters/state/inference scans. Fixed L1024 control then candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed SHA and clean detached worktree required before GPU. | strict contract plus one fixed matched endpoint | Balanced `>=.55` and `+0.10`; future/past `>=.50` and `+0.08`; joint `>=.06` and `+0.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.12x`. | Pending. Kill on any contract/activation/quality/cost miss; no coefficient, detach, normalization, token/layer selection, seed or duration rescue. |
+| P-FS2-011 | discarded; completed_rejected | Native FutureSeed may carry the right completed evidence but receive no direct credit for making it readable under the next layer's own queries. P-FS2-006 did not reach quality because a hand FP32 replay missed parity; exact official graph tensors remain untested. | Keep native two-layer official GDN2 and native FutureSeed exactly unchanged at inference. During training, recompute detached receiver Q with the same projection/Triton conv, read inherited seed and detached exact receiver terminal state, and minimize all-token per-read normalized MSE with fixed weight `.25`. Gradients may reach only producer state parameters and the receiving FS gate. Zero parameters/state/inference scans. Fixed L1024 control then candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `9f911a25`. | strict contract and fixed endpoint complete | Balanced `>=.55` and `+0.10`; future/past `>=.50` and `+0.08`; joint `>=.06` and `+0.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.12x`. | Activation/integrity/cost pass, quality fails. Control/candidate balanced/future/past/joint=`.12375/.12150/.12600/0` versus `.01775/.01650/.01900/0`; errors `3505->3929`. Swap fraction falls only through broad collapse. Close all nearby loss variants; score SHA `0ab8be7f...b360d50`. |
 | P-GDN3-044 | discarded; completed_rejected | Static Q/K gauges are closed, but a fixed K basis may still alias long-sequence phases. Test a bounded token-varying frame that transports live state without splitting ownership. | Per token/layer learn diagonal `C_t`; apply one coherent factor to Q/K, add `log C_t-log C_{t-1}` to native row decay inside one official scan, and canonicalize terminal rows before native FutureSeed. Exact +4,096 params, zero state/scan. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `913f40cd`. | strict contract and fixed endpoint complete | Balanced `>=.55` and control `+.15`; directions `>=.50` and `+.10`; joint `>=.06` and `+.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.12x`. | Contract and all activation/stability gates pass. Control/candidate balanced/future/past/joint=`.36625/.3515/.381/.002` versus `.0765/.071/.082/0`; errors rise `2535->3694`. Factors approach the fixed bound and Q/K changes are large, so the mechanism is active. Lower swap fraction is broad collapse. Allocation/warmed step fail at `1.1462/1.4064x`. Close the complete dynamic-frame family; comparison SHA `790b1550...ff6b`. |
 | P-GDN3-043 | discarded; completed_rejected | P031/P036 close split erase keys and P042 closes forced Q/K similarity, but neither tests a strict coordinate change that retains coherent ownership and the full native differential. P020 says address geometry is causal. | Per layer/head learn bounded symmetric trace-free `G`; use `C=exp(.5log2 G)`, `q'=qC^-T`, `k'=kC`. Raw pairing is invariant, normalization/state geometry can adapt. Exact +4,216 params, zero state/scan, parent-exact at zero. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `5ffaa6ea`. | strict contract and fixed endpoint complete | Balanced `>=.55` and control `+.10`; directions `>=.52` and `+.07`; joint `>=.08` and `+.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.35x`, allocation `<1.12x`. | Contract and all activation gates pass. Control/candidate balanced/future/past/joint=`.04850/.05450/.04250/0` versus `.01975/.01800/.02150/0`; errors rise `3806->3921`. Wrong-key swaps `302->163` are broad collapse and miss the registered fraction gain. Elapsed/wall/allocation pass; warmed step `1.9149x` fails. Close the full gauge family without rescue; comparison SHA `94e85397...505c79`. |
 | P-GDN3-042 | discarded; completed_rejected | P020/P025 prove learned address organization is causal, while surprise replay leaves almost pure wrong-key swaps. The untested cause was drift between native Q read and K write maps, not erase/write key specialization. | Preserve Q/K projections, K32xV32 state, coherent erase/write/read ownership, one pinned-official scan and native FutureSeed. Learn per-layer H4xK32 `alpha=1+.5*tanh(a)` over midpoint/difference coordinates: `q'=c+alpha*d`, `k'=c-alpha*d`; exact256 parameters, zero state/scan delta, parent-exact at zero. One fixed same-process L1024 control/candidate, 10ep/batch32/seed123. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed/read-back SHA `39386276`. | strict R2 contract and fixed two-arm endpoint complete | Balanced `>=.55` and control `+.10`; directions `>=.52` and `+.07`; joint `>=.08` and `+.04`; fewer errors; swap fraction `-.05`; wall/warm `<1.20x`, allocation `<1.10x`. | Contract and activation pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.05725/.10/.0145/0`; errors rise`3301->3771`. Alpha is bounded and all8 heads active. Swap fraction `.23326->.08778` is broad collapse; warmed step is `1.6108x`. Close all coherence/rescaling/training rescues; no Sudoku transfer. Comparison SHA `02ecf1c6...20e6`. |

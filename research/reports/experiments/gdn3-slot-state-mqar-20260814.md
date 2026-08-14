@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered, implementation pending strict CUDA contract
+- Status: discarded; completed_rejected
 - Date: 2026-08-14
 - Benchmark: directional MQAR L1024 wrong-key regime
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
@@ -127,4 +127,53 @@ source/config/checkpoint/score/log hashes and exact GPU provenance.
 
 ## 9. Decision
 
-Pending strict CUDA contract and the one fixed matched endpoint.
+The exact pushed source was
+`44f107196dead62a71e24828dba192ae55cedbc0`, run from a clean detached
+worktree on A100-SXM4-40GB index0 UUID
+`GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`. The strict CUDA contract passed.
+Both arms used the same serialized parent initialization and data hashes, and
+the candidate retained exactly one pinned-official GDN2 scan per layer. The
+candidate added the registered 2,056 parameters and doubled recurrent state
+values/layer from 4,096 to 8,192 without a fallback.
+
+The router and both full states genuinely activate. Layer router entropy is
+`0.55347/0.38086`, mean maximum probability is `0.76690/0.89718`, and global
+slot mass remains noncollapsed at `0.25747..0.74253` and
+`0.17010..0.82990`. Token and board variation are finite, routed erase/write
+changes are about `0.26..0.30` RMS, and mean slot-state cosine falls to
+`0.86547/0.72373`. Layer1 state relative difference reaches `1.06652`.
+However, the strict max-cosine activation gate misses at
+`0.99977/0.99699`, showing that some examples still leave the slots nearly
+identical.
+
+Quality fails decisively. Control versus candidate balanced/future/past/joint
+accuracy is `0.4940/0.4540/0.5340/0.0410` versus
+`0.36525/0.3615/0.3690/0`. Future/past CE rises from
+`1.25939/1.22668` to `2.20532/2.23182`, and total query errors rise
+`2,024 -> 2,539`. The candidate does reduce wrong-key valid-value swaps
+`1,546 -> 1,508` and their fraction among errors
+`0.76383 -> 0.59393`, passing that isolated binding check. The reduction is
+not closure: it comes with 515 additional errors and zero joint-exact cases.
+
+Systems gates pass. Elapsed/post-warm/warmed-step/allocation ratios are
+`1.1690/1.1710/1.6681/1.8344`, within the registered
+`2.75/2.75/2.75/2.00x` limits. This therefore falsifies the fixed two-slot
+content partition rather than exposing a runtime defect.
+
+P-GDN3-038 is closed. A shared soft content hash can separate two full live
+states and reduce conditional key swaps, but joint write/read routing delays
+optimization and sacrifices general retrieval. Do not rescue slot count,
+router form, temperature, gate map, initialization, seed, LR, loss, batch,
+width, depth or duration. The next mechanism must avoid assigning one token to
+one global memory trajectory while preserving native coherent erase/write/read
+ownership.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-gdn3-038-slot-state-l1024-20260814T152219Z-44f1071`;
+- contract SHA256: `092d1227ff45a19f9f4d7b5065c2abe4d302f92bad7f7cad0af79df46142e1b9`;
+- comparison/decision SHA256: `aa4b75d43859ec519db55b8a1b91163fe873fdda575aa79c7fef061cc85b90c7`;
+- control/candidate score SHA256: `e0cfc26013b92cd902af5f19915440520a545c6cfb576fc8ce0417de1bee03ad` / `dc9108a72c726db5e88e9bb63aa66f02fac46cedd92fdca36ea62fbe5393dbf6`;
+- control/candidate checkpoint SHA256: `52d549ed70f6fa3426d6511f7472ab59173dc75f7f51ea4605b3be42cec3eae7` / `3bc9f6fdec07999659515f34408d5b26260119585fe7220458bcbd20cc5fab1c`;
+- formal log SHA256: `54b8e2163caa41c3a40b2871fe1f17b4358ce9cf50cfbc1d13af98ff9f574207`;
+- artifact manifest SHA256: `36df5e52eceea47aba634a6a95dacf499f18977b4ef9026376c1cffd770767a0`.

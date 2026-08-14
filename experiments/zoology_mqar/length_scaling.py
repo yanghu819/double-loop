@@ -61,6 +61,7 @@ GDN2_ARMS = (
     "future_seed_committed_residual_gdn2",
     "future_seed_chunk_local_biaxis_gdn2",
     "future_seed_slot_state_gdn2",
+    "future_seed_raven_address_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -208,6 +209,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_slot_state."
                 "ZoologySlotStateFutureSeedMixer"
+            )
+        elif arm == "future_seed_raven_address_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_raven_address."
+                "ZoologyRavenAddressFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -582,6 +588,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_raven_address_gdn2":
+            from experiments.zoology_mqar.gdn2_raven_address import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -656,6 +668,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_slot_state_gdn2":
         from experiments.zoology_mqar.gdn2_slot_state import parent_parameter_hash
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_raven_address_gdn2":
+        from experiments.zoology_mqar.gdn2_raven_address import (
+            parent_parameter_hash,
+        )
 
         parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
@@ -881,6 +899,18 @@ def run_arm(
         with torch.no_grad():
             model.eval()(diagnostic_inputs[:8].cuda())
         slot_state = slot_state_diagnostics(model)
+    raven_address = None
+    if arm == "future_seed_raven_address_gdn2":
+        from experiments.zoology_mqar.gdn2_raven_address import (
+            raven_address_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs[:8].cuda())
+        raven_address = raven_address_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -914,6 +944,7 @@ def run_arm(
         "recurrent_state_values_per_layer": (
             int(model_heads * gdn2_head_dim * gdn2_head_dim * gdn2_expand_v)
             * (2 if arm == "future_seed_slot_state_gdn2" else 1)
+            + (4_096 if arm == "future_seed_raven_address_gdn2" else 0)
         ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
@@ -939,6 +970,8 @@ def run_arm(
         score["future_seed"] = future_seed
     if slot_state is not None:
         score["slot_state"] = slot_state
+    if raven_address is not None:
+        score["raven_address"] = raven_address
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",

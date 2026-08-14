@@ -1872,3 +1872,22 @@ is another retrieval-collapse artifact. The paper should treat native GDN2's
 K-coordinate erase and V-coordinate write gates as a useful learnable control
 surface, not an incoherence to average into one beta. Close scalar residual
 targets and preserve these degrees of freedom in future state organizations.
+
+### P-GDN3-038 Content-Partitioned Full-State Boundary
+
+P038 tests a genuinely different persistent topology: each native H4 head gets
+two complete K32xV32 live states, and one learned content hash jointly routes
+bounded erase/write admission and read weighting while preserving one official
+scan per layer. The mechanism is not inert. Both routers specialize, mean
+slot-state cosine falls to `.8655/.7237`, and conditional wrong-key swap
+fraction improves `.76383->.59393`.
+
+The topology still loses the task. Contemporaneous control/candidate balanced
+accuracy is `.4940/.36525`, joint exact `.041/0`, and total errors
+`2024->2539`. The shared hash reduces one error subtype but delays learning and
+removes useful retrieval cases; some examples also leave the two slots almost
+identical. This separates address-collision evidence from a viable solution:
+global token-to-slot assignment is too coarse even when each slot preserves a
+full native GDN2 state. Close slot count, routing temperature and training
+rescues. A successor should preserve per-binding coherent ownership without
+selecting a whole global trajectory for each token.

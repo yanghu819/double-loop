@@ -2907,3 +2907,19 @@
 - Close beta reducer, target, residual-scale, decay and training rescues. A next
   recurrence must preserve native erase/write expressivity while changing a
   genuinely different scalable state-organization boundary.
+- A learned content partition can reduce binding swaps without improving the
+  task. P038 lowers wrong-key swap fraction `.76383->.59393`, yet balanced
+  accuracy falls `.4940->.36525` and total errors rise `2024->2539`.
+- Whole-state routing is too coarse for associative memory. Assigning each
+  token's read, erase and write to one shared soft slot makes two full states
+  specialize, but it also delays optimization and loses useful cross-binding
+  retrieval.
+- Check both mean and worst-case state separation. P038 mean slot cosine falls
+  to `.8655/.7237`, while max cosine remains `.99977/.99699`; aggregate
+  specialization can hide nearly identical trajectories on some examples.
+- A lower wrong-key fraction is causal evidence only when total errors and
+  joint exact also improve. Here joint exact drops `.041->0`, so the isolated
+  swap gain is not an architecture win.
+- Close slot count, router form, temperature, gate map and duration rescue. A
+  successor must keep coherent native address ownership without using one
+  global content hash to choose an entire recurrent trajectory.

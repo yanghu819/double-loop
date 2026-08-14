@@ -12,18 +12,33 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-14 CST): `P-GDN3-038` is the sole preregistered
-successor after P-FS2-009. It tests a genuinely new persistent state topology,
-not another key/metric/readout wrapper: every H4 head gets two first-class full
-K32xV32 live states, and one learned content hash jointly partitions bounded
-erase/write admission and query read inside one pinned-official GDN2 scan.
-Uniform routing is exactly native; the fixed formal model trains from scratch
-on directional MQAR L1024 with a contemporaneous matched-initialization
-control. Exact delta is +2,056 parameters and 4,096 state values/layer. Pass
-requires active noncollapsed slots plus balanced >=.50 and control +.10,
-future/past >=.45 and +.07, joint >=.05 and +.04, fewer errors, wrong-key swap
-fraction -0.05, and registered <=2.75x compute/<=2.00x allocation. Any miss
-closes slot count/router/gate/init/training rescue. Report:
+Current update (2026-08-14 CST): `P-GDN3-039` Raven Recurrent Address Composer
+is the sole preregistered successor. P038 shows that full-state partitioning
+can reduce wrong-key swaps but one global token-to-slot hash loses retrieval.
+P039 instead keeps one native coherent GDN2 data plane and lets a compact
+official Raven retrieve binding history used only to compose the shared Q/K
+input. V, decay, K-wise erase, V-wise write, main state and native FutureSeed
+stay native. This is distinct from P017 row allocation and P019 Raven-to-V
+write control. The fixed D128/L2 L1024 run adds exactly 181,648 parameters,
+4,096 state values and one official Raven scan/layer. Pass requires active
+noncollapsed Raven/address paths, balanced `>=.55` and control `+.08`, both
+directions `>=.50` and `+.07`, joint `>=.08` and `+.04`, fewer errors, swap
+fraction `-.05`, and registered `<2.75x` compute/`<1.75x` allocation. Any miss
+closes Raven width/slot/top-k/adapter/transport/training rescue. Report:
+`research/reports/experiments/gdn3-raven-address-composer-mqar-20260814.md`.
+
+Current update (2026-08-14 CST): `P-GDN3-038` Content-Partitioned Full-State
+GDN2 is complete and discarded. The strict matched-initialization contract
+passes and both full K32xV32 slots genuinely specialize: router entropy is
+`.5535/.3809`, mean slot-state cosine is `.8655/.7237`, and wrong-key swap
+fraction falls `.76383->.59393`. This isolated address improvement does not
+translate into retrieval. Control/candidate balanced/future/past/joint is
+`.4940/.4540/.5340/.0410` versus `.36525/.3615/.3690/0`; errors rise
+`2024->2539`, and candidate CE is much worse. Some examples also remain nearly
+slot-identical (max cosine `.99977/.99699`). All cost gates pass. Close slot
+count, router, temperature, gate map, initialization and training rescue. The
+next successor must preserve coherent native ownership without forcing one
+soft content hash to choose an entire memory trajectory. Report:
 `research/reports/experiments/gdn3-slot-state-mqar-20260814.md`.
 
 Current update (2026-08-14 CST): `P-FS2-009` Metric-Pullback FutureSeed is

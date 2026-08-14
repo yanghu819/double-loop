@@ -42,6 +42,7 @@ GDN2_ARMS = (
     "causal_gdn2",
     "future_seed_gdn2",
     "future_seed_gdn2_log_spd",
+    "future_seed_gdn2_metric_pullback",
     "future_seed_gdn2_shared_log_spd",
     "future_seed_gdn2_log_spd_block_gram",
     "future_seed_gdn2_two_edit",
@@ -115,6 +116,7 @@ def build_config(
             )
         if arm in (
             "future_seed_gdn2_log_spd",
+            "future_seed_gdn2_metric_pullback",
             "future_seed_gdn2_shared_log_spd",
         ):
             mixer_name = (
@@ -254,6 +256,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_gdn2_metric_pullback":
+        from experiments.zoology_mqar.gdn2_metric_pullback_futureseed import (
+            MetricPullbackFutureSeedLanguageModel,
+        )
+
+        return MetricPullbackFutureSeedLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_gdn2_shared_log_spd":
         from experiments.zoology_mqar.gdn2_shared_log_spd import (
             SharedLogSPDFutureSeedLanguageModel,
@@ -567,7 +575,10 @@ def run_arm(
     init_hash = model_hash(model)
     init_parameter_hash = parameter_hash(model)
     parent_init_parameter_hash = None
-    if arm == "future_seed_gdn2_log_spd":
+    if arm in (
+        "future_seed_gdn2_log_spd",
+        "future_seed_gdn2_metric_pullback",
+    ):
         from experiments.zoology_mqar.gdn2_log_spd import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
@@ -684,6 +695,7 @@ def run_arm(
     log_spd = None
     if arm in (
         "future_seed_gdn2_log_spd",
+        "future_seed_gdn2_metric_pullback",
         "future_seed_gdn2_log_spd_block_gram",
     ):
         from experiments.zoology_mqar.gdn2_log_spd import log_spd_diagnostics
@@ -696,6 +708,13 @@ def run_arm(
 
         log_spd = shared_log_spd_diagnostics(model)
     block_gram = None
+    metric_pullback = None
+    if arm == "future_seed_gdn2_metric_pullback":
+        from experiments.zoology_mqar.gdn2_metric_pullback_futureseed import (
+            metric_pullback_diagnostics,
+        )
+
+        metric_pullback = metric_pullback_diagnostics(model)
     if arm == "future_seed_gdn2_log_spd_block_gram":
         from experiments.zoology_mqar.gdn2_block_gram import block_gram_diagnostics
 
@@ -882,10 +901,13 @@ def run_arm(
         score["future_seed"] = future_seed
     if arm in (
         "future_seed_gdn2_log_spd",
+        "future_seed_gdn2_metric_pullback",
         "future_seed_gdn2_shared_log_spd",
         "future_seed_gdn2_log_spd_block_gram",
     ):
         score["log_spd"] = log_spd
+    if metric_pullback is not None:
+        score["metric_pullback"] = metric_pullback
     if block_gram is not None:
         score["block_gram"] = block_gram
     if arm == "future_seed_gdn2_two_edit":

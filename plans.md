@@ -12,6 +12,25 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-14 CST): `P-FS2-009` Metric-Pullback FutureSeed is
+approved for one directional-MQAR L1024 decision. P020's independently learned
+private Log-SPD metrics produce the only large same-runtime address gain
+(`+0.30875` balanced), while P033 proves that hard-sharing one metric across
+layers is harmful. The candidate keeps those private metrics and analytically
+pulls the producer terminal state into the receiver read coordinates with
+`B=C_receiver^-1 C_producer` before the unchanged native FutureSeed RMS/gate.
+This is explicitly a receiver-read pullback, not an exact Q/K basis covariance
+claim: tokenwise L2 normalization and different layer projections remain. It
+adds zero parameters, state or scans and is identity when both metrics are
+identity. Run one same-process private-Log-SPD control then one pullback arm at
+fixed D128/L2/H4/K32/V32, 10 epochs, batch32, seed123. Require active bounded
+private metrics and pullback, candidate balanced at least
+`max(.55, control+.10)`, each direction `+0.07`, joint at least
+`max(.08, control+.04)`, fewer
+errors, swap fraction `-.05`, elapsed/wall/warmed `<1.30x`, allocation
+`<1.10x`. Any miss closes metric-derived state transport without direction,
+transpose, inverse, scale, metric or training rescue.
+
 Current update (2026-08-14 CST): `P-GDN3-037` completed and is discarded. Its
 strict contract proves byte-identical native initialization, equal `661,584`
 parameters, two official DPLR backward paths, exact equation mapping, finite

@@ -67,6 +67,7 @@ GDN2_ARMS = (
     "future_seed_qk_coherence_gdn2",
     "future_seed_biorthogonal_qk_gdn2",
     "future_seed_dynamic_frame_gdn2",
+    "future_seed_receiver_read_credit_gdn2",
     "future_seed_producer_readout_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
@@ -299,6 +300,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_receiver_read_credit_gdn2":
+        from experiments.zoology_mqar.futureseed_read_credit import (
+            ReceiverReadCreditLanguageModel,
+        )
+
+        return ReceiverReadCreditLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
             ProducerReadoutFutureSeedLanguageModel,
@@ -396,6 +403,7 @@ def warm_model(
         model.zero_grad(set_to_none=True)
         logits = model(inputs)
         loss = F.cross_entropy(logits.flatten(0, 1), labels.flatten())
+        loss = loss + _model_auxiliary_loss(model)
         loss.backward()
     model.zero_grad(set_to_none=True)
     torch.cuda.synchronize()
@@ -417,6 +425,7 @@ def benchmark_training_step(
         model.zero_grad(set_to_none=True)
         logits = model(inputs)
         loss = F.cross_entropy(logits.flatten(0, 1), labels.flatten())
+        loss = loss + _model_auxiliary_loss(model)
         loss.backward()
 
     for _ in range(warmup_steps):
@@ -436,6 +445,19 @@ def benchmark_training_step(
         "examples_per_sec": inputs.shape[0] * measured_steps / elapsed,
         "peak_cuda_mem_bytes": float(torch.cuda.max_memory_allocated()),
     }
+
+
+def _model_auxiliary_loss(model: torch.nn.Module) -> torch.Tensor:
+    losses: list[torch.Tensor] = []
+
+    def collect(module: torch.nn.Module) -> None:
+        if hasattr(module, "get_auxiliary_loss"):
+            losses.append(module.get_auxiliary_loss())
+
+    model.apply(collect)
+    if not losses:
+        return torch.zeros((), device=next(model.parameters()).device)
+    return torch.stack(losses).sum()
 
 
 def _query_event(
@@ -1090,6 +1112,13 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    receiver_read_credit = None
+    if arm == "future_seed_receiver_read_credit_gdn2":
+        from experiments.zoology_mqar.futureseed_read_credit import (
+            receiver_read_credit_diagnostics,
+        )
+
+        receiver_read_credit = receiver_read_credit_diagnostics(model)
     producer_readout = None
     producer_readout_edge_off = None
     producer_readout_edge_off_cases = None
@@ -1193,6 +1222,8 @@ def run_arm(
         score["biorthogonal_qk"] = biorthogonal_qk
     if dynamic_frame is not None:
         score["dynamic_frame"] = dynamic_frame
+    if receiver_read_credit is not None:
+        score["receiver_read_credit"] = receiver_read_credit
     if producer_readout is not None:
         score["producer_readout"] = producer_readout
         score["producer_readout_edge_off_metrics"] = producer_readout_edge_off

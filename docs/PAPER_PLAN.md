@@ -1838,3 +1838,20 @@ bounded-tangent decoupled erase keys: useful GDN2 memory needs exact coherent
 read/write/erase ownership, not merely nearby key directions. Do not tune the
 angle, cap or regularizer; successors must alter a different scalable state or
 transition boundary.
+
+### P-GDN3-037 Committed-Residual Target Boundary
+
+P037 keeps the exact native read/write key, every GDN2 projection, one
+K32xV32 state and one scan, but replaces coordinate-wise erase plus V-wise
+write with one scalar-gated committed prediction residual. The pinned-official
+DPLR mapping is exact, byte-identical initialization and all gradients pass,
+and the trained transition remains contractive with spectral norm below one.
+
+The result rejects the simplification. Balanced accuracy falls
+`0.36625->0.01525`, joint exact `0.002->0`, and errors rise `2535->3939`, even
+though the committed residual is strongly active at roughly `1.07` relative
+RMS and every cost gate passes. The much lower conditional wrong-key fraction
+is another retrieval-collapse artifact. The paper should treat native GDN2's
+K-coordinate erase and V-coordinate write gates as a useful learnable control
+surface, not an incoherence to average into one beta. Close scalar residual
+targets and preserve these degrees of freedom in future state organizations.

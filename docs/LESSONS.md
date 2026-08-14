@@ -2879,3 +2879,17 @@
 - P031 and P036 close the complete decoupled-key neighborhood. Do not rescue it
   with angle, tangent radius, initialization, regularization or duration; move
   to a different scalable recurrent state organization or committed update.
+- A mathematically coherent committed residual can still destroy learnability.
+  P037 keeps one exact key, one state and a contractive transition, yet balanced
+  accuracy collapses `0.36625->0.01525` and errors rise `2535->3939`.
+- Do not average away GDN2's coordinate-wise control surfaces without causal
+  evidence. Replacing K-wise erase and V-wise write gates by one beta is active,
+  stable and cheap, but removes degrees of freedom needed to learn retrieval.
+- A residual RMS near one is not useful credit by itself. P037's two layers
+  reach `1.07581/1.06857` committed-residual relative RMS while future/past CE
+  rises to `4.6391/5.0233`.
+- Conditional swap reduction again needs an absolute denominator. P037 moves
+  `.62091->.03783` swaps among errors only because almost every query fails.
+- Close beta reducer, target, residual-scale, decay and training rescues. A next
+  recurrence must preserve native erase/write expressivity while changing a
+  genuinely different scalable state-organization boundary.

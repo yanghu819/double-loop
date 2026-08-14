@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; implementation
+- Status: discarded; completed_rejected
 - Date: 2026-08-14
 - Benchmark: directional MQAR L1024, four associations
 - Seed: 123 only
@@ -113,12 +113,57 @@ target gate, decay, kernel, initialization, seed, LR, loss, batch, width,
 depth or duration rescue. Only a full pass authorizes one matched hard-Sudoku
 transfer.
 
-## 8. Required Artifacts
+## 8. Result And Decision
+
+The exact pushed source was
+`f7009fc759589cc60a533f6dceed63ec1fcdf172`, run from a clean detached
+worktree on A100-SXM4-40GB index0 UUID
+`GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`. The strict CUDA contract passed.
+Both layers used official `ChunkDPLRDeltaRuleFunctionBackward`; the candidate
+had the same `661,584` parameters and byte-identical parent hash as control;
+all DPLR call-mapping errors were zero; q/k/v/f/b/w and FutureSeed gradients
+were finite nonzero; and explicit FP32 output/state recurrence errors stayed
+below `0.00371/0.00203` in the production contract.
+
+The mechanism is active, bounded and inexpensive, but quality collapses.
+Control versus candidate balanced/future/past/joint accuracy is
+`0.36625/0.3515/0.3810/0.002` versus
+`0.01525/0.0195/0.0110/0`. Future/past CE rises from
+`1.82845/1.75319` to `4.63909/5.02333`, and total query errors rise
+`2,535 -> 3,939`. The conditional wrong-key valid-value swap fraction falls
+`0.62091 -> 0.03783`, but this is broad retrieval collapse: absolute swaps
+fall only because almost every query is now wrong.
+
+This is not an inactive or unstable implementation. Trained layer beta means
+are `0.76884/0.31349` with nonzero board/token variation; committed-residual
+relative RMS is `1.07581/1.06857`; sampled transition spectral norms are
+`0.99982/0.99941`; and terminal-state RMS remains finite at
+`0.02591/0.00955`. Elapsed/post-warm/warmed/allocation ratios are
+`0.77464/0.94718/1.15144/1.15923`, all inside the frozen cost budget.
+
+The exact committed-residual target equation is rejected. Native GDN2's
+K-coordinate erase and V-coordinate write gates are not dispensable noise:
+collapsing the erase response to one beta and forcing a single prediction
+residual removes a learnable control surface even while preserving a coherent
+key and contractive state. Close beta reducer, target, residual scale, decay,
+initialization, optimizer, seed and duration rescue. No Sudoku transfer is
+authorized.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-gdn3-037-committed-residual-l1024-20260814T134318Z-f7009fc`;
+- contract SHA256: `87e4416355f5d294479aa49494e7ed50063f12cb55c1f4038400402eb2eeb08b`;
+- comparison SHA256: `e37913a0ced01fb99db2ec8fc7adf2d627181cf246853436f1a3d5fe4347084c`;
+- control/candidate score SHA256: `205bde7bd9cdc7adb2587dd26a35aa7f1070bbfbd38dc217f5e7a8bcc29959ea` / `c08d717b734f83bf3c7da7c1773d933356145ed2739f9541afd671eabc315973`;
+- control/candidate checkpoint SHA256: `25c10ce9c13024080ef458e2f8537e7f1030c60df8d467714ca16b3ef285c24b` / `48293d7c6323274409180aa7c08f26187894e22ce81b8aafb615c718d1742bd5`;
+- artifact manifest SHA256: `8eb0f4b1848dd2dd699c3f1e5fb37168e22c43c4414594927ef60bf84da3b605`.
+
+## 9. Required Artifacts
 
 Archive control/candidate metrics and cases, wrong-key taxonomy, validation
 curves, checkpoints, exact equation diagnostics, state geometry, throughput,
 memory, source/config/log/checkpoint hashes and GitHub provenance.
 
-## 9. Submission Record
+## 10. Submission Record
 
 Not applicable. This is an architecture experiment, not a submission.

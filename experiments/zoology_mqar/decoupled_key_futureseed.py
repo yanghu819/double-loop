@@ -99,6 +99,17 @@ class DirectDecoupledKeyGDN2(nn.Module):
     def _unit(tensor: torch.Tensor) -> torch.Tensor:
         return F.normalize(tensor.float(), dim=-1, eps=1e-6).to(tensor.dtype)
 
+    def prepare_erase_key(
+        self,
+        k_write: torch.Tensor,
+        k_erase_raw: torch.Tensor,
+    ) -> torch.Tensor:
+        del k_write
+        return k_erase_raw
+
+    def extra_capture(self) -> dict[str, torch.Tensor]:
+        return {}
+
     @staticmethod
     def transition_factors(
         k_erase: torch.Tensor,
@@ -187,7 +198,8 @@ class DirectDecoupledKeyGDN2(nn.Module):
         g = -layer.A_log.float().exp().unsqueeze(-1) * g
         q = self._unit(q)
         k_write = self._unit(k_write)
-        k_erase = self._unit(k_erase)
+        k_erase_raw = self._unit(k_erase)
+        k_erase = self.prepare_erase_key(k_write, k_erase_raw)
         alpha, beta = self.transition_factors(k_erase, g, erase_gate)
         write = write_gate * value
 
@@ -227,6 +239,7 @@ class DirectDecoupledKeyGDN2(nn.Module):
                 "write": write.detach(),
                 "terminal_state": recurrent_state.detach(),
             }
+            self._captured.update(self.extra_capture())
 
         output = layer.o_norm(
             output,

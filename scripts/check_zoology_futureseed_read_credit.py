@@ -283,6 +283,9 @@ def main() -> None:
         raise RuntimeError("Auxiliary weight changed")
     if diagnostics["uses_targets"]:
         raise RuntimeError("Receiver credit became target-selective")
+    route = diagnostics["routes"][0]
+    if route["query_content_board_std"] <= 1e-6:
+        raise RuntimeError("Receiver query content does not vary across boards")
     auxiliary_backward = backward_names(auxiliary_loss)
     auxiliary_official_backward_count = auxiliary_backward.count(
         "ChunkGDN2FunctionBackward"

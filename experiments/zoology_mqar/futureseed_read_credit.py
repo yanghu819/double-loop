@@ -124,6 +124,11 @@ class ReceiverReadCreditBackbone(FutureSeedLMBackbone):
                 )
                 normalized_inherited = _unit_rms(inherited_read)
                 normalized_live = _unit_rms(live_terminal_read)
+                query_board_summary = query.detach().float().mean(dim=1)
+                query_content_board_std = (
+                    query_board_summary
+                    - query_board_summary.mean(dim=0, keepdim=True)
+                ).square().mean().sqrt()
                 route_loss = (
                     normalized_inherited - normalized_live
                 ).square().mean()
@@ -145,10 +150,8 @@ class ReceiverReadCreditBackbone(FutureSeedLMBackbone):
                                 dim=-1,
                             ).mean().item()
                         ),
-                        "query_board_std": float(
-                            query.detach().float().square().mean(
-                                dim=(-1, -2, -3)
-                            ).sqrt().std(unbiased=False).item()
+                        "query_content_board_std": float(
+                            query_content_board_std.item()
                         ),
                     }
                 )

@@ -2,7 +2,8 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation complete; GPU contract pending
+- Status: R1 stopped before science on an invalid normalized-RMS variation
+  statistic; R2 implementation pending pushed SHA
 - Task: directional MQAR, sequence length 1024, four future and four past queries
 - Carrier: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed endpoint: 10 epochs, batch32, seed123, contemporaneous control then candidate
@@ -91,6 +92,15 @@ Before formal training, require all of the following on the sole visible GPU1:
 
 Any miss is an integrity failure. It does not authorize a tolerance, detach,
 normalization or implementation rescue.
+
+R1 passed every model, kernel, identity and gradient check, then exposed that
+the originally named `query_board_std` measured RMS after per-token L2
+normalization and was therefore structurally zero. The endpoint had only
+entered control compilation and produced no score. Exact formal PGID `74064`
+was terminated; `abort.json` records status143 and
+`scientific_failure=false`. R2 changes only that diagnostic to centered query
+content variation across boards and requires it in the CUDA contract. The
+mechanism, coefficient, data, quality gates and cost gates are unchanged.
 
 ## 6. Fixed Falsifiers And Gate
 

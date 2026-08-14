@@ -148,7 +148,9 @@ def main() -> None:
             route["inherited_read_rms"] >= 1e-4
             and route["live_terminal_read_rms"] >= 1e-4
         ),
-        "receiver_queries_vary_across_boards": route["query_board_std"] > 1e-6,
+        "receiver_queries_vary_across_boards": (
+            route["query_content_board_std"] > 1e-6
+        ),
         "read_alignment_is_finite": math.isfinite(route["read_cosine"]),
         "native_futureseed_active": (
             candidate["future_seed"]["active_seed_routes"] == 1

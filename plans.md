@@ -13,8 +13,13 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-FS2-011` Receiver-Native Terminal-Read
-Credit is preregistered and implementation-complete, pending exact pushed SHA
-and GPU1 contract. P031/P036/P042/P043/P044 close direct decoupled keys and
+Credit R1 passed all model/kernel/identity/gradient contract checks but exposed
+that `query_board_std` measured RMS after per-token L2 normalization and was
+structurally zero. Formal had only entered control compilation and produced no
+score; exact PGID `74064` was stopped and the archived abort is non-scientific.
+R2 changes only this harness statistic to centered query-content variation
+across boards and adds it to the strict contract; mechanism, fixed weight,
+data and all quality/cost gates remain unchanged. P031/P036/P042/P043/P044 close direct decoupled keys and
 nearby static/dynamic Q/K coordinate changes; P-FS2-006 left receiver-native
 credit untested because its hand FP32 replay missed the strict official-kernel
 parity gate. P-FS2-011 leaves inference byte-identical to native FutureSeed.

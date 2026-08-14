@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation complete; CUDA contract pending
+- Status: complete; discarded; complete family closed without rescue
 - Date: 2026-08-15
 - Benchmark: directional MQAR L1024 wrong-key binding regime
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs,
@@ -130,6 +130,36 @@ under `/huyang2/double-loop/runs`.
 
 ## 9. Decision
 
-Pending strict CUDA contract and the single fixed endpoint. A full pass admits
-one strict Sudoku transfer; any miss closes this family and returns mechanism
-selection to a genuinely different live recurrent address/state update.
+Discard. Exact pushed/read-back source
+`5ffaa6ea5222726c2d52644a3285bf7c8bfbcd62` passed the strict A100 contract.
+Zero-init output and terminal state identity held for zero and nonzero incoming
+state, all eight gauge heads had finite nonzero gradients, and opened factors
+remained bounded. At endpoint both layers were active: adapter RMS was
+`0.019219/0.015776`, Q relative change was `0.053283/0.038090`, K relative
+change was `0.036889/0.036952`, maximum condition number was `1.190978`, raw
+pairing relative error was about `0.00205`, and production replay error was
+zero. Native FutureSeed also remained active with gate `0.513134`.
+
+The matched quality result is negative. Control/candidate balanced accuracy is
+`0.04850/0.01975`, future accuracy `0.05450/0.01800`, past accuracy
+`0.04250/0.02150`, and joint exact remains zero. Total query errors increase
+`3806->3921`. Wrong-key valid-value swaps fall `302->163`, but their fraction
+among errors drops only `0.079348->0.041571`, short of the registered `0.05`
+reduction, and the lower count again accompanies broader retrieval failure.
+Every quality gate fails.
+
+Elapsed, post-warm wall and peak-allocation ratios pass at
+`1.0898/1.1034/1.0321x`, while the independent warmed-step ratio fails at
+`1.9149x`. Formal endpoint status is zero, launcher exit `2` denotes the
+registered gate miss, the worktree is clean, the GitHub readback matches, and
+the sole GPU was released to zero utilization and memory. Comparison SHA256 is
+`94e85397f5f530ea694efacd746718b1366d9a0edb9e7133b1cc2e5f1d505c79`;
+candidate checkpoint SHA256 is
+`d37bf6276c6976c25b998667438b5d9f28ee22181889ae8903695616f172e2a0`.
+
+This closes the full biorthogonal-gauge family: cap, generator class, sharing,
+rank, initialization, projection, normalization and training rescue are all
+forbidden. Together P031/P036/P042/P043 show that splitting key ownership,
+forcing Q/K coherence, and preserving their raw pairing under a learned dual
+coordinate gauge all fail. The next mechanism must change the live recurrent
+state organization or its scalable update, not reparameterize native Q/K.

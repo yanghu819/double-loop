@@ -1999,3 +1999,28 @@ native maps without shrinking that differential; P042 shows why this
 distinction matters. The paper should not motivate GDN3 as Q/K alignment or
 decoupling. The open target is a scalable address geometry or state
 organization that preserves both native maps and lowers binding interference.
+
+### P-GDN3-043 Biorthogonal Q/K Gauge Boundary
+
+P043 asks whether the positive address-geometry signal from P020 can be
+isolated without splitting key ownership or shrinking the learned Q/K
+differential. A symmetric trace-free bounded generator applies inverse-
+transpose dual coordinates to Q and K, preserving the unnormalized bilinear
+pairing while allowing normalized address and state-row geometry to change.
+The candidate adds 4,216 parameters, no state or scan, and keeps native
+FutureSeed.
+
+The strict contract validates the intended mechanism: all eight heads learn
+different bounded factors, raw pairing error stays near `.00205`, production
+replay is exact, and terminal states remain finite and variable. Nevertheless,
+matched balanced accuracy falls `.04850->.01975`, future/past accuracy falls
+`.05450/.04250->.01800/.02150`, and total errors rise `3806->3921`.
+Wrong-key valid-value swaps fall, but only as general retrieval deteriorates.
+The warmed-step ratio also fails at `1.9149x`.
+
+The paper should therefore avoid claiming that an algebraically clean address
+gauge resolves GDN2 binding. Together with P031/P036/P042, P043 shows that the
+open problem is not solved by separating keys, forcing Q/K agreement, or
+changing their coordinate gauge while preserving pairings. The next credible
+GDN3 direction must change scalable live-state organization or the committed
+transition while retaining native coherent ownership and learnable Q/K maps.

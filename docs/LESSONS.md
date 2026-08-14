@@ -3018,3 +3018,26 @@
 - Close alpha cap, coordinate/head/layer granularity, initialization,
   regularization, normalization and duration rescues. A successor must change
   a different scalable address geometry or state organization boundary.
+
+## 2026-08-15: Pairing-preserving Q/K gauges do not fix binding
+
+- P-GDN3-043 preserves one coherent read/write/erase key and the complete
+  native Q/K differential while applying inverse-transpose dual coordinates.
+  The raw bilinear pairing is preserved to about `.00205` relative RMS at BF16,
+  production replay is exact, and all eight learned gauge heads activate.
+- This is still harmful: matched balanced accuracy falls `.04850->.01975`,
+  future/past fall `.05450/.04250->.01800/.02150`, and errors rise
+  `3806->3921`. A mathematically valid coordinate gauge is not a useful memory
+  intervention merely because it preserves pairwise dot products.
+- Conditional swap improvements remain unsafe evidence. Wrong-key valid-value
+  swaps fall `302->163`, but overall retrieval worsens and the registered
+  fraction improvement is missed. Binding quality depends on the learned
+  normalized state trajectory, not only one raw Q/K algebraic invariant.
+- Matrix exponentials also impose a hidden step-time cost: end-to-end elapsed
+  is only `1.0898x`, while an isolated warmed step is `1.9149x`. Always retain
+  the independent warm benchmark even when compilation or evaluation dilutes
+  total wall time.
+- P031/P036/P042/P043 close the nearby decoupled-key, tied-neighborhood,
+  forced-coherence and dual-gauge families. Further Q/K caps, ranks, sharing or
+  normalization variants are table filling; move to a scalable live-state
+  organization or transition mechanism.

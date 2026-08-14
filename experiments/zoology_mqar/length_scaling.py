@@ -56,6 +56,7 @@ GDN2_ARMS = (
     "future_seed_gated_delta_product_n2",
     "future_seed_contractive_dplr",
     "future_seed_decoupled_key_gdn2",
+    "future_seed_chunk_local_biaxis_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -183,6 +184,11 @@ def build_config(
                 "experiments.zoology_mqar.decoupled_key_futureseed."
                 "ZoologyDecoupledKeyGDN2FutureSeedMixer"
             )
+        elif arm == "future_seed_chunk_local_biaxis_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_chunk_local_biaxis."
+                "ZoologyChunkLocalBiAxisFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -248,6 +254,12 @@ def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
         )
 
         return make_tied_decoupled_key_model(copy.deepcopy(config.model))
+    if arm == "future_seed_chunk_local_biaxis_gdn2":
+        from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
+            make_chunk_local_biaxis_model,
+        )
+
+        return make_chunk_local_biaxis_model(copy.deepcopy(config.model))
     if arm == "future_seed_gdn2_surprise_regression":
         from experiments.zoology_mqar.gdn2_surprise_regression_seed import (
             SurpriseRegressionFutureSeedLanguageModel,
@@ -568,6 +580,12 @@ def run_arm(
         )
 
         parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_chunk_local_biaxis_gdn2":
+        from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
     data_hashes = {
         "train": dataset_hash(train_dataloader),
@@ -733,6 +751,18 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    chunk_local_biaxis = None
+    if arm == "future_seed_chunk_local_biaxis_gdn2":
+        from experiments.zoology_mqar.gdn2_chunk_local_biaxis import (
+            chunk_local_biaxis_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs[:8].cuda())
+        chunk_local_biaxis = chunk_local_biaxis_diagnostics(model)
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -814,6 +844,8 @@ def run_arm(
         score["contractive_dplr"] = contractive_dplr
     if decoupled_key is not None:
         score["decoupled_key"] = decoupled_key
+    if chunk_local_biaxis is not None:
+        score["chunk_local_biaxis"] = chunk_local_biaxis
     if surprise_regression is not None:
         score["surprise_regression"] = surprise_regression
     logger.finish()

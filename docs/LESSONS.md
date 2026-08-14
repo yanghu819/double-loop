@@ -1,5 +1,14 @@
 # Lessons
 
+## 2026-08-14: Geometry collapse is not enough to admit an address wrapper
+
+- P-DIAG-ADDR-001 measures very low effective rank and extreme anisotropy on
+  L1024, yet receiver-native reprojection, exact write survival, and surprise
+  all fail to predict errors.
+- Respect the frozen causal branch: close cache/reprojection/metric
+  combinations and test a coherent live-state transition instead of fitting
+  the visible geometry symptom.
+
 ## 2026-08-13: A solved write proxy can still miss the read problem
 
 - P-FS2-008 fits the receiver-native weighted write residual to `0.001132x`

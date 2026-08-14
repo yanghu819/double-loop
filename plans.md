@@ -12,6 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-14 CST): `P-DIAG-ADDR-001` completed and selects
+`kill_address_and_cache_line`. On the frozen P-FS2-007 L1024 checkpoint all
+integrity and cost gates pass, but receiver-native reprojection gains only
+`0.00725` top-1 overall and loses `0.001954` on errors; surprise and exact
+address survival have near-zero error correlation, survival AUROC is `0.52717`,
+and surprise-K16 survival (`0.04027`) is far below recency-K16 (`0.25083`).
+Meanwhile producer/receiver key geometry is severely collapsed: median
+anisotropy `28.60/30.39`, effective-rank fraction `0.0561/0.0423`, and
+condition `3678/44778`. Because neither receiver-basis mismatch nor predictive
+write loss passes the frozen rule, close cache/admission/reprojection/ridge and
+Log-SPD-plus-cache combinations. The next model must test a different live
+recurrent-transition hypothesis while preserving coherent erase/write/read
+addressing. Diagnostic JSON SHA256 `2e0370b8...8b3`.
+
 Current update (2026-08-14 CST): `P-GDN3-031` completed and is rejected. It is
 the clean-room direct test of the `GDN_decouple_k` mathematical idea at external
 commit `c7667fd11d95d3d147f59bb3d4492989909b69ae`; the unlicensed repository's code

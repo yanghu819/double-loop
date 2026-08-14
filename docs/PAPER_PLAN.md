@@ -1,5 +1,17 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-14 Receiver-Address Diagnostic Boundary
+
+The frozen surprise-replay checkpoint retains `2044/2047` wrong-key valid-value
+errors, but receiver-native key reprojection improves top-1 by only `0.00725`
+overall and is negative on errors. Surprise-selected writes survive less than a
+matched recency set, and exact survival has error AUROC `0.52717`. Key Gram
+collapse is real (receiver effective-rank fraction `0.0423`, anisotropy `30.39`),
+but it is not causally localized by these measurements. This closes sparse
+cache, admission, receiver reprojection, and metric-plus-cache claims; future
+architecture work must alter the coherent live recurrent transition and prove
+quality from scratch on the directional L1024 binding regime.
+
 ## 2026-08-13 Write Reconstruction Is Not Query Binding
 
 P-FS2-008 replaces P-FS2-007's sparse K16 replay with an all-token,

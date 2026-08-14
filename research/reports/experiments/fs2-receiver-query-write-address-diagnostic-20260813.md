@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; read-only GPU diagnostic
+- Status: completed; branch decision `kill_address_and_cache_line`
 - Task: fixed directional MQAR L1024, 1,000 validation cases
 - Checkpoint: completed P-FS2-007 surprise-K16 arm
 - Intervention: none; zero parameters, zero training, logits unchanged
@@ -110,3 +110,47 @@ equal; receiver replay terminal/seed RMS and board variation must be finite and
 nonzero. The completed P-FS2-007 strict contract remains the independent proof
 of exactly two main plus one replay official backward paths. The checkpoint,
 data, measurements, cost ceiling and branch rule remain unchanged.
+
+R3 (`p-diag-addr-001-r3-20260814T043416Z-0509af7`) completed with status zero
+on the exact clean detached source `0509af7c6f22407b8fd0fedb675e8101d790fdff`.
+All integrity checks passed: 1,000 validation cases and 4,000 labeled queries,
+bitwise-identical logits, unchanged parameter SHA, no gradients, exactly two
+instrumented L1024 chunk scans, exact production top-16 selection/wiring, and
+an active finite K16 receiver replay state. The diagnostic JSON SHA256 is
+`2e0370b815024cec02f02aecc22cded4f439d4ee12b5b3dc1a0d4a1aebce48b3`.
+
+The model accuracy is `0.48825`; `2044/2047` errors (`0.998534`) are valid-value
+wrong-key swaps. Reprojection is not the missing operation: receiver-native
+top-1 improves only `0.00725` overall and falls `0.001954` on errors; MRR gains
+are `0.006062` and `0.000295`. Direction matters (`+0.12325` future versus
+`-0.10875` past top-1), but this asymmetry does not separate correct from error
+cases.
+
+Surprise does not identify overwritten evidence. Target writes are already in
+the top-16 surprise set for `0.99425` of all queries, slightly more often for
+correct than error cases (`0.997952` versus `0.990718`). Surprise-K16 address
+survival is `0.040271`, below recency-K16 `0.250834`; correct-minus-error target
+survival is `-0.000986`, and survival error AUROC is only `0.527174`. All
+registered correlations with error are near zero.
+
+The useful measurement is severe geometry collapse: producer/receiver median
+anisotropy is `28.6008/30.3852`, effective-rank fraction
+`0.056146/0.042308`, condition number `3678.35/44778.27`, and coherence
+`0.99039/1.00066`. Geometry is pathological, but the frozen branch rule
+required predictive write loss or receiver-basis improvement; neither occurs.
+Therefore the formal branch is `kill_address_and_cache_line`. Do not launch a
+surprise-cache, receiver-reprojection, K/admission, Log-SPD-plus-cache, ridge,
+or nearby address-wrapper rescue from this checkpoint. A successor must test a
+different live recurrent-transition hypothesis with its own preregistration.
+
+Instrumentation cost remained valid: diagnostic/ordinary elapsed `1.4513x`
+and peak allocation `1.2536x`, below the frozen `3.00x/1.50x` ceilings.
+
+## 8. Conclusion
+
+The remaining MQAR errors are binding failures, but neither target-write
+survival nor receiver-basis reprojection predicts those failures. The evidence
+rejects cache admission and static receiver-address repair as the next causal
+intervention. Keep the geometry-collapse observation as a mechanistic clue;
+move the next experiment into the live state transition and preserve coherent
+erase/write/read addressing. No Sudoku transfer is authorized by this result.

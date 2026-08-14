@@ -1664,3 +1664,35 @@ preserving the baseline FS-gradient norm. It does not justify global loss
 reweighting, GDN gradient surgery, per-head selection, or a hyperparameter
 sweep. The diagnostic establishes a causal target; the matched endpoint must
 still show that removing this conflict improves exact-board closure.
+
+### P-GDN3-031 Direct Decoupled-Key Boundary
+
+P031 is the clean-room direct test of the mathematical idea in
+`yanghu819/GDN_decouple_k`: use one normalized key to erase and another to
+write/read. Unlike P030's independently initialized contractive transition,
+P031 retains native GDN2 decay and channel-wise erase/write gates and starts
+exactly on the native function. The erase projection and Triton convolution
+are copied bit-for-bit from the write key; a single pinned-official DPLR scan
+implements `DS-k_e[(b*k_e)^TDS]+k_w[(w*v)^T]`. The strict contract verifies
+exact tied output/state parity, both key gradients, official backward/kernel
+provenance, zero state/scan delta, and bounded transition geometry.
+
+This stronger isolation produces a sharper negative than P030. On fixed
+directional MQAR L1024, balanced/future/past/joint are
+`0.011/0.008/0.014/0`, versus current native FutureSeed
+`0.30625/0.3115/0.3010/0` and historical `0.7475/0.7415/0.7535/0.339`.
+Errors rise from 2,775 to 3,956. The key branches do not remain useful
+specialists: layer cosine falls to `0.0483/0.0600`, while key relative RMS rises
+to `1.3796/1.3711`. The state remains numerically bounded, so this is not an
+explosion or inactive-module result.
+
+The apparent swap-fraction improvement is diagnostic of collapse. Conditional
+wrong-key swaps fall `0.458018->0.035642`, but only 44 of 4,000 queries are
+correct and 3,657 predictions are just tokens 165 or 177. Direct decoupling has
+made erase nearly orthogonal to the rows populated by write/read, destroying
+the usable linear address channel. The paper should therefore report total
+errors and prediction concentration beside every swap fraction. P031 closes
+unconstrained erase/write-key decoupling without angle, tie, scale,
+regularization or training rescue and does not authorize Sudoku transfer. It
+does not close mechanisms that preserve a shared base address while adding a
+separately bounded correction topology.

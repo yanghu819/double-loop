@@ -2,10 +2,11 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation and GPU acquisition in progress
+- Status: completed; rejected at the fixed directional-MQAR quality gate
 - Decision field: directional MQAR L1024 wrong-key binding before Sudoku
 - Fixed setting: D128/L2/H4/K32/V32, native FutureSeed, 10 epochs, batch32, seed123
-- Resource: first verified single authorized AIStation GPU; CUDA index0 only
+- Resource: one A100-SXM4-80GB at CUDA index0, physical UUID
+  `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`
 
 ## 2. Evidence And Hypothesis
 
@@ -98,18 +99,91 @@ is required before one hard-Sudoku transfer.
 
 ## 7. Results
 
-Pending exact pushed source, clean detached worktree, CUDA contract and the
-single fixed science run.
+The exact pushed source `004dd0553a160ea397bbbe6cc51b237ec62dbb89`
+completed the contract and single registered endpoint. The contract passed:
+two of two carrier layers were official `GatedDeltaNet2`, autograd contained
+two official `ChunkDPLRDeltaRuleFunctionBackward` nodes, all Q/K-write/K-erase/V
+short convolutions used the Triton path, and the FLA/DPLR source hashes matched
+the registration. Initial erase/write projection and convolution error was
+zero, tied output/state parity passed, all required gradients were finite and
+nonzero, parameter delta was exactly 33,792, and persistent state/scan deltas
+were zero. The contract JSON SHA256 is
+`22f895e1fed7ea4088299958c60a41a57deec2781096039acb6225706055f26f`.
+
+The fixed endpoint result is:
+
+| metric | historical native FS | current-runtime native FS | decoupled key |
+| --- | ---: | ---: | ---: |
+| balanced accuracy | 0.747500 | 0.306250 | **0.011000** |
+| future accuracy | 0.741500 | 0.311500 | **0.008000** |
+| past accuracy | 0.753500 | 0.301000 | **0.014000** |
+| joint exact | 0.339000 | 0 | **0** |
+| errors / 4,000 queries | 1,010 | 2,775 | **3,956** |
+| wrong-key valid-value swaps | 815 | 1,271 | **141** |
+| swap fraction among errors | 0.806931 | 0.458018 | **0.035642** |
+
+The apparently lower conditional swap fraction is a collapse artifact, not an
+addressing gain. Only 44 of 4,000 queries are correct. Predictions concentrate
+on token 165 (`1,914`) and token 177 (`1,743`); 3,626 of 3,956 errors (`91.66%`)
+fall in the broad 160--191 value-token range. The model therefore emits a few
+globally common value tokens rather than retrieving the value associated with
+the queried key. Reporting swaps without total errors would reverse the true
+conclusion.
+
+The mechanism did activate. Layer 0/1 erase-write cosine is
+`0.048316/0.060033`, separation is `0.951684/0.939967`, and key relative RMS is
+`1.379631/1.371106`. Projection delta RMS is `0.018718/0.024485` and convolution
+delta RMS is `0.024441/0.025138`. Sampled transition spectral maxima remain
+bounded at `1.006299/0.998570`; terminal state RMS is `1.764684/0.279975` with
+nonzero board variation. Thus the endpoint is not an inactive-mechanism or
+numerical-instability failure.
+
+Systems gates also pass. Candidate fit, post-warm wall, warmed-step, and peak
+allocation ratios are `1.0823x/1.0856x/1.6035x/1.2235x`, all below their frozen
+limits. Warmed throughput is 1,271.84 examples/s. Training plus validation took
+99.95 seconds, and the full contract-to-decision run completed from
+2026-08-14T03:39:14Z to 03:44:59Z. The score/decision SHA256 is
+`1b631993bbc5dd1e483bd0178083b93f0b9f10c358208ebc7cd767156ba8e538`.
 
 ## 8. Decision
 
-Pending. A pass authorizes one matched hard-Sudoku gate. A miss closes direct
-decoupled-key GDN2 and returns the program to a different scalable recurrent
-state topology.
+Reject and close direct decoupled-key GDN2. Starting from exact native GDN2 did
+not rescue the mathematical idea: optimization rapidly made erase and
+write/read keys nearly orthogonal. The erase operation then no longer targets
+the rows populated by the write/read address, so the recurrent state remains
+bounded while useful retrieval disappears. This independently agrees with the
+P028/P030 boundary that a lower wrong-key error fraction can be obtained by
+destroying the usable linear address channel.
+
+No Sudoku transfer was launched. There will be no angle/tie regularizer,
+key-scale, alternate initialization, kernel, seed, LR, loss, batch, epoch,
+width, depth, or duration rescue. A tie or cosine constraint would be a new
+coupled-address hypothesis rather than evidence that direct decoupling works.
+The next GDN3 candidate must preserve a shared address anchor or change the
+recurrent state topology for a separately falsifiable reason.
 
 ## 9. Provenance
 
 - Idea source: `yanghu819/GDN_decouple_k` commit
   `c7667fd11d95d3d147f59bb3d4492989909b69ae`; mathematical inspiration only.
 - Candidate branch: `codex/gdn3-decoupled-key-mqar-20260814`.
-- Formal source/run/checkpoint hashes: pending.
+- Formal source: `004dd0553a160ea397bbbe6cc51b237ec62dbb89`; local GitHub
+  SSH readback matched before transfer.
+- Clean detached worktree:
+  `/huyang2/double-loop/worktrees/p-gdn3-031-004dd05`.
+- Formal run:
+  `/huyang2/double-loop/runs/p-gdn3-031-decoupled-key-l1024-20260814T0338Z-004dd05`.
+- AIStation HTTPS access to GitHub timed out, so the already-pushed exact source
+  was transported as a verified Git bundle. Bundle SHA256:
+  `cceaeded3b28aeb2255ea3e3cc399a58f83f20f180df6e88505cec5dc8cc58ea`.
+  The remote bundle and branch ref were verified before creating the detached
+  worktree; the local GitHub SSH readback remains the authoritative remote
+  provenance claim.
+- Candidate checkpoint SHA256:
+  `02f61cfbae4fc88625df3acd68f9c75a2eda06a7ab711ce06bb6df0bec3db802`.
+- Candidate config/metrics/score SHA256:
+  `a7caba05a75d0a03a73296990ed339517d7e22b4c9fd5ac8e4296222413dbe59` /
+  `832f1c13ef483d536a7986feb5e7b08d380e269798776d2c455c442b24a8c8b1` /
+  `a2afa9ed5ec548447c4f09458ce97ab114cd6347b004f73a3548fbb36da250ea`.
+- Compact tracked evidence:
+  `runs/p-gdn3-031-decoupled-key-l1024-20260814T0338Z-004dd05`.

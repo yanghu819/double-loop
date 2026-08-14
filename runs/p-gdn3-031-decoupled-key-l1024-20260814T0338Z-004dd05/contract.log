@@ -1,0 +1,186 @@
+Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+/opt/conda/lib/python3.10/site-packages/torch/amp/autocast_mode.py:510: RuntimeWarning: Set chunk_size to 16, to avoid triton compiler erorr. original chunk_size 16
+  return fwd(*args, **kwargs)
+/opt/conda/lib/python3.10/site-packages/torch/amp/autocast_mode.py:510: RuntimeWarning: Set chunk_size to 16, to avoid triton compiler erorr. original chunk_size 16
+  return fwd(*args, **kwargs)
+/opt/conda/lib/python3.10/site-packages/torch/amp/autocast_mode.py:510: RuntimeWarning: Set chunk_size to 16, to avoid triton compiler erorr. original chunk_size 16
+  return fwd(*args, **kwargs)
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_551c1fa2c9c3b93779d648620a98c72a.pt...
+Loading data from on-disk cache at /huyang2/double-loop/.cache/zoology-directional-scaling-l1024-k4/data_305336ef62459626e2de50780d73722e.pt...
+{
+  "candidate_parameter_count": 695376,
+  "data_hashes": {
+    "test": "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f",
+    "train": "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
+  },
+  "erase_key_dependency": {
+    "output_relative_rms": 0.41678956151008606,
+    "state_relative_rms": 0.4256128668785095
+  },
+  "fallback": false,
+  "full_model_tied_output_relative_rms": 0.010242887772619724,
+  "gpu": {
+    "count": 1,
+    "name": "NVIDIA A100-SXM4-80GB",
+    "uuid": "d2877fe4-641c-fe64-2a74-8abca47c292f"
+  },
+  "gradient_rows": [
+    {
+      "b_gradient_rms": 0.001236484999698322,
+      "erase_key_convolution_gradient_rms": 0.008396839319687653,
+      "erase_key_projection_gradient_rms": 0.016376711730451805,
+      "f_gradient_rms": 0.0003965246647993181,
+      "k_gradient_rms": 0.04628941720915146,
+      "layer": 0,
+      "q_gradient_rms": 0.04227993758949635,
+      "v_gradient_rms": 0.04571855072791581,
+      "w_gradient_rms": 0.004874973412005274,
+      "write_erase_gradient_relative_rms": 1.0908722877502441
+    },
+    {
+      "b_gradient_rms": 0.0010147628017265098,
+      "erase_key_convolution_gradient_rms": 0.006602997998506184,
+      "erase_key_projection_gradient_rms": 0.014274085406249052,
+      "f_gradient_rms": 0.00019127876712814973,
+      "future_seed_gradient_rms": 0.0023326186928898096,
+      "k_gradient_rms": 0.02354127168346021,
+      "layer": 1,
+      "q_gradient_rms": 0.027263555690726332,
+      "v_gradient_rms": 0.021887282240015564,
+      "w_gradient_rms": 0.0022667179440140333,
+      "write_erase_gradient_relative_rms": 1.225961685180664
+    }
+  ],
+  "head_permutation": {
+    "output_max_error": 0.0,
+    "state_max_error": 0.0
+  },
+  "initial_tie": [
+    {
+      "convolution_max_error": 0.0,
+      "layer": 0,
+      "projection_max_error": 0.0,
+      "recorded_initial_tie_max_error": 0.0
+    },
+    {
+      "convolution_max_error": 0.0,
+      "layer": 1,
+      "projection_max_error": 0.0,
+      "recorded_initial_tie_max_error": 0.0
+    }
+  ],
+  "logical_scans_per_layer": 1,
+  "native_parameter_count": 661584,
+  "native_parameter_hash": "3b0c133410eaed1135224cc0acb094705655cc7e97ea6beeba17b40beab1a368",
+  "official_carrier_sources": {
+    "gdn2": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/layers/gdn2.py",
+    "short_convolution": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/modules/conv/short_conv.py"
+  },
+  "official_chunk_backward_count": 2,
+  "official_chunk_sha256": "b83e959cca80a0a71d1712c33f5aa59520f2d1789015cc1523c65d8f2792a9fe",
+  "official_chunk_source": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/ops/generalized_delta_rule/dplr/chunk.py",
+  "official_dplr_root": "/huyang2/double-loop/.cache/fla-versions/9c8e42e762fce087c27b673af4922795d9edb85e-0280db310981915e/fla/ops/generalized_delta_rule/dplr",
+  "official_dplr_source_sha256": {
+    "__init__.py": "17c4db6a265e44a8db2a1948e17628a4d7786dfcd5d747de34ed3a8b7da1d95a",
+    "chunk.py": "b83e959cca80a0a71d1712c33f5aa59520f2d1789015cc1523c65d8f2792a9fe",
+    "chunk_A_bwd.py": "c125f65658edfc1572b28c34232954aab8b536b1455b5fb862a24592a41a2e72",
+    "chunk_A_fwd.py": "223bb24f5147d1d531f3b84bddc5f762fb60cdf5342131298ca6608ee16d75ff",
+    "chunk_h_bwd.py": "6c7e2844ce95bb16171be7a7131dbe5adecbb9dfd614ec8ec0fdfc3e4f51c0a1",
+    "chunk_h_fwd.py": "e2c901f75fec51bd89e6731c36b310d903b97fd0d78c3dce00e7ec7827b96750",
+    "chunk_o_bwd.py": "1b069674cb8c190026824fbfdb3874a3455ed76348608e8655a9823f6850bcbe",
+    "chunk_o_fwd.py": "ff93f9c676ea3fd384a0418665fe1092eaf95abacc924c836e157e4315bbf3ec",
+    "fused_recurrent.py": "129e9f77156f905cf956bcfde74c399feaf2d6f48eab1f99ba29c8dfeea9f85e",
+    "naive.py": "e1f94b49952dc1aab94bf3c7f9fbb4e2bcce336f9449d457e8e7ed7b895a9c4f",
+    "wy_fast_bwd.py": "9c4ca36111919fdcb9c43254e8c7c5c989e6fb1805e54ac995a554c8a6974ec9",
+    "wy_fast_fwd.py": "1bc313b8a6ef266a3eb92734b46d9b0c8bccae988753f124a602f14a83317616"
+  },
+  "official_dplr_tree_sha256": "686ca42b82ba098f9187fcacfe8ab689b9038938b1edae2809a21b6f03ec8643",
+  "official_module_provenance": [
+    {
+      "carrier": "GatedDeltaNet2",
+      "convolution_backends": {
+        "base.k_conv1d": "triton",
+        "base.q_conv1d": "triton",
+        "base.v_conv1d": "triton",
+        "k_erase_conv1d": "triton"
+      },
+      "layer": 0,
+      "operator": "ChunkDPLRDeltaRuleFunctionBackward",
+      "state_values": 4096
+    },
+    {
+      "carrier": "GatedDeltaNet2",
+      "convolution_backends": {
+        "base.k_conv1d": "triton",
+        "base.q_conv1d": "triton",
+        "base.v_conv1d": "triton",
+        "k_erase_conv1d": "triton"
+      },
+      "layer": 1,
+      "operator": "ChunkDPLRDeltaRuleFunctionBackward",
+      "state_values": 4096
+    }
+  ],
+  "parameter_delta": 33792,
+  "parent_parameter_hash": "3b0c133410eaed1135224cc0acb094705655cc7e97ea6beeba17b40beab1a368",
+  "persistent_state_delta": 0,
+  "pinned_fla_sha": "9c8e42e762fce087c27b673af4922795d9edb85e",
+  "production_rows": [
+    {
+      "key_relative_rms": 0.0,
+      "layer": 0,
+      "mapping_max_errors": {
+        "decay": 0.0,
+        "erase_alpha": 0.0,
+        "erase_beta": 0.0,
+        "write_key": 0.0,
+        "write_value": 0.0
+      },
+      "terminal_state_rms": 0.01516200602054596,
+      "transition": {
+        "samples": 128,
+        "spectral_norm_max": 0.9912521243095398,
+        "symmetric_eigenvalue_min": 0.17895954847335815,
+        "symmetry_error_max": 0.06296539306640625
+      }
+    },
+    {
+      "key_relative_rms": 0.0,
+      "layer": 1,
+      "mapping_max_errors": {
+        "decay": 0.0,
+        "erase_alpha": 0.0,
+        "erase_beta": 0.0,
+        "write_key": 0.0,
+        "write_value": 0.0
+      },
+      "terminal_state_rms": 0.019013987854123116,
+      "transition": {
+        "samples": 128,
+        "spectral_norm_max": 0.9978442192077637,
+        "symmetric_eigenvalue_min": 0.2728928029537201,
+        "symmetry_error_max": 0.07357406616210938
+      }
+    }
+  ],
+  "recurrent_state_values_per_layer": 4096,
+  "status": "passed",
+  "synthetic_gradient_rms": {
+    "erase_gate": 1.5910157458165486e-07,
+    "g": 2.44429020312964e-06,
+    "initial_state": 3.84168060918455e-07,
+    "key": 1.3957452438262408e-06,
+    "q": 9.620253393904932e-08,
+    "value": 2.8153660878160736e-06,
+    "write_gate": 6.941142487448815e-07
+  },
+  "tied_recurrence_parity": {
+    "dplr_vs_explicit_output_relative_rms": 0.003843472572043538,
+    "dplr_vs_explicit_state_relative_rms": 0.002682155929505825,
+    "dplr_vs_gdn2_output_relative_rms": 0.0047644926235079765,
+    "dplr_vs_gdn2_state_relative_rms": 0.0034825392067432404,
+    "gdn2_vs_explicit_output_relative_rms": 0.003630009712651372,
+    "gdn2_vs_explicit_state_relative_rms": 0.003799102734774351
+  },
+  "zoology_sha": "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"
+}

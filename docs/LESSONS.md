@@ -2779,3 +2779,19 @@
   walks. Tracking only `id(fn)` can suffer object-ID reuse and falsely report a
   missing official backward path; archive this as an engineering abort and
   rerun from a new pushed clean SHA without changing science gates.
+- Function-preserving initialization does not make a new degree of freedom
+  useful. P-GDN3-031 begins at exact native GDN2, yet erase/write key cosine
+  falls to `0.0483/0.0600` and balanced accuracy collapses to `0.011`.
+- Erase and write addresses need a shared ownership anchor. When erase becomes
+  nearly orthogonal to the rows populated by write/read, the state can remain
+  spectrally bounded while associative retrieval disappears.
+- Never credit a lower conditional swap fraction without total errors and the
+  prediction histogram. P031 moves `0.458018->0.035642` swaps among errors only
+  because errors rise `2775->3956` and 3,657/4,000 predictions collapse onto
+  two value tokens.
+- A failed direct-decoupling result cannot be rescued by adding an angle/tie
+  penalty and still answer the same hypothesis. Such a constraint defines a
+  new coupled-address mechanism and needs independent motivation and gates.
+- Unlicensed idea repositories can inform a clean-room equation, but code must
+  not be copied and weak unmatched demonstrations must not be treated as
+  evidence. P031 used only the mathematical idea from `GDN_decouple_k`.

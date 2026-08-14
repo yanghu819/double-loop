@@ -63,6 +63,7 @@ GDN2_ARMS = (
     "future_seed_slot_state_gdn2",
     "future_seed_raven_address_gdn2",
     "future_seed_linear_product_state_gdn2",
+    "future_seed_query_delta_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -220,6 +221,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_linear_product_state."
                 "ZoologyLinearProductStateFutureSeedMixer"
+            )
+        elif arm == "future_seed_query_delta_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.query_delta_futureseed."
+                "ZoologyQueryDeltaFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -606,6 +612,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_query_delta_gdn2":
+            from experiments.zoology_mqar.query_delta_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -690,6 +702,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_linear_product_state_gdn2":
         from experiments.zoology_mqar.gdn2_linear_product_state import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_query_delta_gdn2":
+        from experiments.zoology_mqar.query_delta_futureseed import (
             parent_parameter_hash,
         )
 
@@ -941,6 +959,19 @@ def run_arm(
         with torch.no_grad():
             model.eval()(diagnostic_inputs[:8].cuda())
         linear_product_state = linear_product_state_diagnostics(model)
+    query_delta = None
+    if arm == "future_seed_query_delta_gdn2":
+        from experiments.zoology_mqar.query_delta_futureseed import (
+            query_delta_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        query_delta = query_delta_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -1005,6 +1036,8 @@ def run_arm(
         score["raven_address"] = raven_address
     if linear_product_state is not None:
         score["linear_product_state"] = linear_product_state
+    if query_delta is not None:
+        score["query_delta"] = query_delta
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",

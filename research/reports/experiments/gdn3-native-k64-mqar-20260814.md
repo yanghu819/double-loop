@@ -79,7 +79,11 @@ quality or cost miss rejects the mechanism without rescue.
 
 ## 7. Results
 
-Pending the single registered run.
+R1 source `e80baf7e` exited while sourcing the launch environment because the
+GPU name containing spaces was not quoted. It occurred before contract model
+construction and allocated zero GPU memory, so it is retained as a non-science
+orchestration abort. R2 changes only that quoting; mechanism, data, budget and
+all gates remain frozen.
 
 ## 8. Decision
 

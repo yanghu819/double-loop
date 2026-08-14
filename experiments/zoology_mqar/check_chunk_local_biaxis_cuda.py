@@ -172,8 +172,12 @@ def main() -> None:
     gk = -0.02 * torch.rand(B, T, H, K, device="cuda")
     raw_gv = torch.rand(B, T, H, V, device="cuda")
     gv = -(math.log(4.0) / 64.0) * raw_gv
-    b = torch.sigmoid(torch.randn(B, T, H, K, device="cuda"))
-    w = torch.sigmoid(torch.randn(B, T, H, V, device="cuda"))
+    b = torch.sigmoid(
+        torch.randn(B, T, H, K, device="cuda", dtype=torch.bfloat16)
+    )
+    w = torch.sigmoid(
+        torch.randn(B, T, H, V, device="cuda", dtype=torch.bfloat16)
+    )
     initial_state = torch.randn(B, H, K, V, device="cuda") * 0.05
     reference_output, reference_state = direct_biaxis(
         q,

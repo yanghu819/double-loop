@@ -45,6 +45,21 @@ feedback without sign/cap/projection/normalization/kernel/gate/training rescue
 and do not transfer it to Sudoku. Report:
 `research/reports/experiments/gdn3-query-delta-mqar-20260815.md`.
 
+Current update (2026-08-15 CST): `P-FS2-010` Producer-Native Gated Readout is
+approved and preregistered, not yet scored. It keeps native FutureSeed and both
+pinned-official GDN2 scans unchanged, decodes the transferred terminal state
+through the producer's own Q/output coordinates, and injects that evidence
+through one zero-init bounded rank-32 receiver fusion. The fixed D128/L2
+candidate adds exactly 12,288 parameters, no recurrent state and no scan. The
+sole decision is a from-scratch directional-MQAR L1024 matched control/candidate
+endpoint plus a same-trained-model edge-off attribution evaluation. It must
+gain at least `.10` balanced accuracy while reaching `.55`, improve both
+directions and joint exact, reduce total and wrong-key errors, beat edge-off by
+`.03`, and stay below the preregistered cost ceilings. Any miss closes the
+entire readout rank/cap/injection/decoder/gate/training neighborhood without
+Sudoku transfer. Report:
+`research/reports/experiments/futureseed2-producer-readout-mqar-20260815.md`.
+
 Current update (2026-08-14 CST): `P-GDN3-039` Raven Recurrent Address Composer
 is complete and discarded. Its strict A100 contract proves bit-exact parent
 output/main-state identity, two official GDN2 plus two official Raven/GSA

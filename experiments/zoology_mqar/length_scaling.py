@@ -64,6 +64,7 @@ GDN2_ARMS = (
     "future_seed_raven_address_gdn2",
     "future_seed_linear_product_state_gdn2",
     "future_seed_query_delta_gdn2",
+    "future_seed_producer_readout_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -280,6 +281,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_producer_readout_gdn2":
+        from experiments.zoology_mqar.producer_readout_futureseed import (
+            ProducerReadoutFutureSeedLanguageModel,
+        )
+
+        return ProducerReadoutFutureSeedLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_gdn2_metric_pullback":
         from experiments.zoology_mqar.gdn2_metric_pullback_futureseed import (
             MetricPullbackFutureSeedLanguageModel,
@@ -618,6 +625,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_producer_readout_gdn2":
+            from experiments.zoology_mqar.producer_readout_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -708,6 +721,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_query_delta_gdn2":
         from experiments.zoology_mqar.query_delta_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_producer_readout_gdn2":
+        from experiments.zoology_mqar.producer_readout_futureseed import (
             parent_parameter_hash,
         )
 
@@ -972,6 +991,33 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    producer_readout = None
+    producer_readout_edge_off = None
+    producer_readout_edge_off_cases = None
+    diagnostic_extra_wall_sec = 0.0
+    if arm == "future_seed_producer_readout_gdn2":
+        from experiments.zoology_mqar.producer_readout_futureseed import (
+            producer_readout_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        diagnostic_started = time.perf_counter()
+        producer_readout = producer_readout_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
+        model.set_producer_readout_enabled(False)
+        try:
+            producer_readout_edge_off, producer_readout_edge_off_cases = evaluate(
+                model,
+                test_dataloader,
+                sequence_length=sequence_length,
+            )
+        finally:
+            model.set_producer_readout_enabled(True)
+        diagnostic_extra_wall_sec = time.perf_counter() - diagnostic_started
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
     checkpoint_path = None
@@ -991,8 +1037,12 @@ def run_arm(
         )
         checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
     torch.cuda.synchronize()
-    post_warm_arm_wall_sec = time.perf_counter() - post_warm_arm_started
-    cold_arm_wall_sec = time.perf_counter() - cold_arm_started
+    post_warm_arm_wall_sec = (
+        time.perf_counter() - post_warm_arm_started - diagnostic_extra_wall_sec
+    )
+    cold_arm_wall_sec = (
+        time.perf_counter() - cold_arm_started - diagnostic_extra_wall_sec
+    )
     score: dict[str, Any] = {
         "arm": run_arm_name,
         "carrier_arm": arm,
@@ -1038,6 +1088,12 @@ def run_arm(
         score["linear_product_state"] = linear_product_state
     if query_delta is not None:
         score["query_delta"] = query_delta
+    if producer_readout is not None:
+        score["producer_readout"] = producer_readout
+        score["producer_readout_edge_off_metrics"] = producer_readout_edge_off
+        score["producer_readout_diagnostic_extra_wall_sec"] = (
+            diagnostic_extra_wall_sec
+        )
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",
@@ -1085,6 +1141,14 @@ def run_arm(
     (arm_dir / "cases.json").write_text(
         json.dumps(cases, separators=(",", ":")) + "\n"
     )
+    if producer_readout_edge_off_cases is not None:
+        (arm_dir / "edge_off_cases.json").write_text(
+            json.dumps(
+                producer_readout_edge_off_cases,
+                separators=(",", ":"),
+            )
+            + "\n"
+        )
     del trainer, model
     torch.cuda.empty_cache()
     return score

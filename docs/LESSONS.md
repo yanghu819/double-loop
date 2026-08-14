@@ -2976,3 +2976,9 @@
 - Close slot count, router form, temperature, gate map and duration rescue. A
   successor must keep coherent native address ownership without using one
   global content hash to choose an entire recurrent trajectory.
+- A cross-layer state can be useful yet unreadable without changing the live
+  recurrence. The clean test is producer-native decoding plus an attributable
+  bounded receiver fusion, not another K/V transport or erase-key rewrite.
+- New FutureSeed readouts need an edge-off counterfactual on the same trained
+  model. Activation alone cannot distinguish useful transferred evidence from
+  capacity that the rest of the network ignores.

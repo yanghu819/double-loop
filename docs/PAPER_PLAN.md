@@ -1953,3 +1953,15 @@ global token-to-slot assignment is too coarse even when each slot preserves a
 full native GDN2 state. Close slot count, routing temperature and training
 rescues. A successor should preserve per-binding coherent ownership without
 selecting a whole global trajectory for each token.
+
+### P-FS2-010 Registered Producer-Native Readout Test
+
+P-FS2-010 tests whether native FutureSeed carries useful terminal-state
+evidence that the receiver cannot fully read in its independently learned
+coordinates. It leaves the recurrent state and GDN2 transition untouched,
+reads the seed through the producer's own Q/output interface, and uses a
+zero-initialized bounded rank-32 fusion in hidden space. The directional-MQAR
+L1024 endpoint is preregistered with contemporaneous control, wrong-key error
+accounting and a same-trained-model edge-off attribution test. This is a
+pending experiment, not paper evidence; include it only after the full quality
+and cost gate is decided.

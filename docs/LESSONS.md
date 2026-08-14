@@ -2856,3 +2856,15 @@
   changing the old result. P033 reproduces P020's control (`0.17325` versus
   `0.1735`), so P020's per-layer metric gain to `0.48225` is a credible relative
   mechanism signal after retiring the non-reproducible `.7475` absolute gate.
+- Chained pinned-official chunks do carry gradients through physical state.
+  P035 measures nonzero chunk2-to-chunk1 V, K-decay and V-decay gradients; a
+  terminal grad-fn count alone is not a valid cross-chunk credit diagnostic.
+- Boundedness does not make a value-lifetime axis useful. P035 keeps every
+  local frame in `[0.25,4]` with active group/board/token variation, yet balanced
+  accuracy falls `0.09975->0.01375` and errors rise `3601->3945`.
+- A lower wrong-key-swap fraction still needs an accuracy denominator. P035
+  lowers conditional swaps `0.131630->0.038530` by preventing useful retrieval,
+  independently repeating the collapse pattern from P024/P028/P030/P031/P032.
+- Do not fuse a correctness-first multi-chunk prototype after its quality gate
+  fails. P035's `7.356x` warmed-step ratio is an optimization target only if the
+  recurrence improves quality; here fusion would preserve the wrong mechanism.

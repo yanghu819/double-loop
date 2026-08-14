@@ -2,10 +2,11 @@
 
 ## 1. Metainfo
 
-- Status: preregistered
+- Status: discarded; completed_rejected
 - Date: 2026-08-14
 - Benchmark: directional MQAR L1024, four associations
-- Compute: one AIStation task-mode GPU only
+- Compute: A100-SXM4-40GB index0, UUID
+  `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`
 - Seed: 123 only
 - Model: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Control: contemporaneous native GDN2+FutureSeed in the same process
@@ -93,6 +94,13 @@ Before training, the CUDA contract must prove all of:
 Formal artifacts must include control/candidate score, cases and checkpoint,
 comparison JSON, source/config/log hashes and GPU timing/memory.
 
+The strict R6 contract passed on clean detached pushed SHA
+`61920ce2e78b5c4149f07db0619e62705da5350f`. It proved exact zero-decay
+identity, +8,192 parameters, two pinned-official backward nodes, direct
+recurrence agreement and nonzero cross-chunk gradients into first-chunk V,
+K-decay and V-decay. Contract JSON SHA256 is
+`7cbabc7a8046931b448c5a415f8fb7ecd24bcdd76d851aef5105db63102685a6`.
+
 ## 7. Registered Result Gates
 
 Activation requires two active layers, 16 anchors/layer, mean absolute V decay
@@ -112,13 +120,33 @@ elapsed, post-warm wall and warmed-step ratios must each stay below 4x control,
 and peak allocation below 1.5x. A full pass authorizes one fused chunk kernel,
 whose production target remains near the original GDN2 pipeline.
 
-## 8. Decision Rule
+## 8. Decision
 
-Any contract, activation, stability, quality or prototype-cost miss closes this
-implementation. Do not rescue group count, frame cap, decay map, initialization,
-seed, LR, loss, batch, width/depth or epochs. A pass authorizes only the fused
-implementation and then one Sudoku transfer; it is not itself a hard-Sudoku
-claim.
+The fixed same-process endpoint completed both arms. Native control versus
+candidate balanced/future/past/joint accuracy is
+`0.09975/0.0930/0.1065/0` versus `0.01375/0.0120/0.0155/0`. Total errors rise
+`3601->3945`. Conditional wrong-key swaps fall `0.131630->0.038530`, but this
+is broad retrieval collapse: the candidate learns much later, ends near random,
+and has no joint exact examples.
+
+The failure is not inactivity or instability. Both layers activate with V-decay
+magnitudes `0.006751/0.014278`, active fractions `0.3132/0.6683`, nonzero
+group/board/token variation, finite terminal state and local scale/inverse
+exactly within `[0.25,4]`. The learned solution therefore changes the intended
+physical lifetime but suppresses useful long-range retrieval.
+
+Elapsed, post-warm wall, warmed-step and allocation ratios are
+`2.309/2.321/7.356/1.206x`; the warmed-step cost gate independently fails.
+Comparison, candidate score, checkpoint and manifest SHA256 are respectively
+`3f1558662096c4fce72e0b1208e3b8ce847ddcccb2b2c61261f6079d82531718`,
+`78447503de5f926fc0d56a8e0069ab4c5ad95e4412207b280ab13875aea9b13d`,
+`ad8f4fe8656bcca4fc83070abbbe67e51e98c9698e11019c7564dfb95470f003`
+and `b69c58df37f93f1225d64fc0baf896905b9b6c0010fc09cb76ee5d5160401dd9`.
+
+Close this implementation without group, cap, decay-map, initialization,
+fusion, seed, optimizer or duration rescue. Together with P015/P016, this
+rejects grouped persistent V-axis lifetime as the missing binding mechanism;
+it does not reject future fused chunking for a different recurrence.
 
 ## 9. Submission Record
 

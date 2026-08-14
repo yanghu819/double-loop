@@ -1460,6 +1460,30 @@ the common K contraction required for nonexpansive physical V decay destroys
 useful parent memory. This result closes the registered cap/group/map/max and
 training-rescue family; it should not be softened into a tuning recommendation.
 
+### P-GDN3-035 Chunk-Local Bi-Axis Boundary
+
+P-GDN3-035 removes P016's common-K-contraction confound. It restores physical
+state every 64 tokens and chains sixteen unchanged pinned-official chunks, so
+the eight grouped V lifetimes are directly nonexpansive while every local
+moving frame and inverse stays in `[0.25,4]`. A corrected GPU VJP also proves
+that gradients cross chunk boundaries into earlier V, K-decay and incoming
+state; the old P009 graph-count objection was a diagnostic error, not a kernel
+limitation.
+
+The fixed same-process L1024 result is decisively negative. Control/candidate
+balanced/future/past/joint accuracy is
+`0.09975/0.0930/0.1065/0` versus `0.01375/0.0120/0.0155/0`, while errors rise
+`3601->3945`. Both layers are active and bounded, with decay magnitudes
+`0.006751/0.014278`, so failure is not dead parameters or state explosion.
+Conditional wrong-key swaps fall `0.131630->0.038530` only because general
+retrieval collapses. The unfused reference also costs `7.356x` per warmed step.
+
+Together P015/P016/P035 close grouped persistent V-axis lifetime as the missing
+GDN2 binding mechanism: unstable global framing, funded bounded framing and
+direct bounded physical decay all fail for independent reasons. Future work
+should preserve one coherent erase/write/read ownership space and improve its
+address separability or transition rank, not tune another lifetime gauge.
+
 ### P-FS3-004 Cross-Layer Basis-Alignment Test
 
 P-FS3-004 tests a missing FutureSeed mechanism boundary rather than another

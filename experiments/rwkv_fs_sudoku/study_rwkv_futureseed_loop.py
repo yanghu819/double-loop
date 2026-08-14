@@ -34,6 +34,7 @@ from futureseed3_orthogonal_basis_transport import (
     FutureSeedOrthogonalBasisTransport,
 )
 from futureseed3_producer_codec import FutureSeedProducerCodec
+from gdn3_log_spd import BoundedLogSPDAddressMetric
 from fast_slow_decay_gdn2 import (
     FAST_SLOW_DECAY_MODES,
     FastSlowDecayController,
@@ -301,6 +302,13 @@ ADDRESS_TRAIN_KEYS = (
     "gdn3_shared_address_weight_rms",
     "gdn3_shared_address_residual_rms",
     "gdn3_shared_address_token_std",
+    "gdn3_log_spd_enabled",
+    "gdn3_log_spd_raw_rms",
+    "gdn3_log_spd_metric_delta_fro",
+    "gdn3_log_spd_eigenvalue_min",
+    "gdn3_log_spd_eigenvalue_max",
+    "gdn3_log_spd_condition_max",
+    "gdn3_log_spd_logdet_abs_max",
 )
 PRECONDITION_TRAIN_KEYS = (
     "gdn2_precondition_enabled",
@@ -575,6 +583,7 @@ GDN2_ADDRESS_MODES = (
 GDN2_CROSS_LAYER_INIT_MODES = ("independent", "coherent_qkv")
 GDN2_UPDATE_MODES = (
     "none",
+    "log_spd_metric",
     "coherent_delta",
     "state_feedback",
     "terminal_consolidation",
@@ -961,7 +970,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "coupled_address_rows" and address_mode == "position_qk":
+        if update_mode == "log_spd_metric" and address_mode == "position_qk":
+            execution_path = (
+                "canonical_position_qk_plus_per_layer_bounded_log_spd_"
+                "then_one_official_gdn2_chunk"
+            )
+        elif update_mode == "coupled_address_rows" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_coupled_k64_address_rows_in_one_"
                 "official_gdn2_chunk"
@@ -2530,6 +2544,11 @@ class FLADeltaTimeMix(nn.Module):
         )
         if self.coherent_delta_mix is not None:
             self.coherent_delta_mix._no_weight_decay = True
+        self.log_spd_address_metric = (
+            BoundedLogSPDAddressMetric(self.heads, self.head_dim)
+            if update_mode == "log_spd_metric"
+            else None
+        )
         feedback_hidden = max(8, self.head_v_dim // 2)
         self.state_feedback_in = (
             nn.Linear(self.head_v_dim, feedback_hidden, bias=False)
@@ -2764,6 +2783,13 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_address_carrier_write_norm_ratio": zero,
             "gdn2_address_carrier_b_input_relative_change": zero,
             "gdn2_address_carrier_w_input_relative_change": zero,
+            "gdn3_log_spd_enabled": zero,
+            "gdn3_log_spd_raw_rms": zero,
+            "gdn3_log_spd_metric_delta_fro": zero,
+            "gdn3_log_spd_eigenvalue_min": x.new_ones(()),
+            "gdn3_log_spd_eigenvalue_max": x.new_ones(()),
+            "gdn3_log_spd_condition_max": x.new_ones(()),
+            "gdn3_log_spd_logdet_abs_max": zero,
         }
 
     @staticmethod
@@ -4892,6 +4918,21 @@ class FLADeltaTimeMix(nn.Module):
 
         q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
         k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        if self.update_mode == "log_spd_metric":
+            if self.log_spd_address_metric is None:
+                raise RuntimeError("log_spd_metric requires a per-layer address metric")
+            q, k = self.log_spd_address_metric.transform_pair(q, k)
+            log_spd_diag = self.log_spd_address_metric.diagnostics(q.dtype)
+        else:
+            log_spd_diag = {
+                "gdn3_log_spd_enabled": q.new_zeros((), dtype=torch.float32),
+                "gdn3_log_spd_raw_rms": q.new_zeros((), dtype=torch.float32),
+                "gdn3_log_spd_metric_delta_fro": q.new_zeros((), dtype=torch.float32),
+                "gdn3_log_spd_eigenvalue_min": q.new_ones((), dtype=torch.float32),
+                "gdn3_log_spd_eigenvalue_max": q.new_ones((), dtype=torch.float32),
+                "gdn3_log_spd_condition_max": q.new_ones((), dtype=torch.float32),
+                "gdn3_log_spd_logdet_abs_max": q.new_zeros((), dtype=torch.float32),
+            }
         q_canonical = q
         k_canonical = k
         if cell_order is not None:
@@ -5249,6 +5290,7 @@ class FLADeltaTimeMix(nn.Module):
             **coupled_address_rows_diag,
             **interleaved_write_diag,
             **raven_write_value_diag,
+            **log_spd_diag,
             "gdn2_address_enabled": x.new_ones(()),
             "gdn2_address_qk_diag_cosine": diagonal_mean.detach().to(dtype=x.dtype),
             "gdn2_address_qk_offdiag_cosine": offdiag_mean.detach().to(dtype=x.dtype),
@@ -8219,6 +8261,7 @@ def load_training_checkpoint(
                     field == "gdn2_update_mode"
                     and bool(expected_args.resume_allow_gdn2_update_upgrade)
                     and current_value in {
+                        "log_spd_metric",
                         "coherent_delta",
                         "state_feedback",
                         "terminal_consolidation",
@@ -8292,6 +8335,7 @@ def load_training_checkpoint(
                 and bool(expected_args.resume_allow_gdn2_update_upgrade)
                 and saved_value == "none"
                 and current_value in {
+                    "log_spd_metric",
                     "coherent_delta",
                     "state_feedback",
                     "terminal_consolidation",
@@ -8448,6 +8492,7 @@ def load_training_checkpoint(
         ".time_mix.address_carrier_bias_delta",
     )
     gdn2_update_suffixes = (
+        ".time_mix.log_spd_address_metric.raw",
         ".time_mix.coherent_delta_mix",
         ".time_mix.state_feedback_in.weight",
         ".time_mix.state_feedback_out.weight",
@@ -10566,7 +10611,13 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             raise RuntimeError(
                 "FutureSeed gradient semantic upgrade was not accepted exactly"
             )
-        if args.gdn2_update_mode == "coherent_delta":
+        if args.gdn2_update_mode == "log_spd_metric":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(".time_mix.log_spd_address_metric.raw")
+            }
+        elif args.gdn2_update_mode == "coherent_delta":
             expected_gdn2_update_insertions = {
                 name
                 for name, _parameter in model.named_parameters()
@@ -10653,6 +10704,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             bool(args.resume_allow_gdn2_update_upgrade)
             and args.gdn2_update_mode
             in {
+                "log_spd_metric",
                 "coherent_delta",
                 "state_feedback",
                 "terminal_consolidation",
@@ -13503,6 +13555,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "--resume_allow_gdn2_update_upgrade requires an exact checkpoint resume"
             )
         if args.gdn2_update_mode not in {
+            "log_spd_metric",
             "coherent_delta",
             "state_feedback",
             "terminal_consolidation",

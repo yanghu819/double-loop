@@ -17,8 +17,8 @@ the same A100-SXM4-80GB architecture. Nevertheless, balanced accuracy is
 epoch0.
 
 The material protocol difference is process order. Historical source
-`77e5539` runs causal GDN2 first, FutureSeed GDN2 second, and bidirectional
-attention third. The current native control runs first in its process. Triton
+`77e5539` runs causal GDN2 first and FutureSeed GDN2 second. The current native
+control runs first in its process. Triton
 compilation/autotuning and CUDA execution order can therefore alter the
 optimization trajectory despite reset Python/PyTorch seeds. Continuing to
 judge mechanisms against an unresolved baseline would confound architecture
@@ -32,7 +32,7 @@ unchanged in a clean detached worktree. Invoke its original
 order is preserved:
 
 ```text
-causal_gdn2 -> future_seed_gdn2 -> bidirectional_attention
+causal_gdn2 -> future_seed_gdn2
 ```
 
 Use D128/L2/H4/K32/V32, four pairs, 10,000/1,000 examples, batch32, ten
@@ -65,7 +65,7 @@ fallback, NaN or OOM.
 
 ## 6. Budget And Kill Rule
 
-This is one exact three-arm reproduction, expected to take under ten minutes.
+This is one exact two-arm reproduction, expected to take under ten minutes.
 Any provenance or integrity mismatch aborts the process. A completed result is
 accepted as a carrier decision regardless of score and is never rescued.
 

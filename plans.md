@@ -13,23 +13,20 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-040` Linear + Exact Product
-Direct-Sum State is preregistered and being prepared for its strict GPU
-contract. R1 source `09c1aed9` reached the final gradient audit after CUDA
-forward/state/backward execution, then stopped because the checker treated
-official GDN2's two-layer `f_proj` as a single `Linear`; `abort.json` records a
-non-science contract failure and GPU resources cleared. R2 changes only the
-checker locator to `f_proj[1].weight`; no mechanism, data or gate changed. The
-candidate preserves the native learned K32 read/erase/write block exactly
-and appends one uncompressed K8xK8 product-address block inside the same
-K96xV32 state. It adds zero parameters and no scan/router/cache/expert; native
-FutureSeed transports the full state. This is distinct from P024, which
-replaced the native address with a compact product, P032 raw K expansion, and
-P038 routed parallel states. The fixed from-scratch directional-MQAR endpoint
-uses a contemporaneous control, 10 epochs, batch32, seed123. A pass requires
-balanced/future/past >=.85, joint >=.60, balanced >=historical and control
-+.10, fewer errors and wrong-key swap fraction -.10; time must stay <3.25x and
-allocation <2.50x. Any miss closes the whole factor-dimension/weight/scale/
-gate-lift/training neighborhood without rescue. Report:
+Direct-Sum State is complete and discarded. R2 source `def26f33` passes the
+strict contract: exact native K32 blocks, exact K32+K64 topology, one official
+scan/layer, zero new parameters, active product addresses/state/read,
+independent gradients and active native FutureSeed. The matched endpoint
+rejects the mechanism decisively. Control/candidate balanced/future/past/
+joint is `.17475/.1610/.1885/0` versus `.01225/.0155/.0090/0`; errors rise
+`3301->3951`. Swap fraction falls `.233263->.031891` only because retrieval
+collapses broadly. Product/native state RMS is `.2700/.2652` and read RMS is
+only `.1728/.2473`, despite finite product geometry. All cost gates pass
+(`1.4966/1.4969/1.7612/1.8616x` elapsed/wall/warmed/allocation), so the failure
+is scientific rather than infrastructure or cost. Close factor dimension,
+direct-sum weight/scale, lifted gates and training rescue; no Sudoku transfer.
+The next successor must preserve a native learnable address map without
+imposing another fixed analytic feature basis. Report:
 `research/reports/experiments/gdn3-linear-product-state-mqar-20260815.md`.
 
 Current update (2026-08-14 CST): `P-GDN3-039` Raven Recurrent Address Composer
@@ -1237,7 +1234,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-040 | preregistered; implementation_pending_contract | Native K32 can preserve ordinary retrieval while an exact uncompressed K8xK8 address complement separates pairwise bindings that collide in the linear state. | One coherent K96xV32 state: exact native normalized K32 plus exact K8 outer K8 product K64; native decay/erase block unchanged, bounded lifted product gates, one pinned-official scan, native whole-state FutureSeed. Zero new parameters, 3x state. Fixed matched L1024 D128/L2/H4/V32, 10ep/batch32/seed123; no sweep. | Single task-mode GPU after exact pushed SHA and clean detached worktree; GPU contract required before formal run. | contract plus one fixed two-arm endpoint | Balanced/future/past >=.85, joint>=.60, balanced >=historical and control +.10, fewer errors, swap fraction -.10; elapsed/wall/warmed <3.25x, allocation <2.50x. | Pending. Any miss closes factor dimension, direct-sum weight/scale, lifted gates and training rescue; only a full pass permits one Sudoku transfer. |
+| P-GDN3-040 | discarded; completed_rejected | Native K32 can preserve ordinary retrieval while an exact uncompressed K8xK8 address complement separates pairwise bindings that collide in the linear state. | One coherent K96xV32 state: exact native normalized K32 plus exact K8 outer K8 product K64; native decay/erase block unchanged, bounded lifted product gates, one pinned-official scan, native whole-state FutureSeed. Zero new parameters, 3x state. Fixed matched L1024 D128/L2/H4/V32, 10ep/batch32/seed123; no sweep. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; clean detached pushed SHA `def26f33`. | strict R2 contract and fixed two-arm endpoint complete | Balanced/future/past >=.85, joint>=.60, balanced >=historical and control +.10, fewer errors, swap fraction -.10; elapsed/wall/warmed <3.25x, allocation <2.50x. | Activation and cost pass. Control/candidate balanced/future/past/joint=`.17475/.161/.1885/0` versus `.01225/.0155/.009/0`; errors `3301->3951`. Product read contributes only `.1728/.2473x` native RMS. Lower swap fraction `.23326->.03189` is broad retrieval collapse. Close exact-product factors/weights/scales/gates/training; no Sudoku transfer. Comparison SHA `f9cd8360...1ed3`. |
 | P-FS2-009 | discarded; completed_rejected | Independently useful private Log-SPD metrics create a known linear mismatch when native FutureSeed passes the producer KxV state directly to the receiver. Removing only that metric component may improve receiver binding without hard-sharing geometry. | Directional MQAR L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123. Same-process private-Log-SPD native-FS control then candidate. Candidate applies the zero-parameter receiver-read pullback `S'=C_r^-1 C_p S` before the unchanged native FS RMS/gate; zero state/scan delta. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `246afec`. | strict contract and fixed two-arm endpoint complete | Require active bounded private metrics/pullback; balanced `>=max(.55, control+.10)`, future/past each `+.07`, joint `>=max(.08, control+.04)`, fewer errors and swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.10x`. | Contract/activation/cost pass. Control/candidate balanced/future/past/joint=`.1385/.1485/.1285/0` versus `.17825/.182/.1745/.002`; errors fall `3446->3287`, but swaps rise `602->748` and fraction `.17470->.22756`. Close metric-derived state transport without rescue; comparison SHA `e8b35796...fceeb`. |
 | P-GDN3-037 | discarded; completed_rejected | GDN2 keeps one key but applies a K-coordinate erase response independently of its V-gated write target. A single exact committed residual may preserve coherent binding better than separate erase/write modulation. | From-scratch directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed. Keep byte-identical GDN2 Q/K/V/f/b/w/g/o projections, K decay, state and one coherent key. Define `u=w*v`, `beta=mean_K(sigmoid(b_logits))`, and run one pinned-official DPLR transition `S'=DS+beta*k(u-k^TDS)^T`. Same-process native control then candidate, 10ep/batch32/seed123; equal parameters/state, one scan. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `f7009fc`. | strict contract and fixed two-arm endpoint complete | Integrity, activation, stability and cost all pass. Control/candidate balanced=`.36625/.01525`, future=`.3515/.0195`, past=`.381/.011`, joint=`.002/0`, errors=`2535/3939`. Residual RMS is about`1.07` and spectral norm stays below one; lower conditional swaps are broad retrieval collapse. Close scalar committed residual without beta/target/scale/decay/training rescue; no Sudoku transfer. Comparison SHA `e37913a0...7084c`. |
 | P-GDN3-036 | discarded; completed_rejected | P031 did not disprove erase specialization itself; it disproved unconstrained specialization because erase stopped targeting rows populated by the coherent write/read key. A fixed tangent-space ownership invariant may preserve useful address binding while adding a bounded erase-specific direction. | Directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed. Add the same tied raw erase projection+Triton conv as P031, but project it onto the write-key tangent space and cap the correction at fixed `rho=.5`: `k_e=(k+.5P_k^perp r)/sqrt(1+||.5P_k^perp r||^2)`. One pinned-official DPLR scan, exact +33,792 parameters, zero state/scan delta. Same-process native control then candidate, 10 epochs/batch32/seed123. | A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact clean pushed SHA `4b01640c`. | strict R2 contract and fixed two-arm endpoint complete | Exact tied identity and all activation/stability/cost gates pass. Control/candidate balanced=`.36025/.01375`, future=`.3675/.0145`, past=`.353/.013`, joint=`.014/0`, errors=`2559/3945`; active correction RMS is about`.46` while mean key cosine remains about`.91`. Lower swap fraction is broad retrieval collapse. Close the complete decoupled-key family without rho/projection/angle/init/regularizer/training rescue; no Sudoku transfer. Comparison SHA `0b4a7d61...036b`. |

@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation pending strict CUDA contract
+- Status: completed_rejected; discarded without rescue
 - Date: 2026-08-15
 - Benchmark: directional MQAR L1024 wrong-key regime
 - Fixed setting: D128/L2/H4/V32, native FutureSeed, 10 epochs, batch32,
@@ -129,4 +129,56 @@ and processes cleared. R2 changes only the checker locator from
 `f_proj.weight` to `f_proj[1].weight`. Mechanism, data, prediction, quality,
 cost and kill gates remain byte-for-byte unchanged. No quality result exists.
 
-Pending strict R2 CUDA contract and the single fixed matched endpoint.
+R2 source `def26f335748b9a705b63aade293e236c9807ef6` passed the strict
+A100-SXM4-40GB contract on CUDA index0, UUID
+`GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`. The contract proved exact equal
+parameter count (`661,584`), exact mapped parent and native K32 Q/K/decay/erase
+blocks, two pinned-official GDN2 scans and `ChunkGDN2FunctionBackward` paths,
+head equivariance, K96 state shape, independent factor/native gradients,
+product-state dependence, exact data hashes and active native FutureSeed.
+
+The fixed matched endpoint completed both arms:
+
+| Arm | Balanced | Future | Past | Joint | Errors | Wrong-key swaps | Swap/error |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Native K32 GDN2 + FutureSeed | 0.17475 | 0.1610 | 0.1885 | 0 | 3,301 | 770 | 0.233263 |
+| K32 + exact K8xK8 product state | 0.01225 | 0.0155 | 0.0090 | 0 | 3,951 | 126 | 0.031891 |
+
+Every activation gate passed. Both layers use exactly one official scan and a
+K96xV32 state with `12,288` values and zero new parameters. Product-address
+RMS is approximately `0.125`; token and board variation are finite and
+nonzero. Product/native state RMS ratios are `0.2700/0.2652`, while
+product/native read RMS ratios fall to `0.1728/0.2473`. Native FutureSeed is
+active with gate `0.50535` and raw RMS `0.03517`. The product block therefore
+did not fail to execute; it diverted optimization into an analytic feature
+geometry that never learned usable retrieval. Its validation accuracy stays
+near chance through epoch8 and ends at only `0.01225`.
+
+All cost gates also passed: candidate/control elapsed, post-warm wall,
+independently warmed-step and peak-allocation ratios are
+`1.4966x/1.4969x/1.7612x/1.8616x`. The lower conditional swap fraction is not
+binding closure because total errors increase by 650 and both directional
+accuracies collapse. Exact product features suppress usable retrieval as well
+as collisions, even when the complete native linear block is retained.
+
+Decision: close exact product direct sums and their factor dimension,
+direct-sum weight/scale, lifted gates and training variants. There is no
+Sudoku transfer. A successor must retain a native learnable address map and
+change credit or state organization without imposing another fixed analytic
+address basis.
+
+Artifacts:
+
+- run: `p-gdn3-040-linear-product-l1024-20260814T174422Z-def26f3`;
+- contract/comparison SHA256:
+  `6003e00ac0f1b9d7c5ab09064fc30e545d103b651a7ef000cf5d4ad8f650015e` /
+  `f9cd8360f0ce1fe2900e17e779151330a8939ffcc1c482d401fd4c11948f1ed3`;
+- control/candidate score SHA256:
+  `fcd8f022b18901d2b0f814beff7527f3b7823e3942cd6d8208c7cb3009ee17eb` /
+  `336f9600d06e7b6f4d310ed2c7f50002243db7a7c9d5513e481a9528fc957212`;
+- control/candidate checkpoint SHA256:
+  `4d96b91f9278d38bd92e6f6cf35559ad067a8d5f3ea96d5cd519c558b8a346aa` /
+  `ba0c888b29d815fe8a8c48a2004411cabec55930da17e70a245248b6dfe610ac`;
+- formal log/source snapshot SHA256:
+  `61d9592ef5d8689684b90df420412324f5fa20748a86a0b9b447e803a25c1400` /
+  `04fb48374a12cc4ed6e315f13eded4a8f44c802bce5bf43f4caf5437666c8a82`.

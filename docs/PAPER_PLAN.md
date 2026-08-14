@@ -1,5 +1,27 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Exact Product Features Do Not Rescue Linear Binding
+
+P-GDN3-040 preserves the complete learned native K32 address channel and adds
+an exact uncompressed K8xK8 product complement in the same K96xV32 recurrent
+state. It therefore isolates the strongest remaining interpretation of P024:
+perhaps product binding failed only because the analytic feature map replaced,
+rather than complemented, the native linear map. The strict contract proves
+zero new parameters, one official scan/layer, exact native sub-block identity,
+active and variable product addresses/state/read, and native whole-state
+FutureSeed.
+
+The result closes that interpretation. Balanced accuracy collapses
+`.17475->.01225`, future/past collapse `.1610/.1885->.0155/.0090`, and errors
+rise `3301->3951`. Product/native state RMS remains `.2700/.2652`, but its read
+RMS is only `.1728/.2473`; the analytic block is active yet fails to acquire a
+usable retrieval geometry. Swap fraction `.233263->.031891` is again a broad
+retrieval-collapse artifact. Cost is within the preregistered 3x-state budget,
+so the paper should report a quality boundary: fixed product features do not
+solve wrong-key binding even as a direct-sum complement. Future work must keep
+learnable native addressing and target credit or state organization without a
+fixed analytic basis.
+
 ## 2026-08-14 Recurrent Address Context Can Destroy Native Binding
 
 P-GDN3-039 keeps native GDN2 as the sole data plane and uses an independent

@@ -1,5 +1,21 @@
 # Lessons
 
+## 2026-08-15: More expressive fixed addresses can block learning
+
+- P-GDN3-040 is the clean complement test missing from P024: it keeps the
+  complete native K32 map and adds an exact K8xK8 product block, with zero new
+  parameters and one official scan.
+- Product Q/K, state and read paths all activate; product/native state RMS is
+  `.2700/.2652` and native FutureSeed remains active. This is not dead code.
+- Balanced accuracy collapses `.17475->.01225`, errors rise `3301->3951`, and
+  the product validation curve stays near chance through epoch8.
+- Swap fraction `.233263->.031891` is not success when usable retrieval is
+  destroyed. Always pair conditional error composition with absolute errors.
+- Close factor size, direct-sum weight/scale and lifted-gate variants. Added
+  feature expressivity is not a substitute for a learnable credit path; the
+  next state organization must preserve native address learning rather than
+  impose another analytic basis.
+
 ## 2026-08-14: Strong recurrent address context is not binding closure
 
 - P-GDN3-039 is an exact Raven/GDN composition rather than a replacement

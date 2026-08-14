@@ -85,4 +85,14 @@ gate.
 
 ## 7. Results
 
-Pending.
+R1 (`p-diag-addr-001-20260814T041429Z-004dd05`) exited before model
+construction because the launcher omitted the external Zoology repository from
+`PYTHONPATH`; `ModuleNotFoundError: zoology.data.utils` was raised with zero GPU
+memory allocated. The launcher wrote `abort.json`. This is an orchestration
+failure and carries no mechanism evidence.
+
+R2 fixes only that deterministic environment defect: it adds the fixed
+`/huyang2/double-loop/repos/zoology-official` source root, verifies Zoology SHA
+`1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb`, and invokes the explicit base
+Python. The checkpoint, data, measurements, cost ceiling and branch rule remain
+unchanged. R2 result pending exact pushed source and clean detached execution.

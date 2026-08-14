@@ -71,6 +71,11 @@ kills the address/cache line unless low target survival and anisotropic geometry
 jointly select live-state address interference. Diagnostic/ordinary time and
 allocation ratios must be <=3.00/1.50; the slower FP32 survival replay is
 diagnostic-only and fixed to 128 cases.
+R1 `004dd055` exited before model construction because its launcher omitted the
+external Zoology source root from `PYTHONPATH`; zero GPU memory was allocated
+and the generated `abort.json` is non-science evidence. R2 changes only the
+environment wiring and adds an exact Zoology SHA check; all diagnostic gates
+remain frozen.
 
 Current update (2026-08-13 CST): `P-FS2-006` is closed without a quality
 verdict at its strict recurrence-parity gate. P-GDN3-007 already falsified a

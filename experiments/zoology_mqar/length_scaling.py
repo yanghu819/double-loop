@@ -66,6 +66,7 @@ GDN2_ARMS = (
     "future_seed_query_delta_gdn2",
     "future_seed_qk_coherence_gdn2",
     "future_seed_biorthogonal_qk_gdn2",
+    "future_seed_dynamic_frame_gdn2",
     "future_seed_producer_readout_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
@@ -240,6 +241,11 @@ def build_config(
                 "experiments.zoology_mqar.biorthogonal_qk_futureseed."
                 "ZoologyBiorthogonalQKFutureSeedMixer"
             )
+        elif arm == "future_seed_dynamic_frame_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.dynamic_frame_futureseed."
+                "ZoologyDynamicFrameFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -299,6 +305,12 @@ def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
         )
 
         return ProducerReadoutFutureSeedLanguageModel(copy.deepcopy(config.model))
+    if arm == "future_seed_dynamic_frame_gdn2":
+        from experiments.zoology_mqar.dynamic_frame_futureseed import (
+            DynamicFrameFutureSeedLanguageModel,
+        )
+
+        return DynamicFrameFutureSeedLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_gdn2_metric_pullback":
         from experiments.zoology_mqar.gdn2_metric_pullback_futureseed import (
             MetricPullbackFutureSeedLanguageModel,
@@ -649,6 +661,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_dynamic_frame_gdn2":
+            from experiments.zoology_mqar.dynamic_frame_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         elif arm == "future_seed_producer_readout_gdn2":
             from experiments.zoology_mqar.producer_readout_futureseed import (
                 load_matched_parent_state,
@@ -757,6 +775,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_biorthogonal_qk_gdn2":
         from experiments.zoology_mqar.biorthogonal_qk_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_dynamic_frame_gdn2":
+        from experiments.zoology_mqar.dynamic_frame_futureseed import (
             parent_parameter_hash,
         )
 
@@ -1053,6 +1077,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    dynamic_frame = None
+    if arm == "future_seed_dynamic_frame_gdn2":
+        from experiments.zoology_mqar.dynamic_frame_futureseed import (
+            dynamic_frame_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        dynamic_frame = dynamic_frame_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     producer_readout = None
     producer_readout_edge_off = None
     producer_readout_edge_off_cases = None
@@ -1154,6 +1191,8 @@ def run_arm(
         score["qk_coherence"] = qk_coherence
     if biorthogonal_qk is not None:
         score["biorthogonal_qk"] = biorthogonal_qk
+    if dynamic_frame is not None:
+        score["dynamic_frame"] = dynamic_frame
     if producer_readout is not None:
         score["producer_readout"] = producer_readout
         score["producer_readout_edge_off_metrics"] = producer_readout_edge_off

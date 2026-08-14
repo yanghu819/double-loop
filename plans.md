@@ -12,6 +12,22 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-GDN3-044` Dynamic Canonical Address Frame
+is preregistered as the sole successor. P031/P036/P042/P043 jointly close key
+splitting, forced Q/K coherence and static dual-coordinate gauges. P044 instead
+tests a token-dependent bounded diagonal frame inside the live official GDN2
+scan. Native Q/K share one coherent frame, the exact frame difference is added
+to native row decay to transport the existing K32xV32 state, and terminal rows
+are returned to a canonical basis before native FutureSeed. The fixed D128/L2
+candidate adds exactly 4,096 parameters, zero state and zero scans. It must
+pass exact parent/nonzero-state/FutureSeed identity, two official backward
+paths, telescoping and bounded-state checks before one contemporaneous L1024
+endpoint. Quality requires balanced `.55` and control `+.15`, both directions
+`.50` and `+.10`, joint `.06` and `+.04`, fewer errors and swap fraction
+`-.05`; time ratios must be below `1.30x` and allocation below `1.12x`. Any
+miss closes radius/rank/controller/sharing/canonicalization/training rescue.
+Report: `research/reports/experiments/gdn3-dynamic-canonical-frame-mqar-20260815.md`.
+
 Current update (2026-08-15 CST): `P-GDN3-043` Biorthogonal Q/K Gauge is
 complete and discarded. Exact pushed/read-back source `5ffaa6ea` passes the
 strict A100 contract with parent identity, two official GDN2 backward paths,

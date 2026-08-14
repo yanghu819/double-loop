@@ -37,7 +37,9 @@ class BoundedLogSPDAddressMetric(nn.Module):
         ] = raw[:, off_diagonal]
         diagonal = matrix.diagonal(dim1=-2, dim2=-1)
         diagonal[:, -1] = -diagonal[:, :-1].sum(dim=-1)
-        frobenius = matrix.square().sum(dim=(-1, -2), keepdim=True).sqrt()
+        frobenius = (
+            matrix.square().sum(dim=(-1, -2), keepdim=True) + 1e-12
+        ).sqrt()
         return matrix / (1.0 + frobenius)
 
     def factor(self) -> torch.Tensor:

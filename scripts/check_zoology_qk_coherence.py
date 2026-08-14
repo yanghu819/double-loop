@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import inspect
 import json
 import math
@@ -127,11 +128,17 @@ def main() -> None:
 
     fla_root = Path(os.environ["FLA_SOURCE_ROOT"]).resolve()
     gdn2_source = Path(inspect.getfile(GatedDeltaNet2)).resolve()
-    chunk_source = Path(inspect.getfile(chunk_gdn2)).resolve()
+    chunk_module = importlib.import_module("fla.ops.gdn2.chunk")
+    chunk_source = Path(chunk_module.__file__).resolve()
+    model_module = importlib.import_module(
+        "experiments.zoology_mqar.qk_coherence_futureseed"
+    )
     if fla_root not in gdn2_source.parents or fla_root not in chunk_source.parents:
         raise RuntimeError(
             f"Official carrier escaped pinned FLA: {gdn2_source} {chunk_source}"
         )
+    if model_module.chunk_gdn2 is not chunk_gdn2:
+        raise RuntimeError("Candidate chunk export identity changed")
     source_hash = hashlib.sha256(gdn2_source.read_bytes()).hexdigest()
     if source_hash != os.environ["FLA_GDN2_SOURCE_SHA256"]:
         raise RuntimeError(f"Unexpected GDN2 source hash: {source_hash}")

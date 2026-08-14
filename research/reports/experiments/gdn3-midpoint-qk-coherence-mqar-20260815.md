@@ -123,5 +123,10 @@ GPU provenance and one comparison JSON under `/huyang2/double-loop/runs`.
 
 Implementation, endpoint, strict checker and sole launcher are complete. Python
 compilation, shell parsing and `git diff --check` pass; no CPU model smoke was
-run. Pending exact pushed SHA, clean detached worktree, strict GPU contract and
-the sole fixed endpoint.
+run. R1 source `63493645` stopped before model construction because the
+checker asked `inspect` for a Torch-Dynamo-wrapped function and received
+`torch/_dynamo/eval_frame.py`; its non-science abort is retained. R2 changes
+only provenance inspection to verify the exported function identity, the
+`fla.ops.gdn2.chunk` module path and the unchanged full ops-tree hash. Pending
+R2 exact pushed SHA, clean detached worktree, strict GPU contract and the sole
+fixed endpoint.

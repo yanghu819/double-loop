@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-13: A solved write proxy can still miss the read problem
+
+- P-FS2-008 fits the receiver-native weighted write residual to `0.001132x`
+  native MSE, yet balanced accuracy reaches only `0.2245` versus historical
+  native FutureSeed `0.7475`.
+- Use a same-trained-weight edge-off counterfactual for state additions. Here
+  the residual improves pooled query CE by only `1.15%` and raises wrong-key
+  swaps `906->934`; most of the apparent `0.0400->0.2245` paired gain is not
+  attributable to the ridge edge itself.
+- Numerical conditioning and bounded state are necessary, not sufficient.
+  Cholesky, solve residual, state bounds and write fit all pass while real
+  binding fails.
+- Measure independently warmed steps. Fit and wall ratios barely pass at
+  about `1.58x`, but warmed-step cost is `2.1845x` and closes the mechanism.
+- Close lambda, jitter, solver, weighting, projection, residual-scale, Top-K,
+  replay and training rescues. The next run must target actual live
+  query-address binding, not another write-reconstruction surrogate.
+
 ## 2026-08-13: Stable memory can still be unusable memory
 
 - P-GDN3-030 passes every registered activation and sampled-stability check.

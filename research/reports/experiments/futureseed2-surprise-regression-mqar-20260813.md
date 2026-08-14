@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: proposed; preregistered; implementation and CUDA contract pending
+- Status: completed; rejected by registered activation, quality and cost gates
 - Decision field: directional MQAR L1024 wrong-key binding regime
 - Fixed setting: D128/L2/H4/K32/V32, 10 epochs, batch32, seed123,
   10,000/1,000 examples
@@ -328,6 +328,60 @@ permits a D256/L12 hard-Sudoku transfer and later fused implementation. A miss
 returns the program to live recurrent address-binding dynamics rather than
 another cache, replay or capacity variant.
 
-Exact source SHA, run names, GPU identity, contract, score, cases, checkpoint,
-timing, memory and artifact SHA256 values remain pending and must be appended
-only after execution.
+## 10. Execution And Verdict
+
+The exact pushed source `9b185b640b50ccba8d4e9a6ca6e170864975c2bb`
+ran from a clean detached worktree on CUDA index0, A100-SXM4-80GB UUID
+`GPU-1522da54-4d66-ddda-298e-422ca5bb6516`. The formal run was
+`p-fs2-008-surprise-regression-l1024-20260813T043852Z-9b185b6`. Its strict
+contract passed with exact parameter and initialization parity, two pinned
+official `ChunkGDN2FunctionBackward` paths, zero extra scan/state/parameter,
+exact zero/nonzero-incoming-state parity, receiver dependency, finite
+gradients, tuple permutation error `3.04e-6`, and no fallback. Contract JSON
+SHA256 is `ff1eb76c19c2ac5f46a19ff2b5d0703f8e76089182d4059850930aecbbf22d60`.
+
+The endpoint is rejected:
+
+| metric | same-runtime native | candidate | historical native |
+|---|---:|---:|---:|
+| balanced accuracy | 0.0400 | 0.2245 | 0.7475 |
+| future accuracy / CE | 0.0370 / 3.9867 | 0.2240 / 2.5842 | 0.7415 / 0.6167 |
+| past accuracy / CE | 0.0430 / 3.9638 | 0.2250 / 2.5915 | 0.7535 / 0.6143 |
+| joint exact | 0 | 0.001 | 0.339 |
+| total query errors | 3,840 | 3,102 | 1,010 |
+| wrong-key valid-value swap fraction among errors | 0.06458 | 0.30110 | 0.80693 |
+
+The closed-form objective is nearly solved: weighted write-fit MSE ratio is
+`0.0011318`, solve residual is `6.10e-7`, maximum condition number is
+`7,966.38`, effective token count is `973.88/1024`, and no residual clipping
+activates. The bounded residual RMS is `0.34659` against native seed RMS
+`0.50545`; the resulting seed RMS is `0.28515`. This does not transfer to the
+actual read path. On the same trained weights, removing only the ridge edge
+gives balanced `0.2175`; pooled query CE changes only
+`2.617864 -> 2.587832`, ratio `0.988528`, missing the registered `<=0.98`
+gate. Wrong-key swaps increase from `906/3130` in that counterfactual to
+`934/3102` with the residual.
+
+Fit, post-warm wall and peak-allocation ratios are `1.5788x`, `1.5793x` and
+`1.1787x`, but independently warmed step time is `2.1845x`, above the fixed
+`1.60x` ceiling. The candidate also misses every absolute accuracy gate, the
+historical gain, the `+0.20` paired gain, joint exact, total-error and paired
+swap gates. The same-runtime control's unusually weak endpoint does not
+invalidate the paired comparison, but it also cannot replace the locked
+historical frontier.
+
+The conclusion is narrow and decisive: all-token surprise-weighted ridge can
+reconstruct a receiver write surrogate without improving actual query-key
+binding. Close the entire ridge family without coefficient, jitter, solver,
+weighting, projection, residual-scale, clipping, Top-K, replay, training or
+Sudoku-transfer rescue. The next decision must measure key geometry, exact
+committed-edit overwrite/survival and wrong-key swaps without changing logits.
+
+Decision JSON SHA256 is
+`a3b285d25ca777bb17cecffb4cf7a291a1eb38348fa0d63ced5ee3bd951f6e87`.
+Candidate checkpoint/cases/config/score SHA256 are respectively
+`c5c13a28d4f6f24a2c364f35e44ab43c1d5c84d87c79325c18620ad7b026861d`,
+`292322baea73e4c7a01265cdb122ccaddc3bf1b50b5ffb3ba43abb04fd5b969c`,
+`d3f524f2b6aa8400953b59289df4373bdbea58783a95ba66bee74de6383ea68c`,
+and `58947f3ee7ea2a51c183b368a690b66cfa44060158f0cd3bdd739bab782a5e40`.
+The complete 32-file manifest remains at `artifacts.sha256` in the formal run.

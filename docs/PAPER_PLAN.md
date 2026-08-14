@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-13 Write Reconstruction Is Not Query Binding
+
+P-FS2-008 replaces P-FS2-007's sparse K16 replay with an all-token,
+surprise-weighted receiver-native ridge residual while preserving the native
+FutureSeed base state and both official recurrent scans. The solve is
+numerically successful: it uses effectively `973.88/1024` tokens, reaches a
+write-fit MSE ratio of `0.001132`, stays bounded, and has zero new parameters,
+state or scans.
+
+The actual retrieval result rejects the mechanism. Candidate balanced
+accuracy is `0.2245`, below historical native FutureSeed `0.7475`. On the same
+trained weights, the residual changes pooled query CE only
+`2.617864->2.587832` (`0.988528x`) and increases wrong-key swaps from `906` to
+`934`. Warmed training steps cost `2.1845x` the control. The paper may claim
+that committed-edit surprise and receiver-native evidence are measurable, but
+must not equate excellent ridge write reconstruction with improved FutureSeed
+binding. The next target is the live query/address organization, selected only
+after a zero-parameter key-geometry and overwrite diagnostic.
+
 ## 2026-08-13 Contractivity Alone Does Not Preserve Retrieval
 
 P-GDN3-030 is a direct negative test of numerical stability. Its separate

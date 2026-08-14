@@ -12,6 +12,43 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-13 CST): `P-FS2-008` completed and is rejected. The
+zero-parameter all-token receiver-native ridge residual passes its strict
+official-kernel, identity, gradient, solve and bounded-state contract. Its
+write surrogate is almost exactly fitted (`0.001132x` native MSE), but the
+same-trained-weight query CE improves only `1.15%` (`0.988528x`, missing the
+registered `<=0.98` gate), and wrong-key swaps rise `906->934`. Candidate
+balanced/future/past/joint is `0.2245/0.2240/0.2250/0.001`, far below the
+locked historical native FutureSeed `0.7475/0.7415/0.7535/0.339`; warmed-step
+cost is `2.1845x`. Close ridge coefficient, solver, weighting, projection,
+residual, replay and training rescues. Before another trainable successor,
+run one zero-parameter checkpoint diagnostic of key Gram geometry, exact
+committed-edit survival/overwrite and wrong-key binding.
+
+Current update (2026-08-13 CST): `P-DIAG-ADDR-001` is preregistered as a
+read-only, zero-parameter GPU diagnostic on the completed P-FS2-007 surprise
+K16 directional-MQAR L1024 checkpoint. It does not train or change logits. On
+the same 1,000 validation cases it compares receiver normalized query Q against
+the four producer committed-write K addresses (the value token at
+`write_position+1`) and against receiver-native reprojected K, while scoring
+each target write by the exact official committed-edit norm. The fixed first
+128 cases additionally measure producer/receiver key-Gram geometry, exact
+target-address survival through later decay/erase, and matched surprise-K16
+versus recency-K16 survival. This complements rather than reruns P-BIND-001's
+bit-exact Sudoku loop evidence (`0.5230` correction AUROC, `0.4792/6.4568/402.91`
+effective-rank/anisotropy/condition medians).
+Outputs are top-1/MRR/margin by direction, correctness, wrong-key swap and
+surprise bucket, plus geometry, survival correlations and ordinary-eval cost.
+Bitwise first-batch logit parity, unchanged parameter SHA and all gradients
+`None` are mandatory.
+The fixed branch rule selects receiver-native address/cache only for >=0.10
+rank gain with swap/error>=0.70; selects loop/readout convergence only when
+receiver-native top1 is already >=0.80 overall and >=0.60 on errors; otherwise
+kills the address/cache line unless low target survival and anisotropic geometry
+jointly select live-state address interference. Diagnostic/ordinary time and
+allocation ratios must be <=3.00/1.50; the slower FP32 survival replay is
+diagnostic-only and fixed to 128 cases.
+
 Current update (2026-08-13 CST): `P-FS2-006` is closed without a quality
 verdict at its strict recurrence-parity gate. P-GDN3-007 already falsified a
 generic controller that reads inherited state before the scan, so this test is
@@ -60,27 +97,9 @@ repeating P028/P029's error-composition boundary. A post-result review also
 limits positive claims from this run: transitive shared-kernel hashes and
 exact cross-layer seed wiring were not fully asserted. Neither limitation can
 reverse the quality rejection. Close the exact separate-erase/write
-contractive-DPLR equation without rescue or Sudoku transfer. The sole next
-candidate under preparation is `P-FS2-008`: receiver-native full-token
-surprise regression, which replaces P-FS2-007's sparse sequential replay with
-one weighted ridge state formed directly in the receiver's address/value
-basis.
-
-Current update (2026-08-13 CST): `P-FS2-008` is preregistered and being
-contracted. The producer keeps its pinned-official GDN2 scan unchanged and
-scores every token by the detached norm of the actual committed edit. The
-receiver uses its existing K/V projections plus exact causal-convolution
-preprocessing and write projection to solve one FP32 surprise-weighted K32
-ridge residual per board/head. The post-native-gate residual is added to the
-unchanged native FutureSeed seed with residual RMS capped per board/head at
-native-seed RMS. This is the single decision-changing follow-up to P-FS2-007:
-it removes sparse selection
-and sequential replay while retaining all canonical token evidence in the
-receiver's basis. The fixed run is one contemporaneous native arm followed by
-one candidate at L1024, D128/L2/H4/K32/V32, 10 epochs, batch32, seed123. Any
-contract, write-fit, same-weight query-CE, absolute quality, wrong-key swap, or
-fixed cost miss closes this ridge family without coefficient, solver,
-weighting, projection, seed, optimizer, width, depth or duration rescue.
+contractive-DPLR equation without rescue or Sudoku transfer. P-FS2-008 later
+tested and rejected the receiver-native full-token ridge alternative; it is no
+longer an active successor.
 
 Current update (2026-08-13 CST): `P-GDN3-028` completed and is rejected.
 Atomic shared-payload addressing reduces wrong-key valid-value swaps among
@@ -1013,7 +1032,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-FS2-008 | preregistered; contracting | P-FS2-007 raises balanced accuracy with receiver-native surprise replay but leaves `2044/2047` errors as wrong-key swaps. Sparse replay may be the remaining lossy step; one all-token receiver-native ridge residual should complement rather than replace native FutureSeed binding evidence. | Keep both pinned-official main scans unchanged. Score producer tokens by detached exact committed-edit norm. On the receiver's actual current mixer input, reuse its exact K/V projection plus causal-conv preprocessing and pointwise write gate. Fit the residual payload relative to native seed writes with fixed FP32 `lambda=2^-8*(trace(G)/K+1e-6)`, then add a post-native-gate residual whose RMS is capped per board/head at native-seed RMS. Same-runtime native then candidate, L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; zero new params/state/scans. Write-fit diagnostics are eval-only; a same-trained-weight native-edge counterfactual must preserve exact test hash/case labels, lower future and past query CE, and lower pooled query CE by at least 2%. | Existing A100-SXM4-80GB task GPU2, CUDA index0 UUID `GPU-1522da54-4d66-ddda-298e-422ca5bb6516`; exact pushed SHA pending. | strict contract plus two fixed arms, expected <10m | Cholesky all pass, condition<=`1e4`, solve residual<=`1e-4`, raw write-fit MSE<=`.75x` native proxy, and actual labeled-query CE passes the same-weight native-edge counterfactual gate; residual RMS<=native and total seed RMS<=`2x` native per board/head. Balanced/future/past>=`.85/.83/.83`, joint>=`.60`, balanced>=historical+`.10` and runtime+`.20`, swaps down>=`.10` from both, fewer errors; fit/wall/warm<=`1.60x`, allocation<=`1.25x`. | Pending. Any gate miss closes all ridge/jitter/weight/score/projection/training rescues. |
+| P-FS2-008 | discarded; completed_rejected | P-FS2-007 raises balanced accuracy with receiver-native surprise replay but leaves `2044/2047` errors as wrong-key swaps. Sparse replay may be the remaining lossy step; one all-token receiver-native ridge residual should complement rather than replace native FutureSeed binding evidence. | Keep both pinned-official main scans unchanged. Score producer tokens by detached exact committed-edit norm. On the receiver's actual current mixer input, reuse its exact K/V projection plus causal-conv preprocessing and pointwise write gate. Fit the residual payload relative to native seed writes with fixed FP32 `lambda=2^-8*(trace(G)/K+1e-6)`, then add a post-native-gate residual whose RMS is capped per board/head at native-seed RMS. Same-runtime native then candidate, L1024 D128/L2/H4/K32/V32, 10ep/batch32/seed123; zero new params/state/scans. Write-fit diagnostics are eval-only; a same-trained-weight native-edge counterfactual must preserve exact test hash/case labels, lower future and past query CE, and lower pooled query CE by at least 2%. | A100-SXM4-80GB CUDA index0 UUID `GPU-1522da54-4d66-ddda-298e-422ca5bb6516`; clean detached pushed SHA `9b185b64`. | strict contract plus two fixed 10-epoch arms complete | Cholesky all pass, condition<=`1e4`, solve residual<=`1e-4`, raw write-fit MSE<=`.75x` native proxy, and actual labeled-query CE passes the same-weight native-edge counterfactual gate; residual RMS<=native and total seed RMS<=`2x` native per board/head. Balanced/future/past>=`.85/.83/.83`, joint>=`.60`, balanced>=historical+`.10` and runtime+`.20`, swaps down>=`.10` from both, fewer errors; fit/wall/warm<=`1.60x`, allocation<=`1.25x`. | Contract and write-fit pass, but candidate balanced/future/past/joint=`0.2245/0.2240/0.2250/0.001` versus historical `0.7475/0.7415/0.7535/0.339`. Same-weight query CE ratio=`0.988528`, swaps `906->934`, warmed cost=`2.1845x`. Close the whole ridge family; decision SHA256 `a3b285d2...f6e87`. |
 | P-GDN3-030 | discarded; completed_rejected | GDN2 aliases erase and write to one key, while paired writes and sequential transforms suppress swaps by destroying retrieval. A single contractive DPLR transition with independent erase direction and write address may preserve stable dense memory while reducing binding interference. | Fixed directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed, 10 epochs/batch32/seed123. One official DPLR scan: `sqrt(D)(I-beta rr^T)sqrt(D)` plus additive `p[beta(w*v)]^T`; 662,608 params (+1,024), unchanged 4,096 state values/layer. | A100-SXM4-80GB index0 UUID `GPU-1522da54-4d66-ddda-298e-422ca5bb6516`; clean detached pushed SHA `b8e93424`. | strict R2 contract plus one fixed 10-epoch candidate complete | Balanced/future/past>=`0.85`, joint>=`0.60`, balanced>=historical/current+`0.10`, fewer errors, swaps<=both locked references-`0.10`; separation>=`0.05`, beta std>=`1e-4`, beta weight delta RMS>=`1e-5`, spectral<=`1.001`, eigmin>=`-0.005`; fit/wall/warm<=`1.75x`, allocation<=`1.50x`. | Contract, activation, sampled stability and cost pass. Balanced/future/past/joint=`0.0205/0.0180/0.0230/0`; errors `2775->3918`. Swap fraction `0.458018->0.041858` reflects broad retrieval collapse. Close exact DPLR equation without rescue; decision SHA256 `0f5ff965...69731`. |
 | P-GDN3-029 | discarded; completed_rejected | P028 proves that forced paired addresses suppress swaps but destroy the usable value/read map. A native product of two jointly learned delta transformations may raise binding rank without an analytic address wrapper or independent payload overwrite. | Fixed directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed, 10 epochs/batch32/seed123. Replace each GDN2 layer with pinned official `GatedDeltaProduct`, n=2, one forget gate, positive beta, dedicated Triton chunk op. 666,200 params (+4,616), unchanged 4,096 state values/layer. | A100-SXM4-80GB index0 UUID `GPU-1522da54-4d66-ddda-298e-422ca5bb6516`; clean detached pushed SHA `3c255e0a`. | strict R2 contract plus one fixed 10-epoch candidate complete | Balanced/future/past>=`0.85`, joint>=`0.60`, balanced>=historical/current+`0.10`, fewer errors, swaps<=historical-`0.10`; distinct active pairs; fit/wall/warm<=`1.75x`, allocation<=`1.50x`. | Contract and activation pass. Balanced/future/past/joint=`0.1370/0.1460/0.1280/0`, errors `3452` versus current `2775`; swap fraction improves `0.458018->0.169177`, but retrieval and warmed cost (`1.963x`) fail. Close n=2 GDP+FS without rescue; decision SHA256 `ddbcdcee...d1a3`. |
 | P-GDN3-028 | discarded; completed_rejected | P-FS2-007 leaves `99.8534%` wrong-key swaps; P021's second independent payload overwrites the first. A shared payload committed under two erase-orthogonal addresses may improve binding in one bounded live state. | Directional MQAR L1024 D128/L2/H4/K32/V32 native FutureSeed, 10 epochs/batch32/seed123. Add fixed-init auxiliary Q/K only; symmetric weighted polar makes cross erase zero; share energy-preserving V/write/erase and one decay; encode one commutative atomic rank-two block in one pinned official scan. Exact +65,536 params, zero state. | A100-SXM4-80GB index0 UUID `GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`; clean detached pushed SHA `9048131`. | strict contract plus one fixed 10-epoch candidate complete | Balanced/future/past >=`0.85`, joint>=`0.60`, balanced >=historical/current+`0.10`, swap fraction <=`0.706931`, fewer total errors; conditioned active pair; fit/wall/warm<=`2x`, allocation<=`1.5x`. | Balanced/future/past/joint=`0.04975/0.0470/0.0525/0` versus current `0.30625/0.3115/0.3010/0`; errors `3801` versus `2775`. Swap fraction improves `0.458018->0.074980`, but quality, geometry, and allocation (`1.739x`) gates fail. Close atomic paired-address updates without rescue. Decision SHA256 `fb60b9e5...be96`. |

@@ -350,14 +350,31 @@ class ChunkAddressRecorder:
     def __init__(self, operation: Any) -> None:
         self.operation = operation
         self.records: list[tuple[torch.Tensor, torch.Tensor]] = []
+        self.transition_records: list[dict[str, Any]] = []
 
     def reset(self) -> None:
         self.records.clear()
+        self.transition_records.clear()
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         q = kwargs["q"] if "q" in kwargs else args[0]
         k = kwargs["k"] if "k" in kwargs else args[1]
+        g = kwargs["g"] if "g" in kwargs else args[3]
+        b = kwargs["b"] if "b" in kwargs else args[4]
+        use_qk_l2norm = bool(
+            kwargs.get(
+                "use_qk_l2norm_in_kernel",
+                args[9] if len(args) > 9 else False,
+            )
+        )
         self.records.append((q.detach(), k.detach()))
+        self.transition_records.append(
+            {
+                "g": g.detach(),
+                "b": b.detach(),
+                "use_qk_l2norm_in_kernel": use_qk_l2norm,
+            }
+        )
         return self.operation(*args, **kwargs)
 
 

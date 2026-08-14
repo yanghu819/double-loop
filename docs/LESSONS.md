@@ -2868,3 +2868,14 @@
 - Do not fuse a correctness-first multi-chunk prototype after its quality gate
   fails. P035's `7.356x` warmed-step ratio is an optimization target only if the
   recurrence improves quality; here fusion would preserve the wrong mechanism.
+- A high erase/write cosine is not enough to preserve GDN2 address ownership.
+  P036 keeps mean cosine near `0.91` and minimum near `0.893`, yet balanced
+  accuracy collapses `0.36025->0.01375`; read, write and erase need the same
+  coherent binding, not only a shared neighborhood.
+- Strong activation plus bounded state makes P036 a quality falsification, not
+  an optimization excuse. Correction relative RMS reaches about `0.46`, all
+  cost gates pass, and terminal state remains finite while errors rise
+  `2559->3945`.
+- P031 and P036 close the complete decoupled-key neighborhood. Do not rescue it
+  with angle, tangent radius, initialization, regularization or duration; move
+  to a different scalable recurrent state organization or committed update.

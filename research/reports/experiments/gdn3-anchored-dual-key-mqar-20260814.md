@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved; implementation
+- Status: discarded; completed_rejected
 - Date: 2026-08-14
 - Benchmark: directional MQAR L1024, four associations
 - Seed: 123 only
@@ -111,11 +111,43 @@ control, and peak allocation below 1.50x.
 
 ## 8. Decision
 
-A full pass authorizes one matched hard-Sudoku transfer. Any contract,
-activation, stability, quality or cost miss closes anchored dual-key GDN2 and
-the broader decoupled-key line. There is no residual-cap, tangent map,
-regularizer, initialization, key-angle, seed, optimizer, width, depth or
-duration rescue.
+R2 completed from exact clean pushed source
+`4b01640c7ff6b5c159fe8f61d5b37c5cdb958ab6`. The strict contract passed:
+zero-tangent output identity was exact, two official
+`ChunkDPLRDeltaRuleFunctionBackward` paths were present, both new branches had
+finite distinct gradients, the synthetic key cosine minimum was `0.89442724`,
+and the opened erase route changed output/state while preserving head
+equivariance and bounded transition geometry.
+
+The formal endpoint rejects the mechanism. Contemporaneous control versus
+candidate balanced/future/past/joint accuracy was
+`0.36025/0.3675/0.3530/0.014` versus
+`0.01375/0.0145/0.0130/0`. Errors rose `2559->3945`, and future/past CE rose
+from `1.9276/2.0239` to `4.5671/4.5668`. The conditional wrong-key swap
+fraction fell `0.552950->0.039544` only because useful retrieval collapsed.
+
+This is not an inactive or unstable-module failure. Both layer corrections
+reached relative RMS `0.459802/0.463753`; key cosine mean stayed
+`0.908641/0.907714`, key cosine minimum stayed `0.893630/0.893207`, and
+terminal state remained finite. Elapsed/post-warm/warmed/allocation ratios
+were `0.94294/0.95390/1.49283/1.35614`, all inside the registered budget.
+Quality alone closes the experiment.
+
+P031 and P036 jointly show that GDN2 does not merely require erase and write
+keys to share a broad address neighborhood. Unconstrained separation destroys
+ownership, and a strongly bounded erase-only tangent correction still breaks
+the read/write/erase closure. Close the complete decoupled-key family without
+rho, tangent map, regularizer, initialization, angle, seed, optimizer, width,
+depth or duration rescue. No Sudoku transfer is authorized.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-gdn3-036-anchored-dual-key-r2-l1024-20260814T125026Z-4b01640`;
+- contract SHA256: `48604e3bbd4b1640ea5362571e5c9c12d0c0607a97b138eca9fa2ce224ce116e`;
+- comparison SHA256: `0b4a7d61af366ee131afadff27609d837a30669f6eec9c4aa316916647c9036b`;
+- control/candidate score SHA256: `d47db565cf42484667abf9dcfc0a7d1071ae3ec44dc83ef3728f23ceb505c2fd` / `1bae339a17a15518f3124a21cc6408536dcd8f092362f6f429f396908e5fbcba`;
+- candidate checkpoint SHA256: `87c19c501047fbc22823ba02307d0025039311dc46237e9c25bd4d4aaaa6c6dc`;
+- artifact manifest SHA256: `2aabc41f4107cf6ee184095a910c3dc02ba9923b1757fdcf9105343dbcb99575`.
 
 ## 9. Submission Record
 

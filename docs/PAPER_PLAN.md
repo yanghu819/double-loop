@@ -1819,3 +1819,22 @@ not sufficient for Sudoku loop closure. Close static metric variants on this
 parent. A successor must target a different causal boundary, especially
 FutureSeed loop credit or the live recurrent transition, rather than retuning
 the metric.
+
+### P-GDN3-036 Anchored Dual-Key Boundary
+
+P036 tests the strongest ownership-preserving interpretation left by the
+external decoupled-key idea. It retains the native coherent write/read key and
+permits erase only a fixed-radius tangent correction, giving a structural key
+cosine floor near `0.8944`, exact tied-parent initialization and one
+pinned-official DPLR scan. The strict contract passes and both layer corrections
+become strongly active without state explosion.
+
+That constraint is still insufficient. Contemporaneous control/candidate
+balanced accuracy is `0.36025/0.01375`, joint exact is `0.014/0`, and errors
+rise `2559->3945`, even though mean erase/write cosine remains about `0.91`.
+The lower conditional wrong-key swap fraction again reflects broad retrieval
+collapse, not better binding. Together P031 and P036 close unconstrained and
+bounded-tangent decoupled erase keys: useful GDN2 memory needs exact coherent
+read/write/erase ownership, not merely nearby key directions. Do not tune the
+angle, cap or regularizer; successors must alter a different scalable state or
+transition boundary.

@@ -39,6 +39,7 @@ from experiments.zoology_mqar.length_scaling import (
 )
 from scripts.check_zoology_contractive_dplr import (
     backward_names,
+    finite_module_gradient_rms,
     git_head,
     normalized_uuid,
     python_tree_hash,
@@ -423,8 +424,8 @@ def main() -> None:
         if not torch.all(layer.block_rls_mix_logit.grad.detach() != 0):
             raise RuntimeError(f"Not every mix path has a gradient in layer {layer_index}")
         for name in ("q", "k", "v", "f", "b", "w"):
-            row[name] = _finite_gradient(
-                getattr(layer.base, f"{name}_proj").weight,
+            row[name] = finite_module_gradient_rms(
+                getattr(layer.base, f"{name}_proj"),
                 f"layer{layer_index}.{name}_proj",
             )
         gradient_rows.append(row)

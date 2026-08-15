@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Correct Ownership Evidence Exists Across Heads But Is Not Selectable
+
+P-DIAG-OWN-003 freezes the reproducible P-REPRO-001 endpoint and masks each
+GDN2 head only at the official output projection. A label oracle over the four
+final-layer only-head variants repairs `516/1546` wrong-key swaps and raises
+balanced accuracy from `.4945` to `.64825`; an oracle over all variants reaches
+`.8500`. Thus some alternative heads retain information that could correct a
+substantial minority of bindings.
+
+That observation does not justify a router. The preregistered answer-free
+max-margin rule lowers swaps to `1300` but lowers balanced accuracy to
+`.42325`, and `441/1546` swaps preserve the same wrong owner under every
+final-head isolation. The model exposes no reliable confidence signal for
+choosing the oracle head. This narrows the architectural claim: ownership must
+be made intrinsic to the live within-head memory transition, not recovered by
+post-hoc voting, confidence selection or another readout path. The diagnostic
+also records a small fresh-process BF16/Triton boundary (`3990/4000`
+predictions); all causal comparisons use one same-process baseline.
+
 ## 2026-08-15 Canonical Companion Addresses Do Not Establish Ownership
 
 P-GDN3-049 isolates the hypothesis that P047 failed only because its semantic

@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-15: Oracle head diversity is not a usable confidence signal
+
+- P-DIAG-OWN-003 isolates all eight heads at the official output projection
+  without changing weights, recurrent states or logits elsewhere.
+- A final-layer label oracle repairs `33.38%` of wrong-key swaps and reaches
+  `.64825` balanced, so the information is not completely absent globally.
+- The preregistered label-free max-margin proxy falls `.4945->.42325` balanced
+  even while swaps fall `1546->1300`. Lower swap count again reflects broader
+  breakage, not ownership closure.
+- `28.53%` of swaps keep the same wrong owner across every final-only variant.
+  The dominant error already exists within individual head states.
+- Do not turn diagnostic oracle diversity into a selector, router, voting rule
+  or temperature sweep. The next GDN3 must change the live within-head commit.
+- Exact hashes do not guarantee bit-identical fresh-process BF16/Triton output:
+  this replay differed on 10 of 4,000 predictions. Register and freeze the
+  reload tolerance before reading interventions, then compare in one process.
+
 ## 2026-08-15: A second address space does not create ownership by itself
 
 - P-GDN3-049 stores full native V in an independent H4/K16/V32 official GDN2

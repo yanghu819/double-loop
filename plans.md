@@ -13,25 +13,20 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-047` Binding-Certificate Companion
-State is preregistered and not yet authorized for GPU launch. P046 improves
-balanced retrieval `.36625->.42450` and repairs 1,059 previously wrong queries,
-but it also breaks 826 correct queries and raises wrong-key swaps `1574->1717`.
-The next single hypothesis is therefore missing binding metadata, not another
-Q/K residual. Keep the native main GDN2/FutureSeed path exact and add one
-layer-local pinned-official certificate scan using the exact same Q/K/decay/
-erase/write tensors, but write RMS-normalized token embeddings instead of value
-payload. A zero-initialized per-layer/head scalar mixes the RMS-normalized
-certificate read into the main read before the unchanged output norm/projection.
-This adds exactly 8 parameters, 4,096 transient certificate-state values and one
-official scan per layer; main persistent state and FutureSeed stay unchanged.
-Run exactly one contemporaneous native control then one candidate on fixed
-directional MQAR L1024, D128/L2/H4/K32/V32, 10 epochs, batch32, seed123. Require
-balanced `>=0.55` and `>=+0.10`, both directions `>=0.50` and `>=+0.08`, joint
-exact `>=0.06` and `>=+0.04`, fewer errors, and swap fraction `>=0.10` lower.
-Elapsed/post-warm/warmed-step must each be `<2.25x` and allocation `<1.60x`.
-Any integrity, activation, quality or cost miss closes certificate payload,
-gate map, tag source, normalization, scan sharing, state transport and all
-training-setting rescue. Report:
+State is complete and discarded. Exact pushed/read-back source `abb8427c`
+passes the strict identity, parent-gradient, official-kernel, payload and
+head-equivariance contract. The fixed candidate improves control/candidate
+balanced/future/past/joint from `.17475/.16100/.18850/0` to
+`.48300/.48650/.47950/.04100` and reduces total query errors `3301->2068`.
+It does not close binding: wrong-key valid-value swaps rise `770->1973`, so
+`95.41%` of remaining errors are valid values assigned to the wrong key.
+Paired transitions show 1,580 wrong predictions repaired but 347 correct
+predictions broken. Both certificate states and all eight gates activate;
+warmed-step/allocation ratios pass at `1.3207/1.2430x`. Absolute quality,
+swap-fraction and one raw-payload variation gate fail, so there is no Sudoku
+transfer. Close certificate tag/gate/normalization/sharing/transport and all
+training-setting rescue. The surviving target is ownership-preserving memory
+organization, not another semantic side channel. Report:
 `research/reports/experiments/gdn3-binding-certificate-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-046` Cross-Layer Shared Stable-Token
@@ -1386,7 +1381,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-047 | proposed; preregistered | P046's stable token address improves value-set retrieval but creates heavy correct/wrong churn and increases wrong-key swaps. The missing information may be an explicit certificate of which semantic key actually owns a retrieved state row, rather than another address transform or value-capacity bank. | Preserve the native main scan/state/output and native FutureSeed. Per layer, run one layer-local pinned-official certificate scan with exactly the same native Q/K/g/b/w but RMS-normalized token embedding as V payload. Add its per-token/head RMS-normalized read through one zero-init scalar/head before the unchanged output norm/projection. Exactly +8 parameters/model, +4,096 transient state values/layer and +1 scan/layer; no certificate FutureSeed, router, task rule or selector. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 exact UUID; launch only from pushed/read-back clean detached SHA after strict CUDA contract. | one strict contract plus one fixed matched endpoint | Activation in both layers; exact parent/main-state identity; balanced `>=.55` and `>=+0.10`; each direction `>=.50` and `>=+0.08`; joint `>=.06` and `>=+0.04`; fewer errors; swap fraction `>=.10` lower; elapsed/post-warm/warmed `<2.25x`, allocation `<1.60x`. | Pending. Any miss closes tag source, gate map/scale, normalization, layer sharing/transport and seed/data/LR/loss/width/depth/duration rescue. |
+| P-GDN3-047 | complete; discarded | P046's stable token address improves value-set retrieval but creates heavy correct/wrong churn and increases wrong-key swaps. The missing information may be an explicit certificate of which semantic key actually owns a retrieved state row, rather than another address transform or value-capacity bank. | Preserve the native main scan/state/output and native FutureSeed. Per layer, run one layer-local pinned-official certificate scan with exactly the same native Q/K/g/b/w but RMS-normalized token embedding as V payload. Add its per-token/head RMS-normalized read through one zero-init scalar/head before the unchanged output norm/projection. Exactly +8 parameters/model, +4,096 transient state values/layer and +1 scan/layer; no certificate FutureSeed, router, task rule or selector. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `abb8427c`; strict CUDA contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced/future/past/joint `.17475/.16100/.18850/0 -> .48300/.48650/.47950/.04100`; errors `3301->2068`; swaps `770->1973`; warmed/allocation `1.3207/1.2430x`. | Discarded. Semantic companion state strongly improves value-set retrieval but leaves `95.41%` of remaining errors as wrong-key swaps and misses absolute gates. No Sudoku transfer or nearby rescue; score SHA `d593a01f...66426`. |
 | P-GDN3-046 | complete; discarded | P003's shared stable address is the only positive address intervention and never received its registered generic-retrieval transfer. Same semantic keys at different MQAR positions should benefit from a position-invariant namespace while coherent erase/write ownership stays native. | One zero-init shared `D128->H4*K32` projection of RMS-normalized token embedding, excluding position; add the same residual to native Q/K at both layers before unchanged in-kernel normalization. +16,384 params, zero state/scans. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `b5a791db`; strict R4 contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced `.36625->.42450`, future `.35150->.43350`, past `.38100->.41550`, joint `.002->.012`, errors `2535->2302`; swaps `1574->1717`; warmed step `1.37958x`. | Discarded. Stable token identity helps value-set retrieval but worsens wrong-key binding and misses closure/cost gates. No Sudoku transfer or nearby rescue. |
 | P-GDN3-045 | complete; discarded | Direct and bounded decoupled erase keys destroy coherent ownership, but P020 shows address geometry is causal. Preserve one exact native key and reduce binding collisions statistically by increasing its per-sequence effective rank. | Training only: from detached native layer input, recompute exact K projection + Triton conv and add fixed `.10` loss `mean ||(K/T) sum_t k_t k_t^T-I||^2/K^2`. Auxiliary gradients only to native K projection/conv. Native official scan, FutureSeed and inference graph unchanged; zero params/state/inference scans. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed SHA `89f3ec31`, clean detached worktree and strict CUDA contract verified. | strict contract passed; fixed matched endpoint failed | Balanced `.4830->.0130`, future `.4830->.0115`, past `.4830->.0145`, joint `.0370->0`, errors `2068->3948`; final effective rank `25.423/12.352`, anisotropy `3.006/4.779`; allocation `1.1306x`. | Discarded. Conditional swap reduction is broad collapse; no Sudoku transfer or coefficient/covariance/mask/detach/seed/duration rescue. |
 | P-FS2-011 | discarded; completed_rejected | Native FutureSeed may carry the right completed evidence but receive no direct credit for making it readable under the next layer's own queries. P-FS2-006 did not reach quality because a hand FP32 replay missed parity; exact official graph tensors remain untested. | Keep native two-layer official GDN2 and native FutureSeed exactly unchanged at inference. During training, recompute detached receiver Q with the same projection/Triton conv, read inherited seed and detached exact receiver terminal state, and minimize all-token per-read normalized MSE with fixed weight `.25`. Gradients may reach only producer state parameters and the receiving FS gate. Zero parameters/state/inference scans. Fixed L1024 control then candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `9f911a25`. | strict contract and fixed endpoint complete | Balanced `>=.55` and `+0.10`; future/past `>=.50` and `+0.08`; joint `>=.06` and `+0.04`; fewer errors; swap fraction `-.05`; elapsed/wall/warm `<1.30x`, allocation `<1.12x`. | Activation/integrity/cost pass, quality fails. Control/candidate balanced/future/past/joint=`.12375/.12150/.12600/0` versus `.01775/.01650/.01900/0`; errors `3505->3929`. Swap fraction falls only through broad collapse. Close all nearby loss variants; score SHA `0ab8be7f...b360d50`. |

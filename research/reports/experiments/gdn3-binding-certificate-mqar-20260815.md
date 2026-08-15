@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation and GPU contract pending
+- Status: complete; discarded at the fixed quality/activation gate
 - Task: directional MQAR, sequence length 1024, four future and four past queries
 - Carrier: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed endpoint: 10 epochs, batch32, seed123, contemporaneous control then candidate
@@ -113,10 +113,59 @@ memory. These limits cannot be relaxed after observing the result.
 
 ## 8. Results And Decision
 
-Pending exact pushed source, strict CUDA contract and the one fixed matched
-endpoint. A pass admits one Sudoku-scale transfer; any integrity, activation,
-quality or cost miss closes the mechanism without a nearby run.
+Exact pushed/read-back source `abb8427c` passed the strict CUDA contract. It
+adds exactly 8 parameters, preserves bit-exact zero-logit output and nonzero
+incoming main-state behavior, exposes four official backward paths, gives all
+eight certificate gates finite nonzero gradients, and passes token-ID,
+head-permutation, pinned-kernel and parent-gradient-noise checks.
+
+The fixed endpoint strongly improves retrieval but fails binding closure:
+
+| metric | control | certificate | delta |
+|---|---:|---:|---:|
+| balanced accuracy | 0.174750 | 0.483000 | +0.308250 |
+| future accuracy | 0.161000 | 0.486500 | +0.325500 |
+| past accuracy | 0.188500 | 0.479500 | +0.291000 |
+| joint exact | 0.000000 | 0.041000 | +0.041000 |
+| total query errors | 3,301 | 2,068 | -1,233 |
+| wrong-key valid-value swaps | 770 | 1,973 | +1,203 |
+| wrong-key fraction of errors | 0.233263 | 0.954062 | +0.720799 |
+
+The paired audit is diagnostic rather than merely aggregate. The certificate
+repairs 1,580 previously wrong predictions (`1214` other-wrong and `366`
+wrong-key) while breaking 347 previously correct predictions (`334` become
+wrong-key). Of the 2,068 remaining errors, 1,973 are valid values assigned to
+the wrong key. The auxiliary memory therefore learns the value set and lowers
+CE (`2.91->0.92`), but does not preserve ownership.
+
+All eight gates and both certificate states activate. Mean absolute gates are
+`.00935/.01134`; certificate output RMS is `.1962/.2220`; certificate state RMS
+is `.3182/.3531`; and native FutureSeed remains active. The registered raw
+payload board-variation check misses (`3.88e-7 < 1e-6`) even though downstream
+certificate state/output board variation is nonzero. This does not rescue the
+run because the absolute balanced/directional/joint floors and the required
+swap-fraction reduction independently fail.
+
+Cost gates pass: warmed-step and peak-allocation ratios are `1.3207x/1.2430x`.
+The decision is **discarded**. Do not tune tag source/width, gate map/scale,
+normalization, layer sharing, certificate transport, seed, data, optimizer or
+duration, and do not transfer this mechanism to Sudoku. The result localizes
+the remaining problem: extra semantic payload can solve value-set retrieval,
+but a useful GDN3 must preserve key ownership inside the memory organization
+rather than append another post-read evidence channel.
 
 ## 9. Provenance
 
-Pending source SHA, contract, run, score, checkpoints and artifact hashes.
+- source branch: `codex/gdn3-binding-certificate-20260815`
+- exact source SHA: `abb8427ce91b155c660b115ec3c3e07e7955716f`
+- clean detached worktree: `/huyang2/double-loop/worktrees/p-gdn3-047-abb8427`
+- run: `/huyang2/double-loop/runs/p-gdn3-047-binding-certificate-l1024-20260815T013135Z-abb8427`
+- score/comparison SHA256: `d593a01f651136795dbcbbdc9d1b981a2ce942cfb623011ed00b5796f6166426`
+- contract JSON SHA256: `a1b0581e53ce9e9d83fdbc17386a7c27cebdfa71212b514406704e793b619675`
+- formal log SHA256: `4ab0ea1dc350db28f6b4a09e2e4faa19a3ab21339fca545edd8192cf23495066`
+- control/candidate checkpoint SHA256:
+  `4d96b91f9278d38bd92e6f6cf35559ad067a8d5f3ea96d5cd519c558b8a346aa` /
+  `ea65805078c282767b4ecd4634fc16991dfe1f822c7d11d1c4da1dd055f8741a`
+- source snapshot SHA256: `424469d2d7679365ad20927e0075d90dedb652a81480f163aa87ce5231e40be2`
+- completed: `2026-08-15T01:41:37Z`; formal status `2` is the registered
+  science miss, not an integrity or launcher failure

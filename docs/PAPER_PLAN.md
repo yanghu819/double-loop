@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Semantic Certificates Recover Values, Not Ownership
+
+P-GDN3-047 keeps native GDN2/FutureSeed as the predictor and adds a second
+pinned-official state that writes a position-free token-identity payload under
+the exact same native address and gates. Only eight scalar read gates are new.
+The strict contract proves parent identity, four official backward paths,
+nonzero gradients, exact token invariance and active certificate state in both
+layers.
+
+This produces the clearest binding decomposition so far. Balanced accuracy
+rises `.17475->.48300`, future/past rise `.16100/.18850->.48650/.47950`, joint
+exact reaches `.041`, and errors fall `3301->2068`. Yet wrong-key valid-value
+swaps rise `770->1973`, accounting for `95.41%` of remaining errors. The model
+has learned which values exist but not which key owns each value. The paper
+should use this as direct evidence that extra semantic payload and lower CE are
+not binding closure. Future GDN3 work must preserve ownership in the recurrent
+state/update itself; appending another certificate, readout, cache or value
+bank is now closed under the tested regime.
+
 ## 2026-08-15 Dynamic Address Frames Are Stable But Not Learnable
 
 P-GDN3-044 tests the live-state operation left open by static metric and gauge

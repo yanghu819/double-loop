@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-15: Value-set recovery can make binding errors nearly pure
+
+- P-GDN3-047 stores a token-identity certificate under the exact native GDN2
+  address and gates, with only eight learned read scalars. It is parent-exact
+  at zero and all companion states/gates activate.
+- Balanced accuracy improves `.17475->.48300` and total errors fall
+  `3301->2068`; this is a real retrieval gain, not dead code or broad collapse.
+- Wrong-key valid-value swaps nevertheless rise `770->1973` and become
+  `95.41%` of all remaining errors. Lower CE (`2.91->0.92`) mostly means the
+  model learned the candidate value set.
+- Paired transitions matter: 1,580 wrong predictions become correct, while 347
+  correct predictions break. Aggregate gains can hide destructive binding
+  churn.
+- Do not rescue certificate payload, gate, normalization, transport or width.
+  A next GDN3 must encode ownership in a scalable recurrent memory/update
+  organization rather than append another semantic side channel.
+
 ## 2026-08-15: Stable dynamic state frames can still erase binding
 
 - P-GDN3-044 is a genuine live-transition intervention: the token-dependent

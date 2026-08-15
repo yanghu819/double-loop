@@ -57,3 +57,8 @@ created by P059. The corrected launcher still rejects every tracked source
 change, while source hashes remain enforced by the model loader, and disables
 future bytecode writes. This is an orchestration-only pre-model event, not a
 science result.
+
+R1 then wrote a non-science `abort.json` before model construction because the
+shell-verified GPU name and UUID were not exported to the Python checker. R2
+exports those same fixed values; mechanism, cases and decision thresholds are
+unchanged.

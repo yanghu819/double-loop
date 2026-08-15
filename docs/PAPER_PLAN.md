@@ -1,5 +1,26 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Cycle Consistency Diagnoses Ownership But Cannot Repair It
+
+P-GDN3-058 keeps native GDN2 storage exact and adds a reverse official GDN2
+relation from values back to normalized keys. A native candidate value is
+checked by reconstructing its owner, and a zero-init per-head gate uses the
+query-owner mismatch for one reread of the unchanged main trajectory. Both
+states receive native FutureSeed. The strict R5 contract proves exact parent
+output/state/gradient identity, causal official scans and complete reverse
+state dependency.
+
+The endpoint separates diagnosis from repair. Wrong-key valid-value swaps fall
+from `1546` to `380`, so the reverse relation recognizes many owner mismatches.
+Balanced accuracy nevertheless collapses `.494->.07425`, joint exact falls
+`.041->0`, and errors rise `2024->3703`; 1,846 correct answers are destroyed.
+Only seven/eight gates cross the activation floor and cycle evidence has weak
+board specificity in layer 0. Thus a post-retrieval consistency certificate
+can say that an answer belongs to the wrong key without supplying a safe path
+to recover the right value. The paper should use this to close read-time
+validators and motivate ownership-preserving live state formation or genuinely
+receiver-native FutureSeed evidence.
+
 ## 2026-08-16 Local Raven Events Do Not Establish Global Ownership
 
 P-GDN3-057 is the direct Raven/GDN hybrid test: a causal multiplicative

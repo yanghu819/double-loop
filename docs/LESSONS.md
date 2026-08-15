@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-16: Detecting a wrong owner is not the same as recovering the value
+
+- P-GDN3-058 preserves native GDN2 storage and adds a reverse value-to-key
+  state plus a cycle-consistency reread. Its R5 contract proves exact parent
+  output, state and gradient identity at zero gate.
+- The reverse relation genuinely identifies binding errors: wrong-key swaps
+  fall `1546->380` and their share of errors falls `.76383->.10262`.
+- Retrieval still collapses. Balanced accuracy falls `.494->.07425`, total
+  errors rise `2024->3703`, and 1,846 native-correct queries break while only
+  167 wrong queries repair.
+- Seven/eight gates activate, but layer-0 cycle board variation is only
+  `1.02e-5`. The correction is mostly shared rather than owner-specific.
+- Cycle consistency is a useful diagnostic certificate, not a deployable
+  read-time correction. Close reverse state/gate/reread/decay and training
+  rescue; future work must preserve ownership during the live commit or carry
+  receiver-native owner evidence without overwriting the native value map.
+
 ## 2026-08-16: A local pair feature is not automatically a binding identity
 
 - P-GDN3-057 puts a rank-64 Raven-style current/previous multiplicative event

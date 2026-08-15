@@ -2,9 +2,13 @@
 
 ## 1. Metainfo
 
-- Status: preregistered
+- Status: complete; discarded
 - Date: 2026-08-16
 - Branch: `codex/gdn3-cycle-consistency-memory-20260816`
+- Formal source: exact pushed/read-back SHA
+  `ad697c3cc462c28b27a5c753f0c9c001835eb7db`
+- Formal run:
+  `p-gdn3-058-cycle-memory-r5-20260815T211000Z-ad697c3`
 - Decision field: directional MQAR L1024 wrong-key binding regime
 - Frozen control: deterministic P-REPRO-001 replay B
 - Fixed model/data: D128/L2/H4/K32/V32, four associations, 10,000 train
@@ -141,6 +145,63 @@ official recurrent scans must then preserve the prefix exactly. This tests for
 an illicit noncausal token scan without rejecting the registered cross-layer
 FutureSeed mechanism. No model or endpoint setting changed.
 
+R5 then passed the complete strict contract. It observes only CUDA index 0 on
+the registered A100-SXM4-80GB, pins FLA source
+`9c8e42e762fce087c27b673af4922795d9edb85e`, executes six
+`ChunkGDN2FunctionBackward` paths and Triton short convolutions, and preserves
+zero-gate logits, arbitrary nonzero-incoming outputs/states and every parent
+gradient exactly. Opened gates depend on the reverse incoming state and all
+head-permutation errors are zero. Contract JSON/log SHA256 are
+`7f36c552f594351bbbc30df7a3605baa668c6a0a643d0b6fd681542dd7b916a8` /
+`d864c6aa918532bba3aeea80428bc4a8685a74a52fe989484be41f950c9f404a`.
+
+The fixed endpoint rejects the mechanism:
+
+| arm | balanced | future | past | joint | errors | wrong-key swaps |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| frozen native control | .49400 | .45400 | .53400 | .04100 | 2024 | 1546 |
+| cycle-consistency memory | .07425 | .07450 | .07400 | 0 | 3703 | 380 |
+
+The conditional ownership signal is real. Wrong-key valid-value swaps fall
+`1546->380`, and their share of errors falls `.763834->.102619`. Reciprocal
+swap-event share also falls `.170949->.002160`. But this is not a quality win:
+1,846 native-correct queries become wrong, while only 167 previously wrong
+queries become correct. The mechanism converts many adjacent-owner mistakes
+into unrelated retrieval failures instead of preserving the native value map.
+Future/past CE regresses from `1.2594/1.2267` to `3.5767/3.4825`.
+
+Activation is incomplete rather than absent. Both layers use the cycle path,
+but only seven of eight heads reach the preregistered `1e-3` gate floor; the
+minimum gate is `.000904` in layer 1. Cycle-query relative RMS is
+`.01743/.01033`, yet layer-0 board variation is only `1.02e-5`, below the
+`1e-4` floor, and its reverse/main state RMS ratio is `.04229`, below `.05`.
+The reverse path therefore learns a mostly shared correction and does not form
+robust instance-specific ownership evidence.
+
+Elapsed/post-warm/warmed-step/peak-allocation ratios are
+`2.3426/2.3289/1.5144/1.4732x`, all inside the registered cost ceilings. The
+candidate trains 102.4 million tokens in `163.14 s`, reaches 1,177 examples/s
+in the independent warmed benchmark, and allocates `1,549,046,272` bytes at
+training peak. Across 70 formal five-second samples, utilization averages
+`32.93%` including data load and compile; active samples average `46.10%`,
+peak at `83%`, and observed memory peaks at `5,257 MiB`. Power peaks at
+`337.03 W`.
+
+Final score, model-state, source-snapshot, GPU-sample and key-artifact archive
+SHA256 are respectively
+`4cdc5bfc99dd3c404da7fa79abb39a48567a20ec27d0f90d955fa4d71652d159`,
+`64bb48df94f0e7baf2102e47ee5ca0df8d032fb172e234815cf91a28d5d5e1fe`,
+`b6fb7141f893bfcc95e1ff3789428c591285836b311ec9a725d8f5daa078b1c6`,
+`30b59870800dd7dd87efce850a349158bbf2d20441755354d3742f8c3fdc4ac9`
+and `4780d5c04207ae30f33ae7a2e9c80ac7c5ee6311c475a9cbf3a1fa8a0f825bcd`.
+
 ## 9. Decision
 
-Pending the single registered endpoint.
+Discard P-GDN3-058. Close the complete reverse-state, cycle-query gate,
+reread, reverse-decay, layer/iteration and training-setting neighborhood with
+no Sudoku transfer. The experiment is still useful mechanistic evidence:
+value-to-key consistency can detect wrong ownership, but a post-retrieval
+correction does not preserve native retrieval. A successor must make ownership
+part of the scalable live commit or transport genuinely receiver-native owner
+evidence without replacing the co-adapted native map; another read-time
+validator is not authorized.

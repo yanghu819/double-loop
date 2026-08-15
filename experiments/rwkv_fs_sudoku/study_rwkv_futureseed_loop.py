@@ -7279,6 +7279,7 @@ class FutureSeedRWKV(nn.Module):
                         memory_delta_norms.append(
                             delta.norm(dim=(-1, -2)).mean()
                         )
+                        seed_state = candidate_seed_state
                     elif self.future_seed_update == "loop_residual":
                         assert self.future_seed_update_logit is not None
                         update_gate = torch.sigmoid(self.future_seed_update_logit[layer_idx - 1]).to(

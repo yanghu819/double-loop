@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: approved, implementation pending strict CUDA contract
+- Status: approved, implementation corrected; strict CUDA contract pending
 - Date: 2026-08-15
 - Branch: `codex/fs2-loop-secant-20260815`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
@@ -151,4 +151,11 @@ instances diverged beginning at layer 1 even before any secant history existed.
 R4 therefore compares `fixed` and `loop_secant` semantics on the same migrated
 candidate instance while retaining the independent model for exact state-dict
 and parameter-delta checks. This directly isolates the new branch and avoids
-misclassifying independent-instance runtime state as mechanism behavior.
+misclassifying independent-instance runtime state as mechanism behavior. R4
+then localized a real implementation defect: the branch computed
+`candidate_seed_state` correctly but the common tail immediately overwrote it
+with an unset `seed_state`, disabling FutureSeed rather than preserving the
+zero-coefficient parent. R5 assigns the computed candidate into the common
+seed variable before that tail. This is a semantic correctness fix discovered
+before any training; the mechanism, initialization, parent, budget and all
+registered gates remain unchanged.

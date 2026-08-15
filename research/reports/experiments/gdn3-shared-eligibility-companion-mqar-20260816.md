@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: registered; implementation in progress
+- Status: complete; discarded
 - Date: 2026-08-16
 - Branch: `codex/gdn3-shared-eligibility-20260816`
 - Decision field: directional MQAR L1024 wrong-key binding regime
@@ -121,8 +121,43 @@ normalization, state-size, layer, seed, LR, loss, batch, epoch or Sudoku rescue.
 
 ## 8. Results
 
-Pending the one registered run.
+Exact pushed/read-back source
+`29688a1073b0a0dc2f3b6462bd363c8f18b9c7dc` passed the strict CUDA
+contract on one A100-SXM4-80GB. The contract found four official
+`ChunkGDN2FunctionBackward` paths, the exact 16,912-parameter and
+4,096-state-value/layer deltas, bit-exact zero-gate logits and arbitrary
+nonzero native-state parity, complete gradients, causal history dependence
+and no fallback.
+
+Run `p-gdn3-056-shared-eligibility-r1-20260815T191900Z-29688a1` completed
+normally. Control versus candidate balanced/future/past/joint accuracy is
+`.4940/.4540/.5340/.0410` versus `.14825/.1535/.1430/0`. Total errors rise
+`2024->3407`. Wrong-key valid-value swaps fall `1546->639`, and their fraction
+of errors falls `.763834->.187555`, but paired transitions show broad damage:
+only `68+229=297` previously wrong queries become correct while
+`1359+321=1680` previously correct queries become wrong.
+
+The branch is active rather than dead. All eight read paths and both layer
+states are live; history mass is `.09421`, event write/read relative RMS is
+`.18595`, and the companion output is `1.174/2.661x` the native output RMS in
+layers 0/1. The registered material-use check therefore fails because the
+second layer overwhelms rather than complements the native retrieval map.
+Elapsed/post-warm/warmed-step/allocation ratios are
+`2.1397/2.1278/1.4587/1.2611x`, all within their frozen ceilings. Across 60
+nonzero-utilization samples, GPU utilization averages `54.32%`, peaks at
+`82%`, and observed memory peaks at `5,033 MiB`.
+
+Comparison, checkpoint, contract and GPU-sample SHA256 values are
+`17bd2d83...6e4d2`, `03fbc83a...199a`, `d63c267f...a87a` and
+`51267a69...7258` respectively. Endpoint status is zero; launcher status two
+is the expected scientific-gate rejection.
 
 ## 9. Decision
 
-Pending.
+Discard P-GDN3-056. It passes integrity and cost but fails the material-use
+and every absolute quality gate. Reducing wrong-owner outputs by replacing
+them with unrelated errors is not binding closure. Close the complete shared
+eligibility trace/projection/read-gate/state-size/normalization/training
+neighborhood with no rescue and no Sudoku transfer. The next mechanism must
+form a joint local event representation before the native live transition;
+another additive memory plane cannot supply ownership safely.

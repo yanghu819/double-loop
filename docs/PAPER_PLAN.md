@@ -1,5 +1,23 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Eligibility Side Memory Removes Answers, Not Interference
+
+P-GDN3-056 preserves native GDN2 and FutureSeed and adds one shared,
+causal-eligibility companion state. The strict contract proves exact parent
+behavior at zero gate, official FLA execution, causal history use and complete
+gradient paths. At the endpoint all eight reads activate and wrong-key swaps
+fall from `1546` to `639`.
+
+That conditional improvement is deceptive. Balanced accuracy collapses from
+`.494` to `.14825`, joint exact from `.041` to zero, and total errors rise
+`2024->3407`. Paired transitions contain 1,680 correct-to-wrong changes versus
+only 297 wrong-to-correct changes. The second-layer companion read grows to
+`2.661x` native output RMS, so the side plane replaces the jointly learned
+retrieval map instead of supplying a missing owner bit. Together with sparse
+surprise replay, canonical states and protected FutureSeed planes, this closes
+additive ownership memories. The next claim must concern joint event formation
+before the native live transition, not another post-hoc memory complement.
+
 ## 2026-08-15 Block-Local Whitening Does Not Preserve Address Closure
 
 P-GDN3-054 is the narrow scalable test of the decoupled-key intuition after

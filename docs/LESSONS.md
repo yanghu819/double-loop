@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-16: Removing wrong-owner outputs can remove retrieval itself
+
+- P-GDN3-056 adds a bounded official-GDN2 companion state with a learned
+  causal eligibility address while preserving the native state and
+  FutureSeed path exactly at initialization.
+- All eight reads, both states, history taps and companion FutureSeed activate.
+  Wrong-key swaps fall `1546->639`, but balanced accuracy falls
+  `.494->.14825`, joint exact falls `.041->0`, and errors rise `2024->3407`.
+- Paired transitions expose the failure: 1,680 correct queries break while
+  only 297 wrong queries repair. Conditional swap fraction is not a useful
+  objective without native-correct retention and lower absolute errors.
+- The layer-1 side output reaches `2.661x` native RMS despite small learned
+  read gates. Normalizing a side read before addition can let a side memory
+  overwrite a co-adapted retrieval map.
+- Close eligibility width, projection, read gate, normalization, state size
+  and training rescue. Pair ownership must be formed jointly in the token
+  representation before the live commit, not appended as another memory.
+
 ## 2026-08-15: Preserving erase response is not preserving address closure
 
 - P-GDN3-054 uses a stable causal block-RLS statistic, one official DPLR scan

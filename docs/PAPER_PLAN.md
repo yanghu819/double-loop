@@ -1,5 +1,31 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Second-Order State Nearly Closes Long-Context Binding
+
+P-GDN3-059 replaces the primary first-order GDN2 transition with a complete
+Momentum Delta recurrence trained from scratch, then lets native FutureSeed
+carry both matrix state and momentum state across layers. It is not a
+zero-init side path or short continuation. The exact external chunk kernel,
+its fused recurrent reference, the pinned host FLA compatibility boundary and
+all gradients pass a strict A800 contract.
+
+The endpoint is qualitatively different from the failed wrappers. Balanced
+accuracy rises `.494->.94425`, future/past accuracy reaches `.9515/.9370`,
+joint exact rises `.041->.824`, and errors fall `2024->223`. Wrong-key swaps
+fall `1546->151`; 1,474 baseline swaps become correct. The model also crosses
+the retrieval transition two epochs earlier. This supports the paper's main
+mechanistic claim: changing the live recurrent dynamics can preserve binding,
+where adding more reads, side memories, local event encoders or post-hoc key
+geometry generally reorganizes or destroys the native solution.
+
+The result remains a strict gate miss. Wrong-key swaps comprise `.67713` of
+the small residual error set, only `.08670` below the control share rather
+than the preregistered `.10`. Therefore P059 gets no Sudoku transfer or nearby
+hyperparameter rescue. The paper should present it as the strongest positive
+architecture evidence and an honest residual boundary: second-order dynamics
+solve most retrieval, but explicit scalable owner separation is still needed
+for the final tail.
+
 ## 2026-08-16 Same-Weight Edge-Off Attributes Cycle Failure To Co-Adaptation
 
 P-DIAG-CYCLE-001 removes the only eight learned cycle gates from the exact

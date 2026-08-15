@@ -1,5 +1,25 @@
 # Lessons
 
+## 2026-08-16: Change the recurrent dynamics, not another wrapper
+
+- P-GDN3-059 trains a full second-order Momentum Delta recurrence from scratch
+  and carries stacked state plus momentum through native FutureSeed.
+- It raises balanced/future/past/joint accuracy from
+  `.494/.454/.534/.041` to `.94425/.9515/.937/.824`, while total errors fall
+  `2024->223` and wrong-key swaps fall `1546->151`.
+- This is the first recent mechanism to preserve both directions while
+  repairing most native swaps. The useful change is in the token-scan state
+  transition, not an additive side read, key wrapper, second sweep or loss.
+- The remaining 223 errors are still ownership-heavy: wrong-key swaps are
+  `.67713` of errors, only `.08670` below the `.76383` control share. That
+  narrowly misses the precommitted `.10` gate, so no Sudoku transfer or
+  momentum hyperparameter rescue is allowed.
+- Native FutureSeed generalizes to the new state geometry. Its learned gate is
+  `.50304`, and both `S` and `M` are finite and noncollapsed at the receiver.
+- Next work should preserve end-to-end second-order learnability while adding
+  a genuinely distinct scalable owner representation. Do not reopen local
+  wrappers, read-time validators, direct key surgery or momentum tuning.
+
 ## 2026-08-16: Zero-initialized side paths can still rewrite the native solution
 
 - P-DIAG-CYCLE-001 loads the exact trained P058 model and sets only its eight

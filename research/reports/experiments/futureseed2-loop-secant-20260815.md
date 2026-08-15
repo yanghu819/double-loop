@@ -136,4 +136,9 @@ memory; timing stability; source/config/metric/checkpoint hashes.
 
 ## 9. Decision
 
-Pending strict CUDA contract.
+Pending strict CUDA contract. Contract R1 source `56274f50` stopped before a
+science run at its first dual-model identity comparison. The checker had not
+reset the construction RNG independently for control and candidate, unlike the
+established matched-contract harnesses. R2 changes only that harness setup and
+adds the measured max error to any repeated failure; mechanism, prediction and
+all gates remain frozen.

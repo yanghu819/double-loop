@@ -158,6 +158,7 @@ def random_seed_memory(
 def check_zero_identity(device: torch.device) -> dict[str, Any]:
     torch.manual_seed(12130)
     control = build(device, update_mode="fixed")
+    torch.manual_seed(12130)
     candidate = build(device, update_mode="loop_secant")
     missing = copy_shared_state(control, candidate)
     control.eval()
@@ -191,8 +192,15 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
                 )
             )
             if not torch.equal(control_output, candidate_output):
+                output_error = float(
+                    (control_output.float() - candidate_output.float())
+                    .abs()
+                    .max()
+                    .item()
+                )
                 raise AssertionError(
-                    f"zero-init output identity failed at pass {pass_idx + 1}"
+                    f"zero-init output identity failed at pass {pass_idx + 1}: "
+                    f"max_abs_error={output_error}"
                 )
             state_errors = [
                 float((left.float() - right.float()).abs().max().item())

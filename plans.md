@@ -12,6 +12,31 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-GDN3-059` Momentum-State FutureSeed is the
+sole registered successor. P058 edge-off plus tensor drift shows that a new
+reread path co-adapts the entire native retrieval system: native-versus-P058
+update cosine is only `.0138/.0798/.1383/.2797/.2906/.3264` for decay,
+write gate, erase, value, write address and query address. Freezing one local
+subsystem therefore does not isolate ownership. P059 instead replaces the
+primary live transition with a second-order momentum delta recurrence and
+passes both matrix state and momentum state through the unchanged native
+FutureSeed hook. This is a from-scratch foundational carrier test, not a
+zero-init GDN2 graft, additive side memory, router, second sweep or Sudoku
+special case. The external implementation is consumed read-only at exact SHA
+`c6e77fa`; no unlicensed source is copied into this repository. The fixed
+field is directional MQAR L1024, D128/L2/H4/K32/V32, 10 epochs, batch32,
+seed123 and the frozen P-REPRO initialization/data. Activation requires both
+momentum components finite and noncollapsed, exactly one inter-layer
+FutureSeed route, chunk/recurrent parity and exact external provenance.
+Quality requires balanced accuracy at least `.65` and at least `+.10` over
+the `.494` control, both directions at least `.62`, joint exact at least `.15`
+and `+.10`, total errors down 20%, and wrong-key error share down `.10`.
+Elapsed/post-warm/warmed cost must each stay below `2.0x` and peak allocation
+below `1.5x`. Any contract, activation, quality or cost miss closes the
+momentum family without gate/width/state/seed/LR/loss/batch/depth/duration
+rescue. A pass opens exactly one hard-Sudoku transfer. Report:
+`research/reports/experiments/gdn3-momentum-futureseed-mqar-20260816.md`.
+
 Current update (2026-08-16 CST): `P-DIAG-CYCLE-001` is complete. Exact
 pushed/read-back source `086e25f` loaded the completed P-GDN3-058 weights,
 zeroed only its eight trained cycle gates and reevaluated the identical frozen

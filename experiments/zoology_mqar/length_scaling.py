@@ -84,6 +84,7 @@ GDN2_ARMS = (
     "future_seed_shared_eligibility_gdn2",
     "future_seed_pair_event_gdn2",
     "future_seed_cycle_memory_gdn2",
+    "future_seed_momentum_delta",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -326,6 +327,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_cycle_memory."
                 "ZoologyCycleMemoryFutureSeedMixer"
+            )
+        elif arm == "future_seed_momentum_delta":
+            mixer_name = (
+                "experiments.zoology_mqar.momentum_futureseed."
+                "ZoologyMomentumDeltaFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -915,6 +921,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_momentum_delta":
+            from experiments.zoology_mqar.momentum_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -1103,6 +1115,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_cycle_memory_gdn2":
         from experiments.zoology_mqar.gdn2_cycle_memory import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_momentum_delta":
+        from experiments.zoology_mqar.momentum_futureseed import (
             parent_parameter_hash,
         )
 
@@ -1579,6 +1597,18 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    momentum_delta = None
+    if arm == "future_seed_momentum_delta":
+        from experiments.zoology_mqar.momentum_futureseed import (
+            momentum_futureseed_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs[:8].cuda())
+        momentum_delta = momentum_futureseed_diagnostics(model)
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
             producer_readout_diagnostics,
@@ -1693,6 +1723,7 @@ def run_arm(
                 in (
                     "future_seed_slot_state_gdn2",
                     "future_seed_redundant_address_gdn2",
+                    "future_seed_momentum_delta",
                 )
                 else 1
             )
@@ -1724,6 +1755,8 @@ def run_arm(
     }
     if future_seed is not None:
         score["future_seed"] = future_seed
+    if momentum_delta is not None:
+        score["momentum_delta"] = momentum_delta
     if slot_state is not None:
         score["slot_state"] = slot_state
     if raven_address is not None:

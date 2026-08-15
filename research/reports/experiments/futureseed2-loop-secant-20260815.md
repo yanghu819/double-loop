@@ -6,8 +6,8 @@
 - Date: 2026-08-15
 - Branch: `codex/fs2-loop-secant-20260815`
 - Benchmark: official/full-diversity hard 9x9 Sudoku 51-64 blanks
-- Compute: one AIStation A800 80GB, CUDA index 0 only
-- GPU UUID: `GPU-ad227769-8993-9351-affb-604e46d6e196`
+- Compute: one AIStation A100 80GB, CUDA index 0 only
+- GPU UUID: `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`
 - Seed: 52 only
 - Parent: D256/L12/H8/K32/V32 position-QK GDN3 plus native terminal
   FutureSeed
@@ -77,7 +77,7 @@ is false before science scoring.
 Exact pushed source in a clean detached worktree must prove all of:
 
 1. only CUDA index 0 and UUID
-   `GPU-ad227769-8993-9351-affb-604e46d6e196` are visible;
+   `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f` are visible;
 2. pinned FLA SHA is
    `9c8e42e762fce087c27b673af4922795d9edb85e`;
 3. all 12 layers are official `GatedDeltaNet2`, with

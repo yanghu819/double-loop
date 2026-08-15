@@ -28,7 +28,7 @@ import torch
 from study_rwkv_futureseed_loop import FutureSeedRWKV, GAIN_BUDGET_FLA_SHA
 
 
-EXPECTED_GPU_UUID = "GPU-ad227769-8993-9351-affb-604e46d6e196"
+EXPECTED_GPU_UUID = "GPU-d2877fe4-641c-fe64-2a74-8abca47c292f"
 EXPECTED_FLA_SOURCE_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
 LAYERS = 12
 HEADS = 8

@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PERSIST_ROOT="${PERSIST_ROOT:-/huyang2/double-loop}"
-EXPECTED_UUID="GPU-ad227769-8993-9351-affb-604e46d6e196"
+EXPECTED_UUID="GPU-d2877fe4-641c-fe64-2a74-8abca47c292f"
 EXPECTED_FLA_SHA="9c8e42e762fce087c27b673af4922795d9edb85e"
 BASE_CACHE="$PERSIST_ROOT/.cache/p-fs2-013"
 

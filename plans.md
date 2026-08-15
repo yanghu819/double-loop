@@ -21,7 +21,7 @@ by plateau or oscillation. P-FS2-013 preserves native terminal FutureSeed and
 adds only 88 zero-init edge/head coefficients. Each repeated reasoning pass
 extrapolates the current producer terminal along its RMS-bounded change from
 the preceding pass; high-stream history spans macro loops and low-stream
-history spans consecutive L-cycle passes. Strict A800 CUDA identity, official
+history spans consecutive L-cycle passes. Strict A100 CUDA identity, official
 FLA graph, all-gradient, bounded-geometry and exact-resume step3001 gates must
 pass before one candidate-only step3000->3100 run against the frozen terminal
 control. Primary quality requires hard51-64 macro exact `>=+0.02` with every

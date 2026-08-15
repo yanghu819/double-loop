@@ -171,18 +171,23 @@ class CycleConsistencyGDN2(nn.Module):
 
         gate = torch.tanh(self.cycle_gate).to(dtype=q.dtype)
         owner_residual = _l2_normalize(q) - _l2_normalize(reverse_output)
-        refined_q = q + gate * owner_residual.to(dtype=q.dtype)
-        refined_output, _ = chunk_gdn2(
+        refined_q = q.detach() + gate * owner_residual.to(dtype=q.dtype)
+        reread_output, _ = chunk_gdn2(
             q=refined_q,
-            k=key,
-            v=value,
-            g=decay,
-            b=erase_gate,
-            w=write_gate,
-            initial_state=main_initial_state,
+            k=key.detach(),
+            v=value.detach(),
+            g=decay.detach(),
+            b=erase_gate.detach(),
+            w=write_gate.detach(),
+            initial_state=(
+                None
+                if main_initial_state is None
+                else main_initial_state.detach()
+            ),
             output_final_state=False,
             use_qk_l2norm_in_kernel=True,
         )
+        refined_output = main_output + (reread_output - main_output.detach())
 
         update_layer_cache(
             layer,

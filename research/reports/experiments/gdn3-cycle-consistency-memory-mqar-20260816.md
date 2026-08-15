@@ -41,10 +41,14 @@ y_refined = GDN2(q + tanh(a_head) * d_owner,
 
 The main terminal state is from the native first scan, so its write/update is
 unchanged. The third scan only rereads that same trajectory. `a_head` starts at
-exactly zero. Both main and reverse terminal states receive the same native
-cross-layer FutureSeed normalization and receiving-layer gate. The candidate
-adds exactly eight parameters and one 4x32x32 reverse state per layer. It adds
-no task rule, token selector, search, label signal, noncausal path or fallback.
+exactly zero. Its native storage inputs are stop-gradient; the correction can
+train the parent only through the query-owner residual. This preserves the
+complete native output/state gradient at zero while allowing the opened cycle
+path and reverse incoming state to receive end-to-end credit. Both main and
+reverse terminal states receive the same native cross-layer FutureSeed
+normalization and receiving-layer gate. The candidate adds exactly eight
+parameters and one 4x32x32 reverse state per layer. It adds no task rule, token
+selector, search, label signal, noncausal path or fallback.
 
 ## 4. Why Existing Failures Do Not Cover It
 
@@ -115,6 +119,16 @@ dependency but gates the intended property directly: with the cycle path open,
 model output must have finite nonzero gradient to the reverse initial state.
 No mechanism, model tensor, dataset, optimizer, training budget or science gate
 changed. The registered endpoint remains pending.
+
+The second contract attempt then showed a BF16 parent-gradient difference of
+`9.765625e-4`: output and terminal-state credit had been split across two
+otherwise identical official main scans. The exact gradient gate was kept. The
+third reread now stop-graduates native storage inputs and adds only its
+cycle-query correction to the original main output. At zero gate the first
+scan again receives the exact native joint output/state gradient; once open,
+the owner residual and reverse state remain differentiable. Scan/state/parameter
+counts and every registered science or cost gate are unchanged. This is a
+pre-science implementation correction, not a quality rescue.
 
 ## 9. Decision
 

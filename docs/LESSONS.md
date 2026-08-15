@@ -3103,3 +3103,23 @@
   loss and duration variants. The direct decoupled-key request and its coherent
   spectrum refinement are both bounded; a successor must change scalable live
   state organization or transition, not another Q/K loss.
+
+## 2026-08-15: Stable token identity improves retrieval but not binding closure
+
+- P-GDN3-046 gives both native Q and coherent K the same cross-layer token-only
+  residual. Repeated semantic keys have exact residual identity while native
+  payload, gates, state, official scan and FutureSeed remain unchanged.
+- The signal is real: balanced accuracy rises `.36625->.42450`, future accuracy
+  rises `.35150->.43350`, and total errors fall `2535->2302`.
+- It does not solve binding. Joint exact reaches only `.012`; wrong-key
+  valid-value swaps increase `1574->1717` and their fraction rises
+  `.620907->.745873`. Better value-set retrieval can expose more address
+  ambiguity rather than eliminate it.
+- Use native-vs-native replay to calibrate pinned BF16/Triton backward checks.
+  Here native replay and candidate-parent gradient differences are essentially
+  identical, while forward and recurrent-state identity stay bit exact.
+- Independent warmed-step cost is `1.37958x`, even though arm-order elapsed is
+  misleadingly lower. Keep a warm benchmark separate from compile/eval wall.
+- Close scale, normalization, position, sharing, rank and duration variants.
+  The decoupled-key line is bounded; move to scalable state organization or a
+  different committed recurrent transition that can preserve binding identity.

@@ -2091,3 +2091,27 @@ tangents, Q/K alignment/gauges/frames and key-whitening loss. Do not present
 these as routes to GDN3 or transfer them to Sudoku; the open mechanism must
 change a scalable live-state organization or recurrent transition while
 preserving coherent ownership.
+
+### P-GDN3-046 Stable-Token Address Boundary
+
+P046 tests the last positive-looking source-separation interpretation of the
+external decoupled-key idea. It preserves GDN2's coherent erase/write key and
+independent learned query, but gives both native Q and K one shared token-only
+address residual at both layers. Repeated occurrences of the same semantic key
+therefore receive an exactly identical learned anchor despite contextual and
+positional drift. The candidate adds 16,384 parameters and no state or scan.
+
+This is a genuine but insufficient retrieval signal. Balanced accuracy rises
+`.36625->.42450`, future accuracy rises `.35150->.43350`, and total errors fall
+`2535->2302`. Joint exact reaches only `.012`, however, and wrong-key
+valid-value swaps increase `1574->1717`, from `.62091` to `.74587` of errors.
+The stable anchor helps identify the candidate value set while making the
+remaining binding ambiguity more dominant. An independently warmed step also
+costs `1.37958x`.
+
+The paper should report this as the strongest surviving signal from the
+decoupled-key investigation, but not as a GDN3 win. Direct key splitting,
+ownership-preserving tangents, Q/K alignment/gauges/frames, isotropy credit and
+stable token anchors are now bounded. The next architecture must alter live
+state organization or the committed transition so it can preserve distinct
+bindings, not add another address residual.

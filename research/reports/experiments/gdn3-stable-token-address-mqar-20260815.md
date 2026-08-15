@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: proposed; implementation complete, pending strict CUDA contract
+- Status: complete; discarded at the fixed L1024 quality and warmed-step gates
 - Task: directional MQAR, sequence length 1024, four future and four past queries
 - Carrier: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed endpoint: 10 epochs, batch32, seed123, contemporaneous control then candidate
@@ -106,13 +106,64 @@ Fixed ceilings are `<1.20x` for elapsed, post-warm wall and independently
 warmed step, and `<1.12x` peak allocated CUDA memory. No result-dependent
 relaxation is allowed.
 
-## 8. Next Decision
+## 8. Results And Decision
 
-If every gate passes, authorize one hard-Sudoku scale transfer of the same
-shared-namespace principle. If any gate fails, close the stable-address source
-transfer and the complete decoupled-key refinement line. The next work must
-target a new scalable live-state organization, not another address map.
+The R4 strict CUDA contract passed. Zero-initialized full output and both
+nonzero-incoming output/state paths were bit exact, both layers retained
+official `ChunkGDN2FunctionBackward`, and the candidate had exactly 677,968
+parameters versus 661,584 native with unchanged 4,096-value recurrent states.
+The apparent parent-gradient discrepancy was official BF16/Triton replay
+noise: byte-identical native replay differed by max/relative-RMS
+`0.312055/1.042848`, while candidate-parent differences were
+`0.311873/1.053548`, inside the preregistered `1.5x` calibrated envelope.
 
-## 9. Submission Record
+| Metric | Control | Candidate | Delta |
+|---|---:|---:|---:|
+| Balanced accuracy | 0.36625 | 0.42450 | +0.05825 |
+| Future accuracy | 0.35150 | 0.43350 | +0.08200 |
+| Past accuracy | 0.38100 | 0.41550 | +0.03450 |
+| Joint exact | 0.00200 | 0.01200 | +0.01000 |
+| Total query errors | 2,535 | 2,302 | -233 |
+| Wrong-key valid-value swaps | 1,574 | 1,717 | +143 |
+| Swap fraction among errors | 0.620907 | 0.745873 | +0.124966 |
 
-Not applicable. This is a local architecture science gate.
+The mechanism was fully active. The shared projection weight RMS was
+`0.017893`, address residual RMS/token std/board std were
+`1.054060/0.103689/0.000393`, repeated-token address error was exactly zero,
+and both layers changed Q/K. Native FutureSeed remained active. Stable token
+identity therefore improves directional retrieval, especially future reads,
+but it does not close bindings: joint exact remains low and both the absolute
+wrong-key count and its error fraction worsen. This is a useful value-set
+retrieval signal, not a successful memory architecture.
+
+Elapsed, post-warm wall, independently warmed step, and peak-allocation ratios
+were `0.69544/0.71670/1.37958/1.04818x`. Arm-order compilation makes the first
+two ratios non-causal; the independent warmed-step benchmark is the valid
+steady-state cost and misses the fixed `1.20x` ceiling. There was no NaN, OOM,
+fallback, source/data drift, or infrastructure failure. Exit status 2 is the
+registered science miss.
+
+P-GDN3-046 is discarded with no Sudoku transfer. Close projection scale,
+normalization, token-plus-position, per-layer versus shared maps, rank, seed,
+data, LR, loss, width, depth and duration rescue. Together with P031/P036 and
+P042-P045, this closes direct decoupled erase keys and nearby Q/K/address-map
+refinements. A successor must alter scalable live-state organization or the
+committed recurrent transition while preserving coherent ownership.
+
+## 9. Provenance
+
+- Pushed/read-back source: `b5a791db55cee166bfa1bdae79cde1d4e1b23dde`
+- Formal run:
+  `/huyang2/double-loop/runs/p-gdn3-046-stable-token-address-l1024-20260815T-r4-b5a791d`
+- Contract score SHA256:
+  `22e3c992f536f22b2bfd3389210e142146f2ed3f8e6a6addb518deaadde376b1`
+- Endpoint score SHA256:
+  `7009abf32f925df1f099af41c616327103fcf0d5ead7c89c8e1dd3616731bcbf`
+- Control checkpoint SHA256:
+  `59ca8e2b8aa9fc9527772526956395094888858c9ecced74569216a8ba1cd6ce`
+- Candidate checkpoint SHA256:
+  `2f20458d7355cd345988ec4799b0b69961f600a67406ddcb4e56b87764690c17`
+- Formal log SHA256:
+  `a95ddc4335caea342929c97405c546634c6ca5b1586b9e6af37168ae1a60eb80`
+- Source snapshot SHA256:
+  `2c17b0c0c606a76a61b5ce675a494363df2bfd6f2457c47dd8125a1c83b75e81`

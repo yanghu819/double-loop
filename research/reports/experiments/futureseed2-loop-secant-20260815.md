@@ -145,3 +145,10 @@ all gates remain frozen. R2 source `bee012a9` still found a large pass1 output
 gap, so R3 additionally proves exact shared state-dict migration, fixed-control
 self-repeatability and per-layer terminal-state errors before classifying the
 failure. This remains harness localization; no training or gate changed.
+R3 source `fa2f70aa` proved that shared state-dict migration and repeated
+fixed-mode execution are exact; the two independently constructed FLA module
+instances diverged beginning at layer 1 even before any secant history existed.
+R4 therefore compares `fixed` and `loop_secant` semantics on the same migrated
+candidate instance while retaining the independent model for exact state-dict
+and parameter-delta checks. This directly isolates the new branch and avoids
+misclassifying independent-instance runtime state as mechanism behavior.

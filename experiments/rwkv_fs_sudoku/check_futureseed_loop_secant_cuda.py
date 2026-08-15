@@ -191,11 +191,12 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
     pass_rows = []
     with torch.no_grad():
         repeat_x = torch.randn(2, TOKENS, MODEL_DIM, device=device)
+        candidate.future_seed_update = "fixed"
         repeat_left, _diag_left, repeat_states_left, _ = capture_pass(
-            control, repeat_x, address, cell_order, None
+            candidate, repeat_x, address, cell_order, None
         )
         repeat_right, _diag_right, repeat_states_right, _ = capture_pass(
-            control, repeat_x, address, cell_order, None
+            candidate, repeat_x, address, cell_order, None
         )
         repeat_output_error = float(
             (repeat_left.float() - repeat_right.float()).abs().max().item()
@@ -211,9 +212,11 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
             )
         for pass_idx in range(5):
             x = torch.randn(2, TOKENS, MODEL_DIM, device=device)
+            candidate.future_seed_update = "fixed"
             control_output, _control_diag, control_states, _ = capture_pass(
-                control, x, address, cell_order, None
+                candidate, x, address, cell_order, None
             )
+            candidate.future_seed_update = "loop_secant"
             candidate_output, candidate_diag, candidate_states, next_memory = (
                 capture_pass(
                     candidate,
@@ -271,9 +274,11 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
     nonzero_memory = random_seed_memory(device, batch=2)
     x = torch.randn(2, TOKENS, MODEL_DIM, device=device)
     with torch.no_grad():
+        candidate.future_seed_update = "fixed"
         control_output, _control_diag, control_states, _ = capture_pass(
-            control, x, address, cell_order, None
+            candidate, x, address, cell_order, None
         )
+        candidate.future_seed_update = "loop_secant"
         candidate_output, candidate_diag, candidate_states, _ = capture_pass(
             candidate, x, address, cell_order, nonzero_memory
         )

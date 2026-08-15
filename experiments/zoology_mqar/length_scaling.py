@@ -81,6 +81,7 @@ GDN2_ARMS = (
     "future_seed_redundant_address_gdn2",
     "future_seed_block_rls_gdn2",
     "future_seed_local_binding_gdn2",
+    "future_seed_shared_eligibility_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -309,6 +310,11 @@ def build_config(
                 "experiments.zoology_mqar.gdn2_local_binding."
                 "ZoologyLocalBindingGDN2FutureSeedMixer"
             )
+        elif arm == "future_seed_shared_eligibility_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_shared_eligibility."
+                "ZoologySharedEligibilityFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -362,6 +368,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_shared_eligibility_gdn2":
+        from experiments.zoology_mqar.gdn2_shared_eligibility import (
+            SharedEligibilityLanguageModel,
+        )
+
+        return SharedEligibilityLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_lagged_commit_gdn2":
         from experiments.zoology_mqar.lagged_commit_futureseed import (
             LaggedCommitLanguageModel,
@@ -867,6 +879,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_shared_eligibility_gdn2":
+            from experiments.zoology_mqar.gdn2_shared_eligibility import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -1039,6 +1057,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_local_binding_gdn2":
         from experiments.zoology_mqar.gdn2_local_binding import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_shared_eligibility_gdn2":
+        from experiments.zoology_mqar.gdn2_shared_eligibility import (
             parent_parameter_hash,
         )
 
@@ -1476,6 +1500,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    shared_eligibility = None
+    if arm == "future_seed_shared_eligibility_gdn2":
+        from experiments.zoology_mqar.gdn2_shared_eligibility import (
+            shared_eligibility_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        shared_eligibility = shared_eligibility_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
             producer_readout_diagnostics,
@@ -1596,6 +1633,7 @@ def run_arm(
             + (4_096 if arm == "future_seed_raven_address_gdn2" else 0)
             + (8_192 if arm == "future_seed_linear_product_state_gdn2" else 0)
             + (4_096 if arm == "future_seed_sparse_delta_slot_gdn2" else 0)
+            + (4_096 if arm == "future_seed_shared_eligibility_gdn2" else 0)
         ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
@@ -1675,6 +1713,8 @@ def run_arm(
         score["block_rls"] = block_rls
     if local_binding is not None:
         score["local_binding"] = local_binding
+    if shared_eligibility is not None:
+        score["shared_eligibility"] = shared_eligibility
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",

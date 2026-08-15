@@ -12,6 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-GDN3-056` Shared-Eligibility Companion is
+registered and being implemented as the sole next decision. The intervention
+keeps native GDN2 and native FutureSeed exact, then adds one shared token-event
+namespace and one learned four-tap causal eligibility trace feeding a bounded
+K32xV32 companion official-GDN2 state per layer. This tests role-time key
+decoupling without splitting erase/write coordinates in the main state. It
+adds exactly 16,912 parameters and 4,096 state values/layer. A strict CUDA
+identity/gradient/causality/state-dependency contract precedes one frozen-init
+10ep/b32/seed123 L1024 candidate. Quality requires balanced>=.65 and +.10,
+both directions>=.62, joint>=.15 and +.10, errors -20%, and swap fraction
+-.10; activation and cost gates are frozen in the report. Any miss closes the
+entire trace/projection/gate/state neighborhood without rescue. Report:
+`research/reports/experiments/gdn3-shared-eligibility-companion-mqar-20260816.md`.
+
 Current update (2026-08-16 CST): `P-GDN3-055` Local-Binding Hybrid is complete
 and discarded. Exact source `89764e9` passes strict parent identity,
 official-FLA/Triton and FlashAttention provenance, gradient, causality and
@@ -1632,6 +1646,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-GDN3-056 | registered | Native values survive but adjacent write ownership merges in layer0. Decouple role-time evidence in a bounded companion state instead of splitting the co-adapted main erase/write keys. | Preserve native GDN2+FutureSeed. Shared token-event read address plus one initial-identity learned causal Conv4 eligibility write address; same native V/g/b/w; one companion official K32xV32 state/layer with its own cross-layer seed. +16,912 params and +4,096 state/layer. | Sole A10080 CUDA index0; exact pushed source and strict contract required before science. | contract then one candidate-only 10ep/b32/seed123 L1024 run | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all paths/history/seed active; time<2.25x, alloc<1.75x. | Pending. Any miss closes trace/projection/gate/state-size and all training rescue. |
 | P-GDN3-055 | complete; discarded | Adjacent writes merge in layer 0, while post-hoc key geometry changes break the co-adapted read/erase/write system. A fixed local causal path may form pair identity before the next unchanged GDN2 layer transports it globally. | Keep native GDN2+FutureSeed exact. Add one zero-gated H4/D32 causal FlashAttention path over non-overlapping 128-token blocks/layer, then residual merge. D128/L2, +131,080 params, zero persistent state, one fixed 10ep/b32/seed123 L1024 candidate from frozen init. | Sole A10080 CUDA index0; exact pushed/read-back source `89764e9`; strict contract passed. | contract plus one candidate complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 gates active; time<2.25x, alloc<1.75x. | Rejected: balanced `.4905`, joint `.046`, errors2038, swaps1822; only6/8 gates cross floor. Cost passes. Close fixed-block local binding; no rescue or Sudoku transfer. |
 | P-GDN3-054 | complete; discarded | Native failures are adjacent-owner swaps. A block-sparse online inverse-information state may cancel correlated address directions without splitting the coherent read/erase/write map or paying dense OIG cost. | Directional MQAR L1024 D128/L2/H4/K32/V32 from the frozen reproducible init. Eight 4x4 RLS blocks/head produce a constrained committed-edit direction; one official DPLR chunk/layer, native FutureSeed, +8 params, +512 transient geometry values/layer. | Sole task-mode CUDA index0; exact pushed/read-back source `6b4f0c4`. | strict contract plus one 10ep/b32/seed123 candidate complete | Balanced >=.65 and +.10, directions >=.62, joint >=.15 and +.10, errors -20%, swap fraction -.10; time <1.75x, alloc <1.50x. | Rejected: balanced `.018`, joint0, errors3928, address RMS below gate, warmed cost2.0067x. No rescue or Sudoku transfer. |
 | P-FS2-013 | complete; discarded | Native FutureSeed gives early loop correction but may fail because the transported state approaches the solution too slowly. | Keep native terminal FutureSeed and add 88 zero-init edge/head coefficients. Across repeated passes, extrapolate the current producer terminal along its RMS-bounded secant from the previous pass. No new recurrent state, scan, cache or task logic. | Sole A10080 index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; exact pushed source `6798f03`; strict R5 contract and step3001 probe pass. | one candidate-only step3000->3100 continuation | Hard macro `+.02` or mixed `+.03` with hardest-range and same-board late-correction preservation; elapsed/allocation each `<10%`. | All 88 coefficients activate, but hard macro/mixed exact stay `.000651/.025391`; official blank deltas are `+.001074/-.001613/-.004182`, hardest late correction weakens, and elapsed/allocation overhead is `+18.36/+4.66%`. Discarded; current state direction cannot restore merged ownership. |

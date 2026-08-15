@@ -59,6 +59,31 @@ isolate the native retrieval trajectory during learning, or train a genuinely
 ownership-aware recurrent transition from scratch. Another gate, reverse
 decay, reread scale or short continuation is not authorized.
 
+## Checkpoint Drift Follow-Up
+
+A tensor-only comparison against the exact shared initialization and frozen
+native replay checkpoint confirms that the co-adaptation is broad rather than
+localized to the two new cycle gates. All 57 parent tensors are shape-compatible;
+the candidate has only the two expected additional `cycle_gate` tensors. The
+cosine between the native and P058 training updates is only `.0138` for decay,
+`.0798` for the write gate, `.1383` for erase, `.2797` for value payload,
+`.2906` for write address and `.3264` for query address. Even embeddings and
+the output path diverge materially (`.4167` and `.5353`). Norm updates remain
+the most aligned family at `.9349`, so the failure is not a single malformed
+normalization parameter.
+
+The implication is stricter than "freeze Q/K": cycle training changes the
+whole native ownership trajectory. A viable successor must either isolate all
+native retrieval parameters during a graft, or replace the primary live
+transition and train that architecture end to end. The latter is the higher
+information next test because the former would test a constrained adapter,
+not a stronger recurrent memory system.
+
+- Tensor-only diagnostic script:
+  `experiments/zoology_mqar/diagnose_checkpoint_drift.py`
+- Diagnostic JSON SHA256:
+  `d370d348030ac12901d598c7140ac106bd3fdffd67e9dcd5589b98efdf3099e4`
+
 ## Runtime And Provenance
 
 - Run: `p-diag-cycle-001-edgeoff-20260815T214500Z-086e25f`

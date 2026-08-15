@@ -6516,8 +6516,16 @@ class FutureSeedRWKV(nn.Module):
         super().__init__()
         if layers < 2:
             raise ValueError("FutureSeed needs at least two layers.")
-        if future_seed_update not in {"fixed", "learned", "loop_residual"}:
-            raise ValueError("future_seed_update must be one of: fixed, learned, loop_residual.")
+        if future_seed_update not in {
+            "fixed",
+            "learned",
+            "loop_residual",
+            "loop_secant",
+        }:
+            raise ValueError(
+                "future_seed_update must be one of: fixed, learned, "
+                "loop_residual, loop_secant."
+            )
         if future_seed_norm_mode not in {"unit", "adaptive_rms"}:
             raise ValueError("future_seed_norm_mode must be one of: unit, adaptive_rms.")
         if future_seed_gate_mode not in FUTURE_SEED_GATE_MODES:
@@ -6716,6 +6724,13 @@ class FutureSeedRWKV(nn.Module):
             )
         else:
             self.register_parameter("future_seed_update_logit", None)
+        if future_seed_update == "loop_secant":
+            self.future_seed_secant_raw = nn.Parameter(
+                torch.zeros(layers - 1, 1, heads, 1, 1)
+            )
+            self.future_seed_secant_raw._no_weight_decay = True
+        else:
+            self.register_parameter("future_seed_secant_raw", None)
         if future_seed_norm_mode == "adaptive_rms":
             norm_shape = (layers - 1, 1, heads, 1, 1)
             self.future_seed_norm_slope = nn.Parameter(torch.zeros(norm_shape))
@@ -7076,7 +7091,7 @@ class FutureSeedRWKV(nn.Module):
         next_seed_memory: Optional[List[torch.Tensor]] = (
             []
             if self.future_seed_scope == "block"
-            or self.future_seed_update == "loop_residual"
+            or self.future_seed_update in {"loop_residual", "loop_secant"}
             else None
         )
         gates = []
@@ -7088,6 +7103,12 @@ class FutureSeedRWKV(nn.Module):
         norm_gain_stds = []
         memory_norms = []
         memory_delta_norms = []
+        secant_enabled = []
+        secant_scale_abs = []
+        secant_scale_signed = []
+        secant_delta_relative_rms = []
+        secant_residual_relative_rms = []
+        secant_residual_batch_std = []
         selective_delta_rms = []
         selective_gate_stds = []
         selective_gate_batch_stds = []
@@ -7186,7 +7207,79 @@ class FutureSeedRWKV(nn.Module):
             elif layer_idx > 0:
                 assert previous_state is not None
                 if self.future_seed_scale > 0:
-                    if self.future_seed_update == "loop_residual":
+                    if self.future_seed_update == "loop_secant":
+                        assert self.future_seed_secant_raw is not None
+                        assert next_seed_memory is not None
+                        prior_state = (
+                            None
+                            if seed_memory is None
+                            else seed_memory[layer_idx - 1]
+                        )
+                        scale = 0.5 * torch.tanh(
+                            self.future_seed_secant_raw[layer_idx - 1]
+                        ).to(
+                            device=previous_state.device,
+                            dtype=previous_state.dtype,
+                        )
+                        if prior_state is None:
+                            delta = torch.zeros_like(previous_state)
+                            bounded_delta = delta
+                            residual = delta
+                            candidate_seed_state = previous_state
+                        else:
+                            prior_state = prior_state.to(
+                                device=previous_state.device,
+                                dtype=previous_state.dtype,
+                            )
+                            delta = previous_state - prior_state
+                            previous_rms = previous_state.float().square().mean(
+                                dim=(-1, -2), keepdim=True
+                            ).sqrt().clamp_min(1e-6)
+                            delta_rms = delta.float().square().mean(
+                                dim=(-1, -2), keepdim=True
+                            ).sqrt()
+                            bound = torch.minimum(
+                                torch.ones_like(delta_rms),
+                                previous_rms / delta_rms.clamp_min(1e-6),
+                            )
+                            bounded_delta = delta.float() * bound
+                            residual = scale.float() * bounded_delta
+                            candidate_seed_state = previous_state + residual.to(
+                                dtype=previous_state.dtype
+                            )
+                        next_seed_memory.append(previous_state)
+                        previous_rms = previous_state.float().square().mean(
+                            dim=(-1, -2), keepdim=True
+                        ).sqrt().clamp_min(1e-6)
+                        delta_rms = delta.float().square().mean(
+                            dim=(-1, -2), keepdim=True
+                        ).sqrt()
+                        residual_rms = residual.float().square().mean(
+                            dim=(-1, -2), keepdim=True
+                        ).sqrt()
+                        residual_board = residual.float().square().mean(
+                            dim=(-1, -2, -3)
+                        ).sqrt()
+                        secant_enabled.append(x.new_ones(()))
+                        secant_scale_abs.append(scale.float().abs().mean())
+                        secant_scale_signed.append(scale.float().mean())
+                        secant_delta_relative_rms.append(
+                            (delta_rms / previous_rms).mean()
+                        )
+                        secant_residual_relative_rms.append(
+                            (residual_rms / previous_rms).mean()
+                        )
+                        secant_residual_batch_std.append(
+                            residual_board.std(unbiased=False)
+                        )
+                        update_gates.append(x.new_ones(()))
+                        memory_norms.append(
+                            candidate_seed_state.norm(dim=(-1, -2)).mean()
+                        )
+                        memory_delta_norms.append(
+                            delta.norm(dim=(-1, -2)).mean()
+                        )
+                    elif self.future_seed_update == "loop_residual":
                         assert self.future_seed_update_logit is not None
                         update_gate = torch.sigmoid(self.future_seed_update_logit[layer_idx - 1]).to(
                             device=previous_state.device,
@@ -7580,6 +7673,36 @@ class FutureSeedRWKV(nn.Module):
                 out["fs_memory_norm"] = torch.stack(memory_norms).mean()
             if memory_delta_norms:
                 out["fs_memory_delta_norm"] = torch.stack(memory_delta_norms).mean()
+            out["fs2_loop_secant_enabled"] = (
+                torch.stack(secant_enabled).max()
+                if secant_enabled
+                else x.new_zeros(())
+            )
+            out["fs2_loop_secant_scale_abs"] = (
+                torch.stack(secant_scale_abs).mean()
+                if secant_scale_abs
+                else x.new_zeros(())
+            )
+            out["fs2_loop_secant_scale_signed"] = (
+                torch.stack(secant_scale_signed).mean()
+                if secant_scale_signed
+                else x.new_zeros(())
+            )
+            out["fs2_loop_secant_delta_relative_rms"] = (
+                torch.stack(secant_delta_relative_rms).mean()
+                if secant_delta_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs2_loop_secant_residual_relative_rms"] = (
+                torch.stack(secant_residual_relative_rms).mean()
+                if secant_residual_relative_rms
+                else x.new_zeros(())
+            )
+            out["fs2_loop_secant_residual_batch_std"] = (
+                torch.stack(secant_residual_batch_std).mean()
+                if secant_residual_batch_std
+                else x.new_zeros(())
+            )
             if raw_rms_means:
                 out["fs_raw_rms_mean"] = torch.stack(raw_rms_means).mean()
                 out["fs_raw_rms_std"] = torch.stack(raw_rms_stds).mean()
@@ -7840,6 +7963,12 @@ class FutureSeedRWKV(nn.Module):
             "fs2_readout_scale_abs": zero,
             "fs2_readout_raw_norm": zero,
             "fs2_readout_residual_norm": zero,
+            "fs2_loop_secant_enabled": zero,
+            "fs2_loop_secant_scale_abs": zero,
+            "fs2_loop_secant_scale_signed": zero,
+            "fs2_loop_secant_delta_relative_rms": zero,
+            "fs2_loop_secant_residual_relative_rms": zero,
+            "fs2_loop_secant_residual_batch_std": zero,
             "fs3_innovation_enabled": zero,
             "fs3_innovation_scale_abs": zero,
             "fs3_innovation_fraction": zero,
@@ -8233,6 +8362,7 @@ def load_training_checkpoint(
         accepted_legacy_defaults = {}
         accepted_future_seed_content_upgrade = False
         accepted_future_seed_gradient_upgrade = False
+        accepted_future_seed_update_upgrade = False
         accepted_gdn2_update_upgrade = False
         accepted_gdn2_state_expert_upgrade = False
         for field in contract_fields:
@@ -8306,6 +8436,15 @@ def load_training_checkpoint(
                 )
             else:
                 matches = saved_value == current_value
+            if (
+                not matches
+                and field == "future_seed_update"
+                and bool(expected_args.resume_allow_future_seed_update_upgrade)
+                and saved_value == "fixed"
+                and current_value == "loop_secant"
+            ):
+                accepted_future_seed_update_upgrade = True
+                matches = True
             if (
                 not matches
                 and field == "future_seed_gradient_mode"
@@ -8442,6 +8581,9 @@ def load_training_checkpoint(
             "accepted_future_seed_gradient_upgrade": (
                 accepted_future_seed_gradient_upgrade
             ),
+            "accepted_future_seed_update_upgrade": (
+                accepted_future_seed_update_upgrade
+            ),
             "accepted_gdn2_update_upgrade": accepted_gdn2_update_upgrade,
             "accepted_gdn2_state_expert_upgrade": (
                 accepted_gdn2_state_expert_upgrade
@@ -8459,6 +8601,7 @@ def load_training_checkpoint(
         "reasoner.future_seed_selector.content_weight",
         "reasoner.future_seed_readout_scale",
         "reasoner.future_seed_innovation_scale",
+        "reasoner.future_seed_secant_raw",
         "reasoner.future_seed_producer_codec.row_score_in.weight",
         "reasoner.future_seed_producer_codec.row_score_in.bias",
         "reasoner.future_seed_producer_codec.row_score_out.weight",
@@ -9723,6 +9866,12 @@ def fs_line(m: Dict[str, float]) -> str:
         parts.append(f"fs_mem={m['fs_memory_norm']:.3f}")
     if "fs_memory_delta_norm" in m:
         parts.append(f"fs_mem_delta={m['fs_memory_delta_norm']:.3f}")
+    if m.get("fs2_loop_secant_enabled", 0.0) > 0:
+        parts.append(
+            "fs2_secant="
+            f"{m.get('fs2_loop_secant_scale_signed', 0.0):+.4f}/"
+            f"{m.get('fs2_loop_secant_residual_relative_rms', 0.0):.4f}"
+        )
     if "fs_raw_rms_mean" in m:
         parts.append(f"fs_raw_rms={m['fs_raw_rms_mean']:.3f}")
         parts.append(f"fs_raw_rms_std={m.get('fs_raw_rms_std', 0.0):.3f}")
@@ -10593,6 +10742,22 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             is True
         )
+        expected_future_seed_update_parameters = (
+            {"reasoner.future_seed_secant_raw"}
+            if args.future_seed_update == "loop_secant"
+            else set()
+        )
+        declared_future_seed_update_upgrade = (
+            bool(args.resume_allow_future_seed_update_upgrade)
+            and args.future_seed_update == "loop_secant"
+            and migrated_missing == expected_future_seed_update_parameters
+            and not migration.get("unexpected_parameters")
+            and migration.get("optimizer_groups_expanded") is True
+            and checkpoint.get("_resume_contract", {}).get(
+                "accepted_future_seed_update_upgrade"
+            )
+            is True
+        )
         declared_future_seed_gradient_upgrade = (
             bool(args.resume_allow_future_seed_gradient_upgrade)
             and args.future_seed_gradient_mode == "opening_projection"
@@ -10753,6 +10918,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             )
             and not declared_fast_slow_migration
             and not declared_future_seed_content_upgrade
+            and not declared_future_seed_update_upgrade
             and not declared_gdn2_update_upgrade
             and not declared_gdn2_state_expert_upgrade
         ):
@@ -12230,6 +12396,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "resume_allow_future_seed_content_upgrade": bool(
             args.resume_allow_future_seed_content_upgrade
         ),
+        "resume_allow_future_seed_update_upgrade": bool(
+            args.resume_allow_future_seed_update_upgrade
+        ),
         "resume_allow_future_seed_gradient_upgrade": bool(
             args.resume_allow_future_seed_gradient_upgrade
         ),
@@ -13508,6 +13677,26 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "--resume_allow_future_seed_content_upgrade requires a nonterminal "
                 "FutureSeed content mode"
             )
+    if args.resume_allow_future_seed_update_upgrade:
+        if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
+            raise ValueError(
+                "--resume_allow_future_seed_update_upgrade requires an exact "
+                "checkpoint resume"
+            )
+        if args.future_seed_update != "loop_secant":
+            raise ValueError(
+                "--resume_allow_future_seed_update_upgrade requires "
+                "--future_seed_update loop_secant"
+            )
+    if args.future_seed_update == "loop_secant" and (
+        not str(args.resume_train_checkpoint).strip()
+        or not args.resume_require_exact_state
+        or not args.resume_allow_future_seed_update_upgrade
+    ):
+        raise ValueError(
+            "Loop-secant FutureSeed is candidate-only and requires its "
+            "explicit exact-resume semantic upgrade"
+        )
     if args.resume_allow_future_seed_gradient_upgrade:
         if not str(args.resume_train_checkpoint).strip() or not args.resume_require_exact_state:
             raise ValueError(
@@ -14281,7 +14470,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--loop_update_gate_init", type=float, default=0.95)
     p.add_argument("--future_seed_scale", type=float, default=1.0)
     p.add_argument("--future_seed_decay", type=float, default=0.0)
-    p.add_argument("--future_seed_update", choices=("fixed", "learned", "loop_residual"), default="fixed")
+    p.add_argument(
+        "--future_seed_update",
+        choices=("fixed", "learned", "loop_residual", "loop_secant"),
+        default="fixed",
+    )
     p.add_argument("--future_seed_norm_mode", choices=("unit", "adaptive_rms"), default="unit")
     p.add_argument(
         "--future_seed_gate_mode",
@@ -14330,6 +14523,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--resume_require_exact_state", action="store_true")
     p.add_argument(
         "--resume_allow_future_seed_content_upgrade",
+        action="store_true",
+    )
+    p.add_argument(
+        "--resume_allow_future_seed_update_upgrade",
         action="store_true",
     )
     p.add_argument(

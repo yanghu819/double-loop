@@ -609,6 +609,9 @@ fi
 if [[ "${RESUME_ALLOW_FUTURE_SEED_CONTENT_UPGRADE:-0}" == "1" ]]; then
   COMMON_ARGS+=(--resume_allow_future_seed_content_upgrade)
 fi
+if [[ "${RESUME_ALLOW_FUTURE_SEED_UPDATE_UPGRADE:-0}" == "1" ]]; then
+  COMMON_ARGS+=(--resume_allow_future_seed_update_upgrade)
+fi
 if [[ "${RESUME_ALLOW_FUTURE_SEED_GRADIENT_UPGRADE:-0}" == "1" ]]; then
   COMMON_ARGS+=(--resume_allow_future_seed_gradient_upgrade)
 fi

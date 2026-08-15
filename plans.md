@@ -12,6 +12,25 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-FS2-013` Loop-Secant FutureSeed is the sole
+approved next decision. Direct decoupled-key variants P-GDN3-031/036/043/053
+and the exact dual-address ceiling are closed: query, erase, write and read
+geometry is jointly learned, so post-hoc key separation is destructive. The
+remaining Sudoku evidence instead shows genuine early-loop correction followed
+by plateau or oscillation. P-FS2-013 preserves native terminal FutureSeed and
+adds only 88 zero-init edge/head coefficients. Each repeated reasoning pass
+extrapolates the current producer terminal along its RMS-bounded change from
+the preceding pass; high-stream history spans macro loops and low-stream
+history spans consecutive L-cycle passes. Strict A800 CUDA identity, official
+FLA graph, all-gradient, bounded-geometry and exact-resume step3001 gates must
+pass before one candidate-only step3000->3100 run against the frozen terminal
+control. Primary quality requires hard51-64 macro exact `>=+0.02` with every
+range blank regression `<=0.01`; alternate requires mixed exact `>=+0.03`,
+nonregressive 61-64 and stronger same-board late correction. Warmed time and
+allocation overhead must each stay below 10%. Any miss closes the mechanism;
+no cap/init/edge/seed/LR/loss/batch/width/depth/duration rescue. Report:
+`research/reports/experiments/futureseed2-loop-secant-20260815.md`.
+
 Current update (2026-08-15 CST): `P-DIAG-DUAL-001` is complete and closes
 direct dual-address orthogonalization. Exact pushed source `25743fc` reproduces
 native balanced `.49425`; its tied-DPLR control remains `.4945` with `.99025`

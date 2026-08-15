@@ -12,6 +12,21 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-DIAG-OWN-002` is preregistered as the
+single next decision after P-GDN3-052. It freezes exact P-REPRO-001 replay-B
+and performs 17 inference-only variants: full output, then one drop-head and
+one only-head mask for every head in both GDN2 layers. The full variant must
+reproduce all `4000/4000` predictions and `.494/.454/.534/.041` exactly. The
+head-fusion route opens only if the final-layer only-head oracle repairs at
+least 25% of the `1546` swaps, a label-free final-layer max-margin proxy gains
+at least `.02` balanced, and absolute swaps fall at least 10%; otherwise head
+fusion/readout closes and the next formal candidate must target ownership
+inside each head's live state transition. First-layer masks are sensitivity
+evidence only because FutureSeed still carries their complete terminal state.
+No training, new parameters/state, selector deployment, mask/head-count sweep,
+or Sudoku transfer is authorized. Report:
+`research/reports/diagnostics/native-mqar-head-ownership-20260815.md`.
+
 Current update (2026-08-15 CST): `P-GDN3-052` Committed-Edit Interference
 Credit is complete and discarded. Exact pushed/read-back source `6eb48a47`
 passes the strict A800 contract with bit-exact native inference, two official

@@ -222,7 +222,7 @@ def main() -> None:
         32,
         generator=generator,
         device="cuda",
-        dtype=torch.bfloat16,
+        dtype=torch.float32,
     )
     with torch.no_grad():
         for control_block, candidate_mixer in zip(control.backbone.layers, mixers):

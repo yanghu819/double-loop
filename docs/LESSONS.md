@@ -3293,3 +3293,22 @@
   rescue. Future ownership mechanisms must preserve the native CE trajectory
   and change a bounded live representation or transition, not impose another
   global address-geometry objective.
+
+## 2026-08-15: The dominant swap is competing write superposition
+
+- A fixed frozen causal ablation identifies the component and layer without
+  training or changing the official recurrence. Removing the wrong owner's
+  layer-0 write repairs `1519/1546` swaps; layer1 alone repairs only 48.
+- This is not a usable suppression rule. The same intervention preserves only
+  `5/1141` of the competing owner's own correct queries. One binding is repaired
+  by deleting the other, which is exactly the ownership problem.
+- Erase is secondary: both-layer erase-off repairs 402 swaps but retains only
+  `.7309` competing-owner queries and just 78 repairs retain both answers. Do
+  not reopen decoupled erase keys, erase scale or gate controllers.
+- The first layer needs a representation that can retain two nearby bindings
+  simultaneously. Train the next foundational state topology from scratch on
+  the validated MQAR regime; a zero-init mature-checkpoint graft would test
+  migration speed rather than architecture learnability.
+- Keep the oracle boundary explicit. The `.87425` balanced selected score uses
+  the baseline wrong value to choose which write to delete; it is evidence,
+  not a deployable selector, repair or quality claim.

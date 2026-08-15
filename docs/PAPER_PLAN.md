@@ -2298,3 +2298,27 @@ This rules out local collision penalties as a practical substitute for learned
 binding. A successful successor must preserve the native CE trajectory and add
 an ownership signal inside a reversible or residual live transition, rather
 than globally penalize the key geometry throughout training.
+
+### Wrong-Key Swaps Are First-Layer Write Superposition
+
+P-DIAG-EDIT-001 causally separates erase damage from write interference on the
+frozen reproducible L1024 model. For each sample it turns off exactly one fixed
+owner's erase or write gate at the recovered value commit token, without
+training, new parameters, alternate kernels or labels inside the model.
+
+Turning off the baseline wrong owner's layer-0 write repairs `1519/1546`
+wrong-key swaps (`98.25%`); doing the same in both layers is identical, while
+layer 1 alone repairs only 48. The intervention simultaneously preserves just
+`5/1141` of that owner's own originally-correct queries. Erase-off repairs only
+402 swaps and fails every preservation gate. The model is not primarily
+forgetting the true value through excessive erase. It stores competing valid
+payloads in a shared first-layer trajectory and cannot retrieve both
+associations at once.
+
+The label-mediated `.87425` balanced / `.705` joint selected result is an
+oracle diagnostic, not a method. It proves that deleting the known competing
+write exposes the right answer, but the identity of that write is the answer
+itself. The paper should use this boundary to motivate a generic redundant
+address-state topology trained from scratch, explicitly excluding owner
+selectors, write suppression, erase-key rescue and global token-to-slot
+routing.

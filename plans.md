@@ -12,19 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-15 CST): `P-DIAG-EDIT-001` is preregistered as the
-single next decision-changing audit. Frozen P-REPRO-001 shows adjacent-owner
-swaps, while P-DIAG-OWN-003 closes head selection; this audit therefore turns
-off erase or write, one fixed recovered owner at a time, exactly at each MQAR
-value commit token. It runs one hook-free baseline plus 24 fixed variants over
-layer0/layer1/both and four owner ranks. The both-layer gate opens coherent
-erase ownership only with swap repair >=20%, repair-with-owner-retained >=15%
-and both owner-retention measures >=80%. A separable-state route opens only
-when write-off repairs >=25%, beats erase by >=.05 and retains <=60% of the
-competing owner's query, proving a destructive storage tradeoff. Otherwise
-local gate edits close. This is zero-parameter frozen inference; all
-label-mediated selections are diagnostic only. No token/rank/layer/threshold,
-gate, seed, LR, loss, width, depth or duration rescue is authorized. Report:
+Current update (2026-08-15 CST): `P-DIAG-EDIT-001` is complete and opens one
+separable-state route. Exact source `2b7fef75` passes the frozen baseline at
+`3990/4000` agreement and `.4945/.4545/.5345/.041` balanced/future/past/joint.
+Disabling the wrong owner's write at its value commit in layer0 repairs
+`1519/1546` swaps (`98.25%`), identical to disabling both layers, while layer1
+alone repairs only 48. The intervention retains just `5/1141` competing-owner
+queries, proving a destructive storage tradeoff rather than a usable selector.
+Erase-off both repairs `402/1546` but retains only `.7309` owner queries and
+just `78` repairs with owner retained, so coherent erase ownership fails its
+registered preservation gates. Decision: train one from-scratch redundant
+independent-address state that stores every token in both banks and combines
+reads without token routing. Do not build write/owner selectors, erase rescue,
+or another global slot router. Active sampler utilization averaged `53.10%`
+and peaked at `80%`; result SHA256 `e0d52470...d30a7b80`. Report:
 `research/reports/diagnostics/native-mqar-edit-component-20260815.md`.
 
 Current update (2026-08-15 CST): `P-DIAG-OWN-003` is complete and closes head

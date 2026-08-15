@@ -77,7 +77,8 @@ or if the committed-edit weights are not variable, the mechanism is falsified.
   `df8ae1c212590666440f12029d60c74a6d09cbc059b23e58bcf864c00ae98854`.
 
 Formal source must be an exact pushed/read-back SHA in a clean detached
-worktree. Only CUDA index0 on the registered A100-SXM4-80GB may be visible.
+worktree. Only CUDA index0 on the registered A800-SXM4-80GB, UUID
+`GPU-ad227769-8993-9351-affb-604e46d6e196`, may be visible.
 Require pinned FLA SHA `9c8e42e762fce087c27b673af4922795d9edb85e`,
 clean Zoology SHA `1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb`, Triton
 short convolution, two official GDN2 layers and no fallback.

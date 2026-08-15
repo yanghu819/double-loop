@@ -70,6 +70,7 @@ GDN2_ARMS = (
     "future_seed_receiver_read_credit_gdn2",
     "future_seed_coherent_key_spectrum_gdn2",
     "future_seed_stable_token_address_gdn2",
+    "future_seed_binding_certificate_gdn2",
     "future_seed_producer_readout_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
@@ -254,6 +255,11 @@ def build_config(
                 "experiments.zoology_mqar.stable_token_address_futureseed."
                 "ZoologyStableTokenAddressFutureSeedMixer"
             )
+        elif arm == "future_seed_binding_certificate_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.binding_certificate_futureseed."
+                "ZoologyBindingCertificateFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -307,6 +313,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_binding_certificate_gdn2":
+        from experiments.zoology_mqar.binding_certificate_futureseed import (
+            BindingCertificateLanguageModel,
+        )
+
+        return BindingCertificateLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_stable_token_address_gdn2":
         from experiments.zoology_mqar.stable_token_address_futureseed import (
             StableTokenAddressLanguageModel,
@@ -720,6 +732,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_binding_certificate_gdn2":
+            from experiments.zoology_mqar.binding_certificate_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -840,6 +858,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_stable_token_address_gdn2":
         from experiments.zoology_mqar.stable_token_address_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_binding_certificate_gdn2":
+        from experiments.zoology_mqar.binding_certificate_futureseed import (
             parent_parameter_hash,
         )
 
@@ -1170,6 +1194,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    binding_certificate = None
+    if arm == "future_seed_binding_certificate_gdn2":
+        from experiments.zoology_mqar.binding_certificate_futureseed import (
+            binding_certificate_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        binding_certificate = binding_certificate_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     producer_readout = None
     producer_readout_edge_off = None
     producer_readout_edge_off_cases = None
@@ -1279,6 +1316,8 @@ def run_arm(
         score["coherent_key_spectrum"] = coherent_key_spectrum
     if stable_token_address is not None:
         score["stable_token_address"] = stable_token_address
+    if binding_certificate is not None:
+        score["binding_certificate"] = binding_certificate
     if producer_readout is not None:
         score["producer_readout"] = producer_readout
         score["producer_readout_edge_off_metrics"] = producer_readout_edge_off

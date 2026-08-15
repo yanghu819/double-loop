@@ -2193,3 +2193,24 @@ binding in superposed recurrent memory, not merely more payload capacity or
 more future context. The next GDN3 claim must therefore be tested through a
 scalable live state organization with explicit pair isolation before any
 Sudoku transfer.
+
+### Sparse Pair Slots Expose A Credit-Assignment Boundary
+
+P-GDN3-050 tests explicit ownership rather than another dense address wrapper.
+Each exact official GDN2 committed edit is routed into one of 16 factorized
+key/value slots by a second pinned-official GSA scan, while native GDN2 and
+FutureSeed remain intact behind zero-initialized gates. The strict contract
+proves exact parent identity, official-kernel provenance, live gradients,
+bounded state and exact parameter/state accounting.
+
+The endpoint rejects this realization decisively. Balanced/future/past/joint
+accuracy falls from `.494/.454/.534/.041` to `.04425/.051/.0375/0`, and errors
+rise `2024->3823`. Wrong-key swaps fall `1546->255`, but this is conditional on
+near-total retrieval failure. Only `15/10` of 16 slots remain used after
+training, and elapsed/post-warm wall time rises to `3.277/3.251x` control.
+
+The paper should use P050 to distinguish representation from learnability.
+Pair-isolated memory can suppress one error category while introducing hard
+allocation credit failure and destroying the base learner. The open GDN3 route
+is an ownership-preserving, differentiable live transition that retains native
+retrieval, not a larger discrete side bank or a tuned slot router.

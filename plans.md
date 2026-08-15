@@ -13,19 +13,22 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-050` Sparse Committed-Delta Pair
-Slots is the sole successor authorized by P-REPRO-001. Keep native GDN2 and
-native FutureSeed, but write each exact official committed edit into one of 16
-factorized key/value slots through one pinned-official GSA scan per layer. A
-zero-init local gate reads the sparse state; a zero-init receiving gate folds
-its factor product into the next layer's native KxV FutureSeed. This differs
-from dense correction/companion banks and Raven controllers because key and
-value ownership live in the same sparse slot. Fixed delta is +4,108 parameters,
-+4,096 factor-state values/layer and +1 scan/layer. One candidate-only
-L1024 10ep/b32/seed123 run reuses the frozen P-REPRO initialization/control.
-Pass requires exact strict contract, all 16 stable active slots, balanced
-`>=.85` and `+.10`, future/past `>=.82`, joint `>=.60`, swap fraction `-.10`,
-fewer errors, time `<2x` and allocation `<1.60x`. Any miss closes the family
-without routing/slot/gate/training rescue. Report:
+Slots is complete and discarded. Exact pushed/read-back source `faef909d`
+passes the strict A100-80GB contract: parent output and nonzero incoming state
+are bit exact at zero gates, the graph contains two official GDN2 plus two
+official GSA backwards, the delta is exactly 4,108 parameters and 4,096 state
+values/layer, gradients are live, and routing/state geometry is bounded. The
+endpoint is nevertheless destructive. Frozen control versus candidate balanced,
+future, past and joint accuracy is `.494/.454/.534/.041` versus
+`.04425/.051/.0375/0`; errors rise `2024->3823`. Wrong-key valid-value swaps
+fall `1546->255`, but only because useful retrieval collapses. Layer slot usage
+also contracts to `15/10` active slots. Elapsed/post-warm/warmed/allocation are
+`3.277/3.251/1.586/1.387x`, so two wall-cost gates fail. Close hard top-1
+anchors, slot count, GSA side scan, gates, normalization and all training
+rescues. The next high-information mechanism must preserve native retrieval
+while making binding ownership intrinsic to the recurrent transition; it must
+not add another discrete side bank. Score SHA256 is
+`c13a7550...4cdaac7`. Report:
 `research/reports/experiments/gdn3-sparse-delta-slots-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-REPRO-001` same-seed native GDN2 replay is

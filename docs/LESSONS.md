@@ -3195,3 +3195,22 @@
   and optimization trajectories, but stop spending architecture budget on
   dense side states, Q/K wrappers or receiver residuals. The next useful test
   must isolate committed key-value pairs inside a scalable live memory update.
+
+## 2026-08-15: Pair isolation without learnable ownership destroys retrieval
+
+- P-GDN3-050 gives every exact official committed edit a factorized key/value
+  slot, and its strict contract proves the GDN2 and GSA paths, gradients,
+  bounded transition, parent identity and exact cost accounting are real.
+- The wrong-key swap fraction falls `.763834->.066702`, but balanced accuracy
+  simultaneously collapses `.494->.04425` and errors rise `2024->3823`.
+  Conditional swap composition is again meaningless without absolute retrieval.
+- Hard top-1 straight-through allocation develops dead capacity: the two layers
+  use only `15/10` of 16 slots. Explicit pair storage does not itself solve who
+  owns an update; it moves the problem into discrete routing credit assignment.
+- A second recurrent scan is also too expensive here: elapsed/post-warm wall is
+  `3.277/3.251x`, despite a `1.586x` independently warmed step and `1.387x`
+  allocation. Compile and validation do not explain the full optimization hit.
+- Close slot count, temperature, anchors, gate scale, normalization, scan
+  placement and duration rescue. The next mechanism must make ownership a
+  differentiable part of the native live transition while preserving baseline
+  retrieval, not add another sparse or dense side memory.

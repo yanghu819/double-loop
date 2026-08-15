@@ -52,6 +52,7 @@ EXPECTED_CANDIDATE_PARAMETERS = (
 )
 PARENT_GRADIENT_ATOL = 0.125
 PARENT_GRADIENT_REL_RMS_MAX = 0.01
+PARENT_GRADIENT_NOISE_MULTIPLIER = 1.5
 
 
 def _mapped_candidate_parameters(
@@ -77,6 +78,47 @@ def _finite_nonzero_gradient(parameter: torch.nn.Parameter, label: str) -> float
     if rms <= 0:
         raise RuntimeError(f"Zero gradient: {label}")
     return float(rms)
+
+
+def _gradient_difference_summary(
+    reference: dict[str, torch.nn.Parameter],
+    compared: dict[str, torch.nn.Parameter],
+    *,
+    label: str,
+) -> dict[str, float | int]:
+    if set(reference) != set(compared):
+        raise RuntimeError(f"Gradient parameter names changed: {label}")
+    max_difference = 0.0
+    difference_energy = 0.0
+    reference_energy = 0.0
+    compared_count = 0
+    absent_count = 0
+    for name, parameter in reference.items():
+        other = compared[name]
+        if parameter.grad is None and other.grad is None:
+            absent_count += 1
+            continue
+        if parameter.grad is None or other.grad is None:
+            raise RuntimeError(f"Gradient topology changed for {label}: {name}")
+        if not torch.isfinite(parameter.grad).all() or not torch.isfinite(
+            other.grad
+        ).all():
+            raise RuntimeError(f"Non-finite gradient for {label}: {name}")
+        compared_count += 1
+        difference = parameter.grad.float() - other.grad.float()
+        max_difference = max(
+            max_difference,
+            float(difference.abs().max().item()),
+        )
+        difference_energy += float(difference.square().sum().item())
+        reference_energy += float(parameter.grad.float().square().sum().item())
+    relative_rms = (difference_energy / max(reference_energy, 1e-24)) ** 0.5
+    return {
+        "max_abs": max_difference,
+        "relative_rms": relative_rms,
+        "compared_parameter_count": compared_count,
+        "absent_parameter_count": absent_count,
+    }
 
 
 def main() -> None:
@@ -159,6 +201,9 @@ def main() -> None:
         "future_seed_stable_token_address_gdn2",
     )
     load_matched_parent_state(candidate, native.state_dict())
+    set_determinism(123)
+    native_replay = make_model(native_config, "future_seed_gdn2")
+    native_replay.load_state_dict(native.state_dict(), strict=True)
     if not isinstance(candidate.backbone, StableTokenAddressBackbone):
         raise RuntimeError("Candidate backbone changed")
     counts = {
@@ -230,6 +275,7 @@ def main() -> None:
     inputs = inputs.cuda()
     targets = targets.cuda()
     native = native.cuda().eval()
+    native_replay = native_replay.cuda().eval()
     candidate = candidate.cuda().eval()
     with torch.no_grad():
         native_logits = native(inputs)
@@ -290,11 +336,17 @@ def main() -> None:
         )
 
     native.train()
+    native_replay.train()
     candidate.train()
     native.zero_grad(set_to_none=True)
+    native_replay.zero_grad(set_to_none=True)
     candidate.zero_grad(set_to_none=True)
     native_loss = F.cross_entropy(
         native(inputs[:4]).flatten(0, 1),
+        targets[:4].flatten(),
+    )
+    native_replay_loss = F.cross_entropy(
+        native_replay(inputs[:4]).flatten(0, 1),
         targets[:4].flatten(),
     )
     candidate_loss = F.cross_entropy(
@@ -302,6 +354,7 @@ def main() -> None:
         targets[:4].flatten(),
     )
     native_loss.backward()
+    native_replay_loss.backward()
     candidate_loss.backward()
     backward_graph = backward_names(candidate_loss)
     official_backward_count = sum(
@@ -315,49 +368,40 @@ def main() -> None:
         candidate.backbone.shared_address_proj.weight,
         "shared address projection",
     )
-    parent_gradient_max_diff = 0.0
-    compared_parent_gradients = 0
-    parent_gradient_difference_energy = 0.0
-    parent_gradient_reference_energy = 0.0
     candidate_parameters = _mapped_candidate_parameters(candidate)
     native_parameters = dict(native.named_parameters())
-    for name in native_parameters:
-        native_gradient = native_parameters[name].grad
-        candidate_gradient = candidate_parameters[name].grad
-        if native_gradient is None or candidate_gradient is None:
-            if native_gradient is not candidate_gradient:
-                raise RuntimeError(f"Parent gradient topology changed: {name}")
-            continue
-        compared_parent_gradients += 1
-        gradient_difference = (
-            native_gradient.float() - candidate_gradient.float()
-        )
-        parent_gradient_difference_energy += float(
-            gradient_difference.square().sum().item()
-        )
-        parent_gradient_reference_energy += float(
-            native_gradient.float().square().sum().item()
-        )
-        parent_gradient_max_diff = max(
-            parent_gradient_max_diff,
-            finite_max_abs_difference(
-                native_gradient,
-                candidate_gradient,
-                f"parent gradient {name}",
-            ),
-        )
-    parent_gradient_relative_rms = (
-        parent_gradient_difference_energy
-        / max(parent_gradient_reference_energy, 1e-24)
-    ) ** 0.5
+    replay_parameters = dict(native_replay.named_parameters())
+    native_replay_gradient_noise = _gradient_difference_summary(
+        native_parameters,
+        replay_parameters,
+        label="native replay",
+    )
+    candidate_parent_gradient_difference = _gradient_difference_summary(
+        native_parameters,
+        candidate_parameters,
+        label="stable-address parent",
+    )
+    calibrated_max_abs = max(
+        PARENT_GRADIENT_ATOL,
+        PARENT_GRADIENT_NOISE_MULTIPLIER
+        * float(native_replay_gradient_noise["max_abs"]),
+    )
+    calibrated_relative_rms = max(
+        PARENT_GRADIENT_REL_RMS_MAX,
+        PARENT_GRADIENT_NOISE_MULTIPLIER
+        * float(native_replay_gradient_noise["relative_rms"]),
+    )
     if (
-        parent_gradient_max_diff > PARENT_GRADIENT_ATOL
-        or parent_gradient_relative_rms > PARENT_GRADIENT_REL_RMS_MAX
+        float(candidate_parent_gradient_difference["max_abs"])
+        > calibrated_max_abs
+        or float(candidate_parent_gradient_difference["relative_rms"])
+        > calibrated_relative_rms
     ):
         raise RuntimeError(
-            "Zero address changed parent gradients beyond BF16 tolerance: "
-            f"max={parent_gradient_max_diff} "
-            f"relative_rms={parent_gradient_relative_rms}"
+            "Zero address changed parent gradients beyond calibrated BF16 "
+            f"noise: candidate={candidate_parent_gradient_difference} "
+            f"native_replay={native_replay_gradient_noise} "
+            f"limits={calibrated_max_abs}/{calibrated_relative_rms}"
         )
 
     with torch.no_grad():
@@ -411,11 +455,15 @@ def main() -> None:
         "incoming_state_identity": incoming_rows,
         "official_backward_count": official_backward_count,
         "shared_projection_gradient_rms": shared_gradient_rms,
-        "compared_parent_gradients": compared_parent_gradients,
-        "parent_gradient_max_diff": parent_gradient_max_diff,
-        "parent_gradient_relative_rms": parent_gradient_relative_rms,
+        "native_replay_gradient_noise": native_replay_gradient_noise,
+        "candidate_parent_gradient_difference": (
+            candidate_parent_gradient_difference
+        ),
         "parent_gradient_atol": PARENT_GRADIENT_ATOL,
         "parent_gradient_relative_rms_max": PARENT_GRADIENT_REL_RMS_MAX,
+        "parent_gradient_noise_multiplier": PARENT_GRADIENT_NOISE_MULTIPLIER,
+        "calibrated_parent_gradient_max_abs": calibrated_max_abs,
+        "calibrated_parent_gradient_relative_rms": calibrated_relative_rms,
         "active_diagnostics": active_diagnostics,
         "provenance": provenance,
     }

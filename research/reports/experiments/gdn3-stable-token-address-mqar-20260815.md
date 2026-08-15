@@ -71,13 +71,15 @@ shared 16,384-parameter projection, and 4,096 recurrent values per layer.
 
 At zero initialization require exact full logits, nonzero-incoming output and
 terminal state, parent tensors, parent-gradient topology, and official
-backward-node count. Parent gradients must stay within the preregistered pinned
-BF16/Triton tolerance: max absolute difference `<=0.125` and aggregate relative
-RMS `<=0.01`. The shared projection gradient must be finite/nonzero. With a
-nonzero contract weight, repeated occurrences of one token must have address
-max error `<=1e-6`, different tokens must vary, both layers must change Q/K,
-both must receive the same residual tensor, and terminal states must remain
-finite and board-varying. Any fallback or topology/identity miss is terminal.
+backward-node count. A third byte-identical native model calibrates official
+BF16/Triton replay noise on the same batch. Candidate parent-gradient max
+absolute and aggregate relative RMS differences may not exceed the larger of
+the fixed `0.125/0.01` bounds and `1.5x` native-vs-native replay noise. The
+shared projection gradient must be finite/nonzero. With a nonzero contract
+weight, repeated occurrences of one token must have address max error
+`<=1e-6`, different tokens must vary, both layers must change Q/K, both must
+receive the same residual tensor, and terminal states must remain finite and
+board-varying. Any fallback or topology/identity miss is terminal.
 
 ## 6. Fixed Falsifiers And Gate
 

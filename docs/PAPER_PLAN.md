@@ -2238,3 +2238,26 @@ usable evidence without preserving which key owns that evidence. State
 retention and receiver-native decoding are insufficient; the next claim must
 alter the coherent live commit or introduce an end-to-end ownership mechanism,
 while retaining the native retrieval path and linear-memory advantage.
+
+### Causal Lag And Same-Direction Ownership Boundary
+
+P-GDN3-051 tests whether directional MQAR's serialized `key,value` layout
+creates a one-token phase mismatch in GDN2's coherent erase/write commit. It
+adds one zero-initialized causal lag scalar per head, preserves a single
+official scan and exact parent behavior at zero, and never decouples erase from
+write. The strict CUDA contract passes.
+
+The endpoint rejects this account. Native versus lagged balanced accuracy is
+`.4940->.2020`, joint exact is `.0410->0`, and total errors rise
+`2024->3192`. The lower wrong-key count is broad retrieval collapse. Layer 0
+prefers modest positive lag while layer 1 learns negative lag, and disabling
+the mechanism after training does not recover quality. This closes fixed
+temporal shift as an explanation rather than merely one parameterization.
+
+A prediction-topology audit sharpens the paper's mechanistic claim. Of `1546`
+native valid-value swaps, `99.55%` remain within the same future/past class and
+`99.61%` select the adjacent owner by write rank; `346` events are reciprocal
+two-cycles. The unresolved error is therefore instance ownership within an
+already recovered direction-specific value set. This distinguishes the next
+target from more payload capacity, protected FutureSeed copies, a global key
+split, or a fixed commit delay.

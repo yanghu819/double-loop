@@ -2,7 +2,11 @@
 
 ## 1. Metainfo
 
-- Status: registered; not yet launched
+- Status: complete; discarded
+- Formal source: exact pushed/read-back SHA
+  `d0fd6b3ff8753e99207a3ed52b6eee42ecc30232`
+- Formal run:
+  `p-gdn3-051-lagged-commit-l1024-20260815T084341Z-d0fd6b3`
 - Decision field: validated directional MQAR L1024 wrong-key binding regime
 - Parent: frozen deterministic P-REPRO-001 initialization and replay-B score
 - Candidate: D128/L2/H4/K32/V32 pinned-official GDN2, native FutureSeed,
@@ -144,6 +148,47 @@ same mechanism and no setting changes. A miss redirects the project away from
 temporal commit alignment toward a genuinely different live memory
 organization.
 
+### Endpoint result
+
+The strict CUDA contract passed. Zero mix is bit-exact for output and terminal
+state, including nonzero incoming state; all eight new scalars receive finite
+nonzero gradients; the shift is causal with exact token-0 identity; head
+permutation error is zero; and the graph retains exactly two pinned-official
+`ChunkGDN2FunctionBackward` nodes. The candidate checkpoint SHA256 is
+`7c83747779c3352f8d3172b915157d934030a43dcdb3fdc1badd8564b8bc549b`.
+
+The quality result rejects the hypothesis:
+
+| arm | balanced | future | past | joint | errors | wrong-key swaps |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| frozen native control | .4940 | .4540 | .5340 | .0410 | 2024 | 1546 |
+| lagged commit | .2020 | .2065 | .1975 | 0 | 3192 | 865 |
+| trained model, lag disabled | .1995 | .2040 | .1950 | 0 | 3202 | 852 |
+
+The lower conditional swap count is broad retrieval collapse, not binding
+repair. Lag-off does not recover the native endpoint, so the trained network
+has co-adapted around a harmful intervention rather than using it as a causal
+correction.
+
+Activation also misses the registered mechanism gate. Layer 0 learns three
+positive mixes at or above `.02`, but layer 1 learns four negative mixes. The
+global signed mean is `.008715`, only three of eight heads cross the positive
+threshold, and committed/native K relative RMS is `.008732/.001326` for the
+two layers. Mean value-position cosine gain is only `.006799`. Native
+FutureSeed remains active with gate `.507331`.
+
+Elapsed/post-warm/warmed-step/allocation ratios are
+`2.0081/1.9962/1.0504/1.0160x`. The independently warmed kernel path is cheap,
+but formal wall time misses the fixed gate. P051 is closed without lag radius,
+convolution, interpolation, sharing or training rescue. A fixed one-token
+address/payload phase error is not the root cause.
+
 ## 9. Submission Record
 
-Not applicable.
+- Formal status: endpoint `0`, tee `0`, combined `0`; launcher status `2`
+  denotes the registered science-gate miss, not a runtime failure.
+- Comparison/score SHA256:
+  `d2e59549b5edc3c8f41cbefcc0acca0d574a91bfb6a7e7bc71bbcaa7088fc9c9`.
+- Evidence directory:
+  `runs/p-gdn3-051-lagged-commit-l1024-20260815T084341Z-d0fd6b3`.
+- Decision: discarded; no Sudoku transfer.

@@ -13,18 +13,33 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-051` Causal Lagged-Address Commit is
-registered as the next single high-information arm. Directional MQAR serializes
-each association as a key followed by its value, while native GDN2 commits the
-current payload with the current token's address. P051 keeps erase and write on
-one identical official address, but lets eight zero-initialized per-head
-scalars causally interpolate that address toward the preceding native K. It
-adds eight parameters, no state, token or scan, remains bit-exact at zero, and
-directly tests temporal address/payload phase rather than another key split,
-side bank, cache or readout. Run exactly one D128/L2 L1024 candidate against
-frozen P-REPRO-001, with strict lag-off attribution, swap reduction and
-`1.20x/1.10x` time/allocation gates. No control rerun or lag-radius,
-convolution, mix-map or training rescue. Report:
+complete and discarded. Exact pushed/read-back source `d0fd6b3f` passes the
+strict A100-80GB contract with exactly eight new scalars, one official scan per
+layer, zero state delta, exact parent identity, live gradients and strict
+causal shift. The endpoint rejects fixed temporal phase as the cause of binding
+failure. Frozen control versus candidate balanced/future/past/joint is
+`.494/.454/.534/.041` versus `.202/.2065/.1975/0`; errors rise `2024->3192`.
+Wrong-key swaps fall `1546->865` only because retrieval collapses, and disabling
+lag in the trained model remains at `.1995` balanced. Layer 0 learns three
+positive lags but layer 1 learns four negative lags; global signed mix `.008715`,
+committed/native K RMS `.008732/.001326`, and value-position cosine gain
+`.006799` all miss activation. Elapsed/post-warm/warmed/allocation ratios are
+`2.008/1.996/1.050/1.016x`. Close lag radius/form/convolution/sharing and all
+training rescue. Score SHA256 is `d2e59549...8fc9c9`. Report:
 `research/reports/experiments/gdn3-causal-lagged-commit-mqar-20260815.md`.
+
+Current update (2026-08-15 CST): a zero-parameter topology audit of frozen
+P-REPRO-001 localizes the remaining error more sharply. Of `1546` valid-value
+wrong-key swaps, `1539` (`99.55%`) stay inside the same future/past direction
+class; only seven cross direction. `99.61%` choose the adjacent owner by write
+rank, and `346` events form reciprocal two-cycles. The model therefore usually
+retrieves the correct direction-specific value set but loses which of the two
+same-direction instances owns each value. This rules out a global random
+collision and explains why extra payload, protected FutureSeed copies, fixed
+lag and generic side memory fail. The next intervention must target generic
+instance ownership while preserving native retrieval; it must not reopen
+decoupled-key, lag, cache, side-bank, Raven or readout families. Diagnostic:
+`research/reports/diagnostics/native-mqar-swap-topology-20260815.md`.
 
 Current update (2026-08-15 CST): `P-FS2-012` Read-Only Dual-Plane FutureSeed
 is complete and discarded. Exact pushed/read-back source `b5da2ac` passes the

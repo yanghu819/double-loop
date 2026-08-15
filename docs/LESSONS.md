@@ -3234,3 +3234,25 @@
 - Separate contractions can also hide substantial cost despite zero new model
   parameters: elapsed/post-warm wall reaches `1.989/1.977x`. Close read fusion,
   side-plane normalization/gating and all training-setting rescue.
+
+## 2026-08-15: Fixed temporal lag is not instance ownership
+
+- P-GDN3-051 keeps erase and write on one coherent official address and adds
+  only eight causal lag scalars. Its exact identity, gradient, causality,
+  equivariance and official-kernel contract passes.
+- The learned response is inconsistent with a missing one-token phase. Layer 0
+  learns three positive lags, while all four layer-1 lags become negative;
+  global signed mix is only `.008715` and mean value-position cosine gain is
+  `.006799`.
+- Balanced accuracy collapses `.494->.202` and errors rise `2024->3192`.
+  Wrong-key swaps fall `1546->865` only because useful retrieval fails. Turning
+  lag off after training remains at `.1995`, so co-adaptation does not hide a
+  beneficial lagged path.
+- A topology audit makes the failure concrete: `99.55%` of native wrong-key
+  swaps stay within the same future/past direction class, `99.61%` choose the
+  adjacent owner by write rank, and `346` events participate in reciprocal
+  two-cycles. The model knows the coarse direction but confuses instance
+  ownership inside that class.
+- Close lag radius/form/convolution/sharing and all training rescue. A successor
+  must preserve native retrieval and improve generic occurrence ownership; it
+  must not encode another fixed phase prior.

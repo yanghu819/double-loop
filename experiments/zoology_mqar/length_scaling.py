@@ -78,6 +78,7 @@ GDN2_ARMS = (
     "future_seed_readonly_dual_plane_gdn2",
     "future_seed_lagged_commit_gdn2",
     "future_seed_committed_interference_gdn2",
+    "future_seed_redundant_address_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -290,6 +291,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.lagged_commit_futureseed."
                 "ZoologyLaggedCommitFutureSeedMixer"
+            )
+        elif arm == "future_seed_redundant_address_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_redundant_address."
+                "ZoologyRedundantAddressFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -831,6 +837,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_redundant_address_gdn2":
+            from experiments.zoology_mqar.gdn2_redundant_address import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -987,6 +999,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_lagged_commit_gdn2":
         from experiments.zoology_mqar.lagged_commit_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_redundant_address_gdn2":
+        from experiments.zoology_mqar.gdn2_redundant_address import (
             parent_parameter_hash,
         )
 
@@ -1388,6 +1406,18 @@ def run_arm(
     lagged_commit_edge_off = None
     lagged_commit_edge_off_cases = None
     diagnostic_extra_wall_sec = 0.0
+    redundant_address = None
+    if arm == "future_seed_redundant_address_gdn2":
+        from experiments.zoology_mqar.gdn2_redundant_address import (
+            redundant_address_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        with torch.no_grad():
+            model.eval()(diagnostic_inputs[:8].cuda())
+        redundant_address = redundant_address_diagnostics(model)
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
             producer_readout_diagnostics,
@@ -1496,7 +1526,15 @@ def run_arm(
         "gdn2_expand_v": gdn2_expand_v,
         "recurrent_state_values_per_layer": (
             int(model_heads * gdn2_head_dim * gdn2_head_dim * gdn2_expand_v)
-            * (2 if arm == "future_seed_slot_state_gdn2" else 1)
+            * (
+                2
+                if arm
+                in (
+                    "future_seed_slot_state_gdn2",
+                    "future_seed_redundant_address_gdn2",
+                )
+                else 1
+            )
             + (4_096 if arm == "future_seed_raven_address_gdn2" else 0)
             + (8_192 if arm == "future_seed_linear_product_state_gdn2" else 0)
             + (4_096 if arm == "future_seed_sparse_delta_slot_gdn2" else 0)
@@ -1573,6 +1611,8 @@ def run_arm(
         score["lagged_commit_diagnostic_extra_wall_sec"] = (
             diagnostic_extra_wall_sec
         )
+    if redundant_address is not None:
+        score["redundant_address"] = redundant_address
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",

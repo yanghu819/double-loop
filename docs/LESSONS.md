@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-15: Lower wrong-key fraction can mean the value code stopped working
+
+- P-GDN3-048 encodes V with native `k` and decodes with native `q`, preserving
+  one coherent key/state, one official scan and exact zero-point behavior.
+- All eight codes activate, Q/K mismatch changes the payload, and the state is
+  finite, yet balanced accuracy falls `.17475->.07500` and errors rise
+  `3301->3700`.
+- Wrong-key swaps fall `770->337` and their error fraction falls
+  `.233263->.091081`; paired transitions reveal the cost: 627 correct queries
+  break while only 228 wrong queries become correct.
+- Reciprocal algebra at FP32 is not enough for a BF16 learned memory. Endpoint
+  same-address error is `.004211`, and small address-conditioned factors still
+  perturb payload optimization enough to lose retrieval.
+- Close payload-code radius/map/source/precision/sharing variants. Together
+  with decoupled-key and Q/K gauge failures, this says ownership needs a
+  learnable state organization or credit mechanism, not another reversible
+  coordinate wrapper.
+
 ## 2026-08-15: Value-set recovery can make binding errors nearly pure
 
 - P-GDN3-047 stores a token-identity certificate under the exact native GDN2

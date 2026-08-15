@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation and GPU contract pending
+- Status: complete; discarded at the fixed activation/quality/cost gate
 - Task: directional MQAR, sequence length 1024, four future and four past queries
 - Carrier: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed endpoint: 10 epochs, batch32, seed123, contemporaneous control then candidate
@@ -107,10 +107,67 @@ They cannot be relaxed after observing the result.
 
 ## 8. Results And Decision
 
-Pending exact pushed source, strict CUDA contract and the one fixed matched
-endpoint. A pass admits one Sudoku transfer. Any integrity, activation, quality
-or cost miss closes this final ownership-coding test without a nearby run.
+Exact pushed/read-back source `97cc8f57` passes the strict CUDA contract. The
+candidate adds exactly 8 parameters, keeps one pinned-official scan/layer and
+4,096 recurrent state values/layer, and is bit-exact to the parent at zero for
+full output, FutureSeed transport and finite nonzero incoming state. Both
+layers expose `ChunkGDN2FunctionBackward`; all eight logits have finite nonzero
+gradient. Opened FP32 factors stay bounded, close same-address reciprocity to
+`2.38e-7`, commute exactly with head permutation and change both terminal state
+and decoded output.
+
+The fixed endpoint rejects the mechanism:
+
+| metric | control | payload gauge | delta |
+|---|---:|---:|---:|
+| balanced accuracy | 0.174750 | 0.075000 | -0.099750 |
+| future accuracy | 0.161000 | 0.086000 | -0.075000 |
+| past accuracy | 0.188500 | 0.064000 | -0.124500 |
+| joint exact | 0.000000 | 0.000000 | 0.000000 |
+| total query errors | 3,301 | 3,700 | +399 |
+| wrong-key valid-value swaps | 770 | 337 | -433 |
+| wrong-key fraction of errors | 0.233263 | 0.091081 | -0.142182 |
+
+The lower conditional swap fraction is broad retrieval damage, not ownership
+closure. Paired predictions make this explicit: only 228 previously wrong
+queries become correct, while 627 previously correct queries break. Candidate
+future/past CE rises from `2.9178/2.9002` to `3.5845/3.6341`. The gauge therefore
+removes many recognizable valid-value errors by making the value itself less
+retrievable.
+
+All eight learned strengths activate. Per-layer strength RMS is
+`.02565/.02307`; coded-V relative change is `.00350/.00143`; decoded-output
+relative change is `.00229/.00156`; Q/K code mismatch is `.00473/.00410`; and
+native FutureSeed remains active. Production BF16 factors remain narrowly
+bounded (`.9766..1.0234`), but same-address reciprocal error is `.004211`, above
+the fixed `.002` activation tolerance even though the FP32 contract closes.
+
+Independent warmed-step cost is `1.2047x`, but peak allocation is `1.2593x`
+and misses the fixed `1.12x` ceiling. Arm-order elapsed and post-warm ratios are
+`.8181/.8212x` and are retained only as timing context, not evidence against
+the independent benchmark.
+
+The decision is **discarded**. Do not tune radius, scalar/vector map, Q/K
+source, normalization, precision path, layer/head sharing, seed, data,
+optimizer or duration. There is no Sudoku transfer. Together with direct
+decoupled-key, coherent-key, gauge/frame and certificate tests, this closes the
+nearby address/payload reparameterization route. The useful surviving evidence
+is P047's value-set recovery; the unresolved problem remains ownership in a
+learnable recurrent state organization, not a reversible wrapper around the
+native payload.
 
 ## 9. Provenance
 
-Pending source SHA, contract, run, score, checkpoints and artifact hashes.
+- source branch: `codex/gdn3-address-payload-gauge-20260815`
+- exact source SHA: `97cc8f57a5c767c21466a345a6bf51bb83adb847`
+- clean detached worktree: `/huyang2/double-loop/worktrees/p-gdn3-048-97cc8f5`
+- run: `/huyang2/double-loop/runs/p-gdn3-048-address-payload-gauge-l1024-20260815T021156Z-97cc8f5`
+- score/comparison SHA256: `793f31de2e0f36ec14d4675295390938c75c841e847b8caa726b2ad9d8df1d51`
+- contract JSON SHA256: `fdd375a57eca5fb2a09257a665e201fe195ffd8e79eaa7658738594b01d821d2`
+- formal log SHA256: `8fd86c1047407c67b4811a47435df39f57a7c68bb7a62bc8052d4a67f111c8ba`
+- control/candidate checkpoint SHA256:
+  `4d96b91f9278d38bd92e6f6cf35559ad067a8d5f3ea96d5cd519c558b8a346aa` /
+  `cb7dcfa5c468f2e257ec74eb85dfd87ab78f6097f79e7ba2914628305afac763`
+- source snapshot SHA256: `20d6fe1273b55b0ac37aca1a04b80024615da49e50778ebbcf01a947db0529b4`
+- completed: `2026-08-15T02:20:39Z`; formal status `2` is the registered
+  science miss, not an integrity or launcher failure

@@ -1,5 +1,25 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Reciprocal Payload Codes Suppress Errors By Losing Retrieval
+
+P-GDN3-048 is the narrow ownership-in-payload test motivated by P047's nearly
+pure wrong-key residual. Native `k` writes a bounded diagonal V code, native
+`q` applies its reciprocal after the unchanged one-scan official GDN2, and only
+eight scalar strengths are learned. The strict contract proves exact parent
+identity, official-kernel provenance, finite gradients, bounded FP32 factors
+and reciprocal/head-equivariant behavior.
+
+The endpoint rejects the code. Balanced accuracy falls `.17475->.07500`,
+future/past fall `.16100/.18850->.08600/.06400`, and errors rise `3301->3700`.
+Wrong-key swaps fall `770->337`, but paired predictions show 627 correct
+queries destroyed for only 228 wrong queries repaired. Thus the conditional
+swap improvement comes from losing recognizable values, not binding them more
+accurately. Production BF16 reciprocity also misses its fixed tolerance and
+peak allocation reaches `1.2593x` despite only eight parameters. The paper
+should report this with direct/anchored decoupled-key and Q/K gauge failures:
+algebraically coherent address wrappers are not enough to create a learnable
+ownership code. Do not transfer or tune this family on Sudoku.
+
 ## 2026-08-15 Semantic Certificates Recover Values, Not Ownership
 
 P-GDN3-047 keeps native GDN2/FutureSeed as the predictor and adds a second

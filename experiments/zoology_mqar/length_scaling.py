@@ -71,6 +71,7 @@ GDN2_ARMS = (
     "future_seed_coherent_key_spectrum_gdn2",
     "future_seed_stable_token_address_gdn2",
     "future_seed_binding_certificate_gdn2",
+    "future_seed_canonical_address_companion_gdn2",
     "future_seed_address_payload_gauge_gdn2",
     "future_seed_producer_readout_gdn2",
 )
@@ -261,6 +262,11 @@ def build_config(
                 "experiments.zoology_mqar.binding_certificate_futureseed."
                 "ZoologyBindingCertificateFutureSeedMixer"
             )
+        elif arm == "future_seed_canonical_address_companion_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.canonical_address_companion."
+                "ZoologyCanonicalAddressCompanionFutureSeedMixer"
+            )
         elif arm == "future_seed_address_payload_gauge_gdn2":
             mixer_name = (
                 "experiments.zoology_mqar.address_payload_gauge_futureseed."
@@ -319,6 +325,14 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_canonical_address_companion_gdn2":
+        from experiments.zoology_mqar.canonical_address_companion import (
+            CanonicalAddressCompanionLanguageModel,
+        )
+
+        return CanonicalAddressCompanionLanguageModel(
+            copy.deepcopy(config.model)
+        )
     if arm == "future_seed_binding_certificate_gdn2":
         from experiments.zoology_mqar.binding_certificate_futureseed import (
             BindingCertificateLanguageModel,
@@ -744,6 +758,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_canonical_address_companion_gdn2":
+            from experiments.zoology_mqar.canonical_address_companion import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         elif arm == "future_seed_address_payload_gauge_gdn2":
             from experiments.zoology_mqar.address_payload_gauge_futureseed import (
                 load_matched_parent_state,
@@ -876,6 +896,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_binding_certificate_gdn2":
         from experiments.zoology_mqar.binding_certificate_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_canonical_address_companion_gdn2":
+        from experiments.zoology_mqar.canonical_address_companion import (
             parent_parameter_hash,
         )
 
@@ -1225,6 +1251,21 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    canonical_address_companion = None
+    if arm == "future_seed_canonical_address_companion_gdn2":
+        from experiments.zoology_mqar.canonical_address_companion import (
+            canonical_address_companion_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        canonical_address_companion = (
+            canonical_address_companion_diagnostics(
+                model,
+                diagnostic_inputs[:8].cuda(),
+            )
+        )
     address_payload_gauge = None
     if arm == "future_seed_address_payload_gauge_gdn2":
         from experiments.zoology_mqar.address_payload_gauge_futureseed import (
@@ -1349,6 +1390,8 @@ def run_arm(
         score["stable_token_address"] = stable_token_address
     if binding_certificate is not None:
         score["binding_certificate"] = binding_certificate
+    if canonical_address_companion is not None:
+        score["canonical_address_companion"] = canonical_address_companion
     if address_payload_gauge is not None:
         score["address_payload_gauge"] = address_payload_gauge
     if producer_readout is not None:

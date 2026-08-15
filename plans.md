@@ -12,6 +12,26 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-GDN3-049` Shared Canonical-Address
+Companion State is preregistered and implementation-complete pending pushed-SHA
+CUDA contract. P047 proves a companion state can recover the value set, but
+95.41% of its remaining errors are legal values assigned to the wrong key.
+P049 keeps the native GDN2 scan/state/output and native FutureSeed byte-identical
+at zero gate. A second layer-local pinned-official H4/K16/V32 scan stores the
+full native V payload under one learned 32->16 address projection shared across
+both layers and all heads; its Q and K are the same normalized projection of
+the native `(q+k)` address source. Native decay/erase are mean-reduced only for
+the companion K16 rows, and native write gate/V are retained. The model adds
+exactly 520 parameters, 2,048 transient state values/layer and one scan/layer.
+One fixed directional-MQAR L1024 control/candidate, 10ep/b32/seed123, decides
+the family. Required quality is balanced `>=.55` and `>=control+.10`, both
+directions `>=.50` and `>=control+.08`, joint `>=.06` and `>=control+.04`,
+fewer errors, and wrong-key error fraction lower by `>=.10`; cost ceilings are
+`<2.00x` time and `<1.45x` allocation. Any miss closes address projection,
+K16 size, gate, scalar gate reuse, sharing, transport and all training rescue;
+no Sudoku transfer. Report:
+`research/reports/experiments/gdn3-canonical-address-companion-mqar-20260815.md`.
+
 Current update (2026-08-15 CST): `P-GDN3-048` Reciprocal Address-Conditioned
 Payload Gauge is complete and discarded. Exact pushed/read-back source
 `97cc8f57` passes strict parent/nonzero-state/FutureSeed identity, official

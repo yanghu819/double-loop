@@ -3179,3 +3179,19 @@
 - Close scale, normalization, position, sharing, rank and duration variants.
   The decoupled-key line is bounded; move to scalable state organization or a
   different committed recurrent transition that can preserve binding identity.
+
+## 2026-08-15: Same-seed native replay is exact; binding is the dominant error
+
+- P-REPRO-001 runs two native GDN2 plus FutureSeed arms from one serialized
+  initialization with identical data, warmup and post-warm RNG reset. The
+  trained parameter hashes and all `4000` query predictions are exactly equal.
+- Balanced/future/past/joint accuracy is `.494/.454/.534/.041` in both arms,
+  and both make exactly `2024` errors. The current protocol is reproducible;
+  do not attribute cross-experiment control spread to unavoidable Triton noise.
+- Of those errors, `1546` are valid values attached to the wrong key. This is
+  `76.38%` of all failures and directly diagnoses ownership interference rather
+  than missing value content or insufficient future context.
+- Keep contemporaneous controls because different mechanisms change compile
+  and optimization trajectories, but stop spending architecture budget on
+  dense side states, Q/K wrappers or receiver residuals. The next useful test
+  must isolate committed key-value pairs inside a scalable live memory update.

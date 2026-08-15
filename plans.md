@@ -12,17 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-15 CST): `P-REPRO-001` is a one-time same-seed native
-GDN2 replay diagnostic before P-GDN3-050. Recent controls with exact matching
-initialization/data have landed from roughly `.04` to `.48` balanced, so a
-small candidate delta may be optimization bifurcation. Serialize one native
-initialization and run two sequential D128/L2/H4/K32/V32 FutureSeed arms with
-identical 10ep/b32/seed123 protocol. No parameter, model, data, objective or
-kernel changes. Pass requires balanced delta `<=.01`, directional deltas
-`<=.015`, joint delta `<=.01`, error delta `<=40`, prediction agreement
-`>=.90`, and replay-B post-warm wall `<1.25x`. A miss blocks interpretation of
-architecture deltas below `.05` and redirects to a deterministic protocol; it
-does not authorize seed/precision/duration sweeps. Report:
+Current update (2026-08-15 CST): `P-REPRO-001` same-seed native GDN2 replay is
+complete and passes every registered gate. Exact pushed/read-back source
+`2791a7f4` serialized one initialization and ran two sequential
+D128/L2/H4/K32/V32 native FutureSeed arms with identical data, warmup,
+10ep/b32/seed123 and post-warm determinism reset. Both produce balanced/future/
+past/joint `.494/.454/.534/.041`, exactly the same trained parameter hash,
+`4000/4000` identical predictions, `2024` errors and `1546` wrong-key
+valid-value swaps. Replay-B post-warm wall is `.7155x`; all integrity and cost
+gates pass. This validates the measurement protocol and identifies binding
+ownership as the dominant endpoint failure: `.763834` of errors contain a
+valid value assigned to the wrong key. P-GDN3-050 may proceed only as one
+scalable live-memory organization that gives committed key-value edits
+explicit ownership; no dense companion/QK/payload/router radius or training
+rescue. Decision SHA256 is `df8ae1c2...ae98854`. Report:
 `research/reports/experiments/native-gdn2-repro-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-049` Shared Canonical-Address

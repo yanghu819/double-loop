@@ -2174,3 +2174,22 @@ ownership-preserving tangents, Q/K alignment/gauges/frames, isotropy credit and
 stable token anchors are now bounded. The next architecture must alter live
 state organization or the committed transition so it can preserve distinct
 bindings, not add another address residual.
+
+### Native Replay Reliability And Binding Diagnosis
+
+P-REPRO-001 removes an important measurement ambiguity. Two sequential native
+GDN2 plus FutureSeed runs load one serialized initialization, use identical
+directional-MQAR data and warmup batches, and reset RNG immediately before
+training. They finish with the same trained-parameter hash, identical
+validation curves and `4000/4000` identical query predictions. Their endpoint
+balanced/future/past/joint accuracy is `.494/.454/.534/.041` in both arms.
+
+This permits strict matched architectural comparisons under the current
+pinned BF16/Triton protocol. More importantly, `1546/2024 = 76.38%` of native
+errors are valid values retrieved under the wrong key. Combined with P047's
+value-set gain and P049's failed dense canonical companion, the paper can state
+a narrow mechanistic conclusion: the unresolved problem is ownership-preserving
+binding in superposed recurrent memory, not merely more payload capacity or
+more future context. The next GDN3 claim must therefore be tested through a
+scalable live state organization with explicit pair isolation before any
+Sudoku transfer.

@@ -93,6 +93,19 @@ def copy_shared_state(
         raise AssertionError(
             f"unexpected state migration: missing={missing}, unexpected={unexpected}"
         )
+    candidate_state = candidate.state_dict()
+    shared_errors = {
+        name: float(
+            (tensor.detach().float() - candidate_state[name].detach().float())
+            .abs()
+            .max()
+            .item()
+        )
+        for name, tensor in control.state_dict().items()
+        if not torch.equal(tensor, candidate_state[name])
+    }
+    if shared_errors:
+        raise AssertionError(f"shared state migration is not exact: {shared_errors}")
     return sorted(missing)
 
 
@@ -177,6 +190,25 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
     candidate_memory: Optional[list[torch.Tensor]] = None
     pass_rows = []
     with torch.no_grad():
+        repeat_x = torch.randn(2, TOKENS, MODEL_DIM, device=device)
+        repeat_left, _diag_left, repeat_states_left, _ = capture_pass(
+            control, repeat_x, address, cell_order, None
+        )
+        repeat_right, _diag_right, repeat_states_right, _ = capture_pass(
+            control, repeat_x, address, cell_order, None
+        )
+        repeat_output_error = float(
+            (repeat_left.float() - repeat_right.float()).abs().max().item()
+        )
+        repeat_state_errors = [
+            float((left.float() - right.float()).abs().max().item())
+            for left, right in zip(repeat_states_left, repeat_states_right)
+        ]
+        if repeat_output_error != 0.0 or max(repeat_state_errors) != 0.0:
+            raise AssertionError(
+                "fixed control is not repeatable: "
+                f"output={repeat_output_error} states={repeat_state_errors}"
+            )
         for pass_idx in range(5):
             x = torch.randn(2, TOKENS, MODEL_DIM, device=device)
             control_output, _control_diag, control_states, _ = capture_pass(
@@ -191,6 +223,10 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
                     candidate_memory,
                 )
             )
+            state_errors = [
+                float((left.float() - right.float()).abs().max().item())
+                for left, right in zip(control_states, candidate_states)
+            ]
             if not torch.equal(control_output, candidate_output):
                 output_error = float(
                     (control_output.float() - candidate_output.float())
@@ -200,12 +236,8 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
                 )
                 raise AssertionError(
                     f"zero-init output identity failed at pass {pass_idx + 1}: "
-                    f"max_abs_error={output_error}"
+                    f"max_abs_error={output_error} state_errors={state_errors}"
                 )
-            state_errors = [
-                float((left.float() - right.float()).abs().max().item())
-                for left, right in zip(control_states, candidate_states)
-            ]
             if len(state_errors) != LAYERS or max(state_errors) != 0.0:
                 raise AssertionError(
                     f"zero-init state identity failed at pass {pass_idx + 1}: "
@@ -261,6 +293,8 @@ def check_zero_identity(device: torch.device) -> dict[str, Any]:
     return {
         "missing_parameters": missing,
         "parameter_delta": parameter_delta,
+        "fixed_control_repeat_output_max_abs_error": repeat_output_error,
+        "fixed_control_repeat_state_max_abs_errors": repeat_state_errors,
         "five_pass_identity": pass_rows,
         "nonzero_history_state_max_abs_error": max(nonzero_state_errors),
     }

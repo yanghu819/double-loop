@@ -141,4 +141,7 @@ science run at its first dual-model identity comparison. The checker had not
 reset the construction RNG independently for control and candidate, unlike the
 established matched-contract harnesses. R2 changes only that harness setup and
 adds the measured max error to any repeated failure; mechanism, prediction and
-all gates remain frozen.
+all gates remain frozen. R2 source `bee012a9` still found a large pass1 output
+gap, so R3 additionally proves exact shared state-dict migration, fixed-control
+self-repeatability and per-layer terminal-state errors before classifying the
+failure. This remains harness localization; no training or gate changed.

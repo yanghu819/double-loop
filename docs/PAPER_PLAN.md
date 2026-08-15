@@ -1,5 +1,25 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Canonical Companion Addresses Do Not Establish Ownership
+
+P-GDN3-049 isolates the hypothesis that P047 failed only because its semantic
+certificate reused native addresses. It keeps native GDN2/FutureSeed intact and
+adds a smaller H4/K16/V32 official companion state that stores complete native
+V under one shared learned canonical address projection. The strict contract
+proves exact parent behavior at zero gate, official-kernel provenance, full
+rank, gradients, equivariance and active state in both layers.
+
+The endpoint rejects the hypothesis. Balanced accuracy falls
+`.03700->.03075`, future/past are `.04000/.03400->.03950/.02200`, total errors
+rise `3852->3877`, and wrong-key fraction changes only
+`.058930->.056229`. All activation and cost gates pass. Thus another dense
+address domain is not equivalent to an ownership-preserving memory: values are
+still superposed and can remain detached from the queried key. Together P047
+and P049 say that the model can learn the candidate value set and can learn a
+second address state, yet neither operation establishes pair identity. Future
+work should change the organization of committed edits in live memory rather
+than add semantic payload, dense address banks or coordinate wrappers.
+
 ## 2026-08-15 Reciprocal Payload Codes Suppress Errors By Losing Retrieval
 
 P-GDN3-048 is the narrow ownership-in-payload test motivated by P047's nearly

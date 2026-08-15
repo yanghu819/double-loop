@@ -1,5 +1,26 @@
 # Lessons
 
+## 2026-08-15: A second address space does not create ownership by itself
+
+- P-GDN3-049 stores full native V in an independent H4/K16/V32 official GDN2
+  state under a shared learned canonical address, while leaving native GDN2 and
+  FutureSeed unchanged.
+- The mechanism is genuinely live: both states, all eight gates and the rank-16
+  projection activate; address, output and state vary across tokens and boards.
+- Quality still falls: balanced accuracy is `.03700->.03075`, errors are
+  `3852->3877`, and wrong-key fraction changes only `.058930->.056229`.
+- This distinguishes address capacity from ownership organization. Re-encoding
+  the same values in another dense matrix still superposes multiple bindings;
+  it does not make a value belong uniquely to its key.
+- Preserve contemporaneous controls. The same native initialization/data can
+  land on very different absolute endpoints under BF16/Triton, so only the
+  within-run control/candidate comparison is a valid decision.
+- Preserve operator mistakes as evidence. Here an abort was written after
+  natural completion, then retracted because training RNG is reset after
+  warmup and before `Trainer`; the score is valid and was not rerun.
+- Close companion K/projection/gate/sharing/transport variants. The next test
+  must change live edit organization, not append another dense state bank.
+
 ## 2026-08-15: Lower wrong-key fraction can mean the value code stopped working
 
 - P-GDN3-048 encodes V with native `k` and decodes with native `q`, preserving

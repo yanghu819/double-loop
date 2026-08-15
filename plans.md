@@ -13,23 +13,21 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-049` Shared Canonical-Address
-Companion State is preregistered and implementation-complete pending pushed-SHA
-CUDA contract. P047 proves a companion state can recover the value set, but
-95.41% of its remaining errors are legal values assigned to the wrong key.
-P049 keeps the native GDN2 scan/state/output and native FutureSeed byte-identical
-at zero gate. A second layer-local pinned-official H4/K16/V32 scan stores the
-full native V payload under one learned 32->16 address projection shared across
-both layers and all heads; its Q and K are the same normalized projection of
-the native `(q+k)` address source. Native decay/erase are mean-reduced only for
-the companion K16 rows, and native write gate/V are retained. The model adds
-exactly 520 parameters, 2,048 transient state values/layer and one scan/layer.
-One fixed directional-MQAR L1024 control/candidate, 10ep/b32/seed123, decides
-the family. Required quality is balanced `>=.55` and `>=control+.10`, both
-directions `>=.50` and `>=control+.08`, joint `>=.06` and `>=control+.04`,
-fewer errors, and wrong-key error fraction lower by `>=.10`; cost ceilings are
-`<2.00x` time and `<1.45x` allocation. Any miss closes address projection,
-K16 size, gate, scalar gate reuse, sharing, transport and all training rescue;
-no Sudoku transfer. Report:
+Companion State is complete and discarded. Exact pushed/read-back source
+`3088b0da` passes the strict contract: parent and nonzero incoming main-state
+identity are bit exact, all four official `ChunkGDN2FunctionBackward` paths
+are present, the shared projection has rank 16, all eight read gates receive
+gradient, and head permutation/state-dependency checks pass. The endpoint
+activates both companion states and all gates, but control/candidate balanced,
+future, past and joint accuracy is `.03700/.04000/.03400/0` versus
+`.03075/.03950/.02200/0`; total errors rise `3852->3877`, while wrong-key
+fraction barely changes `.058930->.056229`. Cost gates pass at
+`1.1004/1.1087/1.3982/1.2777x` for elapsed/post-warm/warmed/allocation.
+An operator abort was written 1.2 seconds after natural completion on a false
+RNG concern; the preserved resolution records that `run_arm` resets RNG after
+warmup and before `Trainer`, so the completed score remains valid. Close the
+secondary canonical-address bank and every nearby/training rescue; no Sudoku
+transfer. Report:
 `research/reports/experiments/gdn3-canonical-address-companion-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-048` Reciprocal Address-Conditioned
@@ -1417,6 +1415,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-GDN3-049 | complete; discarded | P047 recovers the value set but leaves 95.41% of its errors as wrong-key swaps; ownership might require an independent canonical address domain that keeps full native V. | Preserve native GDN2/FutureSeed. Add one layer-local H4/K16/V32 official companion scan whose shared rank-16 address is a normalized projection of native `(q+k)` and whose payload is full native V. Exactly +520 parameters and +2,048 transient state values/layer. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `3088b0da`; strict CUDA contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced/future/past/joint `.03700/.04000/.03400/0 -> .03075/.03950/.02200/0`; errors `3852->3877`; swaps `227->218`; warmed/allocation `1.3982/1.2777x`. | Discarded. Both companion states, all eight gates and the rank-16 projection activate, but every quality route fails and ownership errors are unchanged. Post-completion operator retraction preserves the valid natural endpoint. No Sudoku transfer or address/K/gate/sharing/transport/training rescue; score SHA `c31adfaa...8f1c`. |
 | P-GDN3-048 | complete; discarded | P047 recovers the value set but leaves 95.41% of errors as wrong-key swaps. Ownership may need to be encoded in the primary V payload rather than appended as semantic evidence. | Keep native Q/K/g/b/w, one K32xV32 state, one official scan and native FutureSeed. Per layer/head learn one zero-init scalar `s`; write `v*exp(s*k_hat)` and decode readout by `exp(-s*q_hat)`. Exactly +8 parameters/model, zero state/scan delta, bounded factors `[.5,2]`. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `97cc8f57`; strict CUDA contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced/future/past/joint `.17475/.16100/.18850/0 -> .07500/.08600/.06400/0`; errors `3301->3700`; swaps `770->337`; warmed/allocation `1.2047/1.2593x`. | Discarded. Conditional swap fraction falls `.233263->.091081` only through broad retrieval damage; production BF16 reciprocity and allocation gates also fail. No Sudoku transfer or radius/map/source/precision/sharing/training rescue; score SHA `793f31de...f1d51`. |
 | P-GDN3-047 | complete; discarded | P046's stable token address improves value-set retrieval but creates heavy correct/wrong churn and increases wrong-key swaps. The missing information may be an explicit certificate of which semantic key actually owns a retrieved state row, rather than another address transform or value-capacity bank. | Preserve the native main scan/state/output and native FutureSeed. Per layer, run one layer-local pinned-official certificate scan with exactly the same native Q/K/g/b/w but RMS-normalized token embedding as V payload. Add its per-token/head RMS-normalized read through one zero-init scalar/head before the unchanged output norm/projection. Exactly +8 parameters/model, +4,096 transient state values/layer and +1 scan/layer; no certificate FutureSeed, router, task rule or selector. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `abb8427c`; strict CUDA contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced/future/past/joint `.17475/.16100/.18850/0 -> .48300/.48650/.47950/.04100`; errors `3301->2068`; swaps `770->1973`; warmed/allocation `1.3207/1.2430x`. | Discarded. Semantic companion state strongly improves value-set retrieval but leaves `95.41%` of remaining errors as wrong-key swaps and misses absolute gates. No Sudoku transfer or nearby rescue; score SHA `d593a01f...66426`. |
 | P-GDN3-046 | complete; discarded | P003's shared stable address is the only positive address intervention and never received its registered generic-retrieval transfer. Same semantic keys at different MQAR positions should benefit from a position-invariant namespace while coherent erase/write ownership stays native. | One zero-init shared `D128->H4*K32` projection of RMS-normalized token embedding, excluding position; add the same residual to native Q/K at both layers before unchanged in-kernel normalization. +16,384 params, zero state/scans. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `b5a791db`; strict R4 contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced `.36625->.42450`, future `.35150->.43350`, past `.38100->.41550`, joint `.002->.012`, errors `2535->2302`; swaps `1574->1717`; warmed step `1.37958x`. | Discarded. Stable token identity helps value-set retrieval but worsens wrong-key binding and misses closure/cost gates. No Sudoku transfer or nearby rescue. |

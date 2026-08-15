@@ -50,3 +50,10 @@ GDN research branch.
 ## 5. Result
 
 Pending exact pushed-source GPU diagnostic.
+
+The first launch attempt stopped before run-directory creation or model load
+because the read-only external checkout contained untracked Python bytecode
+created by P059. The corrected launcher still rejects every tracked source
+change, while source hashes remain enforced by the model loader, and disables
+future bytecode writes. This is an orchestration-only pre-model event, not a
+science result.

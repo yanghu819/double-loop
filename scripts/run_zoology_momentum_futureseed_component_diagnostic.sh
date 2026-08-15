@@ -22,6 +22,7 @@ export PERSIST_ROOT PYTHON_BIN ZOOLOGY_ROOT ZOOLOGY_SHA FLA_SOURCE_ROOT
 export FLA_EXPECTED_SOURCE_SHA FLA_DISABLE_BACKEND_DISPATCH FLA_CONV_BACKEND
 export MDN_REPO_ROOT MDN_FLA_ROOT MDN_EXPECTED_SHA
 export WANDB_MODE=disabled
+export PYTHONDONTWRITEBYTECODE=1
 
 VISIBLE_GPU="$(nvidia-smi --query-gpu=index,uuid,name --format=csv,noheader)"
 [[ "$VISIBLE_GPU" == "0, $EXPECTED_GPU_UUID, $EXPECTED_GPU_NAME" ]]
@@ -29,7 +30,7 @@ VISIBLE_GPU="$(nvidia-smi --query-gpu=index,uuid,name --format=csv,noheader)"
 [[ "$(git -C "$ZOOLOGY_ROOT" rev-parse HEAD)" == "$ZOOLOGY_SHA" ]]
 [[ -z "$(git -C "$ZOOLOGY_ROOT" status --porcelain)" ]]
 [[ "$(git -C "$MDN_REPO_ROOT" rev-parse HEAD)" == "$MDN_EXPECTED_SHA" ]]
-[[ -z "$(git -C "$MDN_REPO_ROOT" status --porcelain)" ]]
+[[ -z "$(git -C "$MDN_REPO_ROOT" status --porcelain --untracked-files=no)" ]]
 if git -C "$REPO_ROOT" symbolic-ref -q HEAD >/dev/null; then
   printf 'P-DIAG-MOMFS-001 requires a detached source worktree.\n' >&2
   exit 8

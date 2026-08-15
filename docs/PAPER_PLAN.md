@@ -2397,3 +2397,20 @@ not recoverable by independently improving write-key separability. The paper
 should use this ceiling to close post-hoc orthogonalization and motivate an
 end-to-end ownership transition or a distinct loop-convergence mechanism that
 preserves the exact native path.
+
+## Local Binding Before Global Recurrent Transport
+
+The latest ownership evidence motivates one architecture-level test rather
+than another key wrapper. Native L1024 errors are dominated by valid values
+from the adjacent write owner, and deleting that competing layer-0 write
+repairs the queried binding while destroying the competitor. Direct key
+decoupling and exact dual bases fail because query, erase, write and read
+coordinates are co-adapted.
+
+P-GDN3-055 preserves the entire native GDN2+FutureSeed path and adds a fixed
+128-token causal SDPA branch at each layer. The intended division of labor is
+local pair formation followed by global linear-recurrent transport. It is
+trained from scratch on directional MQAR L1024 and must reduce wrong-owner
+swaps at materially higher absolute quality before any Sudoku transfer. A
+failure closes fixed-block local-attention hybrids rather than inviting a
+window or optimization sweep.

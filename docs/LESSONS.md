@@ -3382,3 +3382,16 @@
   GDN3 must acquire ownership end to end while retaining the native learning
   path, or improve generic loop convergence; it cannot bolt an orthogonal
   address correction onto a mature state.
+
+## 2026-08-16: Test Pair Formation Before More Key Surgery
+
+- The decoupled-key family is bounded: direct, anchored, biorthogonal, exact
+  dual, independent-bank and block-RLS variants all damage the jointly learned
+  query/erase/write/read system.
+- The causal intervention localizes the dominant failure to layer-0 write
+  superposition. A viable successor should preserve the exact native global
+  trajectory while creating pair identity before that information is merged.
+- P-GDN3-055 therefore tests one fixed local-binding/global-memory hybrid from
+  scratch. It is a generic scalable architecture test, not an MQAR selector or
+  a Sudoku rule. Kill the family on a quality or cost miss; do not sweep local
+  windows, gates, heads or training settings.

@@ -12,6 +12,22 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-FS2-012` Read-Only Dual-Plane FutureSeed
+is registered as the next single high-information arm. The hypothesis is that
+native FS destroys binding by placing producer future evidence and receiver
+causal writes in the same mutable KxV state. The candidate retains the full
+producer terminal state read-only, starts the receiver's official GDN2 live
+state from zero, and combines receiver-query reads from both planes before the
+unchanged official output norm/projection. It reuses the native FutureSeed
+gate: zero new parameters, zero new recurrent transitions, no added scan, and
+one bounded 4,096-value side matrix. This is not producer-native P-FS2-010,
+training-only P-FS2-011, write-controller P007 or basis-rotation P-FS3-004;
+P-FS2-006 never passed integrity and produced no quality verdict. Run exactly
+one from-scratch D128/L2 directional-MQAR L1024 candidate against frozen
+P-REPRO-001, with strict causal edge-off attribution, binding-error and
+`1.25x/1.10x` time/allocation gates. No control rerun or nearby rescue.
+Report: `research/reports/experiments/futureseed2-readonly-dual-plane-mqar-20260815.md`.
+
 Current update (2026-08-15 CST): `P-GDN3-050` Sparse Committed-Delta Pair
 Slots is complete and discarded. Exact pushed/read-back source `faef909d`
 passes the strict A100-80GB contract: parent output and nonzero incoming state

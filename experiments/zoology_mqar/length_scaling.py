@@ -75,6 +75,7 @@ GDN2_ARMS = (
     "future_seed_address_payload_gauge_gdn2",
     "future_seed_producer_readout_gdn2",
     "future_seed_sparse_delta_slot_gdn2",
+    "future_seed_readonly_dual_plane_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -278,6 +279,11 @@ def build_config(
                 "experiments.zoology_mqar.gdn2_sparse_delta_slots."
                 "ZoologySparseDeltaSlotFutureSeedMixer"
             )
+        elif arm == "future_seed_readonly_dual_plane_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.readonly_dual_plane_futureseed."
+                "ZoologyReadOnlyDualPlaneFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -331,6 +337,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_readonly_dual_plane_gdn2":
+        from experiments.zoology_mqar.readonly_dual_plane_futureseed import (
+            ReadOnlyDualPlaneLanguageModel,
+        )
+
+        return ReadOnlyDualPlaneLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_sparse_delta_slot_gdn2":
         from experiments.zoology_mqar.gdn2_sparse_delta_slots import (
             SparseDeltaSlotLanguageModel,
@@ -788,6 +800,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_readonly_dual_plane_gdn2":
+            from experiments.zoology_mqar.readonly_dual_plane_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -932,6 +950,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_sparse_delta_slot_gdn2":
         from experiments.zoology_mqar.gdn2_sparse_delta_slots import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_readonly_dual_plane_gdn2":
+        from experiments.zoology_mqar.readonly_dual_plane_futureseed import (
             parent_parameter_hash,
         )
 
@@ -1319,6 +1343,9 @@ def run_arm(
     producer_readout = None
     producer_readout_edge_off = None
     producer_readout_edge_off_cases = None
+    readonly_dual_plane = None
+    readonly_dual_plane_edge_off = None
+    readonly_dual_plane_edge_off_cases = None
     diagnostic_extra_wall_sec = 0.0
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
@@ -1342,6 +1369,32 @@ def run_arm(
             )
         finally:
             model.set_producer_readout_enabled(True)
+        diagnostic_extra_wall_sec = time.perf_counter() - diagnostic_started
+    if arm == "future_seed_readonly_dual_plane_gdn2":
+        from experiments.zoology_mqar.readonly_dual_plane_futureseed import (
+            readonly_dual_plane_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        diagnostic_started = time.perf_counter()
+        readonly_dual_plane = readonly_dual_plane_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
+        model.set_readonly_enabled(False)
+        try:
+            (
+                readonly_dual_plane_edge_off,
+                readonly_dual_plane_edge_off_cases,
+            ) = evaluate(
+                model,
+                test_dataloader,
+                sequence_length=sequence_length,
+            )
+        finally:
+            model.set_readonly_enabled(True)
         diagnostic_extra_wall_sec = time.perf_counter() - diagnostic_started
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
@@ -1440,6 +1493,14 @@ def run_arm(
         score["producer_readout_diagnostic_extra_wall_sec"] = (
             diagnostic_extra_wall_sec
         )
+    if readonly_dual_plane is not None:
+        score["readonly_dual_plane"] = readonly_dual_plane
+        score["readonly_dual_plane_edge_off_metrics"] = (
+            readonly_dual_plane_edge_off
+        )
+        score["readonly_dual_plane_diagnostic_extra_wall_sec"] = (
+            diagnostic_extra_wall_sec
+        )
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",
@@ -1491,6 +1552,14 @@ def run_arm(
         (arm_dir / "edge_off_cases.json").write_text(
             json.dumps(
                 producer_readout_edge_off_cases,
+                separators=(",", ":"),
+            )
+            + "\n"
+        )
+    if readonly_dual_plane_edge_off_cases is not None:
+        (arm_dir / "readonly_edge_off_cases.json").write_text(
+            json.dumps(
+                readonly_dual_plane_edge_off_cases,
                 separators=(",", ":"),
             )
             + "\n"

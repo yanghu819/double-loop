@@ -28,8 +28,10 @@ mkdir -p "$(dirname "$MDN_REPO_ROOT")"
 if [[ ! -d "$MDN_REPO_ROOT/.git" ]]; then
   git clone --filter=blob:none --no-checkout "$MDN_REPO_URL" "$MDN_REPO_ROOT"
 fi
-git -C "$MDN_REPO_ROOT" fetch --depth=1 origin "$MDN_EXPECTED_SHA"
-git -C "$MDN_REPO_ROOT" checkout --detach --force "$MDN_EXPECTED_SHA"
+if [[ "$(git -C "$MDN_REPO_ROOT" rev-parse HEAD 2>/dev/null || true)" != "$MDN_EXPECTED_SHA" ]]; then
+  git -C "$MDN_REPO_ROOT" fetch --depth=1 origin "$MDN_EXPECTED_SHA"
+  git -C "$MDN_REPO_ROOT" checkout --detach --force "$MDN_EXPECTED_SHA"
+fi
 [[ "$(git -C "$MDN_REPO_ROOT" rev-parse HEAD)" == "$MDN_EXPECTED_SHA" ]]
 [[ -z "$(git -C "$MDN_REPO_ROOT" status --porcelain)" ]]
 

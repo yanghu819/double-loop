@@ -30,6 +30,7 @@ from experiments.zoology_mqar.momentum_futureseed import (
     ZoologyMomentumDeltaFutureSeedMixer,
     load_external_momentum_layer,
     load_matched_parent_state,
+    momentum_fla_compatibility,
 )
 from scripts.check_zoology_contractive_dplr import (
     backward_names,
@@ -115,6 +116,15 @@ def main() -> None:
         raise RuntimeError(f"Unexpected GPU: {gpu_uuid}, {gpu_name}")
 
     layer_class = load_external_momentum_layer()
+    fla_compatibility = momentum_fla_compatibility()
+    if (
+        fla_compatibility["missing_required_symbols"]
+        or not fla_compatibility["injected_use_cuda_graph"]
+        or fla_compatibility["use_cuda_graph"]
+    ):
+        raise RuntimeError(
+            f"Unexpected Momentum FLA compatibility state: {fla_compatibility}"
+        )
     repo_root = Path(os.environ["MDN_REPO_ROOT"]).resolve()
     fla_root = Path(os.environ["MDN_FLA_ROOT"]).resolve()
     if subprocess.check_output(
@@ -344,6 +354,7 @@ def main() -> None:
             "source_hashes": source_hashes,
             "redistributed_source": False,
         },
+        "host_fla_compatibility": fla_compatibility,
         "data_hashes": data_hashes,
         "parameters": {
             "native": native_parameters,

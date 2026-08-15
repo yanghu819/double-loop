@@ -34,6 +34,11 @@ task-specific logic.
   and fused recurrent kernel.
 - Current pinned FLA remains the host package for shared modules and cache;
   only the external momentum layer and operator namespace is added.
+- The pinned host predates the external operator's uppercase
+  `USE_CUDA_GRAPH` scheduling export. A contract-audited compatibility bridge
+  supplies its upstream default value `False`; every other imported utility
+  must already exist in the pinned host. This does not alter recurrence math,
+  gates, kernel source, data, initialization, or any registered threshold.
 - Candidate: D128/L2/H4/K32/V32, native state-and-momentum FutureSeed, chunk
   training, directional MQAR L1024, 10 epochs, batch32, seed123.
 - The frozen P-REPRO initialization is loaded exactly into every same-name,

@@ -26,6 +26,7 @@ EXPECTED_CHUNK_SHA256 = (
 EXPECTED_RECURRENT_SHA256 = (
     "19f58968d5c0c967f75ceca56cbed5e164109e410a254ad000170ec9d1c059d4"
 )
+EXPECTED_HOST_FLA_SHA = "9c8e42e762fce087c27b673af4922795d9edb85e"
 MODEL_HEADS = 4
 HEAD_DIM = 32
 STATE_COMPONENTS = 2
@@ -33,6 +34,7 @@ EXPECTED_STATE_VALUES_PER_LAYER = (
     STATE_COMPONENTS * MODEL_HEADS * HEAD_DIM * HEAD_DIM
 )
 EXPECTED_PARAMETER_DELTA_VS_GDN2 = -61_912
+_FLA_COMPATIBILITY: Optional[dict[str, Any]] = None
 
 
 def _sha256(path: Path) -> str:
@@ -51,6 +53,58 @@ def _append_package_path(package_name: str, path: Path) -> None:
     package_path = str(path.resolve())
     if package_path not in package.__path__:
         package.__path__.append(package_path)
+
+
+def _install_fla_compatibility() -> dict[str, Any]:
+    """Bridge one newer FLA scheduling flag without changing kernel math."""
+    global _FLA_COMPATIBILITY
+    if _FLA_COMPATIBILITY is not None:
+        return dict(_FLA_COMPATIBILITY)
+
+    if os.environ.get("FLA_EXPECTED_SOURCE_SHA") != EXPECTED_HOST_FLA_SHA:
+        raise RuntimeError("Pinned host FLA SHA was not asserted")
+    if os.environ.get("FLA_USE_CUDA_GRAPH", "0") != "0":
+        raise RuntimeError("P-GDN3-059 fixes FLA_USE_CUDA_GRAPH=0")
+
+    host_utils = importlib.import_module("fla.utils")
+    host_path = Path(inspect.getfile(host_utils)).resolve()
+    host_root = Path(os.environ["FLA_SOURCE_ROOT"]).resolve()
+    if not host_path.is_relative_to(host_root):
+        raise RuntimeError(f"Unexpected host FLA utils module: {host_path}")
+
+    required = {
+        "IS_NVIDIA_HOPPER",
+        "autotune_cache_kwargs",
+        "check_shared_mem",
+        "is_tf32_supported",
+        "input_guard",
+        "autocast_custom_bwd",
+        "autocast_custom_fwd",
+    }
+    missing = sorted(name for name in required if not hasattr(host_utils, name))
+    if missing:
+        raise RuntimeError(f"Pinned host FLA lacks required utilities: {missing}")
+
+    injected = not hasattr(host_utils, "USE_CUDA_GRAPH")
+    if injected:
+        host_utils.USE_CUDA_GRAPH = False
+    if host_utils.USE_CUDA_GRAPH is not False:
+        raise RuntimeError("Momentum kernel requires disabled CUDA graph scheduling")
+
+    _FLA_COMPATIBILITY = {
+        "host_utils_path": str(host_path),
+        "host_fla_sha": EXPECTED_HOST_FLA_SHA,
+        "missing_required_symbols": missing,
+        "injected_use_cuda_graph": injected,
+        "use_cuda_graph": bool(host_utils.USE_CUDA_GRAPH),
+    }
+    return dict(_FLA_COMPATIBILITY)
+
+
+def momentum_fla_compatibility() -> dict[str, Any]:
+    if _FLA_COMPATIBILITY is None:
+        raise RuntimeError("Momentum FLA compatibility bridge is not installed")
+    return dict(_FLA_COMPATIBILITY)
 
 
 def load_external_momentum_layer():
@@ -77,6 +131,7 @@ def load_external_momentum_layer():
         if not path.is_file() or _sha256(path) != expected:
             raise RuntimeError(f"Momentum DeltaNet source drifted: {path}")
 
+    _install_fla_compatibility()
     _append_package_path("fla.layers", fla_root / "fla" / "layers")
     _append_package_path("fla.ops", fla_root / "fla" / "ops")
     importlib.invalidate_caches()

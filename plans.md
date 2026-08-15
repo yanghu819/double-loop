@@ -12,6 +12,25 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-GDN3-058` Bidirectional Cycle-Consistency
+Memory is preregistered as the sole successor. Frozen L1024 errors are mostly
+valid values returned for the adjacent write owner; P057 confirms that a local
+pair transform damages the co-adapted native path instead of creating
+instance-specific ownership. P058 therefore leaves the native GDN2 write and
+state exact, adds a reverse value-to-key official GDN2 state, reconstructs an
+owner key from each native candidate value, and uses a zero-init per-head gate
+to reread the unchanged main state with the query-minus-reconstructed-owner
+residual. Both main and reverse terminal states receive native FutureSeed.
+The fixed D128/L2/H4/K32/V32 candidate adds exactly eight parameters, one
+K32xV32 reverse state per layer and two official scans beyond native. It will
+run once for 10 epochs/batch32/seed123 against the frozen P-REPRO control after
+a strict single-A100 identity/provenance/gradient/causality contract. Quality
+requires balanced `>=.65` and `+.10`, both directions `>=.62`, joint `>=.15`
+and `+.10`, errors `-20%`, and swap fraction `-.10`; cost ceilings are `3.5x`
+time and `2x` allocation. Any miss closes cycle memory without gate, reverse
+decay/state, iteration, training or Sudoku rescue. Report:
+`research/reports/experiments/gdn3-cycle-consistency-memory-mqar-20260816.md`.
+
 Current update (2026-08-16 CST): `P-GDN3-057` Raven/GDN Pair-Event Encoder is
 complete and discarded. Exact pushed/read-back source `098b373` passes the
 strict single-A100 contract: two pinned-official GDN2 backwards, three Triton
@@ -1664,6 +1683,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-GDN3-058 | preregistered | A native candidate value is often present but attached to the adjacent write owner. A reverse value-to-key memory can expose this owner mismatch without replacing the co-adapted main address/write/read path. | Keep native GDN2 main state/update exact. Add one reverse official GDN2 K32xV32 state/layer that stores normalized key under value coordinates; query it with the native candidate, add zero-gated query-minus-reconstructed-owner residual, then reread the unchanged main state. Native FutureSeed transports both states. Exactly +8 params, +4,096 state/layer, three official scans/layer. | Sole A10080 CUDA index0; exact pushed source and strict contract required. | contract then one candidate-only 10ep/b32/seed123 L1024 run | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 cycle paths and dual FS active; time<3.5x, alloc<2x. | Pending. Any integrity/activation/quality/cost miss closes the whole cycle-memory family without rescue. |
 | P-GDN3-057 | discarded | Ownership must be formed as a joint local event before the first native live-state commit; post-GDN local residuals and additive side memories are too late. | Per layer, rank64 multiplicative current/previous token-shift encoder with zero per-head gate before unchanged native GDN2. Native state/FutureSeed, one official scan, +49,160 params, zero state. | Sole A10080 CUDA index0; exact pushed source and strict contract required. | contract then one candidate-only 10ep/b32/seed123 L1024 run | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 paths and bounded pair deltas active; time<1.50x, alloc<1.25x. | Strict contract passes, but balanced `.494->.02475`, joint `.041->0`, errors `2024->3901`; 1,848 correct queries become other wrong values. Event RMS is bounded but board variation is effectively zero. Elapsed/post-warm `1.581/1.574x` also fail. Close the complete one-shift multiplicative pair-encoder family without rescue. |
 | P-GDN3-056 | complete; discarded | Native values survive but adjacent write ownership merges in layer0. Decouple role-time evidence in a bounded companion state instead of splitting the co-adapted main erase/write keys. | Preserve native GDN2+FutureSeed. Shared token-event read address plus one initial-identity learned causal Conv4 eligibility write address; same native V/g/b/w; one companion official K32xV32 state/layer with its own cross-layer seed. +16,912 params and +4,096 state/layer. | Sole A10080 CUDA index0; exact pushed/read-back source `29688a1`; strict contract passed. | contract plus one candidate-only 10ep/b32/seed123 L1024 run complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all paths/history/seed active; time<2.25x, alloc<1.75x. | Rejected: balanced `.14825`, joint0, errors3407. Swaps fall1546->639 only through broad failure; layer1 companion output is2.661x native RMS. Cost passes. Close entire family; no rescue/Sudoku transfer. |
 | P-GDN3-055 | complete; discarded | Adjacent writes merge in layer 0, while post-hoc key geometry changes break the co-adapted read/erase/write system. A fixed local causal path may form pair identity before the next unchanged GDN2 layer transports it globally. | Keep native GDN2+FutureSeed exact. Add one zero-gated H4/D32 causal FlashAttention path over non-overlapping 128-token blocks/layer, then residual merge. D128/L2, +131,080 params, zero persistent state, one fixed 10ep/b32/seed123 L1024 candidate from frozen init. | Sole A10080 CUDA index0; exact pushed/read-back source `89764e9`; strict contract passed. | contract plus one candidate complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 gates active; time<2.25x, alloc<1.75x. | Rejected: balanced `.4905`, joint `.046`, errors2038, swaps1822; only6/8 gates cross floor. Cost passes. Close fixed-block local binding; no rescue or Sudoku transfer. |

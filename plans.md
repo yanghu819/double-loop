@@ -28,6 +28,17 @@ than resolving ownership. Close bank/read/QK/init/training rescue; no Sudoku
 transfer. Report:
 `research/reports/experiments/gdn3-redundant-independent-address-mqar-20260815.md`.
 
+Current update (2026-08-15 CST): `P-DIAG-DUAL-001` is the sole next decision.
+It freezes P-REPRO-001 and tests a non-deployable layer-0 upper bound: native
+queries and erase keys remain unchanged, while the four known owner writes are
+placed on the exact dual basis of the four owner-query directions through one
+official DPLR scan. A tied-DPLR arm first proves algebraic replay stability.
+The route opens only if balanced improves at least `.15`, errors fall `20%`,
+at least half of wrong-key swaps repair and at least `80%` of native-correct
+owners survive. A miss closes direct dual-address orthogonalization; no ridge,
+layer, scale, key or training rescue. Report:
+`research/reports/experiments/gdn3-dual-address-ceiling-diagnostic-20260815.md`.
+
 Current update (2026-08-15 CST): `P-DIAG-EDIT-001` is complete and opens one
 separable-state route. Exact source `2b7fef75` passes the frozen baseline at
 `3990/4000` agreement and `.4945/.4545/.5345/.041` balanced/future/past/joint.

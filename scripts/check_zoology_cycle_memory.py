@@ -441,17 +441,27 @@ def main() -> None:
     )
 
     candidate.eval()
+    hidden_suffix = hidden.clone()
+    hidden_suffix[:, 128:] = torch.randn(
+        hidden_suffix[:, 128:].shape,
+        generator=generator,
+        device="cuda",
+        dtype=hidden_suffix.dtype,
+    )
     with torch.no_grad():
-        suffix_inputs = inputs.clone()
-        suffix_inputs[:, 700:] = torch.randint(
-            0, 256, suffix_inputs[:, 700:].shape,
-            generator=generator, device="cuda",
+        causal_a, _main_a, _reverse_a = mixer.forward_with_cycle_states(
+            hidden,
+            initial_state=main_incoming,
+            reverse_initial_state=reverse_incoming.detach(),
         )
-        prefix_a = candidate(inputs)[:, :700]
-        prefix_b = candidate(suffix_inputs)[:, :700]
-    causal_prefix_max_diff = _max_abs(prefix_a, prefix_b)
+        causal_b, _main_b, _reverse_b = mixer.forward_with_cycle_states(
+            hidden_suffix,
+            initial_state=main_incoming,
+            reverse_initial_state=reverse_incoming.detach(),
+        )
+    causal_prefix_max_diff = _max_abs(causal_a[:, :128], causal_b[:, :128])
     if causal_prefix_max_diff != 0.0:
-        raise RuntimeError("Cycle-memory path leaked future tokens")
+        raise RuntimeError("Cycle-memory token scan leaked future tokens")
 
     batch, length = 2, 128
     q = torch.randn(batch, length, MODEL_HEADS, HEAD_DIM, generator=generator, device="cuda")

@@ -77,7 +77,8 @@ Exact pushed source in a clean detached worktree must prove:
    main terminal state and every parent gradient exactly;
 5. all eight zero gates receive finite nonzero gradients, and opened gates
    materially affect logits and depend on the reverse incoming state;
-6. exact causality and head-permutation equivariance; and
+6. exact within-layer token-scan causality conditioned on fixed incoming main
+   and reverse FutureSeed states, plus head-permutation equivariance; and
 7. frozen data, initialization, source and artifact hashes remain exact.
 
 ## 6. Fixed Science Gate
@@ -129,6 +130,16 @@ scan again receives the exact native joint output/state gradient; once open,
 the owner residual and reverse state remain differentiable. Scan/state/parameter
 counts and every registered science or cost gate are unchanged. This is a
 pre-science implementation correction, not a quality rescue.
+
+The third contract attempt reached the causality check, where the checker
+perturbed suffix tokens and demanded identical full-model prefix logits. That
+condition is invalid for both candidate and native FutureSeed: layer 1 is
+intentionally initialized by layer 0's terminal state, which summarizes the
+whole sequence. The corrected contract holds both incoming FutureSeed states
+fixed and perturbs only the suffix of one layer's hidden sequence; its three
+official recurrent scans must then preserve the prefix exactly. This tests for
+an illicit noncausal token scan without rejecting the registered cross-layer
+FutureSeed mechanism. No model or endpoint setting changed.
 
 ## 9. Decision
 

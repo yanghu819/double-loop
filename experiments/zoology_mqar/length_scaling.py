@@ -76,6 +76,7 @@ GDN2_ARMS = (
     "future_seed_producer_readout_gdn2",
     "future_seed_sparse_delta_slot_gdn2",
     "future_seed_readonly_dual_plane_gdn2",
+    "future_seed_lagged_commit_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -284,6 +285,11 @@ def build_config(
                 "experiments.zoology_mqar.readonly_dual_plane_futureseed."
                 "ZoologyReadOnlyDualPlaneFutureSeedMixer"
             )
+        elif arm == "future_seed_lagged_commit_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.lagged_commit_futureseed."
+                "ZoologyLaggedCommitFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -337,6 +343,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_lagged_commit_gdn2":
+        from experiments.zoology_mqar.lagged_commit_futureseed import (
+            LaggedCommitLanguageModel,
+        )
+
+        return LaggedCommitLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_readonly_dual_plane_gdn2":
         from experiments.zoology_mqar.readonly_dual_plane_futureseed import (
             ReadOnlyDualPlaneLanguageModel,
@@ -806,6 +818,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_lagged_commit_gdn2":
+            from experiments.zoology_mqar.lagged_commit_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -956,6 +974,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_readonly_dual_plane_gdn2":
         from experiments.zoology_mqar.readonly_dual_plane_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_lagged_commit_gdn2":
+        from experiments.zoology_mqar.lagged_commit_futureseed import (
             parent_parameter_hash,
         )
 
@@ -1346,6 +1370,9 @@ def run_arm(
     readonly_dual_plane = None
     readonly_dual_plane_edge_off = None
     readonly_dual_plane_edge_off_cases = None
+    lagged_commit = None
+    lagged_commit_edge_off = None
+    lagged_commit_edge_off_cases = None
     diagnostic_extra_wall_sec = 0.0
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
@@ -1395,6 +1422,29 @@ def run_arm(
             )
         finally:
             model.set_readonly_enabled(True)
+        diagnostic_extra_wall_sec = time.perf_counter() - diagnostic_started
+    if arm == "future_seed_lagged_commit_gdn2":
+        from experiments.zoology_mqar.lagged_commit_futureseed import (
+            lagged_commit_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        diagnostic_started = time.perf_counter()
+        lagged_commit = lagged_commit_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
+        model.set_lag_enabled(False)
+        try:
+            lagged_commit_edge_off, lagged_commit_edge_off_cases = evaluate(
+                model,
+                test_dataloader,
+                sequence_length=sequence_length,
+            )
+        finally:
+            model.set_lag_enabled(True)
         diagnostic_extra_wall_sec = time.perf_counter() - diagnostic_started
     benchmark = benchmark_training_step(model, fixed_batch)
     trained_parameter_hash = parameter_hash(model)
@@ -1501,6 +1551,12 @@ def run_arm(
         score["readonly_dual_plane_diagnostic_extra_wall_sec"] = (
             diagnostic_extra_wall_sec
         )
+    if lagged_commit is not None:
+        score["lagged_commit"] = lagged_commit
+        score["lagged_commit_edge_off_metrics"] = lagged_commit_edge_off
+        score["lagged_commit_diagnostic_extra_wall_sec"] = (
+            diagnostic_extra_wall_sec
+        )
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",
@@ -1560,6 +1616,14 @@ def run_arm(
         (arm_dir / "readonly_edge_off_cases.json").write_text(
             json.dumps(
                 readonly_dual_plane_edge_off_cases,
+                separators=(",", ":"),
+            )
+            + "\n"
+        )
+    if lagged_commit_edge_off_cases is not None:
+        (arm_dir / "lag_edge_off_cases.json").write_text(
+            json.dumps(
+                lagged_commit_edge_off_cases,
                 separators=(",", ":"),
             )
             + "\n"

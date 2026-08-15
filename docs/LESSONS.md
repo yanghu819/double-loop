@@ -3214,3 +3214,23 @@
   placement and duration rescue. The next mechanism must make ownership a
   differentiable part of the native live transition while preserving baseline
   retrieval, not add another sparse or dense side memory.
+
+## 2026-08-15: Protecting FutureSeed state does not protect binding ownership
+
+- P-FS2-012 cleanly separates the inherited producer state from the receiver's
+  live writes. The inherited KxV matrix is immutable, the receiver uses its own
+  zero-start official GDN2 state, and receiver-native queries read both planes.
+- The read-only path is not dead. Removing it only at evaluation drops
+  balanced/future accuracy from `.4445/.4510` to `.2110/.0110`, while its read
+  RMS and relative RMS are `.1570/.01889` with nonzero board/token variation.
+- Causal use is not causal benefit. Relative to the reproducible native
+  control, balanced accuracy falls `.4940->.4445`, joint exact falls
+  `.041->.009`, errors rise `2024->2222`, and wrong-key swaps rise
+  `1546->1749`.
+- Overwrite is therefore not the dominant source of binding loss. A protected
+  plane can faithfully preserve and repeatedly expose the wrong association.
+  FS2 needs ownership-preserving content at commit time, not another retained
+  copy or receiver readout.
+- Separate contractions can also hide substantial cost despite zero new model
+  parameters: elapsed/post-warm wall reaches `1.989/1.977x`. Close read fusion,
+  side-plane normalization/gating and all training-setting rescue.

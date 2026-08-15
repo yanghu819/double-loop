@@ -2214,3 +2214,27 @@ Pair-isolated memory can suppress one error category while introducing hard
 allocation credit failure and destroying the base learner. The open GDN3 route
 is an ownership-preserving, differentiable live transition that retains native
 retrieval, not a larger discrete side bank or a tuned slot router.
+
+### P-FS2-012 Read-Only Dual-Plane Boundary
+
+P-FS2-012 isolates a concrete FutureSeed failure hypothesis: producer future
+evidence and receiver causal writes normally occupy the same mutable KxV
+matrix, so later writes might destroy cross-layer evidence. The candidate keeps
+the inherited state read-only, starts a separate official receiver state from
+zero, and lets receiver-native queries read both planes. It adds no parameters
+or recurrent transition and passes exact edge-off, gradient, official-kernel,
+immutability and equivariance checks.
+
+The endpoint rejects overwrite as the primary binding explanation. Frozen
+native control versus candidate balanced/future/past/joint accuracy is
+`.494/.454/.534/.041` versus `.4445/.451/.438/.009`; errors rise
+`2024->2222` and wrong-key valid-value swaps rise `1546->1749`. The protected
+plane is nevertheless essential to the trained candidate: disabling only that
+read drops balanced/future accuracy to `.211/.011`. Time cost also reaches
+about `1.99x` despite zero new parameters.
+
+The paper should state the distinction explicitly. FutureSeed can transfer
+usable evidence without preserving which key owns that evidence. State
+retention and receiver-native decoding are insufficient; the next claim must
+alter the coherent live commit or introduce an end-to-end ownership mechanism,
+while retaining the native retrieval path and linear-memory advantage.

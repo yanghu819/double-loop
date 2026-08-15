@@ -2,7 +2,13 @@
 
 ## 1. Metainfo
 
-- Status: registered, not yet run
+- Status: complete; discarded at the fixed quality and cost gate
+- Formal run:
+  `p-fs2-012-readonly-dual-plane-l1024-20260815T074456Z-b5da2ac`
+- Exact pushed/read-back source:
+  `b5da2ac543adfeff180b94445ed0062d12cd5b78`
+- GPU: A100-SXM4-80GB index 0, UUID
+  `GPU-573c7ed1-1c51-8334-299b-edf2ff3440e6`
 - Task: validated directional MQAR L1024 wrong-key binding regime
 - Parent: frozen deterministic P-REPRO-001 initialization
 - Candidate: D128/L2/H4/K32/V32 official GDN2, 10 epochs, batch 32,
@@ -119,14 +125,57 @@ Against frozen control, elapsed, post-warm wall and independent warmed-step
 ratios must each be below `1.25x`; peak allocation must be below `1.10x`.
 These limits are fixed before launch and cannot be relaxed after results.
 
-## 8. Next Decision
+## 8. Results And Decision
 
-If every gate passes, freeze the checkpoint and allow one hard-Sudoku transfer
-that tests the same state separation without changing training settings. If
-quality or cost fails, close the dual-plane family and use the result to choose
-one GDN3 live-transition mechanism; do not tune this interface. The endpoint
-must archive score, cases, edge-off cases, checkpoint, config, logs, source and
-hashes before that decision.
+The strict CUDA contract passed before training. It proves zero parameter,
+recurrent-state and scan delta; exact edge-off identity with causal official
+GDN2; exactly two `ChunkGDN2FunctionBackward` nodes; exact read-only state
+immutability; head equivariance and state-shuffle dependency; and finite
+nonzero producer, receiver and FutureSeed-gate gradients. Contract JSON SHA256
+is `68e3bd2a090d1c98ff76d4ba100f1b31b50215d866fe6c4445f7724bd77eeaf7`.
+
+The fixed endpoint rejects the mechanism:
+
+| metric | frozen native control | read-only dual plane | delta |
+|---|---:|---:|---:|
+| balanced accuracy | 0.494000 | 0.444500 | -0.049500 |
+| future accuracy | 0.454000 | 0.451000 | -0.003000 |
+| past accuracy | 0.534000 | 0.438000 | -0.096000 |
+| joint exact | 0.041000 | 0.009000 | -0.032000 |
+| total query errors | 2,024 | 2,222 | +198 |
+| wrong-key valid-value swaps | 1,546 | 1,749 | +203 |
+| wrong-key fraction of errors | 0.763834 | 0.787129 | +0.023295 |
+
+The path is causally active rather than ignored. Disabling only the read-only
+edge in the trained candidate drops balanced/future accuracy to
+`.211/.011`, joint exact to zero, and raises total errors to `3,156`. With the
+edge enabled, receiver read RMS/relative RMS is `.157005/.018889`, board/token
+variation is `.007413/.007188`, inherited state remains exactly unchanged,
+and read/live cosine is `.230676`. The model therefore relies on the protected
+future plane, but that plane protects wrong associations as readily as correct
+ones.
+
+Cost also rejects the realization. Candidate/control elapsed, post-warm wall,
+independently warmed step and peak-allocation ratios are
+`1.98898/1.97700/1.33450/1.02418x`; all three time ceilings miss while the
+allocation ceiling passes. Formal training completed naturally with status 0;
+the registered endpoint returned the science-close status and wrote no
+integrity abort.
+
+Decision: discard P-FS2-012 and close read-only/live plane separation without
+gate, normalization, scale, seed, optimizer, data, width, depth or duration
+rescue. Overwrite is not the dominant causal bottleneck. The next experiment
+must change how a value is committed to its owner inside the live recurrent
+transition, not merely preserve or reread the inherited state.
+
+Provenance SHA256:
+
+- comparison: `8be0f00c9b648d2ffa8356c6c777c5581113565990d91f08014a6b47036e311a`;
+- candidate score: `ccf85ace85bb9f406a781f6abe0154640f07c2c87fda3d37e0dee87ca0cf2384`;
+- checkpoint: `24f3da66bdbbb753b74858624d482515cbf4d07462264438747ac22a616f21d9`;
+- formal log: `1b41fb6f09726be8555e3a24bee8de8c258b46a865d3f91bae07968d4b1c5d36`;
+- source snapshot:
+  `2d91353ba7113104ed07e8e407950452e1081b83deb1a353003955dd3cffe59e`.
 
 ## 9. Submission Record
 

@@ -12,21 +12,36 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-GDN3-051` Causal Lagged-Address Commit is
+registered as the next single high-information arm. Directional MQAR serializes
+each association as a key followed by its value, while native GDN2 commits the
+current payload with the current token's address. P051 keeps erase and write on
+one identical official address, but lets eight zero-initialized per-head
+scalars causally interpolate that address toward the preceding native K. It
+adds eight parameters, no state, token or scan, remains bit-exact at zero, and
+directly tests temporal address/payload phase rather than another key split,
+side bank, cache or readout. Run exactly one D128/L2 L1024 candidate against
+frozen P-REPRO-001, with strict lag-off attribution, swap reduction and
+`1.20x/1.10x` time/allocation gates. No control rerun or lag-radius,
+convolution, mix-map or training rescue. Report:
+`research/reports/experiments/gdn3-causal-lagged-commit-mqar-20260815.md`.
+
 Current update (2026-08-15 CST): `P-FS2-012` Read-Only Dual-Plane FutureSeed
-is registered as the next single high-information arm. The hypothesis is that
-native FS destroys binding by placing producer future evidence and receiver
-causal writes in the same mutable KxV state. The candidate retains the full
-producer terminal state read-only, starts the receiver's official GDN2 live
-state from zero, and combines receiver-query reads from both planes before the
-unchanged official output norm/projection. It reuses the native FutureSeed
-gate: zero new parameters, zero new recurrent transitions, no added scan, and
-one bounded 4,096-value side matrix. This is not producer-native P-FS2-010,
-training-only P-FS2-011, write-controller P007 or basis-rotation P-FS3-004;
-P-FS2-006 never passed integrity and produced no quality verdict. Run exactly
-one from-scratch D128/L2 directional-MQAR L1024 candidate against frozen
-P-REPRO-001, with strict causal edge-off attribution, binding-error and
-`1.25x/1.10x` time/allocation gates. No control rerun or nearby rescue.
-Report: `research/reports/experiments/futureseed2-readonly-dual-plane-mqar-20260815.md`.
+is complete and discarded. Exact pushed/read-back source `b5da2ac` passes the
+strict A100-80GB contract with zero parameter/state-transition/scan delta,
+exact edge-off parent identity, one immutable inherited plane and one official
+live GDN2 plane. The mechanism is strongly active: disabling only the
+read-only edge in the trained model drops balanced/future accuracy to
+`.211/.011`. It does not repair binding. Frozen control versus candidate
+balanced/future/past/joint is `.494/.454/.534/.041` versus
+`.4445/.451/.438/.009`; errors rise `2024->2222` and wrong-key valid-value
+swaps rise `1546->1749`. Elapsed/post-warm/warmed-step ratios are
+`1.989/1.977/1.335x`, so all time gates fail. Close inherited/live plane
+separation, read fusion, gate/normalization and all training rescue. Preserving
+future evidence does not preserve its ownership; the next intervention must
+change the live commit itself. Comparison SHA256 is
+`8be0f00c...e311a`. Report:
+`research/reports/experiments/futureseed2-readonly-dual-plane-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-050` Sparse Committed-Delta Pair
 Slots is complete and discarded. Exact pushed/read-back source `faef909d`

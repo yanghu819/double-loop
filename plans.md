@@ -12,6 +12,21 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-DIAG-MOMFS-001` is the sole next action.
+P-GDN3-059 leaves 223 query errors, including 151 valid-value/wrong-key swaps.
+An exact frozen-case audit finds that all `151/151` swaps choose the adjacent
+write rank and `150/151` remain within the same future/past direction. Before
+adding another architecture, the exact trained P059 weights will be evaluated
+with native `[S,M]` FutureSeed, `S` only, `M` only and no FutureSeed. The native
+mode must replay all formal predictions exactly. A component mask opens one
+component-aware FS successor only if balanced improves at least `.005`, at
+least 20 swaps disappear, total errors do not rise, neither direction falls
+more than `.005`, and joint exact falls no more than `.01`. Otherwise the only
+open branch is a distinct intra-layer owner-preserving recurrence. There is no
+training, checkpoint selection, momentum/gate tuning or Sudoku transfer.
+Report:
+`research/reports/experiments/momentum-futureseed-component-diagnostic-20260816.md`.
+
 Current update (2026-08-16 CST): `P-GDN3-059` Momentum-State FutureSeed is
 complete and strictly closed, but it is the strongest positive architecture
 result in the L1024 ownership regime. Exact pushed/read-back source `96227cb4`
@@ -1717,6 +1732,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-DIAG-MOMFS-001 | registered; implementation pending push/readback | The P059 residual tail may come from transporting `S` and `M` through one shared FutureSeed gate, or from the intra-layer second-order recurrence itself. | Same trained P059 checkpoint and fixed L1024 test bank; evaluate native `[S,M]`, `S` only, `M` only and no seed. Mask only the single inter-layer seed after native normalization. Zero training and zero parameter changes. | Sole open A80080 CUDA index0; exact pushed clean detached source required. | four deterministic evals | Open FS only if one mask gains >=.005 balanced, removes >=20 swaps, adds no errors and stays within directional/joint regressions. Otherwise open one distinct live recurrence. | pending |
 | P-GDN3-059 | complete; strict gate closed; architecture-positive | First-order GDN2 commits overfit adjacent owner writes at L1024. A second-order live transition may reinforce consistent edits and damp one-token interference, while native FutureSeed transports the full recurrent dynamics. | Replace the primary scan with pinned external Momentum DeltaNet at exact SHA `c6e77fa`; carry stacked `[S,M]` through native FutureSeed. D128/L2/H4/K32/V32, 8,192 state values/layer, 599,672 params, fixed 10ep/b32/seed123 L1024 from the reproducible shared init. No side cache/router/reverse scan/task logic. | Sole A80080 CUDA index0 UUID `GPU-c1d7c...`; exact pushed/read-back source `96227cb4`; strict contract passed. | one fixed endpoint complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, conditional wrong-key share -.10; elapsed/post-warm/warmed<2x, allocation<1.5x. | Balanced/future/past/joint `.494/.454/.534/.041 -> .94425/.9515/.937/.824`; errors `2024->223`, swaps `1546->151`. All gates pass except conditional wrong-key share, which falls only `.086704` versus `.10` required. Cost `1.8009/1.7973/1.8264/.9498x`. Strictly closed with no Sudoku transfer/rescue, while retaining the result as strong evidence for second-order recurrent state. Score SHA `7201d328...f6e8a`. |
 | P-DIAG-CYCLE-001 | complete | P058 may fail because its trained reread corrupts inference, or because opening that path already steers the native base into a poor basin. | Load the exact P058 checkpoint and identical test bank, set only its eight cycle gates to exact zero, evaluate once, and record case transitions. No training or parameter selection. | Sole A10080 CUDA index0; exact pushed/read-back source `086e25f`; clean detached worktree. | one eval complete | `>=.40` balanced and `<=2400` errors means read-time damage; `<=.15` and `>=3200` means training co-adaptation collapse; otherwise mixed. | Training co-adaptation collapse: balanced `.07425->.07575`, errors `3703->3697`, swaps `380->388`; only23 wrong queries repair while17 correct queries break. P058 remains closed; diagnostic SHA `c2174644...4720`. |
 | P-GDN3-058 | discarded | A native candidate value is often present but attached to the adjacent write owner. A reverse value-to-key memory can expose this owner mismatch without replacing the co-adapted main address/write/read path. | Keep native GDN2 main state/update exact. Add one reverse official GDN2 K32xV32 state/layer that stores normalized key under value coordinates; query it with the native candidate, add zero-gated query-minus-reconstructed-owner residual, then reread the unchanged main state. Native FutureSeed transports both states. Exactly +8 params, +4,096 state/layer, three official scans/layer. | Sole A10080 CUDA index0; exact pushed/read-back source `ad697c3`; strict R5 contract passed. | contract plus one candidate-only 10ep/b32/seed123 L1024 run complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 cycle paths and dual FS active; time<3.5x, alloc<2x. | Rejected: balanced `.494->.07425`, joint `.041->0`, errors `2024->3703`. Swaps fall `1546->380`, but 1,846 correct queries break and only 167 wrong queries repair. Seven/eight gates activate; board variation also misses. Cost passes. Close whole cycle-memory family; score SHA `4cdc5bfc...d159`. |

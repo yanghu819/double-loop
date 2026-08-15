@@ -77,6 +77,7 @@ GDN2_ARMS = (
     "future_seed_sparse_delta_slot_gdn2",
     "future_seed_readonly_dual_plane_gdn2",
     "future_seed_lagged_commit_gdn2",
+    "future_seed_committed_interference_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -387,6 +388,12 @@ def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
         )
 
         return CoherentKeySpectrumLanguageModel(copy.deepcopy(config.model))
+    if arm == "future_seed_committed_interference_gdn2":
+        from experiments.zoology_mqar.committed_interference_credit import (
+            CommittedInterferenceLanguageModel,
+        )
+
+        return CommittedInterferenceLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_receiver_read_credit_gdn2":
         from experiments.zoology_mqar.futureseed_read_credit import (
             ReceiverReadCreditLanguageModel,
@@ -1297,6 +1304,13 @@ def run_arm(
         )
 
         coherent_key_spectrum = coherent_key_spectrum_diagnostics(model)
+    committed_interference = None
+    if arm == "future_seed_committed_interference_gdn2":
+        from experiments.zoology_mqar.committed_interference_credit import (
+            committed_interference_diagnostics,
+        )
+
+        committed_interference = committed_interference_diagnostics(model)
     stable_token_address = None
     if arm == "future_seed_stable_token_address_gdn2":
         from experiments.zoology_mqar.stable_token_address_futureseed import (
@@ -1527,6 +1541,8 @@ def run_arm(
         score["receiver_read_credit"] = receiver_read_credit
     if coherent_key_spectrum is not None:
         score["coherent_key_spectrum"] = coherent_key_spectrum
+    if committed_interference is not None:
+        score["committed_interference"] = committed_interference
     if stable_token_address is not None:
         score["stable_token_address"] = stable_token_address
     if binding_certificate is not None:

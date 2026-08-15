@@ -12,6 +12,23 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-GDN3-052` Committed-Edit Interference
+Credit is registered and implementation-ready, but not yet launched. Frozen
+P-REPRO-001 shows `76.38%` of errors are valid values under the wrong key;
+`99.55%` stay in the correct future/past direction and `99.61%` select the
+adjacent write owner. P051 rejects a fixed one-token lag, while P045 rejects
+global key whitening. P052 keeps native inference bit exact and adds a
+training-only causal window128 loss weighted by the pinned official kernel's
+detached committed-edit RMS. It penalizes only normalized key-overlap above
+the random `1/K` floor, with fixed coefficient `.03`, zero parameters/state/
+inference scans, and no labels or selectors. Candidate-only L1024 uses the
+frozen matched initialization and replay-B score; quality requires balanced
+`>=.60` and `>=+.10`, future `>=.58` and `>=+.10`, past regression `<=.03`,
+joint `>=.10`, errors `-15%`, swaps `-20%`; elapsed/post-warm/warmed and
+allocation ceilings are `1.35/1.35/1.35/1.25x`. Any miss closes coefficient,
+window, floor, normalization, detach and all training rescue. Report:
+`research/reports/experiments/gdn3-committed-interference-credit-mqar-20260815.md`.
+
 Current update (2026-08-15 CST): `P-GDN3-051` Causal Lagged-Address Commit is
 complete and discarded. Exact pushed/read-back source `d0fd6b3f` passes the
 strict A100-80GB contract with exactly eight new scalars, one official scan per

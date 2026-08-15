@@ -106,7 +106,15 @@ Sudoku rescue.
 
 ## 8. Results
 
-Pending.
+The first contract attempt stopped before training because the checker required
+an arbitrary random reverse initial state to remain visible in the terminal
+state after 256 random tokens. That retention condition was not preregistered
+and conflicts with the intended decayed recurrence. The attempt is preserved
+as a non-science abort. The checker now retains the measured terminal
+dependency but gates the intended property directly: with the cycle path open,
+model output must have finite nonzero gradient to the reverse initial state.
+No mechanism, model tensor, dataset, optimizer, training budget or science gate
+changed. The registered endpoint remains pending.
 
 ## 9. Decision
 

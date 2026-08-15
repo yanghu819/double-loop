@@ -353,8 +353,6 @@ def main() -> None:
             "reverse_input_output_max_diff", "reverse_input_main_state_max_diff",
         )):
             raise RuntimeError(f"Nonzero incoming-state identity failed: {row}")
-        if row["reverse_terminal_dependency"] <= 1e-4:
-            raise RuntimeError("Reverse recurrence ignored its incoming state")
         incoming_rows.append(row)
 
     native.train().zero_grad(set_to_none=True)

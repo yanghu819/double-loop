@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Local Raven Events Do Not Establish Global Ownership
+
+P-GDN3-057 is the direct Raven/GDN hybrid test: a causal multiplicative
+current/previous token-shift feature is formed before each unchanged native
+GDN2 scan, while native FutureSeed carries the resulting terminal state across
+layers. The strict contract proves exact zero-gate parent behavior, official
+FLA/Triton execution, complete gradients and causal one-token dependence.
+
+The endpoint rejects local event formation as the missing binding primitive.
+Balanced accuracy collapses from `.494` to `.02475`, joint exact from `.041`
+to zero, and errors rise `2024->3901`. Wrong-key swaps fall `1546->153`, but
+1,848 native-correct queries become unrelated wrong values. The event is
+bounded and all eight gates activate, yet board variation is effectively zero:
+the adapter learns a shared phase change rather than owner-specific identity.
+Together with post-GDN local attention and additive eligibility memory, this
+closes local wrappers around the native transition. The remaining claim is
+narrower: ownership must be preserved within the live memory edit without
+breaking the co-adapted native Q/K/V/erase/write/read geometry.
+
 ## 2026-08-16 Eligibility Side Memory Removes Answers, Not Interference
 
 P-GDN3-056 preserves native GDN2 and FutureSeed and adds one shared,

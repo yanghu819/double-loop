@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-16: A local pair feature is not automatically a binding identity
+
+- P-GDN3-057 puts a rank-64 Raven-style current/previous multiplicative event
+  encoder before each unchanged native GDN2 scan and preserves exact parent
+  behavior at zero gate.
+- All eight paths activate with bounded event relative RMS
+  `.03082/.02069`, but balanced accuracy collapses `.494->.02475`, joint
+  exact falls `.041->0`, and errors rise `2024->3901`.
+- Wrong-key swaps fall `1546->153` only because 1,848 formerly correct queries
+  become unrelated wrong values. Lower conditional swap rate again means the
+  native value map stopped working, not that ownership improved.
+- Event board variation is effectively zero (`1e-8` to `1e-7`). The local
+  mixer learns a broadly shared phase perturbation instead of a distinct owner
+  code for each association.
+- Close one-shift multiplicative pair encoders and their rank/gate/projection/
+  training variants. The next mechanism must preserve native optimization and
+  add owner-dependent evidence inside the live commit.
+
 ## 2026-08-16: Removing wrong-owner outputs can remove retrieval itself
 
 - P-GDN3-056 adds a bounded official-GDN2 companion state with a learned

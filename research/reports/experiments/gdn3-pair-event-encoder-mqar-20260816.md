@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: registered; implementation complete, CUDA contract pending
+- Status: complete; discarded
 - Date: 2026-08-16
 - Branch: `codex/gdn3-pair-event-encoder-20260816`
 - Decision field: directional MQAR L1024 wrong-key binding regime
@@ -113,8 +113,64 @@ seed, LR, loss, batch, epoch and Sudoku rescue.
 
 ## 8. Results
 
-Pending.
+Exact pushed/read-back source `098b3731122702dfbf2e26334580ed1c258e21d4`
+ran in a clean detached worktree on one A100-SXM4-80GB. The strict CUDA
+contract passed every provenance, identity, gradient and causality assertion:
+two official `ChunkGDN2FunctionBackward` paths, three Triton short
+convolutions per layer, exactly 49,160 new parameters, zero persistent-state
+or scan delta, exact zero-gate logits/output/state identity for arbitrary
+incoming state, exact parent-gradient parity, and finite nonzero gradients for
+all eight gates and all opened projections.
+
+Endpoint control versus candidate metrics were:
+
+| Metric | Control | Candidate |
+| --- | ---: | ---: |
+| balanced accuracy | .494000 | .024750 |
+| future accuracy | .454000 | .019000 |
+| past accuracy | .534000 | .030500 |
+| joint exact | .041000 | 0 |
+| future CE | 1.259387 | 4.341337 |
+| past CE | 1.226685 | 4.327335 |
+| total errors | 2,024 | 3,901 |
+| wrong-key valid-value swaps | 1,546 | 153 |
+| swap fraction of errors | .763834 | .039221 |
+
+The lower swap count is not a repair. Paired predictions contain only 42
+wrong-to-correct transitions, while 1,919 native-correct predictions break:
+1,848 become an unrelated wrong value and 71 become a wrong-key value. Only
+57 native-correct predictions remain correct.
+
+All eight gates activate. Layer 0/1 event relative RMS is
+`.030816/.020692`, and gate absolute mean is `.019658/.016090`; native
+FutureSeed remains active at gate `.510021`. The event-board standard
+deviation is only `6.59e-9/9.56e-8`, however, so the learned perturbation is
+nearly board-invariant rather than owner-specific. This fails the registered
+material-use activation check despite finite token variation.
+
+Elapsed/post-warm/warmed-step/peak-allocation ratios are
+`1.5813/1.5739/1.0940/1.2252x`; elapsed and post-warm cost gates fail. Across
+92 GPU samples, all samples average `30.43%` because compile, data and
+validation gaps are included. The 51 active samples average `54.90%`; the 27
+samples at at least 4 GiB average `62.22%`, peak at `83%`, and observe
+`5,053 MiB` memory. There is no NaN, OOM, fallback or provenance drift.
+
+Comparison/checkpoint/contract-log/GPU-sample SHA256 are respectively
+`92453c89d0fe11cde4346353d993e481f70f538d74a7a8c814c9a1e5187afdf1`,
+`7b77320b6f7b9bdf9d7634df811eb75f54fc154546806f17c54f53ec522a0a8c`,
+`b72e74915b18a7c8f67a8847dd82fcd0a0e1b122747450867209ef58d9b94f86`,
+and `0554ac6cd97261cb577d8a62982da988ea932f661714d6336346c1678f5300e8`.
 
 ## 9. Decision
 
-Pending.
+Discard. A one-token multiplicative Raven event before GDN2 does not create a
+stable owner identity. It changes the jointly learned Q/K/V/gate source enough
+to prevent the native optimization transition, while its learned event is
+almost board-invariant. Close rank, gate, normalization, projection, layer,
+seed, LR, loss, batch, epoch and Sudoku rescue for this family.
+
+The result sharpens the boundary: values are already present, and neither
+post-GDN local context, additive eligibility memory nor pre-GDN local event
+wrappers preserve the co-adapted global retrieval map. A successor must keep
+the native path intact and add genuinely owner-dependent evidence at the live
+commit, not another local wrapper or side answer.

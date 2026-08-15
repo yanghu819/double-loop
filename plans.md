@@ -13,17 +13,22 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-16 CST): `P-GDN3-057` Raven/GDN Pair-Event Encoder is
-the sole registered next decision. Native values exist, but neighboring
-ownership merges during layer-0 state formation; additive local output and
-eligibility-memory paths either preserve the error or overwrite retrieval.
-P057 instead inserts a rank-64 multiplicative current/previous token-shift
-event encoder before each unchanged native GDN2 scan. Zero per-head gates keep
-the parent exact; the candidate adds 49,160 parameters, no state and no scan.
-A strict CUDA identity/gradient/causality contract precedes one frozen-init
-10ep/b32/seed123 L1024 candidate. Quality requires balanced>=.65 and +.10,
-directions>=.62, joint>=.15 and +.10, errors -20% and swap fraction -.10;
-time<1.50x and allocation<1.25x. Any miss closes the entire one-shift
-multiplicative pair-encoder family without rescue. Report:
+complete and discarded. Exact pushed/read-back source `098b373` passes the
+strict single-A100 contract: two pinned-official GDN2 backwards, three Triton
+short convolutions per layer, exact +49,160 parameters, zero state/scan delta,
+parent and nonzero-state identity, gradients and causality. All eight paths
+activate, but balanced/future/past/joint collapses from
+`.494/.454/.534/.041` to `.02475/.019/.0305/0`; errors rise `2024->3901`.
+Swaps fall `1546->153` only because 1,848 native-correct queries become other
+wrong values. Layer event relative RMS is `.03082/.02069`, yet board variation
+is effectively zero, so the pair transform behaves as a nearly global phase
+shift rather than owner-specific evidence. Elapsed/post-warm/warmed/allocation
+ratios are `1.581/1.574/1.094/1.225x`. Active high-memory samples average
+`62.22%` SM, peak at `83%`, and use `5,053 MiB`. Close one-shift
+multiplicative pair encoders and all rank/gate/projection/training rescue. The
+next intervention must preserve the native optimization path and introduce
+owner-dependent evidence inside the live commit; another local wrapper, side
+memory, key transform or FutureSeed extrapolator is not authorized. Report:
 `research/reports/experiments/gdn3-pair-event-encoder-mqar-20260816.md`.
 
 Current update (2026-08-16 CST): `P-GDN3-056` Shared-Eligibility Companion is
@@ -1659,7 +1664,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-057 | registered | Ownership must be formed as a joint local event before the first native live-state commit; post-GDN local residuals and additive side memories are too late. | Per layer, rank64 multiplicative current/previous token-shift encoder with zero per-head gate before unchanged native GDN2. Native state/FutureSeed, one official scan, +49,160 params, zero state. | Sole A10080 CUDA index0; exact pushed source and strict contract required. | contract then one candidate-only 10ep/b32/seed123 L1024 run | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 paths and bounded pair deltas active; time<1.50x, alloc<1.25x. | Pending. Any miss closes one-shift multiplicative pair encoder and all rank/gate/projection/training rescue. |
+| P-GDN3-057 | discarded | Ownership must be formed as a joint local event before the first native live-state commit; post-GDN local residuals and additive side memories are too late. | Per layer, rank64 multiplicative current/previous token-shift encoder with zero per-head gate before unchanged native GDN2. Native state/FutureSeed, one official scan, +49,160 params, zero state. | Sole A10080 CUDA index0; exact pushed source and strict contract required. | contract then one candidate-only 10ep/b32/seed123 L1024 run | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 paths and bounded pair deltas active; time<1.50x, alloc<1.25x. | Strict contract passes, but balanced `.494->.02475`, joint `.041->0`, errors `2024->3901`; 1,848 correct queries become other wrong values. Event RMS is bounded but board variation is effectively zero. Elapsed/post-warm `1.581/1.574x` also fail. Close the complete one-shift multiplicative pair-encoder family without rescue. |
 | P-GDN3-056 | complete; discarded | Native values survive but adjacent write ownership merges in layer0. Decouple role-time evidence in a bounded companion state instead of splitting the co-adapted main erase/write keys. | Preserve native GDN2+FutureSeed. Shared token-event read address plus one initial-identity learned causal Conv4 eligibility write address; same native V/g/b/w; one companion official K32xV32 state/layer with its own cross-layer seed. +16,912 params and +4,096 state/layer. | Sole A10080 CUDA index0; exact pushed/read-back source `29688a1`; strict contract passed. | contract plus one candidate-only 10ep/b32/seed123 L1024 run complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all paths/history/seed active; time<2.25x, alloc<1.75x. | Rejected: balanced `.14825`, joint0, errors3407. Swaps fall1546->639 only through broad failure; layer1 companion output is2.661x native RMS. Cost passes. Close entire family; no rescue/Sudoku transfer. |
 | P-GDN3-055 | complete; discarded | Adjacent writes merge in layer 0, while post-hoc key geometry changes break the co-adapted read/erase/write system. A fixed local causal path may form pair identity before the next unchanged GDN2 layer transports it globally. | Keep native GDN2+FutureSeed exact. Add one zero-gated H4/D32 causal FlashAttention path over non-overlapping 128-token blocks/layer, then residual merge. D128/L2, +131,080 params, zero persistent state, one fixed 10ep/b32/seed123 L1024 candidate from frozen init. | Sole A10080 CUDA index0; exact pushed/read-back source `89764e9`; strict contract passed. | contract plus one candidate complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 gates active; time<2.25x, alloc<1.75x. | Rejected: balanced `.4905`, joint `.046`, errors2038, swaps1822; only6/8 gates cross floor. Cost passes. Close fixed-block local binding; no rescue or Sudoku transfer. |
 | P-GDN3-054 | complete; discarded | Native failures are adjacent-owner swaps. A block-sparse online inverse-information state may cancel correlated address directions without splitting the coherent read/erase/write map or paying dense OIG cost. | Directional MQAR L1024 D128/L2/H4/K32/V32 from the frozen reproducible init. Eight 4x4 RLS blocks/head produce a constrained committed-edit direction; one official DPLR chunk/layer, native FutureSeed, +8 params, +512 transient geometry values/layer. | Sole task-mode CUDA index0; exact pushed/read-back source `6b4f0c4`. | strict contract plus one 10ep/b32/seed123 candidate complete | Balanced >=.65 and +.10, directions >=.62, joint >=.15 and +.10, errors -20%, swap fraction -.10; time <1.75x, alloc <1.50x. | Rejected: balanced `.018`, joint0, errors3928, address RMS below gate, warmed cost2.0067x. No rescue or Sudoku transfer. |

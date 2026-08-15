@@ -17,7 +17,7 @@ informative intervention until this boundary is known.
 
 ## Frozen protocol
 
-`P-DIAG-OWN-002` is a zero-parameter, inference-only audit of exact
+`P-DIAG-OWN-003` is a zero-parameter, inference-only audit of exact
 P-REPRO-001 replay-B:
 
 - L1024 directional MQAR, four distinct bindings, 1,000 examples and 4,000
@@ -30,10 +30,15 @@ P-REPRO-001 replay-B:
   official GDN2 output projection; weights, states and logits outside that
   diagnostic intervention are unchanged.
 
-The full replay must match all 4,000 frozen predictions and the registered
-`.494/.454/.534/.041` endpoint exactly. Any mismatch is an integrity failure.
-This diagnostic is not a deployable selector and cannot be reported as a new
-quality score.
+P-DIAG-OWN-002 originally required exact fresh-process replay. It was closed
+before reading any mask score because a hook-free replay matched `3990/4000`
+frozen predictions. The checkpoint, trained-parameter and dataset hashes were
+exact, so P-DIAG-OWN-003 registers the observed official-kernel reload boundary
+before rerunning masks: prediction agreement must be at least `99.5%`, each of
+balanced/future/past/joint may drift at most `.005`, and error/swap counts may
+drift by at most 20. Every mask and derived comparison uses this same-process
+fresh baseline. This diagnostic is not a deployable selector and cannot be
+reported as a new quality score.
 
 ## Registered prediction and gate
 

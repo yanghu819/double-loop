@@ -29,7 +29,7 @@ VISIBLE_GPU="$(nvidia-smi --query-gpu=index,uuid,name --format=csv,noheader)"
 [[ "$(git -C "$ZOOLOGY_ROOT" rev-parse HEAD)" == "$ZOOLOGY_SHA" ]]
 [[ -z "$(git -C "$ZOOLOGY_ROOT" status --porcelain)" ]]
 if git -C "$REPO_ROOT" symbolic-ref -q HEAD >/dev/null; then
-  printf 'P-DIAG-OWN-002 requires a detached source worktree.\n' >&2
+  printf 'P-DIAG-OWN-003 requires a detached source worktree.\n' >&2
   exit 8
 fi
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
@@ -46,11 +46,11 @@ ${SOURCE_REMOTE_REF#refs/}" \
 
 LOCK_DIR="$PERSIST_ROOT/artifacts/locks"
 mkdir -p "$LOCK_DIR"
-exec 9>"$LOCK_DIR/p-diag-own-002.lock"
+exec 9>"$LOCK_DIR/p-diag-own-003.lock"
 flock -n 9
 
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-RUN_NAME="${RUN_NAME:-p-diag-own-002-head-ownership-${TIMESTAMP}-${GIT_SHA:0:7}}"
+RUN_NAME="${RUN_NAME:-p-diag-own-003-head-ownership-${TIMESTAMP}-${GIT_SHA:0:7}}"
 RUN_DIR="$PERSIST_ROOT/runs/$RUN_NAME"
 mkdir -p "$RUN_DIR"
 STATUS=0
@@ -87,7 +87,7 @@ Path(sys.argv[1]).write_text(json.dumps({
     "timestamp_utc": datetime.now(timezone.utc).isoformat(),
     "exit_status": int(sys.argv[2]),
     "phase": sys.argv[3],
-    "reason": "P-DIAG-OWN-002 integrity or infrastructure failure",
+    "reason": "P-DIAG-OWN-003 integrity or infrastructure failure",
     "scientific_failure": False,
     "rescue_authorized": False,
 }, indent=2, sort_keys=True) + "\n")

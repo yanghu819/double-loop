@@ -2,9 +2,12 @@
 
 ## 1. Metainfo
 
-- Status: approved; static implementation in progress
+- Status: complete; discarded
 - Date: 2026-08-15
 - Branch: `codex/gdn3-block-rls-20260815`
+- Exact source: `6b4f0c4ecabf2a82691c9535c1770c2f386a26a6`
+- Formal run: `p-gdn3-054-block-rls-r2-20260815T165534Z-6b4f0c4`
+- Decision: closed; no Sudoku transfer or same-family rescue
 - First decision field: directional MQAR L1024 wrong-key binding regime
 - Frozen control: deterministic P-REPRO-001 replay B
 - Fixed model: D128/L2/H4/K32/V32 plus native FutureSeed
@@ -144,10 +147,68 @@ activation, stability, quality or cost miss closes P-GDN3-054. There is no
 block size, grouping, statistic-gradient, mix cap/init, prior, epsilon, seed,
 LR, loss, batch, width/depth, epoch, duration, FutureSeed or Sudoku rescue.
 
-## 7. Next Decision
+## 7. Endpoint Result
 
-Only a full pass authorizes one fixed Sudoku transfer with the same mechanism.
-A quality miss rejects block-sparse RLS. A cost-only miss with strong quality
-does not authorize an eager or compiler rescue; a future implementation would
-need a separately preregistered fused main recurrence. Until the endpoint,
-do not infer quality from contract or one-step activation probes.
+The R2 strict contract passes. It verifies the pinned FLA source, two official
+`ChunkDPLRDeltaRuleFunctionBackward` operators, one scan per layer, matching
+Triton/Torch block recurrences, exactly eight new parameters, zero persistent
+state, finite nonzero gradients, causal-prefix dependence, permutation
+equivariance and stable precision geometry. The first R1 attempt stopped before
+science because its checker treated an official `Sequential` projection as a
+single `.weight`; the checker-only fix is the R2 source above and does not
+change the mechanism, data, training or gates.
+
+The fixed 10-epoch endpoint rejects the hypothesis:
+
+| metric | frozen control | candidate |
+| --- | ---: | ---: |
+| balanced accuracy | `.494` | `.018` |
+| future accuracy | `.454` | `.022` |
+| past accuracy | `.534` | `.014` |
+| joint exact | `.041` | `0` |
+| total errors | `2024` | `3928` |
+| wrong-key valid-value swaps | `1546` | `190` |
+| swap fraction among errors | `.763834` | `.048371` |
+
+The lower swap count is not a binding improvement. Paired predictions show
+1,849 control-correct queries becoming another wrong value, while only 24
+control wrong-key swaps become correct. Validation remains near chance through
+epoch 5 and ends at `.018`, whereas the frozen control makes its learning
+transition at epoch 5 and ends at `.494`.
+
+The precision statistic is numerically healthy and all eight learned mix paths
+are active. Mean absolute mix is `.02589/.02395` by layer, terminal block
+off-diagonal ratio is `.08559/.04560`, minimum denominator is above `1.0`, and
+terminal eigenvalues remain in `[.04038, 1.000001]`. However, actual address
+relative RMS is only `.00772/.00796`, below the registered `.02` activation
+floor, with very small board variation. Exact committed-response error remains
+`2.38e-7`.
+
+Elapsed, post-warm wall, independent warmed-step and peak-allocation ratios are
+`1.7176/1.7266/2.0067/1.2732x`. The first three fit/allocation checks pass, but
+the warmed-step `<1.75x` gate fails. Across 101 five-second GPU samples, the
+all-sample mean is `44.26%`; the 67 active samples average `66.72%`, peak at
+`95%`, and observe 2,339 MiB peak memory on the sole A100-SXM4-80GB.
+
+## 8. Decision And Provenance
+
+P-GDN3-054 is closed. Preserving the native erase scalar while changing the
+committed write direction is not enough to preserve the jointly learned
+query/erase/write/read closure. The result is consistent with direct,
+anchored, biorthogonal and redundant-bank decoupled-key failures: address
+decorrelation can reduce recognizable swaps by making the value code stop
+working. Do not tune block size, grouping, statistic gradient, mix, prior,
+epsilon, seed, optimization, model size, training duration or FutureSeed, and
+do not transfer this mechanism to Sudoku.
+
+- comparison SHA256: `f2259362b8d9c06f2972b90b5ea3907a80d08d1f51ee70b457473813bfd7ddb3`
+- contract SHA256: `c9cbe3378d3ea3bb47a369bcc5a13a2ff5e3d722c88cbdb79e80cbd38808bacf`
+- checkpoint SHA256: `4f36b6b9ea01a587dc848893307a92e389e83f2f31bb430877acd0e7cf9325a9`
+- formal log SHA256: `40c4c5fa0d99655fbeae63f47779984a4bbc1cab592cd4b42d251115b6169e80`
+- source snapshot SHA256: `880d80f4dda6ad43430c44bd522cbb14b9f19d7c9353435a7b535cbb3a7a74ac`
+- science endpoint status: `0`; registered decision exit: `2` (gate fail)
+
+The next architecture decision must preserve pair identity as a first-class
+learned state organization, or carry receiver-native ownership evidence. It
+must not be another post-hoc key transform, erase/write decoupler, fixed bank
+average, preconditioner wrapper or extrapolation of an already merged state.

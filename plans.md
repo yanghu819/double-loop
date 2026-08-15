@@ -13,20 +13,23 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-054` Block-RLS Constrained Delta is
-the sole approved next decision. Reproducible L1024 evidence localizes 76.38%
-of errors to wrong-key valid-value swaps, while direct decoupled-key, dual-bank
-and exact dual-address interventions destroy the jointly learned read/erase/
-write closure. P054 keeps one coherent native ownership address and one
-committed residual. A custom Triton statistic maintains eight independent
-4x4 inverse-information blocks per head; their causal output redistributes the
-write direction under an exact native erase-response constraint, then one
-pinned-official DPLR chunk performs the main recurrence. It adds eight
-parameters and 512 transient geometry values/layer, versus 4,096 main-state
-values. After pushed-source and strict CUDA gates, run one candidate-only
-directional MQAR L1024 10ep/b32/seed123 arm from the frozen reproducible
-initialization. Require balanced >=.65 and +.10, directions >=.62, joint >=.15
-and +.10, errors -20%, swap fraction -.10, time <1.75x and allocation <1.50x.
-Any miss closes block/group/mix/prior/training/Sudoku rescue. Report:
+complete and discarded. Exact pushed/read-back source `6b4f0c4` passes the
+strict A10080 contract with one pinned-official DPLR scan/layer, a matching
+custom Triton block statistic, exact +8 parameters, zero persistent-state
+delta, stable positive 4x4 precision blocks, gradients and causal dependency.
+All eight mix paths learn (`mean |mix|=.02492`), but the actual address change
+is only `.00772/.00796` relative RMS and misses the registered `.02` activation
+floor. More importantly, control/candidate balanced/future/past/joint is
+`.494/.454/.534/.041` versus `.018/.022/.014/0`; errors rise `2024->3928`.
+Wrong-key swaps fall `1546->190` only because retrieval collapses: 1,849
+control-correct queries become another wrong value and only 24 prior swaps are
+repaired. Elapsed/post-warm/warmed/allocation ratios are
+`1.7176/1.7266/2.0067/1.2732x`, so warmed cost also fails. Active GPU samples
+average `66.72%` SM and peak at `95%` with 2,339 MiB observed peak memory.
+Close block size/grouping/statistic-gradient/mix/prior/training/Sudoku rescue.
+This also closes the user-linked direct decouple-key neighborhood: preserving
+one scalar erase response does not preserve the learned query/write/read
+geometry. Report:
 `research/reports/experiments/gdn3-block-rls-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-FS2-013` Loop-Secant FutureSeed is complete

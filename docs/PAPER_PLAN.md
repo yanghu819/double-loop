@@ -1,5 +1,26 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Block-Local Whitening Does Not Preserve Address Closure
+
+P-GDN3-054 is the narrow scalable test of the decoupled-key intuition after
+the exact dual-address oracle and independent-bank variants failed. It keeps a
+single native ownership coordinate, maintains eight causal 4x4 inverse-
+information blocks in Triton, and projects each corrected write back onto the
+native erase-response constraint before one official DPLR scan. The strict
+contract proves the statistic, state geometry, gradients and kernel path; this
+is a real live-transition intervention rather than a dead wrapper.
+
+The endpoint still collapses balanced accuracy from `.494` to `.018` and
+joint exact from `.041` to zero. Errors rise `2024->3928`. Wrong-key swaps fall
+`1546->190`, but 1,849 formerly correct queries become another wrong value and
+only 24 swaps repair. Thus even an erase-response-preserving write transform
+breaks the learned query/erase/write/read coordinate system. The block state is
+stable and nondiagonal, but actual address motion remains only about `.008`
+relative RMS; warmed-step cost is `2.007x`. Together with direct, anchored,
+biorthogonal and redundant decoupling, this closes post-hoc key geometry as the
+paper's explanation. Pair identity must be learned as part of state formation,
+not imposed on a mature key basis.
+
 ## 2026-08-15 Cross-Loop Secants Do Not Restore Lost Ownership
 
 P-FS2-013 tests the narrow convergence hypothesis on the fixed hard-Sudoku

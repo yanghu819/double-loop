@@ -1,5 +1,21 @@
 # Lessons
 
+## 2026-08-15: Preserving erase response is not preserving address closure
+
+- P-GDN3-054 uses a stable causal block-RLS statistic, one official DPLR scan
+  per layer, exactly eight new parameters and no persistent state increase.
+- All eight mix paths activate and the 4x4 precision blocks stay positive and
+  nondiagonal, but the candidate ends at `.018` balanced versus `.494` control.
+- Errors nearly double (`2024->3928`). Swaps fall `1546->190` only because
+  retrieval broadly fails: 1,849 correct queries break and only 24 swaps repair.
+- Constraining `z^T a=z^T k` preserves one erase-response scalar, not the full
+  co-adapted query, erase, write and read geometry learned by GDN2.
+- Tiny parameter count does not imply low cost. The custom causal statistic
+  reaches `2.007x` warmed-step time and fails its systems gate.
+- Close block size/grouping/mix/prior and all nearby decoupled-key rescue. A
+  successor must make pair ownership intrinsic to learned state formation or
+  carry new receiver-native ownership evidence.
+
 ## 2026-08-15: Accelerating a lossy FutureSeed trajectory does not recover binding
 
 - P-FS2-013 adds only 88 zero-init coefficients and passes exact parent,

@@ -2068,3 +2068,26 @@ coordinates alone do not make a terminal-state teacher causal for binding.
 Agreement with a detached receiver endpoint can reproduce its mistakes or
 flatten evidence. Do not present lower conditional swap fraction as an FS2
 gain, do not transfer this loss to Sudoku, and do not tune nearby loss variants.
+
+### P-GDN3-045 Coherent Key-Spectrum Credit Boundary
+
+P045 tests the narrow statistical interpretation left after functional key
+splitting and Q/K alignment fail. It keeps one exact native coherent key and
+the independent learned query, leaves inference byte-identical, and applies a
+fixed training-only covariance credit only to the native K projection and
+Triton convolution. The strict contract verifies exact parent behavior,
+official recurrent kernels and selective auxiliary gradients.
+
+The endpoint rejects isotropic keys as binding credit. Balanced accuracy falls
+`.4830->.0130`, future/past both collapse, joint exact falls `.0370->0`, and
+errors rise `2068->3948`. Endpoint effective rank is `25.423/12.352` and
+anisotropy `3.006/4.779`, so task training moves the second layer opposite to
+the intended geometry. The apparent swap reduction is caused by broad failure.
+
+The paper should therefore separate two claims: learned address geometry is
+causal, but Euclidean key isotropy is not its objective. Together with
+P031/P036/P042-P044, P045 closes direct erase-key decoupling, bounded coherent
+tangents, Q/K alignment/gauges/frames and key-whitening loss. Do not present
+these as routes to GDN3 or transfer them to Sudoku; the open mechanism must
+change a scalable live-state organization or recurrent transition while
+preserving coherent ownership.

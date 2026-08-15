@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: proposed; implementation pending strict CUDA contract
+- Status: complete; discarded at the fixed L1024 science and allocation gate
 - Task: directional MQAR, sequence length 1024, four future and four past queries
 - Carrier: D128/L2/H4/K32/V32 pinned-official GDN2 plus native FutureSeed
 - Fixed endpoint: 10 epochs, batch32, seed123, contemporaneous control then candidate
@@ -97,13 +97,59 @@ Inference cost is exactly native. Fixed training cost ceilings are `<1.20x`
 for elapsed, post-warm wall and independently warmed step, and `<1.12x` peak
 allocated CUDA memory. These cannot be relaxed after results.
 
-## 8. Next Decision
+## 8. Results And Decision
 
-If every gate passes, authorize one hard-Sudoku transfer with the same
-training-only credit and native inference model. If any gate fails, close key
-whitening/isotropy losses. The next mechanism must change a scalable state
-organization or recurrent transition rather than another Q/K loss or map.
+The strict CUDA contract passed. Control and candidate were bit exact at
+initialization for eval, training, and nonzero incoming-state output/state;
+both had 661,584 parameters and 4,096 recurrent values per layer. The combined
+candidate objective retained two official `ChunkGDN2FunctionBackward` paths,
+while the auxiliary graph contained none. Auxiliary gradients were finite and
+nonzero only in both native K projections and K convolutions.
 
-## 9. Submission Record
+| Metric | Control | Candidate |
+|---|---:|---:|
+| Balanced accuracy | 0.4830 | 0.0130 |
+| Future accuracy | 0.4830 | 0.0115 |
+| Past accuracy | 0.4830 | 0.0145 |
+| Joint exact | 0.0370 | 0 |
+| Total query errors | 2,068 | 3,948 |
+| Wrong-key valid-value swaps | 1,959 | 144 |
+| Swap fraction among errors | 0.947292 | 0.036474 |
 
-Not applicable. This is a local architecture science gate.
+The candidate's endpoint key spectrum moved opposite to the prediction.
+Layer effective rank ended at `25.423/12.352`, anisotropy at
+`3.006/4.779`, and unweighted/weighted credit at
+`0.040736/0.004074`. The second layer therefore became substantially more
+anisotropic despite the active credit. The large conditional swap reduction
+is broad retrieval collapse, not repaired binding.
+
+Elapsed, post-warm wall, independently warmed step, and peak-allocation ratios
+were `0.91199/0.91238/1.01868/1.13064x`. The first three cost checks passed;
+allocation missed the fixed `1.12x` ceiling. There was no NaN, OOM, fallback,
+data drift, source drift, or infrastructure failure. Endpoint exit status 2 is
+the registered science miss.
+
+P-GDN3-045 is discarded and has no Sudoku transfer. Close coefficient,
+covariance scope/normalization, token/layer mask, detach boundary, seed, data,
+loss, width, depth and duration rescue. Key whitening/isotropy credit is not a
+viable refinement of decoupled keys. A successor must alter a scalable state
+organization or recurrent transition while preserving native coherent
+ownership and the useful learned Q/K differential.
+
+## 9. Provenance
+
+- Pushed/read-back source: `89f3ec31d3b9616576cfd64534f4535be2891638`
+- Formal run:
+  `/huyang2/double-loop/runs/p-gdn3-045-coherent-key-spectrum-l1024-20260814T235135Z-89f3ec3`
+- Contract score SHA256:
+  `fb05a09f2040e9ee94b69d71832aeb5d3f40fc672a3a82c1b8d1425a0100650b`
+- Endpoint score SHA256:
+  `7fa489eecb9a40c1ffaac7298da6cf9bc937269d7d5231632dc6a2875320ae27`
+- Control checkpoint SHA256:
+  `d1eea0ce82329f17be4bd1193a5be93a4e164779a8d1bf952f54fac57bc36fae`
+- Candidate checkpoint SHA256:
+  `2bad1d91b84a1886fa526407cae6af53881698267b531a267b4c57f5faca75c5`
+- Formal log SHA256:
+  `bcd664bacc94cd0294cf1bc502ecb37c7f3c052faf73fcae2eafacea036823d5`
+- Source snapshot SHA256:
+  `05cc54442e899c601ff77f3c53b13683bf293c659a75953ddd92d6da5cabaf56`

@@ -3082,3 +3082,24 @@
   duration variants. Future FS2 work needs a causal, receiver-native content
   mechanism or a task-independent learning signal that cannot be minimized by
   destroying retrieval.
+
+## 2026-08-15: Key-spectrum whitening is not coherent binding credit
+
+- P-GDN3-045 preserves GDN2's exact native read/write/erase ownership and
+  inference graph, while sending a scale-free covariance credit only into the
+  native K projection and K convolution. The strict identity, official-kernel
+  and selective-gradient contract passes.
+- The credit does not make the learned address space healthier. Endpoint
+  effective rank is `25.423/12.352` and anisotropy is `3.006/4.779`; the
+  second layer becomes markedly more concentrated despite the active loss.
+- Retrieval collapses from `.4830` to `.0130` balanced accuracy and total
+  errors rise `2068->3948`. Wrong-key valid-value swaps fall `1959->144`
+  only because almost every query fails. Conditional error composition is not
+  evidence without absolute retrieval quality.
+- A covariance target competes with the task's useful address geometry and can
+  be defeated by the coupled CE trajectory. P020's positive Log-SPD result
+  must not be generalized into isotropic keys.
+- Close coefficient, covariance scope/normalization, mask, detach, seed, data,
+  loss and duration variants. The direct decoupled-key request and its coherent
+  spectrum refinement are both bounded; a successor must change scalable live
+  state organization or transition, not another Q/K loss.

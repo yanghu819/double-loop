@@ -12,23 +12,19 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-15 CST): `P-FS2-013` Loop-Secant FutureSeed is the sole
-approved next decision. Direct decoupled-key variants P-GDN3-031/036/043/053
-and the exact dual-address ceiling are closed: query, erase, write and read
-geometry is jointly learned, so post-hoc key separation is destructive. The
-remaining Sudoku evidence instead shows genuine early-loop correction followed
-by plateau or oscillation. P-FS2-013 preserves native terminal FutureSeed and
-adds only 88 zero-init edge/head coefficients. Each repeated reasoning pass
-extrapolates the current producer terminal along its RMS-bounded change from
-the preceding pass; high-stream history spans macro loops and low-stream
-history spans consecutive L-cycle passes. Strict A100 CUDA identity, official
-FLA graph, all-gradient, bounded-geometry and exact-resume step3001 gates must
-pass before one candidate-only step3000->3100 run against the frozen terminal
-control. Primary quality requires hard51-64 macro exact `>=+0.02` with every
-range blank regression `<=0.01`; alternate requires mixed exact `>=+0.03`,
-nonregressive 61-64 and stronger same-board late correction. Warmed time and
-allocation overhead must each stay below 10%. Any miss closes the mechanism;
-no cap/init/edge/seed/LR/loss/batch/width/depth/duration rescue. Report:
+Current update (2026-08-15 CST): `P-FS2-013` Loop-Secant FutureSeed is complete
+and discarded. Strict R5 CUDA identity, official FLA, all-gradient, bounded
+geometry and exact-resume gates pass, and all 88 coefficients activate. Yet
+hard51-64 macro and mixed loop5 exact remain `.000651/.025391`; official blank
+deltas for 51-55/56-60/61-64 are `+.001074/-.001613/-.004182`. Same-board
+late correction weakens in 61-64 and elapsed overhead is `+18.36%` against the
+registered `<10%` gate. The learned perturbation also contracts from loop2
+residual relative RMS `.002687` to only `.00004161` at loop5. Existing state
+direction therefore cannot recover ownership information already merged by
+the live recurrence. Close cap/init/edge/seed/LR/loss/batch/width/depth/duration
+rescue. The next decision must modify scalable live recurrent interference
+handling or carry genuinely new ownership evidence, not accelerate the same
+trajectory. Report:
 `research/reports/experiments/futureseed2-loop-secant-20260815.md`.
 
 Current update (2026-08-15 CST): `P-DIAG-DUAL-001` is complete and closes
@@ -1602,6 +1598,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-FS2-013 | complete; discarded | Native FutureSeed gives early loop correction but may fail because the transported state approaches the solution too slowly. | Keep native terminal FutureSeed and add 88 zero-init edge/head coefficients. Across repeated passes, extrapolate the current producer terminal along its RMS-bounded secant from the previous pass. No new recurrent state, scan, cache or task logic. | Sole A10080 index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; exact pushed source `6798f03`; strict R5 contract and step3001 probe pass. | one candidate-only step3000->3100 continuation | Hard macro `+.02` or mixed `+.03` with hardest-range and same-board late-correction preservation; elapsed/allocation each `<10%`. | All 88 coefficients activate, but hard macro/mixed exact stay `.000651/.025391`; official blank deltas are `+.001074/-.001613/-.004182`, hardest late correction weakens, and elapsed/allocation overhead is `+18.36/+4.66%`. Discarded; current state direction cannot restore merged ownership. |
 | P-GDN3-053 | complete; discarded | P-DIAG-EDIT-001 proves layer0 competing writes contain both useful values but one shared trajectory cannot preserve both owners. | From-scratch D128/L2 directional MQAR: two independent Q/K K32xV32 banks per H4 head, shared V/g/b/w edits, fixed equal read, native H8 FutureSeed, one official scan. +67,592 params, 2x state, no router/selector/task rule. | Sole A80080 index0, target UUID; exact pushed/read-back SHA `d569d3f`; strict R3 contract passed. | contract + one 10ep/b32/seed123 arm | Balanced >=.65 and +.15, both directions >=.60, joint >=.15 and +.10, errors -20%, swaps -25% and fraction -.10; time <2x, alloc <1.75x. | Candidate `.00875/.007/.0105/0`, errors3965, swaps144. Both banks and FutureSeed active, but retrieval stays near chance; elapsed/postwarm/warmed/allocation `2.032/2.033/2.139/1.531x`. Discarded; no bank/read/QK/init/training rescue or Sudoku transfer. |
 | P-GDN3-049 | complete; discarded | P047 recovers the value set but leaves 95.41% of its errors as wrong-key swaps; ownership might require an independent canonical address domain that keeps full native V. | Preserve native GDN2/FutureSeed. Add one layer-local H4/K16/V32 official companion scan whose shared rank-16 address is a normalized projection of native `(q+k)` and whose payload is full native V. Exactly +520 parameters and +2,048 transient state values/layer. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `3088b0da`; strict CUDA contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced/future/past/joint `.03700/.04000/.03400/0 -> .03075/.03950/.02200/0`; errors `3852->3877`; swaps `227->218`; warmed/allocation `1.3982/1.2777x`. | Discarded. Both companion states, all eight gates and the rank-16 projection activate, but every quality route fails and ownership errors are unchanged. Post-completion operator retraction preserves the valid natural endpoint. No Sudoku transfer or address/K/gate/sharing/transport/training rescue; score SHA `c31adfaa...8f1c`. |
 | P-GDN3-048 | complete; discarded | P047 recovers the value set but leaves 95.41% of errors as wrong-key swaps. Ownership may need to be encoded in the primary V payload rather than appended as semantic evidence. | Keep native Q/K/g/b/w, one K32xV32 state, one official scan and native FutureSeed. Per layer/head learn one zero-init scalar `s`; write `v*exp(s*k_hat)` and decode readout by `exp(-s*q_hat)`. Exactly +8 parameters/model, zero state/scan delta, bounded factors `[.5,2]`. One fixed L1024 control/candidate, 10ep/b32/seed123. | Sole task-mode A100-SXM4-40GB index0 UUID `GPU-31166d8c-9fe5-d953-dc44-d0d549969ada`; exact pushed/read-back SHA `97cc8f57`; strict CUDA contract passed. | strict CUDA contract plus one fixed matched endpoint | Balanced/future/past/joint `.17475/.16100/.18850/0 -> .07500/.08600/.06400/0`; errors `3301->3700`; swaps `770->337`; warmed/allocation `1.2047/1.2593x`. | Discarded. Conditional swap fraction falls `.233263->.091081` only through broad retrieval damage; production BF16 reciprocity and allocation gates also fail. No Sudoku transfer or radius/map/source/precision/sharing/training rescue; score SHA `793f31de...f1d51`. |

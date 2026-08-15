@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-15: Accelerating a lossy FutureSeed trajectory does not recover binding
+
+- P-FS2-013 adds only 88 zero-init coefficients and passes exact parent,
+  official-kernel, gradient, bounded-state and exact-resume checks.
+- The mechanism activates: loop2 secant delta/residual relative RMS is
+  `.408061/.002687`, with nonzero board variation and learned scale.
+- Hard macro and mixed exact do not move, while 61-64 blank falls `.004182`
+  and its loop3-to-loop5 wrong-cell correction weakens.
+- The residual contracts to `.00004161` of state RMS by loop5. The model is not
+  missing scalar momentum; it is missing information that the state trajectory
+  no longer represents.
+- Close secant cap/init/edge/training variants. A useful FS2 must carry distinct
+  ownership evidence or improve its credit path, while the GDN3 route must
+  alter scalable live interference handling.
+- Measure systems cost even for tiny parameter deltas: retaining cross-pass
+  histories raised fresh-process elapsed time `18.36%` despite only `4.66%`
+  more peak allocation.
+
 ## 2026-08-15: Oracle head diversity is not a usable confidence signal
 
 - P-DIAG-OWN-003 isolates all eight heads at the official output projection

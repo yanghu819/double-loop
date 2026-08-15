@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-15 Cross-Loop Secants Do Not Restore Lost Ownership
+
+P-FS2-013 tests the narrow convergence hypothesis on the fixed hard-Sudoku
+parent. It preserves native terminal FutureSeed and adds only 88 zero-init
+edge/head coefficients that extrapolate each producer terminal along its
+bounded change from the preceding reasoning pass. The strict contract proves
+parent identity, official FLA execution, complete gradient coverage and stable
+geometry; the production path is therefore real rather than a dead adapter.
+
+The endpoint closes this explanation. Hard51-64 macro and mixed loop5 exact are
+unchanged at `.000651` and `.025391`; 61-64 blank falls by `.004182`, its
+same-board loop3-to-loop5 correction weakens, and elapsed cost rises `18.36%`.
+The learned residual itself shrinks from `.002687` of state RMS at loop2 to
+`.00004161` at loop5. FutureSeed's remaining failure is not simply insufficient
+momentum along its current trajectory. Once the recurrent state has merged
+neighboring ownership, a secant can only extrapolate that lossy representation.
+Future work must preserve new ownership evidence or change the live memory
+transition, not add another interpolation/extrapolation wrapper.
+
 ## 2026-08-15 Correct Ownership Evidence Exists Across Heads But Is Not Selectable
 
 P-DIAG-OWN-003 freezes the reproducible P-REPRO-001 endpoint and masks each

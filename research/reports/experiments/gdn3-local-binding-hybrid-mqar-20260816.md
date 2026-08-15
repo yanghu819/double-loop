@@ -116,6 +116,12 @@ Sudoku rescue.
 
 ## 8. Pending Provenance
 
+R1 source `f8a7940` stopped before model construction because the checker
+imported a provenance helper returning `(tree_hash, file_hashes)` but compared
+the tuple to the registered scalar hash. The launcher wrote a non-science
+abort and released GPU memory. R2 changes only that checker import; mechanism,
+data, initialization, training and gates are unchanged.
+
 Exact source SHA, run name, contract, score, checkpoint, source snapshot, GPU
 samples and final decision will be written only after the pushed-SHA run
 finishes.

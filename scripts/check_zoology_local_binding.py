@@ -36,8 +36,8 @@ from scripts.check_zoology_contractive_dplr import (
     backward_names,
     git_head,
     normalized_uuid,
-    python_tree_hash,
 )
+from scripts.check_zoology_gdn2_log_spd import python_tree_hash
 
 
 EXPECTED_ZOOLOGY_SHA = "1ad20d193b6113cae1e8f3c655c300d7b4b3f4bb"

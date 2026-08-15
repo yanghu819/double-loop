@@ -53,12 +53,12 @@ def _visible_gpu() -> tuple[str, str]:
 def _grad_fn_counts(loss: torch.Tensor) -> dict[str, int]:
     counts: dict[str, int] = {}
     pending = [loss.grad_fn]
-    seen: set[int] = set()
+    seen: set[object] = set()
     while pending:
         node = pending.pop()
-        if node is None or id(node) in seen:
+        if node is None or node in seen:
             continue
-        seen.add(id(node))
+        seen.add(node)
         name = type(node).__name__
         counts[name] = counts.get(name, 0) + 1
         pending.extend(next_node for next_node, _index in node.next_functions)

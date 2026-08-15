@@ -1,5 +1,22 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Same-Weight Edge-Off Attributes Cycle Failure To Co-Adaptation
+
+P-DIAG-CYCLE-001 removes the only eight learned cycle gates from the exact
+trained P058 checkpoint while preserving every other tensor and the frozen
+L1024 cases. This turns the reverse-state correction off at inference without
+retraining. Balanced accuracy changes only `.07425->.07575`, errors
+`3703->3697`, wrong-key swaps `380->388`, and joint exact remains zero. The
+result is far inside the preregistered training-co-adaptation region.
+
+The paper can therefore make a stronger distinction than "the cycle reread
+was harmful." Zero initialization gave exact parent behavior before training,
+but the opened side path subsequently reorganized the native GDN2 retrieval
+map around itself. Removing the side path after training cannot recover that
+map. Future architecture claims must protect native-correct retrieval during
+learning or train a complete ownership-aware recurrence from scratch; optional
+post-hoc validators and zero-gated wrappers are not optimization isolation.
+
 ## 2026-08-16 Cycle Consistency Diagnoses Ownership But Cannot Repair It
 
 P-GDN3-058 keeps native GDN2 storage exact and adds a reverse official GDN2

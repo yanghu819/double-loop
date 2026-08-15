@@ -1,5 +1,21 @@
 # Lessons
 
+## 2026-08-16: Zero-initialized side paths can still rewrite the native solution
+
+- P-DIAG-CYCLE-001 loads the exact trained P058 model and sets only its eight
+  cycle gates to zero. Every native tensor remains at its trained value and the
+  identical L1024 cases are reevaluated without an optimizer.
+- Edge-off barely changes balanced accuracy `.07425->.07575`, errors
+  `3703->3697`, or swaps `380->388`; it does not recover the `.494` native
+  control. The preregistered training-co-adaptation diagnosis passes.
+- A zero-initialized optional route protects initialization, not the rest of
+  optimization. Once opened, gradients can reorganize embeddings, Q/K/V,
+  erase/write gates and readout around a shortcut that later cannot be removed.
+- New ownership mechanisms must either keep the proven native route frozen or
+  functionally protected while the complement learns, or be trained from
+  scratch as a complete recurrent transition. Another read-time gate, scale or
+  short continuation cannot answer this failure.
+
 ## 2026-08-16: Detecting a wrong owner is not the same as recovering the value
 
 - P-GDN3-058 preserves native GDN2 storage and adds a reverse value-to-key

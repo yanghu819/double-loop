@@ -32,4 +32,44 @@ rescue P-GDN3-058; it only chooses the next architecture boundary.
 
 ## Result
 
-Pending.
+Complete. Exact pushed/read-back source
+`086e25f77716b5eaab7aa218c22df70545c8ac68` ran in a clean detached
+worktree on the sole A100-SXM4-80GB at CUDA index 0. The frozen model, formal
+score, cases and test data all matched their registered hashes. The process
+finished with status 0 and no NaN, OOM or fallback.
+
+| condition | balanced | future | past | joint | errors | wrong-key swaps |
+|---|---:|---:|---:|---:|---:|---:|
+| trained cycle path | .07425 | .07450 | .07400 | 0 | 3703 | 380 |
+| same weights, 8 gates zero | .07575 | .07600 | .07550 | 0 | 3697 | 388 |
+
+The edge-off intervention repairs only 23 formerly wrong queries while
+breaking 17 formerly correct queries. Of the 380 original wrong-key events,
+362 remain wrong-key, 15 become another wrong value and only three become
+correct. Balanced accuracy remains far below `.15` and total errors remain
+well above 3,200, so the preregistered diagnosis is
+`training_coadaptation_already_collapsed_native_path`.
+
+This rules out the interpretation that the final cycle reread is the main
+source of P058's collapse. Learning with the opened cycle route already moved
+the native embeddings, projections, gates and readout into a poor joint
+solution; disabling only the new route at inference cannot restore the frozen
+native control. P058 remains closed. The next architecture must preserve or
+isolate the native retrieval trajectory during learning, or train a genuinely
+ownership-aware recurrent transition from scratch. Another gate, reverse
+decay, reread scale or short continuation is not authorized.
+
+## Runtime And Provenance
+
+- Run: `p-diag-cycle-001-edgeoff-20260815T214500Z-086e25f`
+- Wall interval: `2026-08-15T21:38:50Z` to `21:41:19Z` (149 seconds,
+  including imports and shared-filesystem cache reads)
+- GPU sampler: 30 five-second samples; active-sample utilization mean
+  `39.875%`, sampled peak `62%`, separately observed instantaneous peak
+  `69%`, peak observed memory `1,235 MiB`, peak power `321.9 W`
+- Diagnostic JSON SHA256:
+  `c2174644173bdf2e757936cbb41f556b70b2372120b31f8ccb7537e805904720`
+- Diagnostic log SHA256:
+  `55b31e31340550acbec041ff289eeef4910c2e01807d6c8b198d9586fa01cd8f`
+- GPU samples SHA256:
+  `fa11c6df434f24fad6e66777c5482fc1393eef34afb43da2127702a9bc2ca14e`

@@ -12,16 +12,18 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-DIAG-CYCLE-001` is preregistered as a
-single same-weight read-only attribution on the completed P-GDN3-058
-checkpoint. It sets exactly eight trained cycle gates to zero and reevaluates
-the identical frozen L1024 cases, with no training or other tensor change.
-Balanced `>=.40` and errors `<=2400` attributes failure mainly to the read-time
-reread; balanced `<=.15` and errors `>=3200` attributes it to training
-co-adaptation already collapsing the native path; intermediate results mean
-both. This diagnostic cannot rescue cycle memory. It only decides whether the
-next high-information architecture must isolate learning or replace the
-read-time correction. Report:
+Current update (2026-08-16 CST): `P-DIAG-CYCLE-001` is complete. Exact
+pushed/read-back source `086e25f` loaded the completed P-GDN3-058 weights,
+zeroed only its eight trained cycle gates and reevaluated the identical frozen
+L1024 cases without training. Balanced/future/past/joint moves only
+`.07425/.0745/.074/0 -> .07575/.076/.0755/0`; errors move `3703->3697` and
+wrong-key swaps `380->388`. This strongly passes the preregistered
+training-co-adaptation diagnosis: opening the cycle route during learning had
+already moved the native path into a bad joint solution, so disabling its
+read-time reread cannot recover the `.494` control. P058 remains closed. The
+next high-information architecture must protect or isolate native retrieval
+during learning, or replace it with a genuinely ownership-aware transition
+trained from scratch. Report:
 `research/reports/experiments/gdn3-cycle-edgeoff-diagnostic-20260816.md`.
 
 Current update (2026-08-16 CST): `P-GDN3-058` Bidirectional Cycle-Consistency
@@ -1694,7 +1696,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-DIAG-CYCLE-001 | preregistered | P058 may fail because its trained reread corrupts inference, or because opening that path already steers the native base into a poor basin. | Load the exact P058 checkpoint and identical test bank, set only its eight cycle gates to exact zero, evaluate once, and record case transitions. No training or parameter selection. | Sole A10080 CUDA index0; exact pushed source and clean detached worktree required. | one eval | `>=.40` balanced and `<=2400` errors means read-time damage; `<=.15` and `>=3200` means training co-adaptation collapse; otherwise mixed. | Pending. Diagnostic only; cannot rescue P058. |
+| P-DIAG-CYCLE-001 | complete | P058 may fail because its trained reread corrupts inference, or because opening that path already steers the native base into a poor basin. | Load the exact P058 checkpoint and identical test bank, set only its eight cycle gates to exact zero, evaluate once, and record case transitions. No training or parameter selection. | Sole A10080 CUDA index0; exact pushed/read-back source `086e25f`; clean detached worktree. | one eval complete | `>=.40` balanced and `<=2400` errors means read-time damage; `<=.15` and `>=3200` means training co-adaptation collapse; otherwise mixed. | Training co-adaptation collapse: balanced `.07425->.07575`, errors `3703->3697`, swaps `380->388`; only23 wrong queries repair while17 correct queries break. P058 remains closed; diagnostic SHA `c2174644...4720`. |
 | P-GDN3-058 | discarded | A native candidate value is often present but attached to the adjacent write owner. A reverse value-to-key memory can expose this owner mismatch without replacing the co-adapted main address/write/read path. | Keep native GDN2 main state/update exact. Add one reverse official GDN2 K32xV32 state/layer that stores normalized key under value coordinates; query it with the native candidate, add zero-gated query-minus-reconstructed-owner residual, then reread the unchanged main state. Native FutureSeed transports both states. Exactly +8 params, +4,096 state/layer, three official scans/layer. | Sole A10080 CUDA index0; exact pushed/read-back source `ad697c3`; strict R5 contract passed. | contract plus one candidate-only 10ep/b32/seed123 L1024 run complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 cycle paths and dual FS active; time<3.5x, alloc<2x. | Rejected: balanced `.494->.07425`, joint `.041->0`, errors `2024->3703`. Swaps fall `1546->380`, but 1,846 correct queries break and only 167 wrong queries repair. Seven/eight gates activate; board variation also misses. Cost passes. Close whole cycle-memory family; score SHA `4cdc5bfc...d159`. |
 | P-GDN3-057 | discarded | Ownership must be formed as a joint local event before the first native live-state commit; post-GDN local residuals and additive side memories are too late. | Per layer, rank64 multiplicative current/previous token-shift encoder with zero per-head gate before unchanged native GDN2. Native state/FutureSeed, one official scan, +49,160 params, zero state. | Sole A10080 CUDA index0; exact pushed source and strict contract required. | contract then one candidate-only 10ep/b32/seed123 L1024 run | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 paths and bounded pair deltas active; time<1.50x, alloc<1.25x. | Strict contract passes, but balanced `.494->.02475`, joint `.041->0`, errors `2024->3901`; 1,848 correct queries become other wrong values. Event RMS is bounded but board variation is effectively zero. Elapsed/post-warm `1.581/1.574x` also fail. Close the complete one-shift multiplicative pair-encoder family without rescue. |
 | P-GDN3-056 | complete; discarded | Native values survive but adjacent write ownership merges in layer0. Decouple role-time evidence in a bounded companion state instead of splitting the co-adapted main erase/write keys. | Preserve native GDN2+FutureSeed. Shared token-event read address plus one initial-identity learned causal Conv4 eligibility write address; same native V/g/b/w; one companion official K32xV32 state/layer with its own cross-layer seed. +16,912 params and +4,096 state/layer. | Sole A10080 CUDA index0; exact pushed/read-back source `29688a1`; strict contract passed. | contract plus one candidate-only 10ep/b32/seed123 L1024 run complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all paths/history/seed active; time<2.25x, alloc<1.75x. | Rejected: balanced `.14825`, joint0, errors3407. Swaps fall1546->639 only through broad failure; layer1 companion output is2.661x native RMS. Cost passes. Close entire family; no rescue/Sudoku transfer. |

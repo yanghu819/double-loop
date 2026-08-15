@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib
 import inspect
 import json
 import math
@@ -12,7 +13,6 @@ from pathlib import Path
 
 import torch
 from fla.layers.gdn2 import GatedDeltaNet2
-from fla.ops.gsa import chunk_gsa
 from zoology.data.utils import prepare_data
 from zoology.utils import set_determinism
 
@@ -108,7 +108,9 @@ def main() -> None:
 
     fla_root = Path(os.environ["FLA_SOURCE_ROOT"]).resolve()
     gdn2_source = Path(inspect.getfile(GatedDeltaNet2)).resolve()
-    gsa_source = Path(inspect.getfile(chunk_gsa)).resolve()
+    gsa_source = Path(
+        importlib.import_module("fla.ops.gsa.chunk").__file__
+    ).resolve()
     if fla_root not in gdn2_source.parents or fla_root not in gsa_source.parents:
         raise RuntimeError("GDN2 or GSA was imported outside the pinned FLA root")
     if hashlib.sha256(gdn2_source.read_bytes()).hexdigest() != os.environ[

@@ -12,22 +12,18 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-GDN3-055` Local-Binding Hybrid is the sole
-approved next decision. The native L1024 endpoint has 1,546 wrong-key
-valid-value swaps and `99.61%` select the adjacent owner by write rank, while
-direct/anchored/biorthogonal/dual/bank/block-RLS key remedies all break the
-co-adapted retrieval system. Keep each pinned-official GDN2 scan and native
-FutureSeed exact, and add one zero-gated causal FlashAttention branch over
-fixed non-overlapping 128-token blocks per layer. Layer 0 can form local pair
-evidence before layer 1 transports it globally. Fixed candidate-only
-D128/L2/H4/K32/V32, 10ep/b32/seed123 from the frozen initialization; +131,080
-parameters, zero persistent state, no global quadratic attention. The strict
-contract must prove exact zero-gate identity, official FLA/Triton provenance,
-two FlashAttention paths, gradients, causality and block independence.
-Quality requires balanced>=`.65` and +`.10`, both directions>=`.62`, joint
->=`.15` and +`.10`, errors -20% and swap fraction -.10; time<`2.25x`,
-allocation<`1.75x`. Any miss closes the family with no window/gate/head/
-training rescue. Report:
+Current update (2026-08-16 CST): `P-GDN3-055` Local-Binding Hybrid is complete
+and discarded. Exact source `89764e9` passes strict parent identity,
+official-FLA/Triton and FlashAttention provenance, gradient, causality and
+block-isolation gates. The mechanism activates materially, but control versus
+candidate balanced/future/past/joint is `.494/.454/.534/.041` versus
+`.4905/.475/.506/.046`; errors rise `2024->2038` and wrong-key swaps rise
+`1546->1822` (`76.38%->89.40%` of errors). Local context helps future queries
+while harming past ownership, so it does not form a stable pair identity.
+Cost passes at `1.596/1.593/1.743/1.130x`; stable GPU samples average `62.70%`
+and peak at `81%`, with `4,945 MiB` observed peak memory. Close the entire
+fixed-block local-binding family and all window/gate/head/projection/training
+rescue; no Sudoku transfer. Report:
 `research/reports/experiments/gdn3-local-binding-hybrid-mqar-20260816.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-054` Block-RLS Constrained Delta is
@@ -1636,7 +1632,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-055 | approved; implementation complete | Adjacent writes merge in layer 0, while post-hoc key geometry changes break the co-adapted read/erase/write system. A fixed local causal path may form pair identity before the next unchanged GDN2 layer transports it globally. | Keep native GDN2+FutureSeed exact. Add one zero-gated H4/D32 causal FlashAttention path over non-overlapping 128-token blocks/layer, then residual merge. D128/L2, +131,080 params, zero persistent state, one fixed 10ep/b32/seed123 L1024 candidate from frozen init. | Sole task-mode CUDA index0 after pushed SHA, clean detached worktree and strict official-GDN2/FlashAttention contract. | contract plus one candidate; no repeated control | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 gates active; time<2.25x, alloc<1.75x. | Pending. Any miss closes fixed-block local binding; no window/gate/head/projection/training/Sudoku rescue. |
+| P-GDN3-055 | complete; discarded | Adjacent writes merge in layer 0, while post-hoc key geometry changes break the co-adapted read/erase/write system. A fixed local causal path may form pair identity before the next unchanged GDN2 layer transports it globally. | Keep native GDN2+FutureSeed exact. Add one zero-gated H4/D32 causal FlashAttention path over non-overlapping 128-token blocks/layer, then residual merge. D128/L2, +131,080 params, zero persistent state, one fixed 10ep/b32/seed123 L1024 candidate from frozen init. | Sole A10080 CUDA index0; exact pushed/read-back source `89764e9`; strict contract passed. | contract plus one candidate complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, swap fraction -.10; all8 gates active; time<2.25x, alloc<1.75x. | Rejected: balanced `.4905`, joint `.046`, errors2038, swaps1822; only6/8 gates cross floor. Cost passes. Close fixed-block local binding; no rescue or Sudoku transfer. |
 | P-GDN3-054 | complete; discarded | Native failures are adjacent-owner swaps. A block-sparse online inverse-information state may cancel correlated address directions without splitting the coherent read/erase/write map or paying dense OIG cost. | Directional MQAR L1024 D128/L2/H4/K32/V32 from the frozen reproducible init. Eight 4x4 RLS blocks/head produce a constrained committed-edit direction; one official DPLR chunk/layer, native FutureSeed, +8 params, +512 transient geometry values/layer. | Sole task-mode CUDA index0; exact pushed/read-back source `6b4f0c4`. | strict contract plus one 10ep/b32/seed123 candidate complete | Balanced >=.65 and +.10, directions >=.62, joint >=.15 and +.10, errors -20%, swap fraction -.10; time <1.75x, alloc <1.50x. | Rejected: balanced `.018`, joint0, errors3928, address RMS below gate, warmed cost2.0067x. No rescue or Sudoku transfer. |
 | P-FS2-013 | complete; discarded | Native FutureSeed gives early loop correction but may fail because the transported state approaches the solution too slowly. | Keep native terminal FutureSeed and add 88 zero-init edge/head coefficients. Across repeated passes, extrapolate the current producer terminal along its RMS-bounded secant from the previous pass. No new recurrent state, scan, cache or task logic. | Sole A10080 index0 UUID `GPU-d2877fe4-641c-fe64-2a74-8abca47c292f`; exact pushed source `6798f03`; strict R5 contract and step3001 probe pass. | one candidate-only step3000->3100 continuation | Hard macro `+.02` or mixed `+.03` with hardest-range and same-board late-correction preservation; elapsed/allocation each `<10%`. | All 88 coefficients activate, but hard macro/mixed exact stay `.000651/.025391`; official blank deltas are `+.001074/-.001613/-.004182`, hardest late correction weakens, and elapsed/allocation overhead is `+18.36/+4.66%`. Discarded; current state direction cannot restore merged ownership. |
 | P-GDN3-053 | complete; discarded | P-DIAG-EDIT-001 proves layer0 competing writes contain both useful values but one shared trajectory cannot preserve both owners. | From-scratch D128/L2 directional MQAR: two independent Q/K K32xV32 banks per H4 head, shared V/g/b/w edits, fixed equal read, native H8 FutureSeed, one official scan. +67,592 params, 2x state, no router/selector/task rule. | Sole A80080 index0, target UUID; exact pushed/read-back SHA `d569d3f`; strict R3 contract passed. | contract + one 10ep/b32/seed123 arm | Balanced >=.65 and +.15, both directions >=.60, joint >=.15 and +.10, errors -20%, swaps -25% and fraction -.10; time <2x, alloc <1.75x. | Candidate `.00875/.007/.0105/0`, errors3965, swaps144. Both banks and FutureSeed active, but retrieval stays near chance; elapsed/postwarm/warmed/allocation `2.032/2.033/2.139/1.531x`. Discarded; no bank/read/QK/init/training rescue or Sudoku transfer. |

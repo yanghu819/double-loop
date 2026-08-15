@@ -2414,3 +2414,14 @@ trained from scratch on directional MQAR L1024 and must reduce wrong-owner
 swaps at materially higher absolute quality before any Sudoku transfer. A
 failure closes fixed-block local-attention hybrids rather than inviting a
 window or optimization sweep.
+
+The endpoint rejects that division of labor. Balanced accuracy is essentially
+flat (`.4940->.4905`) and joint exact only moves `.041->.046`; future accuracy
+improves `.454->.475` while past accuracy falls `.534->.506`. More decisively,
+wrong-key valid-value swaps increase `1546->1822` and become `89.40%` of all
+errors. The local path is materially active and affordable, so this is not a
+dead adapter or cost failure. A parallel local correlation path does not
+create symmetric occurrence ownership before the native global scan. The
+paper boundary should close fixed-block local-attention hybrids and motivate a
+live recurrent representation that can preserve multiple owner-specific
+bindings simultaneously.

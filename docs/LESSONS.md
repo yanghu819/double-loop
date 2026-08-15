@@ -3395,3 +3395,19 @@
   scratch. It is a generic scalable architecture test, not an MQAR selector or
   a Sudoku rule. Kill the family on a quality or cost miss; do not sweep local
   windows, gates, heads or training settings.
+
+## 2026-08-16: Local Correlation Is Not Symmetric Ownership
+
+- P-GDN3-055 passes exact parent, official-kernel, FlashAttention, causality
+  and cost contracts; its local residual reaches `.16165/.22932` relative RMS,
+  so the negative result is not a dead branch.
+- Future accuracy improves `.454->.475`, but past accuracy falls `.534->.506`;
+  balanced accuracy is flat-to-worse `.494->.4905` and joint exact only changes
+  `.041->.046`.
+- Wrong-key valid-value swaps worsen `1546->1822` and rise from `76.38%` to
+  `89.40%` of errors. A local attention residual can strengthen directional
+  association while making occurrence ownership less stable.
+- Close window, overlap, gate, head, projection, layer and training rescue.
+  The next useful GDN3 needs owner-specific structure inside the live memory
+  update/read representation, not another context branch around the same
+  state.

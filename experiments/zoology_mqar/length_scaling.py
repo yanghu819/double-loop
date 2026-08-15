@@ -82,6 +82,7 @@ GDN2_ARMS = (
     "future_seed_block_rls_gdn2",
     "future_seed_local_binding_gdn2",
     "future_seed_shared_eligibility_gdn2",
+    "future_seed_pair_event_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -314,6 +315,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_shared_eligibility."
                 "ZoologySharedEligibilityFutureSeedMixer"
+            )
+        elif arm == "future_seed_pair_event_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_pair_event."
+                "ZoologyPairEventGDN2FutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -885,6 +891,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_pair_event_gdn2":
+            from experiments.zoology_mqar.gdn2_pair_event import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -1065,6 +1077,10 @@ def run_arm(
         from experiments.zoology_mqar.gdn2_shared_eligibility import (
             parent_parameter_hash,
         )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_pair_event_gdn2":
+        from experiments.zoology_mqar.gdn2_pair_event import parent_parameter_hash
 
         parent_init_parameter_hash = parent_parameter_hash(model)
     train_dataloader, test_dataloader = prepare_data(config.data)
@@ -1513,6 +1529,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    pair_event = None
+    if arm == "future_seed_pair_event_gdn2":
+        from experiments.zoology_mqar.gdn2_pair_event import (
+            pair_event_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        pair_event = pair_event_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
             producer_readout_diagnostics,
@@ -1715,6 +1744,8 @@ def run_arm(
         score["local_binding"] = local_binding
     if shared_eligibility is not None:
         score["shared_eligibility"] = shared_eligibility
+    if pair_event is not None:
+        score["pair_event"] = pair_event
     if arm in (
         "future_seed_gdn2_log_spd",
         "future_seed_gdn2_metric_pullback",

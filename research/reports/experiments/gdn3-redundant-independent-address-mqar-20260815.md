@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation pending strict CUDA contract
+- Status: complete; discarded after strict CUDA contract and fixed endpoint
 - Date: 2026-08-15
 - Branch: `codex/gdn3-redundant-address-20260815`
 - Benchmark: validated directional MQAR L1024 binding-error regime
@@ -129,6 +129,49 @@ utilization; exact config/source/init/checkpoint/score/log hashes.
 
 ## 9. Decision
 
-Pending strict CUDA contract and the single fixed candidate endpoint. A pass
-admits one Sudoku transfer. A miss closes this topology and returns the next
-decision to the causal evidence rather than a nearby parameter sweep.
+The strict R3 contract passed from exact pushed source
+`d569d3fdda3271105e0d8ec18213d4ecdbf336d8`. It verified one pinned-official
+scan per layer, two official backward nodes, exact parent parameter mapping,
+`729,176` total parameters (`+67,592`), `8,192` state values per layer, all 18
+required gradient paths, exact bank-swap equivariance, native H8 FutureSeed and
+the registered GPU UUID. Contract SHA256 is
+`970d232b0b659f851167ae44492fb9811299694609d5a32f372f9e0c4beea2fc`.
+
+Both address banks strongly activated and remained distinct. Layer-0/1 Q
+cosines are `-.0560/.1570`, K cosines `.0265/-.1123`, maximum state cosines
+`.5358/.7469`, state relative differences `1.0828/.8389`, and output relative
+disagreements `.4569/.8110`. Native FutureSeed is active with gate `.50049`.
+The mechanism therefore did not fail through dead symmetry.
+
+Quality collapsed. Frozen control versus candidate
+balanced/future/past/joint is `.494/.454/.534/.041` versus
+`.00875/.007/.0105/0`; future/past CE rises from `1.25939/1.22668` to
+`4.58485/4.58624`; errors rise `2024->3965`. Wrong-key swaps fall
+`1546->144`, but only because almost all retrieval is lost. Paired transitions
+include `1885` correct-to-other-wrong and `1475` wrong-key-to-other-wrong,
+against only `18` correct-to-correct and `15` wrong-key-to-correct cases. The
+validation curve stays near chance for all ten epochs, so the topology never
+enters the native late learning transition.
+
+Cost also misses: elapsed/post-warm/warmed-step/allocation ratios are
+`2.0324/2.0327/2.1390/1.5306x`; only allocation passes. The candidate trains at
+`833.36` examples/s, reaches `1,609,427,968` training bytes and
+`1,642,720,256` independently warmed bytes. GPU sampling records 95 samples,
+54 active samples at `59.11%` mean SM, `82%` peak SM and `5,224 MiB` observed
+peak memory.
+
+R1 (`947087f`) stopped before science because the contract checker retained
+only Python object IDs while traversing autograd and observed reused wrapper
+IDs. R2 (`d7f98be`) stopped before training because the frozen initialization
+SHA literal omitted its final `f`. Both are preserved as non-science launch
+incidents; R3 reverified the actual 64-character initialization SHA and
+completed normally. Formal score/log/GPU/checkpoint SHA256 values are
+`ef1af824990d6bb7f0a7d4ad1d34060b276568b612faaadc2adcf47652353b3d`,
+`85a21ccdc5628d11f48945632ed931f4c1c8db9d101a3c454f9e2cf7b8d5de13`,
+`ddb2d1464b19147b0631ad9accec06a24ca65d1d8bcb4b5a0ec224f787fa75b`, and
+`b9759264353fa31641913b390a7bf7cb15c3cc314dcdbeccec31792f80995d36`.
+
+Decision: discard P-GDN3-053. Independent address redundancy with shared
+edits and a fixed equal read is not sufficient and disrupts the native
+optimization path. Close bank count, read mix, Q/K, initialization and
+training rescue. There is no Sudoku transfer.

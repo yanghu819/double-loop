@@ -3312,3 +3312,22 @@
 - Keep the oracle boundary explicit. The `.87425` balanced selected score uses
   the baseline wrong value to choose which write to delete; it is evidence,
   not a deployable selector, repair or quality claim.
+
+## 2026-08-15: Independent address redundancy can destroy the learning transition
+
+- P-GDN3-053 gives every native head two independently learned full K32xV32
+  address banks, sends the same committed edit to both, and averages both
+  official reads from the first training step. The strict contract proves
+  independent Q/K geometry, strong state/output disagreement and active H8
+  FutureSeed; symmetry did break.
+- Despite doubled state, balanced accuracy collapses `.494->.00875` and the
+  ten-epoch validation curve never leaves chance. The fall in wrong-key swaps
+  `1546->144` is broad retrieval failure, not ownership repair.
+- The negative result is stronger than “decoupled keys did not help.” A global
+  second coordinate system changes every read and removes the native model's
+  late optimization transition. Future work must retain an exact native path
+  and make ownership an additive, learnable live-state capability whose
+  utility can emerge without averaging incompatible coordinate systems.
+- Time ratios above `2.03x` also reject this topology as a scalable GDN3 core.
+  Close bank count, mean-read weighting, Q/K coupling and initialization
+  rescue rather than tuning around the collapse.

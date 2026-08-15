@@ -2322,3 +2322,21 @@ itself. The paper should use this boundary to motivate a generic redundant
 address-state topology trained from scratch, explicitly excluding owner
 selectors, write suppression, erase-key rescue and global token-to-slot
 routing.
+
+### Redundant Independent Addresses Do Not Preserve Native Learnability
+
+P-GDN3-053 tests the resulting foundational topology rather than a mature
+checkpoint graft. Two full K32xV32 banks per head use independently learned
+Q/K projections, receive the same native edit, run in one pinned-official H8
+scan and contribute through a fixed mean. Both banks and the enlarged native
+FutureSeed activate and remain non-collinear.
+
+The result rejects raw redundant address capacity. Balanced accuracy falls
+from `.494` to `.00875`, errors rise `2024->3965`, and validation stays near
+chance for every epoch. The lower swap count is a consequence of losing
+almost all retrieval. Time cost is also slightly above `2x`. The paper should
+therefore separate the causal storage diagnosis from this failed remedy: two
+bindings need separable ownership, but duplicating coordinate systems and
+averaging their reads globally destroys the base optimization path. A viable
+successor must preserve the native trajectory and add ownership in a bounded
+live transition, not merely add or decouple keys.

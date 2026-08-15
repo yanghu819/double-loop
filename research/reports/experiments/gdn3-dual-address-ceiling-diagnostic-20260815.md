@@ -78,3 +78,11 @@ hashes, GitHub readback and an artifact manifest under the formal run directory.
 ## 8. Decision
 
 Pending the single frozen GPU diagnostic.
+
+R1 source `2bd7e66` completed native and tied-DPLR execution, then exited
+before the oracle intervention because the surrounding production autocast
+downcast a 4x4 `eigvalsh` input to BF16. CUDA does not implement that operation
+for BF16. The launcher wrote a non-science `abort.json`; no mechanism or gate
+assertion failed. R2 changes only the registered Gram eigensolve/solve region
+to explicit FP32 with autocast disabled, matching the preregistered numerical
+definition.

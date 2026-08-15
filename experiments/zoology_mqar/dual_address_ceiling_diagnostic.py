@@ -134,30 +134,35 @@ class _DualAddressController:
     ) -> torch.Tensor:
         if self.query_positions is None or self.write_positions is None:
             raise RuntimeError("Owner positions were not registered")
-        owner_q = self._gather_owner_rows(q_unit, self.query_positions).float()
-        native_write = self._gather_owner_rows(
-            k_unit, self.write_positions
-        ).float()
-        gram = torch.einsum("bhik,bhjk->bhij", owner_q, owner_q)
-        eigenvalues = torch.linalg.eigvalsh(gram)
-        if not torch.isfinite(eigenvalues).all() or (eigenvalues <= 0).any():
-            raise RuntimeError("Owner query Gram is not finite positive definite")
-        condition = eigenvalues[..., -1] / eigenvalues[..., 0]
-        if float(condition.max().item()) > GRAM_CONDITION_CEILING:
-            raise RuntimeError("Owner query Gram exceeds the registered condition cap")
+        with torch.autocast(device_type=q_unit.device.type, enabled=False):
+            owner_q = self._gather_owner_rows(
+                q_unit, self.query_positions
+            ).float()
+            native_write = self._gather_owner_rows(
+                k_unit, self.write_positions
+            ).float()
+            gram = torch.einsum("bhik,bhjk->bhij", owner_q, owner_q)
+            eigenvalues = torch.linalg.eigvalsh(gram)
+            if not torch.isfinite(eigenvalues).all() or (eigenvalues <= 0).any():
+                raise RuntimeError("Owner query Gram is not finite positive definite")
+            condition = eigenvalues[..., -1] / eigenvalues[..., 0]
+            if float(condition.max().item()) > GRAM_CONDITION_CEILING:
+                raise RuntimeError(
+                    "Owner query Gram exceeds the registered condition cap"
+                )
 
-        dual = torch.linalg.solve(gram, owner_q)
-        dual_unit = F.normalize(dual, dim=-1, eps=1e-6)
-        pairing = torch.einsum("bhik,bhjk->bhij", owner_q, dual_unit)
-        diagonal = pairing.diagonal(dim1=-2, dim2=-1)
-        offdiagonal = pairing - torch.diag_embed(diagonal)
-        native_diagonal = torch.einsum(
-            "bhik,bhik->bhi", owner_q, native_write
-        )
-        relative_change = (
-            (dual_unit - native_write).square().mean().sqrt()
-            / native_write.square().mean().sqrt().clamp_min(1e-8)
-        )
+            dual = torch.linalg.solve(gram, owner_q)
+            dual_unit = F.normalize(dual, dim=-1, eps=1e-6)
+            pairing = torch.einsum("bhik,bhjk->bhij", owner_q, dual_unit)
+            diagonal = pairing.diagonal(dim1=-2, dim2=-1)
+            offdiagonal = pairing - torch.diag_embed(diagonal)
+            native_diagonal = torch.einsum(
+                "bhik,bhik->bhi", owner_q, native_write
+            )
+            relative_change = (
+                (dual_unit - native_write).square().mean().sqrt()
+                / native_write.square().mean().sqrt().clamp_min(1e-8)
+            )
         self._diagnostics["gram_condition_max"].append(condition.max().detach())
         self._diagnostics["gram_eigenvalue_min"].append(
             eigenvalues[..., 0].min().detach()

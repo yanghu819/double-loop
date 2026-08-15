@@ -122,6 +122,13 @@ the tuple to the registered scalar hash. The launcher wrote a non-science
 abort and released GPU memory. R2 changes only that checker import; mechanism,
 data, initialization, training and gates are unchanged.
 
+Before R2 reached its contract, the old AIStation lease expired
+(`remainTime=-126`) and the platform halted the development environment. The
+replacement remains one A100-SXM4-80GB but has UUID
+`GPU-12f300d0-b6fa-4d23-0ab9-c57ffdec4ef5`. R3 changes only the registered
+hardware UUID. The persisted source, frozen artifacts and experiment protocol
+are unchanged.
+
 Exact source SHA, run name, contract, score, checkpoint, source snapshot, GPU
 samples and final decision will be written only after the pushed-SHA run
 finishes.

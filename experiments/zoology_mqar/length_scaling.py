@@ -74,6 +74,7 @@ GDN2_ARMS = (
     "future_seed_canonical_address_companion_gdn2",
     "future_seed_address_payload_gauge_gdn2",
     "future_seed_producer_readout_gdn2",
+    "future_seed_sparse_delta_slot_gdn2",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -272,6 +273,11 @@ def build_config(
                 "experiments.zoology_mqar.address_payload_gauge_futureseed."
                 "ZoologyAddressPayloadGaugeFutureSeedMixer"
             )
+        elif arm == "future_seed_sparse_delta_slot_gdn2":
+            mixer_name = (
+                "experiments.zoology_mqar.gdn2_sparse_delta_slots."
+                "ZoologySparseDeltaSlotFutureSeedMixer"
+            )
         else:
             mixer_name = (
                 "experiments.zoology_mqar.gdn2_futureseed."
@@ -325,6 +331,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_sparse_delta_slot_gdn2":
+        from experiments.zoology_mqar.gdn2_sparse_delta_slots import (
+            SparseDeltaSlotLanguageModel,
+        )
+
+        return SparseDeltaSlotLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_canonical_address_companion_gdn2":
         from experiments.zoology_mqar.canonical_address_companion import (
             CanonicalAddressCompanionLanguageModel,
@@ -770,6 +782,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_sparse_delta_slot_gdn2":
+            from experiments.zoology_mqar.gdn2_sparse_delta_slots import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -908,6 +926,12 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm == "future_seed_address_payload_gauge_gdn2":
         from experiments.zoology_mqar.address_payload_gauge_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_sparse_delta_slot_gdn2":
+        from experiments.zoology_mqar.gdn2_sparse_delta_slots import (
             parent_parameter_hash,
         )
 
@@ -1266,6 +1290,19 @@ def run_arm(
                 diagnostic_inputs[:8].cuda(),
             )
         )
+    sparse_delta_slots = None
+    if arm == "future_seed_sparse_delta_slot_gdn2":
+        from experiments.zoology_mqar.gdn2_sparse_delta_slots import (
+            sparse_delta_slot_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        sparse_delta_slots = sparse_delta_slot_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     address_payload_gauge = None
     if arm == "future_seed_address_payload_gauge_gdn2":
         from experiments.zoology_mqar.address_payload_gauge_futureseed import (
@@ -1345,6 +1382,7 @@ def run_arm(
             * (2 if arm == "future_seed_slot_state_gdn2" else 1)
             + (4_096 if arm == "future_seed_raven_address_gdn2" else 0)
             + (8_192 if arm == "future_seed_linear_product_state_gdn2" else 0)
+            + (4_096 if arm == "future_seed_sparse_delta_slot_gdn2" else 0)
         ),
         "init_hash": init_hash,
         "init_parameter_hash": init_parameter_hash,
@@ -1392,6 +1430,8 @@ def run_arm(
         score["binding_certificate"] = binding_certificate
     if canonical_address_companion is not None:
         score["canonical_address_companion"] = canonical_address_companion
+    if sparse_delta_slots is not None:
+        score["sparse_delta_slots"] = sparse_delta_slots
     if address_payload_gauge is not None:
         score["address_payload_gauge"] = address_payload_gauge
     if producer_readout is not None:

@@ -12,6 +12,22 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-GDN3-050` Sparse Committed-Delta Pair
+Slots is the sole successor authorized by P-REPRO-001. Keep native GDN2 and
+native FutureSeed, but write each exact official committed edit into one of 16
+factorized key/value slots through one pinned-official GSA scan per layer. A
+zero-init local gate reads the sparse state; a zero-init receiving gate folds
+its factor product into the next layer's native KxV FutureSeed. This differs
+from dense correction/companion banks and Raven controllers because key and
+value ownership live in the same sparse slot. Fixed delta is +4,108 parameters,
++4,096 factor-state values/layer and +1 scan/layer. One candidate-only
+L1024 10ep/b32/seed123 run reuses the frozen P-REPRO initialization/control.
+Pass requires exact strict contract, all 16 stable active slots, balanced
+`>=.85` and `+.10`, future/past `>=.82`, joint `>=.60`, swap fraction `-.10`,
+fewer errors, time `<2x` and allocation `<1.60x`. Any miss closes the family
+without routing/slot/gate/training rescue. Report:
+`research/reports/experiments/gdn3-sparse-delta-slots-mqar-20260815.md`.
+
 Current update (2026-08-15 CST): `P-REPRO-001` same-seed native GDN2 replay is
 complete and passes every registered gate. Exact pushed/read-back source
 `2791a7f4` serialized one initialization and ran two sequential

@@ -129,6 +129,15 @@ replacement remains one A100-SXM4-80GB but has UUID
 hardware UUID. The persisted source, frozen artifacts and experiment protocol
 are unchanged.
 
+R3 reached the strict CUDA contract but stopped before science because its
+parent-gradient check ran the train-mode control and candidate under different
+dropout RNG states. Full eval logits and arbitrary nonzero incoming-state
+outputs/states were already exact. R4 restores the same CPU/CUDA RNG state
+between those two train-mode forwards, matching the established checker
+pattern used by the other zero-initialized GDN3 contracts. This is a
+checker-only correction; the model, initialization, data and registered gates
+remain unchanged.
+
 Exact source SHA, run name, contract, score, checkpoint, source snapshot, GPU
 samples and final decision will be written only after the pushed-SHA run
 finishes.

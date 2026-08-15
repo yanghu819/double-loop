@@ -313,7 +313,11 @@ def main() -> None:
 
     native.train().zero_grad(set_to_none=True)
     candidate.train().zero_grad(set_to_none=True)
+    cpu_rng_state = torch.get_rng_state()
+    cuda_rng_state = torch.cuda.get_rng_state()
     native_logits = native(inputs)
+    torch.set_rng_state(cpu_rng_state)
+    torch.cuda.set_rng_state(cuda_rng_state)
     candidate_logits = candidate(inputs)
     mask = targets != -100
     native_loss = F.cross_entropy(native_logits[mask], targets[mask])

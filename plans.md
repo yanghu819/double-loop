@@ -12,6 +12,21 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-DIAG-EDIT-001` is preregistered as the
+single next decision-changing audit. Frozen P-REPRO-001 shows adjacent-owner
+swaps, while P-DIAG-OWN-003 closes head selection; this audit therefore turns
+off erase or write, one fixed recovered owner at a time, exactly at each MQAR
+value commit token. It runs one hook-free baseline plus 24 fixed variants over
+layer0/layer1/both and four owner ranks. The both-layer gate opens coherent
+erase ownership only with swap repair >=20%, repair-with-owner-retained >=15%
+and both owner-retention measures >=80%. A separable-state route opens only
+when write-off repairs >=25%, beats erase by >=.05 and retains <=60% of the
+competing owner's query, proving a destructive storage tradeoff. Otherwise
+local gate edits close. This is zero-parameter frozen inference; all
+label-mediated selections are diagnostic only. No token/rank/layer/threshold,
+gate, seed, LR, loss, width, depth or duration rescue is authorized. Report:
+`research/reports/diagnostics/native-mqar-edit-component-20260815.md`.
+
 Current update (2026-08-15 CST): `P-DIAG-OWN-003` is complete and closes head
 fusion/readout selection. Exact pushed/read-back source `e535977a` passes the
 registered fresh-process boundary with `3990/4000` frozen predictions,

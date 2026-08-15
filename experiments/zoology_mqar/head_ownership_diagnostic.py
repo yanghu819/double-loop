@@ -5,7 +5,7 @@ import hashlib
 import json
 import time
 from collections import Counter
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -153,7 +153,7 @@ def _evaluate_variant(
     model: torch.nn.Module,
     dataloader: Any,
     mixers: list[GatedDeltaNet2],
-    masks: dict[int, torch.Tensor],
+    masks: dict[int, torch.Tensor] | None,
 ) -> dict[str, Any]:
     model.eval()
     quarter = SEQUENCE_LENGTH // 4
@@ -169,7 +169,10 @@ def _evaluate_variant(
     torch.cuda.synchronize()
     started = time.perf_counter()
 
-    with _head_mask_hooks(mixers, masks):
+    hook_context = (
+        nullcontext() if masks is None else _head_mask_hooks(mixers, masks)
+    )
+    with hook_context:
         for inputs, labels, _slices in dataloader:
             logits = model(inputs.cuda())
             labels_gpu = labels.cuda()
@@ -327,12 +330,14 @@ def main() -> None:
     mixers = _mixers(model)
     _train_loader, test_loader = prepare_data(config.data)
 
+    masks_by_variant = _variant_masks()
     variants: dict[str, dict[str, Any]] = {}
     torch.cuda.reset_peak_memory_stats()
-    for name, masks in _variant_masks().items():
-        variants[name] = _evaluate_variant(model, test_loader, mixers, masks)
-        elapsed = variants[name]["elapsed_sec"]
-        print(f"variant={name} elapsed={elapsed:.3f}s", flush=True)
+    variants["full"] = _evaluate_variant(model, test_loader, mixers, None)
+    print(
+        f"variant=full elapsed={variants['full']['elapsed_sec']:.3f}s",
+        flush=True,
+    )
 
     baseline = variants["full"]
     frozen = _frozen_predictions(args.frozen_cases)
@@ -344,20 +349,30 @@ def main() -> None:
             baseline["predictions"],
         )
     )
+    print(
+        f"full_query_exact_replay={replay_matches}/{len(baseline['predictions'])}",
+        flush=True,
+    )
     if replay_matches != len(baseline["predictions"]):
         raise RuntimeError("Frozen baseline replay is not query-exact")
+    baseline_summary = _summary(baseline["predictions"], baseline)
+    if any(
+        baseline_summary[key] != expected
+        for key, expected in EXPECTED_BASELINE.items()
+    ):
+        raise RuntimeError(f"Frozen baseline metrics changed: {baseline_summary}")
+
+    for name, masks in masks_by_variant.items():
+        if name == "full":
+            continue
+        variants[name] = _evaluate_variant(model, test_loader, mixers, masks)
+        elapsed = variants[name]["elapsed_sec"]
+        print(f"variant={name} elapsed={elapsed:.3f}s", flush=True)
 
     variant_summaries = {
         name: _summary(row["predictions"], baseline)
         for name, row in variants.items()
     }
-    if any(
-        variant_summaries["full"][key] != expected
-        for key, expected in EXPECTED_BASELINE.items()
-    ):
-        raise RuntimeError(
-            f"Frozen baseline metrics changed: {variant_summaries['full']}"
-        )
 
     drop_names = [name for name in variants if name.startswith("drop_")]
     only_names = [name for name in variants if name.startswith("only_")]
@@ -427,7 +442,6 @@ def main() -> None:
         )
         for index in swap_indices
     )
-    baseline_summary = variant_summaries["full"]
     margin_summary = derived_summaries["max_margin_final_only"]
     oracle_swap_repair = corrected_by_final_only / len(swap_indices)
     readout_route_open = (

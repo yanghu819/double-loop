@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: preregistered; implementation pending strict GPU execution
+- Status: complete; direct dual-address route closed
 - Date: 2026-08-15
 - Benchmark: frozen P-REPRO-001 directional MQAR L1024 replay B
 - Model: trained native D128/L2/H4/K32/V32 official GDN2 plus FutureSeed
@@ -77,7 +77,9 @@ hashes, GitHub readback and an artifact manifest under the formal run directory.
 
 ## 8. Decision
 
-Pending the single frozen GPU diagnostic.
+Close direct dual-address orthogonalization. Do not launch a causal dual-key,
+dual-bank, ridge, owner-count, layer, scale, key or training rescue from this
+diagnostic.
 
 R1 source `2bd7e66` completed native and tied-DPLR execution, then exited
 before the oracle intervention because the surrounding production autocast
@@ -86,3 +88,34 @@ for BF16. The launcher wrote a non-science `abort.json`; no mechanism or gate
 assertion failed. R2 changes only the registered Gram eigensolve/solve region
 to explicit FP32 with autocast disabled, matching the preregistered numerical
 definition.
+
+R2 source `25743fc` completes with status0 on the sole A800 GPU. The native arm
+reproduces balanced/future/past/joint `.49425/.454/.5345/.041`, `2023` errors
+and `1546` wrong-key swaps. Rewriting layer0 as a tied DPLR control preserves
+`.99025` of predictions and balanced `.4945`, so the diagnostic algebra itself
+is faithful.
+
+The oracle dual geometry is numerically strong: maximum owner-query Gram
+condition `4409.71`, minimum eigenvalue `.0009057`, maximum off-diagonal dual
+pairing error `3.62e-6` and minimum diagonal pairing `.036923`. Nevertheless,
+balanced/future/past/joint falls to `.23025/.146/.3145/0`; errors rise
+`2023->3079`. It repairs only `327/1546` native swaps (`21.15%`) and retains
+only `512/1977` native-correct queries (`25.90%`). The registered quality
+ceiling therefore fails every threshold despite passing geometry.
+
+The causal conclusion is stronger than "keys are not orthogonal enough."
+Native query, erase, write and read geometry are co-adapted. Replacing only the
+write coordinate system, even with an exact owner oracle, destroys more correct
+bindings than it repairs. Future work must preserve the native trajectory and
+learn ownership as part of the end-to-end transition or loop dynamics; it must
+not retry post-hoc key separation.
+
+Formal run:
+`/huyang2/double-loop/runs/p-diag-dual-001-owner-ceiling-r2-20260815T1326Z-25743fc`.
+Diagnostic JSON/log SHA256 are
+`dbab5254a96a0a00a94b121ba73218e3494fbd1a8e89c34458f84b0b1d05de4d` /
+`7a94062f59da04a9d0852c87e00e09bcff819814485fb15fd8944bdbcc546c78`;
+source snapshot SHA256 is
+`fdd4f1d125eab02f582fef967fa112298fde553f469f02684e506cb2b1767af3`.
+Active GPU samples average `59.21%` SM, peak at `90%`, and average `1188.6`
+MiB observed memory; PyTorch peak allocated memory is `599,437,824` bytes.

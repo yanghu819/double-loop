@@ -3331,3 +3331,20 @@
 - Time ratios above `2.03x` also reject this topology as a scalable GDN3 core.
   Close bank count, mean-read weighting, Q/K coupling and initialization
   rescue rather than tuning around the collapse.
+
+## 2026-08-15: Exact dual keys do not preserve a co-adapted binding system
+
+- P-DIAG-DUAL-001 freezes the reproducible L1024 model and gives the four
+  known owner writes an almost exact dual basis. Off-diagonal query/write
+  pairing is only `3.62e-6`; this is a strong representational ceiling, not an
+  optimization miss.
+- Balanced accuracy still falls `.49425->.23025`, errors rise `2023->3079`,
+  and native-correct retention is only `25.90%`. The intervention repairs just
+  `21.15%` of swaps while breaking `1465` formerly correct queries.
+- The model's query, erase, write and read directions form one co-adapted
+  coordinate system. Making one component mathematically cleaner after
+  training invalidates the other components.
+- This closes direct `decouple_k`, dual-basis, ridge and bank rescue. A useful
+  GDN3 must acquire ownership end to end while retaining the native learning
+  path, or improve generic loop convergence; it cannot bolt an orthogonal
+  address correction onto a mature state.

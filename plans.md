@@ -12,6 +12,19 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-15 CST): `P-DIAG-DUAL-001` is complete and closes
+direct dual-address orthogonalization. Exact pushed source `25743fc` reproduces
+native balanced `.49425`; its tied-DPLR control remains `.4945` with `.99025`
+prediction agreement. The oracle write basis achieves off-diagonal owner
+pairing error `3.62e-6`, yet balanced falls to `.23025`, errors rise
+`2023->3079`, only `21.15%` of swaps repair and only `25.90%` of native-correct
+queries survive. Therefore the bottleneck is not a missing post-hoc orthogonal
+key basis: query/erase/write/read geometry is jointly learned. Close direct
+dual-key/bank/ridge/owner-count/layer/scale/training rescue. The next decision
+must target a genuinely different end-to-end ownership or loop-convergence
+mechanism while preserving the exact native path. Report:
+`research/reports/experiments/gdn3-dual-address-ceiling-diagnostic-20260815.md`.
+
 Current update (2026-08-15 CST): `P-GDN3-053` Redundant Independent-Address
 GDN2 is complete and discarded. Exact pushed source `d569d3f` passes the
 strict A800 contract with two distinct full K32xV32 address banks, one

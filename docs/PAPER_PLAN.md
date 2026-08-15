@@ -2340,3 +2340,20 @@ bindings need separable ownership, but duplicating coordinate systems and
 averaging their reads globally destroys the base optimization path. A viable
 successor must preserve the native trajectory and add ownership in a bounded
 live transition, not merely add or decouple keys.
+
+### Exact Dual-Address Geometry Is Not a Binding Solution
+
+P-DIAG-DUAL-001 asks the strongest possible version of the decoupled-key
+hypothesis on the frozen reproducible L1024 model. It keeps native queries and
+erase directions, but maps the four known owner writes to an exact dual basis.
+The tied-DPLR control preserves the model, and the oracle pairing error is only
+`3.62e-6`, so a failure cannot be attributed to an approximate solver.
+
+The oracle instead lowers balanced accuracy from `.49425` to `.23025`, raises
+errors from `2023` to `3079`, repairs only `327/1546` swaps and retains only
+`512/1977` native-correct answers. This establishes a useful negative result:
+GDN2 binding is distributed across a co-adapted query/erase/write/read system,
+not recoverable by independently improving write-key separability. The paper
+should use this ceiling to close post-hoc orthogonalization and motivate an
+end-to-end ownership transition or a distinct loop-convergence mechanism that
+preserves the exact native path.

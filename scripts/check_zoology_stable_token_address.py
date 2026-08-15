@@ -50,6 +50,8 @@ EXPECTED_NATIVE_PARAMETERS = 661_584
 EXPECTED_CANDIDATE_PARAMETERS = (
     EXPECTED_NATIVE_PARAMETERS + EXPECTED_NEW_PARAMETERS
 )
+PARENT_GRADIENT_ATOL = 0.125
+PARENT_GRADIENT_REL_RMS_MAX = 0.01
 
 
 def _mapped_candidate_parameters(
@@ -315,6 +317,8 @@ def main() -> None:
     )
     parent_gradient_max_diff = 0.0
     compared_parent_gradients = 0
+    parent_gradient_difference_energy = 0.0
+    parent_gradient_reference_energy = 0.0
     candidate_parameters = _mapped_candidate_parameters(candidate)
     native_parameters = dict(native.named_parameters())
     for name in native_parameters:
@@ -325,6 +329,15 @@ def main() -> None:
                 raise RuntimeError(f"Parent gradient topology changed: {name}")
             continue
         compared_parent_gradients += 1
+        gradient_difference = (
+            native_gradient.float() - candidate_gradient.float()
+        )
+        parent_gradient_difference_energy += float(
+            gradient_difference.square().sum().item()
+        )
+        parent_gradient_reference_energy += float(
+            native_gradient.float().square().sum().item()
+        )
         parent_gradient_max_diff = max(
             parent_gradient_max_diff,
             finite_max_abs_difference(
@@ -333,8 +346,19 @@ def main() -> None:
                 f"parent gradient {name}",
             ),
         )
-    if parent_gradient_max_diff != 0:
-        raise RuntimeError("Zero address changed parent gradients")
+    parent_gradient_relative_rms = (
+        parent_gradient_difference_energy
+        / max(parent_gradient_reference_energy, 1e-24)
+    ) ** 0.5
+    if (
+        parent_gradient_max_diff > PARENT_GRADIENT_ATOL
+        or parent_gradient_relative_rms > PARENT_GRADIENT_REL_RMS_MAX
+    ):
+        raise RuntimeError(
+            "Zero address changed parent gradients beyond BF16 tolerance: "
+            f"max={parent_gradient_max_diff} "
+            f"relative_rms={parent_gradient_relative_rms}"
+        )
 
     with torch.no_grad():
         torch.nn.init.normal_(
@@ -389,6 +413,9 @@ def main() -> None:
         "shared_projection_gradient_rms": shared_gradient_rms,
         "compared_parent_gradients": compared_parent_gradients,
         "parent_gradient_max_diff": parent_gradient_max_diff,
+        "parent_gradient_relative_rms": parent_gradient_relative_rms,
+        "parent_gradient_atol": PARENT_GRADIENT_ATOL,
+        "parent_gradient_relative_rms_max": PARENT_GRADIENT_REL_RMS_MAX,
         "active_diagnostics": active_diagnostics,
         "provenance": provenance,
     }

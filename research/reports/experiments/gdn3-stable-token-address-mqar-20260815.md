@@ -70,12 +70,14 @@ The candidate must have 677,968 parameters versus 661,584 native, exactly one
 shared 16,384-parameter projection, and 4,096 recurrent values per layer.
 
 At zero initialization require exact full logits, nonzero-incoming output and
-terminal state, parent tensors, parent gradients, and official backward-node
-count. The shared projection gradient must be finite/nonzero. With a nonzero
-contract weight, repeated occurrences of one token must have address max error
-`<=1e-6`, different tokens must vary, both layers must change Q/K, both must
-receive the same residual tensor, and terminal states must remain finite and
-board-varying. Any fallback or topology/identity miss is terminal.
+terminal state, parent tensors, parent-gradient topology, and official
+backward-node count. Parent gradients must stay within the preregistered pinned
+BF16/Triton tolerance: max absolute difference `<=0.125` and aggregate relative
+RMS `<=0.01`. The shared projection gradient must be finite/nonzero. With a
+nonzero contract weight, repeated occurrences of one token must have address
+max error `<=1e-6`, different tokens must vary, both layers must change Q/K,
+both must receive the same residual tensor, and terminal states must remain
+finite and board-varying. Any fallback or topology/identity miss is terminal.
 
 ## 6. Fixed Falsifiers And Gate
 

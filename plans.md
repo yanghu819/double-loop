@@ -13,20 +13,18 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-15 CST): `P-GDN3-052` Committed-Edit Interference
-Credit is registered and implementation-ready, but not yet launched. Frozen
-P-REPRO-001 shows `76.38%` of errors are valid values under the wrong key;
-`99.55%` stay in the correct future/past direction and `99.61%` select the
-adjacent write owner. P051 rejects a fixed one-token lag, while P045 rejects
-global key whitening. P052 keeps native inference bit exact and adds a
-training-only causal window128 loss weighted by the pinned official kernel's
-detached committed-edit RMS. It penalizes only normalized key-overlap above
-the random `1/K` floor, with fixed coefficient `.03`, zero parameters/state/
-inference scans, and no labels or selectors. Candidate-only L1024 uses the
-frozen matched initialization and replay-B score; quality requires balanced
-`>=.60` and `>=+.10`, future `>=.58` and `>=+.10`, past regression `<=.03`,
-joint `>=.10`, errors `-15%`, swaps `-20%`; elapsed/post-warm/warmed and
-allocation ceilings are `1.35/1.35/1.35/1.25x`. Any miss closes coefficient,
-window, floor, normalization, detach and all training rescue. Report:
+Credit is complete and discarded. Exact pushed/read-back source `6eb48a47`
+passes the strict A800 contract with bit-exact native inference, two official
+GDN2 backwards, exact committed edits and selective K-only auxiliary
+gradients. The active local window128 credit nevertheless prevents the native
+learning transition: control/candidate balanced/future/past/joint is
+`.494/.454/.534/.041` versus `.013/.011/.015/0`, errors rise `2024->3948`,
+and swaps fall `1546->148` only through broad retrieval collapse. Endpoint
+credit remains active in both layers. Elapsed/post-warm/warmed/allocation
+ratios are `3.543/3.521/3.405/4.539x`. Close coefficient, window, floor,
+normalization, detach and all training rescue; no Sudoku transfer. Formal
+high-memory A800 samples average `79.06%` SM with `8.51 GiB` observed peak.
+Score SHA256 is `ec8debb8...dd4bf`. Report:
 `research/reports/experiments/gdn3-committed-interference-credit-mqar-20260815.md`.
 
 Current update (2026-08-15 CST): `P-GDN3-051` Causal Lagged-Address Commit is

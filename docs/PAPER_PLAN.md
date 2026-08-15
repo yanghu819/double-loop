@@ -2261,3 +2261,21 @@ two-cycles. The unresolved error is therefore instance ownership within an
 already recovered direction-specific value set. This distinguishes the next
 target from more payload capacity, protected FutureSeed copies, a global key
 split, or a fixed commit delay.
+
+### Exact Edit-Weighted Interference Credit Is Too Destructive
+
+P-GDN3-052 asks whether only high-energy official committed edits should avoid
+recently occupied key directions. It leaves inference bit exact and adds no
+parameters or state; training alone receives a causal window128 hinge credit
+weighted by detached exact committed-edit RMS. The strict contract proves that
+the loss is active, target free, scale invariant and isolated to native K
+projection/convolution gradients.
+
+The candidate does not preserve the base learner. Balanced accuracy collapses
+`.494->.013`, joint exact `.041->0`, and errors rise `2024->3948`. Wrong-key
+swaps fall `1546->148` only because almost all retrieval fails. The credit is
+still active at the endpoint, while all measured cost ratios are above `3.4x`.
+This rules out local collision penalties as a practical substitute for learned
+binding. A successful successor must preserve the native CE trajectory and add
+an ownership signal inside a reversible or residual live transition, rather
+than globally penalize the key geometry throughout training.

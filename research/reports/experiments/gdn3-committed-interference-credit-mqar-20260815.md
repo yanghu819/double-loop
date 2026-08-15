@@ -2,7 +2,11 @@
 
 ## 1. Metainfo
 
-- Status: registered; not yet launched
+- Status: complete; discarded
+- Formal source: exact pushed/read-back SHA
+  `6eb48a47658a01e67ee4c3095e95cc3f1bb866cc`
+- Formal run:
+  `p-gdn3-052-committed-interference-l1024-20260815T100327Z-6eb48a4`
 - Decision field: validated directional MQAR L1024 wrong-key binding regime
 - Parent: frozen deterministic P-REPRO-001 initialization and replay-B score
 - Candidate: D128/L2/H4/K32/V32 pinned-official GDN2, native FutureSeed,
@@ -140,8 +144,50 @@ with the same objective. A miss means local collision-aware training credit is
 insufficient; the next experiment must change learned ownership in the live
 transition rather than add another geometry loss or cache.
 
+### Endpoint result
+
+The strict A800 CUDA contract passed. Candidate and native outputs and both
+terminal states are bit exact at initialization, including nonzero incoming
+state. The combined graph retains exactly two pinned-official
+`ChunkGDN2FunctionBackward` paths, while the auxiliary-only graph contains
+none. Its only nonzero gradients reach the two native K projections and K
+short convolutions. Both layers have variable exact committed edits and a
+nonzero collision tail; head permutation error is zero and scale-invariance
+error is `1.49e-8`.
+
+The endpoint rejects the mechanism decisively:
+
+| arm | balanced | future | past | joint | errors | wrong-key swaps |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| frozen native control | .4940 | .4540 | .5340 | .0410 | 2024 | 1546 |
+| committed-interference credit | .0130 | .0110 | .0150 | 0 | 3948 | 148 |
+
+The apparent swap reduction is broad retrieval collapse. Validation never
+enters the native learning transition: accuracy stays near one percent through
+all ten epochs and future/past CE ends at `4.5796/4.5783`, versus
+`1.2594/1.2267` for control. The credit remains active at the endpoint in both
+layers (`.1431/.1512` unweighted loss); its above-random fractions are
+`.6824/.7260`, so the failure is not dead activation.
+
+Elapsed/post-warm/warmed-step/allocation ratios are
+`3.5433/3.5214/3.4046/4.5389x`, all beyond the registered ceilings. During the
+formal high-memory phase, 54 five-second A800 samples average `79.06%` SM,
+`8.46 GiB` used memory and `246.66 W`; observed ranges are `35-90%` SM with
+`8.51 GiB` peak memory and `317.36 W` peak power. P052 closes coefficient,
+window, floor, normalization, detach and all training-setting rescue. Local
+overlap credit cannot safely replace the native binding learning trajectory.
+
 ## 9. Submission Record
 
-- Formal source/run: pending pushed SHA and strict CUDA contract.
-- Endpoint: pending.
-- Decision: pending.
+- Formal status: endpoint `0`, tee `0`, combined `0`; launcher status `2`
+  denotes a registered science/cost-gate miss.
+- Comparison/score SHA256:
+  `ec8debb8a99471e9db92bd2235c872a9c9516cd9a4d45132016168a7a11dd4bf`.
+- Contract/checkpoint SHA256:
+  `e80dfee20f1f58c2314992736ec4ac06363761ca7c64d472b0f5411f662564f2` /
+  `606c04d87a212663dfeb23d9d6ab6b551f4bfb98fc529e0f9a8aa552c811d2ec`.
+- Source snapshot SHA256:
+  `5b24135012117841132f19352f4d0d71598760d8c1600b96a4e5b120941c2dde`.
+- Evidence directory:
+  `runs/p-gdn3-052-committed-interference-l1024-20260815T100327Z-6eb48a4`.
+- Decision: discarded; no Sudoku transfer.

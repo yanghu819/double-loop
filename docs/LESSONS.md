@@ -3256,3 +3256,23 @@
 - Close lag radius/form/convolution/sharing and all training rescue. A successor
   must preserve native retrieval and improve generic occurrence ownership; it
   must not encode another fixed phase prior.
+
+## 2026-08-15: Exact committed-edit collision credit suppresses learning
+
+- P-GDN3-052 keeps native inference bit exact and routes a target-free causal
+  collision loss only into the two native K projections and short convolutions.
+  Exact committed edits, surprise variation and above-random collision tails
+  are all active, so this is not a dead auxiliary objective.
+- Balanced/future/past/joint accuracy collapses from
+  `.494/.454/.534/.041` to `.013/.011/.015/0`; errors rise `2024->3948`.
+  Swaps fall `1546->148` only because useful retrieval disappears.
+- The validation curve stays near one percent for all ten epochs. Penalizing
+  local normalized key overlap from the start interferes with the base model's
+  own phase transition into binding, even though the loss uses exact kernel
+  edits and no labels.
+- Training-time recomputation is also noncompetitive: elapsed, post-warm,
+  warmed-step and allocation ratios are `3.543/3.521/3.405/4.539x`.
+- Close coefficient, window, floor, normalization, detach and all nearby loss
+  rescue. Future ownership mechanisms must preserve the native CE trajectory
+  and change a bounded live representation or transition, not impose another
+  global address-geometry objective.

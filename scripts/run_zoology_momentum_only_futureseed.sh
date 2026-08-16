@@ -9,6 +9,7 @@ source "$CONFIG"
 : "${EXPECTED_GPU_NAME:?set EXPECTED_GPU_NAME}"
 : "${EXPECTED_GPU_UUID:?set EXPECTED_GPU_UUID}"
 : "${EXPECTED_SOURCE_SHA:?set EXPECTED_SOURCE_SHA}"
+: "${GITHUB_READBACK_SHA:?set GITHUB_READBACK_SHA}"
 
 export CUDA_VISIBLE_DEVICES=0
 export PATH="$ENV_ROOT/bin:$PATH"
@@ -39,7 +40,7 @@ fi
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 [[ "$GIT_SHA" == "$EXPECTED_SOURCE_SHA" ]]
 [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]
-REMOTE_SHA="$(env -u LD_LIBRARY_PATH git -C "$REPO_ROOT" ls-remote origin "$SOURCE_REMOTE_REF" | awk '{print $1}')"
+REMOTE_SHA="$GITHUB_READBACK_SHA"
 [[ "$REMOTE_SHA" == "$GIT_SHA" ]]
 [[ -f "$MATCHED_INIT" && -f "$FROZEN_SCORE" && -f "$FROZEN_CASES" ]]
 

@@ -37,6 +37,7 @@ HEAD_DIM = 32
 EXPECTED_STATE_VALUES_PER_LAYER = MODEL_HEADS * HEAD_DIM * HEAD_DIM
 EXPECTED_PARAMETER_DELTA_VS_GDN2 = -63_976
 EXPECTED_PARAMETER_DELTA_VS_MOMENTUM = -2_064
+_COMBA_LAYER_CLASS = None
 
 
 def _prepend_package_path(package_name: str, path: Path) -> None:
@@ -48,6 +49,7 @@ def _prepend_package_path(package_name: str, path: Path) -> None:
 
 
 def load_external_comba_layer():
+    global _COMBA_LAYER_CLASS
     repo_root = Path(os.environ["MDN_REPO_ROOT"]).resolve()
     fla_root = Path(os.environ["MDN_FLA_ROOT"]).resolve()
     if os.environ.get("MDN_EXPECTED_SHA") != EXPECTED_MDN_SHA:
@@ -72,6 +74,11 @@ def load_external_comba_layer():
     _install_fla_compatibility()
     _prepend_package_path("fla.layers", fla_root / "fla" / "layers")
     _prepend_package_path("fla.ops", fla_root / "fla" / "ops")
+    if _COMBA_LAYER_CLASS is not None:
+        resolved = Path(inspect.getfile(_COMBA_LAYER_CLASS)).resolve()
+        if resolved != layer_path:
+            raise RuntimeError(f"Cached Comba module drifted: {resolved}")
+        return _COMBA_LAYER_CLASS
     for name in list(sys.modules):
         if name == "fla.layers.comba" or name.startswith("fla.ops.comba"):
             del sys.modules[name]
@@ -80,7 +87,8 @@ def load_external_comba_layer():
     resolved = Path(inspect.getfile(module.Comba)).resolve()
     if resolved != layer_path:
         raise RuntimeError(f"Unexpected Comba module: {resolved}")
-    return module.Comba
+    _COMBA_LAYER_CLASS = module.Comba
+    return _COMBA_LAYER_CLASS
 
 
 class ZoologyCombaFutureSeedMixer(ZoologyGDN2FutureSeedMixer):

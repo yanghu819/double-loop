@@ -103,7 +103,14 @@ paths explicit import priority and clears only the colliding Comba module
 cache before import. No recurrence, parameter, state, data, budget or gate has
 changed. No R1 quality result exists.
 
-Pending the R2 exact pushed-SHA CUDA contract and single formal endpoint.
+R2 exact source `37c4bf44` resolves and hash-verifies the registered external
+files, then stops before candidate CUDA because each mixer construction
+re-imported the same source into a new Python class object. The strict identity
+check correctly rejected layer instances whose content was exact but whose
+class object differed from the initially pinned object. R3 caches and reuses
+the first verified class. No model or gate changed and R2 has no quality result.
+
+Pending the R3 exact pushed-SHA CUDA contract and single formal endpoint.
 
 ## 7. Decision
 

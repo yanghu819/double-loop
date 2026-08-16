@@ -12,6 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-GDN3-070` Coupled Dual-Rate Momentum is
+approved for one from-scratch directional MQAR L1024 decision. It preserves
+P059's exact Q/K/V convolution, shared address/edit, residual, `q-Dk` read and
+slow Momentum path. One additional fast lane uses `mu^2` decay; a zero-init
+D128-to-H4 token controller injects only the fast-minus-slow band into the
+single S update. Native FutureSeed carries `[S,Mslow,Mfast]`. This is exactly
++1,024 parameters and +4,096 persistent values/layer, with one linear scan.
+The fixed prediction is balanced +`.005`, joint +`.005`, both directions no
+worse than `-.005`, errors -20, wrong-key swaps -25 and adjacent swaps -20%,
+with finite variable activation. Prototype elapsed/post-warm/warmed cost must
+remain below `3x` and allocation below `1.6x` P059. Any miss closes fast decay,
+mix scale/sharing, checkpoint and all training rescues. Report:
+`research/reports/experiments/gdn3-dual-rate-momentum-mqar-20260816.md`.
+
 Completed update (2026-08-16 CST): `P-DIAG-MOMREAD-001` rejects output-read
 removal. Exact same-weight P059 replay with only `q <- q - exp(D)k` disabled
 changes balanced/future/past/joint `.94425/.95150/.93700/.82400` to

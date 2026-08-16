@@ -92,6 +92,7 @@ GDN2_ARMS = (
     "future_seed_momentum_refresh",
     "future_seed_predictive_momentum",
     "future_seed_owner_local_momentum",
+    "future_seed_dual_rate_momentum",
     "future_seed_momentum_address_deblur",
     "future_seed_momentum_conv_prefill",
     "future_seed_official_sdm",
@@ -379,6 +380,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.momentum_owner_local."
                 "ZoologyOwnerLocalMomentumFutureSeedMixer"
+            )
+        elif arm == "future_seed_dual_rate_momentum":
+            mixer_name = (
+                "experiments.zoology_mqar.momentum_dual_rate."
+                "ZoologyDualRateMomentumFutureSeedMixer"
             )
         elif arm == "future_seed_momentum_address_deblur":
             mixer_name = (
@@ -1017,6 +1023,7 @@ def run_arm(
             "future_seed_momentum_refresh",
             "future_seed_predictive_momentum",
             "future_seed_owner_local_momentum",
+            "future_seed_dual_rate_momentum",
             "future_seed_momentum_address_deblur",
             "future_seed_momentum_conv_prefill",
         ):
@@ -1249,6 +1256,7 @@ def run_arm(
         "future_seed_momentum_refresh",
         "future_seed_predictive_momentum",
         "future_seed_owner_local_momentum",
+        "future_seed_dual_rate_momentum",
         "future_seed_momentum_address_deblur",
         "future_seed_momentum_conv_prefill",
     ):
@@ -1763,6 +1771,7 @@ def run_arm(
         "future_seed_momentum_refresh",
         "future_seed_predictive_momentum",
         "future_seed_owner_local_momentum",
+        "future_seed_dual_rate_momentum",
         "future_seed_momentum_address_deblur",
         "future_seed_momentum_conv_prefill",
     ):
@@ -1811,6 +1820,12 @@ def run_arm(
             )
 
             momentum_delta = owner_local_momentum_diagnostics(model)
+        elif arm == "future_seed_dual_rate_momentum":
+            from experiments.zoology_mqar.momentum_dual_rate import (
+                dual_rate_momentum_diagnostics,
+            )
+
+            momentum_delta = dual_rate_momentum_diagnostics(model)
         elif arm == "future_seed_momentum_address_deblur":
             from experiments.zoology_mqar.momentum_address_deblur import (
                 momentum_address_deblur_diagnostics,
@@ -1972,7 +1987,9 @@ def run_arm(
             if arm == "future_seed_mesa"
             else int(model_heads * gdn2_head_dim * gdn2_head_dim * gdn2_expand_v)
             * (
-                2
+                3
+                if arm == "future_seed_dual_rate_momentum"
+                else 2
                 if arm
                 in (
                     "future_seed_slot_state_gdn2",

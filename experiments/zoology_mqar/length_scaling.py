@@ -55,6 +55,7 @@ GDN2_ARMS = (
     "future_seed_gdn2_surprise_regression",
     "future_seed_gdn2_atomic_pair",
     "future_seed_gated_delta_product_n2",
+    "future_seed_erase_then_delta",
     "future_seed_contractive_dplr",
     "future_seed_decoupled_key_gdn2",
     "future_seed_anchored_dual_key_gdn2",
@@ -210,6 +211,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.gated_delta_product_futureseed."
                 "ZoologyGatedDeltaProductFutureSeedMixer"
+            )
+        elif arm == "future_seed_erase_then_delta":
+            mixer_name = (
+                "experiments.zoology_mqar.erase_then_delta_futureseed."
+                "ZoologyEraseThenDeltaFutureSeedMixer"
             )
         elif arm == "future_seed_contractive_dplr":
             mixer_name = (
@@ -1379,6 +1385,19 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    erase_then_delta = None
+    if arm == "future_seed_erase_then_delta":
+        from experiments.zoology_mqar.erase_then_delta_futureseed import (
+            erase_then_delta_diagnostics,
+        )
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        erase_then_delta = erase_then_delta_diagnostics(
+            model,
+            diagnostic_inputs[:8].cuda(),
+        )
     contractive_dplr = None
     if arm == "future_seed_contractive_dplr":
         from experiments.zoology_mqar.contractive_dplr_futureseed import (
@@ -2039,6 +2058,8 @@ def run_arm(
         score["atomic_pair"] = atomic_pair
     if gated_delta_product is not None:
         score["gated_delta_product"] = gated_delta_product
+    if erase_then_delta is not None:
+        score["erase_then_delta"] = erase_then_delta
     if contractive_dplr is not None:
         score["contractive_dplr"] = contractive_dplr
     if decoupled_key is not None:

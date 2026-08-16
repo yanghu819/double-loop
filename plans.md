@@ -12,6 +12,25 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-FS2-015` Receiver-Native Momentum Conv
+Prefill is preregistered for one candidate-only directional MQAR L1024 endpoint.
+P059 transports terminal `[S,M]`, while P069 proves that the Q/K width-four
+short-convolution front end is indispensable local address formation. The new
+FS2 edge therefore retains all P059 recurrence and Q/K/V convolutions, carries
+only the final four causal producer hidden tokens, and lets the receiver use
+its own Q/K/V projections and exact Triton convolutions to form its initial
+conv cache. Three per-head zero-init gates add exactly 12 parameters, with no
+persistent state or scan delta. The strict A800 contract requires bit-exact
+zero-gate parent logits and arbitrary-state parity, exact sources and parent
+mapping, native Momentum backwards, ordered evidence dependence and complete
+gradients. The fixed quality gate requires `+.005` balanced/future/joint,
+past regression at most `.003`, errors/swaps at most `200/120`, at least 20%
+fewer adjacent-owner swaps and conditional wrong-key share at most `.60`;
+elapsed/post-warm/warmed/allocation must remain below
+`1.15/1.15/1.15/1.05x`. Any miss closes token count, stream, gate, projection
+and all training rescues. Report:
+`research/reports/experiments/futureseed2-momentum-conv-prefill-mqar-20260816.md`.
+
 Completed update (2026-08-16 CST): `P-GDN3-069` Address-Deblurred Momentum is
 discarded. Exact pushed/read-back source `b42e6295` passes the strict A800
 contract: both native Momentum backwards, exact pointwise Q/K and

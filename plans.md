@@ -12,6 +12,30 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current approved plan (2026-08-16 CST): `P-GDN3-066` replaces the primary
+recurrence with the exact pinned-official FLA Mesa least-squares memory and
+adds native joint `[Hkk,Hkv]` FutureSeed. P059's 151 wrong-key valid-value
+swaps are almost entirely adjacent and direction-preserving, while capacity,
+dual-key, router, side-state, phase, erase, and pre/post-scan families are
+closed. Mesa directly stores decayed key-Gram and key-value sufficient
+statistics and solves the regularized normal equation, so it tests whether
+correlated addresses rather than missing payload capacity are the bottleneck.
+The fixed run is D128/L2/H4/K32/V32, official chunk Mesa with 30 CG steps,
+lambda lower bound `.25`, output gate on, 8,192 state values/layer, one jointly
+RMS-normalized adjacent FutureSeed route, directional MQAR L1024/K4, 10
+epochs, batch32, seed123. It reuses only shape-compatible frozen shell tensors;
+the foundational Mesa recurrence trains from scratch. The strict A800 contract
+requires exact pinned source hashes, two official Mesa backward paths, finite
+Q/K/V/decay/write/lambda/initial-state/FutureSeed gradients, nonzero incoming
+state dependence, output/state parity to exact Mesa at `.05/.01`, head
+equivariance `.005`, and stable symmetric PSD Hkk/CG geometry. Formal quality
+must beat P059: balanced `>=.95425`, future/past regress `<=.005`, joint
+`>=.834`, errors `<=180`, swaps `<=105`, and swap share `<=.60713`. Elapsed,
+post-warm and warmed-step ratios are capped at `3x`, peak allocation at `2x`.
+Any miss closes the exact configuration without CG/lambda/gate/seed/LR/loss/
+batch/width/depth/duration rescue. Report:
+`research/reports/experiments/gdn3-mesa-futureseed-mqar-20260816.md`.
+
 Completed update (2026-08-16 CST): `P-GDN3-065` Closed-Loop Comba with
 native FutureSeed is discarded at its strict R5 CUDA semantic contract. Exact
 pushed/read-back source `753735b6` and its clean detached worktree resolve the

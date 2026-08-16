@@ -12,23 +12,21 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-GDN3-069` Address-Deblurred Momentum is
-the sole approved successor. P059 removes `88.98%` of native-GDN2 errors, but
-all 151 remaining valid-value swaps are adjacent write owners and 150 share
-one direction. The external Momentum layer forms both Q and K with a causal
-depthwise convolution of width four before its successful `[S,M]` scan. The
-falsifiable hypothesis is therefore local address aliasing, not missing value
-capacity or a need for a second erase/write key. Keep the exact P059 Momentum
-recurrence, V convolution, gates, output correction and native `[S,M]`
-FutureSeed, but replace only Q/K short convolution by pointwise SiLU on their
-unchanged projections. This removes exactly 2,048 parameters and adds no
-state or scan. One from-scratch D128/L2/H4/K32/V32 L1024 10ep/b32/seed123 run
-must reach balanced/joint `>=.955/.84` with gains `>=.01`, keep both directions
-within `.005`, reduce errors to `<=178`, swaps to `<=105`, conditional swap
-share to `<=.60713`, and adjacent swaps by at least 20%; elapsed/post-warm/
-warmed/allocation must each be `<1.10x` P059. Any contract, quality, or cost
-miss closes address deblurring, including partial bypass, tap, kernel, mix,
-conv-width, seed/LR/loss/batch/width/depth/duration rescue. Report:
+Completed update (2026-08-16 CST): `P-GDN3-069` Address-Deblurred Momentum is
+discarded. Exact pushed/read-back source `b42e6295` passes the strict A800
+contract: both native Momentum backwards, exact pointwise Q/K and
+neighbor-token independence, Triton width-four V, exact `-2,048` parameters,
+unchanged `[S,M]` state, complete gradients and native FutureSeed all pass.
+Quality nevertheless collapses P059 balanced/future/past/joint
+`.94425/.95150/.93700/.82400` to `.36275/.35650/.36900/0`; errors, swaps and
+adjacent-owner swaps rise `223/151/151 -> 2549/1491/1459`. Of 3,777
+parent-correct queries, 2,404 break. Elapsed/post-warm/warmed/allocation ratios
+are `1.139/1.134/.606/1.000x`; compute-active GPU utilization averages
+`48.75%`, peaks at `82%`, and observed memory peaks at `3,016 MiB`. The Q/K
+short convolution is therefore useful local address formation, not a removable
+blur. Close bypass/tap/conv-width/mix/activation and all training rescues. A
+successor must retain the co-adapted Q/K front end and add ownership evidence
+without replacing the P059 recurrence. Report:
 `research/reports/experiments/gdn3-address-deblurred-momentum-mqar-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-GDN3-068` Owner-Local Momentum Commit is

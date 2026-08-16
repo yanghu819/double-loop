@@ -73,8 +73,54 @@ transfer.
 
 ## 6. Result
 
-Pending.
+The exact pushed/read-back source `b42e6295a44274bb1f0cc6cd024fad1726b409cc`
+ran from clean detached worktree
+`/huyang2/double-loop/worktrees/p-gdn3-069-b42e629` on the registered A800
+`GPU-c1d7c624-a393-befa-3807-7e00602d65ca`. The strict CUDA contract passed:
+both native Momentum chunk backward paths were present, Q/K were exactly
+pointwise and neighboring-token independent, V remained a width-four Triton
+convolution, the parameter delta was exactly `-2,048`, `[S,M]` state geometry
+was unchanged, the native FutureSeed edge and all recurrence gradients were
+finite and nonzero, and shared-parent loading was exact. Contract JSON SHA256
+is `7d34444f44d894dc29a083150e503739ab8a41cc355b6a543e68eb0226b6fb9a`.
+
+The sole formal endpoint completed all ten epochs and failed quality sharply:
+
+| Metric | P059 control | P069 candidate | Delta |
+|---|---:|---:|---:|
+| balanced accuracy | .94425 | .36275 | -.58150 |
+| future accuracy | .95150 | .35650 | -.59500 |
+| past accuracy | .93700 | .36900 | -.56800 |
+| joint exact | .82400 | 0 | -.82400 |
+| total errors | 223 | 2,549 | +2,326 |
+| wrong-key valid-value swaps | 151 | 1,491 | +1,340 |
+| adjacent-owner swaps | 151 | 1,459 | +1,308 |
+
+This is broad retrieval failure, not a cleaner address tail. Of 3,777
+control-correct queries, 1,405 become wrong-key swaps and 999 become other
+errors; only 52 old swaps become correct. Both pointwise address paths are
+active and token-varying, the native FutureSeed gate is `.50932`, and state
+and Momentum remain bounded. Therefore dead activation or numerical
+instability cannot explain the quality loss.
+
+Cost ratios for elapsed/post-warm/warmed-step/allocation are
+`1.13908/1.13439/.60612/.99998x`. The isolated warmed step is faster because
+two convolutions were removed, but full training is slower and misses both
+registered wall-time gates. GPU telemetry contains 163 samples: compute-active
+mean/peak utilization is `48.75%/82%`, observed memory peaks at `3,016 MiB`,
+and power peaks at `227.83 W`.
+
+Comparison, candidate cases and checkpoint SHA256 are respectively
+`485616caf7dc535df6c5c19c32cd0e16377443a3e2c9a390b516cd5bc5bee602`,
+`f06c9e8c015f51deecab78c6967cd11eed8047c530ac1403509aa9adfd1094cf`,
+and `7a92c75e30faf859a1c91eab2327b6fb409bdec89eff8b747768eda2bff8c497`.
 
 ## 7. Decision
 
-Pending the sole registered endpoint.
+Discard P-GDN3-069. The result falsifies the claim that Q/K short convolution
+is merely harmful adjacent-owner blur. It is part of the useful learned local
+address representation, and deleting it destroys the P059 optimization
+transition despite preserving the complete recurrent core. Close full or
+partial Q/K bypass, residual tap, convolution width, activation, interpolation
+and every training-setting rescue. The remaining owner tail must be addressed
+without breaking the co-adapted Q/K front end.

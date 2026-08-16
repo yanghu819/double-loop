@@ -2686,3 +2686,18 @@ create symmetric occurrence ownership before the native global scan. The
 paper boundary should close fixed-block local-attention hybrids and motivate a
 live recurrent representation that can preserve multiple owner-specific
 bindings simultaneously.
+
+### Address Deblurring Falsifies The Simple Front-End Alias Hypothesis
+
+P-GDN3-069 removes only the width-four temporal convolution from Momentum
+Q/K, preserving V convolution, the complete successful `[S,M]` recurrence and
+native FutureSeed. The strict contract proves that this is a clean, active,
+parameter-reducing intervention rather than a fallback.
+
+Balanced accuracy collapses `.94425->.36275`, joint exact `.824->0`, and
+adjacent-owner swaps rise `151->1459`. The result is mechanistically useful:
+the local Q/K convolution is not merely smearing nearby addresses; it is part
+of the representation that makes the sharp P059 learning transition possible.
+Future work must preserve that co-adapted address front end. Ownership should
+enter as additive receiver-native evidence or a scalable state organization,
+not by deleting, splitting or post-hoc orthogonalizing the learned key.

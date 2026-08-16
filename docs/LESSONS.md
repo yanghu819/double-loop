@@ -3656,3 +3656,18 @@
   The next useful GDN3 needs owner-specific structure inside the live memory
   update/read representation, not another context branch around the same
   state.
+
+## 2026-08-16: Local Q/K convolution is useful formation, not removable blur
+
+- P059's 151 residual swaps are all adjacent write owners, but topology alone
+  did not identify the cause. Removing only Q/K temporal mixing is a direct
+  falsification test.
+- P-GDN3-069 preserves the complete Momentum recurrence, convolved V, stacked
+  `[S,M]` FutureSeed and state geometry, while deleting exactly 2,048 Q/K
+  convolution parameters. All integrity and activation checks pass.
+- Balanced/joint accuracy falls `.94425/.824 -> .36275/0`; errors and
+  adjacent-owner swaps rise `223/151 -> 2549/1459`. The short convolution is
+  required for useful local address features even though failures look local.
+- Do not reopen pointwise/partial Q/K bypass, residual taps, convolution width
+  or learned mixing. Preserve the co-adapted front end and attach any owner
+  correction through a distinct, bounded path.

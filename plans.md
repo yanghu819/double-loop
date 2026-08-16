@@ -12,19 +12,27 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-DIAG-MOMFS-001` is the sole next action.
-P-GDN3-059 leaves 223 query errors, including 151 valid-value/wrong-key swaps.
-An exact frozen-case audit finds that all `151/151` swaps choose the adjacent
-write rank and `150/151` remain within the same future/past direction. Before
-adding another architecture, the exact trained P059 weights will be evaluated
-with native `[S,M]` FutureSeed, `S` only, `M` only and no FutureSeed. The native
-mode must replay all formal predictions exactly. A component mask opens one
-component-aware FS successor only if balanced improves at least `.005`, at
-least 20 swaps disappear, total errors do not rise, neither direction falls
-more than `.005`, and joint exact falls no more than `.01`. Otherwise the only
-open branch is a distinct intra-layer owner-preserving recurrence. There is no
-training, checkpoint selection, momentum/gate tuning or Sudoku transfer.
-Report:
+Current update (2026-08-16 CST): `P-GDN3-060` is the sole next experiment.
+It composes P059's architecture-positive Momentum Delta recurrence with one
+per-layer bounded coherent Log-SPD Q/K metric. The metric never splits erase,
+write and read keys; it only reshapes their shared address space. It adds
+exactly 4,216 parameters and no state or scan. The raw-zero contract requires
+bit-exact P059 output and nonzero-state identity. Against frozen P059, the
+candidate must reach balanced `>=.955` with `>=.01` gain, joint `>=.84` with
+`>=.01` gain, reduce errors and wrong-key swaps at least 20%, improve their
+conditional share by `.05`, preserve both directions within `.005`, keep the
+metric positive/condition `<=4.1`, and stay below `1.30x` time and `1.10x`
+allocation. Any miss closes the exact composition without metric, momentum or
+training rescue. Report:
+`research/reports/experiments/gdn3-momentum-log-spd-mqar-20260816.md`.
+
+Current update (2026-08-16 CST): `P-DIAG-MOMFS-001` is complete and closes
+component-aware FutureSeed routing. Exact native `[S,M]` replay is `.94425`
+balanced with 223 errors and 151 swaps; `M`-only is `.94375` with 225/153,
+whereas `S`-only falls to `.48450` and no-FutureSeed to `.47475`. Momentum is
+therefore the effective cross-layer carrier, while the residual adjacent-owner
+tail resides in the live intra-layer recurrence. Active GPU samples average
+`53.21%` and peak at `77%`. Report:
 `research/reports/experiments/momentum-futureseed-component-diagnostic-20260816.md`.
 
 Current update (2026-08-16 CST): `P-GDN3-059` Momentum-State FutureSeed is

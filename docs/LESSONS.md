@@ -1,5 +1,19 @@
 # Lessons
 
+## 2026-08-16: Momentum, not the base state, carries useful future evidence
+
+- The exact trained P059 checkpoint is replayed with `[S,M]`, `S` only, `M`
+  only and no FutureSeed on identical L1024 cases.
+- `M` only nearly reproduces native `[S,M]`: balanced accuracy is
+  `.94375` versus `.94425`, with 225 versus 223 errors. `S` only collapses
+  future accuracy to `.031` while past accuracy remains `.938`.
+- Cross-layer momentum is therefore the useful FutureSeed content. Selecting,
+  weighting or routing the transported base matrix cannot explain the 151
+  residual adjacent-owner swaps.
+- The remaining tail belongs to the live intra-layer address transition. A
+  successor should preserve the successful second-order recurrence and test a
+  distinct coherent owner geometry, rather than add another FS content codec.
+
 ## 2026-08-16: Change the recurrent dynamics, not another wrapper
 
 - P-GDN3-059 trains a full second-order Momentum Delta recurrence from scratch

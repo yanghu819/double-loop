@@ -80,6 +80,14 @@ class BoundedLogSPDAddressMetric(nn.Module):
         delta = delta.to(dtype=tensor.dtype)
         return tensor + torch.einsum("...hk,hkj->...hj", tensor, delta)
 
+    def transform_with_delta(
+        self,
+        tensor: torch.Tensor,
+        delta: torch.Tensor,
+    ) -> torch.Tensor:
+        """Apply one precomputed residual factor to an address tensor."""
+        return self._transform(tensor, delta)
+
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         delta = (self.matrix() - torch.eye(
             self.head_dim,

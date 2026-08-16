@@ -1,5 +1,22 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Momentum Is The Effective Cross-Layer FutureSeed Component
+
+P-DIAG-MOMFS-001 masks only the transported component of the exact trained
+P059 checkpoint. Momentum-only replay remains at `.94375` balanced versus
+`.94425` for native `[S,M]`, adding only two errors and two swaps. State-only
+replay falls to `.48450` balanced because future accuracy collapses to `.031`,
+while past accuracy remains `.938`. The direction asymmetry is mechanistically
+clean: local causal recurrence already answers past queries, whereas future
+queries depend on the cross-layer momentum carrier.
+
+The paper should therefore distinguish state capacity from useful future
+evidence. P059's benefit is not simply carrying twice as many numbers; the
+second-order component encodes the transferable update trajectory. Its final
+151 swaps remain adjacent-owner errors even when the base matrix is removed,
+so the next GDN claim concerns coherent intra-layer owner geometry rather than
+another FutureSeed component router.
+
 ## 2026-08-16 Second-Order State Nearly Closes Long-Context Binding
 
 P-GDN3-059 replaces the primary first-order GDN2 transition with a complete

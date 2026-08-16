@@ -92,6 +92,7 @@ GDN2_ARMS = (
     "future_seed_momentum_refresh",
     "future_seed_predictive_momentum",
     "future_seed_owner_local_momentum",
+    "future_seed_momentum_address_deblur",
     "future_seed_official_sdm",
     "future_seed_comba",
     "future_seed_mesa",
@@ -377,6 +378,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.momentum_owner_local."
                 "ZoologyOwnerLocalMomentumFutureSeedMixer"
+            )
+        elif arm == "future_seed_momentum_address_deblur":
+            mixer_name = (
+                "experiments.zoology_mqar.momentum_address_deblur."
+                "ZoologyMomentumAddressDeblurFutureSeedMixer"
             )
         elif arm == "future_seed_official_sdm":
             mixer_name = (
@@ -999,6 +1005,7 @@ def run_arm(
             "future_seed_momentum_refresh",
             "future_seed_predictive_momentum",
             "future_seed_owner_local_momentum",
+            "future_seed_momentum_address_deblur",
         ):
             from experiments.zoology_mqar.momentum_futureseed import (
                 load_matched_parent_state,
@@ -1229,6 +1236,7 @@ def run_arm(
         "future_seed_momentum_refresh",
         "future_seed_predictive_momentum",
         "future_seed_owner_local_momentum",
+        "future_seed_momentum_address_deblur",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
             parent_parameter_hash,
@@ -1741,6 +1749,7 @@ def run_arm(
         "future_seed_momentum_refresh",
         "future_seed_predictive_momentum",
         "future_seed_owner_local_momentum",
+        "future_seed_momentum_address_deblur",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
             momentum_futureseed_diagnostics,
@@ -1787,6 +1796,12 @@ def run_arm(
             )
 
             momentum_delta = owner_local_momentum_diagnostics(model)
+        elif arm == "future_seed_momentum_address_deblur":
+            from experiments.zoology_mqar.momentum_address_deblur import (
+                momentum_address_deblur_diagnostics,
+            )
+
+            momentum_delta = momentum_address_deblur_diagnostics(model)
         else:
             momentum_delta = momentum_futureseed_diagnostics(model)
     official_sdm = None
@@ -1948,6 +1963,7 @@ def run_arm(
                     "future_seed_momentum_refresh",
                     "future_seed_predictive_momentum",
                     "future_seed_owner_local_momentum",
+                    "future_seed_momentum_address_deblur",
                 )
                 else 1
             )

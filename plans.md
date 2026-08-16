@@ -12,6 +12,25 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-GDN3-069` Address-Deblurred Momentum is
+the sole approved successor. P059 removes `88.98%` of native-GDN2 errors, but
+all 151 remaining valid-value swaps are adjacent write owners and 150 share
+one direction. The external Momentum layer forms both Q and K with a causal
+depthwise convolution of width four before its successful `[S,M]` scan. The
+falsifiable hypothesis is therefore local address aliasing, not missing value
+capacity or a need for a second erase/write key. Keep the exact P059 Momentum
+recurrence, V convolution, gates, output correction and native `[S,M]`
+FutureSeed, but replace only Q/K short convolution by pointwise SiLU on their
+unchanged projections. This removes exactly 2,048 parameters and adds no
+state or scan. One from-scratch D128/L2/H4/K32/V32 L1024 10ep/b32/seed123 run
+must reach balanced/joint `>=.955/.84` with gains `>=.01`, keep both directions
+within `.005`, reduce errors to `<=178`, swaps to `<=105`, conditional swap
+share to `<=.60713`, and adjacent swaps by at least 20%; elapsed/post-warm/
+warmed/allocation must each be `<1.10x` P059. Any contract, quality, or cost
+miss closes address deblurring, including partial bypass, tap, kernel, mix,
+conv-width, seed/LR/loss/batch/width/depth/duration rescue. Report:
+`research/reports/experiments/gdn3-address-deblurred-momentum-mqar-20260816.md`.
+
 Completed update (2026-08-16 CST): `P-GDN3-068` Owner-Local Momentum Commit is
 discarded. Exact pushed/read-back source `911ffaad` passes fused Triton/Torch
 output, state and all-gradient parity, parent limiting identities, owner

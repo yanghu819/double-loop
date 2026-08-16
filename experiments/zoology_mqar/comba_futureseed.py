@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import inspect
 import os
+import sys
 from pathlib import Path
 from typing import Any, Optional
 
@@ -14,7 +15,6 @@ from experiments.zoology_mqar.gdn2_futureseed import (
 )
 from experiments.zoology_mqar.momentum_futureseed import (
     EXPECTED_MDN_SHA,
-    _append_package_path,
     _git_head,
     _install_fla_compatibility,
     _sha256,
@@ -37,6 +37,14 @@ HEAD_DIM = 32
 EXPECTED_STATE_VALUES_PER_LAYER = MODEL_HEADS * HEAD_DIM * HEAD_DIM
 EXPECTED_PARAMETER_DELTA_VS_GDN2 = -63_976
 EXPECTED_PARAMETER_DELTA_VS_MOMENTUM = -2_064
+
+
+def _prepend_package_path(package_name: str, path: Path) -> None:
+    package = importlib.import_module(package_name)
+    package_path = str(path.resolve())
+    while package_path in package.__path__:
+        package.__path__.remove(package_path)
+    package.__path__.insert(0, package_path)
 
 
 def load_external_comba_layer():
@@ -62,8 +70,11 @@ def load_external_comba_layer():
             raise RuntimeError(f"Comba source drifted: {path}")
 
     _install_fla_compatibility()
-    _append_package_path("fla.layers", fla_root / "fla" / "layers")
-    _append_package_path("fla.ops", fla_root / "fla" / "ops")
+    _prepend_package_path("fla.layers", fla_root / "fla" / "layers")
+    _prepend_package_path("fla.ops", fla_root / "fla" / "ops")
+    for name in list(sys.modules):
+        if name == "fla.layers.comba" or name.startswith("fla.ops.comba"):
+            del sys.modules[name]
     importlib.invalidate_caches()
     module = importlib.import_module("fla.layers.comba")
     resolved = Path(inspect.getfile(module.Comba)).resolve()

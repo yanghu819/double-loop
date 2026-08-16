@@ -95,7 +95,15 @@ the exact configuration without rescue.
 
 ## 6. Result
 
-Pending the exact pushed-SHA CUDA contract and single formal endpoint.
+R1 exact source `c36caa76` stopped before its first candidate CUDA forward.
+The host FLA tree already contains a module named `fla.layers.comba`; appending
+the registered external path therefore resolved the host copy and the strict
+source-path assertion aborted. R2 gives the registered external layer and ops
+paths explicit import priority and clears only the colliding Comba module
+cache before import. No recurrence, parameter, state, data, budget or gate has
+changed. No R1 quality result exists.
+
+Pending the R2 exact pushed-SHA CUDA contract and single formal endpoint.
 
 ## 7. Decision
 

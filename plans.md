@@ -12,18 +12,23 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-GDN3-060` is the sole next experiment.
-It composes P059's architecture-positive Momentum Delta recurrence with one
-per-layer bounded coherent Log-SPD Q/K metric. The metric never splits erase,
-write and read keys; it only reshapes their shared address space. It adds
-exactly 4,216 parameters and no state or scan. The raw-zero contract requires
-bit-exact P059 output and nonzero-state identity. Against frozen P059, the
-candidate must reach balanced `>=.955` with `>=.01` gain, joint `>=.84` with
-`>=.01` gain, reduce errors and wrong-key swaps at least 20%, improve their
-conditional share by `.05`, preserve both directions within `.005`, keep the
-metric positive/condition `<=4.1`, and stay below `1.30x` time and `1.10x`
-allocation. Any miss closes the exact composition without metric, momentum or
-training rescue. Report:
+Current update (2026-08-16 CST): `P-DIAG-MOMADDR-001` is the sole next action.
+It replays exact P059 weights and all 4,000 frozen queries while transparently
+recording the corrected Q/K entering both Momentum kernels. It opens an
+address-organization branch only if at least 60% of swaps already prefer the
+predicted wrong owner, correct-versus-swap median margin separation is at
+least `.02`, and the nearest competing key matches that owner at least 50% of
+the time. If at most 30% have negative margin, only a committed-state-edit
+transition is open; intermediate evidence opens nothing. Logits and kernel
+outputs are unchanged. Report:
+`research/reports/experiments/momentum-address-attribution-20260816.md`.
+
+Current update (2026-08-16 CST): `P-GDN3-060` closed at its strict pretraining
+contract. The opened dense metric is coherent and bounded in FP32, but its
+effective BF16 absolute log determinant is `.06724`, above the preregistered
+`.05` volume-stability ceiling. No formal model ran. Active GPU samples average
+`53.43%` and peak at `85%`. Close metric cap/scale/rank/sharing and threshold
+rescue. Report:
 `research/reports/experiments/gdn3-momentum-log-spd-mqar-20260816.md`.
 
 Current update (2026-08-16 CST): `P-DIAG-MOMFS-001` is complete and closes

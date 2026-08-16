@@ -87,5 +87,29 @@ allowed only after every gate passes.
 
 ## 6. Status
 
-Registered before GPU contract or formal training. Pending exact pushed-source
-contract and the single candidate-only endpoint.
+Exact pushed/read-back source
+`d4fd8003e685dbad02dd82e7352f98d4d5c0ac07` stopped at the strict contract,
+before formal training. The synthetic opened metric is active and coherent:
+address relative RMS is `.03393`, head-permutation error is zero, FP32 metric
+condition is `2.0592`, and FP32 absolute log determinant is `4.46e-6`.
+
+The actual BF16-applied factor fails the preregistered volume-stability gate.
+Its condition remains bounded at `2.0628`, but absolute log determinant is
+`.06724`, above the fixed `.05` ceiling. Dense elementwise BF16 rounding thus
+turns an analytically volume-preserving factor into roughly 7% volume drift in
+the effective address transform.
+
+Close P060 without formal training. Do not lower the synthetic opening, relax
+the threshold, change metric cap/scale/rank/sharing, or rerun. The launcher
+wrote a non-science contract `abort.json`; no checkpoint or score exists.
+
+Across 34 sampler rows, active-memory samples average `53.43%` GPU utilization
+and peak at `85%`; sampled memory peaks at `3,022 MiB` and power at `204.31 W`.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-gdn3-060-momentum-log-spd-20260816T001911Z-d4fd800`
+- contract log SHA256: `4540c8fffeada5cd8f0020764587c8785925876d7530a973ca40452e05ed571d`
+- GPU samples SHA256: `41a606a563294ee1ecf857fc6e848497a51ee78038916e77290fd17b59910a61`
+- source snapshot SHA256: `a4367a7b411cd6403a62793413ddeddb02d38337606ca892e0badb1378328f6f`
+- abort SHA256: `1051333aff19fee5b0e87e594bb2dbaa40b3d2fbee7f8f5cb5c9898ef2bea7a1`

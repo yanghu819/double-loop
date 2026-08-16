@@ -146,7 +146,7 @@ def main() -> None:
     frozen = json.loads(args.formal_score.read_text())
     formal_control = frozen["candidate"]
     formal_cases = json.loads(args.formal_cases.read_text())
-    checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+    checkpoint = torch.load(args.checkpoint, map_location="cuda", weights_only=True)
     state_dict = checkpoint["model_state_dict"]
 
     control_config = build_config(
@@ -173,22 +173,36 @@ def main() -> None:
         raise RuntimeError("P059 fixed benchmark batch drifted")
 
     control = make_model(control_config, CONTROL_ARM).cuda().eval()
-    candidate = make_model(candidate_config, CANDIDATE_ARM).cuda().eval()
     control.load_state_dict(state_dict, strict=True)
-    candidate.load_state_dict(state_dict, strict=True)
     expected_parameter_hash = formal_control["trained_parameter_hash"]
     if parameter_hash(control) != expected_parameter_hash:
         raise RuntimeError("Frozen P059 parameter hash drifted")
-    if parameter_hash(candidate) != expected_parameter_hash:
-        raise RuntimeError("Momentum-only model did not load P059 exactly")
 
     control_metrics, control_cases = evaluate(
         control, test_loader, sequence_length=SEQUENCE_LENGTH
     )
-    if control_cases != formal_cases:
-        raise RuntimeError("Native P059 replay did not reproduce frozen cases")
-    if _metric_row(control_metrics) != _metric_row(formal_control["metrics"]):
-        raise RuntimeError("Native P059 replay metrics drifted")
+    control_metric_row = _metric_row(control_metrics)
+    formal_metric_row = _metric_row(formal_control["metrics"])
+    if control_cases != formal_cases or control_metric_row != formal_metric_row:
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        replay_audit = {
+            "status": "failed",
+            "reason": "native_p059_replay_drift",
+            "formal_metrics": formal_metric_row,
+            "observed_metrics": control_metric_row,
+            "prediction_transitions": transition_summary(formal_cases, control_cases),
+        }
+        (args.output_dir / "native_replay_audit.json").write_text(
+            json.dumps(replay_audit, indent=2, sort_keys=True) + "\n"
+        )
+        raise RuntimeError("Native P059 replay did not reproduce frozen endpoint")
+
+    # Construct the deployment model only after the frozen native endpoint has
+    # passed. This keeps candidate lifecycle effects outside the replay gate.
+    candidate = make_model(candidate_config, CANDIDATE_ARM).cuda().eval()
+    candidate.load_state_dict(state_dict, strict=True)
+    if parameter_hash(candidate) != expected_parameter_hash:
+        raise RuntimeError("Momentum-only model did not load P059 exactly")
 
     candidate_metrics, candidate_cases = evaluate(
         candidate, test_loader, sequence_length=SEQUENCE_LENGTH

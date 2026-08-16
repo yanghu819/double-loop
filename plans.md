@@ -28,6 +28,16 @@ and allocation <`1.15x`. All checks are conjunctive. No correction/decay/
 gate/seed/LR/loss/batch/width/depth/duration rescue is authorized. Report:
 `research/reports/experiments/gdn3-comba-futureseed-mqar-20260816.md`.
 
+Infrastructure update: R3 reached the external Comba Triton WY kernel but
+failed before logits because FP32 cumulative decay promoted a BF16 key product
+at a `tl.dot`; the same pattern exists in pinned host FLA. R4 stages the exact
+hash-verified external `ops/comba` package in the run directory and applies
+only two explicit operand-dtype casts at the cumulative-decay WY forward and
+backward dots. Contract now pins original/effective hashes, exactly two edits,
+the effective import path and the unchanged chunk source. The shared external
+checkout remains clean; model math, parameters, state, data, gate and budget
+are unchanged. R1-R3 have no quality result.
+
 Completed update (2026-08-16 CST): `P-GDN3-064` Official Sparse Delta
 Memory with Native Slot-Bank FutureSeed is approved for one from-scratch
 directional MQAR L1024 decision. The intervention replaces the primary dense

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import inspect
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -32,12 +33,29 @@ EXPECTED_CHUNK_SHA256 = (
 EXPECTED_RECURRENT_SHA256 = (
     "aa73a9abe5820d8104b5f6399a016c6fd4e1922798ca78759e89766a5ef5bba5"
 )
+EXPECTED_WY_SHA256 = (
+    "6e4edc5886fda8eca4be2d67066521db16c91e49a73f34e0dfc2b874adf69959"
+)
+EXPECTED_COMPAT_WY_SHA256 = (
+    "2de7bebba43ccef9fb1aef8598da0c0f075664cd3769789bdaa85806f9d6a109"
+)
+_WY_DTYPE_PATCHES = (
+    (
+        "tl.dot(b_dw, tl.trans(b_p_beta_g0))",
+        "tl.dot(b_dw, tl.trans(b_p_beta_g0.to(b_dw.dtype)))",
+    ),
+    (
+        "tl.dot(b_A, b_kb)",
+        "tl.dot(b_A, b_kb.to(b_A.dtype))",
+    ),
+)
 MODEL_HEADS = 4
 HEAD_DIM = 32
 EXPECTED_STATE_VALUES_PER_LAYER = MODEL_HEADS * HEAD_DIM * HEAD_DIM
 EXPECTED_PARAMETER_DELTA_VS_GDN2 = -63_976
 EXPECTED_PARAMETER_DELTA_VS_MOMENTUM = -2_064
 _COMBA_LAYER_CLASS = None
+_COMBA_COMPAT_METADATA: Optional[dict[str, Any]] = None
 
 
 def _prepend_package_path(package_name: str, path: Path) -> None:
@@ -48,8 +66,53 @@ def _prepend_package_path(package_name: str, path: Path) -> None:
     package.__path__.insert(0, package_path)
 
 
+def _build_comba_compat_overlay(fla_root: Path) -> dict[str, Any]:
+    run_root = Path(os.environ["COMBA_RUN_ROOT"]).resolve()
+    compat_root = Path(os.environ["COMBA_COMPAT_ROOT"]).resolve()
+    if compat_root != run_root / "comba-compat":
+        raise RuntimeError(f"Unexpected Comba compatibility root: {compat_root}")
+
+    source_package = fla_root / "fla" / "ops" / "comba"
+    source_wy = source_package / "wy_fast.py"
+    if _sha256(source_wy) != EXPECTED_WY_SHA256:
+        raise RuntimeError(f"Comba WY source drifted: {source_wy}")
+
+    if compat_root.exists():
+        shutil.rmtree(compat_root)
+    effective_package = compat_root / "fla" / "ops" / "comba"
+    shutil.copytree(
+        source_package,
+        effective_package,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    effective_wy = effective_package / "wy_fast.py"
+    text = effective_wy.read_text()
+    for old, new in _WY_DTYPE_PATCHES:
+        if text.count(old) != 1:
+            raise RuntimeError(f"Comba WY compatibility site drifted: {old}")
+        text = text.replace(old, new)
+    effective_wy.write_text(text)
+    if _sha256(effective_wy) != EXPECTED_COMPAT_WY_SHA256:
+        raise RuntimeError("Comba WY compatibility output drifted")
+    return {
+        "root": str(compat_root),
+        "ops_root": str(compat_root / "fla" / "ops"),
+        "source_wy_path": str(source_wy),
+        "source_wy_sha256": EXPECTED_WY_SHA256,
+        "effective_wy_path": str(effective_wy),
+        "effective_wy_sha256": EXPECTED_COMPAT_WY_SHA256,
+        "patch_count": len(_WY_DTYPE_PATCHES),
+    }
+
+
+def comba_compatibility_metadata() -> dict[str, Any]:
+    if _COMBA_COMPAT_METADATA is None:
+        raise RuntimeError("Comba compatibility overlay has not been loaded")
+    return dict(_COMBA_COMPAT_METADATA)
+
+
 def load_external_comba_layer():
-    global _COMBA_LAYER_CLASS
+    global _COMBA_COMPAT_METADATA, _COMBA_LAYER_CLASS
     repo_root = Path(os.environ["MDN_REPO_ROOT"]).resolve()
     fla_root = Path(os.environ["MDN_FLA_ROOT"]).resolve()
     if os.environ.get("MDN_EXPECTED_SHA") != EXPECTED_MDN_SHA:
@@ -62,10 +125,12 @@ def load_external_comba_layer():
     layer_path = fla_root / "fla" / "layers" / "comba.py"
     chunk_path = fla_root / "fla" / "ops" / "comba" / "chunk.py"
     recurrent_path = fla_root / "fla" / "ops" / "comba" / "fused_recurrent.py"
+    wy_path = fla_root / "fla" / "ops" / "comba" / "wy_fast.py"
     expected_hashes = {
         layer_path: EXPECTED_LAYER_SHA256,
         chunk_path: EXPECTED_CHUNK_SHA256,
         recurrent_path: EXPECTED_RECURRENT_SHA256,
+        wy_path: EXPECTED_WY_SHA256,
     }
     for path, expected in expected_hashes.items():
         if not path.is_file() or _sha256(path) != expected:
@@ -78,7 +143,18 @@ def load_external_comba_layer():
         resolved = Path(inspect.getfile(_COMBA_LAYER_CLASS)).resolve()
         if resolved != layer_path:
             raise RuntimeError(f"Cached Comba module drifted: {resolved}")
+        metadata = comba_compatibility_metadata()
+        if (
+            Path(metadata["root"]).resolve()
+            != Path(os.environ["COMBA_COMPAT_ROOT"]).resolve()
+            or _sha256(Path(metadata["effective_wy_path"]))
+            != EXPECTED_COMPAT_WY_SHA256
+        ):
+            raise RuntimeError("Cached Comba compatibility overlay drifted")
         return _COMBA_LAYER_CLASS
+
+    _COMBA_COMPAT_METADATA = _build_comba_compat_overlay(fla_root)
+    _prepend_package_path("fla.ops", Path(_COMBA_COMPAT_METADATA["ops_root"]))
     for name in list(sys.modules):
         if name == "fla.layers.comba" or name.startswith("fla.ops.comba"):
             del sys.modules[name]
@@ -87,6 +163,24 @@ def load_external_comba_layer():
     resolved = Path(inspect.getfile(module.Comba)).resolve()
     if resolved != layer_path:
         raise RuntimeError(f"Unexpected Comba module: {resolved}")
+    effective_chunk = Path(
+        inspect.getfile(importlib.import_module("fla.ops.comba.chunk"))
+    ).resolve()
+    effective_wy = Path(
+        inspect.getfile(importlib.import_module("fla.ops.comba.wy_fast"))
+    ).resolve()
+    if (
+        _sha256(effective_chunk) != EXPECTED_CHUNK_SHA256
+        or effective_wy != Path(_COMBA_COMPAT_METADATA["effective_wy_path"])
+        or _sha256(effective_wy) != EXPECTED_COMPAT_WY_SHA256
+    ):
+        raise RuntimeError("Comba compatibility modules escaped the pinned overlay")
+    _COMBA_COMPAT_METADATA.update(
+        {
+            "effective_chunk_path": str(effective_chunk),
+            "effective_chunk_sha256": _sha256(effective_chunk),
+        }
+    )
     _COMBA_LAYER_CLASS = module.Comba
     return _COMBA_LAYER_CLASS
 

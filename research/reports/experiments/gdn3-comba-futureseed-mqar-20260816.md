@@ -110,7 +110,21 @@ check correctly rejected layer instances whose content was exact but whose
 class object differed from the initially pinned object. R3 caches and reuses
 the first verified class. No model or gate changed and R2 has no quality result.
 
-Pending the R3 exact pushed-SHA CUDA contract and single formal endpoint.
+R3 exact source `79734b26` reaches the external chunk Triton compiler, which
+rejects one WY dot because the kernel's FP32 cumulative decay promotes a BF16
+key product despite the source's `.to(b_k.dtype)`. The same source pattern is
+present in the pinned host FLA Comba implementation. R3 therefore closes as a
+non-science production compatibility failure before logits.
+
+R4 changes only the execution compatibility boundary. It copies the exact
+hash-verified external `ops/comba` package into the run's private artifact
+directory and adds explicit operand-dtype casts at the two WY forward/backward
+dot sites involving cumulative decay. The source checkout remains clean. The
+contract asserts the original WY hash, exact two replacements, patched hash,
+effective import path and unchanged chunk hash. No recurrence, parameter,
+state, initialization, data, budget or registered science gate changes.
+
+Pending the R4 exact pushed-SHA CUDA contract and single formal endpoint.
 
 ## 7. Decision
 

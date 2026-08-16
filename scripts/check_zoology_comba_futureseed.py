@@ -17,12 +17,15 @@ from zoology.utils import set_determinism
 
 from experiments.zoology_mqar.comba_futureseed import (
     EXPECTED_CHUNK_SHA256,
+    EXPECTED_COMPAT_WY_SHA256,
     EXPECTED_LAYER_SHA256,
     EXPECTED_MDN_SHA,
     EXPECTED_PARAMETER_DELTA_VS_GDN2,
     EXPECTED_RECURRENT_SHA256,
+    EXPECTED_WY_SHA256,
     EXPECTED_STATE_VALUES_PER_LAYER,
     ZoologyCombaFutureSeedMixer,
+    comba_compatibility_metadata,
     load_external_comba_layer,
     load_matched_parent_state,
 )
@@ -120,13 +123,29 @@ def main() -> None:
         "fused_recurrent": _sha256(
             fla_root / "fla" / "ops" / "comba" / "fused_recurrent.py"
         ),
+        "wy_fast": _sha256(fla_root / "fla" / "ops" / "comba" / "wy_fast.py"),
     }
     if source_hashes != {
         "layer": EXPECTED_LAYER_SHA256,
         "chunk": EXPECTED_CHUNK_SHA256,
         "fused_recurrent": EXPECTED_RECURRENT_SHA256,
+        "wy_fast": EXPECTED_WY_SHA256,
     }:
         raise RuntimeError(f"External Comba source drifted: {source_hashes}")
+    compatibility_overlay = comba_compatibility_metadata()
+    if (
+        compatibility_overlay["source_wy_sha256"] != EXPECTED_WY_SHA256
+        or compatibility_overlay["effective_wy_sha256"]
+        != EXPECTED_COMPAT_WY_SHA256
+        or compatibility_overlay["patch_count"] != 2
+        or Path(compatibility_overlay["root"]).resolve()
+        != Path(os.environ["COMBA_COMPAT_ROOT"]).resolve()
+        or _sha256(Path(compatibility_overlay["effective_wy_path"]))
+        != EXPECTED_COMPAT_WY_SHA256
+    ):
+        raise RuntimeError(
+            f"Comba compatibility overlay drifted: {compatibility_overlay}"
+        )
 
     native_config = build_config(
         arm="future_seed_gdn2",
@@ -324,6 +343,7 @@ def main() -> None:
             "repo": str(repo_root),
             "sha": EXPECTED_MDN_SHA,
             "source_hashes": source_hashes,
+            "compatibility_overlay": compatibility_overlay,
             "redistributed_source": False,
         },
         "host_fla_compatibility": compatibility,

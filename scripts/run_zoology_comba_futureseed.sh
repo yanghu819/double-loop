@@ -65,6 +65,8 @@ RUN_NAME="${RUN_NAME:-p-gdn3-065-comba-futureseed-${TIMESTAMP}-${GIT_SHA:0:7}}"
 RUN_DIR="$PERSIST_ROOT/runs/$RUN_NAME"
 OUT_DIR="$RUN_DIR/output"
 mkdir -p "$OUT_DIR"
+export COMBA_RUN_ROOT="$RUN_DIR"
+export COMBA_COMPAT_ROOT="$RUN_DIR/comba-compat"
 STATUS=0
 PHASE=contract
 GPU_SAMPLER_PID=""

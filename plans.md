@@ -28,22 +28,21 @@ Close CG/lambda/output/seed gate/normalization and all training rescues; there
 is no GDN3 or FS2 claim. Report:
 `research/reports/experiments/gdn3-mesa-futureseed-mqar-20260816.md`.
 
-Current approved plan (2026-08-16 CST): `P-GDN3-067` tests structured
-Erase-then-Delta with native FutureSeed. It is the narrow address-decoupling
-mechanism not covered by P031 or P029: an independent normalized key performs
-a pure zero-payload erase, then the original write key performs the complete
-standard delta correction. Thus the new erase path cannot replace the working
-owner/write channel. The exact pair runs in one pinned-official
-`chunk_gated_delta_product` scan, D128/L2/H4/K32/V32, one 4,096-value state per
-layer, one full-state adjacent FutureSeed route, fixed directional MQAR
-L1024/K4 for 10 epochs/batch32/seed123 from scratch. The strict A800 contract
-requires exact source provenance, two official product backward paths,
-zero first payload, explicit-recurrence parity, complete gradients,
-incoming-state/order dependence, head equivariance and finite L1024 backward.
-Quality must beat P059: balanced/joint at least +`.005`, both directions
-regress at most `.003`, errors<=200, swaps<=120/share<=`.60`; time<=2.25x and
-allocation<=1.50x. Any miss closes erase-before-write without gate/key/order/
-product/seed/LR/loss/batch/width/depth/duration rescue. Report:
+Completed update (2026-08-16 CST): `P-GDN3-067` structured Erase-then-Delta
+with native FutureSeed is discarded. Exact pushed/read-back source `52f0d325`
+passes the strict A800 contract with two official product backward paths,
+explicit output/state parity `.00482/.00515`, nonzero incoming-state and
+microstep-order dependence, complete gradients and zero head-permutation
+error. Both learned erase addresses are strongly distinct from the write
+addresses and materially active; both states and the native FutureSeed route
+are finite and live. The fixed endpoint nevertheless collapses P059
+balanced/future/past/joint `.94425/.95150/.93700/.82400` to
+`.16850/.17600/.16100/.00100`; errors/swaps rise `223/151 -> 3326/657`.
+Conditional swap share falls only because 3,134 previously correct events
+break. All cost gates pass at `1.239/1.244/.685/.916x`. Close pure independent
+erase, key/gate/order/product and all training rescues. Next work must preserve
+P059's second-order carrier and localize its committed Momentum by owner rather
+than add another deletion address. Report:
 `research/reports/experiments/gdn3-erase-then-delta-futureseed-mqar-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-GDN3-065` Closed-Loop Comba with
@@ -1936,7 +1935,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-067 | approved; implementation in progress | P059's adjacent-owner tail needs targeted stale-memory deletion, but direct key decoupling failed because it replaced the working same-key correction. A pure independent erase followed by the complete standard delta edit should preserve ownership while removing interference. | Pinned official two-microstep GatedDeltaProduct: `(e,0,gamma)` then `(k,v,beta)`, D128/L2/H4/K32/V32, one KxV state and native full-state FutureSeed; fixed directional MQAR L1024 10ep/b32/seed123 from scratch; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed SHA and strict contract required before formal run. | one fixed candidate | Balanced/joint >=P059+.005; direction regress<=.003; errors<=200; swaps<=120/share<=.60; time<=2.25x, allocation<=1.50x. | pending |
+| P-GDN3-067 | complete; discarded; independent pure-erase family closed | P059's adjacent-owner tail needs targeted stale-memory deletion, but direct key decoupling failed because it replaced the working same-key correction. A pure independent erase followed by the complete standard delta edit should preserve ownership while removing interference. | Pinned official two-microstep GatedDeltaProduct: `(e,0,gamma)` then `(k,v,beta)`, D128/L2/H4/K32/V32, one KxV state and native full-state FutureSeed; fixed directional MQAR L1024 10ep/b32/seed123 from scratch; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `52f0d325`; clean detached worktree; strict contract passed. | one fixed candidate complete | Balanced/joint >=P059+.005; direction regress<=.003; errors<=200; swaps<=120/share<=.60; time<=2.25x, allocation<=1.50x. | Mechanism and cost gates pass, but balanced/future/past/joint collapses `.94425/.95150/.93700/.82400 -> .16850/.17600/.16100/.00100`; errors/swaps `223/151 -> 3326/657`. Close without rescue; score SHA `46e7b22c...bfea2f8fe`. |
 | P-GDN3-066 | complete; discarded | P059's adjacent direction-preserving swaps may be address interference; exact Mesa normal-equation reads could decorrelate keys while native FutureSeed transports complete sufficient statistics. | Pinned official Mesa D128/L2/H4/K32/V32, CG30, lambda floor.25, joint `[Hkk,Hkv]` FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from matched shell tensors; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `d1cf70bd`; clean detached worktree; strict R3 contract passed. | one fixed from-scratch candidate complete | Balanced>=.95425, future/past regression<=.005, joint>=.834, errors<=180, swaps<=105/share<=.60713; time<=3x, allocation<=2x. | Balanced/future/past/joint `.00975/.00650/.01300/0`, errors3961. Hkk is stable PSD and CG error<.0022, but effective rank collapses to `1.079/1.169`; global least squares destroys directional ownership. Cost `.824/.834/.883/.796x` passes. Close Mesa/CG/lambda/gate rescues; no GDN3/FS2 claim. |
 | P-GDN3-065 | complete; discarded at strict CUDA semantic contract | P059's remaining valid-value/wrong-key swaps come from an incoherent live edit, not insufficient state capacity. A closed-loop residual update with prediction and write keys in the same owner direction should reduce binding errors. | Pinned external Comba chunk recurrence, D128/L2/H4/K32/V32, native terminal FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from shared parent tensors; no side state, cache, router or sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `753735b6`; clean detached worktree; R5 contract completed CUDA forward/backward. | Contract only; formal endpoint killed | Same quality gate, contingent on output/state parity <=.05. | Chunk/fused-recurrent output/state relative RMS `.239417/.258119` fails the `.05` integrity gate despite nonzero initial-state dependency `.0415303`. Status1 non-science abort; no formal quality run and no GDN3/FS2 claim. Close exact Comba transfer without rescue. |
 | P-GDN3-064 | complete; discarded; sparse-slot capacity family closed | P059 leaves 151 wrong-owner errors because one dense K32xV32 basis may collide; a primary sparse product-key delta bank may preserve discrete ownership while native FutureSeed transports the complete terminal bank. | Pinned official SDM at exact SHA `183e7df`, D128/L2/H1/1024 slots/read8/write8/block64, full-bank native FutureSeed, 131,072 state values/layer. Fixed directional MQAR L1024 10ep/b32/seed123 from the shared parent tensors; no dense GDN2 scan, sidecar, selector or sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `cbec800`; clean detached worktree; strict R4 contract passed. | one fixed candidate complete | Preserve P059 `.94/.93/.93/.82`, errors<=223, swaps<=100 and share<=.60 with one strict gain; cost <=3x and allocation <=4x. | Integrity/activation/cost pass, but balanced/future/past/joint is `.26825/.02850/.50800/0`; errors/swaps `2927/1126`. State is 16x P059 and hundreds of slots activate, yet future retrieval stays near chance. Cost `1.506/1.509/1.809/1.033x`. Close slot/read/write/head/block/full-bank rescues; score SHA `cb22182e...12469`. |

@@ -1,5 +1,21 @@
 # Lessons
 
+## 2026-08-16: An extra erase address can destroy a correct write path
+
+- P-GDN3-067 prepends an independent zero-payload erase to a complete standard
+  delta correction; it does not replace the working write key.
+- The strict contract passes, both erase keys strongly diverge from write keys,
+  both erase effects are material, terminal states are stable and the native
+  FutureSeed route remains active.
+- Balanced accuracy nevertheless collapses `.94425->.16850`; errors and
+  wrong-key swaps rise `223/151 -> 3326/657`.
+- Preserving the final write operation does not preserve learned ownership when
+  a separate preceding address deletes useful memory. Conditional swap share
+  is not meaningful without high correct-event retention.
+- Close independent erase/gate/key/order/product rescue. Preserve P059's
+  second-order dynamics and target owner-local Momentum commitment instead of
+  adding another address-level deletion.
+
 ## 2026-08-16: Stable sufficient statistics can still erase ownership
 
 - P-GDN3-066 uses the exact official Mesa recurrence, not a local wrapper.

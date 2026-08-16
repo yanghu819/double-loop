@@ -1,5 +1,23 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Independent Erase Destroys Learned Ownership
+
+P-GDN3-067 tests a structured erase-then-delta transition using two ordered
+pinned-official product microsteps. The first uses an independently learned
+address and an exactly zero payload; the second retains the complete standard
+same-key delta correction. Its strict contract and endpoint diagnostics prove
+that both addresses, gates, states and native FutureSeed are active, stable and
+equivariant.
+
+The mechanism still collapses directional retrieval. P059 versus P067
+balanced/future/past/joint is `.94425/.95150/.93700/.82400` versus
+`.16850/.17600/.16100/.00100`; errors rise `223->3326`. The lower conditional
+swap share is broad failure, not owner repair. This result sharpens the owner
+constraint: retaining the standard write is insufficient if a preceding
+independent address deletes useful state. The next paper candidate should keep
+P059's successful second-order carrier and change how its velocity is committed
+within the current owner subspace, without another learned deletion address.
+
 ## 2026-08-16 Global Least Squares Loses Directional Ownership
 
 P-GDN3-066 replaces the recurrent transition with the exact pinned-official

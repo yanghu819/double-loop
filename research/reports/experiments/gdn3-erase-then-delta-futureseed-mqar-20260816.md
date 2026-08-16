@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-GDN3-067`
-- State: approved; implementation in progress
+- State: complete; discarded
 - First decision field: fixed directional MQAR L1024/K4
 - Resource: one AIStation A800 80GB, CUDA index 0 only
 - Frozen reference: `P-GDN3-059` Momentum DeltaNet + native `[S,M]`
@@ -134,8 +134,65 @@ batch, width, depth or duration rescue is authorized.
 
 ## 8. Artifacts And Decision
 
-Pending exact pushed source, clean detached worktree, strict contract and one
-fixed endpoint.
+Exact pushed/read-back source
+`52f0d32569a10599ba90c912fe0b4ede25f05a3b` ran from the clean detached
+worktree `/huyang2/double-loop/worktrees/p-gdn3-067-52f0d32` on CUDA index 0,
+A800 UUID `GPU-c1d7c624-a393-befa-3807-7e00602d65ca`.
+
+The strict contract passed every integrity assertion. Both layers executed two
+official `ChunkGatedDeltaProductFunctionBackward` paths; the first payload was
+exactly zero; explicit recurrence output/state relative RMS was
+`.004820/.005153`; incoming-state and microstep-order output dependence was
+`1.5159/.07176`; head permutation error was zero; and every projection, gate,
+initial-state and FutureSeed gradient was finite and nonzero.
+
+The fixed endpoint activated exactly the intended mechanism. Layer 0/1
+erase-write key relative RMS was `1.3780/1.3545`, with mean absolute cosine
+`.08873/.14609`. Erase relative RMS was `.01931/.03027`; gamma means were
+`.38967/.50235`, beta means `.42640/.37811`; terminal-state RMS and board
+variation were finite. The one native FutureSeed route remained active with
+gate `.49799`.
+
+Quality nevertheless collapsed:
+
+| metric | frozen P059 | erase-then-delta | delta |
+|---|---:|---:|---:|
+| balanced accuracy | .94425 | .16850 | -.77575 |
+| future accuracy | .95150 | .17600 | -.77550 |
+| past accuracy | .93700 | .16100 | -.77600 |
+| joint exact | .82400 | .00100 | -.82300 |
+| total errors | 223 | 3,326 | +3,103 |
+| wrong-key valid-value swaps | 151 | 657 | +506 |
+
+Only the conditional swap share passes (`.19753 <= .60`), because broad
+retrieval failure replaces the narrow P059 tail. Paired transitions show
+2,509 frozen-correct queries becoming other wrong values and 625 becoming
+wrong-key errors, while only 31 prior errors repair. Validation accuracy rises
+monotonically but reaches only `.1685` at epoch 10, so this is a learned bad
+transition rather than a dead path.
+
+Elapsed/post-warm/warmed-step/allocation ratios are
+`1.23895/1.24445/.68531/.91592x`, all inside the registered cost ceilings.
+Across the full contract and endpoint, 49 active five-second samples average
+`40.80%` GPU utilization and peak at `78%`; sampled memory and power peak at
+`1,918 MiB` and `241.43 W`.
+
+Decision: discard P-GDN3-067. Independent pure erase before a complete delta
+correction does not preserve P059's owner solution; it repeatedly removes
+useful state even though the standard write remains intact. Close erase/write
+gate, key, order, product-count and all training rescues. The next mechanism
+must retain P059's successful second-order dynamics while changing how
+Momentum is committed to an owner, not add another deletion address.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-gdn3-067-erase-then-delta-fs-20260816T103617Z-52f0d32`;
+- contract JSON SHA256: `c86463a4ca876dc5ef81279d4499dc320cda50d39bb688b8b073345269098bd3`;
+- score JSON SHA256: `46e7b22c96ea5dfb258871805fdc5951a1894491f72fcce77771520bfea2f8fe`;
+- checkpoint SHA256: `669d472458bfb69cd587b559573c6cd24982f7ba2e80413b77391d6691346ae6`;
+- cases SHA256: `93f93a4c50c9c1654a0174ce151f5c354a55ce24468b862e3342e7a09ae831b2`;
+- GPU telemetry SHA256: `103e1fbc9bd3c4feb7b2cf9fe7fb281f126f7afed5d1e2cbe4beebe56b56a1cc`;
+- source snapshot SHA256: `4e49daa3ed6b7ee2b99e5756b8593fefbaa8160c0afbe0e24adf90248569a131`.
 
 ## 9. Submission Record
 

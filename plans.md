@@ -12,20 +12,21 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-DIAG-MOMVEL-001` is registered and has no
-observed result. P059's 151 residual wrong-key valid-value swaps usually select
-an adjacent write in the same temporal direction; component and exact-own-key
-diagnostics place the remaining cause inside the live Momentum transition.
-Replay the exact frozen model unchanged while the external fused recurrent op
-exposes token states. At each true write, measure decayed old `M` along the
-current normalized key and a diagnostic-only exact removal of that component.
-Open one clean-room key-local Momentum erase transition only if causal swaps
-have old-velocity/update median `>=.25` and `>=1.25x` matched correct, the fixed
-erase lowers their post-commit residual to `<=.85x`, matched correct is
-`<=1.05x`, and correct-minus-swap selectivity is `>=.10`. No logits, weights or
-formal score change. Any miss closes this branch without coefficient, decay,
-rank, width, seed, LR, loss, batch, depth or duration rescue. Report:
-`research/reports/experiments/momentum-key-locality-diagnostic-20260816.md`.
+Current update (2026-08-16 CST): `P-DIAG-MOMVEL-001` completed status 0 from
+exact pushed source `4e855671`. All 135 swap-bearing cases plus 135 matched
+all-correct controls preserved their frozen predictions and passed chunk,
+sequential and manual-equation integrity. Old key-local Momentum is enormous
+for both groups: causal swap/correct old-velocity-to-update medians are
+`12.53231/12.38849`, only `1.01161x` apart versus the registered `1.25x`.
+Removing that component reduces immediate residual for both groups
+(`.131297/.115448`), so correct-minus-swap selectivity is `-.015849` instead of
+`+.10`. Gates 1/3/4 pass but 2/5 fail. Close direct key-local Momentum erase and
+all strength/decay/coefficient/rank/width/seed/LR/loss/batch/depth/duration
+rescues. The result instead selects a distinct live Momentum lifetime or state
+organization. Active GPU utilization averaged `17.625%`, peaked at `86%`, and
+used at most `3,688 MiB`. Diagnostic JSON SHA256 is
+`f2367fcd1f4e04b6a4ca17ffbe4b722a26e024f415ff6e8e9e86cafc0d93d2c0`.
+Report: `research/reports/experiments/momentum-key-locality-diagnostic-20260816.md`.
 
 Current update (2026-08-16 CST): `P-GDN3-061` closed at its strict CUDA
 contract before formal training. Both exact refresh layers used the registered
@@ -1782,7 +1783,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-DIAG-MOMVEL-001 | registered; implementation complete, launch pending pushed/read-back SHA | P059's adjacent same-direction owner tail may be stale decayed Momentum that survives specifically along the key of a later committed write. | Frozen no-logit replay of all swap-bearing cases plus equal all-correct controls. Use the external fused recurrent op to expose exact `[S,M]` token trajectories and measure a diagnostic-only removal of old `M` along the current key. No training, parameters, state or returned outputs change. | Sole open A80080 CUDA index0, exact pushed clean detached source required. | one bounded diagnostic, hard timeout 40 minutes | Open one clean-room key-local erase transition only if causal swaps have old-velocity/update median `>=.25` and `>=1.25x` correct, erase residual `<=.85x`, correct `<=1.05x`, selectivity `>=.10`; otherwise close without rescue. | pending; no result observed |
+| P-DIAG-MOMVEL-001 | complete; key-local erase closed | P059's adjacent same-direction owner tail may be stale decayed Momentum that survives specifically along the key of a later committed write. | Frozen no-logit replay of all 135 swap-bearing cases plus 135 all-correct controls. Use the external fused recurrent op to expose exact `[S,M]` token trajectories and measure a diagnostic-only removal of old `M` along the current key. No training, parameters, state or returned outputs change. | Sole A80080 CUDA index0; exact pushed clean detached source `4e855671`. | one bounded diagnostic complete | Open one clean-room key-local erase transition only if causal swaps have old-velocity/update median `>=.25` and `>=1.25x` correct, erase residual `<=.85x`, correct `<=1.05x`, selectivity `>=.10`; otherwise close without rescue. | Integrity passed. Old-velocity/update is huge but non-selective: swap/correct `12.53231/12.38849 = 1.01161x`. Erase/native residual is `.131297/.115448`, yielding `-.015849` selectivity. Gates 2 and 5 fail; close erase/decay/strength rescues. JSON SHA `f2367fcd...d2c0`; GPU active mean/peak `17.625/86%`, peak `3,688 MiB`. |
 | P-DIAG-MOMFS-001 | registered; implementation pending push/readback | The P059 residual tail may come from transporting `S` and `M` through one shared FutureSeed gate, or from the intra-layer second-order recurrence itself. | Same trained P059 checkpoint and fixed L1024 test bank; evaluate native `[S,M]`, `S` only, `M` only and no seed. Mask only the single inter-layer seed after native normalization. Zero training and zero parameter changes. | Sole open A80080 CUDA index0; exact pushed clean detached source required. | four deterministic evals | Open FS only if one mask gains >=.005 balanced, removes >=20 swaps, adds no errors and stays within directional/joint regressions. Otherwise open one distinct live recurrence. | pending |
 | P-GDN3-059 | complete; strict gate closed; architecture-positive | First-order GDN2 commits overfit adjacent owner writes at L1024. A second-order live transition may reinforce consistent edits and damp one-token interference, while native FutureSeed transports the full recurrent dynamics. | Replace the primary scan with pinned external Momentum DeltaNet at exact SHA `c6e77fa`; carry stacked `[S,M]` through native FutureSeed. D128/L2/H4/K32/V32, 8,192 state values/layer, 599,672 params, fixed 10ep/b32/seed123 L1024 from the reproducible shared init. No side cache/router/reverse scan/task logic. | Sole A80080 CUDA index0 UUID `GPU-c1d7c...`; exact pushed/read-back source `96227cb4`; strict contract passed. | one fixed endpoint complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, conditional wrong-key share -.10; elapsed/post-warm/warmed<2x, allocation<1.5x. | Balanced/future/past/joint `.494/.454/.534/.041 -> .94425/.9515/.937/.824`; errors `2024->223`, swaps `1546->151`. All gates pass except conditional wrong-key share, which falls only `.086704` versus `.10` required. Cost `1.8009/1.7973/1.8264/.9498x`. Strictly closed with no Sudoku transfer/rescue, while retaining the result as strong evidence for second-order recurrent state. Score SHA `7201d328...f6e8a`. |
 | P-DIAG-CYCLE-001 | complete | P058 may fail because its trained reread corrupts inference, or because opening that path already steers the native base into a poor basin. | Load the exact P058 checkpoint and identical test bank, set only its eight cycle gates to exact zero, evaluate once, and record case transitions. No training or parameter selection. | Sole A10080 CUDA index0; exact pushed/read-back source `086e25f`; clean detached worktree. | one eval complete | `>=.40` balanced and `<=2400` errors means read-time damage; `<=.15` and `>=3200` means training co-adaptation collapse; otherwise mixed. | Training co-adaptation collapse: balanced `.07425->.07575`, errors `3703->3697`, swaps `380->388`; only23 wrong queries repair while17 correct queries break. P058 remains closed; diagnostic SHA `c2174644...4720`. |

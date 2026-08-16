@@ -74,9 +74,54 @@ telemetry sampling are fixed before launch.
 
 ## 6. Status
 
-Registered. No GPU result has been observed.
+Complete; key-local Momentum erase is closed.
+
+The exact pushed source `4e855671e6cfdeabafc0a73446f7a99670622d16`
+ran once in the clean detached worktree on the sole A800 CUDA index 0. The
+diagnostic selected all 135 swap-bearing cases and 135 deterministic
+all-correct controls. Frozen predictions matched exactly, every chunk and
+sequential replay gate passed, and the maximum manual native-equation versus
+external recurrent-state relative RMS was `.000949852`, below the registered
+`.05` limit.
+
+At the causal layer, the matched-correct and swap old-velocity/update medians
+were `12.38849` and `12.53231`. Their ratio was only `1.01161`, far below the
+registered `1.25`. Removing old Momentum along the current key reduced the
+immediate residual strongly in both groups: the matched-correct and swap
+erase/native medians were `.115448` and `.131297`. The resulting
+correct-minus-swap selectivity was `-.015849`, not the required `+.10`.
+
+The five registered gates therefore resolved as:
+
+1. swap old-velocity/update at least `.25`: pass (`12.53231`);
+2. swap/correct old-velocity ratio at least `1.25`: fail (`1.01161`);
+3. swap erase/native residual at most `.85`: pass (`.131297`);
+4. correct erase/native residual at most `1.05`: pass (`.115448`);
+5. correct-minus-swap erase selectivity at least `.10`: fail (`-.015849`).
+
+This is a useful negative result. Old key-local Momentum dominates the write
+update for essentially every event, but it is not selectively elevated on the
+remaining owner swaps. A direct key-local erase would suppress a universal
+part of the trained integrator rather than target the error mechanism.
+
+The bounded run emitted 81 telemetry samples, including 56 active-memory
+samples. Active GPU utilization averaged `17.625%`, peaked at `86%`, used at
+most `3,688 MiB`, and peaked at `286.17 W`. The low mean reflects checkpoint
+and cache I/O plus many one-token recurrent launches; the run completed
+naturally with status 0 and left no compute process.
+
+Archived artifact SHA256 values:
+
+- diagnostic JSON: `f2367fcd1f4e04b6a4ca17ffbe4b722a26e024f415ff6e8e9e86cafc0d93d2c0`;
+- GPU samples: `0e29e2fa5f5f0e10a3b3e5537e83c9198a6930e629ec88bab335af25b31d0ba9`;
+- source snapshot: `b639f1e9a8909271acb1ec77d923b4f44f7b8e674f4536d5da47512fbbf13af3`;
+- diagnostic log: `1c279a0889a4c547d29f26d4e1d210f7225baae597b97b9f0862ceff86969b6c`.
 
 ## 7. Next Decision
 
-Only the preregistered five-way gate may select the next recurrent mechanism.
-This diagnostic cannot itself justify Sudoku transfer or a quality claim.
+Do not launch key-local erase, decay, strength, coefficient, rank, width or
+seed variants. The remaining branch is a distinct Momentum lifetime or state
+organization that changes the live recurrent transition and is first judged
+from scratch on the directional MQAR L1024 binding regime. It must preserve a
+single scalable scan and receive its own identity, gradient, stability,
+quality and cost gates before consuming formal training compute.

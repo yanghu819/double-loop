@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-GDN3-066`
-- State: implementation complete, R3 contract pending
+- State: complete; discarded
 - Decision field: directional MQAR L1024/K4, not Sudoku
 - Resource: one AIStation A800 80GB, CUDA index 0 only
 - Frozen reference: `P-GDN3-059` Momentum DeltaNet + native `[S,M]` FutureSeed
@@ -94,7 +94,44 @@ terminal carry without requiring stale initial-state retention. This is a
 non-science checker correction; recurrence, data, initialization, budget, and
 all quality/cost gates remain unchanged.
 
-Formal artifacts pending.
+R3 exact pushed/read-back source `d1cf70bd4f86612f338373fee639136162298bd0`
+ran from the clean detached worktree
+`/huyang2/double-loop/worktrees/p-gdn3-066-r3-d1cf70b` as
+`p-gdn3-066-official-mesa-fs-r3-20260816T093556Z-d1cf70b`.
+The strict contract passed: both layers used official
+`ChunkMesaNetFunctionBackward`, all registered recurrence, initial-state and
+FutureSeed gradients were finite and nonzero, incoming-state output dependence
+was `.126012` relative RMS, head permutation errors were zero, and official
+chunk/reference parity was `.002488/.000327/.000258` for output/Hkk/Hkv.
+Contract JSON SHA256 is
+`74353ddf95ab8d2ae89462f438f1721203faf1f5545523cfaafee48645ad879b`.
+
+The fixed endpoint completed naturally and closed the configuration. P059
+versus Mesa balanced/future/past/joint accuracy is
+`.94425/.95150/.93700/.82400 -> .00975/.00650/.01300/0`. Total errors rise
+`223->3961`. Wrong-key swaps are `107`, but this is not an ownership gain:
+3,645 native-correct queries become other wrong values, 96 become wrong-key
+errors, and only three prior errors repair. Hkk remains symmetric/PSD and the
+CG residual is small (`.00191/.00218`), yet endpoint effective rank is only
+`1.079/1.169` out of 32. The global sufficient statistic therefore collapses
+to an almost one-dimensional address geometry instead of preserving the
+directional owner coordinates required by MQAR.
+
+The endpoint records `requires_grad=false` only because diagnostics run under
+evaluation/no-grad. It does not override the strict training contract, which
+proved the producer terminal state and receiver FutureSeed path are connected.
+The active FutureSeed gate is `.49925` and the receiver joint seed RMS is
+`.10702`; quality failure is not a dead path. Candidate/control elapsed,
+post-warm, warmed-step and allocation ratios are
+`.8235/.8339/.8828/.7963`, so all cost gates pass. Full-run telemetry has 77
+samples: overall/active mean utilization `16.68%/47.56%`, peak `83%`, peak
+observed memory `1,816 MiB`; the overall mean includes source snapshot,
+reference validation and CPU-side endpoint analysis.
+
+Comparison/checkpoint/source-snapshot SHA256 values are respectively
+`de7d012fe7c72dd92ebd1cfc38903f70e459e62983939624f160e09188ae8ca2`,
+`032efb86c71bcfe76831e70aec56180525998cf6c52888aec3bc04245cc453ec`,
+and `6ea9fa59193216062399227cf5bf903e53947f3805ebad2e5cdd2e467e77d9cd`.
 
 ## 7. Registered Decision Gates
 
@@ -120,10 +157,18 @@ batch/width/depth/duration rescue is authorized.
 
 ## 8. Conclusions
 
-Pending. A pass establishes a better GDN3 recurrence, after which one matched
-state-component isolation is required to determine whether the joint
-`[Hkk,Hkv]` transport is also a better FS2. A fail closes least-squares Mesa at
-this fixed condition and returns the search to a different scalable recurrence.
+Discard P-GDN3-066. Official Mesa is fully active, stable, faster than P059,
+and correctly connected through native joint `[Hkk,Hkv]` FutureSeed, but it
+does not learn directional L1024 binding. Its low-rank Gram geometry turns the
+sequence into a global regression problem and loses token ownership. This is
+strong evidence against least-squares sufficient-statistic memory for the
+current regime, not evidence against linear memory generally.
+
+Close CG count, lambda, output gate, seed gate, normalization, seed, LR, loss,
+batch, width, depth and duration rescue. The next GDN3 candidate must change
+the live recurrent edit while preserving local owner information; another
+global statistic, readout wrapper or capacity increase is not authorized.
+There is no better GDN3 or FS2 claim from P066.
 
 ## 9. Submission Record
 

@@ -12,45 +12,31 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current approved plan (2026-08-16 CST): `P-GDN3-066` replaces the primary
-recurrence with the exact pinned-official FLA Mesa least-squares memory and
-adds native joint `[Hkk,Hkv]` FutureSeed. P059's 151 wrong-key valid-value
-swaps are almost entirely adjacent and direction-preserving, while capacity,
-dual-key, router, side-state, phase, erase, and pre/post-scan families are
-closed. Mesa directly stores decayed key-Gram and key-value sufficient
-statistics and solves the regularized normal equation, so it tests whether
-correlated addresses rather than missing payload capacity are the bottleneck.
-The fixed run is D128/L2/H4/K32/V32, official chunk Mesa with 30 CG steps,
-lambda lower bound `.25`, output gate on, 8,192 state values/layer, one jointly
-RMS-normalized adjacent FutureSeed route, directional MQAR L1024/K4, 10
-epochs, batch32, seed123. It reuses only shape-compatible frozen shell tensors;
-the foundational Mesa recurrence trains from scratch. The strict A800 contract
-requires exact pinned source hashes, two official Mesa backward paths, finite
-Q/K/V/decay/write/lambda/initial-state/FutureSeed gradients, nonzero incoming
-state dependence, output/state parity to exact Mesa at `.05/.01`, head
-equivariance `.005`, and stable symmetric PSD Hkk/CG geometry. Formal quality
-must beat P059: balanced `>=.95425`, future/past regress `<=.005`, joint
-`>=.834`, errors `<=180`, swaps `<=105`, and swap share `<=.60713`. Elapsed,
-post-warm and warmed-step ratios are capped at `3x`, peak allocation at `2x`.
-Any miss closes the exact configuration without CG/lambda/gate/seed/LR/loss/
-batch/width/depth/duration rescue. Report:
+Completed update (2026-08-16 CST): `P-GDN3-066` Official Mesa
+Least-Squares FutureSeed is discarded. Exact pushed/read-back R3 source
+`d1cf70bd` passes the strict A800 contract with two official Mesa backward
+paths, complete recurrence/initial-state/FutureSeed gradients, incoming-state
+output dependence `.126012`, zero head-permutation error and official
+output/Hkk/Hkv parity `.002488/.000327/.000258`. The fixed from-scratch L1024
+endpoint nevertheless collapses: P059 versus Mesa balanced/future/past/joint
+is `.94425/.95150/.93700/.82400 -> .00975/.00650/.01300/0`, and errors rise
+`223->3961`. Symmetry, PSD and CG accuracy pass, but Hkk effective rank is only
+`1.079/1.169` out of 32. Global least-squares sufficient statistics erase the
+directional owner geometry rather than resolving address interference. Cost
+passes at `.824/.834/.883/.796x` for elapsed/post-warm/warmed/allocation.
+Close CG/lambda/output/seed gate/normalization and all training rescues; there
+is no GDN3 or FS2 claim. Report:
 `research/reports/experiments/gdn3-mesa-futureseed-mqar-20260816.md`.
 
-P-GDN3-066 infrastructure update: R1 source `3bc35d08` stopped before model or
-CUDA because `inspect.getfile` on the TorchDynamo-decorated public function
-reported its wrapper file. R2 verifies the exact operator module `__file__`,
-`ChunkMesaNetFunction` path, and pinned file hashes. No mechanism, gate, data,
-budget, or initialization changed; R1 has no science result.
-
-P-GDN3-066 R2 source `f0181c77` executed the official operator and showed strong
-finite incoming-state output dependence (`.126012` relative RMS), but stopped
-because the checker additionally required the old initial state to survive in
-the terminal state after the full sequence; measured carry was exactly zero.
-That stale-state-retention condition was not preregistered and conflicts with a
-stable forgetting recurrence. R3 retains receiver-output dependence as the hard
-gate and separately retains nonzero, board-varying, PSD terminal-statistic and
-gradient gates. It only records terminal carry. No recurrence, solver, data,
-initialization, budget, quality, or cost gate changes.
+Current decision boundary (2026-08-16 CST): select exactly one successor that
+changes the token-scan live state transition and preserves local owner
+information. Capacity increases, global sufficient statistics, direct
+erase/write-key decoupling, prediction-key wrappers, routers, caches,
+pre/post-scan residuals and parallel side memories are closed. Before GPU
+launch, the successor must have a primary-source equation and license audit,
+a falsifiable directional-MQAR prediction, fixed budget/kill gates, an exact
+pushed SHA, clean detached worktree, and a production-length A800 CUDA
+contract. No parameter sweep or low-information GPU filler is authorized.
 
 Completed update (2026-08-16 CST): `P-GDN3-065` Closed-Loop Comba with
 native FutureSeed is discarded at its strict R5 CUDA semantic contract. Exact
@@ -1942,6 +1928,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-GDN3-066 | complete; discarded | P059's adjacent direction-preserving swaps may be address interference; exact Mesa normal-equation reads could decorrelate keys while native FutureSeed transports complete sufficient statistics. | Pinned official Mesa D128/L2/H4/K32/V32, CG30, lambda floor.25, joint `[Hkk,Hkv]` FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from matched shell tensors; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `d1cf70bd`; clean detached worktree; strict R3 contract passed. | one fixed from-scratch candidate complete | Balanced>=.95425, future/past regression<=.005, joint>=.834, errors<=180, swaps<=105/share<=.60713; time<=3x, allocation<=2x. | Balanced/future/past/joint `.00975/.00650/.01300/0`, errors3961. Hkk is stable PSD and CG error<.0022, but effective rank collapses to `1.079/1.169`; global least squares destroys directional ownership. Cost `.824/.834/.883/.796x` passes. Close Mesa/CG/lambda/gate rescues; no GDN3/FS2 claim. |
 | P-GDN3-065 | complete; discarded at strict CUDA semantic contract | P059's remaining valid-value/wrong-key swaps come from an incoherent live edit, not insufficient state capacity. A closed-loop residual update with prediction and write keys in the same owner direction should reduce binding errors. | Pinned external Comba chunk recurrence, D128/L2/H4/K32/V32, native terminal FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from shared parent tensors; no side state, cache, router or sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `753735b6`; clean detached worktree; R5 contract completed CUDA forward/backward. | Contract only; formal endpoint killed | Same quality gate, contingent on output/state parity <=.05. | Chunk/fused-recurrent output/state relative RMS `.239417/.258119` fails the `.05` integrity gate despite nonzero initial-state dependency `.0415303`. Status1 non-science abort; no formal quality run and no GDN3/FS2 claim. Close exact Comba transfer without rescue. |
 | P-GDN3-064 | complete; discarded; sparse-slot capacity family closed | P059 leaves 151 wrong-owner errors because one dense K32xV32 basis may collide; a primary sparse product-key delta bank may preserve discrete ownership while native FutureSeed transports the complete terminal bank. | Pinned official SDM at exact SHA `183e7df`, D128/L2/H1/1024 slots/read8/write8/block64, full-bank native FutureSeed, 131,072 state values/layer. Fixed directional MQAR L1024 10ep/b32/seed123 from the shared parent tensors; no dense GDN2 scan, sidecar, selector or sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `cbec800`; clean detached worktree; strict R4 contract passed. | one fixed candidate complete | Preserve P059 `.94/.93/.93/.82`, errors<=223, swaps<=100 and share<=.60 with one strict gain; cost <=3x and allocation <=4x. | Integrity/activation/cost pass, but balanced/future/past/joint is `.26825/.02850/.50800/0`; errors/swaps `2927/1126`. State is 16x P059 and hundreds of slots activate, yet future retrieval stays near chance. Cost `1.506/1.509/1.809/1.033x`. Close slot/read/write/head/block/full-bank rescues; score SHA `cb22182e...12469`. |
 | P-FS2-014 | complete; discarded; S/M phase family closed | P059's native FutureSeed already transports useful normalized Momentum, but the receiver may need that future derivative rephased into the state component consumed by its own live transition. | Keep exact P059 Momentum recurrence, owner/write K and native shared seed gate. After separate S/M normalization and gating, apply one energy-preserving 2D S/M rotation per receiving head. Exactly +4 params, zero state/scan/key/kernel delta; fixed L1024 10ep/b32/seed123 from exact P059 data/init, frozen P059 reference without rerun. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `b41a0e74`; clean detached worktree; strict R2 contract passed. | one fixed candidate complete | Balanced>=.955 and +.01; future +.01; past regression<=.003; joint>=.84 and +.01; errors/swaps/adjacent tail -20%; conditional swap share -.05; activation/stability; elapsed/post-warm/warmed<1.10x and allocation<1.05x. | All integrity/activation/stability/cost gates pass, but balanced/future/past/joint collapses `.94425/.9515/.937/.824 -> .25950/.24750/.27150/.001`; errors `223->2962`, swaps `151->1081`. Mean/min `|sin(phi)|=.050011/.008744`; board variation `2.79e-9` shows a global semantic channel mix. Cost `1.01958/1.01823/.91544/1.00105x`. Close without rescue; comparison SHA `72d07ead...e9fa6f77`. |

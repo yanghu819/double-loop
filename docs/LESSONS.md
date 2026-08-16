@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-16: Stable sufficient statistics can still erase ownership
+
+- P-GDN3-066 uses the exact official Mesa recurrence, not a local wrapper.
+- The strict A800 contract proves two official backward paths, full gradients,
+  incoming-state use, equivariance and close exact-reference parity.
+- Mesa remains numerically well behaved and cheaper than P059, but directional
+  MQAR balanced accuracy collapses `.94425->.00975` and errors rise
+  `223->3961`.
+- Endpoint Hkk effective rank is only `1.079/1.169` out of 32. PSD, symmetry
+  and low CG error do not imply that the state preserves token ownership.
+- A global regression summary is the wrong inductive bias for this residual
+  tail. Native FutureSeed faithfully carrying `[Hkk,Hkv]` cannot restore local
+  address distinctions that the recurrence has already compressed away.
+- Close CG/lambda/gate/normalization rescue. The next candidate must change the
+  live local state edit and preserve owner evidence rather than add capacity or
+  another global statistic.
+
 ## 2026-08-16: A plausible recurrence is not evidence without chunk parity
 
 - P-GDN3-065 targets the right remaining problem: a closed-loop residual edit

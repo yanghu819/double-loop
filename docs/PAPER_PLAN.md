@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Global Least Squares Loses Directional Ownership
+
+P-GDN3-066 replaces the recurrent transition with the exact pinned-official
+Mesa operator and transports its complete `[Hkk,Hkv]` sufficient statistics
+through native FutureSeed. Its strict contract is positive: both official
+backward paths, all recurrence and seed gradients, incoming-state dependence,
+head equivariance and exact-reference parity pass. It is also faster and
+lighter than the P059 Momentum DeltaNet baseline.
+
+Quality nevertheless falls to chance. Balanced/future/past/joint accuracy is
+`.00975/.00650/.01300/0` versus `.94425/.95150/.93700/.82400`, with
+`3,961` errors. Hkk is symmetric, PSD and solved accurately, but its effective
+rank is only `1.079/1.169` out of 32. The paper should distinguish numerical
+stability from useful memory geometry: a stable global normal equation can
+compress the sequence into an almost one-dimensional statistic and erase the
+local owner coordinates needed for directional retrieval. Native FutureSeed
+cannot recover semantics absent from its producer state. Close Mesa and target
+a live local edit that preserves ownership.
+
 ## 2026-08-16 Closed-Loop Ownership Requires Operator-Level Semantic Parity
 
 P-GDN3-065 tests a complete Comba residual recurrence rather than another

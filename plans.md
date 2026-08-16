@@ -12,6 +12,29 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current candidate (2026-08-16 CST): `P-GDN3-064` Official Sparse Delta
+Memory with Native Slot-Bank FutureSeed is approved for one from-scratch
+directional MQAR L1024 decision. The intervention replaces the primary dense
+K32xV32 recurrence rather than wrapping it: each D128 layer uses the exact
+read-only external
+`facebookresearch/sparse-delta-memory@183e7df809131b80ad4393741029d0f20fc3640b`
+product-key delta state with one head, 1,024 slots, eight reads, eight writes,
+and a 64-token block. Layer 0's complete terminal slot bank is RMS-normalized
+per board and passed to layer 1 through one learned FutureSeed gate. This is
+not P050's failed 16-slot committed-edit sidecar: there is no dense GDN2 main
+state, auxiliary scan, selector, replay, or Sudoku logic. The fixed run is
+D128/L2, 10 epochs, batch32, seed123 on the established mixed-direction data.
+It must be Pareto-better than P059, not merely better than old GDN2: balanced,
+future, past and joint must remain at least `.94/.93/.93/.82`, total errors may
+not exceed 223, wrong-key swaps must fall to at most 100 with share at most
+`.60`, and at least one of balanced, joint, or total errors must strictly
+improve. Elapsed/post-warm/warmed-step may be at most `3x` P059 and peak
+allocation at most `4x`. Any environment, contract, activation, quality, or
+cost miss closes the complete 1024-slot/8-read/8-write configuration without
+slot/read/write/head/gate/normalization/seed/LR/loss/batch/width/depth/duration
+rescue. Report:
+`research/reports/experiments/gdn3-official-sdm-futureseed-mqar-20260816.md`.
+
 Current update (2026-08-16 CST): `P-FS2-014` Momentum S/M Phase Transport is
 complete and discarded. Exact pushed/read-back source `b41a0e74` passes the R2
 strict A800 contract: exactly four new angles, zero state/scan delta, bit-exact

@@ -48,7 +48,7 @@ GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 [[ "$GIT_SHA" == "$EXPECTED_SOURCE_SHA" ]]
 [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]
 REMOTE_SHA="$(
-  curl -fsSL --connect-timeout 10 --max-time 30 \
+  env -u LD_LIBRARY_PATH /usr/bin/curl -fsSL --connect-timeout 10 --max-time 30 \
     "https://api.github.com/repos/yanghu819/double-loop/git/ref/${SOURCE_REMOTE_REF#refs/}" \
     | "$PYTHON_BIN" -c 'import json,sys; print(json.load(sys.stdin)["object"]["sha"])'
 )"

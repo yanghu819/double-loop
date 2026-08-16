@@ -49,6 +49,13 @@ source, recurrence, state, data, initialization, budget and registered gates
 are unchanged; the contract additionally asserts disabled update autocast and
 BF16 memory input. No quality result exists yet.
 
+R3 crossed the original mixed-dot site and completed the official CUDA
+forward, then a new contract graph walker falsely saw only loss nodes because
+it stored transient Python wrapper ids instead of the autograd node objects;
+id reuse truncated traversal. R4 aligns that harness with the repository's
+established object-retaining graph walkers. No model, recurrence, precision,
+data, budget, or gate changes; R3 produced no quality score.
+
 Current update (2026-08-16 CST): `P-FS2-014` Momentum S/M Phase Transport is
 complete and discarded. Exact pushed/read-back source `b41a0e74` passes the R2
 strict A800 contract: exactly four new angles, zero state/scan delta, bit-exact

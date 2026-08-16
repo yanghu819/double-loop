@@ -74,13 +74,13 @@ def _version(value: str) -> tuple[int, ...]:
 
 def backward_names(loss: torch.Tensor) -> list[str]:
     names: list[str] = []
-    visited: set[int] = set()
+    visited = set()
     queue = [loss.grad_fn]
     while queue:
         node = queue.pop()
-        if node is None or id(node) in visited:
+        if node is None or node in visited:
             continue
-        visited.add(id(node))
+        visited.add(node)
         names.append(type(node).__name__)
         queue.extend(next_node for next_node, _index in node.next_functions)
     return names

@@ -109,10 +109,17 @@ science settings fixed, but disables autocast only at the official
 `gated_write_read` boundary. The strict contract now also asserts this
 precision boundary and a BF16 memory input.
 
+R3 then completed that official CUDA forward but the newly written graph
+checker falsely reported only the two loss nodes. Unlike the repository's
+established graph walkers, it retained only `id(node)` rather than the autograd
+node objects; Python wrapper-id reuse truncated traversal before the sparse
+backward nodes. R4 changes only this contract harness bookkeeping. The model,
+external source, precision boundary and all science settings remain fixed.
+
 ## 7. Decision
 
-Pending the R3 strict CUDA contract and single formal endpoint. R1/R2 are
-non-science integration failures, not configuration retries.
+Pending the R4 strict CUDA contract and single formal endpoint. R1-R3 are
+non-science integration or contract-harness failures, not quality attempts.
 
 ## 8. Artifacts
 

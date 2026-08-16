@@ -12,6 +12,27 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Approved update (2026-08-16 CST): `P-FS2-016` tests Momentum-only FutureSeed
+as a strict Pareto simplification of P059, not as a residual-error repair. The
+frozen same-weight component audit showed that `[S,M] -> [0,M]` changes
+balanced/future/past/joint only
+`.94425/.95150/.93700/.82400 -> .94375/.95000/.93750/.82200`, while `S`-only
+loses future retrieval. The candidate therefore keeps P059's complete
+Momentum recurrence, recurrent `[S,M]` state, parameters, scans, Q/K/V and
+short convolutions, but packs only terminal `M` across the layer boundary and
+reconstructs receiver state `[0,M]`. This halves the logical FutureSeed edge
+from 8,192 to 4,096 values without changing persistent state. The strict A800
+contract must prove exact pinned source, identical parameters and producer
+path, exact M-seed parity, zero transported-S gradient, nonzero transported-M
+gradient and two native Momentum backwards. The one from-scratch L1024 run
+passes only if balanced is at least `.94` and within `.005` of P059, each
+direction is within `.005`, joint is at least `.81` and within `.01`, errors
+and wrong-key swaps are at most `243/171`, elapsed/post-warm/warmed ratios are
+below `1.05x`, and allocation below `1.02x`. Any miss closes the architecture
+without component/gate/scale/seed/LR/loss/batch/width/depth/duration rescue.
+Report:
+`research/reports/experiments/futureseed2-momentum-only-mqar-20260816.md`.
+
 Completed update (2026-08-16 CST): `P-GDN3-070` Coupled Dual-Rate Momentum is
 discarded. Exact pushed/read-back source `11372b96` passed the strict A800
 contract, including one clean-room scan, fused/Torch output/state/all-gradient

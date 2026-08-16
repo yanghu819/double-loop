@@ -95,6 +95,7 @@ GDN2_ARMS = (
     "future_seed_dual_rate_momentum",
     "future_seed_momentum_address_deblur",
     "future_seed_momentum_conv_prefill",
+    "future_seed_momentum_only",
     "future_seed_official_sdm",
     "future_seed_comba",
     "future_seed_mesa",
@@ -396,6 +397,11 @@ def build_config(
                 "experiments.zoology_mqar.momentum_conv_prefill_futureseed."
                 "ZoologyMomentumConvPrefillFutureSeedMixer"
             )
+        elif arm == "future_seed_momentum_only":
+            mixer_name = (
+                "experiments.zoology_mqar.momentum_only_futureseed."
+                "ZoologyMomentumOnlyFutureSeedMixer"
+            )
         elif arm == "future_seed_official_sdm":
             mixer_name = (
                 "experiments.zoology_mqar.official_sdm_futureseed."
@@ -464,6 +470,12 @@ def build_config(
 
 
 def make_model(config: TrainConfig, arm: str) -> torch.nn.Module:
+    if arm == "future_seed_momentum_only":
+        from experiments.zoology_mqar.momentum_only_futureseed import (
+            MomentumOnlyFutureSeedLanguageModel,
+        )
+
+        return MomentumOnlyFutureSeedLanguageModel(copy.deepcopy(config.model))
     if arm == "future_seed_momentum_conv_prefill":
         from experiments.zoology_mqar.momentum_conv_prefill_futureseed import (
             MomentumConvPrefillLanguageModel,
@@ -1026,6 +1038,7 @@ def run_arm(
             "future_seed_dual_rate_momentum",
             "future_seed_momentum_address_deblur",
             "future_seed_momentum_conv_prefill",
+            "future_seed_momentum_only",
         ):
             from experiments.zoology_mqar.momentum_futureseed import (
                 load_matched_parent_state,
@@ -1259,6 +1272,7 @@ def run_arm(
         "future_seed_dual_rate_momentum",
         "future_seed_momentum_address_deblur",
         "future_seed_momentum_conv_prefill",
+        "future_seed_momentum_only",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
             parent_parameter_hash,
@@ -1774,6 +1788,7 @@ def run_arm(
         "future_seed_dual_rate_momentum",
         "future_seed_momentum_address_deblur",
         "future_seed_momentum_conv_prefill",
+        "future_seed_momentum_only",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
             momentum_futureseed_diagnostics,
@@ -1838,6 +1853,12 @@ def run_arm(
             )
 
             momentum_delta = momentum_conv_prefill_diagnostics(model)
+        elif arm == "future_seed_momentum_only":
+            from experiments.zoology_mqar.momentum_only_futureseed import (
+                momentum_only_futureseed_diagnostics,
+            )
+
+            momentum_delta = momentum_only_futureseed_diagnostics(model)
         else:
             momentum_delta = momentum_futureseed_diagnostics(model)
     official_sdm = None
@@ -2003,6 +2024,7 @@ def run_arm(
                     "future_seed_owner_local_momentum",
                     "future_seed_momentum_address_deblur",
                     "future_seed_momentum_conv_prefill",
+                    "future_seed_momentum_only",
                 )
                 else 1
             )

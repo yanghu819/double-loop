@@ -109,6 +109,14 @@ def _prediction_disagreements(
 ) -> dict[str, Any]:
     if len(reference) != len(observed):
         raise RuntimeError("Native replay changed the number of cases")
+    reference_by_index = {case["case_index"]: case for case in reference}
+    observed_by_index = {case["case_index"]: case for case in observed}
+    if (
+        len(reference_by_index) != len(reference)
+        or len(observed_by_index) != len(observed)
+        or reference_by_index.keys() != observed_by_index.keys()
+    ):
+        raise RuntimeError("Native replay case indices drifted")
     disagreements = []
     event_fields = (
         "direction",
@@ -118,7 +126,9 @@ def _prediction_disagreements(
         "key",
         "target",
     )
-    for expected_case, observed_case in zip(reference, observed, strict=True):
+    for case_index in sorted(reference_by_index):
+        expected_case = reference_by_index[case_index]
+        observed_case = observed_by_index[case_index]
         case_fields = ("case_index", "case_id", "sequence_length")
         if any(
             expected_case[field] != observed_case[field] for field in case_fields

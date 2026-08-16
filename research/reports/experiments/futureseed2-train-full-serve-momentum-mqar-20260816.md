@@ -64,10 +64,12 @@ R1 passed the strict CUDA contract but stopped before candidate evaluation when
 the native replay differed from the frozen cases. R2 isolated native replay
 before candidate construction and recorded the single changed prediction above,
 proving the mismatch is a bounded cross-A800 replay effect rather than candidate
-lifecycle contamination. No candidate quality result exists yet. R3 is the sole
-registered production endpoint; its model, data, mechanism and original
-quality/cost limits are unchanged.
+lifecycle contamination. R3 stopped before candidate construction because its
+new audit zipped two hardest-first case lists; the one changed prediction moved
+that case in the sort order and triggered a false identity error. R4 aligns by
+the immutable `case_index`. No candidate quality result exists yet; the model,
+data, mechanism and registered quality/cost limits remain unchanged.
 
 ## 6. Decision
 
-Pending R3.
+Pending R4.

@@ -137,7 +137,41 @@ authorizes one hard-Sudoku transfer.
 
 ## 8. Status
 
-Registered before implementation and before any candidate score was observed.
+Closed at the strict CUDA contract before formal training. The exact source
+`04ca4afc83aeec748fe28f3867df117722f8d952` was pushed and read back, then run
+from a clean detached worktree on CUDA index 0, A800 UUID
+`GPU-c1d7c624-a393-befa-3807-7e00602d65ca`.
+
+The short synthetic contract passed clean-room Triton versus FP32 Torch parity:
+output/state relative RMS was `1.00e-7/7.24e-8`, and the maximum relative
+gradient error over Q/K/V/log-alpha/log-mu/beta/eta/initial-state was
+`1.50e-6`. Structural checks also passed: `beta=0` output identity was exact,
+one-step zero-old-momentum output identity was exact, state discrepancies were
+below `1.3e-7`, head permutation error was zero, and causal-prefix error was
+zero.
+
+The production-length backward failed. L1024 forward activation was finite in
+both layers: lookahead relative RMS was `7.2593/4.2362`, residual-change
+relative RMS was `.28011/.25065`, and minimum inverse denominators were
+`.37202/.41214`. Despite those locally safe denominators, every layer-0
+Q/K/V/alpha/mu/beta/eta gradient became NaN. Layer 1 Q/K/alpha/mu/beta/eta
+also became NaN; only layer-1 V (`.013915` RMS) and the native FutureSeed gate
+(`.002405` RMS) remained finite. The reversible backward reconstructs 1,024
+prior states by repeatedly dividing by decays, so local inverse validity does
+not imply a numerically stable long reverse chain.
+
+The launcher wrote a non-science `abort.json` with status 1. Formal training,
+quality evaluation and checkpoint creation did not run. Contract telemetry has
+13 active-memory samples, `11.08%` mean and `51%` peak utilization, and
+`1,118 MiB` observed peak memory.
+
+Artifact SHA256 values:
+
+- `abort.json`: `47a777c829290eba3fa53c2d67ee2becb3feeee0e33d9fc84c1617882605dfa1`;
+- contract log: `f88d43c451293a9b05e42b17738fb16d126df5b284c87bfe4c3d8dd411526fe6`;
+- source snapshot: `9e1b7aa3c794ac72560311ae669a596ed3f6084fed47be92214557475e925a06`;
+- postmortem log: `d0587232cf12f2deccc36785cae722ceac2e396022be2843c309372bfa315da2`;
+- postmortem JSON: `cc3706765463026b9a583ca1e0b9542af86bfd59431aa14e217d6770535556b4`.
 
 ## 9. Required Artifacts And Next Decision
 
@@ -146,7 +180,10 @@ validation curve, per-direction transition taxonomy, lookahead/residual/state
 diagnostics, independent throughput, memory and GPU telemetry, source/config/
 log hashes, and GitHub readback.
 
-A complete pass promotes Predictive-Residual Momentum as the GDN3 carrier and
-opens one matched hard-Sudoku transfer with native FutureSeed. Any miss closes
-this recurrence and returns to a genuinely different scalable state
-organization; it cannot justify another Momentum microstep or lifetime sweep.
+The registered production-stability miss closes this reversible-backward
+implementation. There is no epsilon, precision, checkpoint interval, block
+size, lookahead coefficient, state, seed, LR, loss, batch, width, depth or
+duration rescue, and no Sudoku transfer. The equation did not receive a
+quality verdict; a successor must nevertheless use a genuinely different,
+pre-registered scalable state/training organization rather than silently
+rerunning the same failed kernel.

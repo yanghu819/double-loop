@@ -1,5 +1,22 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Local Reversibility Does Not Guarantee Trainable Long Memory
+
+P-GDN3-062 evaluates the Momentum residual at a velocity lookahead and uses a
+clean-room reversible Triton backward. The short contract is deceptively
+strong: output/state parity is about `1e-7`, all synthetic gradients agree
+within `1.5e-6`, and the L1024 forward has finite nontrivial lookahead and
+residual changes. At L1024, however, nearly all full-model recurrent gradients
+become NaN. Only final-layer V and the FutureSeed gate remain finite.
+
+The paper should separate algebraic invertibility from stable credit transport.
+The inverse at each token is locally well-defined, but repeatedly dividing by
+decay factors reconstructs an exponentially ill-conditioned reverse history.
+This is a useful negative systems result: strict production-length gradient
+contracts are necessary for new linear-recurrent transitions, and a short
+reference parity test is insufficient. P062 receives no quality claim and no
+Sudoku transfer.
+
 ## 2026-08-16 Momentum Is The Effective Cross-Layer FutureSeed Component
 
 P-DIAG-MOMFS-001 masks only the transported component of the exact trained

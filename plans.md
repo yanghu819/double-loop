@@ -12,19 +12,21 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-GDN3-062` Predictive-Residual Momentum is
-the sole registered successor. P059's old velocity is roughly `12.5x` the
-current write update for both correct and swap events, so deleting it is not
-selective. P062 instead evaluates the one committed residual at the lookahead
-state `L=A*S-beta*U*M`, then performs the same single Momentum update and
-native `[S,M]` FutureSeed transport. It adds zero parameters/state and no
-second token, cache, router or extra scan. One from-scratch directional MQAR
-L1024 candidate uses the exact P059 data/initialization and fixed
-10ep/b32/seed123. Strict clean-room Triton parity, finite reversible geometry,
-quality (`balanced>=.955`, errors `<=180`, swaps `<=105`) and cost
-(`<2.5x` time, `<1.25x` allocation) gates are frozen before implementation.
-Any miss closes without kernel/epsilon/coefficient/state/seed/LR/loss/batch/
-width/depth/duration rescue. Report:
+Current update (2026-08-16 CST): `P-GDN3-062` Predictive-Residual Momentum
+closed at its strict CUDA contract before formal training. Exact pushed source
+`04ca4afc` passes short-sequence Triton/Torch output, state and all-gradient
+parity at about `1e-6`, exact `beta=0` and one-step zero-old-momentum identity,
+causality, head equivariance and finite L1024 forward activation. The complete
+L1024 backward is not production-stable: all layer-0 projection/gate gradients
+and all layer-1 gradients except V become NaN, while only layer-1 V and the
+FutureSeed gate remain finite. Reverse reconstruction repeatedly divides by
+the decays across 1,024 tokens, amplifying numerical error even though the
+minimum local inverse denominator is `.3720`. No formal score exists and the
+lookahead hypothesis therefore remains untested for quality. Close the
+reversible backward implementation without epsilon/precision/checkpoint/
+block-size/coefficient/state/seed/LR/loss/batch/width/depth/duration rescue.
+Contract telemetry used 13 active samples at `11.08%` mean and `51%` peak GPU,
+with `1,118 MiB` observed peak memory. Report:
 `research/reports/experiments/gdn3-predictive-residual-momentum-mqar-20260816.md`.
 
 Current update (2026-08-16 CST): `P-DIAG-MOMVEL-001` completed status 0 from
@@ -1798,7 +1800,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-062 | registered; implementation pending | P059 computes its residual before applying old Momentum even though that velocity is about `12.5x` the new write. Evaluating at the impending state should preserve useful velocity while correcting its displacement. | One clean-room fused one-scan recurrence: `L=A*S-beta*U*M`, `r=v-p^T*L`, then unchanged `M=U*M-eta*k*r^T`, `S=A*S-beta*M`. Zero parameters/state, exact P059 projections/gates/native `[S,M]` FutureSeed, fixed from-scratch L1024 10ep/b32/seed123. | Sole open A80080 CUDA index0; exact pushed clean detached source required. | contract plus one fixed candidate | Balanced `>=.955` and `+.01`; directions regress `<=.005`; joint `>=.84` and `+.01`; errors `<=180`; swaps `<=105`; conditional swap share `<=.60713`; time `<2.5x`, allocation `<1.25x`. | pending; no candidate score observed |
+| P-GDN3-062 | closed at strict CUDA contract; no formal quality run | P059 computes its residual before applying old Momentum even though that velocity is about `12.5x` the new write. Evaluating at the impending state should preserve useful velocity while correcting its displacement. | One clean-room fused one-scan recurrence: `L=A*S-beta*U*M`, `r=v-p^T*L`, then unchanged `M=U*M-eta*k*r^T`, `S=A*S-beta*M`. Zero parameters/state, exact P059 projections/gates/native `[S,M]` FutureSeed, fixed from-scratch L1024 10ep/b32/seed123. | A80080 CUDA index0, clean detached pushed source `04ca4afc`; contract run `p-gdn3-062-predictive-momentum-20260816T024047Z-04ca4af`. | contract only; formal did not start | Short FP32 parity and finite forward pass, but L1024 reverse-reconstruction backward produces NaN in nearly every recurrent projection/gate gradient. Close this implementation with no kernel/epsilon/precision/checkpoint/block/coefficient or training rescue. | failed production-stability contract; no candidate score |
 | P-DIAG-MOMVEL-001 | complete; key-local erase closed | P059's adjacent same-direction owner tail may be stale decayed Momentum that survives specifically along the key of a later committed write. | Frozen no-logit replay of all 135 swap-bearing cases plus 135 all-correct controls. Use the external fused recurrent op to expose exact `[S,M]` token trajectories and measure a diagnostic-only removal of old `M` along the current key. No training, parameters, state or returned outputs change. | Sole A80080 CUDA index0; exact pushed clean detached source `4e855671`. | one bounded diagnostic complete | Open one clean-room key-local erase transition only if causal swaps have old-velocity/update median `>=.25` and `>=1.25x` correct, erase residual `<=.85x`, correct `<=1.05x`, selectivity `>=.10`; otherwise close without rescue. | Integrity passed. Old-velocity/update is huge but non-selective: swap/correct `12.53231/12.38849 = 1.01161x`. Erase/native residual is `.131297/.115448`, yielding `-.015849` selectivity. Gates 2 and 5 fail; close erase/decay/strength rescues. JSON SHA `f2367fcd...d2c0`; GPU active mean/peak `17.625/86%`, peak `3,688 MiB`. |
 | P-DIAG-MOMFS-001 | registered; implementation pending push/readback | The P059 residual tail may come from transporting `S` and `M` through one shared FutureSeed gate, or from the intra-layer second-order recurrence itself. | Same trained P059 checkpoint and fixed L1024 test bank; evaluate native `[S,M]`, `S` only, `M` only and no seed. Mask only the single inter-layer seed after native normalization. Zero training and zero parameter changes. | Sole open A80080 CUDA index0; exact pushed clean detached source required. | four deterministic evals | Open FS only if one mask gains >=.005 balanced, removes >=20 swaps, adds no errors and stays within directional/joint regressions. Otherwise open one distinct live recurrence. | pending |
 | P-GDN3-059 | complete; strict gate closed; architecture-positive | First-order GDN2 commits overfit adjacent owner writes at L1024. A second-order live transition may reinforce consistent edits and damp one-token interference, while native FutureSeed transports the full recurrent dynamics. | Replace the primary scan with pinned external Momentum DeltaNet at exact SHA `c6e77fa`; carry stacked `[S,M]` through native FutureSeed. D128/L2/H4/K32/V32, 8,192 state values/layer, 599,672 params, fixed 10ep/b32/seed123 L1024 from the reproducible shared init. No side cache/router/reverse scan/task logic. | Sole A80080 CUDA index0 UUID `GPU-c1d7c...`; exact pushed/read-back source `96227cb4`; strict contract passed. | one fixed endpoint complete | Balanced>=.65 and +.10, directions>=.62, joint>=.15 and +.10, errors -20%, conditional wrong-key share -.10; elapsed/post-warm/warmed<2x, allocation<1.5x. | Balanced/future/past/joint `.494/.454/.534/.041 -> .94425/.9515/.937/.824`; errors `2024->223`, swaps `1546->151`. All gates pass except conditional wrong-key share, which falls only `.086704` versus `.10` required. Cost `1.8009/1.7973/1.8264/.9498x`. Strictly closed with no Sudoku transfer/rescue, while retaining the result as strong evidence for second-order recurrent state. Score SHA `7201d328...f6e8a`. |

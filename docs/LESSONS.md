@@ -1,5 +1,24 @@
 # Lessons
 
+## 2026-08-16: A locally invertible recurrence need not have a stable long backward
+
+- P-GDN3-062 changes the Momentum residual to account for the old velocity
+  before committing the current update. Its fused forward is finite at L1024,
+  and a short synthetic test matches a Torch reference in outputs, states and
+  all gradients to about `1e-6` relative error.
+- The reverse-reconstruction backward still fails at production length. Nearly
+  every recurrent projection and gate gradient becomes NaN at L1024 even
+  though every local inverse denominator stays above `.372`.
+- Reconstructing history repeatedly divides by alpha and mu. Small local errors
+  are therefore multiplied over 1,024 reverse steps; a lower bound on one
+  algebraic denominator is not a bound on the whole adjoint computation.
+- CUDA contracts must exercise the production sequence length and the complete
+  model graph. Short reference parity alone would have admitted a recurrence
+  that cannot train.
+- Close reversible-backward precision/epsilon/checkpoint/block rescue. The next
+  scalable recurrent update must make its long-horizon training stability part
+  of the architecture, not an after-the-fact numerical patch.
+
 ## 2026-08-16: Momentum, not the base state, carries useful future evidence
 
 - The exact trained P059 checkpoint is replayed with `[S,M]`, `S` only, `M`

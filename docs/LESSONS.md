@@ -3737,3 +3737,26 @@
   removed during learning merely because it can be masked after convergence.
 - The only justified simplification is phase-asymmetric: train `[S,M]`, serve
   M-only, and bound the claim with exact frozen replay and deployment costs.
+
+## 2026-08-16: Train full, serve Momentum-only is a valid FS2 contract
+
+- P-FS2-017 validates the phase-asymmetric contract on the exact frozen P059
+  model. Native versus production M-only balanced/future/past/joint is
+  `.94400/.95150/.93650/.82300` versus
+  `.94375/.95000/.93750/.82200`; errors and wrong-key swaps each increase by
+  only one. Every registered quality gate passes.
+- Cross-layer payload falls exactly from `8,192` to `4,096` values. Parameter,
+  persistent-state and scan deltas are zero, peak allocation is unchanged, and
+  the interleaved warmed elapsed ratio is `.94017`. Treat this as no cost
+  regression, not a robust speedup claim.
+- The combined P-FS2-016/017 result is stronger than either alone: S is needed
+  while the model learns, but the converged receiver can reconstruct `[0,M]`
+  without meaningful quality loss. Architectural simplification may therefore
+  be phase-specific rather than uniform across training and serving.
+- This does not solve the residual ownership tail: M-only has `153` swaps
+  versus native replay's `152`. Keep FS transport efficiency separate from the
+  remaining GDN3 address-binding problem and from Sudoku transfer.
+- Cross-device BF16 replay can change a single argmax despite exact source,
+  data and parameter hashes. Calibrate bounded replay drift before candidate
+  construction, and align sorted audit records by immutable `case_index`, not
+  by post-score list position.

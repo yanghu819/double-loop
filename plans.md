@@ -12,30 +12,19 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Approved update (2026-08-16 CST): `P-FS2-017` tests one phase-asymmetric
-FutureSeed deployment contract. P-FS2-016 proves that M-only transport is
-semantically exact but cannot learn from scratch: balanced/future/past/joint
-collapses `.94425/.95150/.93700/.82400 -> .01325/.01350/.01300/0` despite all
-integrity and activation gates passing. Combined with the frozen same-weight
-`[S,M] -> [0,M]` result `.94375/.95000/.93750/.82200`, the only open FS claim
-is that S acts as a training scaffold while converged future evidence resides
-in M. P-FS2-017 loads the exact P059 checkpoint, compares native `[S,M]` with
-the production M-only edge on identical cases, and interleaves warmed
-inference benchmarks. It passes only if transport is exactly halved with no
-parameter/state/scan change, balanced and each direction stay within `.005`,
-joint within `.01`, errors/swaps stay within `243/171`, inference is below
-`1.05x`, and allocation below `1.02x`. The claim is deployment-only; no
-training, finetuning or rescue is allowed. R1/R2 passed the CUDA contract but a
-new A800 changed one native prediction out of 4,000 despite exact artifact,
-parameter and data hashes (`balanced -.00025`, `joint -.001`, max CE drift
-`4.8e-6`). Before any production-candidate result, R3 freezes a cross-A800
-native bound of at most two prediction changes, `.001` accuracy/joint drift and
-`1e-4` CE drift, and additionally requires reproduction of the exact frozen
-same-weight M-only diagnostic within those metric bounds. The original
-candidate quality and cost gates remain unchanged. R3 stopped before candidate
-construction because the auditor compared two hardest-first case lists by list
-position; one changed prediction reorders the list. R4 aligns immutable
-`case_index` values and changes no science setting. Report:
+Completed update (2026-08-16 CST): `P-FS2-017` passes the phase-asymmetric
+FutureSeed deployment gate. On the exact frozen P059 model, native `[S,M]`
+versus production `[0,M]` reaches balanced/future/past/joint
+`.94400/.95150/.93650/.82300` versus
+`.94375/.95000/.93750/.82200`; errors/swaps change only `224/152 -> 225/153`.
+The edge transports exactly `4,096` instead of `8,192` values with zero
+parameter, persistent-state and scan delta. Interleaved warmed time ratio is
+`.94017` and allocation ratio is exactly `1.0`, so the registered no-regression
+cost gates pass without claiming a robust speedup. Together with P-FS2-016's
+from-scratch collapse, this proves the useful phase boundary: S is required as
+a training scaffold, while converged cross-layer inference content can be
+carried by M alone. This is a directional-MQAR deployment result, not M-only
+trainability, owner-swap repair or an implicit Sudoku endpoint. Report:
 `research/reports/experiments/futureseed2-train-full-serve-momentum-mqar-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-FS2-016` is discarded. Exact clean
@@ -2054,7 +2043,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-FS2-017 | R1/R2 bounded native-replay calibration complete; R4 production endpoint approved | P-FS2-016 shows S is required to learn, while frozen P059 masking shows converged future retrieval is almost entirely in M. A phase-asymmetric FS can train full and deploy half-width. | Load exact frozen P059 weights. Compare native `[S,M]` with the production M-only edge `[0,M]` on identical L1024 cases; interleave warmed inference benchmarks. Zero training/parameters/state/scans; logical edge 8192->4096 values. | Sole A80080 CUDA index0; exact pushed/read-back source and clean detached worktree required. | strict contract plus one frozen endpoint | Exact transport ratio .5; balanced/directions within .005, joint within .01, errors<=243, swaps<=171; inference<1.05x, allocation<1.02x. Cross-A800 native calibration <=2/4000 predictions, <=.001 accuracy/joint and <=1e-4 CE; production candidate must also reproduce frozen exact M-only diagnostic within those metric bounds. | R1/R2 candidate did not run; native-only replay changed 1/4000 prediction on new A800. R3 stopped before candidate on case-sort auditor error; R4 pending. |
+| P-FS2-017 | complete; promoted as Pareto FS2 deployment | P-FS2-016 shows S is required to learn, while frozen P059 masking shows converged future retrieval is almost entirely in M. A phase-asymmetric FS can train full and deploy half-width. | Load exact frozen P059 weights. Compare native `[S,M]` with the production M-only edge `[0,M]` on identical L1024 cases; interleave warmed inference benchmarks. Zero training/parameters/state/scans; logical edge 8192->4096 values. | A80080 index0 UUID `GPU-7db97dd1...`; exact pushed/read-back source `d943ab6c`; strict contract passed. | strict contract plus one frozen endpoint complete | Exact transport ratio .5; balanced/directions within .005, joint within .01, errors<=243, swaps<=171; inference<1.05x, allocation<1.02x. | All gates pass. Native/candidate balanced/future/past/joint `.94400/.95150/.93650/.82300 -> .94375/.95000/.93750/.82200`; errors/swaps `224/152 -> 225/153`. Transport `8192->4096`, parameter/state/scan delta0, elapsed/allocation `.94017/1.0x`. Promote train-full/serve-Momentum; no M-only training or Sudoku claim. Score SHA `318962aa...e654`. |
 | P-FS2-016 | complete; discarded; M-only training closed | Almost all frozen P059 future information is in M, so carrying only M might halve FS bandwidth without changing quality. | Exact P059 Momentum recurrence, but pack only terminal M and reconstruct receiver `[0,M]`; fixed from-scratch L1024 10ep/b32/seed123. | A80080 index0 UUID `GPU-7db97dd1...`; exact pushed/read-back source `6ad6dbad`; strict contract passed. | one fixed endpoint complete | Quality equivalence plus .5 transport and <=1.05x time. | Transport/integrity/activation pass exactly, but balanced/future/past/joint collapses `.94425/.9515/.937/.824 -> .01325/.0135/.013/0`; errors `223->3947`. Cost elapsed/post-warm=`1.149/1.143x`, warmed/allocation=`.607/.999x`. Active GPU mean/nonzero/peak=`43.62/66.71/78%`, memory2270MiB. S is a learning scaffold; no rescue. Score SHA `a4473c2e...b3d6426`. |
 | P-GDN3-068 | complete; discarded; owner-local commit family closed | P059 solves values/direction but all 151 wrong-key swaps are adjacent owners; global Momentum commit applies every owner's velocity at every token. | Exact current-key projector `P_k(M)` replaces only P059's `M` commit to `S`; same D128/L2/H4/K32/V32, 599672 parameters, `[S,M]` state, native FutureSeed, matched initialization and L1024 10ep/b32/seed123. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back SHA `911ffaad`; strict contract passed. | strict contract plus one candidate-only endpoint complete | Balanced/joint gain>=.01, directions regress<=.005, errors<=180, swaps<=105/share<=.60713, adjacent swaps -20%; time<2.5x, allocation<1.25x. | Balanced/future/past/joint `.0125/.0105/.0145/0`; errors3950. Adjacent swaps fall151->77 only through broad collapse; 3591 parent-correct queries become unrelated wrong. Cost passes. Close projector/carry/rank/gate and training rescue; score SHA `efc8ce5c...e9528967`. |
 | P-GDN3-067 | complete; discarded; independent pure-erase family closed | P059's adjacent-owner tail needs targeted stale-memory deletion, but direct key decoupling failed because it replaced the working same-key correction. A pure independent erase followed by the complete standard delta edit should preserve ownership while removing interference. | Pinned official two-microstep GatedDeltaProduct: `(e,0,gamma)` then `(k,v,beta)`, D128/L2/H4/K32/V32, one KxV state and native full-state FutureSeed; fixed directional MQAR L1024 10ep/b32/seed123 from scratch; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `52f0d325`; clean detached worktree; strict contract passed. | one fixed candidate complete | Balanced/joint >=P059+.005; direction regress<=.003; errors<=200; swaps<=120/share<=.60; time<=2.25x, allocation<=1.50x. | Mechanism and cost gates pass, but balanced/future/past/joint collapses `.94425/.95150/.93700/.82400 -> .16850/.17600/.16100/.00100`; errors/swaps `223/151 -> 3326/657`. Close without rescue; score SHA `46e7b22c...bfea2f8fe`. |

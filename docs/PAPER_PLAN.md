@@ -2763,8 +2763,14 @@ plane is nearly dispensable after convergence, but removing it during learning
 prevents the Momentum representation from forming.
 
 The paper must distinguish an optimization scaffold from inference content.
-P-FS2-017 is the only open claim: train the complete `[S,M]` carrier, then
-deploy the same frozen model through the production `[0,M]` edge. If its
-strict replay and inference-cost gates pass, report a 2x logical FutureSeed
-bandwidth reduction at matched quality, explicitly not an M-only training
-result and not a repair of the remaining owner swaps.
+P-FS2-017 closes this claim positively. Native `[S,M]` versus the production
+`[0,M]` edge reaches balanced/future/past/joint
+`.94400/.95150/.93650/.82300` versus
+`.94375/.95000/.93750/.82200`; errors and wrong-key swaps change by only one.
+The logical FutureSeed edge is exactly halved from `8,192` to `4,096` values,
+with no parameter, persistent-state, scan, allocation or measured latency
+regression. The paper should present this as train-full/serve-Momentum FS2:
+S is needed to form the representation during optimization, while M is a
+sufficient deployment carrier after convergence. It is explicitly not an
+M-only training result, not a repair of the remaining owner swaps, and not yet
+a Sudoku endpoint result.

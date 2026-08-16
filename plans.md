@@ -38,6 +38,14 @@ the effective import path and the unchanged chunk source. The shared external
 checkout remains clean; model math, parameters, state, data, gate and budget
 are unchanged. R1-R3 have no quality result.
 
+R4 crossed the patched WY dot but exposed FP32 query promotion from the
+external layer's output-correction parameter at the common BF16 output kernel.
+R5 is the final compatibility attempt: the private overlay also casts
+inner-decay `p` back to key dtype and corrected `q` back to query dtype. The
+contract pins exactly four edits and both effective hashes. Any additional
+dtype, graph or kernel failure closes Comba on this stack with no further
+patching. R4 produced no logits or quality score.
+
 Completed update (2026-08-16 CST): `P-GDN3-064` Official Sparse Delta
 Memory with Native Slot-Bank FutureSeed is approved for one from-scratch
 directional MQAR L1024 decision. The intervention replaces the primary dense

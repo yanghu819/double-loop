@@ -124,7 +124,19 @@ contract asserts the original WY hash, exact two replacements, patched hash,
 effective import path and unchanged chunk hash. No recurrence, parameter,
 state, initialization, data, budget or registered science gate changes.
 
-Pending the R4 exact pushed-SHA CUDA contract and single formal endpoint.
+R4 exact source `e79deeab` crosses the WY forward site, then the common output
+kernel rejects FP32 `q` against BF16 state. The external layer's FP32 output
+correction parameter promoted the projected BF16 query. R4 therefore also has
+no logits or quality result.
+
+R5 is the final production-compatibility attempt. The same private overlay now
+stages the exact layer source and explicitly casts inner-decay `p` to key dtype
+and output-corrected `q` to query dtype. Together with R4's two WY casts, the
+contract pins exactly four compatibility edits and both patched hashes. Any
+new dtype, graph or kernel failure closes Comba on this stack; no further
+compatibility patch is authorized.
+
+Pending the R5 exact pushed-SHA CUDA contract and single formal endpoint.
 
 ## 7. Decision
 

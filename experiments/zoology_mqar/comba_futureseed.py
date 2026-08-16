@@ -39,6 +39,19 @@ EXPECTED_WY_SHA256 = (
 EXPECTED_COMPAT_WY_SHA256 = (
     "2de7bebba43ccef9fb1aef8598da0c0f075664cd3769789bdaa85806f9d6a109"
 )
+EXPECTED_COMPAT_LAYER_SHA256 = (
+    "a075263c8a4410ab859a35c794b4f46c91b19265c6877ffcd19838363020d9a9"
+)
+_LAYER_DTYPE_PATCHES = (
+    (
+        "p = k * self.decay[None, None, :, None].sigmoid()",
+        "p = k * self.decay[None, None, :, None].sigmoid().to(k)",
+    ),
+    (
+        "q = q - self.D[None, None, :, None] * p",
+        "q = q - (self.D[None, None, :, None] * p).to(q)",
+    ),
+)
 _WY_DTYPE_PATCHES = (
     (
         "tl.dot(b_dw, tl.trans(b_p_beta_g0))",
@@ -73,7 +86,10 @@ def _build_comba_compat_overlay(fla_root: Path) -> dict[str, Any]:
         raise RuntimeError(f"Unexpected Comba compatibility root: {compat_root}")
 
     source_package = fla_root / "fla" / "ops" / "comba"
+    source_layer = fla_root / "fla" / "layers" / "comba.py"
     source_wy = source_package / "wy_fast.py"
+    if _sha256(source_layer) != EXPECTED_LAYER_SHA256:
+        raise RuntimeError(f"Comba layer source drifted: {source_layer}")
     if _sha256(source_wy) != EXPECTED_WY_SHA256:
         raise RuntimeError(f"Comba WY source drifted: {source_wy}")
 
@@ -85,6 +101,18 @@ def _build_comba_compat_overlay(fla_root: Path) -> dict[str, Any]:
         effective_package,
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
     )
+    effective_layer = compat_root / "fla" / "layers" / "comba.py"
+    effective_layer.parent.mkdir(parents=True)
+    shutil.copy2(source_layer, effective_layer)
+    layer_text = effective_layer.read_text()
+    for old, new in _LAYER_DTYPE_PATCHES:
+        if layer_text.count(old) != 1:
+            raise RuntimeError(f"Comba layer compatibility site drifted: {old}")
+        layer_text = layer_text.replace(old, new)
+    effective_layer.write_text(layer_text)
+    if _sha256(effective_layer) != EXPECTED_COMPAT_LAYER_SHA256:
+        raise RuntimeError("Comba layer compatibility output drifted")
+
     effective_wy = effective_package / "wy_fast.py"
     text = effective_wy.read_text()
     for old, new in _WY_DTYPE_PATCHES:
@@ -97,11 +125,17 @@ def _build_comba_compat_overlay(fla_root: Path) -> dict[str, Any]:
     return {
         "root": str(compat_root),
         "ops_root": str(compat_root / "fla" / "ops"),
+        "layers_root": str(compat_root / "fla" / "layers"),
+        "source_layer_path": str(source_layer),
+        "source_layer_sha256": EXPECTED_LAYER_SHA256,
+        "effective_layer_path": str(effective_layer),
+        "effective_layer_sha256": EXPECTED_COMPAT_LAYER_SHA256,
+        "layer_patch_count": len(_LAYER_DTYPE_PATCHES),
         "source_wy_path": str(source_wy),
         "source_wy_sha256": EXPECTED_WY_SHA256,
         "effective_wy_path": str(effective_wy),
         "effective_wy_sha256": EXPECTED_COMPAT_WY_SHA256,
-        "patch_count": len(_WY_DTYPE_PATCHES),
+        "wy_patch_count": len(_WY_DTYPE_PATCHES),
     }
 
 
@@ -141,12 +175,13 @@ def load_external_comba_layer():
     _prepend_package_path("fla.ops", fla_root / "fla" / "ops")
     if _COMBA_LAYER_CLASS is not None:
         resolved = Path(inspect.getfile(_COMBA_LAYER_CLASS)).resolve()
-        if resolved != layer_path:
-            raise RuntimeError(f"Cached Comba module drifted: {resolved}")
         metadata = comba_compatibility_metadata()
         if (
-            Path(metadata["root"]).resolve()
+            resolved != Path(metadata["effective_layer_path"]).resolve()
+            or Path(metadata["root"]).resolve()
             != Path(os.environ["COMBA_COMPAT_ROOT"]).resolve()
+            or _sha256(Path(metadata["effective_layer_path"]))
+            != EXPECTED_COMPAT_LAYER_SHA256
             or _sha256(Path(metadata["effective_wy_path"]))
             != EXPECTED_COMPAT_WY_SHA256
         ):
@@ -154,6 +189,7 @@ def load_external_comba_layer():
         return _COMBA_LAYER_CLASS
 
     _COMBA_COMPAT_METADATA = _build_comba_compat_overlay(fla_root)
+    _prepend_package_path("fla.layers", Path(_COMBA_COMPAT_METADATA["layers_root"]))
     _prepend_package_path("fla.ops", Path(_COMBA_COMPAT_METADATA["ops_root"]))
     for name in list(sys.modules):
         if name == "fla.layers.comba" or name.startswith("fla.ops.comba"):
@@ -161,7 +197,7 @@ def load_external_comba_layer():
     importlib.invalidate_caches()
     module = importlib.import_module("fla.layers.comba")
     resolved = Path(inspect.getfile(module.Comba)).resolve()
-    if resolved != layer_path:
+    if resolved != Path(_COMBA_COMPAT_METADATA["effective_layer_path"]):
         raise RuntimeError(f"Unexpected Comba module: {resolved}")
     effective_chunk = Path(
         inspect.getfile(importlib.import_module("fla.ops.comba.chunk"))

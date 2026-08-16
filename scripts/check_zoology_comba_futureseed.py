@@ -18,6 +18,7 @@ from zoology.utils import set_determinism
 from experiments.zoology_mqar.comba_futureseed import (
     EXPECTED_CHUNK_SHA256,
     EXPECTED_COMPAT_WY_SHA256,
+    EXPECTED_COMPAT_LAYER_SHA256,
     EXPECTED_LAYER_SHA256,
     EXPECTED_MDN_SHA,
     EXPECTED_PARAMETER_DELTA_VS_GDN2,
@@ -118,7 +119,7 @@ def main() -> None:
     ).strip() != EXPECTED_MDN_SHA:
         raise RuntimeError("External Comba checkout changed")
     source_hashes = {
-        "layer": _sha256(Path(inspect.getfile(layer_class)).resolve()),
+        "layer": _sha256(fla_root / "fla" / "layers" / "comba.py"),
         "chunk": _sha256(fla_root / "fla" / "ops" / "comba" / "chunk.py"),
         "fused_recurrent": _sha256(
             fla_root / "fla" / "ops" / "comba" / "fused_recurrent.py"
@@ -134,12 +135,20 @@ def main() -> None:
         raise RuntimeError(f"External Comba source drifted: {source_hashes}")
     compatibility_overlay = comba_compatibility_metadata()
     if (
-        compatibility_overlay["source_wy_sha256"] != EXPECTED_WY_SHA256
+        compatibility_overlay["source_layer_sha256"] != EXPECTED_LAYER_SHA256
+        or compatibility_overlay["effective_layer_sha256"]
+        != EXPECTED_COMPAT_LAYER_SHA256
+        or compatibility_overlay["layer_patch_count"] != 2
+        or compatibility_overlay["source_wy_sha256"] != EXPECTED_WY_SHA256
         or compatibility_overlay["effective_wy_sha256"]
         != EXPECTED_COMPAT_WY_SHA256
-        or compatibility_overlay["patch_count"] != 2
+        or compatibility_overlay["wy_patch_count"] != 2
         or Path(compatibility_overlay["root"]).resolve()
         != Path(os.environ["COMBA_COMPAT_ROOT"]).resolve()
+        or Path(inspect.getfile(layer_class)).resolve()
+        != Path(compatibility_overlay["effective_layer_path"]).resolve()
+        or _sha256(Path(compatibility_overlay["effective_layer_path"]))
+        != EXPECTED_COMPAT_LAYER_SHA256
         or _sha256(Path(compatibility_overlay["effective_wy_path"]))
         != EXPECTED_COMPAT_WY_SHA256
     ):

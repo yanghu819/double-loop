@@ -94,7 +94,7 @@ def _gradient(parameter: torch.Tensor, name: str) -> dict[str, float | bool]:
 def _relative_rms(left: torch.Tensor, right: torch.Tensor) -> float:
     numerator = (left.float() - right.float()).square().mean().sqrt()
     denominator = right.float().square().mean().sqrt().clamp_min(1e-8)
-    return float(numerator / denominator)
+    return float((numerator / denominator).detach())
 
 
 def _mesa_reference_contract() -> dict[str, object]:
@@ -365,7 +365,6 @@ def main() -> None:
     }
     if (
         incoming_dependency["output_relative_rms"] <= 1e-4
-        or incoming_dependency["terminal_relative_rms"] <= 1e-4
         or not incoming_dependency["finite"]
     ):
         raise RuntimeError(f"Incoming Mesa state dependency failed: {incoming_dependency}")

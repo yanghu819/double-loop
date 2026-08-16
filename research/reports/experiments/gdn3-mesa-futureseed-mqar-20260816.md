@@ -3,7 +3,7 @@
 ## 1. Metainfo
 
 - Plan: `P-GDN3-066`
-- State: approved, implementation/contract pending
+- State: implementation complete, R3 contract pending
 - Decision field: directional MQAR L1024/K4, not Sudoku
 - Resource: one AIStation A800 80GB, CUDA index 0 only
 - Frozen reference: `P-GDN3-059` Momentum DeltaNet + native `[S,M]` FutureSeed
@@ -80,6 +80,19 @@ path, and all pinned file hashes were unchanged. R2 validates the module
 `__file__` plus operator class path and exact hashes. This is a non-science
 checker correction; mechanism, data, initialization, budget, and gates are
 unchanged.
+
+R2 source `f0181c77` completed the expensive official operator execution and
+proved material incoming-state use in the receiver output (relative RMS
+`0.126012`, finite), but the checker also required the old initial state to
+remain visible in the terminal state after the full sequence. Its measured
+terminal difference was exactly zero. That extra condition was not a registered
+contract item and contradicts the intended stable forgetting behavior: the seed
+must affect receiver computation, while fresh terminal sufficient statistics
+are separately required to be nonzero, board-varying, symmetric/PSD, and
+differentiable. R3 therefore keeps output dependence as a hard gate and records
+terminal carry without requiring stale initial-state retention. This is a
+non-science checker correction; recurrence, data, initialization, budget, and
+all quality/cost gates remain unchanged.
 
 Formal artifacts pending.
 

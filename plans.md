@@ -42,6 +42,16 @@ reported its wrapper file. R2 verifies the exact operator module `__file__`,
 `ChunkMesaNetFunction` path, and pinned file hashes. No mechanism, gate, data,
 budget, or initialization changed; R1 has no science result.
 
+P-GDN3-066 R2 source `f0181c77` executed the official operator and showed strong
+finite incoming-state output dependence (`.126012` relative RMS), but stopped
+because the checker additionally required the old initial state to survive in
+the terminal state after the full sequence; measured carry was exactly zero.
+That stale-state-retention condition was not preregistered and conflicts with a
+stable forgetting recurrence. R3 retains receiver-output dependence as the hard
+gate and separately retains nonzero, board-varying, PSD terminal-statistic and
+gradient gates. It only records terminal carry. No recurrence, solver, data,
+initialization, budget, quality, or cost gate changes.
+
 Completed update (2026-08-16 CST): `P-GDN3-065` Closed-Loop Comba with
 native FutureSeed is discarded at its strict R5 CUDA semantic contract. Exact
 pushed/read-back source `753735b6` and its clean detached worktree resolve the

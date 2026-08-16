@@ -44,7 +44,7 @@ GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]
 REMOTE_SHA="$(
   env -u LD_LIBRARY_PATH git -C "$REPO_ROOT" ls-remote \
-    git@github.com:yanghu819/double-loop.git "$SOURCE_REMOTE_REF" | awk '{print $1}'
+    origin "$SOURCE_REMOTE_REF" | awk '{print $1}'
 )"
 [[ "$REMOTE_SHA" == "$GIT_SHA" ]]
 [[ -f "$FROZEN_SCORE" && -f "$FROZEN_CASES" ]]

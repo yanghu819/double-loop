@@ -47,5 +47,10 @@ organization.
 
 ## 5. Status
 
-Approved; implementation complete; awaiting exact pushed source and sole-GPU
-execution.
+Approved; implementation complete. R1 stopped before Python/CUDA because a
+full-repository source archive spent several minutes materializing 340 MiB on
+the shared filesystem and the supervising process sent the registered PGID a
+termination signal. The runner wrote a non-science `abort.json`; no metric,
+prediction or model forward exists. R2 changes only source-archive scope to
+the five registered files and keeps the model, artifacts, intervention and all
+gates unchanged.

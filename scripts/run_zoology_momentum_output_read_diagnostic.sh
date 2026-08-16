@@ -118,7 +118,12 @@ git -C "$REPO_ROOT" status --short > "$RUN_DIR/git_status.txt"
 printf '%s\n' "$REMOTE_SHA" > "$RUN_DIR/github_readback_sha.txt"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN_DIR/started_at.txt"
 git -C "$REPO_ROOT" archive --format=tar.gz \
-  --output="$RUN_DIR/source_snapshot.tar.gz" HEAD
+  --output="$RUN_DIR/source_snapshot.tar.gz" HEAD -- \
+  configs/retrieval/zoology_momentum_output_read_diagnostic.env \
+  experiments/zoology_mqar/momentum_output_read_diagnostic.py \
+  research/reports/experiments/momentum-output-read-diagnostic-20260816.md \
+  scripts/run_zoology_momentum_output_read_diagnostic.sh \
+  plans.md
 sample_gpu >> "$RUN_DIR/gpu_samples.csv" &
 GPU_SAMPLER_PID="$!"
 

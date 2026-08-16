@@ -87,6 +87,7 @@ GDN2_ARMS = (
     "future_seed_momentum_delta",
     "future_seed_momentum_log_spd",
     "future_seed_momentum_refresh",
+    "future_seed_predictive_momentum",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -344,6 +345,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.momentum_refresh."
                 "ZoologyMomentumRefreshFutureSeedMixer"
+            )
+        elif arm == "future_seed_predictive_momentum":
+            mixer_name = (
+                "experiments.zoology_mqar.momentum_predictive."
+                "ZoologyPredictiveMomentumFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -937,6 +943,7 @@ def run_arm(
             "future_seed_momentum_delta",
             "future_seed_momentum_log_spd",
             "future_seed_momentum_refresh",
+            "future_seed_predictive_momentum",
         ):
             from experiments.zoology_mqar.momentum_futureseed import (
                 load_matched_parent_state,
@@ -1139,6 +1146,7 @@ def run_arm(
         "future_seed_momentum_delta",
         "future_seed_momentum_log_spd",
         "future_seed_momentum_refresh",
+        "future_seed_predictive_momentum",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
             parent_parameter_hash,
@@ -1622,6 +1630,7 @@ def run_arm(
         "future_seed_momentum_delta",
         "future_seed_momentum_log_spd",
         "future_seed_momentum_refresh",
+        "future_seed_predictive_momentum",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
             momentum_futureseed_diagnostics,
@@ -1644,6 +1653,12 @@ def run_arm(
             )
 
             momentum_delta = momentum_refresh_diagnostics(model)
+        elif arm == "future_seed_predictive_momentum":
+            from experiments.zoology_mqar.momentum_predictive import (
+                predictive_momentum_diagnostics,
+            )
+
+            momentum_delta = predictive_momentum_diagnostics(model)
         else:
             momentum_delta = momentum_futureseed_diagnostics(model)
     if arm == "future_seed_producer_readout_gdn2":
@@ -1763,6 +1778,7 @@ def run_arm(
                     "future_seed_momentum_delta",
                     "future_seed_momentum_log_spd",
                     "future_seed_momentum_refresh",
+                    "future_seed_predictive_momentum",
                 )
                 else 1
             )

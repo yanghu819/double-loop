@@ -27,6 +27,17 @@ EXPECTED_PARAMETER_DELTA_VS_MOMENTUM = 2 * (
 )
 
 
+class PredictionKeyProjection(torch.nn.Module):
+    """Linear projection excluded from Zoology's global nn.Linear re-init pass."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.weight = torch.nn.Parameter(torch.empty(width, width))
+
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        return F.linear(hidden_states, self.weight)
+
+
 class PredictionKeyOperation:
     """Supply one receiver-local prediction key to the native Momentum scan."""
 
@@ -152,7 +163,7 @@ class ZoologyMomentumPredictionKeyFutureSeedMixer(
             or self.layer.conv_size != CONV_SIZE
         ):
             raise ValueError("P-GDN3-063 fixes D128/H4/K32/Conv4")
-        self.prediction_key_proj = deepcopy(self.layer.k_proj)
+        self.prediction_key_proj = PredictionKeyProjection(MODEL_WIDTH)
         self.prediction_key_conv = deepcopy(self.layer.k_conv1d)
         self.last_prediction_stats: Optional[dict[str, Any]] = None
 

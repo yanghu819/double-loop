@@ -12,25 +12,30 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Approved update (2026-08-16 CST): `P-FS2-016` tests Momentum-only FutureSeed
-as a strict Pareto simplification of P059, not as a residual-error repair. The
-frozen same-weight component audit showed that `[S,M] -> [0,M]` changes
-balanced/future/past/joint only
-`.94425/.95150/.93700/.82400 -> .94375/.95000/.93750/.82200`, while `S`-only
-loses future retrieval. The candidate therefore keeps P059's complete
-Momentum recurrence, recurrent `[S,M]` state, parameters, scans, Q/K/V and
-short convolutions, but packs only terminal `M` across the layer boundary and
-reconstructs receiver state `[0,M]`. This halves the logical FutureSeed edge
-from 8,192 to 4,096 values without changing persistent state. The strict A800
-contract must prove exact pinned source, identical parameters and producer
-path, exact M-seed parity, zero transported-S gradient, nonzero transported-M
-gradient and two native Momentum backwards. The one from-scratch L1024 run
-passes only if balanced is at least `.94` and within `.005` of P059, each
-direction is within `.005`, joint is at least `.81` and within `.01`, errors
-and wrong-key swaps are at most `243/171`, elapsed/post-warm/warmed ratios are
-below `1.05x`, and allocation below `1.02x`. Any miss closes the architecture
-without component/gate/scale/seed/LR/loss/batch/width/depth/duration rescue.
-Report:
+Approved update (2026-08-16 CST): `P-FS2-017` tests one phase-asymmetric
+FutureSeed deployment contract. P-FS2-016 proves that M-only transport is
+semantically exact but cannot learn from scratch: balanced/future/past/joint
+collapses `.94425/.95150/.93700/.82400 -> .01325/.01350/.01300/0` despite all
+integrity and activation gates passing. Combined with the frozen same-weight
+`[S,M] -> [0,M]` result `.94375/.95000/.93750/.82200`, the only open FS claim
+is that S acts as a training scaffold while converged future evidence resides
+in M. P-FS2-017 loads the exact P059 checkpoint, compares native `[S,M]` with
+the production M-only edge on identical cases, and interleaves warmed
+inference benchmarks. It passes only if transport is exactly halved with no
+parameter/state/scan change, balanced and each direction stay within `.005`,
+joint within `.01`, errors/swaps stay within `243/171`, inference is below
+`1.05x`, and allocation below `1.02x`. The claim is deployment-only; no
+training, finetuning or rescue is allowed. Report:
+`research/reports/experiments/futureseed2-train-full-serve-momentum-mqar-20260816.md`.
+
+Completed update (2026-08-16 CST): `P-FS2-016` is discarded. Exact clean
+source `6ad6dbad` passed the A800 contract and halved the FS payload exactly,
+but its from-scratch L1024 model stayed near chance through 10 epochs. Errors
+rose `223->3947`; only the swap-count budget passes because almost every query
+is wrong. Formal active-window GPU mean/nonzero mean/peak is
+`43.62/66.71/78%`, with `2,270 MiB` observed training memory. This establishes
+that S is an optimization scaffold, not that M-only is a trainable FS. Close
+all M-only training rescue. Report:
 `research/reports/experiments/futureseed2-momentum-only-mqar-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-GDN3-070` Coupled Dual-Rate Momentum is
@@ -2039,6 +2044,8 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
+| P-FS2-017 | approved; implementation complete; push/contract pending | P-FS2-016 shows S is required to learn, while frozen P059 masking shows converged future retrieval is almost entirely in M. A phase-asymmetric FS can train full and deploy half-width. | Load exact frozen P059 weights. Compare native `[S,M]` with the production M-only edge `[0,M]` on identical L1024 cases; interleave warmed inference benchmarks. Zero training/parameters/state/scans; logical edge 8192->4096 values. | Sole A80080 CUDA index0; exact pushed/read-back source and clean detached worktree required. | strict contract plus one frozen endpoint | Exact transport ratio .5; balanced/directions within .005, joint within .01, errors<=243, swaps<=171; inference<1.05x, allocation<1.02x. | pending |
+| P-FS2-016 | complete; discarded; M-only training closed | Almost all frozen P059 future information is in M, so carrying only M might halve FS bandwidth without changing quality. | Exact P059 Momentum recurrence, but pack only terminal M and reconstruct receiver `[0,M]`; fixed from-scratch L1024 10ep/b32/seed123. | A80080 index0 UUID `GPU-7db97dd1...`; exact pushed/read-back source `6ad6dbad`; strict contract passed. | one fixed endpoint complete | Quality equivalence plus .5 transport and <=1.05x time. | Transport/integrity/activation pass exactly, but balanced/future/past/joint collapses `.94425/.9515/.937/.824 -> .01325/.0135/.013/0`; errors `223->3947`. Cost elapsed/post-warm=`1.149/1.143x`, warmed/allocation=`.607/.999x`. Active GPU mean/nonzero/peak=`43.62/66.71/78%`, memory2270MiB. S is a learning scaffold; no rescue. Score SHA `a4473c2e...b3d6426`. |
 | P-GDN3-068 | complete; discarded; owner-local commit family closed | P059 solves values/direction but all 151 wrong-key swaps are adjacent owners; global Momentum commit applies every owner's velocity at every token. | Exact current-key projector `P_k(M)` replaces only P059's `M` commit to `S`; same D128/L2/H4/K32/V32, 599672 parameters, `[S,M]` state, native FutureSeed, matched initialization and L1024 10ep/b32/seed123. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back SHA `911ffaad`; strict contract passed. | strict contract plus one candidate-only endpoint complete | Balanced/joint gain>=.01, directions regress<=.005, errors<=180, swaps<=105/share<=.60713, adjacent swaps -20%; time<2.5x, allocation<1.25x. | Balanced/future/past/joint `.0125/.0105/.0145/0`; errors3950. Adjacent swaps fall151->77 only through broad collapse; 3591 parent-correct queries become unrelated wrong. Cost passes. Close projector/carry/rank/gate and training rescue; score SHA `efc8ce5c...e9528967`. |
 | P-GDN3-067 | complete; discarded; independent pure-erase family closed | P059's adjacent-owner tail needs targeted stale-memory deletion, but direct key decoupling failed because it replaced the working same-key correction. A pure independent erase followed by the complete standard delta edit should preserve ownership while removing interference. | Pinned official two-microstep GatedDeltaProduct: `(e,0,gamma)` then `(k,v,beta)`, D128/L2/H4/K32/V32, one KxV state and native full-state FutureSeed; fixed directional MQAR L1024 10ep/b32/seed123 from scratch; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `52f0d325`; clean detached worktree; strict contract passed. | one fixed candidate complete | Balanced/joint >=P059+.005; direction regress<=.003; errors<=200; swaps<=120/share<=.60; time<=2.25x, allocation<=1.50x. | Mechanism and cost gates pass, but balanced/future/past/joint collapses `.94425/.95150/.93700/.82400 -> .16850/.17600/.16100/.00100`; errors/swaps `223/151 -> 3326/657`. Close without rescue; score SHA `46e7b22c...bfea2f8fe`. |
 | P-GDN3-066 | complete; discarded | P059's adjacent direction-preserving swaps may be address interference; exact Mesa normal-equation reads could decorrelate keys while native FutureSeed transports complete sufficient statistics. | Pinned official Mesa D128/L2/H4/K32/V32, CG30, lambda floor.25, joint `[Hkk,Hkv]` FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from matched shell tensors; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `d1cf70bd`; clean detached worktree; strict R3 contract passed. | one fixed from-scratch candidate complete | Balanced>=.95425, future/past regression<=.005, joint>=.834, errors<=180, swaps<=105/share<=.60713; time<=3x, allocation<=2x. | Balanced/future/past/joint `.00975/.00650/.01300/0`, errors3961. Hkk is stable PSD and CG error<.0022, but effective rank collapses to `1.079/1.169`; global least squares destroys directional ownership. Cost `.824/.834/.883/.796x` passes. Close Mesa/CG/lambda/gate rescues; no GDN3/FS2 claim. |

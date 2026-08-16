@@ -3722,3 +3722,18 @@
   training rescue. New owner structure must preserve a complete learnable base
   path and earn influence from exact binding evidence, not globally modify
   every update from initialization.
+
+## 2026-08-16: Inference attribution does not imply trainability
+
+- P-FS2-016 makes the frozen component observation structural: only M crosses
+  the layer edge, receiver S is exactly zero, and parameters/state/scans are
+  identical to P059.
+- Despite a strict passing CUDA contract, from-scratch balanced accuracy is
+  only `.01325`; 3,947 of 4,000 queries are wrong. The same-weight M-only
+  replay had `.94375`, so this is an optimization failure, not missing
+  inference information.
+- S should be treated as a training scaffold that helps the two layers
+  co-develop a usable second-order state. Do not infer that a component can be
+  removed during learning merely because it can be masked after convergence.
+- The only justified simplification is phase-asymmetric: train `[S,M]`, serve
+  M-only, and bound the claim with exact frozen replay and deployment costs.

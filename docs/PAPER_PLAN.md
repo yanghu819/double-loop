@@ -2752,3 +2752,19 @@ Mechanistically, the fast band is live and bounded but removes the sharp P059
 optimization transition. This closes coupled fast-decay/mix variants and
 strengthens the requirement that ownership capacity preserve the successful
 base learning path instead of entering every live update from the first step.
+
+## 2026-08-16 Momentum FutureSeed Has Different Training And Serving Needs
+
+P-FS2-016 physically halves the cross-layer interface and passes every source,
+kernel, identity, state, scan and gradient check, yet its from-scratch model
+stays at chance: balanced accuracy is `.01325` rather than P059's `.94425`.
+This is stronger than the earlier frozen component attribution. The base S
+plane is nearly dispensable after convergence, but removing it during learning
+prevents the Momentum representation from forming.
+
+The paper must distinguish an optimization scaffold from inference content.
+P-FS2-017 is the only open claim: train the complete `[S,M]` carrier, then
+deploy the same frozen model through the production `[0,M]` edge. If its
+strict replay and inference-cost gates pass, report a 2x logical FutureSeed
+bandwidth reduction at matched quality, explicitly not an M-only training
+result and not a repair of the remaining owner swaps.

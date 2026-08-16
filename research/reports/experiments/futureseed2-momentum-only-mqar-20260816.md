@@ -83,8 +83,49 @@ width, depth or duration rescue.
 
 ## 6. Result
 
-Pending the registered A800 contract and formal endpoint.
+Exact pushed/read-back source `6ad6dbad73c51407f93d094183c0a592fded02e0`
+passed the strict A800 contract. It proved 599,672 identical parameters, two
+native Momentum backwards, exact producer identity, exact M-seed parity,
+zero receiver S, nonzero M transport gradient, unchanged recurrent state and
+scans, and the exact `4096/8192 = .5` transport ratio.
+
+The from-scratch endpoint then failed decisively:
+
+| metric | frozen P059 `[S,M]` | trained M-only |
+| --- | ---: | ---: |
+| balanced | .94425 | .01325 |
+| future | .95150 | .01350 |
+| past | .93700 | .01300 |
+| joint exact | .82400 | 0 |
+| errors | 223 | 3,947 |
+| wrong-key swaps | 151 | 157 |
+
+Validation stayed near chance through epoch 7 and reached only `.01325` at
+epoch 10. All integrity and activation checks pass, so this is not a wiring,
+kernel, source or data failure. Removing S during optimization prevents the
+second-order solution from forming even though masking S after P059 has
+converged is almost lossless. Cost also misses the cold matched wall gates
+(`1.1490x` elapsed, `1.1432x` post-warm), while warmed-step compute is
+`0.6071x` and allocation is `0.9995x`.
+
+Formal active-window GPU utilization averages `43.62%` including evaluation
+gaps and `66.71%` over nonzero samples, peaks at `78%`, and reaches `2,270
+MiB`; contract compilation peaks at `3,024 MiB`. There is one A800 compute
+process and no NaN, OOM or fallback.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-fs2-016-momentum-only-20260816T143919Z-6ad6dba`
+- contract SHA256: `1ef8b8bf0fc80a9445bce70126b616c8041bf3cdc298beeca3a63c7055cb74d2`
+- comparison SHA256: `a4473c2e9c8c7fd55fe9cf19937e5225901e413d639356e8b99e80a23b3d6426`
+- checkpoint SHA256: `5e919122fe6af8321af652a953694e4b518fac5807e8b70f53ae8530adbca3db`
+- formal log SHA256: `4ab97df0eff5ef8b0bba53ea4f806119a3f1bf8c3c276f5f02442d60928d1765`
+- GPU samples SHA256: `f507c82ede8445500bdc1faf2e1e28f0a705219f955952ff388ac2b8d4f271ea`
 
 ## 7. Decision
 
-Pending.
+Close M-only end-to-end training with no component, gate, normalization,
+scale, seed, LR, loss, batch, width, depth or duration rescue. The new
+mechanistic result is phase dependence: S is dispensable after convergence
+but necessary while learning. Open only the separately registered
+train-full/serve-M-only deployment test P-FS2-017.

@@ -45,6 +45,9 @@ from scripts.check_zoology_contractive_dplr import (
 EXPECTED_TRAIN_HASH = "647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68"
 EXPECTED_TEST_HASH = "4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f"
 EXPECTED_PARAMETERS = 599_672
+EXPECTED_MATCHED_INIT_SHA256 = (
+    "7402e46c48cbd47070d65262d1a1b62a32ac55a4d644a6fb9644b96b0914850f"
+)
 EXPECTED_PARENT_PARAMETER_HASH = (
     "0adf26f657e59a35e90d7e54b905721b10f537b6391d107676248de16b71f13f"
 )
@@ -382,6 +385,11 @@ def main() -> None:
     }
     if data_hashes != {"train": EXPECTED_TRAIN_HASH, "test": EXPECTED_TEST_HASH}:
         raise RuntimeError(f"Directional MQAR data drifted: {data_hashes}")
+    if (
+        not args.matched_init.is_file()
+        or _sha256(args.matched_init) != EXPECTED_MATCHED_INIT_SHA256
+    ):
+        raise RuntimeError(f"Matched initialization drifted: {args.matched_init}")
     parent_state = torch.load(args.matched_init, map_location="cpu", weights_only=True)
     set_determinism(123)
     model = make_model(config, "future_seed_predictive_momentum")
@@ -469,6 +477,7 @@ def main() -> None:
             "one_scan_per_layer": True,
         },
         "data_hashes": data_hashes,
+        "matched_init_sha256": EXPECTED_MATCHED_INIT_SHA256,
         "parameters": EXPECTED_PARAMETERS,
         "state_values_per_layer": EXPECTED_STATE_VALUES_PER_LAYER,
         "matched_parent": metadata,

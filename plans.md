@@ -38,6 +38,17 @@ slot/read/write/head/gate/normalization/seed/LR/loss/batch/width/depth/duration
 rescue. Report:
 `research/reports/experiments/gdn3-official-sdm-futureseed-mqar-20260816.md`.
 
+Infrastructure update: R1 stopped before CUDA because the isolated prefix's
+library path broke system `curl`. R2 reached the exact pinned official SDM
+operator but failed before logits when host autocast changed its internal FP32
+`QB` matrix to BF16 while `retrieved` remained FP32, producing a Triton
+mixed-dot compile error. R3 changes only the thin precision boundary: official
+projections remain under BF16 host autocast, while `gated_write_read` runs with
+autocast disabled so its explicitly upcast WY algebra stays FP32. The external
+source, recurrence, state, data, initialization, budget and registered gates
+are unchanged; the contract additionally asserts disabled update autocast and
+BF16 memory input. No quality result exists yet.
+
 Current update (2026-08-16 CST): `P-FS2-014` Momentum S/M Phase Transport is
 complete and discarded. Exact pushed/read-back source `b41a0e74` passes the R2
 strict A800 contract: exactly four new angles, zero state/scan delta, bit-exact

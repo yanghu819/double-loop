@@ -97,11 +97,22 @@ Any miss closes this exact configuration. No rescue is authorized.
 
 ## 6. Result
 
-Pending.
+R1 stopped before CUDA because the isolated environment's `LD_LIBRARY_PATH`
+made system `curl` load an incompatible `libffi`; the launcher now runs that
+single network preflight with the library path unset. R2 reached the exact
+official training operator, then Triton rejected a BF16/FP32 mixed dot in the
+upstream fused dual-matmul kernel. The mechanism had not produced logits or a
+quality score. Root cause was the host adapter's outer autocast: it recast the
+official operator's deliberately FP32 `QB = QK @ B_matrix` intermediate to
+BF16 while `retrieved` remained FP32. R3 keeps the external source and all
+science settings fixed, but disables autocast only at the official
+`gated_write_read` boundary. The strict contract now also asserts this
+precision boundary and a BF16 memory input.
 
 ## 7. Decision
 
-Pending the strict CUDA contract and single formal endpoint.
+Pending the R3 strict CUDA contract and single formal endpoint. R1/R2 are
+non-science integration failures, not configuration retries.
 
 ## 8. Artifacts
 

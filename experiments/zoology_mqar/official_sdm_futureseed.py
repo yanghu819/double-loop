@@ -158,6 +158,24 @@ class ZoologyOfficialSDMFutureSeedMixer(ZoologyGDN2FutureSeedMixer):
         self.future_seed_scale = float(future_seed_scale)
         self.layer = layer_class(args, layer_id=self.layer_idx)
         self.layer.args.log_memory_access_stats = False
+        official_update = self.layer.gated_write_read
+
+        def official_update_without_autocast(*update_args, **update_kwargs):
+            memory = update_args[0]
+            with torch.autocast(device_type=memory.device.type, enabled=False):
+                self.last_update_autocast_enabled = bool(torch.is_autocast_enabled())
+                self.last_update_input_dtypes = {
+                    name: str(value.dtype)
+                    for name, value in zip(
+                        ("memory", "k_idx", "k_val", "v", "beta", "g", "q_idx", "q_val"),
+                        update_args,
+                    )
+                }
+                return official_update(*update_args, **update_kwargs)
+
+        # The official operator owns its FP32 WY intermediates. Keeping only this
+        # state-update boundary outside host autocast prevents Triton mixed-dot inputs.
+        self.layer.gated_write_read = official_update_without_autocast
         self.cache_class = cache_class
         self.future_seed_logit = nn.Parameter(torch.zeros(1, SDM_HEADS, 1, 1))
         self.source_path = str(Path(inspect.getfile(layer_class)).resolve())
@@ -170,6 +188,8 @@ class ZoologyOfficialSDMFutureSeedMixer(ZoologyGDN2FutureSeedMixer):
         self.last_active_slots: Optional[int] = None
         self.last_terminal_requires_grad: Optional[bool] = None
         self.last_terminal_grad_fn: Optional[str] = None
+        self.last_update_autocast_enabled: Optional[bool] = None
+        self.last_update_input_dtypes: Optional[dict[str, str]] = None
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         output, _terminal = self.forward_with_state(
@@ -306,6 +326,8 @@ def official_sdm_diagnostics(
                     "active_slots": mixer.last_active_slots,
                     "terminal_requires_grad": mixer.last_terminal_requires_grad,
                     "terminal_grad_fn": mixer.last_terminal_grad_fn,
+                    "update_autocast_enabled": mixer.last_update_autocast_enabled,
+                    "update_input_dtypes": mixer.last_update_input_dtypes,
                     "seed_applied": mixer.last_seed_gate is not None,
                     "seed_gate": None if mixer.last_seed_gate is None else float(mixer.last_seed_gate),
                     "access": access,

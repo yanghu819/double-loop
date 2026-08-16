@@ -261,7 +261,9 @@ def main() -> None:
         read_slots = access["read_unique_pct"] * SDM_SLOTS / 100.0
         write_slots = access["write_unique_pct"] * SDM_SLOTS / 100.0
         if (
-            read_slots <= 64
+            row["update_autocast_enabled"] is not False
+            or row["update_input_dtypes"]["memory"] != "torch.bfloat16"
+            or read_slots <= 64
             or write_slots <= 64
             or access["read_slot_entropy_normalized"] <= 0
             or access["write_slot_entropy_normalized"] <= 0

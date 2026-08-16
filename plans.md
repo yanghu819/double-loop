@@ -12,14 +12,18 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-DIAG-MOMQCF-001` is the sole next action.
-With exact P059 weights, it replaces each corrected MQAR query address with
-the corrected key at its own write token in layer 0, layer 1, or both. This is
-an oracle causal diagnostic, not a quality mechanism. Open owner-address
-organization only if final-layer substitution repairs at least 50% of swaps,
-retains 95% of correct events and gains `.015` total accuracy. If every
-substitution repairs at most 10% of swaps, open committed-state-edit
-transition; intermediate evidence opens nothing. Report:
+Current update (2026-08-16 CST): `P-DIAG-MOMQCF-001` completed from exact
+pushed source and opens only the committed-state-edit transition. The frozen
+P059 replay matches all 4,000 predictions. Replacing the final-layer query
+with its exact own-write key repairs only `14/151` swaps (`.09272`), retains
+only `.51496` of already-correct events and drops balanced accuracy
+`.94425->.49025`; future accuracy collapses `.95150->.04700` while past stays
+`.93700->.93350`. Layer 0 and both-layer substitutions are worse. The learned
+receiver query is therefore a co-adapted decoder for incoming Momentum state,
+not a misplaced local key. Close direct key alignment, key-neighbor and
+decoupling interpretations; target the live committed Momentum transition.
+The diagnostic used 42 active-memory GPU samples with `26.81%` mean and `85%`
+peak utilization, `3,014 MiB` peak memory and `245.56 W` peak power. Report:
 `research/reports/experiments/momentum-query-owner-counterfactual-20260816.md`.
 
 Current update (2026-08-16 CST): `P-DIAG-MOMADDR-001` completed from exact

@@ -91,6 +91,7 @@ GDN2_ARMS = (
     "future_seed_momentum_refresh",
     "future_seed_predictive_momentum",
     "future_seed_official_sdm",
+    "future_seed_comba",
 )
 ARMS = ("causal_gdn2", "future_seed_gdn2", "bidirectional_attention")
 P007_LENGTH64_TRAIN_HASH = (
@@ -368,6 +369,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.official_sdm_futureseed."
                 "ZoologyOfficialSDMFutureSeedMixer"
+            )
+        elif arm == "future_seed_comba":
+            mixer_name = (
+                "experiments.zoology_mqar.comba_futureseed."
+                "ZoologyCombaFutureSeedMixer"
             )
         else:
             mixer_name = (
@@ -986,6 +992,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_comba":
+            from experiments.zoology_mqar.comba_futureseed import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         else:
             model.load_state_dict(matched_state, strict=True)
     contractive_dplr_initial_beta_weights = None
@@ -1193,6 +1205,12 @@ def run_arm(
         "future_seed_predictive_momentum",
     ):
         from experiments.zoology_mqar.momentum_futureseed import (
+            parent_parameter_hash,
+        )
+
+        parent_init_parameter_hash = parent_parameter_hash(model)
+    elif arm == "future_seed_comba":
+        from experiments.zoology_mqar.comba_futureseed import (
             parent_parameter_hash,
         )
 
@@ -1732,6 +1750,14 @@ def run_arm(
             model,
             diagnostic_inputs[:8].cuda(),
         )
+    comba = None
+    if arm == "future_seed_comba":
+        from experiments.zoology_mqar.comba_futureseed import comba_diagnostics
+
+        diagnostic_inputs, _diagnostic_labels, _diagnostic_slices = next(
+            iter(test_dataloader)
+        )
+        comba = comba_diagnostics(model, diagnostic_inputs[:8].cuda())
     if arm == "future_seed_producer_readout_gdn2":
         from experiments.zoology_mqar.producer_readout_futureseed import (
             producer_readout_diagnostics,
@@ -1889,6 +1915,8 @@ def run_arm(
         score["momentum_delta"] = momentum_delta
     if official_sdm is not None:
         score["official_sdm"] = official_sdm
+    if comba is not None:
+        score["comba"] = comba
     if slot_state is not None:
         score["slot_state"] = slot_state
     if raven_address is not None:

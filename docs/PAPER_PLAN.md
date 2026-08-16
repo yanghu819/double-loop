@@ -1,5 +1,23 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Sparse Capacity Does Not Replace Coherent Future Ownership
+
+P-GDN3-064 replaces the primary recurrence with the pinned official Sparse
+Delta Memory and transports the complete 1,024-slot terminal bank through
+native FutureSeed. It provides 131,072 recurrent values per layer, 16x P059,
+and activates 66/214 slots in the two layers. The strict contract, sparse
+backward paths, FutureSeed gradient and all cost gates pass.
+
+Quality collapses despite that capacity. Balanced/future/past/joint accuracy is
+`.26825/.02850/.50800/0` versus P059's
+`.94425/.95150/.93700/.82400`; errors rise `223->2927` and wrong-key swaps
+`151->1126`. The causal past direction partially learns, but the next layer
+cannot use the terminal slot bank to resolve future writes. The paper should
+separate memory quantity from state semantics: a compact derivative state can
+be a better FutureSeed carrier than a much larger sparse snapshot when its
+ownership coordinates are native to the receiving transition. Close sparse
+slot/read/write/head rescue and test complete coherent recurrences instead.
+
 ## 2026-08-16 Momentum And State Are Not A Rotatable FutureSeed Basis
 
 P-FS2-014 follows the clean P-DIAG-MOMFS observation that transported Momentum

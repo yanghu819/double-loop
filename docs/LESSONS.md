@@ -1,5 +1,22 @@
 # Lessons
 
+## 2026-08-16: Sparse slots add capacity but not receiver-readable ownership
+
+- P-GDN3-064 uses the official Sparse Delta Memory as the primary recurrence
+  and carries its full 1,024-slot bank through native FutureSeed.
+- Both sparse layers, hundreds of slots, the FutureSeed gate and all gradients
+  activate; elapsed and peak-allocation ratios are `1.506x/1.033x` versus
+  P059. This is not a dead-path or cost failure.
+- Balanced accuracy is only `.26825`. Past accuracy reaches `.508`, while
+  future accuracy remains `.0285`; errors and wrong-key swaps rise to
+  `2,927/1,126`.
+- A large terminal bank is not automatically a useful future summary. The
+  receiver needs state coordinates whose semantics are shared with its own
+  live update, not just more places to store values.
+- Close slots/read/write/head/block and full-bank transport rescue. The next
+  experiment must replace the complete recurrent transition, preserving a
+  coherent prediction/owner coordinate inside each token update.
+
 ## 2026-08-16: Useful future components are not interchangeable coordinates
 
 - P-FS2-014 adds only four zero-initialized per-head angles after native

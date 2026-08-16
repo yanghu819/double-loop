@@ -116,15 +116,78 @@ node objects; Python wrapper-id reuse truncated traversal before the sparse
 backward nodes. R4 changes only this contract harness bookkeeping. The model,
 external source, precision boundary and all science settings remain fixed.
 
+R4 source `cbec8008095ef40551c749626d785184b34788ba` passed the strict
+contract and completed the fixed endpoint on A800 index 0, UUID
+`GPU-c1d7c624-a393-befa-3807-7e00602d65ca`. Both official sparse layers and
+their backward paths were present. The one FutureSeed route had finite
+nonzero gradient RMS `.0025482`; layer 0 and layer 1 touched 66 and 214 slots
+on the diagnostic batch, and the trained receiving gate was `.4765625`.
+Integrity, activation and every cost check passed.
+
+The quality result is decisive and negative:
+
+| arm | balanced | future | past | joint | errors | wrong-key swaps |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| P059 Momentum + native FutureSeed | .94425 | .95150 | .93700 | .82400 | 223 | 151 |
+| official SDM + full-bank FutureSeed | .26825 | .02850 | .50800 | 0 | 2,927 | 1,126 |
+
+Validation accuracy rises from `.02450` to `.26825`, so the sparse recurrence
+does learn a real causal retrieval path. It does not learn the future path:
+future exact is `.002`, while past exact reaches `.181`. The candidate's
+wrong-key share among errors is lower (`.38469`), but only because broad
+retrieval failure replaces the small P059 tail. The paired audit records 2,770
+P059-correct queries becoming wrong and only 66 P059-wrong queries becoming
+correct.
+
+Elapsed/post-warm/warmed-step/peak-allocation ratios versus P059 are
+`1.5064/1.5094/1.8086/1.0327x`. Formal training takes `188.91 s`; the warmed
+benchmark reaches `539.67` examples/s and peak allocated memory is
+`1,031,413,760` bytes. The 100 five-second telemetry samples have mean/peak
+utilization `30.64/97%`; 81 active-memory samples average `37.83%`, observed
+memory peaks at `1,876 MiB`, and mean/peak power is `94.50/179.55 W`.
+
 ## 7. Decision
 
-Pending the R4 strict CUDA contract and single formal endpoint. R1-R3 are
-non-science integration or contract-harness failures, not quality attempts.
+Discard P-GDN3-064. R1-R3 remain non-science integration or harness failures;
+R4 is the sole quality result. Close this slots/read/write/head/block and
+full-bank transport configuration without rescue. The result is not evidence
+for improved FS2 credit because the official terminal bank is detached from
+the producer graph, and it is not a better GDN3 because every quality gate
+fails.
+
+The next decision must not tune sparse capacity. The useful distinction is
+that P064 learns causal storage but cannot make a huge terminal slot bank
+receiver-readable as future evidence. Test one complete closed-loop primary
+transition in which prediction and committed owner coordinates remain
+coherent inside every token update.
 
 ## 8. Artifacts
 
-Pending.
+- run:
+  `/huyang2/double-loop/runs/p-gdn3-064-official-sdm-fs-r4-20260816T065300Z-cbec800`;
+- source SHA: `cbec8008095ef40551c749626d785184b34788ba`;
+- external SDM SHA: `183e7df809131b80ad4393741029d0f20fc3640b`;
+- contract/score SHA256:
+  `87ea54d129f640cba895d1100cc4cdc2a6c3ad24f3fd29ac267de7f94d3d59c1` /
+  `cb22182e62cf5123fff35fe87e30802fa45570384e810d5aa26c5c46d1712469`;
+- checkpoint/cases SHA256:
+  `ca5955e8a1e40f440847d728401227e96481a34900d07d0f959e51d1f866fe48` /
+  `737029a8a67391d1304ccbe05a506cd466215794278e8e31d82df5e87f122daf`;
+- formal log/GPU samples/source snapshot SHA256:
+  `03c8ca71cc0f92d4664da5c3c29d891d834c82d0cffe55f2ef2e62b9fc487d85` /
+  `15a0fce8687440263468a37f328a94cc5fec2b05550e9382d84f91b9701180a1` /
+  `36fa1e7dba438516102376d75d9e3dfa2076584c1d917840d5489fa04a92aff3`.
 
 ## 9. Lessons
 
-Pending.
+More address slots are not a substitute for a learnable ownership transition.
+P064 has 16x P059's recurrent values, activates hundreds of sparse slots and
+fits the cost budget, yet it cannot align future writes with receiver reads.
+Its direction asymmetry is especially informative: causal past retrieval is
+partially learned, while cross-layer future retrieval remains near chance.
+
+Native FutureSeed works when the transported state has the same semantics as
+the receiving transition. P059's compact momentum component carries a learned
+update trajectory; P064's full sparse bank is a large endpoint snapshot with
+weak receiver-native indexing. Continue with a complete end-to-end recurrence,
+not another cache, slot-count sweep or producer-state codec.

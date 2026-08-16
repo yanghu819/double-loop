@@ -12,15 +12,14 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-GDN3-061` is the sole registered next
-experiment. Post-Commit Momentum Refresh preserves the complete P059 parent
-microstep, then applies one residual-only microstep with the same K/V/eta but
-`alpha=1`, `mu=1` and `beta=0`. The refresh can change `M` but is algebraically
-unable to change `S`; when the committed state already reconstructs V, it is
-an exact fixed point. It adds no parameter or persistent state and uses one
-interleaved `2T` external Momentum chunk call per layer. Train once from
-scratch on the fixed directional MQAR L1024 regime and compare to frozen P059;
-no repeated control. Contract, quality and cost gates are frozen in:
+Current update (2026-08-16 CST): `P-GDN3-061` closed at its strict CUDA
+contract before formal training. Both exact refresh layers used the registered
+`T->2T` schedule with zero refresh log-alpha, log-mu and beta, but the BF16
+chunk's parent-versus-refresh read relative RMS was
+`2.5927e-4/2.6429e-4`, above the frozen `1e-5` invariant. The formal endpoint
+did not run; parameter/tolerance/order/coefficient rescue is forbidden. The
+contract sampled 13 active-memory points at `39.69%` mean and `61%` peak GPU
+utilization, with `3,000 MiB` peak memory. Report:
 `research/reports/experiments/gdn3-post-commit-momentum-refresh-mqar-20260816.md`.
 
 Current update (2026-08-16 CST): `P-DIAG-MOMQCF-001` completed from exact

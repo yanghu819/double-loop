@@ -2,7 +2,7 @@
 
 ## 1. Metainfo
 
-- Status: registered before implementation and GPU execution
+- Status: closed at the strict CUDA contract; no formal training
 - Decision field: directional MQAR L1024 wrong-owner tail
 - Candidate: D128/L2/H4/K32/V32 Momentum Delta + native `[S,M]` FutureSeed
 - Fixed training: 10 epochs, batch32, seed123, exact P059 data and initialization
@@ -132,4 +132,39 @@ throughput, memory, GPU samples, source/config/log hashes and GitHub readback.
 
 ## 9. Result And Decision
 
-Pending the exact pushed-source CUDA contract and single formal run.
+Exact pushed/read-back source
+`832f5258512fe8cf8c8665cb2dbb5b2eb9e0963d` ran from a clean detached
+worktree on A800 index0 UUID
+`GPU-c1d7c624-a393-befa-3807-7e00602d65ca`. The implementation reached the
+full-stack GPU contract with two exact refresh mixers, the fixed `1024->2048`
+microstep schedule and zero refresh log-alpha, log-mu and beta.
+
+The contract then failed the preregistered state-read identity before formal
+training. Parent-versus-refresh output relative RMS was
+`2.5927345e-4/2.6428906e-4` across the two layers, with maximum BF16 changes
+`2.44140625e-4/9.765625e-4`. Both exceed the frozen `1e-5` ceiling. This is a
+small numerical discrepancy, but the gate intentionally required the M-only
+microstep to leave the primary-state read invariant under the production
+chunk path. The miss is binding and is not reinterpreted after observation.
+
+Close P-GDN3-061 without tolerance, output probe, refresh coefficient, decay,
+count, order, seed, LR, loss, batch, width, depth or duration rescue. No
+checkpoint or quality score exists and no Sudoku transfer is authorized.
+
+Artifacts:
+
+- run:
+  `/huyang2/double-loop/runs/p-gdn3-061-momentum-refresh-20260816T013400Z-832f525`;
+- contract log SHA256:
+  `22fb53bd3152e39b4770f36b643bf96ed7a7b6e978f04152412d0f335c4d67a0`;
+- abort SHA256:
+  `b9870ffdacac54be4b55be1b193b9433fe98819e68c628656d058ddd5fad56c3`;
+- GPU samples SHA256:
+  `cdb55c17be7e6847839dc25c5f857e995d8bc8234a30af5693d0b51630c48d6e`;
+- source snapshot SHA256:
+  `50b83cae8b81526878623049512b5e139957434b02a31daf885ddb59514eb9bc`.
+
+There were 32 sampler rows and 13 active-memory rows. Active utilization
+averaged `39.69%`, peaked at `61%`, peak sampled memory was `3,000 MiB`, and
+peak sampled power was `199.90 W`. The A800 returned to 0%/0 MiB with no
+compute process after the exact contract failure.

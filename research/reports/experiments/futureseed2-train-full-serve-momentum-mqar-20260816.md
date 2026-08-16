@@ -32,14 +32,25 @@ selector, cache, task logic or parameter change is allowed.
 ## 4. Gates
 
 The clean pushed A800 run must pass the existing strict CUDA contract and then
-replay the exact P059 test bank. A deployment Pareto pass requires:
+replay the P059 test bank. R1/R2 established a cross-device calibration before
+the production candidate ran: the new A800 changed exactly `1/4000` native
+predictions, balanced accuracy by `.00025`, joint exact by `.001`, and CE by at
+most `4.8e-6`, while all artifact, parameter and data hashes remained exact.
+R3 therefore fixes, before candidate evaluation, a native replay bound of at
+most `2/4000` changed predictions, `.001` accuracy/joint drift and `1e-4` CE
+drift. It also freezes the prior exact same-weight M-only diagnostic SHA256
+`75f7ee388aee78139c9a261238e102b4cb2670df1dbdc8f0acdf46d921091f07`.
+A deployment Pareto pass requires:
 
-- exact frozen checkpoint, data, cases and parameter hashes;
+- exact frozen artifact, data and parameter hashes, plus the fixed native
+  cross-A800 replay calibration above;
 - exactly 4,096 transported values instead of 8,192, with zero parameter,
   persistent-state and scan delta;
 - one active M-only route, exact zero receiver S and finite nonzero M;
 - balanced, future and past each within `.005` of P059, joint within `.01`,
   total errors at most `243`, and wrong-key swaps at most `171`;
+- production M-only metrics within `.001` accuracy/joint and `1e-4` CE of the
+  previously frozen exact same-weight M-only counterfactual;
 - median interleaved warmed inference time below `1.05x` and allocation below
   `1.02x` the native control.
 
@@ -49,8 +60,14 @@ owner swaps.
 
 ## 5. Result
 
-Pending the strict A800 endpoint.
+R1 passed the strict CUDA contract but stopped before candidate evaluation when
+the native replay differed from the frozen cases. R2 isolated native replay
+before candidate construction and recorded the single changed prediction above,
+proving the mismatch is a bounded cross-A800 replay effect rather than candidate
+lifecycle contamination. No candidate quality result exists yet. R3 is the sole
+registered production endpoint; its model, data, mechanism and original
+quality/cost limits are unchanged.
 
 ## 6. Decision
 
-Pending.
+Pending R3.

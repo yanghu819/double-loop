@@ -52,6 +52,12 @@ EXPECTED_FORMAL_SCORE_SHA256 = (
 EXPECTED_FORMAL_CASES_SHA256 = (
     "f64b0ae0e45a65a8da2934ece8cfe208fedd835a373d79230320bdf945826f20"
 )
+EXPECTED_COMPONENT_DIAGNOSTIC_SHA256 = (
+    "75f7ee388aee78139c9a261238e102b4cb2670df1dbdc8f0acdf46d921091f07"
+)
+MAX_NATIVE_REPLAY_DISAGREEMENTS = 2
+MAX_NATIVE_ACCURACY_DRIFT = 0.001000001
+MAX_NATIVE_CE_DRIFT = 1e-4
 
 
 def _sha256(path: Path) -> str:
@@ -97,6 +103,52 @@ def _metric_row(metrics: dict[str, Any]) -> dict[str, float]:
     }
 
 
+def _prediction_disagreements(
+    reference: list[dict[str, Any]],
+    observed: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if len(reference) != len(observed):
+        raise RuntimeError("Native replay changed the number of cases")
+    disagreements = []
+    event_fields = (
+        "direction",
+        "query_position",
+        "write_position",
+        "distance",
+        "key",
+        "target",
+    )
+    for expected_case, observed_case in zip(reference, observed, strict=True):
+        case_fields = ("case_index", "case_id", "sequence_length")
+        if any(
+            expected_case[field] != observed_case[field] for field in case_fields
+        ):
+            raise RuntimeError("Native replay case identity drifted")
+        expected_events = expected_case["events"]
+        observed_events = observed_case["events"]
+        if len(expected_events) != len(observed_events):
+            raise RuntimeError("Native replay changed the number of events")
+        for expected_event, observed_event in zip(
+            expected_events, observed_events, strict=True
+        ):
+            if any(
+                expected_event[field] != observed_event[field]
+                for field in event_fields
+            ):
+                raise RuntimeError("Native replay event identity drifted")
+            if expected_event["prediction"] != observed_event["prediction"]:
+                disagreements.append(
+                    {
+                        "case_index": expected_case["case_index"],
+                        "direction": expected_event["direction"],
+                        "query_position": expected_event["query_position"],
+                        "expected": expected_event["prediction"],
+                        "observed": observed_event["prediction"],
+                    }
+                )
+    return {"count": len(disagreements), "rows": disagreements}
+
+
 @torch.inference_mode()
 def _benchmark_forward(
     model: torch.nn.Module,
@@ -130,6 +182,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--formal-score", type=Path, required=True)
     parser.add_argument("--formal-cases", type=Path, required=True)
+    parser.add_argument("--component-diagnostic", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
 
@@ -137,6 +190,7 @@ def main() -> None:
         args.checkpoint: EXPECTED_CHECKPOINT_SHA256,
         args.formal_score: EXPECTED_FORMAL_SCORE_SHA256,
         args.formal_cases: EXPECTED_FORMAL_CASES_SHA256,
+        args.component_diagnostic: EXPECTED_COMPONENT_DIAGNOSTIC_SHA256,
     }
     for path, digest in expected.items():
         if not path.is_file() or _sha256(path) != digest:
@@ -146,6 +200,8 @@ def main() -> None:
     frozen = json.loads(args.formal_score.read_text())
     formal_control = frozen["candidate"]
     formal_cases = json.loads(args.formal_cases.read_text())
+    component_diagnostic = json.loads(args.component_diagnostic.read_text())
+    frozen_momentum_only = component_diagnostic["variants"]["momentum_only"]
     checkpoint = torch.load(args.checkpoint, map_location="cuda", weights_only=True)
     state_dict = checkpoint["model_state_dict"]
 
@@ -183,19 +239,38 @@ def main() -> None:
     )
     control_metric_row = _metric_row(control_metrics)
     formal_metric_row = _metric_row(formal_control["metrics"])
-    if control_cases != formal_cases or control_metric_row != formal_metric_row:
+    replay_predictions = _prediction_disagreements(formal_cases, control_cases)
+    accuracy_fields = (
+        "balanced_accuracy",
+        "future_accuracy",
+        "past_accuracy",
+        "joint_exact",
+    )
+    ce_fields = ("future_ce", "past_ce")
+    replay_calibration = {
+        "formal_metrics": formal_metric_row,
+        "observed_metrics": control_metric_row,
+        "prediction_disagreements": replay_predictions,
+        "max_accuracy_drift": max(
+            abs(control_metric_row[field] - formal_metric_row[field])
+            for field in accuracy_fields
+        ),
+        "max_ce_drift": max(
+            abs(control_metric_row[field] - formal_metric_row[field])
+            for field in ce_fields
+        ),
+    }
+    replay_calibration["passed"] = (
+        replay_predictions["count"] <= MAX_NATIVE_REPLAY_DISAGREEMENTS
+        and replay_calibration["max_accuracy_drift"] <= MAX_NATIVE_ACCURACY_DRIFT
+        and replay_calibration["max_ce_drift"] <= MAX_NATIVE_CE_DRIFT
+    )
+    if not replay_calibration["passed"]:
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        replay_audit = {
-            "status": "failed",
-            "reason": "native_p059_replay_drift",
-            "formal_metrics": formal_metric_row,
-            "observed_metrics": control_metric_row,
-            "prediction_transitions": transition_summary(formal_cases, control_cases),
-        }
         (args.output_dir / "native_replay_audit.json").write_text(
-            json.dumps(replay_audit, indent=2, sort_keys=True) + "\n"
+            json.dumps(replay_calibration, indent=2, sort_keys=True) + "\n"
         )
-        raise RuntimeError("Native P059 replay did not reproduce frozen endpoint")
+        raise RuntimeError("Native P059 replay exceeded the registered R3 bound")
 
     # Construct the deployment model only after the frozen native endpoint has
     # passed. This keeps candidate lifecycle effects outside the replay gate.
@@ -251,8 +326,11 @@ def main() -> None:
 
     cm = _metric_row(control_metrics)
     mm = _metric_row(candidate_metrics)
+    frozen_mm = frozen_momentum_only["metrics"]
     integrity_checks = {
-        "frozen_checkpoint_and_cases_exact": True,
+        "frozen_artifacts_exact_and_native_replay_calibrated": (
+            replay_calibration["passed"]
+        ),
         "parameters_exact": parameter_hash(candidate) == parameter_hash(control),
         "transport_exactly_halved": (
             diagnostics["full_state_values_per_route"]
@@ -293,6 +371,14 @@ def main() -> None:
         "wrong_key_swap_budget": (
             candidate_swaps["wrong_key_valid_value_swaps"] <= 171
         ),
+        "frozen_momentum_only_accuracy_reproduced": all(
+            abs(mm[field] - float(frozen_mm[field])) <= MAX_NATIVE_ACCURACY_DRIFT
+            for field in accuracy_fields
+        ),
+        "frozen_momentum_only_ce_reproduced": all(
+            abs(mm[field] - float(frozen_mm[field])) <= MAX_NATIVE_CE_DRIFT
+            for field in ce_fields
+        ),
     }
     cost_checks = {
         "inference_elapsed_below_1.05x": time_ratio < 1.05,
@@ -322,9 +408,11 @@ def main() -> None:
             "checkpoint_sha256": _sha256(args.checkpoint),
             "formal_score_sha256": _sha256(args.formal_score),
             "formal_cases_sha256": _sha256(args.formal_cases),
+            "component_diagnostic_sha256": _sha256(args.component_diagnostic),
             "test_data_sha256": test_digest,
             "benchmark_order": ["control", "candidate", "candidate", "control"],
         },
+        "native_replay_calibration": replay_calibration,
         "control": {"metrics": cm, "swap_summary": control_swaps},
         "candidate": {
             "metrics": mm,
@@ -348,6 +436,9 @@ def main() -> None:
         },
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    (args.output_dir / "control_cases.json").write_text(
+        json.dumps(control_cases, indent=2, sort_keys=True) + "\n"
+    )
     (args.output_dir / "cases.json").write_text(
         json.dumps(candidate_cases, indent=2, sort_keys=True) + "\n"
     )

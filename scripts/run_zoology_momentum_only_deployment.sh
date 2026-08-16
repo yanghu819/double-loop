@@ -43,6 +43,7 @@ GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 [[ "$GITHUB_READBACK_SHA" == "$GIT_SHA" ]]
 [[ -f "$MATCHED_INIT" && -f "$MOMENTUM_CHECKPOINT" ]]
 [[ -f "$FROZEN_SCORE" && -f "$FROZEN_CASES" ]]
+[[ -f "$FROZEN_COMPONENT_DIAGNOSTIC" ]]
 
 LOCK_DIR="$PERSIST_ROOT/artifacts/locks"
 mkdir -p "$LOCK_DIR"
@@ -139,6 +140,7 @@ timeout --signal=TERM --kill-after=30 "$FORMAL_WALL_BUDGET_SEC" \
   --checkpoint "$MOMENTUM_CHECKPOINT" \
   --formal-score "$FROZEN_SCORE" \
   --formal-cases "$FROZEN_CASES" \
+  --component-diagnostic "$FROZEN_COMPONENT_DIAGNOSTIC" \
   --output-dir "$OUT_DIR" 2>&1 | tee "$RUN_DIR/formal.log"
 PIPE=("${PIPESTATUS[@]}")
 STATUS="${PIPE[0]}"

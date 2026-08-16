@@ -12,15 +12,23 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-DIAG-MOMADDR-001` is the sole next action.
-It replays exact P059 weights and all 4,000 frozen queries while transparently
-recording the corrected Q/K entering both Momentum kernels. It opens an
-address-organization branch only if at least 60% of swaps already prefer the
-predicted wrong owner, correct-versus-swap median margin separation is at
-least `.02`, and the nearest competing key matches that owner at least 50% of
-the time. If at most 30% have negative margin, only a committed-state-edit
-transition is open; intermediate evidence opens nothing. Logits and kernel
-outputs are unchanged. Report:
+Current update (2026-08-16 CST): `P-DIAG-MOMQCF-001` is the sole next action.
+With exact P059 weights, it replaces each corrected MQAR query address with
+the corrected key at its own write token in layer 0, layer 1, or both. This is
+an oracle causal diagnostic, not a quality mechanism. Open owner-address
+organization only if final-layer substitution repairs at least 50% of swaps,
+retains 95% of correct events and gains `.015` total accuracy. If every
+substitution repairs at most 10% of swaps, open committed-state-edit
+transition; intermediate evidence opens nothing. Report:
+`research/reports/experiments/momentum-query-owner-counterfactual-20260816.md`.
+
+Current update (2026-08-16 CST): `P-DIAG-MOMADDR-001` completed from exact
+pushed source. Final-layer negative swap margin is 65.56%, but correct versus
+swap separation is `-.04218` and nearest-competitor/predicted-owner alignment
+is only 31.13%; 81.41% of correct events also do not rank their own key first.
+The key space is highly anisotropic (effective-rank fraction `.06625`), but raw
+cosine does not selectively identify failures. The registered mixed result
+opens no architecture. Report:
 `research/reports/experiments/momentum-address-attribution-20260816.md`.
 
 Current update (2026-08-16 CST): `P-GDN3-060` closed at its strict pretraining

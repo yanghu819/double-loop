@@ -39,4 +39,31 @@ routers, state-width or training sweeps.
 
 ## 4. Status
 
-Registered before the exact pushed-source GPU replay. Pending result.
+Completed from exact pushed/read-back source
+`32f4787d1310a23efdfe11de1dbcb46a5f25fb86`; all 4,000 baseline predictions
+replayed exactly and the run exited zero.
+
+In the final layer, 65.56% of swaps prefer the predicted wrong owner's key,
+but this is not a clean address discriminator. Correct events have an
+own-minus-best-other median of `-.10638`, versus `-.12653` for swaps, making
+the registered separation `-.04218` rather than `>=.02`. The nearest competing
+key equals the predicted owner in only 31.13% of swaps, below 50%. Moreover,
+81.41% of correct events do not rank their own write key first by mean-head
+similarity. Raw nearest-key cosine is therefore not the model's operative
+owner contract.
+
+The learned key space is severely anisotropic: final-layer mean anisotropy is
+`26.22`, effective-rank fraction `.06625`, and condition about `35,440`.
+That is real geometry collapse, but it does not selectively explain failures.
+The preregistered result is mixed and authorizes no architecture. Proceed only
+to the exact own-write-key query counterfactual in `P-DIAG-MOMQCF-001`.
+
+The 71 GPU samples contain 23 active-memory rows: active utilization averages
+`41.91%`, peaks at `79%`, and sampled memory peaks at `3,050 MiB`.
+
+Artifacts:
+
+- run: `/huyang2/double-loop/runs/p-diag-momaddr-001-20260816T003324Z-32f4787`
+- diagnostic SHA256: `7e4a37939624e500de4d37eadc470cb98e4619ab215e1e21b2d3b07854b7eb1e`
+- GPU samples SHA256: `111ff12f61aae51dd55d4975b581c25995d4b8b542a6062e63a44c0bcc349e78`
+- source snapshot SHA256: `ef5c828d358c0c93e8bb280b08072ea691a64c7cfe787e0953a357bd61f7a96e`

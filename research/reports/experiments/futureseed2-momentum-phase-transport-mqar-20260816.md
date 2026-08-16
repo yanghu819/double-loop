@@ -119,18 +119,76 @@ pass authorizes one fixed hard-Sudoku transfer.
 
 ## 8. Status
 
-Preregistered. Implementation, strict CUDA contract, and the single fixed
-candidate remain pending. No science score exists yet.
+Complete and discarded. Exact GitHub source
+`b41a0e74367d1d8df59304215612226fcc411e7f` was read back, checked out as a
+clean detached worktree, and run on the sole A800 CUDA index 0
+`GPU-c1d7c624-a393-befa-3807-7e00602d65ca`.
+
+R1 completed every strict contract assertion but its outer launcher lost the
+closed caller stdout after the Python contract exited successfully, so `tee`
+returned 1 and the combined status became 74. No formal model started. This is
+archived as a non-science orchestration failure. R2 redirected the unchanged
+launcher output to a persistent file and reran the complete chain. The R2
+contract passed:
+
+- candidate/control parameters are `599676/599672`, exactly four new angles,
+  with zero persistent-state and scan delta;
+- zero-angle full output and arbitrary nonzero incoming/terminal `[S,M]` state
+  are bit-exact to P059;
+- both native Momentum layers, the native FutureSeed route and all four angle
+  gradients are finite and nonzero;
+- opening the phase changes the receiving output/state while owner K remains
+  exact and head permutation error is zero; and
+- FP32/BF16 energy relative error is `5.96e-8/.0004174`.
+
+The formal endpoint fails quality decisively despite passing every integrity,
+activation, stability and cost check:
+
+| metric | frozen P059 | phase transport | delta |
+|---|---:|---:|---:|
+| balanced accuracy | .94425 | .25950 | -.68475 |
+| future accuracy | .95150 | .24750 | -.70400 |
+| past accuracy | .93700 | .27150 | -.66550 |
+| joint exact | .82400 | .00100 | -.82300 |
+| total errors | 223 | 2962 | +2739 |
+| wrong-key valid-value swaps | 151 | 1081 | +930 |
+| adjacent-write-rank swaps | 151 | 1056 | +905 |
+
+All four angles activate: values are
+`[-.097260,-.081167,-.008744,-.013114]`, mean/min absolute sine are
+`.050011/.008744`, and the seed residual relative RMS is `.064694`. The
+rotation remains numerically orthogonal (`2.37e-7` energy error), and both
+state and Momentum RMS remain finite. However, phase residual board variation
+is only `2.79e-9` while head variation is `.020295`: this is a global
+head-specific channel rotation, not owner-specific evidence. Of 3,777 frozen
+correct query events, only 981 stay correct and 2,796 break. The conditional
+wrong-key share happens to fall because broad retrieval failure dominates; it
+is not a binding improvement.
+
+Elapsed/post-warm/warmed-step/peak-allocation ratios are
+`1.01958/1.01823/.91544/1.00105x`. The candidate warmed benchmark is
+`1.066M examples/s` and `1.092M tokens/s`. Across the complete R2 chain, 47
+active five-second GPU samples average `58.36%` utilization and `157.66 W`,
+with `82%`, `3,844 MiB` and `247.09 W` sampled peaks. Exit status 2 is the
+registered science rejection, not an infrastructure failure.
 
 ## 9. Required Artifacts And Next Decision
 
-Archive the exact source/config/data/initialization hashes, contract JSON,
-formal comparison, checkpoint, cases, log, GPU telemetry, per-head angles,
-seed residual and energy diagnostics. Update `plans.md`, this report,
-`leaderboard.csv`, `docs/PAPER_PLAN.md`, and `docs/LESSONS.md`, then commit and
-push the result.
+The complete R2 run is
+`/huyang2/double-loop/runs/p-fs2-014-momentum-phase-r2-20260816T041740Z-b41a0e7`.
+SHA256 values are:
 
-A pass selects receiver-native S/M phase transport as FS2 and opens exactly
-one hard-Sudoku transfer. A miss closes this entire component-phase family and
-returns the next decision to a distinct live recurrent state organization;
-it does not authorize a nearby parameter or training sweep.
+- contract JSON: `22622f849fcc4a27cd7d8b3c3feadae03c6170b9b10019e2b7a9ea9d6f098ff0`;
+- comparison/score: `72d07eadf15c8b3fea698959db4ffefe0a547d1b55a4d73a15107d097ca64c46`;
+- checkpoint: `46cce2194d06d682c32c469c9d0cc37019461ee66067614fd8ec59887c1cf495`;
+- formal log: `ad245841eef8953f03295239039332a15c865cffddf0c3cb01dccf367435260f`;
+- GPU telemetry: `f305deed95f2acb72b1d65d7b1c82e44c384ba5d90c6a335fe99e18de9fa6f77`;
+- source snapshot: `b90455945818b74b19b363441696b990e9fda56d2e9843be3e2cc4598aa4bd04`.
+
+Decision: close the entire S/M component-phase family. Do not retry angle
+initialization, cap, sign, sharing, scale, seed, LR, loss, batch, width, depth,
+duration or dataset. No Sudoku transfer is authorized. The result sharpens
+P-DIAG-MOMFS: Momentum is useful future evidence, but `S` and `M` are not
+exchangeable coordinates. A successor must preserve their dynamical semantics
+and change a distinct live recurrent state organization or ownership
+transition.

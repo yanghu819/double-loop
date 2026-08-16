@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-08-16: Useful future components are not interchangeable coordinates
+
+- P-FS2-014 adds only four zero-initialized per-head angles after native
+  FutureSeed separately normalizes state `S` and Momentum `M`. It changes no
+  owner key, recurrence, state size, scan or kernel.
+- Exact identity, gradients, orthogonal energy, activation, finite state and
+  all cost gates pass. Mean/min absolute sine are `.050011/.008744` and the
+  transported residual is `.064694` of seed RMS.
+- Quality nevertheless collapses: balanced accuracy `.94425->.25950`, joint
+  exact `.824->.001`, errors `223->2962`, and wrong-key swaps `151->1081`.
+- Residual board variation is only `2.79e-9` while head variation is `.020295`.
+  A shared head rotation cannot express owner-specific evidence; it globally
+  changes the semantics consumed by the receiver.
+- P-DIAG-MOMFS showed that `M` is the useful future carrier, not that `M` may
+  be freely reinterpreted as `S`. Preserve derivative/state identity. Close
+  angle, sign, cap, sharing and scale rescue; the next intervention must alter
+  a distinct ownership or live-state organization.
+
 ## 2026-08-16: A second address can destroy a stable owner coordinate
 
 - P-GDN3-063 uses the external Momentum operator's native distinct prediction

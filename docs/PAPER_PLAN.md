@@ -1,5 +1,26 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Momentum And State Are Not A Rotatable FutureSeed Basis
+
+P-FS2-014 follows the clean P-DIAG-MOMFS observation that transported Momentum
+alone retains almost all of P059's FutureSeed quality. It leaves the successful
+second-order recurrence, owner key, stacked state, normalization and native
+gate exact, then adds only one zero-initialized orthogonal S/M rotation angle
+per receiving head. The strict contract proves exact parent behavior, complete
+gradients and energy preservation with only four new parameters.
+
+The endpoint rejects the tempting interpretation that state and Momentum form
+a redundant two-dimensional coordinate plane. All angles activate and remain
+stable, but balanced accuracy falls `.94425->.25950`, errors rise `223->2962`
+and wrong-key swaps rise `151->1081`. The learned residual has substantial
+head variation but effectively no board variation (`2.79e-9`), so it is a
+global channel remapping rather than owner-specific evidence. The paper should
+state the stronger semantic result: Momentum is the useful cross-layer future
+signal, but it is useful *as a derivative*. Rotating it into the base state
+destroys the live transition's learned meaning. Future FS2 mechanisms must
+preserve component identity and improve credit or ownership transport without
+treating `[S,M]` as exchangeable capacity.
+
 ## 2026-08-16 Independent Prediction Keys Break Momentum Ownership
 
 P-GDN3-063 tests the most direct residual-tail interpretation of P059. The

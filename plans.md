@@ -12,6 +12,19 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Current update (2026-08-16 CST): `P-DIAG-MOMREAD-001` is approved as a frozen
+same-weight decision, not a training arm. P059 leaves 151 wrong-key swaps, all
+adjacent in write rank. The diagnostic evaluates the exact P059 checkpoint on
+the exact L1024 test set with native output correction and with only
+`q <- q - exp(D)k` disabled in both layers. It changes no parameter, state,
+scan, data or FutureSeed edge. A no-output-correction from-scratch successor
+opens only if balanced accuracy gains at least `.005`, wrong-key swaps fall by
+at least 20, each direction regresses at most `.005`, joint exact regresses at
+most `.01`, and total errors do not increase. Any miss closes correction
+scale/sign/gate/head/token/key-neighbor and all training rescues, and selects a
+distinct live Momentum state organization. Report:
+`research/reports/experiments/momentum-output-read-diagnostic-20260816.md`.
+
 Completed update (2026-08-16 CST): `P-FS2-015` Receiver-Native Momentum Conv
 Prefill is discarded. Exact pushed/read-back source `8705a098` passes the
 strict A800 contract: +12 parameters, unchanged `[S,M]` state/scans, two native

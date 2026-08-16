@@ -85,6 +85,7 @@ GDN2_ARMS = (
     "future_seed_pair_event_gdn2",
     "future_seed_cycle_memory_gdn2",
     "future_seed_momentum_delta",
+    "future_seed_momentum_prediction_key",
     "future_seed_momentum_log_spd",
     "future_seed_momentum_refresh",
     "future_seed_predictive_momentum",
@@ -335,6 +336,11 @@ def build_config(
             mixer_name = (
                 "experiments.zoology_mqar.momentum_futureseed."
                 "ZoologyMomentumDeltaFutureSeedMixer"
+            )
+        elif arm == "future_seed_momentum_prediction_key":
+            mixer_name = (
+                "experiments.zoology_mqar.momentum_prediction_key."
+                "ZoologyMomentumPredictionKeyFutureSeedMixer"
             )
         elif arm == "future_seed_momentum_log_spd":
             mixer_name = (
@@ -939,6 +945,12 @@ def run_arm(
             )
 
             load_matched_parent_state(model, matched_state)
+        elif arm == "future_seed_momentum_prediction_key":
+            from experiments.zoology_mqar.momentum_prediction_key import (
+                load_matched_parent_state,
+            )
+
+            load_matched_parent_state(model, matched_state)
         elif arm in (
             "future_seed_momentum_delta",
             "future_seed_momentum_log_spd",
@@ -1144,6 +1156,7 @@ def run_arm(
         parent_init_parameter_hash = parent_parameter_hash(model)
     elif arm in (
         "future_seed_momentum_delta",
+        "future_seed_momentum_prediction_key",
         "future_seed_momentum_log_spd",
         "future_seed_momentum_refresh",
         "future_seed_predictive_momentum",
@@ -1628,6 +1641,7 @@ def run_arm(
     momentum_delta = None
     if arm in (
         "future_seed_momentum_delta",
+        "future_seed_momentum_prediction_key",
         "future_seed_momentum_log_spd",
         "future_seed_momentum_refresh",
         "future_seed_predictive_momentum",
@@ -1641,7 +1655,13 @@ def run_arm(
         )
         with torch.no_grad():
             model.eval()(diagnostic_inputs[:8].cuda())
-        if arm == "future_seed_momentum_log_spd":
+        if arm == "future_seed_momentum_prediction_key":
+            from experiments.zoology_mqar.momentum_prediction_key import (
+                momentum_prediction_key_diagnostics,
+            )
+
+            momentum_delta = momentum_prediction_key_diagnostics(model)
+        elif arm == "future_seed_momentum_log_spd":
             from experiments.zoology_mqar.momentum_log_spd import (
                 momentum_log_spd_diagnostics,
             )
@@ -1776,6 +1796,7 @@ def run_arm(
                     "future_seed_slot_state_gdn2",
                     "future_seed_redundant_address_gdn2",
                     "future_seed_momentum_delta",
+                    "future_seed_momentum_prediction_key",
                     "future_seed_momentum_log_spd",
                     "future_seed_momentum_refresh",
                     "future_seed_predictive_momentum",

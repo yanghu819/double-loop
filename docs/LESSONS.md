@@ -3703,3 +3703,22 @@
 - Close scale, sign, token/head gate and replacement rescue. Preserve Q/K/V
   convolution and `q-Dk`; attack owner interference inside the live Momentum
   transition or state organization.
+
+## 2026-08-16: More time scales can erase the learning transition
+
+- P-GDN3-070 retains exact P059 address formation, committed edit, slow
+  Momentum, output correction and native FutureSeed, then adds one coupled
+  fast velocity and a token-wise fast-minus-slow mix in the same scan.
+- The strict contract proves exact zero-mix parent identity, fused/Torch
+  parity, active finite fast/slow lanes, full gradients, causality and head
+  equivariance. This is not a fallback or implementation mismatch.
+- Balanced/joint accuracy collapses `.94425/.824 -> .00850/0`; errors rise
+  `223->3966`. Wrong-key/adjacent swaps fall `151/151 -> 109/53` only because
+  3,744 parent-correct queries break while one old swap repairs.
+- The fast band becomes material and layer 1 reaches max mix `.96869`, so it
+  perturbs the optimization trajectory before P059's sharp retrieval phase
+  transition. Bounded state magnitude alone does not preserve learnability.
+- Close fast-decay exponent, mix scale/init, controller sharing and all
+  training rescue. New owner structure must preserve a complete learnable base
+  path and earn influence from exact binding evidence, not globally modify
+  every update from initialization.

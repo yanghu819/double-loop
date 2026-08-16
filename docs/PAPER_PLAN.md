@@ -2734,3 +2734,21 @@ treat the correction as necessary co-adapted decoding geometry, not as the
 cause of residual adjacent-owner interference. The remaining architecture
 question is how to preserve short-lived owner identity inside a scalable live
 Momentum state without replacing its successful global integration.
+
+### Coupled Time Scales Remove Swaps By Removing Retrieval
+
+P-GDN3-070 preserves P059's Q/K/V convolution, shared committed edit,
+`q-Dk` read and slow Momentum path, then adds a fast `mu^2` velocity whose
+fast-minus-slow band is mixed token-wise into the same state update. The strict
+contract establishes a real one-scan recurrence with exact zero-mix P059
+identity, finite fast/slow states and complete gradients.
+
+From-scratch learning nevertheless never leaves chance: balanced accuracy
+falls `.94425->.00850`, joint exact `.824->0`, and errors rise `223->3966`.
+Wrong-key and adjacent swaps fall to `109/53`, but 3,744 formerly correct
+queries break and only one old swap repairs. The paper should not present
+conditional error-category reductions without correct-retention accounting.
+Mechanistically, the fast band is live and bounded but removes the sharp P059
+optimization transition. This closes coupled fast-decay/mix variants and
+strengthens the requirement that ownership capacity preserve the successful
+base learning path instead of entering every live update from the first step.

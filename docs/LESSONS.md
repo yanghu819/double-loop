@@ -1,5 +1,25 @@
 # Lessons
 
+## 2026-08-16: A second address can destroy a stable owner coordinate
+
+- P-GDN3-063 uses the external Momentum operator's native distinct prediction
+  key `p` while leaving the correction owner/write key `k` unchanged. P starts
+  byte-exactly tied to K and adds no state, scan or custom kernel.
+- The strict contract is exact, but training immediately diverges from the
+  successful P059 trajectory. Balanced accuracy remains at chance and ends
+  `.009` versus `.94425`; errors rise `223->3964` and joint exact falls
+  `.824->0`.
+- P/K mean cosine falls to `.152/.143` and relative RMS divergence reaches
+  `1.691/1.133`. Layer-0 state and momentum overflow even though the final
+  training loss and outputs remain finite.
+- The apparent swap reduction `151->131` is invalid evidence: 3,744 formerly
+  correct queries break while only three swaps repair. Absolute correct
+  retention must accompany every ownership metric.
+- The shared prediction/commit key in the successful Momentum recurrence is a
+  useful geometric constraint. Close independent P projection/conv/tie/scale
+  rescue; the next mechanism must preserve the learned owner coordinate while
+  changing stable state organization or credit transport.
+
 ## 2026-08-16: A locally invertible recurrence need not have a stable long backward
 
 - P-GDN3-062 changes the Momentum residual to account for the old velocity

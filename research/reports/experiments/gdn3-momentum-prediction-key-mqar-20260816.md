@@ -131,17 +131,90 @@ complete pass authorizes one hard-Sudoku transfer.
 
 ## 8. Status
 
-Preregistered before implementation. Source SHA, strict CUDA contract, formal
-run and science verdict are pending.
+Complete and discarded.
+
+R1 source `7e32793db986de0cde1ce2d3f0cbcea420a590ff` stopped in the
+contract before the first GPU model forward. The initial implementation used a
+deep-copied `nn.Linear` for P. Zoology's global initializer therefore
+reinitialized that copy and consumed RNG before construction of the next
+native layer, changing parent tensors outside the candidate path. The parent
+tensor invariant caught this. This is a non-science harness failure, not a
+mechanism result; its contract-log and `abort.json` SHA256 values are
+`79cf3b15f4ed4869a817f10fe822c4a7a0d7914cdae80ea8e17ab3dddb283038`
+and `9c005b7be036e9f0b42293ec14a0f19173bda70a0b96976f8546216dc55d5fc0`.
+
+R2 changes no mechanism or registered gate. Exact pushed/read-back source
+`50009bd24fda09b2b50b9499c9b2fa6f027c2c44` represents P with a one-weight
+module using `F.linear`, excludes it from the generic Linear initializer, and
+then byte-copies K as originally specified. The clean detached A800 contract
+passes:
+
+- full-model logits and every per-layer output and terminal `[S,M]` state are
+  bit-exact to P059 for zero and finite nonzero incoming state;
+- parameter count is exactly `599,672 -> 633,464`, with four new tensors and
+  no state or scan delta;
+- both layers use native `Chunkmode_ruleFunctionBackward` and exact external
+  Momentum SHA `c6e77fa261fb0c002fae1a14b6209a5b28d2edc9`;
+- P projection/conv, Q/K/V, alpha/momentum/erase/write, both recurrent layers
+  and the receiving FutureSeed edge all have finite nonzero gradients;
+- opening P changes output/state and preserves exact head equivariance; and
+- train/test hashes are
+  `647c64ece84984a23dfd817c4f277ea83840dbec57cc18bb6c9bf9eda7cc9a68` /
+  `4a8237ba8fe19aaff0d1d72de7b7f6505eaab59cd091442c2f463df34cce278f`.
+
+The formal endpoint
+`p-gdn3-063-momentum-prediction-key-r2-20260816T032241Z-50009bd`
+completed normally with science exit status `2`. Frozen P059 versus candidate
+is:
+
+| Metric | P059 | P063 |
+|---|---:|---:|
+| balanced accuracy | .94425 | .00900 |
+| future accuracy | .95150 | .01100 |
+| past accuracy | .93700 | .00700 |
+| joint exact | .82400 | 0 |
+| total errors | 223 | 3,964 |
+| wrong-key valid-value swaps | 151 | 131 |
+| adjacent-write-rank swaps | 151 | 61 |
+
+The lower swap count is not a repair. Paired transitions contain `3,620`
+parent-correct to unrelated-wrong and `124` parent-correct to wrong-key
+changes, while only three parent swaps become correct. Validation accuracy is
+approximately chance for all ten epochs (`.00975` at epoch0 and `.00900` at
+epoch9).
+
+The mechanism activates destructively. Layer-0/1 P/K relative RMS divergence
+is `1.69070/1.13315`, while mean normalized cosine is only `.15248/.14325`, far
+below the registered `.80` floor. Layer 0 state and momentum RMS overflow to
+`Inf`; its momentum/state ratio and the transported raw FutureSeed RMS are not
+finite. Layer 1 remains finite but cannot recover the destroyed first-layer
+trajectory. Activation/stability, every substantive quality route, and the
+time-cost gate fail. Elapsed/post-warm/warmed-step ratios are
+`1.59575/1.59904/1.55312x`; peak allocation is `1.03407x`.
+
+The run sampled 89 active-memory telemetry points: mean/p95/peak utilization
+`32.61/79/92%`, peak observed memory `3,970 MiB`, mean power `124.47 W`, and
+peak power `236.70 W`. It ended with zero GPU memory and no compute process.
+No NaN/OOM/fallback appears in the training log; non-finite recurrent
+diagnostics are themselves the registered stability failure.
 
 ## 9. Required Artifacts And Next Decision
 
-Archive the contract, formal score/cases/checkpoint, exact frozen hashes,
-validation curve, per-direction transition taxonomy, P/K divergence and state
-diagnostics, independent throughput, memory and GPU telemetry, source/config/
-log hashes, and GitHub readback.
+The remote run directory is
+`/huyang2/double-loop/runs/p-gdn3-063-momentum-prediction-key-r2-20260816T032241Z-50009bd`.
+Key SHA256 values are:
 
-A complete pass establishes a better GDN3 candidate and authorizes one hard
-Sudoku transfer with native `[S,M]` FutureSeed. A miss closes prediction-key
-decoupling and sends the next decision back to stable scalable live-state
-organization rather than another address/readout patch.
+- contract JSON: `93f89af09ec0f414feabf1c7e3c5535e50bfa5e45aac98321fd9f481b4ee1cc2`;
+- comparison/score JSON: `30d7630211794495c2185792d5af1a2eed9283f7514c51a2464e7405e3b90018`;
+- candidate checkpoint: `9ddb505040852c212fa771810fe69034e065f0ec2cd78e8cb2d6b07a4f3f6605`;
+- cases: `05b8382c719bb93c9ffb700e15eb4391082c199d052d7929c3906d35585ad60e`;
+- formal log: `e507aced8be0c05ed36895af76d10fe6e1d4d432fc13f8c621c5c85678054ebc`;
+- GPU telemetry: `6e3c5cd46d3db5778478d12cf7494ae06756091e02e56ef725d978fbeb243e41`;
+- source snapshot: `a14030793c9078f7d7ece231b087b737de1a2b7be0fc064e445788b5f50aa7fd`.
+
+Independent prediction-key decoupling is closed. P063 shows that the shared
+prediction/owner address is a stabilizing coordinate constraint, not merely an
+unnecessary parameter tie. Do not rescue it with tying, interpolation, scale,
+rank or training sweeps. The next decision returns to stable scalable live
+state organization or an FS mechanism that transports genuinely distinct
+second-order evidence without changing the owner coordinate.

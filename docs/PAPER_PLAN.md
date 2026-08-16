@@ -1,5 +1,24 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Independent Prediction Keys Break Momentum Ownership
+
+P-GDN3-063 tests the most direct residual-tail interpretation of P059. The
+native external Momentum recurrence already accepts a prediction key distinct
+from the correction owner key. The candidate adds one independent prediction
+projection and ShortConv per layer, initializes both exactly from K, and leaves
+the successful owner/write K, recurrent `[S,M]`, scan and FutureSeed unchanged.
+The A800 contract proves exact parent behavior and complete gradient paths.
+
+The endpoint rejects unconstrained address decoupling. P/K cosine falls to
+`.152/.143`, layer-0 state and momentum overflow, and balanced/joint accuracy
+collapses from `.94425/.824` to `.009/0`. Wrong-key swaps appear to improve
+`151->131`, but 3,744 native-correct queries break and only three swaps repair.
+This is a useful negative boundary for the paper: the prediction/commit tie is
+part of the stable owner geometry. The remaining P059 tail cannot be solved by
+adding a free second key after initialization. Future claims should preserve
+the learned owner coordinate and test bounded state organization or genuinely
+new cross-layer second-order evidence.
+
 ## 2026-08-16 Local Reversibility Does Not Guarantee Trainable Long Memory
 
 P-GDN3-062 evaluates the Momentum residual at a velocity lookahead and uses a

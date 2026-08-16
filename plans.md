@@ -13,24 +13,26 @@ recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
 Current update (2026-08-16 CST): `P-GDN3-063` Momentum Prediction-Key
-Decoupling is preregistered. P059's remaining 151 wrong-key valid-value swaps
-are overwhelmingly adjacent writes, while replacing the learned query with an
-exact owner key and erasing key-local old velocity both fail. The next test
-therefore leaves the sole Momentum write/owner key `k` unchanged and adds one
-independently learned prediction key `p` per layer only for estimating
-`v-S@(alpha*p)` before the correction is committed along `k`. The prediction
-projection and ShortConv are initialized byte-identically from the parent K
-path, so the complete P059 function and `[S,M]` state are exact at launch.
-This adds exactly 33,792 parameters, no recurrent state, no scan and no custom
-kernel; the pinned external chunk backward already implements separate `p`
-and `k`. One fixed directional MQAR L1024 candidate uses the exact P059 data,
-initialization, 10ep/b32/seed123 and native `[S,M]` FutureSeed. It passes only
-with balanced accuracy `>=.955` and `>=+.01`, joint exact `>=.84` and `>=+.01`,
-errors/swaps/adjacent-tail each at least 20% lower, conditional swap share at
-least `.05` lower, stable active `p/k` divergence, and elapsed/post-warm/warmed
-ratios `<1.30x` with allocation `<1.10x`. Any contract, activation, quality or
-cost miss closes the family without projection/conv/tie/scale/rank/seed/LR/
-loss/batch/width/depth/duration rescue. Report:
+Decoupling is complete and discarded. R1 exact source `7e32793d` stopped before
+its first GPU forward because constructing an ordinary copied Linear consumed
+the global initializer RNG and changed later parent tensors; this is archived
+as a non-science harness failure. R2 source `50009bd2` replaces only that
+projection container with an equivalent `F.linear` module, preserves RNG, and
+passes the strict contract: exact parent logits and nonzero-state outputs/
+terminal `[S,M]`, exact +33,792 parameters, two native
+`Chunkmode_ruleFunctionBackward` paths, complete finite gradients, exact data
+hashes and head equivariance. Formal quality then collapses. Frozen P059 versus
+candidate balanced/future/past/joint is
+`.94425/.9515/.937/.824 -> .009/.011/.007/0`; errors rise `223->3964`.
+Wrong-key swaps fall `151->131` only because 3,744 formerly correct queries
+break and only three swaps repair. The two learned P/K relative RMS values are
+`1.69070/1.13315` and mean cosine is only `.15248/.14325`; layer-0 state and
+momentum overflow to `Inf`, so stable activation fails. Elapsed/post-warm/
+warmed ratios are `1.59575/1.59904/1.55312x` and allocation is `1.03407x`.
+Active GPU samples average `32.61%`, p95 `79%`, peak `92%`, with `3,970 MiB`
+observed memory. Close independent prediction-key projection/conv/tie/scale/
+rank/seed/LR/loss/batch/width/depth/duration rescue. A stable Momentum owner
+coordinate must not be split by an unconstrained second address. Report:
 `research/reports/experiments/gdn3-momentum-prediction-key-mqar-20260816.md`.
 
 Current update (2026-08-16 CST): `P-GDN3-062` Predictive-Residual Momentum
@@ -1821,7 +1823,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-063 | preregistered; implementation pending | P059 uses one address both to predict the current value and to own the committed correction. In the residual adjacent-write tail, prediction interference may require a distinct address while ownership must remain on the stable learned write key. | Keep the exact external Momentum recurrence, owner/write K and native `[S,M]` FutureSeed. Add one P projection plus depthwise ShortConv per layer, initialized exactly from K; pass it only as the recurrence's native `p` argument. +33,792 params, zero state/scan/kernel delta, fixed L1024 10ep/b32/seed123 from P059 data/init. | Sole A80080 CUDA index0; exact pushed clean detached source and strict contract required. | contract then one candidate, about 60-80 min | Balanced>=.955 and +.01; joint>=.84 and +.01; errors/swaps/adjacent tail -20%; conditional swap share -.05; directions <=.005 regression; cost <1.30x, alloc <1.10x. | pending; no control rerun or sweep |
+| P-GDN3-063 | complete; discarded; prediction-key family closed | P059 uses one address both to predict the current value and to own the committed correction. In the residual adjacent-write tail, prediction interference may require a distinct address while ownership must remain on the stable learned write key. | Keep the exact external Momentum recurrence, owner/write K and native `[S,M]` FutureSeed. Add one P projection plus depthwise ShortConv per layer, initialized exactly from K; pass it only as the recurrence's native `p` argument. +33,792 params, zero state/scan/kernel delta, fixed L1024 10ep/b32/seed123 from P059 data/init. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `50009bd2`; strict R2 contract passed. | one fixed candidate complete | Balanced>=.955 and +.01; joint>=.84 and +.01; errors/swaps/adjacent tail -20%; conditional swap share -.05; directions <=.005 regression; cost <1.30x, alloc <1.10x. | Candidate balanced/future/past/joint `.009/.011/.007/0`, errors3964. P/K cosine `.152/.143`; layer0 `[S,M]` overflows. Time ratios `1.596/1.599/1.553x`. Strictly closed; comparison SHA `30d76302...0018`. |
 | P-GDN3-062 | closed at strict CUDA contract; no formal quality run | P059 computes its residual before applying old Momentum even though that velocity is about `12.5x` the new write. Evaluating at the impending state should preserve useful velocity while correcting its displacement. | One clean-room fused one-scan recurrence: `L=A*S-beta*U*M`, `r=v-p^T*L`, then unchanged `M=U*M-eta*k*r^T`, `S=A*S-beta*M`. Zero parameters/state, exact P059 projections/gates/native `[S,M]` FutureSeed, fixed from-scratch L1024 10ep/b32/seed123. | A80080 CUDA index0, clean detached pushed source `04ca4afc`; contract run `p-gdn3-062-predictive-momentum-20260816T024047Z-04ca4af`. | contract only; formal did not start | Short FP32 parity and finite forward pass, but L1024 reverse-reconstruction backward produces NaN in nearly every recurrent projection/gate gradient. Close this implementation with no kernel/epsilon/precision/checkpoint/block/coefficient or training rescue. | failed production-stability contract; no candidate score |
 | P-DIAG-MOMVEL-001 | complete; key-local erase closed | P059's adjacent same-direction owner tail may be stale decayed Momentum that survives specifically along the key of a later committed write. | Frozen no-logit replay of all 135 swap-bearing cases plus 135 all-correct controls. Use the external fused recurrent op to expose exact `[S,M]` token trajectories and measure a diagnostic-only removal of old `M` along the current key. No training, parameters, state or returned outputs change. | Sole A80080 CUDA index0; exact pushed clean detached source `4e855671`. | one bounded diagnostic complete | Open one clean-room key-local erase transition only if causal swaps have old-velocity/update median `>=.25` and `>=1.25x` correct, erase residual `<=.85x`, correct `<=1.05x`, selectivity `>=.10`; otherwise close without rescue. | Integrity passed. Old-velocity/update is huge but non-selective: swap/correct `12.53231/12.38849 = 1.01161x`. Erase/native residual is `.131297/.115448`, yielding `-.015849` selectivity. Gates 2 and 5 fail; close erase/decay/strength rescues. JSON SHA `f2367fcd...d2c0`; GPU active mean/peak `17.625/86%`, peak `3,688 MiB`. |
 | P-DIAG-MOMFS-001 | registered; implementation pending push/readback | The P059 residual tail may come from transporting `S` and `M` through one shared FutureSeed gate, or from the intra-layer second-order recurrence itself. | Same trained P059 checkpoint and fixed L1024 test bank; evaluate native `[S,M]`, `S` only, `M` only and no seed. Mask only the single inter-layer seed after native normalization. Zero training and zero parameter changes. | Sole open A80080 CUDA index0; exact pushed clean detached source required. | four deterministic evals | Open FS only if one mask gains >=.005 balanced, removes >=20 swaps, adds no errors and stays within directional/joint regressions. Otherwise open one distinct live recurrence. | pending |

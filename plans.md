@@ -12,17 +12,17 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-DIAG-MOMREAD-001` is approved as a frozen
-same-weight decision, not a training arm. P059 leaves 151 wrong-key swaps, all
-adjacent in write rank. The diagnostic evaluates the exact P059 checkpoint on
-the exact L1024 test set with native output correction and with only
-`q <- q - exp(D)k` disabled in both layers. It changes no parameter, state,
-scan, data or FutureSeed edge. A no-output-correction from-scratch successor
-opens only if balanced accuracy gains at least `.005`, wrong-key swaps fall by
-at least 20, each direction regresses at most `.005`, joint exact regresses at
-most `.01`, and total errors do not increase. Any miss closes correction
-scale/sign/gate/head/token/key-neighbor and all training rescues, and selects a
-distinct live Momentum state organization. Report:
+Completed update (2026-08-16 CST): `P-DIAG-MOMREAD-001` rejects output-read
+removal. Exact same-weight P059 replay with only `q <- q - exp(D)k` disabled
+changes balanced/future/past/joint `.94425/.95150/.93700/.82400` to
+`.56050/.28350/.83750/.05700`; errors and wrong-key swaps rise
+`223/151 -> 1758/180`. Only 23 old swaps repair, while 1,565 formerly correct
+queries break. All selection gates fail. Active A800 samples average `56.50%`,
+peak at `79%`, with `3,016 MiB` observed memory. Close correction scale, sign,
+gate, head, token and key-neighbor rescue. The read correction is necessary
+co-adapted geometry; the residual owner error is in the live `[S,M]` state, so
+the next test must change scalable Momentum state organization. Diagnostic/log
+SHA256 are `880fa365...40f0b` and `3ea52222...81d`. Report:
 `research/reports/experiments/momentum-output-read-diagnostic-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-FS2-015` Receiver-Native Momentum Conv

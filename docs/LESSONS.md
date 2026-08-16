@@ -3689,3 +3689,17 @@
 - Close tail length, stream, gate, projection and scale rescue. FutureSeed
   should transport a genuinely missing future summary in receiver-readable
   state coordinates, not create circular local geometry.
+
+## 2026-08-16: Momentum output correction is necessary read geometry
+
+- P-DIAG-MOMREAD-001 toggles only the trained `q <- q - exp(D)k` correction on
+  the frozen P059 checkpoint; parameters, Q/K/V convolution, `[S,M]`
+  recurrence, native FutureSeed, data and weights are unchanged.
+- Balanced/joint accuracy falls `.94425/.824 -> .56050/.057`, errors rise
+  `223->1758`, and wrong-key swaps rise `151->180`. Only 23 old swaps repair
+  while 1,565 formerly correct queries break.
+- The correction is not causing the adjacent-owner tail. It is part of the
+  co-adapted read geometry needed to decode the successful live state.
+- Close scale, sign, token/head gate and replacement rescue. Preserve Q/K/V
+  convolution and `q-Dk`; attack owner interference inside the live Momentum
+  transition or state organization.

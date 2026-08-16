@@ -2721,3 +2721,16 @@ state, which is genuinely absent from the receiver's causal scan, from local
 hidden context already present in the aligned residual stream. Future FS2
 should change the transported state's receiver-readable semantics rather than
 duplicate the residual path.
+
+### Output-Read Removal Does Not Explain Momentum Owner Errors
+
+P-DIAG-MOMREAD-001 is a same-weight intervention on the exact P059 endpoint.
+It disables only Momentum DeltaNet's final `q <- q - exp(D)k` read correction,
+leaving the complete `[S,M]` recurrence, Q/K/V convolution and native
+FutureSeed untouched. Balanced accuracy falls `.94425->.56050`, joint exact
+falls `.824->.057`, and wrong-key swaps rise `151->180`. Only 23 old swaps are
+repaired while 1,565 parent-correct queries break. The paper should therefore
+treat the correction as necessary co-adapted decoding geometry, not as the
+cause of residual adjacent-owner interference. The remaining architecture
+question is how to preserve short-lived owner identity inside a scalable live
+Momentum state without replacing its successful global integration.

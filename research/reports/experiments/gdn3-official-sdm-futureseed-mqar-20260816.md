@@ -42,6 +42,12 @@ scratch.
 - Native FutureSeed transports `[B,1,1024,128]` terminal memory from layer 0
   to layer 1 through one scalar gate. State size is exactly 131,072 values per
   layer, 32x the dense GDN2 state and 16x the P059 `[S,M]` state.
+- The CUDA contract reports whether the official training operator exposes the
+  committed layer-0 bank as an autograd-connected terminal output. Forward-only
+  bank transport is allowed to answer the sparse-state quality question, but a
+  pass without producer-side terminal credit is not evidence of a better FS2
+  learning rule and will be labeled accordingly; the external operator is not
+  patched to manufacture that credit.
 - Directional MQAR L1024/K4, 10 epochs, batch32, seed123, identical data and
   post-warm determinism reset to P059. Shared embedding, MLP, norm and readout
   tensors are loaded exactly from the frozen matched initialization; the new

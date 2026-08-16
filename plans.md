@@ -21,6 +21,9 @@ read-only external
 product-key delta state with one head, 1,024 slots, eight reads, eight writes,
 and a 64-token block. Layer 0's complete terminal slot bank is RMS-normalized
 per board and passed to layer 1 through one learned FutureSeed gate. This is
+instrumented to distinguish forward-only state transport from genuine
+producer-side terminal-state gradient credit; only the latter may count as an
+FS2 learning-rule improvement. This is
 not P050's failed 16-slot committed-edit sidecar: there is no dense GDN2 main
 state, auxiliary scan, selector, replay, or Sudoku logic. The fixed run is
 D128/L2, 10 epochs, batch32, seed123 on the established mixed-direction data.

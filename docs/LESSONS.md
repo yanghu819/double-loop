@@ -1,5 +1,21 @@
 # Lessons
 
+## 2026-08-16: Owner selectivity is not useful if it removes global integration
+
+- P-GDN3-068 is mathematically exact and fully active: its clean-room fused
+  Triton scan matches explicit Torch, preserves limiting identities and
+  projects Momentum onto the current normalized owner key.
+- Balanced accuracy still collapses `.94425->.01250`; errors rise `223->3950`.
+  Adjacent swaps fall only because almost all correct retrieval disappears.
+- P059 Momentum cannot be interpreted as independent owner rows that may be
+  withheld until their key reappears. Dense velocity integration is causal to
+  learning the task.
+- Preserve the successful global second-order path. Any new owner mechanism
+  must be an additional scalable organization with an identity parent path,
+  not a projection, deletion or alternate key that replaces the commit.
+- Close projector softness, carry gate, rank, normalization and training
+  rescues for this family.
+
 ## 2026-08-16: An extra erase address can destroy a correct write path
 
 - P-GDN3-067 prepends an independent zero-payload erase to a complete standard

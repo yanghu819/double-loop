@@ -12,25 +12,20 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-GDN3-068` Owner-Local Momentum Commit is
-registered for one fixed directional MQAR L1024/K4 decision against frozen
-P059. P059's remaining 151 wrong-key valid-value swaps are all adjacent write
-ranks and 150 share one direction: values and traversal are learned, but the
-global `S <- alpha*S - beta*M` commit leaks a superposition of owner edits.
-P068 keeps the complete P059 projections, gates, residual, `[S,M]` state,
-native FutureSeed, parameter count and training protocol, but commits only the
-current normalized key's exact Momentum component
-`P_k(M)=k(k^T M)/(k^T k)` to `S`; orthogonal components remain in `M` for
-their own owners. It adds zero parameters/state/passes and is distinct from
-the closed direct-Momentum erase, independent erase-key, second-address and
-global phase families. The exact pushed clean worktree must first pass fused
-Triton/Torch output/state/all-gradient parity, parent limiting identities,
-owner selectivity, causality/equivariance, full L1024 backward and fixed
-activation/stability gates. Formal admission requires balanced/joint gains of
-at least `.01`, no direction regression beyond `.005`, errors <=180, swaps
-<=105/share<=`.60713`, adjacent swaps down at least 20%, time `<2.5x` and
-allocation `<1.25x`. Any miss closes the exact mechanism without rescue.
-Report:
+Completed update (2026-08-16 CST): `P-GDN3-068` Owner-Local Momentum Commit is
+discarded. Exact pushed/read-back source `911ffaad` passes fused Triton/Torch
+output, state and all-gradient parity, parent limiting identities, owner
+selectivity, causality/equivariance, full L1024 backward and all activation and
+cost gates. The endpoint nevertheless collapses P059
+balanced/future/past/joint `.94425/.95150/.93700/.82400` to
+`.01250/.01050/.01450/0`; errors rise `223->3950`. Adjacent swaps fall
+`151->77`, but only because `3,591` parent-correct queries become unrelated
+wrong values. Layer-0 local-commit relative RMS reaches `129,049`: exact
+current-key projection removes the dense global Momentum integration needed
+to learn retrieval. Cost ratios elapsed/post-warm/warmed/allocation are
+`1.740/1.738/1.224/1.232x`. Close projector/carry/rank/gate and all training
+rescues. A successor must preserve the full P059 commit and add scalable owner
+organization rather than replace it with a rank-one slice. Report:
 `research/reports/experiments/gdn3-owner-local-momentum-mqar-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-GDN3-066` Official Mesa
@@ -1956,7 +1951,7 @@ wall-time comparison, rescue, or second seed.
 
 | ID | 状态 | 假设 | 方法 | 机器/资源 | 预估时长 | 期望 Δ | 实际结果 |
 |---|---|---|---|---|---:|---|---|
-| P-GDN3-068 | registered; implementation pending strict CUDA contract | P059 solves values/direction but all 151 wrong-key swaps are adjacent owners; global Momentum commit applies every owner's velocity at every token. | Exact current-key projector `P_k(M)` replaces only P059's `M` commit to `S`; same D128/L2/H4/K32/V32, 599672 parameters, `[S,M]` state, native FutureSeed, matched initialization and L1024 10ep/b32/seed123. | Sole A80080 CUDA index0 target; exact pushed clean worktree required before launch. | one fixed candidate only; no sweep | Balanced/joint gain>=.01, directions regress<=.005, errors<=180, swaps<=105/share<=.60713, adjacent swaps -20%; time<2.5x, allocation<1.25x. | Pending strict mathematical/production contract and endpoint; any miss closes without rescue. |
+| P-GDN3-068 | complete; discarded; owner-local commit family closed | P059 solves values/direction but all 151 wrong-key swaps are adjacent owners; global Momentum commit applies every owner's velocity at every token. | Exact current-key projector `P_k(M)` replaces only P059's `M` commit to `S`; same D128/L2/H4/K32/V32, 599672 parameters, `[S,M]` state, native FutureSeed, matched initialization and L1024 10ep/b32/seed123. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back SHA `911ffaad`; strict contract passed. | strict contract plus one candidate-only endpoint complete | Balanced/joint gain>=.01, directions regress<=.005, errors<=180, swaps<=105/share<=.60713, adjacent swaps -20%; time<2.5x, allocation<1.25x. | Balanced/future/past/joint `.0125/.0105/.0145/0`; errors3950. Adjacent swaps fall151->77 only through broad collapse; 3591 parent-correct queries become unrelated wrong. Cost passes. Close projector/carry/rank/gate and training rescue; score SHA `efc8ce5c...e9528967`. |
 | P-GDN3-067 | complete; discarded; independent pure-erase family closed | P059's adjacent-owner tail needs targeted stale-memory deletion, but direct key decoupling failed because it replaced the working same-key correction. A pure independent erase followed by the complete standard delta edit should preserve ownership while removing interference. | Pinned official two-microstep GatedDeltaProduct: `(e,0,gamma)` then `(k,v,beta)`, D128/L2/H4/K32/V32, one KxV state and native full-state FutureSeed; fixed directional MQAR L1024 10ep/b32/seed123 from scratch; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `52f0d325`; clean detached worktree; strict contract passed. | one fixed candidate complete | Balanced/joint >=P059+.005; direction regress<=.003; errors<=200; swaps<=120/share<=.60; time<=2.25x, allocation<=1.50x. | Mechanism and cost gates pass, but balanced/future/past/joint collapses `.94425/.95150/.93700/.82400 -> .16850/.17600/.16100/.00100`; errors/swaps `223/151 -> 3326/657`. Close without rescue; score SHA `46e7b22c...bfea2f8fe`. |
 | P-GDN3-066 | complete; discarded | P059's adjacent direction-preserving swaps may be address interference; exact Mesa normal-equation reads could decorrelate keys while native FutureSeed transports complete sufficient statistics. | Pinned official Mesa D128/L2/H4/K32/V32, CG30, lambda floor.25, joint `[Hkk,Hkv]` FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from matched shell tensors; no sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `d1cf70bd`; clean detached worktree; strict R3 contract passed. | one fixed from-scratch candidate complete | Balanced>=.95425, future/past regression<=.005, joint>=.834, errors<=180, swaps<=105/share<=.60713; time<=3x, allocation<=2x. | Balanced/future/past/joint `.00975/.00650/.01300/0`, errors3961. Hkk is stable PSD and CG error<.0022, but effective rank collapses to `1.079/1.169`; global least squares destroys directional ownership. Cost `.824/.834/.883/.796x` passes. Close Mesa/CG/lambda/gate rescues; no GDN3/FS2 claim. |
 | P-GDN3-065 | complete; discarded at strict CUDA semantic contract | P059's remaining valid-value/wrong-key swaps come from an incoherent live edit, not insufficient state capacity. A closed-loop residual update with prediction and write keys in the same owner direction should reduce binding errors. | Pinned external Comba chunk recurrence, D128/L2/H4/K32/V32, native terminal FutureSeed, fixed directional MQAR L1024 10ep/b32/seed123 from shared parent tensors; no side state, cache, router or sweep. | Sole A80080 CUDA index0 UUID `GPU-c1d7...`; exact pushed/read-back source `753735b6`; clean detached worktree; R5 contract completed CUDA forward/backward. | Contract only; formal endpoint killed | Same quality gate, contingent on output/state parity <=.05. | Chunk/fused-recurrent output/state relative RMS `.239417/.258119` fails the `.05` integrity gate despite nonzero initial-state dependency `.0415303`. Status1 non-science abort; no formal quality run and no GDN3/FS2 claim. Close exact Comba transfer without rescue. |

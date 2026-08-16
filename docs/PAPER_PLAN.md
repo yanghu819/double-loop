@@ -1,5 +1,19 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Owner-Local Projection Removes The Useful Global Integrator
+
+P-GDN3-068 keeps P059's second-order Momentum, residual, owner key, state and
+native `[S,M]` FutureSeed, but commits only the exact current-key projection of
+Momentum. Its strict fused-kernel contract and all cost gates pass. Quality
+collapses from `.94425` to `.01250` balanced accuracy and total errors rise
+`223->3950`. The apparent adjacent-swap reduction `151->77` is caused by
+`3,591` previously correct queries becoming unrelated wrong values.
+
+This falsifies the idea that Momentum is merely a bag of separable owner edits.
+Its dense global commit is the useful integrator. The remaining ownership tail
+must be handled by an additive, scalable state organization that preserves the
+parent path, not by projecting or erasing most of the velocity at every token.
+
 ## 2026-08-16 Independent Erase Destroys Learned Ownership
 
 P-GDN3-067 tests a structured erase-then-delta transition using two ordered

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import inspect
 import os
 from functools import lru_cache
@@ -68,10 +69,11 @@ def official_mesa_provenance() -> dict[str, Any]:
     if resolved != EXPECTED_MESA_SOURCE_SHA256:
         raise RuntimeError(f"Pinned official Mesa source drifted: {resolved}")
 
+    operator_module = importlib.import_module("fla.ops.mesa_net.chunk")
     expected_paths = {
         Path(inspect.getfile(MesaNet)).resolve(): EXPECTED_FLA_ROOT
         / "fla/layers/mesa_net.py",
-        Path(inspect.getfile(chunk_mesa_net)).resolve(): EXPECTED_FLA_ROOT
+        Path(operator_module.__file__).resolve(): EXPECTED_FLA_ROOT
         / "fla/ops/mesa_net/chunk.py",
         Path(inspect.getfile(ChunkMesaNetFunction)).resolve(): EXPECTED_FLA_ROOT
         / "fla/ops/mesa_net/chunk.py",
@@ -83,7 +85,7 @@ def official_mesa_provenance() -> dict[str, Any]:
         "source_sha": PINNED_FLA_SHA,
         "source_sha256": resolved,
         "layer_source": str(Path(inspect.getfile(MesaNet)).resolve()),
-        "operator_source": str(Path(inspect.getfile(chunk_mesa_net)).resolve()),
+        "operator_source": str(Path(operator_module.__file__).resolve()),
         "license": "MIT",
         "redistributed_source": False,
     }

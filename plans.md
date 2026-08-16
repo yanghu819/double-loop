@@ -36,6 +36,12 @@ Any miss closes the exact configuration without CG/lambda/gate/seed/LR/loss/
 batch/width/depth/duration rescue. Report:
 `research/reports/experiments/gdn3-mesa-futureseed-mqar-20260816.md`.
 
+P-GDN3-066 infrastructure update: R1 source `3bc35d08` stopped before model or
+CUDA because `inspect.getfile` on the TorchDynamo-decorated public function
+reported its wrapper file. R2 verifies the exact operator module `__file__`,
+`ChunkMesaNetFunction` path, and pinned file hashes. No mechanism, gate, data,
+budget, or initialization changed; R1 has no science result.
+
 Completed update (2026-08-16 CST): `P-GDN3-065` Closed-Loop Comba with
 native FutureSeed is discarded at its strict R5 CUDA semantic contract. Exact
 pushed/read-back source `753735b6` and its clean detached worktree resolve the

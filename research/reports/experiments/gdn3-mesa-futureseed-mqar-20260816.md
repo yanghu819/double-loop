@@ -72,7 +72,16 @@ setsid env EXPECTED_SOURCE_SHA=<pushed-sha> \
 
 ## 6. Artifacts
 
-Pending contract and formal run.
+R1 source `3bc35d08` stopped before any model/CUDA execution. The provenance
+checker called `inspect.getfile` on the `@torch.compiler.disable`-decorated
+`chunk_mesa_net` function and therefore saw TorchDynamo's wrapper file instead
+of the operator module. The actual `ChunkMesaNetFunction`, layer path, module
+path, and all pinned file hashes were unchanged. R2 validates the module
+`__file__` plus operator class path and exact hashes. This is a non-science
+checker correction; mechanism, data, initialization, budget, and gates are
+unchanged.
+
+Formal artifacts pending.
 
 ## 7. Registered Decision Gates
 

@@ -129,26 +129,67 @@ kernel rejects FP32 `q` against BF16 state. The external layer's FP32 output
 correction parameter promoted the projected BF16 query. R4 therefore also has
 no logits or quality result.
 
-R5 is the final production-compatibility attempt. The same private overlay now
-stages the exact layer source and explicitly casts inner-decay `p` to key dtype
-and output-corrected `q` to query dtype. Together with R4's two WY casts, the
-contract pins exactly four compatibility edits and both patched hashes. Any
-new dtype, graph or kernel failure closes Comba on this stack; no further
-compatibility patch is authorized.
+R5 exact pushed/read-back source
+`753735b6a18afbc108ee3b837064e7853722ad40` is the final
+production-compatibility attempt. Its clean detached worktree stages the exact
+external layer and ops sources in a run-private overlay and applies exactly
+four asserted dtype-boundary edits: the two R4 WY dot casts, inner-decay `p`
+back to key dtype, and corrected `q` back to query dtype. It resolves every
+previous import and compile failure and completes both CUDA forward and
+backward on the sole registered A800.
 
-Pending the R5 exact pushed-SHA CUDA contract and single formal endpoint.
+The strict semantic gate nevertheless fails. Against the external fused
+recurrent reference, the production chunk path has output relative RMS
+`.239417` and terminal-state relative RMS `.258119`, both above the registered
+`.05` maximum. Initial-state dependency is healthy at `.0415303`, so this is
+not a dead state or zero-input artifact. It is a material disagreement between
+the chunk training operator and the claimed closed-loop recurrence.
+
+The contract exits status 1 and writes a non-science integrity `abort.json`.
+The 10-epoch endpoint is not launched, so P065 has no quality score and cannot
+support a better GDN3 or FS2 claim. During contract compile/autotune, 62 GPU
+samples show overall mean/peak utilization `8.97%/73%`, active-sample mean
+utilization `13.90%`, peak observed memory `1,112 MiB`, and mean/peak power
+`82.37/200.29 W`. These are contract telemetry, not training occupancy.
 
 ## 7. Decision
 
-Pending. A pass supports a better GDN3 live recurrence. Native FutureSeed is
-retained, but this run alone cannot claim a better FS2 intervention.
+Discarded at the strict CUDA semantic contract. Close this exact Comba
+transfer, its compatibility overlay, correction factor, and all nearby
+decay/gate/key/seed/LR/loss/batch/width/depth/duration rescues. The mechanism
+may still be a useful clean-room architecture hypothesis, but this external
+chunk implementation is not a valid production realization of the registered
+recurrence. P059 Momentum DeltaNet plus native `[S,M]` FutureSeed remains the
+strongest working result.
 
 ## 8. Artifacts
 
-Pending.
+- Exact source: `753735b6a18afbc108ee3b837064e7853722ad40`.
+- Clean detached worktree:
+  `/huyang2/double-loop/worktrees/p-gdn3-065-r5-753735b`.
+- Contract run:
+  `/huyang2/double-loop/runs/p-gdn3-065-comba-futureseed-r5-20260816T082800Z-753735b`.
+- External read-only source:
+  `HuuYuLong/MomentumDeltaNet@c6e77fa261fb0c002fae1a14b6209a5b28d2edc9`;
+  no declared license and no copied implementation in this repository.
+- `contract.log` SHA256:
+  `00db633728399ffc4961641e82c3b6b36aadb521ef368ab80076b164229b0380`.
+- `abort.json` SHA256:
+  `873c0453e1c78115014b1f82b04f3f0abe7191d0b91f2bd7dfdad28bb794a6a3`.
+- `gpu_samples.csv` SHA256:
+  `8b8cae1bf2ecbd3a8ebb1b800bc19a350e7df2a05864a79335eab9dc0d581f56`.
+- Source snapshot SHA256:
+  `0cf329739f0ee03febdfeb72d8f7f82fbe4029d74ef2c514789869b4f16842fd`.
+- Compact evidence archive SHA256:
+  `5379c0fd5113f7f06d1085f2a828a290111d7813944745391b4971dbb9394b39`.
 
 ## 9. Lessons
 
 The experiment is deliberately about transition coherence rather than memory
-size. A compact state with a correct closed-loop edit is more plausible than a
-large state whose future evidence cannot be addressed by the receiver.
+size. A compact state with a correct closed-loop edit remains more plausible
+than a large state whose future evidence cannot be addressed by the receiver,
+but operator parity is part of that claim. A recurrence is not validated when
+its training chunk and recurrent reference disagree by roughly 24-26% RMS.
+The next foundational transition must establish exact chunk/recurrent semantics
+from the start rather than accumulate compatibility patches around an external
+operator.

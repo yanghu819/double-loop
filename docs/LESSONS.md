@@ -1,5 +1,24 @@
 # Lessons
 
+## 2026-08-16: A plausible recurrence is not evidence without chunk parity
+
+- P-GDN3-065 targets the right remaining problem: a closed-loop residual edit
+  whose prediction and commit share an owner direction, instead of adding
+  slots, a router, a cache or another side state.
+- Its final exact source completes CUDA forward/backward after four narrowly
+  asserted run-private dtype-boundary casts. The implementation is active and
+  the initial state affects outputs.
+- Production chunk versus fused-recurrent output/state relative RMS is still
+  `.239417/.258119`, far above the registered `.05` semantic limits.
+- Formal quality training is correctly skipped. Training a mismatched operator
+  could produce a score, but that score would not test the claimed recurrence.
+- Close this external Comba transfer and compatibility rescue. A future live
+  ownership transition must be implemented with chunk/recurrent parity and
+  production-length gradients as first-class architecture contracts.
+- The strongest working evidence remains P059: second-order Momentum state and
+  native `[S,M]` FutureSeed repair most long-context binding errors, while the
+  residual tail is still primarily correct-value/wrong-owner confusion.
+
 ## 2026-08-16: Sparse slots add capacity but not receiver-readable ownership
 
 - P-GDN3-064 uses the official Sparse Delta Memory as the primary recurrence

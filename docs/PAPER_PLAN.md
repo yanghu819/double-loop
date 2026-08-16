@@ -1,5 +1,22 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-16 Closed-Loop Ownership Requires Operator-Level Semantic Parity
+
+P-GDN3-065 tests a complete Comba residual recurrence rather than another
+wrapper: predict from the current state with an owner-collinear key, then write
+only the unresolved value. This is the right mechanistic target after P064
+showed that 16x sparse capacity cannot replace coherent future ownership.
+
+The exact R5 source resolves all import and mixed-precision compile boundaries
+and executes CUDA forward/backward, but the production chunk differs from its
+fused-recurrent reference by `.239417` output RMS and `.258119` terminal-state
+RMS. Both exceed the registered `.05` contract limit. Therefore no L1024
+quality training is launched and no Comba, GDN3, or FS2 improvement is
+claimed. The paper should treat chunk/recurrent agreement as architectural
+evidence, not merely a systems detail. P059 Momentum DeltaNet with native
+`[S,M]` FutureSeed remains the strongest positive result; a future ownership
+transition needs clean-room semantics and parity from the beginning.
+
 ## 2026-08-16 Sparse Capacity Does Not Replace Coherent Future Ownership
 
 P-GDN3-064 replaces the primary recurrence with the pinned official Sparse

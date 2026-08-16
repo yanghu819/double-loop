@@ -3671,3 +3671,21 @@
 - Do not reopen pointwise/partial Q/K bypass, residual taps, convolution width
   or learned mixing. Preserve the co-adapted front end and attach any owner
   correction through a distinct, bounded path.
+
+## 2026-08-16: Future state and a local convolution boundary are not interchangeable
+
+- P-FS2-015 keeps exact P059 Momentum and native `[S,M]` FutureSeed, then lets
+  layer 1 reproject layer 0's final four hidden tokens through layer 1's own
+  Q/K/V width-four Triton convolutions.
+- The strict contract is exact and the 12 gates activate materially. The mixed
+  cache has finite board variation, while recurrent state and Momentum remain
+  bounded.
+- Balanced accuracy still collapses `.94425->.356`; errors and adjacent-owner
+  swaps rise `223/151 -> 2576/1424`.
+- A receiver already sees the complete producer hidden sequence at aligned
+  positions through the ordinary residual stack. Terminal conv prefill is not
+  missing future information: it duplicates that path while making producer
+  tail tokens immediate local predecessors of receiver token zero.
+- Close tail length, stream, gate, projection and scale rescue. FutureSeed
+  should transport a genuinely missing future summary in receiver-readable
+  state coordinates, not create circular local geometry.

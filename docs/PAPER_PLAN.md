@@ -2701,3 +2701,23 @@ of the representation that makes the sharp P059 learning transition possible.
 Future work must preserve that co-adapted address front end. Ownership should
 enter as additive receiver-native evidence or a scalable state organization,
 not by deleting, splitting or post-hoc orthogonalizing the learned key.
+
+### Terminal Conv Prefill Is Redundant And Geometrically Misaligned
+
+P-FS2-015 tests whether native `[S,M]` FutureSeed is missing the Q/K/V
+short-convolution boundary. It preserves exact P059 and gives layer 1 a
+receiver-native conv cache built from layer 0's final four hidden tokens. The
+strict contract proves identity at zero gate, complete gradients, ordered
+evidence dependence and exact external Momentum provenance. The route then
+activates to mean gate `.051609` with nonzero board-varying cache.
+
+The result rejects the hypothesis: balanced accuracy falls
+`.94425->.35600`, joint exact `.824->.001`, and adjacent-owner swaps rise
+`151->1424`. The ordinary stack already supplies layer 1 with the full aligned
+layer-0 hidden sequence, which layer 1 projects and convolves itself. Seeding
+its token-zero convolution with producer terminal tokens instead creates a
+tail-to-head local adjacency. The paper should distinguish recurrent future
+state, which is genuinely absent from the receiver's causal scan, from local
+hidden context already present in the aligned residual stream. Future FS2
+should change the transported state's receiver-readable semantics rather than
+duplicate the residual path.

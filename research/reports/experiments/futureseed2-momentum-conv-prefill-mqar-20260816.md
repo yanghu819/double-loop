@@ -73,8 +73,52 @@ authorizes transfer to hard Sudoku.
 
 ## 6. Result
 
-Pending.
+The exact pushed/read-back source
+`8705a098a709fcca6a62b8856a6e95a12a17db6a` ran from clean detached
+worktree `/huyang2/double-loop/worktrees/p-fs2-015-8705a09` on A800
+`GPU-c1d7c624-a393-befa-3807-7e00602d65ca`. The strict CUDA contract passed.
+It proves exact +12 parameters, unchanged `[S,M]` state and scan count, two
+native Momentum backwards, bit-exact zero-gate parent logits and arbitrary
+nonzero-state output/state, finite gate/evidence gradients and ordered evidence
+dependence `.074004/.039228` in output/state. Contract JSON SHA256 is
+`be8ffe87f18c78ba711318056a301b65c62eadf86c7649ed8b37148daddd0ddf`.
+
+The formal mechanism is fully active. The sole receiving gate reaches mean
+absolute value `.051609`; evidence RMS/board std are `.345615/.006692`, raw
+cache RMS is `.181327`, and mixed-cache RMS/board std are
+`.015161/.000366`. Both layers keep bounded state and Momentum. Quality still
+collapses:
+
+| Metric | P059 control | P-FS2-015 | Delta |
+|---|---:|---:|---:|
+| balanced accuracy | .94425 | .35600 | -.58825 |
+| future accuracy | .95150 | .36450 | -.58700 |
+| past accuracy | .93700 | .34750 | -.58950 |
+| joint exact | .82400 | .00100 | -.82300 |
+| total errors | 223 | 2,576 | +2,353 |
+| wrong-key valid-value swaps | 151 | 1,446 | +1,295 |
+| adjacent-owner swaps | 151 | 1,424 | +1,273 |
+
+Only 47 old swaps are repaired; 1,359 parent-correct queries become wrong-key
+errors and 1,061 become other errors. Elapsed/post-warm/warmed/allocation ratios
+are `1.76644/1.75676/.94571/1.00050x`. The formal process, including compile
+and validation gaps, has active-sample mean/peak utilization `48.58%/75%` and
+observed memory peak `2,284 MiB`.
+
+Comparison, cases and checkpoint SHA256 are respectively
+`613b7bfe59d0701e6ec9f8dedaa4858dfeee0ba4c058244ab23293422bb0c418`,
+`10f102d5f1e730ea8f7e79de3ff5f664e14b96bd425c617a46052d12358d86d5`
+and `89aecb98c23c76b8c66e54ad6d11dc4b032df4514e907973ec7d6a289d159713`.
 
 ## 7. Decision
 
-Pending the sole registered endpoint.
+Discard P-FS2-015. This is neither dead activation nor unstable recurrent
+state. Receiver layer 1 already applies its Q/K/V projections and causal short
+convolutions to the complete layer-0 hidden sequence at aligned positions.
+Injecting layer 0's terminal hidden tail as layer 1's initial convolution cache
+duplicates evidence and treats end-of-sequence representations as immediate
+predecessors of token zero. That circular tail-to-head local geometry causes
+broad ownership corruption. Close prefill token count, stream selection, gate,
+projection, scale and every training rescue. Future FS2 work must improve the
+semantics of the transported future state itself, not duplicate an aligned
+feed-forward path through a misaligned convolution boundary.

@@ -12,23 +12,23 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Current update (2026-08-16 CST): `P-FS2-015` Receiver-Native Momentum Conv
-Prefill is preregistered for one candidate-only directional MQAR L1024 endpoint.
-P059 transports terminal `[S,M]`, while P069 proves that the Q/K width-four
-short-convolution front end is indispensable local address formation. The new
-FS2 edge therefore retains all P059 recurrence and Q/K/V convolutions, carries
-only the final four causal producer hidden tokens, and lets the receiver use
-its own Q/K/V projections and exact Triton convolutions to form its initial
-conv cache. Three per-head zero-init gates add exactly 12 parameters, with no
-persistent state or scan delta. The strict A800 contract requires bit-exact
-zero-gate parent logits and arbitrary-state parity, exact sources and parent
-mapping, native Momentum backwards, ordered evidence dependence and complete
-gradients. The fixed quality gate requires `+.005` balanced/future/joint,
-past regression at most `.003`, errors/swaps at most `200/120`, at least 20%
-fewer adjacent-owner swaps and conditional wrong-key share at most `.60`;
-elapsed/post-warm/warmed/allocation must remain below
-`1.15/1.15/1.15/1.05x`. Any miss closes token count, stream, gate, projection
-and all training rescues. Report:
+Completed update (2026-08-16 CST): `P-FS2-015` Receiver-Native Momentum Conv
+Prefill is discarded. Exact pushed/read-back source `8705a098` passes the
+strict A800 contract: +12 parameters, unchanged `[S,M]` state/scans, two native
+Momentum backwards, bit-exact zero-gate parent logits and arbitrary-state
+parity, complete gradients and ordered-evidence dependence all pass. The sole
+route activates strongly (`mix=.051609`, mixed-cache RMS `.015161`) with finite
+board variation and bounded state. Quality nevertheless collapses P059
+balanced/future/past/joint `.94425/.95150/.93700/.82400` to
+`.35600/.36450/.34750/.00100`; errors/swaps/adjacent swaps rise
+`223/151/151 -> 2576/1446/1424`. Elapsed/post-warm/warmed/allocation ratios are
+`1.766/1.757/.946/1.0005x`; formal active GPU samples average `48.58%`, peak
+`75%`, with `2,284 MiB` observed memory. Layer 1 already convolves the full
+aligned layer-0 sequence; terminal-tail prefill redundantly makes producer end
+tokens local predecessors of receiver token zero, creating destructive
+tail-to-head geometry. Close token/stream/gate/projection/scale/training rescue.
+FS2 must improve transported future-state semantics, not duplicate the aligned
+feed-forward path through a misaligned conv boundary. Report:
 `research/reports/experiments/futureseed2-momentum-conv-prefill-mqar-20260816.md`.
 
 Completed update (2026-08-16 CST): `P-GDN3-069` Address-Deblurred Momentum is

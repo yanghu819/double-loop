@@ -94,28 +94,83 @@ depth, duration, transport or nearby recurrence rescue.
 
 ## 5. Result
 
-Pending strict CUDA contract, production probe and formal training.
+Closed at the formal stability gate.
+
+The strict CUDA contract passed on the requested single A100. It verified ten
+exact external Momentum layers, ten native Momentum backward paths, complete
+Q/K/V/alpha/beta/Momentum/eta and FutureSeed-gate gradients, finite nonzero
+`S`/`M` geometry, and the exact `1.0 -> .5` logical transport change between
+full and M-only FutureSeed. The contract JSON SHA256 is
+`5f729d879dd13286a9e20734fa778bdbbdc1a0679c3567f6246df20daae03150`.
+
+The two-step production probe also passed and produced both a complete metrics
+JSON and checkpoint. Its metrics/checkpoint SHA256 values are
+`64e137750b305ecc27256b1a39f6b8fb9834e72b5b724c943e5fd42d4601f2c0` and
+`e9cb6993bc359e29e062fc3aedbc7b5e92f6ff78d3e4349061388a763c189651`.
+The eight-board probe exists only to prove the production path; its loop scores
+are not a quality result.
+
+The formal run
+`p-gdn3-071-momentum-sudoku-d192l10-s12000-20260818T032813Z-733fa14`
+failed before step100 with `RuntimeError: Momentum terminal state is
+nonfinite`. No formal checkpoint or scheduled evaluation was written. The
+orchestrator recorded exit status 1 and `rescue_authorized=false`. Consequently
+there is no h50/h53/h58/h64, official-range, mixed, throughput-at-steady-state
+or endpoint M-only quality result to report.
 
 ## 6. Mechanistic Interpretation
 
-Pending. A pass would show that a general second-order linear recurrent
-transition transfers from binding to iterative constraint solving. A failure
-would bound the strong MQAR result as task-specific and close Momentum-to-
-Sudoku transfer without implying that another wrapper around first-order GDN2
-is useful.
+The exact second-order carrier that learns directional MQAR does not transfer
+unchanged to five-loop hard Sudoku training. The important distinction is
+stability, not task quality: a finite forward/backward contract and a two-step
+probe did not predict finite recurrent state under the production trajectory.
+The complete `[S,M]` edge repeatedly re-injects a second-order state across
+layers and macro loops; the resulting dynamical system can leave its finite
+region before the first science checkpoint.
+
+This does not falsify Momentum as a sequence-memory mechanism, because there
+is no converged Sudoku model to evaluate. It does falsify the exact naive
+composition of the external Momentum recurrence with full-state native
+FutureSeed under the registered canonical training setup. Any successor must
+make bounded loop stability part of the recurrence design itself. Changing a
+state scale or optimizer after observing this failure would be a rescue, not a
+new mechanism.
 
 ## 7. Cost And GPU
 
-Pending. Report effective boards/s after compilation warmup, step timing
-variation, peak allocated/reserved memory, sampled utilization and transport
-bytes for both endpoint FS modes.
+The complete contract/probe/formal launch window ran from `03:28:32Z` to
+`03:53:53Z` on one `NVIDIA A100-SXM4-80GB`, CUDA index0, UUID
+`GPU-0da20a4f-5e67-e47d-7aab-8c6efa2864ad`. Across 301 five-second samples,
+161 were compute-active; active utilization averaged `28.87%`, peaked at
+`79%`, and observed memory peaked at `10,967 MiB`. These samples include
+compilation, contract and probe activity and are not a steady-state training
+throughput measurement. Because formal training failed before step100, the
+registered wall-time and allocation ratios cannot be evaluated.
 
 ## 8. Provenance
 
-Pending pushed source SHA, clean detached worktree, GPU UUID, run names,
-checkpoint/config/metrics/source hashes and launch logs.
+- GitHub source/read-back SHA: `733fa141b8213ec6c345266caf31c6ad235867d3`.
+- Source tree: `dad1b8eeaf88b3350a59d8824a820fd084eeb88d`.
+- Clean detached worktree:
+  `/huyang2/double-loop/worktrees/p-gdn3-071-4b3bdef`.
+- Launch directory:
+  `/huyang2/double-loop/artifacts/launch/p-gdn3-071/20260818T032813Z-733fa14`.
+- Formal log SHA256:
+  `52b76be1126bbe7aaf3817e8b5df56867f36b3b27a417cf0256414c3f3097f1a`.
+- Abort JSON SHA256:
+  `d7b8db92de571853bb0e3446fffcc45a6ecb05d44a931ce6619ee8ea2ab4e363`.
+- Source snapshot SHA256:
+  `5806ba53ac8f259945e49d3da8967e05258e44e2c7befbc666b9fcc033c9641a`.
+- Pinned external Momentum SHA:
+  `c6e77fa261fb0c002fae1a14b6209a5b28d2edc9`.
+- Pinned host FLA SHA:
+  `9c8e42e762fce087c27b673af4922795d9edb85e`.
 
 ## 9. Decision
 
-Approved as one high-information from-scratch Sudoku trajectory. Do not start
-another arm until a registered gate yields a decision.
+Discard and close the exact P-GDN3-071 mechanism. Do not run state-scale,
+learning-rate, seed, loss, batch, width, depth, duration, full-versus-M-only
+transport or nearby Momentum rescue. `P-FS2-018` is not launched because its
+required frozen endpoint does not exist. The next Sudoku experiment must use a
+distinct bounded recurrent/FS mechanism with a pre-registered long-horizon
+state-stability contract, not reinterpret the tiny production probe.

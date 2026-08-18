@@ -3756,6 +3756,24 @@
 - This does not solve the residual ownership tail: M-only has `153` swaps
   versus native replay's `152`. Keep FS transport efficiency separate from the
   remaining GDN3 address-binding problem and from Sudoku transfer.
+
+## 2026-08-18: A passing micro-probe does not certify recurrent loop stability
+
+- P-GDN3-071 transfers the exact external Momentum DeltaNet to D192/L10 hard
+  Sudoku and carries the complete `[S,M]` state through native FutureSeed. The
+  strict A100 contract and two-step production probe both pass.
+- The formal trajectory still reaches a nonfinite Momentum terminal state
+  before step100, before any scheduled science checkpoint, and writes no
+  formal checkpoint. There is no Sudoku quality result and no endpoint M-only
+  replay.
+- Contract correctness, gradient coverage and two finite updates prove the
+  implementation path, not the stability of a recurrence composed across ten
+  layers and five macro loops. Future second-order mechanisms need an explicit
+  long-horizon state-geometry gate before formal training.
+- Do not rescue this run by tuning state scale, learning rate, seed, loss,
+  batch, width, depth, duration or transported plane. A useful successor must
+  make boundedness part of the architecture while preserving the native
+  no-rule/no-search Sudoku contract.
 - Cross-device BF16 replay can change a single argmax despite exact source,
   data and parameter hashes. Calibrate bounded replay drift before candidate
   construction, and align sorted audit records by immutable `case_index`, not

@@ -2774,3 +2774,20 @@ S is needed to form the representation during optimization, while M is a
 sufficient deployment carrier after convergence. It is explicitly not an
 M-only training result, not a repair of the remaining owner swaps, and not yet
 a Sudoku endpoint result.
+
+### Momentum Memory Does Not Compose Naively With Iterative Sudoku FutureSeed
+
+P-GDN3-071 is the direct hard-Sudoku transfer of the successful directional-
+MQAR Momentum carrier. Ten exact external Momentum layers and full `[S,M]`
+FutureSeed pass the strict CUDA contract and a two-step production probe, but
+the formal D192/L10 trajectory produces a nonfinite Momentum terminal state
+before step100. No formal checkpoint or quality metric exists.
+
+This is a useful architecture boundary rather than a negative Sudoku score.
+A short finite probe is insufficient for a second-order recurrence embedded in
+both a depth-wise FutureSeed path and a five-loop iteration. The paper should
+state that stability under the composed long-horizon dynamical system must be
+an architectural invariant, not an after-the-fact state-scale adjustment. Do
+not report the eight-board probe as quality and do not claim that Momentum
+itself is ineffective; only the exact unbounded full-state composition is
+closed.

@@ -12,20 +12,19 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-In progress (2026-08-18 CST): `P-GDN3-071` is the single approved Sudoku
-successor. It transfers the already validated second-order Momentum DeltaNet
-recurrence to the canonical D192/L10 hard-9x9 curriculum and trains native
-FutureSeed over the complete `[S,M]` terminal state. This is a from-scratch
-architecture test, not another 100-step graft around GDN2. The intervention
-changes the live token recurrence itself while preserving a linear recurrent
-state, the fixed full-diversity 46-64 curriculum, effective batch 128, seed52,
-loop5 equal CE and all no-rule/no-search constraints. `P-FS2-018` is not a
-second training arm: at the endpoint it will replay the same frozen checkpoint
-with the FS edge changed from `[S,M]` to `[0,M]`, directly testing whether the
-MQAR train-full/serve-Momentum result transfers to Sudoku. The run is approved
-only after exact pushed source, clean detached worktree, strict A100 CUDA
-contract and a two-step production probe. Gates and kill criteria are frozen
-in `research/reports/experiments/gdn3-momentum-futureseed-sudoku-20260818.md`.
+Completed update (2026-08-18 CST): `P-GDN3-071` is closed at its registered
+stability gate. Exact pushed/read-back source `733fa141` in a clean detached
+worktree passed the strict A100 contract and the two-step production Sudoku
+probe, including ten exact external Momentum layers, full `[S,M]` FutureSeed,
+complete gradients, finite state variation, metrics JSON and checkpoint. The
+formal D192/L10 12k trajectory then raised `RuntimeError: Momentum terminal
+state is nonfinite` before step100 and wrote no formal checkpoint. Therefore
+there is no hard-Sudoku quality score, no scheduled gate result and no basis
+for the endpoint `[0,M]` replay `P-FS2-018`. The exact Momentum-to-Sudoku
+transfer is an integrity/stability failure rather than evidence for or against
+quality. Per registration, close state-scale, learning-rate, seed, loss,
+batch, width, depth, duration and transport rescue. Report:
+`research/reports/experiments/gdn3-momentum-futureseed-sudoku-20260818.md`.
 
 Completed update (2026-08-16 CST): `P-FS2-017` passes the phase-asymmetric
 FutureSeed deployment gate. On the exact frozen P059 model, native `[S,M]`

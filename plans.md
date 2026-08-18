@@ -12,6 +12,29 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Registered update (2026-08-18 CST): `P-GDN3-072 / P-FS2-019` tests one
+Sudoku-only Receiver-Live Boundary Recommit. Native FutureSeed currently enters
+each receiving GDN2 layer only before token 1; a long live scan can overwrite
+that future summary before the sequence tail. At the existing official GDN2
+64-token chunk boundary, the candidate extracts the component of the original
+FutureSeed state that is orthogonal to the receiver's live state, RMS-bounds it
+to the live state, and adds it through one zero-initialized scalar per
+layer/head before the unchanged final 17-token official chunk. This is the
+previously untested receiver-live recommit boundary, not producer reprojection,
+cache/replay, a second sweep, an extra state bank, or a Sudoku rule. Use the
+frozen canonical D192/L10/H6/K32/V32 step12000 checkpoint and run exactly one
+matched terminal control and one candidate from step12000 to12100 with
+identical optimizer/RNG/data order. Primary quality requires hard51-64 macro
+loop5 exact `>= control + .015` with each official-range blank regression
+`<=.01`; alternate requires mixed loop5 exact `>= control + .02`, non-regressive
+61-64 exact, and stronger same-board loop3-to-loop5 correction. Exactly nine
+receiving paths must activate with gate/residual RMS `>=1e-4`; boundary state
+norm ratio must remain `<=2`, terminal RMS `<=4x` control, elapsed overhead
+`<35%`, and allocation overhead `<10%`. Any integrity, activation, stability,
+quality, or cost miss closes boundary recommit without boundary/gate/scale,
+seed/LR/loss/batch/width/depth/duration rescue. Report:
+`research/reports/experiments/gdn3-boundary-recommit-sudoku-20260818.md`.
+
 Completed update (2026-08-18 CST): `P-GDN3-071` is closed at its registered
 stability gate. Exact pushed/read-back source `733fa141` in a clean detached
 worktree passed the strict A100 contract and the two-step production Sudoku

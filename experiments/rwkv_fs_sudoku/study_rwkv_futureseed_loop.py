@@ -391,6 +391,20 @@ ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS = (
     "gdn3_orthogonal_chunk_state_angle_weight_rms",
     "gdn3_orthogonal_chunk_state_plane_weight_rms",
 )
+BOUNDARY_RECOMMIT_TRAIN_KEYS = (
+    "gdn3_boundary_recommit_enabled",
+    "gdn3_boundary_recommit_gate_abs",
+    "gdn3_boundary_recommit_gate_head_std",
+    "gdn3_boundary_recommit_seed_live_cosine",
+    "gdn3_boundary_recommit_missing_fraction",
+    "gdn3_boundary_recommit_missing_batch_std",
+    "gdn3_boundary_recommit_residual_relative_rms",
+    "gdn3_boundary_recommit_residual_batch_std",
+    "gdn3_boundary_recommit_boundary_norm_ratio",
+    "gdn3_boundary_recommit_terminal_rms",
+    "gdn3_boundary_recommit_terminal_batch_std",
+    "gdn3_boundary_recommit_weight_rms",
+)
 ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS = (
     "gdn3_orthogonal_head_write_enabled",
     "gdn3_orthogonal_head_write_angle_abs",
@@ -600,6 +614,7 @@ GDN2_UPDATE_MODES = (
     "state_feedback",
     "terminal_consolidation",
     "orthogonal_chunk_state",
+    "boundary_recommit",
     "orthogonal_head_write",
     "adaptive_signed_erase",
     "bi_axis_value_decay",
@@ -1068,6 +1083,11 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = (
                 "canonical_position_qk_two_official_gdn2_chunks_with_"
                 "orthogonal_live_state_transport"
+            )
+        elif update_mode == "boundary_recommit" and address_mode == "none":
+            execution_path = (
+                "native_content_qk_two_official_gdn2_chunks_with_"
+                "receiver_live_futureseed_recommit"
             )
         elif update_mode == "terminal_consolidation" and address_mode == "position_qk":
             execution_path = (
@@ -2496,9 +2516,13 @@ class FLADeltaTimeMix(nn.Module):
             )
         if update_mode != "none" and backbone != "gdn2":
             raise ValueError("GDN2 update extensions are restricted to GDN2")
-        if update_mode != "none" and address_mode != "position_qk":
+        if update_mode != "none" and not (
+            address_mode == "position_qk"
+            or update_mode == "boundary_recommit" and address_mode == "none"
+        ):
             raise ValueError(
-                "GDN2 update extensions compose only with position_qk"
+                "GDN2 update extensions compose only with position_qk, except "
+                "boundary_recommit which requires native content addressing"
             )
         if update_mode != "none" and (
             gain_budget_mode != "none"
@@ -2640,6 +2664,13 @@ class FLADeltaTimeMix(nn.Module):
         if self.orthogonal_chunk_state_proj is not None:
             with torch.no_grad():
                 self.orthogonal_chunk_state_proj.weight[-1:].zero_()
+        self.boundary_recommit_mix = (
+            nn.Parameter(torch.zeros(self.heads))
+            if update_mode == "boundary_recommit"
+            else None
+        )
+        if self.boundary_recommit_mix is not None:
+            self.boundary_recommit_mix._no_weight_decay = True
         self.orthogonal_head_write_proj = (
             nn.Linear(self.head_v_dim, 3, bias=False)
             if update_mode == "orthogonal_head_write"
@@ -2880,6 +2911,17 @@ class FLADeltaTimeMix(nn.Module):
         values = {key: zero for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS}
         values["gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"] = (
             x.new_ones((), dtype=torch.float32)
+        )
+        return values
+
+    @staticmethod
+    def _zero_boundary_recommit_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        values = {key: zero for key in BOUNDARY_RECOMMIT_TRAIN_KEYS}
+        values["gdn3_boundary_recommit_boundary_norm_ratio"] = x.new_ones(
+            (), dtype=torch.float32
         )
         return values
 
@@ -3857,6 +3899,76 @@ class FLADeltaTimeMix(nn.Module):
                 ),
             }
         return output, terminal_state, diagnostics
+
+    def _boundary_recommit_state(
+        self,
+        inherited_state: torch.Tensor,
+        live_state: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        mix = self.boundary_recommit_mix
+        if self.update_mode != "boundary_recommit" or mix is None:
+            return live_state, self._zero_boundary_recommit_diag(live_state)
+        if inherited_state.shape != live_state.shape:
+            raise ValueError(
+                "Boundary recommit state mismatch: "
+                f"{tuple(inherited_state.shape)} != {tuple(live_state.shape)}"
+            )
+
+        inherited = inherited_state.float()
+        live = live_state.float()
+        live_energy = live.square().sum(dim=(-1, -2), keepdim=True).clamp_min(1e-12)
+        projection = (
+            (inherited * live).sum(dim=(-1, -2), keepdim=True) / live_energy
+        ) * live
+        missing = inherited - projection
+        live_rms = live.square().mean(dim=(-1, -2), keepdim=True).sqrt().clamp_min(1e-6)
+        missing_rms = missing.square().mean(dim=(-1, -2), keepdim=True).sqrt()
+        bounded = missing * (live_rms / missing_rms.clamp_min(1e-6))
+        gate = torch.tanh(mix.float()).view(1, self.heads, 1, 1)
+        residual = gate * bounded
+        transported = live + residual
+
+        with torch.no_grad():
+            inherited_rms = inherited.square().mean(
+                dim=(-1, -2), keepdim=True
+            ).sqrt().clamp_min(1e-6)
+            live_norm = live.flatten(-2).norm(dim=-1).clamp_min(1e-6)
+            inherited_norm = inherited.flatten(-2).norm(dim=-1).clamp_min(1e-6)
+            cosine = (inherited * live).sum(dim=(-1, -2)) / (
+                inherited_norm * live_norm
+            )
+            missing_fraction = missing_rms / inherited_rms
+            residual_rms = residual.square().mean(
+                dim=(-1, -2), keepdim=True
+            ).sqrt()
+            transported_rms = transported.square().mean(
+                dim=(-1, -2), keepdim=True
+            ).sqrt()
+            residual_relative = residual_rms / live_rms
+            boundary_ratio = transported_rms / live_rms
+            diagnostics = {
+                "gdn3_boundary_recommit_enabled": live.new_ones(()),
+                "gdn3_boundary_recommit_gate_abs": gate.abs().mean(),
+                "gdn3_boundary_recommit_gate_head_std": gate.flatten().std(
+                    unbiased=False
+                ),
+                "gdn3_boundary_recommit_seed_live_cosine": cosine.mean(),
+                "gdn3_boundary_recommit_missing_fraction": missing_fraction.mean(),
+                "gdn3_boundary_recommit_missing_batch_std": missing_fraction.mean(
+                    dim=(1, 2, 3)
+                ).std(unbiased=False),
+                "gdn3_boundary_recommit_residual_relative_rms": (
+                    residual_relative.mean()
+                ),
+                "gdn3_boundary_recommit_residual_batch_std": residual_relative.mean(
+                    dim=(1, 2, 3)
+                ).std(unbiased=False),
+                "gdn3_boundary_recommit_boundary_norm_ratio": boundary_ratio.max(),
+                "gdn3_boundary_recommit_terminal_rms": live.new_zeros(()),
+                "gdn3_boundary_recommit_terminal_batch_std": live.new_zeros(()),
+                "gdn3_boundary_recommit_weight_rms": mix.float().square().mean().sqrt(),
+            }
+        return transported.to(dtype=live_state.dtype), diagnostics
 
     def _orthogonal_chunk_state_transport(
         self,
@@ -4918,6 +5030,111 @@ class FLADeltaTimeMix(nn.Module):
             seq_len,
             core.num_v_heads,
             core.head_v_dim,
+        )
+        o = core.o_norm(o.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
+
+    def _forward_boundary_recommit(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError("Boundary recommit requires the official GDN2 chunk op")
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+        chunk_boundary = 64
+        if seq_len <= chunk_boundary:
+            raise RuntimeError(
+                "Boundary recommit requires a sequence longer than the native "
+                f"chunk boundary {chunk_boundary}, got {seq_len}"
+            )
+
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = self._zero_conv_state(x)
+            q, _ = core.q_conv1d(
+                x=core.q_proj(x), cache=conv_q, output_final_state=True
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(x), cache=conv_k, output_final_state=True
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x), cache=conv_v, output_final_state=True
+            )
+        else:
+            q = F.silu(core.q_proj(x))
+            k = F.silu(core.k_proj(x))
+            v = F.silu(core.v_proj(x))
+
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias).view(
+            batch_size, seq_len, core.num_heads, core.head_k_dim
+        )
+        b = core.b_proj(x).sigmoid().view(
+            batch_size, seq_len, core.num_heads, core.head_k_dim
+        )
+        w = core.w_proj(x).sigmoid().view(
+            batch_size, seq_len, core.num_v_heads, core.head_v_dim
+        )
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+        if core.num_v_heads > core.num_heads:
+            groups = core.num_v_heads // core.num_heads
+            q = torch.repeat_interleave(q, groups, dim=-2)
+            k = torch.repeat_interleave(k, groups, dim=-2)
+            g = torch.repeat_interleave(g, groups, dim=-2)
+            b = torch.repeat_interleave(b, groups, dim=-2)
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        first_output, boundary_state = chunk_gdn2(
+            q=q[:, :chunk_boundary],
+            k=k[:, :chunk_boundary],
+            v=v[:, :chunk_boundary],
+            g=g[:, :chunk_boundary],
+            b=b[:, :chunk_boundary],
+            w=w[:, :chunk_boundary],
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+        recommitted_state, diagnostics = self._boundary_recommit_state(
+            initial_state,
+            boundary_state,
+        )
+        second_output, terminal_state = chunk_gdn2(
+            q=q[:, chunk_boundary:],
+            k=k[:, chunk_boundary:],
+            v=v[:, chunk_boundary:],
+            g=g[:, chunk_boundary:],
+            b=b[:, chunk_boundary:],
+            w=w[:, chunk_boundary:],
+            initial_state=recommitted_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+        o = torch.cat((first_output, second_output), dim=1)
+        with torch.no_grad():
+            terminal_board_rms = terminal_state.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            diagnostics["gdn3_boundary_recommit_terminal_rms"] = (
+                terminal_board_rms.mean()
+            )
+            diagnostics["gdn3_boundary_recommit_terminal_batch_std"] = (
+                terminal_board_rms.std(unbiased=False)
+            )
+        self.last_gain_budget_diag = {
+            **self._zero_address_diag(x),
+            **self._zero_precondition_diag(x),
+            **diagnostics,
+        }
+
+        output_gate = core.g_proj(x).view(
+            batch_size, seq_len, core.num_v_heads, core.head_v_dim
         )
         o = core.o_norm(o.to(dtype=x.dtype), output_gate)
         o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
@@ -5995,6 +6212,11 @@ class FLADeltaTimeMix(nn.Module):
                 address=address,
                 cell_order=cell_order,
             )
+        if self.update_mode == "boundary_recommit" and initial_state is not None:
+            return self._forward_boundary_recommit(
+                x,
+                initial_state=initial_state,
+            )
         if self.address_mode == "position_qk":
             if address is None:
                 raise ValueError("position_qk address mode requires a canonical address stream")
@@ -6085,6 +6307,7 @@ class FLADeltaTimeMix(nn.Module):
             "gdn2_fast_slow_alpha_mean": x.new_ones(()),
             **self._zero_address_diag(x),
             **self._zero_precondition_diag(x),
+            **self._zero_boundary_recommit_diag(x),
         }
         return y, terminal_state
 
@@ -6780,6 +7003,26 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError(
                 "The registered Raven write controller is fixed to "
                 "D256/L12/H8/K32/V32"
+            )
+        if gdn2_update_mode == "boundary_recommit" and (
+            backbone != "gdn2"
+            or gdn2_address_mode != "none"
+            or gdn2_state_expert_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+            or not math.isclose(gdn_expand_v, 1.0)
+            or not math.isclose(gdn_progressive_base_expand_v, 0.0)
+            or not math.isclose(future_seed_scale, 1.0)
+            or not math.isclose(future_seed_decay, 0.0)
+            or future_seed_update != "fixed"
+            or future_seed_norm_mode != "unit"
+            or future_seed_gate_mode != "head"
+            or future_seed_scope != "layer"
+            or future_seed_readout_hop != 0
+            or future_seed_content_mode != "terminal"
+        ):
+            raise ValueError(
+                "Boundary recommit composes only with matched-width native-address "
+                "GDN2 and fixed adjacent-layer terminal FutureSeed"
             )
         if gdn2_update_mode == "paired_address_bank" and (
             backbone != "gdn2"
@@ -8572,6 +8815,7 @@ def load_training_checkpoint(
                         "state_feedback",
                         "terminal_consolidation",
                         "orthogonal_chunk_state",
+                        "boundary_recommit",
                         "orthogonal_head_write",
                         "adaptive_signed_erase",
                         "bi_axis_value_decay",
@@ -8655,6 +8899,7 @@ def load_training_checkpoint(
                     "state_feedback",
                     "terminal_consolidation",
                     "orthogonal_chunk_state",
+                    "boundary_recommit",
                     "orthogonal_head_write",
                     "adaptive_signed_erase",
                     "bi_axis_value_decay",
@@ -8817,6 +9062,7 @@ def load_training_checkpoint(
         ".time_mix.state_feedback_out.weight",
         ".time_mix.terminal_consolidation_k_proj.weight",
         ".time_mix.orthogonal_chunk_state_proj.weight",
+        ".time_mix.boundary_recommit_mix",
         ".time_mix.orthogonal_head_write_proj.weight",
         ".time_mix.adaptive_signed_erase_proj.weight",
         ".time_mix.bi_axis_value_decay_proj.weight",
@@ -10245,6 +10491,18 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_orthogonal_chunk_state_plane_norm_error_max', 0.0):.2e}/"
             f"{m.get('gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error', 0.0):.2e}"
         )
+    if m.get("gdn3_boundary_recommit_enabled", 0.0) > 0:
+        parts.append(
+            "boundary_recommit="
+            f"{m.get('gdn3_boundary_recommit_gate_abs', 0.0):.4f}/"
+            f"{m.get('gdn3_boundary_recommit_residual_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_boundary_recommit_missing_fraction', 0.0):.4f}"
+        )
+        parts.append(
+            "boundary_recommit_state="
+            f"{m.get('gdn3_boundary_recommit_boundary_norm_ratio', 1.0):.4f}/"
+            f"{m.get('gdn3_boundary_recommit_terminal_rms', 0.0):.4f}"
+        )
     if m.get("gdn3_orthogonal_head_write_enabled", 0.0) > 0:
         parts.append(
             "orth_head_angle="
@@ -10779,6 +11037,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_orthogonal_chunk_state_diag[
         "gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean"
     ] = 1.0
+    last_boundary_recommit_diag = {
+        key: 0.0 for key in BOUNDARY_RECOMMIT_TRAIN_KEYS
+    }
+    last_boundary_recommit_diag[
+        "gdn3_boundary_recommit_boundary_norm_ratio"
+    ] = 1.0
     last_orthogonal_head_write_diag = {
         key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
     }
@@ -10989,6 +11253,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     ".time_mix.orthogonal_chunk_state_proj.weight"
                 )
             }
+        elif args.gdn2_update_mode == "boundary_recommit":
+            expected_gdn2_update_insertions = {
+                name
+                for name, _parameter in model.named_parameters()
+                if name.endswith(".time_mix.boundary_recommit_mix")
+            }
         elif args.gdn2_update_mode == "orthogonal_head_write":
             expected_gdn2_update_insertions = {
                 name
@@ -11053,6 +11323,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 "state_feedback",
                 "terminal_consolidation",
                 "orthogonal_chunk_state",
+                "boundary_recommit",
                 "orthogonal_head_write",
                 "adaptive_signed_erase",
                 "bi_axis_value_decay",
@@ -11204,6 +11475,21 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     )
                 )
                 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
+            }
+        saved_boundary_recommit_diag = last_metrics.get(
+            "boundary_recommit", {}
+        )
+        if isinstance(saved_boundary_recommit_diag, dict):
+            last_boundary_recommit_diag = {
+                key: float(
+                    saved_boundary_recommit_diag.get(
+                        key,
+                        1.0
+                        if key == "gdn3_boundary_recommit_boundary_norm_ratio"
+                        else 0.0,
+                    )
+                )
+                for key in BOUNDARY_RECOMMIT_TRAIN_KEYS
             }
         saved_orthogonal_head_write_diag = last_metrics.get(
             "orthogonal_head_write", {}
@@ -11398,6 +11684,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_orthogonal_chunk_state_diag = {
                 key: 0.0 for key in ORTHOGONAL_CHUNK_STATE_TRAIN_KEYS
+            }
+            accum_boundary_recommit_diag = {
+                key: 0.0 for key in BOUNDARY_RECOMMIT_TRAIN_KEYS
             }
             accum_orthogonal_head_write_diag = {
                 key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
@@ -11686,6 +11975,20 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in BOUNDARY_RECOMMIT_TRAIN_KEYS:
+                        accum_boundary_recommit_diag[key] += float(
+                            trace_last.get(
+                                key,
+                                ce_loss.new_tensor(
+                                    1.0
+                                    if key
+                                    == "gdn3_boundary_recommit_boundary_norm_ratio"
+                                    else 0.0
+                                ),
+                            )
+                            .detach()
+                            .cpu()
+                        )
                     for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS:
                         accum_orthogonal_head_write_diag[key] += float(
                             trace_last.get(
@@ -11947,6 +12250,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_orthogonal_chunk_state_diag.items()
             }
+            last_boundary_recommit_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_boundary_recommit_diag.items()
+            }
             last_orthogonal_head_write_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_orthogonal_head_write_diag.items()
@@ -12044,6 +12351,11 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_read_residual_relative_rms']:.4f} "
                     f"orth_chunk_norm={last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_mean']:.6f}/"
                     f"{last_orthogonal_chunk_state_diag['gdn3_orthogonal_chunk_state_boundary_norm_ratio_max_error']:.2e} "
+                    f"recommit={last_boundary_recommit_diag['gdn3_boundary_recommit_gate_abs']:.4f}/"
+                    f"{last_boundary_recommit_diag['gdn3_boundary_recommit_residual_relative_rms']:.4f}/"
+                    f"{last_boundary_recommit_diag['gdn3_boundary_recommit_missing_fraction']:.4f} "
+                    f"recommit_norm={last_boundary_recommit_diag['gdn3_boundary_recommit_boundary_norm_ratio']:.4f}/"
+                    f"{last_boundary_recommit_diag['gdn3_boundary_recommit_terminal_rms']:.4f} "
                     f"orth_head_angle={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_angle_abs']:.4f}/"
                     f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_angle_batch_std']:.4f} "
                     f"orth_head_v={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_v_residual_relative_rms']:.4f}/"
@@ -12171,6 +12483,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "orthogonal_chunk_state": dict(
                             last_orthogonal_chunk_state_diag
                         ),
+                        "boundary_recommit": dict(last_boundary_recommit_diag),
                         "orthogonal_head_write": dict(
                             last_orthogonal_head_write_diag
                         ),
@@ -12291,6 +12604,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             "orthogonal_chunk_state": dict(
                                 last_orthogonal_chunk_state_diag
                             ),
+                            "boundary_recommit": dict(last_boundary_recommit_diag),
                             "orthogonal_head_write": dict(
                                 last_orthogonal_head_write_diag
                             ),
@@ -12390,6 +12704,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                         "orthogonal_chunk_state": dict(
                             last_orthogonal_chunk_state_diag
                         ),
+                        "boundary_recommit": dict(last_boundary_recommit_diag),
                         "orthogonal_head_write": dict(
                             last_orthogonal_head_write_diag
                         ),
@@ -12503,6 +12818,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "state_feedback": dict(last_state_feedback_diag),
         "terminal_consolidation": dict(last_terminal_consolidation_diag),
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
+        "boundary_recommit": dict(last_boundary_recommit_diag),
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
         "bi_axis_value_decay": dict(last_bi_axis_value_decay_diag),
@@ -13932,6 +14248,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "state_feedback",
             "terminal_consolidation",
             "orthogonal_chunk_state",
+            "boundary_recommit",
             "orthogonal_head_write",
             "adaptive_signed_erase",
             "bi_axis_value_decay",
@@ -14071,9 +14388,14 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn2_update_mode requires --backbone gdn2")
         if not args.fla_strict_official:
             raise ValueError("--gdn2_update_mode requires --fla_strict_official")
-        if args.gdn2_address_mode != "position_qk":
+        if not (
+            args.gdn2_address_mode == "position_qk"
+            or args.gdn2_update_mode == "boundary_recommit"
+            and args.gdn2_address_mode == "none"
+        ):
             raise ValueError(
-                "GDN2 update extensions require --gdn2_address_mode position_qk"
+                "GDN2 update extensions require --gdn2_address_mode position_qk, "
+                "except boundary_recommit which requires none"
             )
         if args.future_seed_content_mode != "terminal":
             raise ValueError(

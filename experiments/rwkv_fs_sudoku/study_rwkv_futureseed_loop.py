@@ -921,10 +921,40 @@ def resolve_strict_fla_source(backbone: str) -> Tuple[str, str, str]:
             raise RuntimeError(
                 f"FLA module {module_path} is outside pinned source root {source_root}"
             )
-        source_sha = subprocess.check_output(
-            ["git", "-C", str(source_root), "rev-parse", "HEAD"],
+        git_probe = subprocess.run(
+            ["git", "-C", str(source_root), "rev-parse", "--show-toplevel"],
             text=True,
-        ).strip()
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        git_toplevel = (
+            Path(git_probe.stdout.strip()).resolve()
+            if git_probe.returncode == 0 and git_probe.stdout.strip()
+            else None
+        )
+        if git_toplevel == source_root:
+            source_sha = subprocess.check_output(
+                ["git", "-C", str(source_root), "rev-parse", "HEAD"],
+                text=True,
+            ).strip()
+        else:
+            marker = Path(
+                os.environ.get(
+                    "FLA_SOURCE_SHA_MARKER",
+                    "/huyang2/double-loop/.cache/fla-source-sha",
+                )
+            )
+            if not marker.is_file():
+                raise RuntimeError(
+                    f"Pinned wheel source {source_root} has no provenance marker"
+                )
+            source_sha = marker.read_text(encoding="utf-8").strip()
+            if not source_root.name.startswith(f"{source_sha}-"):
+                raise RuntimeError(
+                    "Pinned wheel source directory does not match its provenance marker: "
+                    f"{source_root.name!r} vs {source_sha!r}"
+                )
     else:
         marker = Path(
             os.environ.get(

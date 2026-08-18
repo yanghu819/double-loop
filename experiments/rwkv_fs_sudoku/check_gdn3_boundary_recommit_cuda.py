@@ -154,13 +154,12 @@ def check_nonzero_initial_state_identity(
             device=device,
             dtype=torch.float32,
         )
-        with torch.no_grad():
-            control_output, control_state = direct_block_forward(
-                control_block, x, initial_state
-            )
-            candidate_output, candidate_state = direct_block_forward(
-                candidate_block, x, initial_state
-            )
+        control_output, control_state = direct_block_forward(
+            control_block, x, initial_state
+        )
+        candidate_output, candidate_state = direct_block_forward(
+            candidate_block, x, initial_state
+        )
         output_error = float(
             (control_output.float() - candidate_output.float()).abs().max().item()
         )

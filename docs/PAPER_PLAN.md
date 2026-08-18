@@ -1,5 +1,34 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-18 Receiver-Live FutureSeed Loss Is A Measurable Closure Bottleneck
+
+P-GDN3-072 is the first matched hard-Sudoku mechanism in this sequence that
+improves full-board exact accuracy in every official difficulty band. Native
+FutureSeed enters a receiving layer before token1. At the official token64
+chunk boundary, the candidate restores only the inherited-state component
+orthogonal to the receiver's current live state, bounded to live-state RMS and
+controlled by 60 zero-initialized layer/head scalars. The official recurrent
+kernel, state size, token count, loss, data and Sudoku contract remain intact.
+
+Official 51-55/56-60/61-64 loop5 exact changes
+`.431641/.197266/.289063 -> .462891/.210938/.304688`; macro exact rises
+`.305990->.326172`, and all three blank accuracies improve. The mechanism is
+small but materially active: about 80% of inherited-state energy lies outside
+the live-state direction at the boundary, while the learned recommit is only
+`.00773` of state RMS and leaves the boundary norm ratio at `1.000142`. This
+supports a paper claim stronger than "more memory helps": cross-layer future
+evidence can be present at receiver entry yet be partially overwritten by the
+receiver's own causal scan, and bounded mid-scan reintroduction improves global
+constraint closure.
+
+The exact implementation is not a production winner. Split-chunk execution
+costs `+28.55%` elapsed and `+10.895%` peak allocation; the latter misses the
+registered `<10%` limit. Mixed exact improves only `+.007812`, and loop3-to-5
+wrong-cell reduction is slightly weaker, so the effect is earlier convergence,
+not better late-loop correction. Present P072 as a positive mechanistic result
+with a strict systems caveat. A future fused/native transition is a new
+pre-registered engineering hypothesis, not a post-hoc rescue of this run.
+
 ## 2026-08-16 Owner-Local Projection Removes The Useful Global Integrator
 
 P-GDN3-068 keeps P059's second-order Momentum, residual, owner key, state and

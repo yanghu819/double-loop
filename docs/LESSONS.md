@@ -1,5 +1,28 @@
 # Lessons
 
+## 2026-08-18: FutureSeed can be useful at entry and still be overwritten live
+
+- P-GDN3-072 leaves the official GDN2 update unchanged, then at its native
+  token64 boundary adds only the component of the inherited FutureSeed that is
+  orthogonal to the receiver's current live state.
+- The path is not dead or unstable: exactly nine receivers activate, the
+  learned residual is `.007730` of live-state RMS, about `.7997` of inherited
+  energy is outside the live-state direction, and the boundary norm ratio is
+  `1.000142`.
+- Official 51-55/56-60/61-64 loop5 exact improves in every range; hard macro
+  exact rises `.305990->.326172`, above the registered `+.015` gate, with no
+  blank-accuracy regression.
+- The improvement appears before the final loop rather than strengthening
+  loop3-to-5 correction. The bottleneck is partly within-layer overwriting of
+  useful cross-layer evidence, not only insufficient outer-loop iteration.
+- Small parameter count does not imply free execution. Splitting one official
+  scan into two calls raises elapsed time `28.55%` and allocated memory
+  `10.895%`; the latter closes this exact implementation under the fixed gate.
+- Preserve the scientific result but do not call it a production win. Do not
+  rescue boundary, scale, gate, sharing or training settings. Any future fused
+  version must be separately registered and must preserve exact parent
+  semantics while removing the systems overhead.
+
 ## 2026-08-16: Owner selectivity is not useful if it removes global integration
 
 - P-GDN3-068 is mathematically exact and fully active: its clean-room fused

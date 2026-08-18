@@ -12,27 +12,25 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Registered update (2026-08-18 CST): `P-GDN3-072 / P-FS2-019` tests one
-Sudoku-only Receiver-Live Boundary Recommit. Native FutureSeed currently enters
-each receiving GDN2 layer only before token 1; a long live scan can overwrite
-that future summary before the sequence tail. At the existing official GDN2
-64-token chunk boundary, the candidate extracts the component of the original
-FutureSeed state that is orthogonal to the receiver's live state, RMS-bounds it
-to the live state, and adds it through one zero-initialized scalar per
-layer/head before the unchanged final 17-token official chunk. This is the
-previously untested receiver-live recommit boundary, not producer reprojection,
-cache/replay, a second sweep, an extra state bank, or a Sudoku rule. Use the
-frozen canonical D192/L10/H6/K32/V32 step12000 checkpoint and run exactly one
-matched terminal control and one candidate from step12000 to12100 with
-identical optimizer/RNG/data order. Primary quality requires hard51-64 macro
-loop5 exact `>= control + .015` with each official-range blank regression
-`<=.01`; alternate requires mixed loop5 exact `>= control + .02`, non-regressive
-61-64 exact, and stronger same-board loop3-to-loop5 correction. Exactly nine
-receiving paths must activate with gate/residual RMS `>=1e-4`; boundary state
-norm ratio must remain `<=2`, terminal RMS `<=4x` control, elapsed overhead
-`<35%`, and allocation overhead `<10%`. Any integrity, activation, stability,
-quality, or cost miss closes boundary recommit without boundary/gate/scale,
-seed/LR/loss/batch/width/depth/duration rescue. Report:
+Completed update (2026-08-18 CST): `P-GDN3-072 / P-FS2-019` is closed as a
+quality-positive, cost-negative Sudoku result. On the exact matched
+D192/L10/H6 step12000->12100 continuation, Receiver-Live Boundary Recommit
+raises official 51-55/56-60/61-64 loop5 exact from
+`.431641/.197266/.289063` to `.462891/.210938/.304688`. Hard51-64 macro exact
+therefore rises `.305990->.326172` (`+.020182`), above the registered `+.015`
+primary floor, while all three blank accuracies improve. Exactly nine receiving
+paths activate; gate/residual relative RMS is `.007730`, missing inherited
+fraction `.799709`, boundary norm ratio `1.000142`, and terminal state remains
+finite. This is the first matched hard-Sudoku evidence in this sequence that a
+receiver loses useful FutureSeed content during its own live scan and benefits
+from a bounded mid-scan recommit. It is not promoted: elapsed overhead is
+`+28.55%` and passes its `<35%` gate, but peak allocated memory overhead is
+`+10.895%`, strictly missing the preregistered `<10%` gate. Mixed exact improves
+only `.326172->.333984`, so the alternate route also fails. Per registration,
+do not rescue the boundary, split implementation, gate, scale, sharing, seed,
+LR, loss, batch, width, depth, or duration. Preserve the mechanism as positive
+paper evidence and require any future production form to be a separately
+registered native/fused transition, not a post-hoc exception. Report:
 `research/reports/experiments/gdn3-boundary-recommit-sudoku-20260818.md`.
 
 Completed update (2026-08-18 CST): `P-GDN3-071` is closed at its registered

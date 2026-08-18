@@ -999,9 +999,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         "gdn2": GatedDeltaNet2,
         "kda": KimiDeltaAttention,
         "raven": FLARaven,
-        "momentum": load_external_momentum_layer(),
     }
-    expected = expected_layers[backbone]
+    expected = (
+        load_external_momentum_layer()
+        if backbone == "momentum"
+        else expected_layers[backbone]
+    )
     rows = []
     reasoner = getattr(model, "reasoner", None)
     if reasoner is None:

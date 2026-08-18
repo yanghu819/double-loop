@@ -530,6 +530,7 @@ COMMON_ARGS=(
   --future_seed_scope "${FUTURE_SEED_SCOPE:-layer}"
   --future_seed_readout_hop "${FUTURE_SEED_READOUT_HOP:-0}"
   --future_seed_content_mode "${FUTURE_SEED_CONTENT_MODE:-terminal}"
+  --momentum_future_seed_transport "${MOMENTUM_FUTURE_SEED_TRANSPORT:-full_state}"
   --future_seed_gradient_mode "${FUTURE_SEED_GRADIENT_MODE:-canonical}"
   --loop_feedback_scale "${LOOP_FEEDBACK_SCALE:-0.0}"
   --loop_feedback_detach "${LOOP_FEEDBACK_DETACH:-0}"

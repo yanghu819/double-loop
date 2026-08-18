@@ -40,6 +40,11 @@ from fast_slow_decay_gdn2 import (
     FastSlowDecayController,
 )
 from gain_budget_gdn2 import fla_l2norm_fp32, project_erase_gate
+from momentum_delta_sudoku import (
+    MomentumDeltaTimeMix,
+    load_external_momentum_layer,
+    momentum_source_summary,
+)
 from preconditioned_gdn2 import (
     GDN2_PRECONDITION_MODES,
     causal_tied_atk_preconditioner,
@@ -121,6 +126,12 @@ def fla_gdn_available() -> Tuple[bool, str]:
 
 
 def fla_delta_available(backbone: str) -> Tuple[bool, str]:
+    if backbone == "momentum":
+        try:
+            load_external_momentum_layer()
+        except Exception as exc:
+            return False, f"pinned Momentum DeltaNet import failed: {exc}"
+        return True, "ok"
     implementations = {
         "fla_gdn": (FLAGatedDeltaNet, chunk_gated_delta_rule),
         "gdn2": (GatedDeltaNet2, chunk_gdn2),
@@ -559,6 +570,7 @@ BACKBONE_DISPLAY_NAMES = {
     "gdn2": "GDN2 (official FLA)",
     "kda": "KDA (official FLA)",
     "raven": "Raven (official FLA)",
+    "momentum": "Momentum DeltaNet (pinned external FLA)",
 }
 RWKV7_OFFICIAL_SOURCE_COMMIT = "952102498e9ed367ea0a59ee64106916d474d30f"
 RWKV7_OFFICIAL_SOURCE_BLOB = "b4d167fedead2655d253c55eb47b65f00e7193d2"
@@ -894,6 +906,7 @@ def resolve_strict_fla_source(backbone: str) -> Tuple[str, str, str]:
         "gdn2": GatedDeltaNet2,
         "kda": KimiDeltaAttention,
         "raven": FLARaven,
+        "momentum": GatedDeltaNet2,
     }[backbone]
     if expected_layer is None:
         raise RuntimeError(f"Official FLA layer for {backbone} is unavailable")
@@ -941,6 +954,7 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         "gdn2": GatedDeltaNet2,
         "kda": KimiDeltaAttention,
         "raven": FLARaven,
+        "momentum": load_external_momentum_layer(),
     }
     expected = expected_layers[backbone]
     rows = []
@@ -970,7 +984,12 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         gain_budget_mode = getattr(time_mix, "gain_budget_mode", "none")
         precondition_mode = getattr(time_mix, "precondition_mode", "none")
         update_mode = getattr(time_mix, "update_mode", "none")
-        if update_mode == "log_spd_metric" and address_mode == "position_qk":
+        if backbone == "momentum":
+            execution_path = (
+                "pinned_external_second_order_momentum_delta_chunk_with_"
+                "explicit_state_and_velocity"
+            )
+        elif update_mode == "log_spd_metric" and address_mode == "position_qk":
             execution_path = (
                 "canonical_position_qk_plus_per_layer_bounded_log_spd_"
                 "then_one_official_gdn2_chunk"
@@ -1095,6 +1114,8 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
                 "state_elements_per_head": (
                     int(core.num_slots) * (int(core.head_k_dim) + int(core.head_v_dim))
                     if backbone == "raven"
+                    else int(time_mix.state_elements_per_head())
+                    if backbone == "momentum"
                     else int(getattr(time_mix, "head_dim"))
                     * int(getattr(time_mix, "head_v_dim"))
                 ),
@@ -1123,6 +1144,9 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
         "conv_backend": "triton",
         "layers": rows,
         "gain_budget_contract": gain_budget_contract,
+        "momentum_source": (
+            momentum_source_summary() if backbone == "momentum" else None
+        ),
     }
 
 
@@ -6470,6 +6494,49 @@ class FLADeltaBlock(nn.Module):
         return self.time_mix.read_recurrent_state(self.ln_time(x), state)
 
 
+class MomentumDeltaBlock(nn.Module):
+    def __init__(
+        self,
+        d_model: int,
+        heads: int,
+        head_dim: int,
+        channel_mult: int,
+        *,
+        layer_idx: int,
+        gdn_expand_v: float,
+        gdn_use_short_conv: bool,
+        gdn_conv_size: int,
+    ) -> None:
+        super().__init__()
+        self.ln_time = nn.LayerNorm(d_model)
+        self.ln_channel = nn.LayerNorm(d_model)
+        self.time_mix = MomentumDeltaTimeMix(
+            d_model,
+            heads,
+            head_dim,
+            layer_idx=layer_idx,
+            expand_v=gdn_expand_v,
+            use_short_conv=gdn_use_short_conv,
+            conv_size=gdn_conv_size,
+        )
+        self.channel_mix = ChannelMix(d_model, channel_mult)
+        self.future_seed_logit = nn.Parameter(torch.zeros(1, heads, 1, 1))
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        time_out, terminal_state = self.time_mix(
+            self.ln_time(x),
+            initial_state=initial_state,
+        )
+        x = x + time_out
+        x = x + self.channel_mix(self.ln_channel(x))
+        return x, terminal_state
+
+
 class FutureSeedRWKV(nn.Module):
     def __init__(
         self,
@@ -6487,6 +6554,7 @@ class FutureSeedRWKV(nn.Module):
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
         future_seed_content_mode: str = "terminal",
+        momentum_future_seed_transport: str = "full_state",
         activation_checkpoint: bool = False,
         rwkv_kernel: str = "auto",
         backbone: str = "rwkv",
@@ -6600,10 +6668,42 @@ class FutureSeedRWKV(nn.Module):
                 "Orthogonal basis transport composes only with matched-width "
                 "independent position-QK GDN2 and the unmodified recurrent update"
             )
-        if backbone not in {"rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"}:
+        if backbone not in {
+            "rwkv",
+            "rwkv7",
+            "gdn",
+            "fla_gdn",
+            "gdn2",
+            "kda",
+            "raven",
+            "momentum",
+        }:
             raise ValueError(
-                "backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, kda, raven."
+                "backbone must be one of: rwkv, rwkv7, gdn, fla_gdn, gdn2, "
+                "kda, raven, momentum."
             )
+        if momentum_future_seed_transport not in {"full_state", "momentum_only"}:
+            raise ValueError(
+                "momentum_future_seed_transport must be full_state or momentum_only"
+            )
+        if backbone == "momentum" and (
+            future_seed_update != "fixed"
+            or future_seed_norm_mode != "unit"
+            or future_seed_gate_mode != "head"
+            or future_seed_scope != "layer"
+            or future_seed_readout_hop != 0
+            or future_seed_content_mode != "terminal"
+            or gdn2_address_mode != "none"
+            or gdn2_update_mode != "none"
+            or gdn2_state_expert_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+        ):
+            raise ValueError(
+                "Momentum Sudoku composes only with fixed adjacent-layer terminal "
+                "FutureSeed and no GDN2 wrapper mechanisms"
+            )
+        if backbone != "momentum" and momentum_future_seed_transport != "full_state":
+            raise ValueError("momentum_only transport requires the Momentum backbone")
         if gdn2_cross_layer_init not in GDN2_CROSS_LAYER_INIT_MODES:
             raise ValueError(
                 "gdn2_cross_layer_init must be one of: "
@@ -6702,6 +6802,7 @@ class FutureSeedRWKV(nn.Module):
         self.future_seed_scope = future_seed_scope
         self.future_seed_readout_hop = int(future_seed_readout_hop)
         self.future_seed_content_mode = future_seed_content_mode
+        self.momentum_future_seed_transport = momentum_future_seed_transport
         self.activation_checkpoint = bool(activation_checkpoint)
         self.gdn2_precondition_mode = gdn2_precondition_mode
         self.gdn2_address_mode = gdn2_address_mode
@@ -6756,7 +6857,7 @@ class FutureSeedRWKV(nn.Module):
         if backbone in {"gdn", "fla_gdn", "kda"}:
             state_row_dim = expanded_head_dim
             state_col_dim = head_dim
-        elif backbone == "gdn2":
+        elif backbone in {"gdn2", "momentum"}:
             state_row_dim = (
                 2 * head_dim
                 if gdn2_update_mode == "coupled_address_rows"
@@ -6855,6 +6956,19 @@ class FutureSeedRWKV(nn.Module):
                         gdn_use_short_conv=gdn_use_short_conv,
                         gdn_conv_size=gdn_conv_size,
                         gdn_allow_neg_eigval=gdn_allow_neg_eigval,
+                    )
+                )
+            elif backbone == "momentum":
+                blocks.append(
+                    MomentumDeltaBlock(
+                        d_model,
+                        heads,
+                        head_dim,
+                        channel_mult,
+                        layer_idx=layer_id,
+                        gdn_expand_v=gdn_expand_v,
+                        gdn_use_short_conv=gdn_use_short_conv,
+                        gdn_conv_size=gdn_conv_size,
                     )
                 )
             else:
@@ -7150,6 +7264,7 @@ class FutureSeedRWKV(nn.Module):
         basis_transport_fp32_norm_max_error = []
         basis_transport_storage_norm_max_error = []
         basis_transport_orthogonality_max_error = []
+        momentum_transport_fractions = []
         state_history: List[torch.Tensor] = []
         gain_budget_values: Dict[str, List[torch.Tensor]] = {}
         for layer_idx, block in enumerate(self.blocks):
@@ -7319,6 +7434,22 @@ class FutureSeedRWKV(nn.Module):
                         update_gates.append(x.new_tensor(1.0 - keep))
                     candidate_seed_state = seed_state
             if candidate_seed_state is not None and self.future_seed_scale > 0:
+                if self.backbone == "momentum":
+                    if candidate_seed_state.ndim != 5 or candidate_seed_state.shape[0] != 2:
+                        raise RuntimeError(
+                            "Momentum FutureSeed must carry [state, momentum] planes"
+                        )
+                    if self.momentum_future_seed_transport == "momentum_only":
+                        candidate_seed_state = torch.stack(
+                            (
+                                torch.zeros_like(candidate_seed_state[0]),
+                                candidate_seed_state[1],
+                            ),
+                            dim=0,
+                        )
+                        momentum_transport_fractions.append(x.new_tensor(0.5))
+                    else:
+                        momentum_transport_fractions.append(x.new_tensor(1.0))
                 candidate_seed_state, innovation_diag = self._compose_future_seed_content(
                     candidate_seed_state,
                     previous_initial_state,
@@ -7521,7 +7652,10 @@ class FutureSeedRWKV(nn.Module):
                     ).sqrt().clamp(min=1e-6)
                     normalized_state = candidate_seed_state / denom_native
                 raw_rms_means.append(denom.mean().to(dtype=x.dtype))
-                raw_rms_stds.append(denom.std(dim=0, unbiased=False).mean().to(dtype=x.dtype))
+                batch_dim = 1 if candidate_seed_state.ndim == 5 else 0
+                raw_rms_stds.append(
+                    denom.std(dim=batch_dim, unbiased=False).mean().to(dtype=x.dtype)
+                )
                 if self.future_seed_norm_mode == "adaptive_rms":
                     assert self.future_seed_norm_slope is not None
                     assert self.future_seed_norm_bias is not None
@@ -7658,6 +7792,9 @@ class FutureSeedRWKV(nn.Module):
                 for key, value in block.time_mix.last_gain_budget_diag.items():
                     gain_budget_values.setdefault(key, []).append(value)
                 for key, value in block.last_state_expert_diag.items():
+                    gain_budget_values.setdefault(key, []).append(value)
+            elif isinstance(block, MomentumDeltaBlock):
+                for key, value in block.time_mix.last_diagnostics.items():
                     gain_budget_values.setdefault(key, []).append(value)
             if self.future_seed_scope == "block":
                 assert next_seed_memory is not None
@@ -7918,6 +8055,11 @@ class FutureSeedRWKV(nn.Module):
                 if basis_transport_orthogonality_max_error
                 else x.new_zeros(())
             )
+            out["momentum_future_seed_transport_fraction"] = (
+                torch.stack(momentum_transport_fractions).mean()
+                if momentum_transport_fractions
+                else x.new_zeros(())
+            )
             for key, values in gain_budget_values.items():
                 stacked = torch.stack([value.float() for value in values])
                 out[key] = (
@@ -8003,6 +8145,7 @@ class FutureSeedRWKV(nn.Module):
             "fs3_basis_transport_fp32_norm_max_error": zero,
             "fs3_basis_transport_storage_norm_max_error": zero,
             "fs3_basis_transport_orthogonality_max_error": zero,
+            "momentum_future_seed_transport_fraction": zero,
         }
         for key, values in gain_budget_values.items():
             stacked = torch.stack([value.float() for value in values])
@@ -8291,6 +8434,7 @@ def load_training_checkpoint(
             "future_seed_scope",
             "future_seed_readout_hop",
             "future_seed_content_mode",
+            "momentum_future_seed_transport",
             "future_seed_gradient_mode",
             "lambda_",
             "loop_update_mode",
@@ -8346,6 +8490,7 @@ def load_training_checkpoint(
             "future_seed_scope": "layer",
             "future_seed_readout_hop": 0,
             "future_seed_content_mode": "terminal",
+            "momentum_future_seed_transport": "full_state",
             "future_seed_gradient_mode": "canonical",
             "gdn2_precondition_mode": "none",
             "gdn2_address_mode": "none",
@@ -8809,6 +8954,7 @@ class FutureSeedLoopSudoku(nn.Module):
         future_seed_scope: str = "layer",
         future_seed_readout_hop: int = 0,
         future_seed_content_mode: str = "terminal",
+        momentum_future_seed_transport: str = "full_state",
     ) -> None:
         super().__init__()
         self.l_cycles = int(l_cycles)
@@ -8859,6 +9005,7 @@ class FutureSeedLoopSudoku(nn.Module):
             future_seed_scope=future_seed_scope,
             future_seed_readout_hop=future_seed_readout_hop,
             future_seed_content_mode=future_seed_content_mode,
+            momentum_future_seed_transport=momentum_future_seed_transport,
             activation_checkpoint=activation_checkpoint,
             rwkv_kernel=rwkv_kernel,
             backbone=backbone,
@@ -10423,6 +10570,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         future_seed_scope=args.future_seed_scope,
         future_seed_readout_hop=args.future_seed_readout_hop,
         future_seed_content_mode=args.future_seed_content_mode,
+        momentum_future_seed_transport=args.momentum_future_seed_transport,
         loop_feedback_scale=args.loop_feedback_scale,
         loop_feedback_detach=bool(args.loop_feedback_detach),
         loop_feedback_corrupt_prob=args.loop_feedback_corrupt_prob,
@@ -12423,6 +12571,7 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "future_seed_scope": args.future_seed_scope,
         "future_seed_readout_hop": args.future_seed_readout_hop,
         "future_seed_content_mode": args.future_seed_content_mode,
+        "momentum_future_seed_transport": args.momentum_future_seed_transport,
         "future_seed_gradient_mode": args.future_seed_gradient_mode,
         "loop_feedback_scale": args.loop_feedback_scale,
         "loop_feedback_detach": bool(args.loop_feedback_detach),
@@ -13399,6 +13548,9 @@ def export_case_bank(
                     "future_seed_content_mode": (
                         model.reasoner.future_seed_content_mode
                     ),
+                    "momentum_future_seed_transport": (
+                        model.reasoner.momentum_future_seed_transport
+                    ),
                 },
                 "cases": all_cases,
                 "data_hash": data_hash,
@@ -14033,7 +14185,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
-    if args.backbone in {"fla_gdn", "gdn2", "kda", "raven"}:
+    if args.backbone in {"fla_gdn", "gdn2", "kda", "raven", "momentum"}:
         if args.gdn_mode != "chunk":
             raise ValueError(f"--backbone {args.backbone} requires --gdn_mode chunk during training.")
         ok, reason = fla_delta_available(args.backbone)
@@ -14043,9 +14195,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn_expand_v must be positive.")
         if args.gdn_conv_size < 1:
             raise ValueError("--gdn_conv_size must be positive.")
-    if args.fla_strict_official and args.backbone not in {"fla_gdn", "gdn2", "kda", "raven"}:
+    if args.fla_strict_official and args.backbone not in {
+        "fla_gdn",
+        "gdn2",
+        "kda",
+        "raven",
+        "momentum",
+    }:
         raise ValueError(
-            "--fla_strict_official is valid only for fla_gdn, gdn2, kda, or raven"
+            "--fla_strict_official is valid only for fla_gdn, gdn2, kda, "
+            "raven, or momentum"
         )
     if args.backbone == "rwkv7":
         if args.rwkv_kernel not in {"statepassing", "torch"}:
@@ -14076,6 +14235,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         f"future_seed_gate_mode={args.future_seed_gate_mode} future_seed_scope={args.future_seed_scope} "
         f"future_seed_readout_hop={args.future_seed_readout_hop} "
         f"future_seed_content_mode={args.future_seed_content_mode} "
+        f"momentum_future_seed_transport={args.momentum_future_seed_transport} "
         f"future_seed_gradient_mode={args.future_seed_gradient_mode} "
         f"gdn_mode={args.gdn_mode} gdn_progressive_base_expand_v={args.gdn_progressive_base_expand_v} "
         f"gdn2_gain_budget={args.gdn2_gain_budget_mode} "
@@ -14260,6 +14420,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "future_seed_scope": args.future_seed_scope,
         "future_seed_readout_hop": args.future_seed_readout_hop,
         "future_seed_content_mode": args.future_seed_content_mode,
+        "momentum_future_seed_transport": args.momentum_future_seed_transport,
         "future_seed_gradient_mode": args.future_seed_gradient_mode,
         "loop_update_mode": args.loop_update_mode,
         "loop_update_gate_init": args.loop_update_gate_init,
@@ -14490,6 +14651,11 @@ def parse_args() -> argparse.Namespace:
         default="terminal",
     )
     p.add_argument(
+        "--momentum_future_seed_transport",
+        choices=("full_state", "momentum_only"),
+        default="full_state",
+    )
+    p.add_argument(
         "--future_seed_gradient_mode",
         choices=FUTURE_SEED_GRADIENT_MODES,
         default="canonical",
@@ -14547,7 +14713,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--forward_dtype", choices=("float32", "bfloat16"), default="float32")
     p.add_argument(
         "--backbone",
-        choices=("rwkv", "rwkv7", "gdn", "fla_gdn", "gdn2", "kda", "raven"),
+        choices=(
+            "rwkv",
+            "rwkv7",
+            "gdn",
+            "fla_gdn",
+            "gdn2",
+            "kda",
+            "raven",
+            "momentum",
+        ),
         default="rwkv",
     )
     p.add_argument("--rwkv_kernel", choices=("auto", "torch", "cuda", "statepassing", "wind"), default="auto")

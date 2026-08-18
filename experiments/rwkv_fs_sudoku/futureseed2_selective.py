@@ -78,14 +78,20 @@ class FutureSeedSelectiveGate(nn.Module):
         base_logit: torch.Tensor,
         layer_idx: int,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        if state.ndim != 4:
+        if state.ndim not in {4, 5}:
             raise ValueError(
-                f"FutureSeed state must be [batch, heads, rows, cols], got {tuple(state.shape)}"
+                "FutureSeed state must be [batch, heads, rows, cols] or "
+                f"[planes, batch, heads, rows, cols], got {tuple(state.shape)}"
             )
-        expected = (self.heads, self.row_dim, self.col_dim)
-        if tuple(state.shape[1:]) != expected:
+        if state.ndim == 5 and self.mode != "head":
             raise ValueError(
-                f"FutureSeed state shape {tuple(state.shape[1:])} does not match {expected}"
+                "Multi-plane FutureSeed currently supports only the canonical head gate"
+            )
+        state_shape = state.shape[1:] if state.ndim == 4 else state.shape[2:]
+        expected = (self.heads, self.row_dim, self.col_dim)
+        if tuple(state_shape) != expected:
+            raise ValueError(
+                f"FutureSeed state shape {tuple(state_shape)} does not match {expected}"
             )
         if tuple(base_logit.shape) != (1, self.heads, 1, 1):
             raise ValueError(

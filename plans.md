@@ -12,6 +12,26 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
+Registered update (2026-08-19 CST): `P-GDN3-074 / P-FS2-020` tests the
+necessary teacher ceiling for a Retrospective State Compiler before any router,
+critic, sparse replay, or compiled-seed student is authorized. On the exact
+P072 D192/L10/H6 step12000 parent, each of the nine receiving native-address
+GDN2 layers projects the 81-token stream once, repeats the identical
+Q/K/V/decay/erase/write tensors, and executes one pinned-official length162
+`chunk_gdn2` scan from native FutureSeed. Only second-pass outputs and the final
+state continue downstream. It adds zero parameters and persistent state and is
+not a deployable cost claim. One candidate-only exact-resume continuation runs
+step12000->12100 against the frozen P072 control; no control rerun. Quality
+requires hard51-64 macro loop5 exact `>=.3209895833` with every official blank
+range within `.01`, or mixed exact `>=.346171875`, 61-64 exact preserved, and
+stronger same-board late correction. Exactly nine paths, output delta
+relative RMS `>=1e-4`, board variation, finite state, and loop5 terminal RMS
+`<=4x` control are mandatory. Teacher cost is fixed before launch at elapsed
+`<2.20x` and allocation `<1.25x`. A quality miss closes retrospective
+replay/compilation on this parent; a pass authorizes exactly one fixed K=8
+receiver-native compiled student. Report:
+`research/reports/experiments/gdn3-retrospective-full-repeat-sudoku-20260819.md`.
+
 Completed update (2026-08-18 CST): `P-GDN3-072 / P-FS2-019` is closed as a
 quality-positive, cost-negative Sudoku result. On the exact matched
 D192/L10/H6 step12000->12100 continuation, Receiver-Live Boundary Recommit

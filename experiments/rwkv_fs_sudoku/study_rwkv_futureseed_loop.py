@@ -405,6 +405,16 @@ BOUNDARY_RECOMMIT_TRAIN_KEYS = (
     "gdn3_boundary_recommit_terminal_batch_std",
     "gdn3_boundary_recommit_weight_rms",
 )
+RETROSPECTIVE_FULL_REPEAT_TRAIN_KEYS = (
+    "gdn3_retrospective_full_repeat_enabled",
+    "gdn3_retrospective_full_repeat_path_count_sum",
+    "gdn3_retrospective_full_repeat_output_relative_rms",
+    "gdn3_retrospective_full_repeat_output_batch_std",
+    "gdn3_retrospective_full_repeat_first_output_rms",
+    "gdn3_retrospective_full_repeat_second_output_rms",
+    "gdn3_retrospective_full_repeat_terminal_rms",
+    "gdn3_retrospective_full_repeat_terminal_batch_std",
+)
 ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS = (
     "gdn3_orthogonal_head_write_enabled",
     "gdn3_orthogonal_head_write_angle_abs",
@@ -615,6 +625,7 @@ GDN2_UPDATE_MODES = (
     "terminal_consolidation",
     "orthogonal_chunk_state",
     "boundary_recommit",
+    "retrospective_full_repeat",
     "orthogonal_head_write",
     "adaptive_signed_erase",
     "bi_axis_value_decay",
@@ -1091,6 +1102,13 @@ def strict_fla_runtime_summary(model: nn.Module, backbone: str) -> Dict[str, Any
             execution_path = (
                 "native_content_qk_two_official_gdn2_chunks_with_"
                 "receiver_live_futureseed_recommit"
+            )
+        elif (
+            update_mode == "retrospective_full_repeat"
+            and address_mode == "none"
+        ):
+            execution_path = (
+                "native_content_qkv_tied_two_pass_in_one_official_gdn2_chunk"
             )
         elif update_mode == "terminal_consolidation" and address_mode == "position_qk":
             execution_path = (
@@ -2521,11 +2539,13 @@ class FLADeltaTimeMix(nn.Module):
             raise ValueError("GDN2 update extensions are restricted to GDN2")
         if update_mode != "none" and not (
             address_mode == "position_qk"
-            or update_mode == "boundary_recommit" and address_mode == "none"
+            or update_mode in {"boundary_recommit", "retrospective_full_repeat"}
+            and address_mode == "none"
         ):
             raise ValueError(
                 "GDN2 update extensions compose only with position_qk, except "
-                "boundary_recommit which requires native content addressing"
+                "boundary_recommit and retrospective_full_repeat which require "
+                "native content addressing"
             )
         if update_mode != "none" and (
             gain_budget_mode != "none"
@@ -2927,6 +2947,15 @@ class FLADeltaTimeMix(nn.Module):
             (), dtype=torch.float32
         )
         return values
+
+    @staticmethod
+    def _zero_retrospective_full_repeat_diag(
+        x: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        zero = x.new_zeros((), dtype=torch.float32)
+        return {
+            key: zero for key in RETROSPECTIVE_FULL_REPEAT_TRAIN_KEYS
+        }
 
     @staticmethod
     def _zero_orthogonal_head_write_diag(
@@ -5143,6 +5172,136 @@ class FLADeltaTimeMix(nn.Module):
         o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
         return o, terminal_state
 
+    def _forward_retrospective_full_repeat(
+        self,
+        x: torch.Tensor,
+        *,
+        initial_state: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compile a receiver context by scanning the same projected stream twice."""
+        if self.backbone != "gdn2" or chunk_gdn2 is None:
+            raise RuntimeError(
+                "Retrospective full repeat requires the official GDN2 chunk op"
+            )
+        core = self.core
+        batch_size, seq_len, _channels = x.shape
+        if seq_len != 81:
+            raise RuntimeError(
+                "Retrospective full repeat is registered for the 81-token "
+                f"Sudoku carrier, got seq_len={seq_len}"
+            )
+
+        # Project once in the original causal order. The repeated recurrent
+        # pass sees identical token features; ShortConv is not allowed to leak
+        # first-pass boundary artifacts into the second pass.
+        if core.use_short_conv:
+            conv_q, conv_k, conv_v = self._zero_conv_state(x)
+            q, _ = core.q_conv1d(
+                x=core.q_proj(x), cache=conv_q, output_final_state=True
+            )
+            k, _ = core.k_conv1d(
+                x=core.k_proj(x), cache=conv_k, output_final_state=True
+            )
+            v, _ = core.v_conv1d(
+                x=core.v_proj(x), cache=conv_v, output_final_state=True
+            )
+        else:
+            q = F.silu(core.q_proj(x))
+            k = F.silu(core.k_proj(x))
+            v = F.silu(core.v_proj(x))
+
+        q = q.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        k = k.view(batch_size, seq_len, core.num_heads, core.head_k_dim)
+        v = v.view(batch_size, seq_len, core.num_v_heads, core.head_v_dim)
+        g = F.softplus(core.f_proj(x).float() + core.dt_bias).view(
+            batch_size, seq_len, core.num_heads, core.head_k_dim
+        )
+        b = core.b_proj(x).sigmoid().view(
+            batch_size, seq_len, core.num_heads, core.head_k_dim
+        )
+        w = core.w_proj(x).sigmoid().view(
+            batch_size, seq_len, core.num_v_heads, core.head_v_dim
+        )
+        g = -core.A_log.float().exp().view(1, 1, core.num_heads, 1) * g
+
+        if core.num_v_heads > core.num_heads:
+            groups = core.num_v_heads // core.num_heads
+            q = torch.repeat_interleave(q, groups, dim=-2)
+            k = torch.repeat_interleave(k, groups, dim=-2)
+            g = torch.repeat_interleave(g, groups, dim=-2)
+            b = torch.repeat_interleave(b, groups, dim=-2)
+        if core.allow_neg_eigval:
+            b = b * 2.0
+
+        def repeat(stream: torch.Tensor) -> torch.Tensor:
+            return torch.cat((stream, stream), dim=1)
+
+        repeated_output, terminal_state = chunk_gdn2(
+            q=repeat(q),
+            k=repeat(k),
+            v=repeat(v),
+            g=repeat(g),
+            b=repeat(b),
+            w=repeat(w),
+            initial_state=initial_state,
+            output_final_state=True,
+            use_qk_l2norm_in_kernel=True,
+        )
+        first_output, second_output = repeated_output.split(seq_len, dim=1)
+        with torch.no_grad():
+            first_board_rms = first_output.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            second_board_rms = second_output.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            output_delta = second_output.float() - first_output.float()
+            output_relative = output_delta.square().mean(
+                dim=(1, 2, 3)
+            ).sqrt() / first_board_rms.clamp_min(1e-8)
+            terminal_board_rms = terminal_state.float().square().mean(
+                dim=(1, 2, 3)
+            ).sqrt()
+            diagnostics = {
+                "gdn3_retrospective_full_repeat_enabled": x.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_retrospective_full_repeat_path_count_sum": x.new_ones(
+                    (), dtype=torch.float32
+                ),
+                "gdn3_retrospective_full_repeat_output_relative_rms": (
+                    output_relative.mean()
+                ),
+                "gdn3_retrospective_full_repeat_output_batch_std": (
+                    output_relative.std(unbiased=False)
+                ),
+                "gdn3_retrospective_full_repeat_first_output_rms": (
+                    first_board_rms.mean()
+                ),
+                "gdn3_retrospective_full_repeat_second_output_rms": (
+                    second_board_rms.mean()
+                ),
+                "gdn3_retrospective_full_repeat_terminal_rms": (
+                    terminal_board_rms.mean()
+                ),
+                "gdn3_retrospective_full_repeat_terminal_batch_std": (
+                    terminal_board_rms.std(unbiased=False)
+                ),
+            }
+        self.last_gain_budget_diag = {
+            **self._zero_address_diag(x),
+            **self._zero_precondition_diag(x),
+            **self._zero_boundary_recommit_diag(x),
+            **diagnostics,
+        }
+
+        output_gate = core.g_proj(x).view(
+            batch_size, seq_len, core.num_v_heads, core.head_v_dim
+        )
+        o = core.o_norm(second_output.to(dtype=x.dtype), output_gate)
+        o = core.o_proj(o.reshape(batch_size, seq_len, core.value_dim))
+        return o, terminal_state
+
     def _forward_position_qk(
         self,
         x: torch.Tensor,
@@ -6220,6 +6379,14 @@ class FLADeltaTimeMix(nn.Module):
                 x,
                 initial_state=initial_state,
             )
+        if (
+            self.update_mode == "retrospective_full_repeat"
+            and initial_state is not None
+        ):
+            return self._forward_retrospective_full_repeat(
+                x,
+                initial_state=initial_state,
+            )
         if self.address_mode == "position_qk":
             if address is None:
                 raise ValueError("position_qk address mode requires a canonical address stream")
@@ -6311,6 +6478,7 @@ class FLADeltaTimeMix(nn.Module):
             **self._zero_address_diag(x),
             **self._zero_precondition_diag(x),
             **self._zero_boundary_recommit_diag(x),
+            **self._zero_retrospective_full_repeat_diag(x),
         }
         return y, terminal_state
 
@@ -7026,6 +7194,26 @@ class FutureSeedRWKV(nn.Module):
             raise ValueError(
                 "Boundary recommit composes only with matched-width native-address "
                 "GDN2 and fixed adjacent-layer terminal FutureSeed"
+            )
+        if gdn2_update_mode == "retrospective_full_repeat" and (
+            backbone != "gdn2"
+            or gdn2_address_mode != "none"
+            or gdn2_state_expert_mode != "none"
+            or gdn2_cross_layer_init != "independent"
+            or not math.isclose(gdn_expand_v, 1.0)
+            or not math.isclose(gdn_progressive_base_expand_v, 0.0)
+            or not math.isclose(future_seed_scale, 1.0)
+            or not math.isclose(future_seed_decay, 0.0)
+            or future_seed_update != "fixed"
+            or future_seed_norm_mode != "unit"
+            or future_seed_gate_mode != "head"
+            or future_seed_scope != "layer"
+            or future_seed_readout_hop != 0
+            or future_seed_content_mode != "terminal"
+        ):
+            raise ValueError(
+                "Retrospective full repeat composes only with matched-width "
+                "native-address GDN2 and fixed adjacent-layer terminal FutureSeed"
             )
         if gdn2_update_mode == "paired_address_bank" and (
             backbone != "gdn2"
@@ -8819,6 +9007,7 @@ def load_training_checkpoint(
                         "terminal_consolidation",
                         "orthogonal_chunk_state",
                         "boundary_recommit",
+                        "retrospective_full_repeat",
                         "orthogonal_head_write",
                         "adaptive_signed_erase",
                         "bi_axis_value_decay",
@@ -8903,6 +9092,7 @@ def load_training_checkpoint(
                     "terminal_consolidation",
                     "orthogonal_chunk_state",
                     "boundary_recommit",
+                    "retrospective_full_repeat",
                     "orthogonal_head_write",
                     "adaptive_signed_erase",
                     "bi_axis_value_decay",
@@ -10506,6 +10696,17 @@ def fs_line(m: Dict[str, float]) -> str:
             f"{m.get('gdn3_boundary_recommit_boundary_norm_ratio', 1.0):.4f}/"
             f"{m.get('gdn3_boundary_recommit_terminal_rms', 0.0):.4f}"
         )
+    if m.get("gdn3_retrospective_full_repeat_enabled", 0.0) > 0:
+        parts.append(
+            "full_repeat="
+            f"{m.get('gdn3_retrospective_full_repeat_output_relative_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_retrospective_full_repeat_output_batch_std', 0.0):.4f}"
+        )
+        parts.append(
+            "full_repeat_state="
+            f"{m.get('gdn3_retrospective_full_repeat_second_output_rms', 0.0):.4f}/"
+            f"{m.get('gdn3_retrospective_full_repeat_terminal_rms', 0.0):.4f}"
+        )
     if m.get("gdn3_orthogonal_head_write_enabled", 0.0) > 0:
         parts.append(
             "orth_head_angle="
@@ -11046,6 +11247,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
     last_boundary_recommit_diag[
         "gdn3_boundary_recommit_boundary_norm_ratio"
     ] = 1.0
+    last_retrospective_full_repeat_diag = {
+        key: 0.0 for key in RETROSPECTIVE_FULL_REPEAT_TRAIN_KEYS
+    }
     last_orthogonal_head_write_diag = {
         key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
     }
@@ -11494,6 +11698,14 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 )
                 for key in BOUNDARY_RECOMMIT_TRAIN_KEYS
             }
+        saved_retrospective_full_repeat_diag = last_metrics.get(
+            "retrospective_full_repeat", {}
+        )
+        if isinstance(saved_retrospective_full_repeat_diag, dict):
+            last_retrospective_full_repeat_diag = {
+                key: float(saved_retrospective_full_repeat_diag.get(key, 0.0))
+                for key in RETROSPECTIVE_FULL_REPEAT_TRAIN_KEYS
+            }
         saved_orthogonal_head_write_diag = last_metrics.get(
             "orthogonal_head_write", {}
         )
@@ -11690,6 +11902,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
             }
             accum_boundary_recommit_diag = {
                 key: 0.0 for key in BOUNDARY_RECOMMIT_TRAIN_KEYS
+            }
+            accum_retrospective_full_repeat_diag = {
+                key: 0.0 for key in RETROSPECTIVE_FULL_REPEAT_TRAIN_KEYS
             }
             accum_orthogonal_head_write_diag = {
                 key: 0.0 for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS
@@ -11992,6 +12207,12 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             .detach()
                             .cpu()
                         )
+                    for key in RETROSPECTIVE_FULL_REPEAT_TRAIN_KEYS:
+                        accum_retrospective_full_repeat_diag[key] += float(
+                            trace_last.get(key, ce_loss.new_zeros(()))
+                            .detach()
+                            .cpu()
+                        )
                     for key in ORTHOGONAL_HEAD_WRITE_TRAIN_KEYS:
                         accum_orthogonal_head_write_diag[key] += float(
                             trace_last.get(
@@ -12257,6 +12478,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                 key: value / float(accum_count)
                 for key, value in accum_boundary_recommit_diag.items()
             }
+            last_retrospective_full_repeat_diag = {
+                key: value / float(accum_count)
+                for key, value in accum_retrospective_full_repeat_diag.items()
+            }
             last_orthogonal_head_write_diag = {
                 key: value / float(accum_count)
                 for key, value in accum_orthogonal_head_write_diag.items()
@@ -12359,6 +12584,10 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                     f"{last_boundary_recommit_diag['gdn3_boundary_recommit_missing_fraction']:.4f} "
                     f"recommit_norm={last_boundary_recommit_diag['gdn3_boundary_recommit_boundary_norm_ratio']:.4f}/"
                     f"{last_boundary_recommit_diag['gdn3_boundary_recommit_terminal_rms']:.4f} "
+                    f"full_repeat={last_retrospective_full_repeat_diag['gdn3_retrospective_full_repeat_output_relative_rms']:.4f}/"
+                    f"{last_retrospective_full_repeat_diag['gdn3_retrospective_full_repeat_output_batch_std']:.4f} "
+                    f"full_repeat_state={last_retrospective_full_repeat_diag['gdn3_retrospective_full_repeat_second_output_rms']:.4f}/"
+                    f"{last_retrospective_full_repeat_diag['gdn3_retrospective_full_repeat_terminal_rms']:.4f} "
                     f"orth_head_angle={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_angle_abs']:.4f}/"
                     f"{last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_angle_batch_std']:.4f} "
                     f"orth_head_v={last_orthogonal_head_write_diag['gdn3_orthogonal_head_write_v_residual_relative_rms']:.4f}/"
@@ -12487,6 +12716,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             last_orthogonal_chunk_state_diag
                         ),
                         "boundary_recommit": dict(last_boundary_recommit_diag),
+                        "retrospective_full_repeat": dict(
+                            last_retrospective_full_repeat_diag
+                        ),
                         "orthogonal_head_write": dict(
                             last_orthogonal_head_write_diag
                         ),
@@ -12608,6 +12840,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                                 last_orthogonal_chunk_state_diag
                             ),
                             "boundary_recommit": dict(last_boundary_recommit_diag),
+                            "retrospective_full_repeat": dict(
+                                last_retrospective_full_repeat_diag
+                            ),
                             "orthogonal_head_write": dict(
                                 last_orthogonal_head_write_diag
                             ),
@@ -12708,6 +12943,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
                             last_orthogonal_chunk_state_diag
                         ),
                         "boundary_recommit": dict(last_boundary_recommit_diag),
+                        "retrospective_full_repeat": dict(
+                            last_retrospective_full_repeat_diag
+                        ),
                         "orthogonal_head_write": dict(
                             last_orthogonal_head_write_diag
                         ),
@@ -12822,6 +13060,9 @@ def train_model(args: argparse.Namespace, *, device: torch.device) -> Tuple[Futu
         "terminal_consolidation": dict(last_terminal_consolidation_diag),
         "orthogonal_chunk_state": dict(last_orthogonal_chunk_state_diag),
         "boundary_recommit": dict(last_boundary_recommit_diag),
+        "retrospective_full_repeat": dict(
+            last_retrospective_full_repeat_diag
+        ),
         "orthogonal_head_write": dict(last_orthogonal_head_write_diag),
         "adaptive_signed_erase": dict(last_adaptive_signed_erase_diag),
         "bi_axis_value_decay": dict(last_bi_axis_value_decay_diag),
@@ -14252,6 +14493,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "terminal_consolidation",
             "orthogonal_chunk_state",
             "boundary_recommit",
+            "retrospective_full_repeat",
             "orthogonal_head_write",
             "adaptive_signed_erase",
             "bi_axis_value_decay",
@@ -14393,12 +14635,14 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             raise ValueError("--gdn2_update_mode requires --fla_strict_official")
         if not (
             args.gdn2_address_mode == "position_qk"
-            or args.gdn2_update_mode == "boundary_recommit"
+            or args.gdn2_update_mode
+            in {"boundary_recommit", "retrospective_full_repeat"}
             and args.gdn2_address_mode == "none"
         ):
             raise ValueError(
                 "GDN2 update extensions require --gdn2_address_mode position_qk, "
-                "except boundary_recommit which requires none"
+                "except boundary_recommit and retrospective_full_repeat which "
+                "require none"
             )
         if args.future_seed_content_mode != "terminal":
             raise ValueError(

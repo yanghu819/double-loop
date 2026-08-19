@@ -1,5 +1,30 @@
 # FutureSeed + Loop Paper Plan
 
+## 2026-08-19 Full Retrospective Replay Is Not A FutureSeed Teacher Ceiling
+
+P-GDN3-074 tests the strongest direct version of retrospective replay on the
+quality-positive P072 Sudoku parent. Each receiving layer projects the complete
+81-token board once, repeats bit-identical Q/K/V/decay/erase/write tensors, and
+runs one pinned-official length162 GDN2 scan from native FutureSeed. It adds no
+parameters or persistent state and uses only the second-pass outputs.
+
+The intervention is real: all nine paths activate and the second pass changes
+outputs by `.5332` relative RMS. Yet official 51-55/56-60/61-64 loop5 exact
+falls `.431641/.197266/.289063 -> .390625/.158203/.199219`; hard macro exact
+falls `.305990->.249349`, mixed exact falls `.326172->.322266`, and every blank
+range regresses beyond `.01`. The model recovers near-control CE within the
+fixed 100 steps, so the failure is not the eight-board migration probe.
+
+This sharpens the positive P072 claim. The useful missing object is not a
+second copy of the same receiver-basis token updates. Reapplying every learned
+erase/write operation after the state already summarizes the board changes the
+co-adapted address/state trajectory and amplifies interference. A bounded
+recommit of specifically lost inherited evidence can help, while indiscriminate
+full replay hurts. Do not claim a Retrospective State Compiler ceiling from
+this parent and do not train its K=8 student. A future retrospective model must
+earn a teacher gain from scratch or preserve a separate delayed representation;
+that is a new architecture claim, not a rescue of P074.
+
 ## 2026-08-18 Receiver-Live FutureSeed Loss Is A Measurable Closure Bottleneck
 
 P-GDN3-072 is the first matched hard-Sudoku mechanism in this sequence that

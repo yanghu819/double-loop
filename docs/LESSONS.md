@@ -1,5 +1,25 @@
 # Lessons
 
+## 2026-08-19: Re-reading identical updates is not missing future evidence
+
+- P-GDN3-074 gives every receiving layer a complete second official scan over
+  bit-identical projected board features, starting from native FutureSeed and
+  keeping only the second outputs.
+- All nine paths activate materially and remain finite. This is not a dead
+  branch, fallback, provenance failure, or one-step quality judgment.
+- Hard51-64 macro loop5 exact falls `.305990->.249349`; mixed exact and every
+  official blank range also regress. The second pass therefore adds computation
+  without adding a new information source.
+- P072 and P074 together identify a narrower target: preserve or recommit the
+  inherited component that the live scan loses, rather than replaying all
+  erase/write operations. More recurrence is not automatically more useful
+  future context.
+- Zero new parameters does not mean low systems cost. Full repeat raises peak
+  allocation `25.897%` and fails its `<1.25x` teacher gate.
+- Close repeat count/order, K=8 compiled student, router, cache and training
+  rescue on this Sudoku parent. Any from-scratch retrospective architecture is
+  a separate hypothesis and must first demonstrate its own teacher advantage.
+
 ## 2026-08-18: FutureSeed can be useful at entry and still be overwritten live
 
 - P-GDN3-072 leaves the official GDN2 update unchanged, then at its native

@@ -12,24 +12,23 @@ it is a controlled global-constraint task that exposes whether future context,
 recurrent state capacity, and loop correction scale without solver-specific
 repair, search, rules, or selectors.
 
-Registered update (2026-08-19 CST): `P-GDN3-074 / P-FS2-020` tests the
-necessary teacher ceiling for a Retrospective State Compiler before any router,
-critic, sparse replay, or compiled-seed student is authorized. On the exact
-P072 D192/L10/H6 step12000 parent, each of the nine receiving native-address
-GDN2 layers projects the 81-token stream once, repeats the identical
-Q/K/V/decay/erase/write tensors, and executes one pinned-official length162
-`chunk_gdn2` scan from native FutureSeed. Only second-pass outputs and the final
-state continue downstream. It adds zero parameters and persistent state and is
-not a deployable cost claim. One candidate-only exact-resume continuation runs
-step12000->12100 against the frozen P072 control; no control rerun. Quality
-requires hard51-64 macro loop5 exact `>=.3209895833` with every official blank
-range within `.01`, or mixed exact `>=.346171875`, 61-64 exact preserved, and
-stronger same-board late correction. Exactly nine paths, output delta
-relative RMS `>=1e-4`, board variation, finite state, and loop5 terminal RMS
-`<=4x` control are mandatory. Teacher cost is fixed before launch at elapsed
-`<2.20x` and allocation `<1.25x`. A quality miss closes retrospective
-replay/compilation on this parent; a pass authorizes exactly one fixed K=8
-receiver-native compiled student. Report:
+Completed update (2026-08-19 CST): `P-GDN3-074 / P-FS2-020` is discarded.
+The zero-parameter Retrospective Full-Repeat Teacher passed its strict CUDA
+contract, exact-resume probe, activation and stability gates: all nine receiving
+layers executed one pinned-official length162 scan over bit-identical projected
+halves, and second-minus-first output relative RMS reached `.533215` at loop5.
+That material intervention did not improve closure. Against the frozen P072
+control, official 51-55/56-60/61-64 loop5 exact fell
+`.431641/.197266/.289063 -> .390625/.158203/.199219`; hard51-64 macro exact fell
+`.305990->.249349`, mixed exact fell `.326172->.322266`, and every official
+blank accuracy regressed by more than `.01`. Same-board loop3-to-loop5
+wrong-cell correction strengthened only in 51-55 and weakened in 56-60 and
+61-64. Full step12100 elapsed overhead was `+3.817%`, but peak allocation rose
+`+25.897%`, also missing the strict `<1.25x` teacher limit. No NaN, OOM,
+fallback, source drift, data drift, or GPU drift occurred. Per registration,
+close exact full repeat and do not launch a K=8 compiled student, router, cache,
+repeat-count/order, seed, LR, loss, batch, width, depth, or duration rescue on
+this Sudoku parent. Report:
 `research/reports/experiments/gdn3-retrospective-full-repeat-sudoku-20260819.md`.
 
 Completed update (2026-08-18 CST): `P-GDN3-072 / P-FS2-019` is closed as a

@@ -190,9 +190,19 @@ def check_repeat_contract(device: torch.device) -> dict[str, Any]:
     loss.backward()
     gradient_rows: dict[str, dict[str, float]] = {}
     for layer, block in enumerate(candidate.blocks[1:], start=1):
+        core = block.time_mix.core
         layer_gradients: dict[str, float] = {}
-        for name in ("q_proj", "k_proj", "v_proj", "f_proj", "b_proj", "w_proj"):
-            gradient = getattr(block.time_mix.core, name).weight.grad
+        projection_weights = (
+            ("q_proj", core.q_proj.weight),
+            ("k_proj", core.k_proj.weight),
+            ("v_proj", core.v_proj.weight),
+            ("f_proj_in", core.f_proj[0].weight),
+            ("f_proj_out", core.f_proj[1].weight),
+            ("b_proj", core.b_proj.weight),
+            ("w_proj", core.w_proj.weight),
+        )
+        for name, weight in projection_weights:
+            gradient = weight.grad
             if gradient is None or not bool(torch.isfinite(gradient).all()):
                 raise AssertionError(f"layer {layer} {name} gradient is invalid")
             maximum = float(gradient.float().abs().max().item())
